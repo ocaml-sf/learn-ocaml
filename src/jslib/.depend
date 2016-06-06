@@ -1,0 +1,11 @@
+xor.cmo : xor.cmi
+xor.cmx : xor.cmi
+js_utils.cmo : js_utils.cmi
+js_utils.cmx : js_utils.cmi
+lwt_request.cmo : js_utils.cmi lwt_request.cmi
+lwt_request.cmx : js_utils.cmx lwt_request.cmi
+xor_main.cmo : xor.cmi
+xor_main.cmx : xor.cmx
+xor.cmi :
+js_utils.cmi :
+lwt_request.cmi :

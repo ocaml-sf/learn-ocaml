@@ -1,0 +1,22 @@
+@import url('learnocaml_common.css');
+body {
+  margin: 5px 10px;
+  background: #eee;
+}
+code, pre {
+  padding: 0px 4px;
+  background: #ddd;
+  border: 1px #fff solid;
+  border-radius: 4px;
+}
+h2 {
+  font-size: 20px;
+  line-height: 26px;
+  margin: 10px -10px;
+  padding: 10px;
+  background: #ddd;
+  font-weight: normal;
+}
+p {
+  margin: 10px 0;
+}

@@ -1,0 +1,85 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml by OCamlPro</title>
+    <link rel="stylesheet" href="learnocaml_common.css">
+    <link rel="stylesheet" href="learnocaml_tryocaml.css">
+    <link rel="stylesheet" href="learnocaml_main.css">
+    <script src="ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="learnocaml-main.js" defer></script>
+  </head>
+  <body>
+    <div style="display:none">
+      <!-- preload -->
+      <img src="tryocaml_loading_1.gif"><img src="tryocaml_loading_2.gif">
+      <img src="tryocaml_loading_3.gif"><img src="tryocaml_loading_4.gif">
+      <img src="tryocaml_loading_5.gif"><img src="tryocaml_loading_6.gif">
+      <img src="tryocaml_loading_7.gif"><img src="tryocaml_loading_8.gif">
+    </div>
+    <div id="learnocaml-main-toolbar">
+      <div class="logo">
+        <img src="logo_ocaml.svg">
+        <span>Learn OCaml</span>
+        <img src="logo_ocp.svg">
+      </div>
+    </div>
+    <div id="learnocaml-main-panel" class="hidden">
+      <hr class="glue">
+      <div>Welcome to <emph>LearnOCaml</emph> by OCamlPro.</div>
+      <div>This App is still under construction.</div>
+      <hr class="line">
+      <div>Choose your activity below.</div>
+      <div id="learnocaml-tab-buttons-container" class="tabs">
+        <!-- Keep in sync with learnocaml_main.ml -->
+        <button>Exercises</button>
+        <button>Lessons</button>
+        <button>Toplevel</button>
+      </div>
+      <hr class="line">
+      <div>Your storage token on OCamlPro's servers:</div>
+      <input type="text" value="NOT-YET-IMPLEMENTED" size="22" id="learnocaml-save-token-field" readonly>
+      <div>You can share it between devices.</div>
+      <hr class="line">
+      <div>Progression is saved locally in the browser.</div>
+      <div id="learnocaml-sync-buttons">
+        <button disabled>
+          <img src="icon_download_white.svg" alt="download icon">
+          <span class="label">Save</span>
+        </button>
+        <button disabled>
+          <img src="icon_upload_white.svg" alt="upload icon">
+          <span class="label">Restore</span>
+        </button>
+        <button disabled>
+          <img src="icon_sync_white.svg" alt="sync icon">
+          <span class="label">Sync</span>
+        </button>
+      </div>
+      <div>Save it to a file using the
+        <img src="icon_download_white.svg" class="icon"  alt="save">
+        button above.</div>
+      <div>Restore it from a file using the
+        <img src="icon_upload_white.svg" class="icon" alt="restore">
+        button above.</div>
+      <div>Save online using the
+        <img src="icon_sync_white.svg" class="icon"  alt="sync">
+        button above.</div>
+      <hr class="glue">
+    </div>
+    <div id="learnocaml-main-content">
+      <!-- <h1 class="pack">A separator</h1> -->
+      <!-- <div class="exercise"> -->
+      <!--   <div class="descr"> -->
+      <!--     <h1>Exercise title</h1> -->
+      <!--     <p>Short description of the exercise.</p> -->
+      <!--   </div> -->
+      <!--   <div class="stats failure"|partial|success> -->
+      <!--     <div class="stars"><img src="stars_00|05|10|15|20|25|30|35|40.svg"></div> -->
+      <!--     <div class="length">Exercise kind</div> -->
+      <!--     <div class="score">42%</div> -->
+      <!--   </div> -->
+      <!-- </div> -->
+    </div>
+  </body>
+</html>

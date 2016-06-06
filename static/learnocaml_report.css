@@ -1,0 +1,194 @@
+@import url('learnocaml_common.css');
+#learnocaml-report {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+#learnocaml-report > .title {
+  flex: 0 0 auto;
+}
+#learnocaml-report > .main {
+  flex: 1;
+  border-width: 0 10px 10px 10px;
+  border-style: solid;
+  overflow: auto;
+  padding: 1px 1px 0 0
+}
+#learnocaml-report .code {
+  font-family: 'Inconsolata', monospace;
+  display: inline;
+  font-size: 18px;
+  line-height: 18px;
+  margin: 0;
+  padding: 0;
+  color: unset;
+  background: unset;
+  border: unset;
+}
+#learnocaml-report .code-block {
+  vertical-align: top;
+  font-family: 'Inconsolata', monospace;
+  white-space: pre;
+  display: block;
+  font-size: 18px;
+  line-height: 18px;
+  margin: 0 0 0 15px;
+  padding: 0;
+  color: unset;
+  background: unset;
+  border: unset;
+  overflow: auto;
+}
+#learnocaml-report .output-block {
+  vertical-align: top;
+  font-family: 'Inconsolata', monospace;
+  white-space: pre;
+  display: block;
+  font-size: 18px;
+  line-height: 18px;
+  margin: 0 0 0 15px;
+  padding: 0;
+  color: unset;
+  background: rgba(255,255,255,0.5);
+  border: 2px rgba(255,255,255,0.5) solid;
+}
+#learnocaml-report .main .section,
+#learnocaml-report .main .message {
+  display:block;
+  margin: 1px 0 1px 1px;
+  padding: 0;
+}
+#learnocaml-report .main .section:first-child,
+#learnocaml-report .main .message:first-child {
+  display:block;
+  margin: 0 0 1px 1px;
+  padding: 0;
+}
+#learnocaml-report .main .section > .message {
+  margin: 0 0 0 1px;
+}
+#learnocaml-report .text,
+#learnocaml-report .report {
+  display: block;
+  border-width: 0px 0px 0px 5px;
+  border-style: solid;
+  margin: 0;
+  padding: 0;
+}
+#learnocaml-report .text {
+  padding: 0;
+}
+#learnocaml-report .report {
+  padding: 1px 0 0 0;
+}
+#learnocaml-report .text {
+  padding: 0 0 0 4px
+}
+#learnocaml-report .title {
+  display: block;
+  border-width: 0px 0px 0px 5px;
+  border-style: solid;
+  margin: 0;
+  padding: 2px 0px 2px 0px ;
+  line-height: 22px;
+  font-size: 15px;
+}
+#learnocaml-report .score {
+  float: right;
+  padding: 0 4px 0 0;
+  height: 0;
+}
+#learnocaml-report .success > .title span {
+  background-color: #0a0;
+  color: white
+}
+#learnocaml-report .failure > .title span {
+  background-color: #b00;
+  color: white
+}
+#learnocaml-report .warning > .title span {
+  background-color: #e80;
+  color: white
+}
+#learnocaml-report .informative > .title span {
+  background-color: lightgrey;
+}
+#learnocaml-report .success > .title {
+  background-color: #0a0;
+  color: white
+}
+#learnocaml-report .failure > .title {
+  background-color: #b00;
+  color: white
+}
+#learnocaml-report .informative > .title {
+  background-color: #888;
+}
+#learnocaml-report .warning > .title {
+  background-color: #e80;
+  color: white
+}
+#learnocaml-report .warning > .text {
+  background-color: #ff8;
+}
+#learnocaml-report .success > .text {
+  background-color: #bea;
+}
+#learnocaml-report .failure > .text {
+  background-color: #fdd;
+}
+#learnocaml-report .informative > .text {
+  background-color: #eee;
+}
+#learnocaml-report .important > .text {
+  background-color: #e0e8ff;
+}
+#learnocaml-report .warning + .main,
+#learnocaml-report .warning > .text,
+#learnocaml-report .warning > .report,
+#learnocaml-report .warning > .title {
+  border-color: #e80;
+}
+#learnocaml-report .success + .main,
+#learnocaml-report .success > .text,
+#learnocaml-report .success > .report,
+#learnocaml-report .success > .title {
+  border-color: #0a0;
+}
+#learnocaml-report .failure + .main,
+#learnocaml-report .failure > .text,
+#learnocaml-report .failure > .report,
+#learnocaml-report .failure > .title {
+  border-color: #b00;
+}
+#learnocaml-report .informative + .main,
+#learnocaml-report .informative > .text,
+#learnocaml-report .informative > .report,
+#learnocaml-report .informative > .title {
+  border-color: #888;
+}
+#learnocaml-report .important + .main,
+#learnocaml-report .important > .text,
+#learnocaml-report .important > .report,
+#learnocaml-report .important > .title {
+  border-color: #67f;
+}
+#learnocaml-report .success .text .score {
+  color: green;
+}
+#learnocaml-report .failure .text .score {
+  color: red;
+}
+#learnocaml-report div > .folded .report {
+  display: none;
+}
+#learnocaml-report .clickable {
+  cursor: pointer ;
+}
+#learnocaml-report .folder-icon {
+  font-family: sans-serif ;
+  width: 1em;
+  float: left;
+}

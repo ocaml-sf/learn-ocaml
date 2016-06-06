@@ -1,0 +1,4 @@
+ast_lifter.cmo :
+ast_lifter.cmx :
+ppx_metaquot.cmo : ast_lifter.cmo
+ppx_metaquot.cmx : ast_lifter.cmx

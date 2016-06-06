@@ -1,0 +1,468 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #666;
+}
+/* -------------------- toolbar ----------------------------------- */
+#learnocaml-exo-toolbar {
+  position: absolute;
+  left: 0; top: 0;
+  color: #fff;
+  z-index: 1004;
+  border-bottom: 1px #eee solid;
+  display: flex;
+  background: #222;
+}
+#learnocaml-exo-toolbar > button {
+  border-left: 1px #eee solid !important;
+  padding: 0 10px 0 10px;
+  margin: 0;
+  background: none;
+  border: none;
+  flex: 0;
+  position: relative;
+  display: block;
+}
+#learnocaml-exo-toolbar > button > * {
+  padding: 5px;
+  color: #eee;
+  text-align: center;
+}
+#learnocaml-exo-toolbar::before {
+  z-index: 1004;
+  position: absolute;
+  left: 0px; height: 5px; width: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+  content:"";
+}
+@media (max-width: 549px) {
+  #learnocaml-exo-toolbar {
+    height: 40px;
+  }
+  #learnocaml-exo-toolbar::before {
+    top: 41px;
+  }
+  #learnocaml-exo-toolbar > button > .label {
+    display: none;
+  }
+}
+@media (min-width: 550px) {
+  #learnocaml-exo-toolbar {
+    height: 60px;
+  }
+  #learnocaml-exo-toolbar::before {
+    top: 61px;
+  }
+}
+/* -------------------- tabs and tab buttons ---------------------- */
+#learnocaml-exo-tab-buttons {
+  position: absolute;
+  z-index: 999;
+  display: flex;
+  height: 40px;
+}
+#learnocaml-exo-tab-buttons > button {
+  flex: 1;
+  padding: 0;
+  border: none;
+  color: #333;
+  background: #eee;
+  position: relative;
+  z-index: 1000;
+}
+#learnocaml-exo-tab-buttons > button:not(:first-child) {
+  border-left: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled]) {
+  border-bottom: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button[disabled]::before {
+  display: none;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled])::after {
+  position: absolute;
+  left:0; right:0; bottom:0; top:0;
+  content:"";
+  z-index: 1009;
+  background: linear-gradient(to top, rgba(0,0,0,0.4) 0, transparent 5px);
+}
+#learnocaml-exo-tabs > * {
+  position: absolute;
+  z-index: 997;
+  background: #eee;
+  padding: 0;
+  opacity: 0;
+}
+#learnocaml-exo-tabs > *.front-tab {
+  z-index: 998;
+  opacity: 1;
+}
+/* -------------------- two columns mode -------------------------- */
+@media (min-width: 1200px) {
+  #learnocaml-exo-toolbar {
+    width: 800px;
+  }
+  #learnocaml-exo-tab-editor::after {
+    position: absolute;
+    left: 800px; top: -61px; bottom: 0; width: 10px;
+    background: linear-gradient(to right, #fff 0px, #fff 1px, rgba(0,0,0,0.6) 1px, rgba(0,0,0,0) 10px);
+    content:"";
+  }
+  #learnocaml-exo-button-editor {
+    display: none;
+  }
+  #learnocaml-exo-tab-buttons {
+    left: 800px; right: 0px; top: 0px;
+  }
+  #learnocaml-exo-button-editor.front-tab ~ #learnocaml-exo-button-toplevel {
+    border-bottom: none;
+    background: #bbb;
+  }
+  #learnocaml-exo-button-editor.front-tab ~ #learnocaml-exo-button-toplevel::after {
+    display: none;
+  }
+  #learnocaml-exo-tab-editor.front-tab ~ #learnocaml-exo-tab-toplevel {
+    z-index: 998;
+    opacity: 1;
+  }
+  #learnocaml-exo-tabs > * {
+    left: 800px; top: 40px; right: 0px; bottom: 0px;
+  }
+  #learnocaml-exo-tabs > #learnocaml-exo-tab-editor {
+    width: 800px; left: 0; bottom: 0; top: 61px;
+    z-index: 1000;
+    opacity: 1;
+  }
+}
+/* -------------------- one column mode --------------------------- */
+@media (max-width: 1199px) {
+  #learnocaml-exo-toolbar {
+    right: 0px;
+  }
+  #learnocaml-exo-tab-buttons {
+    left: 0; right: 0px;
+  }
+  #learnocaml-exo-tabs > * {
+    position: absolute;
+    left: 0; right: 0px; bottom: 0px;
+  }
+  #learnocaml-exo-tab-editor > .pane {
+    margin-top: 5px;
+  }
+  #learnocaml-exo-tab-editor::after {
+    position: absolute;
+    z-index: 1005;
+    left: 0; top: 0; height: 10px; width: 100%;
+    content: "";
+    background: linear-gradient(to bottom, #444 0, #444 5px,
+      rgba(0,0,0,0.5) 5px, transparent 10px) ;
+  }
+}
+@media (min-width: 550px) and (max-width: 1199px) {
+  #learnocaml-exo-tab-buttons {
+    top: 60px;
+  }
+  #learnocaml-exo-tabs > * {
+    top: 100px;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-exo-tab-buttons {
+    top: 40px;
+  }
+  #learnocaml-exo-tabs > * {
+    top: 80px;
+  }
+}
+/* -------------------- editor tab -------------------------------- */
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-editor {
+  background: #444;
+  color: white;
+}
+#learnocaml-exo-tab-editor > .pane {
+  position: absolute;
+  left: 0; top: 0; bottom: 40px; width: 100%;
+  background: #666;
+  color: #fff;
+  z-index: 1002;
+}
+#learnocaml-exo-tab-editor > .buttons {
+  position: absolute;
+  left: 0; bottom: 0px; width: 100%; height: 40px;
+  background: linear-gradient(to bottom, #666 0px, #444 10px, #222 60px);
+  color: #fff;
+  line-height: 40px;
+  display: flex;
+  flex-direction: row;
+  z-index: 1003;
+}
+#learnocaml-exo-tab-editor > .buttons::after {
+  position: absolute;
+  bottom: 40px; left: 0px; height: 5px; width: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+  content:"";
+}
+#learnocaml-exo-tab-editor > .buttons > button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #eee;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+  border-top: 1px #eee solid;
+  position: relative;
+  padding: 0;
+}
+#learnocaml-exo-tab-editor > .buttons > button:not(:first-child) {
+  border-left: 1px #eee solid;
+}
+@media (max-width: 550px) {
+  #learnocaml-exo-tab-editor > .buttons > button > .label {
+    display: none;
+  }
+}
+/* -------------------- toplevel tab ------------------------------ */
+#learnocaml-exo-tab-toplevel > .toplevel-pane {
+  position: absolute;
+  left: 0; top: 0; bottom: 40px; width: 100%;
+  z-index: 1002;
+  margin: 5px 0 0 0;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-toplevel {
+  background: #bbb;
+}
+#learnocaml-exo-tab-toplevel {
+  background: #bbb;
+}
+#learnocaml-exo-tab-toplevel > .buttons {
+  position: absolute;
+  left: 0; bottom: 0px; width: 100%; height: 40px;
+  background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
+  color: #fff;
+  line-height: 40px;
+  display: flex;
+  flex-direction: row;
+  z-index: 1003;
+}
+#learnocaml-exo-tab-toplevel > .buttons > button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #222;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  border-top: 1px #666 solid;
+  position: relative;
+  padding: 0;
+}
+#learnocaml-exo-tab-toplevel > .buttons > button:not(:first-child) {
+  border-left: 1px #666 solid;
+}
+@media (max-width: 550px) {
+  #learnocaml-exo-tab-toplevel > .buttons > button > .label {
+    display: none;
+  }
+}
+#learnocaml-exo-toplevel-pane {
+  position: absolute;
+  left: 0; top: 0; bottom: 40px; width: 100%;
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  margin: 5px 0 0 0;
+}
+#learnocaml-exo-tab-toplevel::after {
+  position: absolute;
+  z-index: 1005;
+  left: 0; top: 5px; height: 10px; width: 100%;
+  content: "";
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0, transparent 5px) ;
+}
+/* -------------------- report tab -------------------------------- */
+#learnocaml-exo-tab-report {
+  border: none;
+  overflow: hidden;
+}
+#learnocaml-exo-button-report > .score {
+  padding: 0 5px;
+  float: right;
+}
+#learnocaml-exo-tab-report > iframe {
+  border: none;
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 550px) {
+  #learnocaml-exo-button-report > .score {
+    position: absolute;
+    right: 0; left: 0; top: 0; bottom: 0;
+    display: block;
+    line-height: 40px;
+    background: inherit;
+  }
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.success {
+  background: #0a0;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.failure {
+  background: #b00;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.partial {
+  background: #e80;
+  color: white;
+}
+/* -------------------- text tab ---------------------------------- */
+#learnocaml-exo-tab-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#learnocaml-exo-tab-text > h1 {
+  flex: 0 0 auto;
+  background: #222;
+  color: #eee;
+  font-size: 20px;
+  line-height: 22px;
+  margin: 0;
+  padding: 10px;
+  display: block;
+  font-weight: normal;
+  position: relative;
+}
+#learnocaml-exo-tab-text > h1:first-child {
+  margin-top: 5px;
+}
+#learnocaml-exo-tab-text > h1 > button {
+  float: right;
+  border: none;
+  border-left: 1px #eee solid;
+  color: #eee;
+  background: none;
+  margin: -10px;
+  padding: 10px;
+  font-size: 20px;
+  line-height: 22px;
+}
+#learnocaml-exo-tab-text > iframe {
+  border: none;
+  overflow: auto;
+  flex: 1 3 auto ;
+}
+#learnocaml-exo-tab-text > pre.toplevel-code {
+  flex: 0 1 auto;
+  max-height: 45%;
+  background: #666;
+  margin: 0;
+  padding: 5px 10px 5px 5px;
+  overflow: auto;
+}
+#learnocaml-exo-tab-text > h1::after {
+  position: absolute;
+  left: 0px; bottom: -5px; width: 100%;
+  content:"";
+  height:5px; background: pink;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
+}
+
+/* -------------------- loading splash screen --------------------- */
+#learnocaml-exo-loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#learnocaml-exo-loading.loading,
+#learnocaml-exo-loading.loaded {
+  background: rgba(200,200,200,0.9);
+}
+/* -------------------- ACE overriding ---------------------------- */
+#learnocaml-exo-editor-pane {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-exo-editor-pane .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-exo-editor-pane .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-exo-editor-pane .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-exo-editor-pane .ace_constant { color: #acf; }
+#learnocaml-exo-editor-pane .ace_string { color: #acf; }
+#learnocaml-exo-editor-pane .ace_function { color: #fff; }
+#learnocaml-exo-editor-pane .ace_type { color: #fff; }
+#learnocaml-exo-editor-pane .ace_operator { color: #fff; }
+#learnocaml-exo-editor-pane .ace_meta { color: #fff; }
+#learnocaml-exo-editor-pane .ace_variable { color: #fff; }
+#learnocaml-exo-editor-pane .ace_text { color: #fff; }
+#learnocaml-exo-editor-pane .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-exo-editor-pane .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-exo-editor-pane .ace_selected-word { background: #e80; opacity: 0.2; }
+
+#learnocaml-exo-editor-pane.ocaml-check-success::after,
+#learnocaml-exo-editor-pane.ocaml-check-warn::after,
+#learnocaml-exo-editor-pane.ocaml-check-error::after {
+  animation: 1s check_status_animation;
+  animation-fill-mode: forwards;
+  position: absolute;
+  margin: -100px 0 0 0;
+  top: 50%;
+  text-align: center;
+  font-size: 200px;
+  line-height: 200px;
+  width: 100%;
+}
+
+#learnocaml-exo-editor-pane.ocaml-check-success::after {
+  content: "✌";
+  color: #0a0;
+  text-shadow: 0px 0px 40px #6F6;
+}
+
+#learnocaml-exo-editor-pane.ocaml-check-warn::after {
+  content: "✋";
+  color: #ec0;
+  text-shadow: 0px 0px 40px #Fe6;
+}
+
+#learnocaml-exo-editor-pane.ocaml-check-error::after {
+  content: "☠";
+  color: #b00;
+  text-shadow: 0px 0px 40px #F66;
+}
+
+
+@keyframes check_status_animation {
+  0%   { opacity: 0; z-index: 9999; }
+  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}
+
+@-webkit-keyframes check_status_animation {
+  0%   { opacity: 0; z-index: 9999; }
+  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}

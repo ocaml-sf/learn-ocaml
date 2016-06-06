@@ -1,0 +1,24 @@
+
+optcomp_opt = %string(strings = [
+  "-let ocaml_full_version=("
+    ocaml_major_version ","
+    ocaml_minor_version ","
+    ocaml_point_version
+  ")"
+])
+
+camlp4_optcomp_js = [
+  "camlp4o"
+  "%{optcomp_SRC_DIR}%/optcomp.cma" optcomp_opt
+  "%{js_of_ocaml_SRC_DIR}%/pa_js.cmo"
+]
+
+camlp4_js = [
+  "camlp4o"
+  "%{js_of_ocaml_SRC_DIR}%/pa_js.cmo"
+]
+
+camlp4_optcomp = [
+  "camlp4o"
+  "%{optcomp_SRC_DIR}%/optcomp.cma" optcomp_opt
+]

@@ -1,0 +1,102 @@
+{
+    "learnocaml_version": "1",
+    "title": "Pattern-matching",
+    "steps": [
+      {
+        "title": "Pattern-matching on integers",
+        "contents": [
+          {
+            "html": "A powerful feature of OCaml is pattern-matching. For simple values as integers, pattern-matching is quite similar to case switches in other languages (<code>_</code> corresponds to the default case). Moreover, each case is handled in chronological order:"
+          },
+          {
+            "code": "let string_of_int x = match x with\n   | 0 -> \"zero\"\n   | 1 -> \"one\"\n   | 2 -> \"two\"\n   | _ -> \"many\""
+          },
+          {
+            "code": "let string_of_int2 = function\n    | 0 -> \"zero\"\n    | 1 -> \"one\"\n    | 2 -> \"two\"\n    | _ -> \"many\""
+          }
+        ]
+      },
+      {
+        "title": "Pattern-matching on chars",
+        "contents": [
+          {
+            "html": "Pattern-matching on characters is also possible, with a special syntax to denote character ranges:"
+          },
+          {
+            "code": "let is_capital = function\n  | 'a' .. 'z' -> false\n  | 'A' .. 'Z' -> true\n  | _          -> failwith \"Not a valid letter\""
+          },
+          {
+            "html": "as"
+          },
+          {
+            "code": "let capitalize = function\n  | 'a' .. 'z' as letter -> Char.uppercase letter\n  | 'A' .. 'Z' as letter -> letter\n  | _                    -> failwith \"Not a valid letter\""
+          }
+        ]
+      },
+      {
+        "title": "Pattern-matching on tuples",
+        "contents": [
+          {
+            "html": "Pattern-matching is also possible on tuples:"
+          },
+          {
+            "code": "let fit str len = match (str,len) with\n  | (\"foo\", 51) -> true\n  | (\"bar\", 51) -> true\n  | (_    , 42) -> false\n  | _           -> (String.length str) = len"
+          },
+          {
+            "code": "let fit str len = match (str,len) with\n  | (\"foo\", 51)\n  | (\"bar\", 51) -> true\n  | (_    , 42) -> false\n  | _           -> (String.length str) = len"
+          },
+          {
+            "html": "when"
+          },
+          {
+            "code": "let fit str len = match (str,len) with\n  | (_,51) when (str=\"foo\" || str=\"bar\") -> true\n  | (_, x) when x=42 -> false\n  | _ -> (String.length str) = len"
+          }
+        ]
+      },
+      {
+        "title": "Pattern-matching on lists",
+        "contents": [
+          {
+            "html": "However, the real power of pattern-matching appears when we start using more structured values, when we start needing giving a name to matched patterns. For instance, a list is either the empty list <code>[]</code> or a head and a tail, denoted by the pattern <code>h::t</code> where <code>h</code> and <code>t</code> are fresh variables bound to the matched patterns:"
+          },
+          {
+            "code": "let head = function\n  | []   -> failwith \"empty list\"\n  | h::t -> h"
+          },
+          {
+            "code": "let second_element = function\n  | []      -> failwith \"the list is empty\"\n  | [_]     -> failwith \"the list contains only one element\"\n  | _::e::_ -> e"
+          },
+          {
+            "code": "let head_head = function\n  | []        -> failwith \"the list is empty\"\n  | []::_     -> failwith \"the head is the empty list\"\n  | (h::_)::_ -> h"
+          }
+        ]
+      },
+      {
+        "title": "Pattern-matching on arrays",
+        "contents": [
+          {
+            "html": "You can also pattern match on arrays:"
+          },
+          {
+            "code": "let has_size_two = function\n  | [| _; _ |] -> true\n  | _          -> false"
+          },
+          {
+            "code": "let f = function\n  | []                 -> failwith \"empty list\"\n  | [| _; (_, x) |]::_ -> x\n  | _                  -> failwith \"the first array should be of size two\""
+          }
+        ]
+      },
+      {
+        "title": "Exhaustiveness",
+        "contents": [
+          {
+              "html": "One of the benefit of pattern-matching is the exhaustiveness check done by the compiler statically. Indeed, the OCaml compiler can verify that all the cases are handled. For instance, when pattern-matching on a list, the compiler will warn the user if she forgets to handle the empty list case:"
+          },
+          {
+            "code": "let head_partial = function\n  | h::_ -> h"
+          },
+          {
+            "code": "let head = function\n  | []   -> failwith \"empty list\"\n  | h::_ -> h\n  | [h]  -> h"
+          }
+        ]
+      }
+    ]
+}

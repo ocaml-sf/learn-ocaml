@@ -1,0 +1,117 @@
+begin program "learnocaml-process-repository"
+  has_asm = false
+  files = [
+    "server_index.ml"
+    "../grader/grader_cli.ml"
+    "index_builder.ml"
+  ]
+  requires = [
+    "ocplib-json-typed"
+    "ezjsonm"
+    "str"
+    "lwt.unix"
+    "exercise"
+    "grading-cli"
+  ]
+end
+
+begin library "browser-json"
+  files = [
+    "browser_json.ml"
+  ]
+  requires = [
+    "ocplib-json-typed"
+    "js_of_ocaml"
+  ]
+end
+
+
+begin library "learnocaml-common"
+  files = [
+    "server_index.ml"
+    "lesson.ml"
+    "client_index.ml"
+    "client_storage.ml" ( pp = camlp4_js )
+    "server_paths.ml"
+    "server_caller.ml" ( pp = camlp4_js )
+    "learnocaml_common.ml" ( pp = camlp4_js )
+  ]
+  requires = [
+    "browser-json"
+    "exercise"
+    "report"
+    "jsutils"
+    "ocplib-json-typed"
+    "js_of_ocaml"
+    "js_of_ocaml.syntax"
+    "js_of_ocaml.tyxml"
+  ]
+end
+
+begin program "learnocaml-main"
+  requires = [
+    "jsutils"
+    "ocplib-json-typed"
+    "js_of_ocaml"
+    "js_of_ocaml.syntax"
+    "js_of_ocaml.tyxml"
+    "ezjsonm"
+    "cstruct"
+    "browser-json"
+    "exercise"
+    "report"
+    "ace"
+    "learnocaml-common"
+    "tryocaml"
+  ]
+  files = [
+    "learnocaml_main.ml" ( pp = camlp4_js )
+  ]
+  build_rules = [
+    "%{learnocaml-main_FULL_DST_DIR}%/learnocaml-main.js" (
+      build_target = true
+      sources = %byte_exe( p = "learnocaml-main" )
+      commands = [ {
+        "js_of_ocaml"
+           "+weak.js"
+           "+cstruct/cstruct.js"
+           "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
+           %byte_exe( p = "learnocaml-main" )
+      } ]
+    )
+  ]
+end
+
+begin program "learnocaml-exercise"
+  requires = [
+    "jsutils"
+    "ocplib-json-typed"
+    "js_of_ocaml"
+    "js_of_ocaml.syntax"
+    "js_of_ocaml.tyxml"
+    "browser-json"
+    "ezjsonm"
+    "cstruct"
+    "exercise"
+    "grading-jsoo"
+    "ace"
+    "learnocaml-common"
+    "tryocaml"
+  ]
+  files = [
+    "learnocaml_exercise.ml" ( pp = camlp4_js )
+  ]
+  build_rules = [
+    "%{learnocaml-exercise_FULL_DST_DIR}%/learnocaml-exercise.js" (
+      build_target = true
+      sources = %byte_exe( p = "learnocaml-exercise" )
+      commands = [ {
+        "js_of_ocaml"
+           "+weak.js"
+           "+cstruct/cstruct.js"
+           "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
+           %byte_exe( p = "learnocaml-exercise" )
+      } ]
+    )
+  ]
+end

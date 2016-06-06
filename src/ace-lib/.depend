@@ -1,0 +1,9 @@
+ace.cmo : ace_types.cmi ace.cmi
+ace.cmx : ace_types.cmi ace.cmi
+ocaml_mode.cmo : ../../src/jslib/js_utils.cmi ace_types.cmi ace.cmi \
+    ocaml_mode.cmi
+ocaml_mode.cmx : ../../src/jslib/js_utils.cmx ace_types.cmi ace.cmx \
+    ocaml_mode.cmi
+ace_types.cmi :
+ace.cmi : ace_types.cmi
+ocaml_mode.cmi : ace.cmi

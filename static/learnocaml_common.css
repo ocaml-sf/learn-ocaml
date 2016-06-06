@@ -1,0 +1,235 @@
+body {
+  font-family: 'Fontin', 'Linux Biolinum', sans-serif;
+  font-size: 16px;
+  line-height: 18px;
+}
+button, select {
+  font-family: 'Fontin', 'Linux Biolinum', sans-serif;
+  font-size: 16px;
+  line-height: 16px;
+  outline: none;
+}
+code, pre, textarea {
+  font-family: 'Inconsolata', monospace;
+  font-size: 18px;
+  line-height: 18px;
+}
+/* -------------------- fix browser's CSSs ------------------------ */
+button > img {
+  vertical-align: -10%;
+}
+img.icon {
+  vertical-align: -15%;
+}
+select, button {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  position: relative;
+}
+button[disabled] {
+  cursor: not-allowed;
+}
+/* -------------------- buttons ----------------------------------- */
+button::before,
+button::after {
+  position: absolute;
+  left:0; right:0; bottom:0; top:0;
+  z-index: 1010;
+  content:"";
+  background: transparent;
+}
+button:active:not([disabled])::after {
+  box-shadow: rgba(0,0,0,0.8) 0px 0px 10px -1px inset;
+}
+button:hover:not([disabled])::after {
+  background: rgba(170,204,255,0.5);
+}
+button[disabled]::before {
+  transition: background 0.5s 0.5s;
+  background: rgba(128,128,128,0.4);
+}
+/* -------------------- font faces -------------------------------- */
+@font-face {
+  font-family: "Linux Biolinum";
+  src: url('LinBiolinum_R.woff') format('woff');
+}
+@font-face {
+  font-family: "Linux Biolinum";
+  font-style: italic;
+  src: url('LinBiolinum_RI.woff') format('woff');
+}
+@font-face {
+  font-family: "Linux Biolinum";
+  font-weight: bold;
+  src: url('LinBiolinum_RB.woff') format('woff');
+}
+@font-face {
+  /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
+  font-family: "Fontin";
+  src: url("Fontin-Regular.woff") format("woff"),
+       url("Fontin-Regular.ttf") format("truetype");
+}
+@font-face {
+  /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
+  font-family: "Fontin";
+  font-style: italic;
+  src: url("Fontin-Italic.woff") format("woff"),
+       url("Fontin-Italic.ttf") format("truetype");
+}
+@font-face {
+  /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
+  font-family: "Fontin";
+  font-weight: bold;
+  src: url("Fontin-Bold.woff") format("woff"),
+       url("Fontin-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Inconsolata";
+  src: url("InconsolataGo-Regular.woff") format("woff"),
+       url("InconsolataGo-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Inconsolata";
+  font-weight: bold;
+  src: url("InconsolataGo-Bold.woff") format("woff"),
+       url("InconsolataGo-Bold.ttf") format("truetype");
+}
+/* -------------------- loading splash screen --------------------- */
+.loading-layer {
+  background: #ccc;
+  display: flex;
+  flex-direction: column;
+}
+.loading-layer.initial {
+  opacity: 1;
+  z-index: 9999;
+  background: #eee;
+}
+.loading-layer.loaded {
+  animation: loaded_animation 0.5s ease-out both;
+  -webkit-animation: loaded_animation 0.5s ease-out both;
+}
+.loading-layer.loading {
+  animation: loading_animation 0.5s ease-out both;
+  -webkit-animation: loading_animation 0.5s ease-out both;
+  z-index: 9999;
+  background: #eee;
+}
+.loading-layer > * {
+  flex: 0 0 auto;
+  text-align: center;
+}
+.loading-layer img {
+  filter: drop-shadow(0 0 5px #888);
+}
+.loading-layer::before {
+  flex: 4 4 auto;
+  content:"";
+}
+.loading-layer::after {
+  flex: 7 7 auto;
+  content:"";
+}
+.loading-layer .messages {
+  text-shadow: 0 0 5px #888;
+  vertical-align: bottom;
+  position: relative;
+  height: 120px;
+  font-size: 24px; line-height: 26px;
+}
+.loading-layer .messages ul {
+  position: absolute;
+  width: 100%;
+  bottom: 0px;
+  margin: 0;
+  padding: 0;
+}
+.loading-layer .messages ul li {
+  list-style: none;
+  opacity: 0.1;
+  font-size: 16px; line-height: 18px;
+}
+.loading-layer .messages ul li:nth-last-child(1) { opacity: 1; font-size: 24px; line-height: 26px;}
+.loading-layer .messages ul li:nth-last-child(2) { opacity: 0.9; font-size: 22px; line-height: 24px;}
+.loading-layer .messages ul li:nth-last-child(3) { opacity: 0.8; font-size: 20px; line-height: 22px; }
+.loading-layer .messages ul li:nth-last-child(4) { opacity: 0.7; font-size: 19px; line-height: 21px; }
+.loading-layer .messages ul li:nth-last-child(5) { opacity: 0.6; font-size: 18px; line-height: 20px;}
+.loading-layer .messages ul li:nth-last-child(6) { opacity: 0.5; font-size: 17px; line-height: 19px;}
+.loading-layer .messages ul li:nth-last-child(7) { opacity: 0.4; }
+.loading-layer .messages ul li:nth-last-child(8) { opacity: 0.3; }
+.loading-layer .messages ul li:nth-last-child(9) { opacity: 0.2; }
+
+.loading-layer .messages .dialog {
+  position: absolute;
+  width: 100%;
+  top: 105%;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 10px 0 10px 0;
+  line-height: 24px;
+  font-size: 22px;
+  transition: opacity 0.5s ease-in-out;
+}
+.loading-layer .messages .dialog > button {
+  background: none;
+  border: 1px white solid;
+  color: white;
+  line-height: 24px;
+  font-size: 22px;
+}
+
+@keyframes loaded_animation {
+  0%   { opacity: 1; z-index: 9999; }
+  99%  { opacity: 0; z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}
+@-webkit-keyframes loaded_animation {
+  0%   { opacity: 1; z-index: 9999; }
+  99%  { opacity: 0; z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}
+@-webkit-keyframes loading_animation {
+  0%   { opacity: 0; }
+  100% { opacity: 1;}
+}
+@keyframes loading_animation {
+  0%   { opacity: 0; }
+  100% { opacity: 1;}
+}
+/* -------------------- common logo layout -- --------------------- */
+.logo {
+  font-family: 'Fontin', 'Linux Biolinum', sans-serif ;
+  text-shadow: 5px 5px 10px rgba(0,0,0,0.4);
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+@media (max-width: 549px) {
+  .logo {
+    line-height: 28px;
+    font-size: 28px;
+    padding: 6px;
+  }
+  .logo > img {
+    vertical-align: -3px;
+    height: 26px;
+  }
+}
+@media (min-width: 550px) {
+  .logo {
+    line-height: 44px;
+    font-size: 40px;
+    padding: 8px;
+  }
+  .logo > img {
+    vertical-align: -10px;
+  }
+}

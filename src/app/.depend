@@ -1,0 +1,10 @@
+server_index.cmo : server_index.cmi
+server_index.cmx : server_index.cmi
+client_index.cmo : client_index.cmi
+client_index.cmx : client_index.cmi
+learnocaml_main.cmo : server_index.cmi ../../src/jslib/lwt_request.cmi \
+    ../../src/jslib/js_utils.cmi
+learnocaml_main.cmx : server_index.cmx ../../src/jslib/lwt_request.cmx \
+    ../../src/jslib/js_utils.cmx
+server_index.cmi :
+client_index.cmi :

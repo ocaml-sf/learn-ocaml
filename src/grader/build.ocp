@@ -1,0 +1,195 @@
+begin library "exercise"
+  has_asm = true
+  requires = [
+    "lwt"
+    "ocplib-json-typed"
+    "xor"
+  ]
+  files = [
+    "exercise.ml"
+  ]
+end
+
+begin library "report"
+  requires = [
+    "ocplib-json-typed"
+  ]
+  files = [
+    "report.ml"
+  ]
+end
+
+begin library "testing"
+  comp_requires = "ppx_metaquot:asm"
+  link += [ "-linkall" ]
+  requires = [
+    "ty"
+    "report"
+    "toploop"
+    "ppx_metaquot"
+    "ppx_metaquot_lib"
+    "ocplib-json-typed"
+  ]
+  files = [
+    "introspection_intf.mli"
+    "introspection.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
+    "test_lib.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
+  ]
+end
+
+embedded_cmis = [
+
+  "%{stdlib_SRC_DIR}%/pervasives.cmi"
+  "%{stdlib_SRC_DIR}%/array.cmi"
+  "%{stdlib_SRC_DIR}%/arrayLabels.cmi"
+  "%{stdlib_SRC_DIR}%/list.cmi"
+  "%{stdlib_SRC_DIR}%/camlinternalFormatBasics.cmi"
+  "%{stdlib_SRC_DIR}%/camlinternalFormat.cmi"
+  "%{stdlib_SRC_DIR}%/printf.cmi"
+  "%{stdlib_SRC_DIR}%/random.cmi"
+  "%{stdlib_SRC_DIR}%/string.cmi"
+  "%{stdlib_SRC_DIR}%/bytes.cmi"
+  "%{stdlib_SRC_DIR}%/sys.cmi"
+  "%{stdlib_SRC_DIR}%/format.cmi"
+  "%{stdlib_SRC_DIR}%/char.cmi"
+  "%{stdlib_SRC_DIR}%/printexc.cmi"
+  "%{stdlib_SRC_DIR}%/digest.cmi"
+  "%{stdlib_SRC_DIR}%/lexing.cmi"
+  "%{stdlib_SRC_DIR}%/buffer.cmi"
+  "%{stdlib_SRC_DIR}%/hashtbl.cmi"
+  "%{stdlib_SRC_DIR}%/set.cmi"
+  "%{stdlib_SRC_DIR}%/map.cmi"
+  "%{stdlib_SRC_DIR}%/topdirs.cmi"
+
+  (* TODO... add the required stdlib... *)
+
+]
+
+embedded_grading_cmis = [
+
+  "%{compiler-libs_FULL_DST_DIR}%/longident.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/asttypes.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/ast_helper.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/ast_mapper.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/parsetree.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/location.cmi"
+  "%{compiler-libs_FULL_DST_DIR}%/parse.cmi"
+  "%{ty_FULL_DST_DIR}%/ty.cmi"
+  "%{testing_FULL_DST_DIR}%/introspection_intf.cmi"
+  "%{report_FULL_DST_DIR}%/report.cmi"
+  "%{testing_FULL_DST_DIR}%/test_lib.cmi"
+
+]
+
+begin library "embedded_cmis"
+  build_rules = [
+    "embedded_cmis.ml" (
+      build_target = true
+      sources = embedded_cmis
+      commands = [ {
+        "ocp-ocamlres" "-format" "ocamlres" embedded_cmis
+      } ( stdout = "embedded_cmis.ml" ) ]
+    )
+  ]
+  files = [
+    "embedded_cmis.ml"
+  ]
+  requires = [
+      "ocplib-ocamlres.runtime"
+  ]
+end
+
+begin library "grading"
+  comp_requires = "ppx_metaquot:asm"
+  link += [ "-linkall" ]
+  requires = [
+    "exercise"
+    "testing"
+    "ppx_metaquot"
+    "ocplib-ocamlres.runtime"
+    "embedded_cmis"
+  ]
+  build_rules = [
+    "embedded_grading_cmis.ml" (
+      build_target = true
+      sources = embedded_grading_cmis
+      commands = [ {
+        "ocp-ocamlres" "-format" "ocamlres" embedded_grading_cmis
+      } ( stdout = "embedded_grading_cmis.ml" ) ]
+    )
+  ]
+  files = [
+    "embedded_grading_cmis.ml"
+    "grading.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
+  ]
+end
+
+begin library "grading-cli"
+  requires = [
+    "toploop_unix"
+    "grading"
+    "ocplib-ocamlres"
+  ]
+  files = [
+    "grading_cli.ml"
+  ]
+end
+
+begin program "learnocaml-grader"
+  requires = [
+    "grading-cli"
+    "ezjsonm"
+  ]
+  files = [
+    "grader_cli.ml"
+  ]
+end
+
+begin library "grading-jsoo"
+  requires = [
+    "exercise"
+    "report"
+    "js_of_ocaml"
+    "js_of_ocaml.syntax"
+    "ezjsonm"
+    "ocplib-json-typed"
+    "browser-json"
+  ]
+  files = [
+    "grader_jsoo_messages.ml"
+    "grading_jsoo.ml" ( pp = camlp4_js )
+  ]
+end
+
+begin program "learnocaml-grader-worker"
+  requires = [
+    "toploop_jsoo"
+    "grading"
+    "exercise"
+    "browser-json"
+    "ezjsonm"
+    "ocplib-json-typed"
+    "js_of_ocaml"
+    "js_of_ocaml.syntax"
+  ]
+  files = [
+    "grader_jsoo_messages.ml"
+    "grader_jsoo_worker.ml" ( pp = camlp4_js )
+  ]
+  build_rules = [
+    "%{learnocaml-grader-worker_FULL_DST_DIR}%/learnocaml-grader-worker.js" (
+      build_target = true
+      sources = %byte_exe( p = "learnocaml-grader-worker" )
+      commands = [ {
+        "js_of_ocaml"
+           "+weak.js"
+           "+cstruct/cstruct.js"
+           "+dynlink.js"
+           "+toplevel.js"
+           "--toplevel"
+           "--nocmis"
+           %byte_exe( p = "learnocaml-grader-worker" )
+      } ]
+    )
+  ]
+end

@@ -1,0 +1,2 @@
+comp = [ "-safe-string" ]
+has_asm = false

@@ -1,0 +1,851 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #eee;
+}
+
+/* -- Main layout ---------------------------------------------------------- */
+
+#learnocaml-main-panel > div {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  cursor: default;
+  flex: 0 0 auto;
+  text-align: center;
+  vertical-align: middle;
+  margin: 0;
+}
+#learnocaml-main-panel > hr.glue {
+  flex: 1 1 auto;
+  display: block;
+  min-height: 10px;
+  max-height: 30px;
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+#learnocaml-main-panel > hr.line {
+  flex: 1 1 auto;
+  display: block;
+  margin: 5px -10px;
+  background: none;
+  border: none;
+  position: relative;
+  max-height: 60px;
+}
+#learnocaml-main-panel > hr.line::after {
+  display: block;
+  position: absolute;
+  height: 1px;
+  width: 100%;
+  background: white;
+  opacity: 0.5;
+  box-shadow: 0 0 20px 2px #acf;
+  top: 50%;
+  content: "";
+}
+#learnocaml-main-panel > div#learnocaml-sync-buttons {
+  display: flex;
+  flex-direction: row;
+  margin: 10px;
+}
+#learnocaml-sync-buttons > button {
+  flex: 1;
+  display: block;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  border-radius: 5px;
+  padding: 5px;
+  margin-right: 10px;
+  font-size: 18px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
+}
+#learnocaml-sync-buttons > button::before,
+#learnocaml-sync-buttons > button::after {
+  border-radius: 5px;
+}
+#learnocaml-sync-buttons > button:last-child {
+  margin-right: 0;
+}
+#learnocaml-sync-buttons > button > img {
+  height: 32px;
+  margin: auto;
+}
+#learnocaml-sync-buttons > button > * {
+  padding: 5px;
+  margin: 0;
+  display: block;
+  text-align: center;
+}
+#learnocaml-save-token-field {
+  display: block;
+  margin: 10px auto 10px auto;
+  flex: 0 0 auto;
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 24px;
+  line-height: 30px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  text-align: center;
+  font-family: 'Inconsolata';
+}
+#learnocaml-main-panel > div.tabs {
+  margin: 10px 0 5px 0;
+  display: flex;
+  flex-direction: column;
+}
+#learnocaml-main-panel > div.tabs > button {
+  flex: 0 0 auto;
+  display: block;
+  left:0; right:0;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  text-shadow: 0 0 10px #000;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 20px;
+  line-height: 30px;
+  font-weight: bold;
+  margin: 0;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+}
+#learnocaml-main-panel > div.tabs > button + button {
+  margin: 10px 0 0 0;
+}
+#learnocaml-main-panel > div.tabs > button.active {
+  background: linear-gradient(to bottom, #f29100 0%, #ec670f 100%);
+}
+#learnocaml-main-panel > div.tabs > button::before,
+#learnocaml-main-panel > div.tabs > button::after {
+  border-radius: 5px;
+}
+/* Large screen: two columns w/ menu in the left column */
+@media (min-width: 1000px) {
+  #learnocaml-main-toolbar {
+    position: absolute;
+    left: 0; top: 0; height: 60px; width: 400px;
+    background: #222;
+    color: #fff;
+    z-index: 1020;
+    border-bottom: 1px #eee solid;
+    display: flex;
+  }
+  #learnocaml-main-toolbar > button {
+    display: none;
+  }
+  #learnocaml-main-toolbar::before {
+    z-index: 1004;
+    position: absolute;
+    left: 0px; top: 61px; height: 5px; width: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+    content:"";
+  }
+  #learnocaml-main-panel {
+    position: absolute;
+    left: 0; top: 60px; bottom: 0; width: 380px;
+    margin: 0; padding: 0 10px 10px 10px;
+    z-index: 1003;
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-align: justify;
+    background: #555;
+    border-right: 1px white solid;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+  }
+  #learnocaml-main-content {
+    position: absolute;
+    left: 401px; top: 0; right: 0; bottom: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  #learnocaml-main-loading {
+    position: absolute;
+    top: 0; left: 400; right: 0; bottom: 0;
+  }
+}
+/* Medium screen: one column w/ popup menu */
+@media (max-width: 999px) {
+  #learnocaml-main-toolbar {
+    position: absolute;
+    top: 0; left: 0px; right: 0px;
+    color: #fff;
+    z-index: 1020;
+    display: flex;
+    flex-direction: row;
+  }
+  #learnocaml-main-toolbar > button {
+    border-left: 1px #eee solid !important;
+    padding: 0 10px 0 10px;
+    margin: 0 0 10px 0;
+    background: none;
+    border: none;
+    flex: 0;
+    position: relative;
+    display: block;
+  }
+  #learnocaml-main-toolbar > button > * {
+    padding: 5px;
+    color: #eee;
+    text-align: center;
+  }
+  #learnocaml-main-content {
+    position: absolute;
+    bottom: 0; left: 0px; right: 0px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 1018;
+  }
+  #learnocaml-main-loading {
+    position: absolute;
+    top: 0px; left: 0; right: 0; bottom: 0;
+  }
+  #learnocaml-main-panel {
+    position: absolute;
+    background: #555;
+    color: #eee;
+    padding: 0 10px 10px 10px;
+    left: 0px; right: 0px; bottom: 0px;
+    z-index: 1019;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  #learnocaml-main-panel.hidden {
+    display: none;
+  }
+}
+@media (min-width: 550px) and (max-width: 999px) {
+  #learnocaml-main-panel,
+  #learnocaml-main-content {
+    top: 60px;
+  }
+  #learnocaml-main-toolbar {
+    height: 70px;
+    background: linear-gradient(to bottom, #222 0px, #222 60px, #eee 60px, #eee 61px, rgba(0,0,0,0.4) 61px, rgba(0,0,0,0) 66px);
+  }
+}
+/* Small screen: no button labels, thinner bars & buttons */
+@media (max-width: 549px) {
+  #learnocaml-main-panel,
+  #learnocaml-main-content {
+    top: 40px;
+  }
+  #learnocaml-main-toolbar {
+    height: 50px;
+    background: linear-gradient(to bottom, #222 0px, #222 40px, #eee 40px, #eee 41px, rgba(0,0,0,0.4) 41px, rgba(0,0,0,0) 46px);
+  }
+  #learnocaml-main-toolbar > button > .label {
+    display: none;
+  }
+  #learnocaml-main-panel > div.tabs > button {
+    padding: 5px;
+    font-size: 18px;
+    line-height: 22px;
+  }
+  #learnocaml-sync-buttons > button > .label {
+    display: none;
+  }
+}
+
+/* -- Activity place-holder ------------------------------------------------ */
+
+#Learnocaml-main-content > .placeholder {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: #eee;
+  font-size: 24px; line-height: 26px;
+  text-shadow: 0 0 5px #888;
+  display: flex;
+  flex-direction: column;
+}
+#learnocaml-main-content > .placeholder > div {
+  flex: 0 0 auto;
+  text-align: center;
+}
+#learnocaml-main-content > .placeholder::after,
+#learnocaml-main-content > .placeholder::before {
+  flex: 1 1 auto;
+  content: "";
+}
+
+@media (min-width: 1000px) {
+  #Learnocaml-main-content > .placeholder {
+    background: linear-gradient(to right, #aaa 0px, #eee 8px);
+  }
+}
+/* -- Toplevel activity ---------------------------------------------------- */
+
+#learnocaml-main-toplevel {
+  position: absolute;
+  left: 0px; top: 0; right: 0; bottom: 0;
+}
+#learnocaml-main-toplevel > .toplevel-pane {
+  position: absolute;
+  left: 0px; top: 0; right: 0; bottom: 40px;
+}
+#learnocaml-main-toplevel > .buttons {
+  position: absolute;
+  left: 0; bottom: 0px; width: 100%; height: 40px;
+  background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
+  color: #fff;
+  line-height: 40px;
+  display: flex;
+  flex-direction: row;
+  z-index: 1003;
+}
+#learnocaml-main-toplevel > .buttons > button {
+  flex: 1 1 auto;
+  background: none;
+  border: none;
+  color: #222;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  border-top: 1px #666 solid;
+  position: relative;
+  padding: 0;
+}
+#learnocaml-main-toplevel > .buttons > button:not(:first-child) {
+  border-left: 1px #666 solid;
+}
+@media (max-width: 550px) {
+  #learnocaml-main-toplevel > .buttons > button > .label {
+    display: none;
+  }
+}
+@media (min-width: 1000px) {
+  #learnocaml-main-toplevel > .toplevel-pane > .toplevel-output::after {
+    position: absolute;
+    left:0; top:0; bottom: 0px; width: 8px;
+    background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+  }
+}
+
+/* -- Exercises activity --------------------------------------------------- */
+
+#learnocaml-main-exercise-list > .exercise + .exercise {
+  border-top: 1px #333 solid;
+}
+#learnocaml-main-exercise-list > .exercise {
+  position: relative;
+  background: linear-gradient(to top, #aaa 0px, #eee 10px, #ddd 100%);
+  color: black;
+  text-decoration: none;
+}
+#learnocaml-main-exercise-list > .exercise:hover::after {
+  position: absolute;
+  background: #acf;
+  opacity: 0.3;
+  z-index: 1010;
+  left:0; right:0; bottom:0; top:0;
+  content:"";
+}
+#learnocaml-main-exercise-list > .exercise > .descr {
+  padding: 10px;
+  flex: 1 1 auto;
+}
+#learnocaml-main-exercise-list > .exercise > .descr > h1 {
+  margin: 0 0 10px 0; padding: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+#learnocaml-main-exercise-list > .exercise > .descr > p {
+  margin: 10px 0 0 0; padding: 0;
+  text-align: justify;
+}
+#learnocaml-main-exercise-list > .pack {
+  padding: 10px;
+  margin: 0;
+  background: #222;
+  color: #eee;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 26px;
+}
+@media (min-width: 1000px) {
+  #learnocaml-main-exercise-list {
+    position: relative;
+  }
+  #learnocaml-main-exercise-list::after {
+    position: absolute;
+    left:0; top:0; bottom: 0px; width: 8px;
+    background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+    z-index: 1000;
+  }
+}
+@media (min-width: 550px) {
+  #learnocaml-main-exercise-list > .exercise {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    z-index: 999;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats {
+    flex: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 10px 15px 10px;
+    margin: 0 10px 0 0;
+    text-align: center;
+    min-width: 120px;
+    background:
+    linear-gradient(to bottom, #bbb 0px, #ccc 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #999 0px, #ccc 10px);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .stars {
+    min-height: 20px;
+    flex: 0 1 auto;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .length {
+    flex: 1 1 auto;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .score {
+    font-size: 20px;
+    color: #666;
+    flex: 0 1 auto;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.success {
+    background:
+    linear-gradient(to bottom, #7b6 0px, #8c7 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #483 0px, #8c7 10px);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.success > .score {
+    color: #080;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.failure {
+    background:
+    linear-gradient(to bottom, #f44 0px, #f55 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #844 0px, #f55 10px);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.failure > .score {
+    color: #800;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.partial {
+    background:
+    linear-gradient(to bottom, #fc4 0px, #fd5 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #874 0px, #fd5 10px);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.partial > .score {
+    color: #C80;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-main-exercise-list > .exercise {
+    display: block;
+    position: relative;
+    z-index: 999;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > *,
+  #learnocaml-main-exercise-list > .exercise > .descr > * {
+    position: relative;
+    z-index: 1000;
+  }
+  #learnocaml-main-exercise-list > .exercise > .descr > p {
+    margin: 0 0 30px 0;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .stars {
+    position: absolute;
+    line-height: 20px;
+    height: 30px;
+    bottom: 0; left: 10px;
+    vertical-align: bottom;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .length {
+    position: absolute;
+    display: inline-block;
+    line-height: 20px;
+    height: 30px;
+    bottom: 0; left: 90px;
+    vertical-align: bottom;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats > .score {
+    width: 70px;
+    text-align: center;
+    font-size: 20px;
+    position: absolute;
+    bottom: 15px; right: 10px;
+    color: #666;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats::after {
+    background: linear-gradient(to top, #999 0px, #ccc 10px, rgba(0,0,0,0) 100%);
+    bottom: 0; right: 0; top: 0; left: 0;
+    content:"";
+    position: absolute;
+    z-index: 999;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.success::after {
+    background: linear-gradient(to top, #483 0px, #8c7 10px, #8c7 100%);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.success > .score {
+    color: #080;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.failure::after {
+    background: linear-gradient(to top, #844 0px, #f55 10px);
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.failure > .score {
+    color: #800;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.partial::after {
+    background: linear-gradient(to top, #874 0px, #fd5 10px);
+    color: #C80;
+  }
+  #learnocaml-main-exercise-list > .exercise > .stats.partial > .score {
+    color: #C80;
+  }
+}
+
+/* -- Lessons activity ----------------------------------------------------- */
+
+#learnocaml-main-lesson > .toplevel-pane {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 1;
+}
+@media (min-width: 1000px) {
+  #learnocaml-main-lesson > .toplevel-pane > .toplevel-output::after {
+    position: absolute;
+    left:0; top:0; bottom: 0px; width: 8px;
+    background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+  }
+}
+#learnocaml-main-lesson > .navigation {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: row ;
+  border-bottom: 1px white solid;
+  background: #ddd;
+  padding: 0px;
+}
+#learnocaml-main-lesson > .navigation::after {
+  position: absolute;
+  left:0; bottom: -9px; right: 0px; height: 8px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+  content:"";
+}
+#learnocaml-main-lesson > .navigation > button {
+  flex: 0;
+  padding: 0 10px 0 10px;
+  background: none;
+  border: none;
+  position: relative;
+  display: block;
+}
+#learnocaml-main-lesson > .navigation > button > * {
+  padding: 5px;
+  color: black;
+  text-align: center;
+}
+#learnocaml-main-lesson > .navigation > select {
+  flex: 1 1 auto;
+  padding: 0 10px 0 10px;
+  background: none;
+  border: none;
+  position: relative;
+  display: block;
+  text-align: center;
+  color: black;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+}
+#learnocaml-main-lesson > .navigation > select[disabled] {
+  transition: background 0.5s 0.5s;
+  background: rgba(0,0,0,0.4);
+}
+#learnocaml-main-lesson > .navigation > select:not([disabled]):hover {
+  background: rgba(170,204,255,0.3);
+}
+#learnocaml-main-lesson > .toplevel-pane {
+  overflow: hidden;
+}
+#learnocaml-main-lesson > .toplevel-pane > .toplevel-output > hr {
+  display: none ;
+}
+#learnocaml-main-lesson > .toplevel-pane > .toplevel-output > .toplevel-html-block > h3 {
+  margin: 10px 0 0 -14px ;
+  padding: 10px;
+  font-size: 20px;
+  background: #ccc;
+  border-top: 1px #222 solid;
+}
+
+@media (min-width: 550px) {
+  #learnocaml-main-lesson > .toplevel-pane {
+    top: 61px;
+  }
+  #learnocaml-main-lesson > .navigation {
+    height: 60px;
+  }
+  #learnocaml-main-lesson > .navigation > select {
+    font-size: 22px;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-main-lesson > .toplevel-pane {
+    top: 41px;
+  }
+  #learnocaml-main-lesson > .navigation {
+    height: 40px;
+  }
+  #learnocaml-main-lesson > .navigation > button > .label {
+    display: none;
+  }
+  #learnocaml-main-lesson > .navigation > select {
+    font-size: 18px;
+  }
+}
+
+/* -- Try OCaml activity --------------------------------------------------- */
+
+#learnocaml-main-tryocaml {
+  position: absolute;
+  top:0 ; left:0; right:0; bottom:0;
+}
+#learnocaml-main-tryocaml > .buttons {
+  height: 40px;
+  background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
+  color: #fff;
+  line-height: 40px;
+  display: flex;
+  flex-direction: row;
+}
+@media (max-width: 1399px) {
+  #learnocaml-main-tryocaml {
+    display: flex ;
+    flex-direction: column;
+  }
+  #learnocaml-main-tryocaml > .navigation {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: row ;
+    border-bottom: 1px white solid;
+    background: #ddd;
+    padding: 0px;
+    flex: 0 0 auto;
+  }
+  #learnocaml-main-tryocaml > .toplevel-pane {
+    flex: 1 1 auto;
+    position: relative;
+    z-index: 1;
+  }
+  #learnocaml-main-tryocaml > .buttons {
+    flex: 0 0 auto;
+  }
+  #learnocaml-main-tryocaml > .step-pane {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 2;
+    background: #fe9;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    max-height: 50%;
+  }
+  #learnocaml-main-tryocaml > .step-pane::after {
+    position: absolute;
+    left:0; right:0; bottom: -8px; height: 8px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+  }
+}
+@media (min-width: 1400px) {
+  #learnocaml-main-tryocaml > .navigation {
+    position: absolute;
+    top: 0; left:0; right: 0; height: 60px;
+    z-index: 3;
+    display: flex;
+    flex-direction: row ;
+    border-bottom: 1px white solid;
+    background: #ddd;
+    padding: 0px;
+  }
+  #learnocaml-main-tryocaml > .toplevel-pane {
+    position: absolute;
+    right: 500px; top: 61px; bottom: 40px; left: 0px;
+    z-index: 1;
+  }
+  #learnocaml-main-tryocaml > .buttons {
+    position: absolute;
+    right: 500px; bottom: 0; left: 0px;
+  }
+  #learnocaml-main-tryocaml > .step-pane {
+    position: absolute;
+    right: 0; top: 61px; bottom: 0; width: 500px;
+    z-index: 2;
+    background: #fe9;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+  }
+  #learnocaml-main-tryocaml > .step-pane::after {
+    position: absolute;
+    top:0; bottom:0; left: -8px; width: 8px;
+    background: linear-gradient(to left, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+  }
+}
+#learnocaml-main-tryocaml > .toplevel-pane > .toplevel-output::after {
+  position: absolute;
+  left:0; top:0; bottom: 0px; width: 8px;
+  background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+  content:"";
+}
+#learnocaml-main-tryocaml > .step-pane > h3 {
+  margin: 0;
+  padding: 0;
+  background: #dfcf8f;
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  flex: 0 0 auto;
+}
+#learnocaml-main-tryocaml > .step-pane::before {
+  position: absolute;
+  left:0; right:0; bottom:0;
+  content:"";
+  background: rgba(128,128,128,0.4);
+  opacity: 0;
+}
+#learnocaml-main-tryocaml > .step-pane.disabled::before {
+  top:0;
+  transition: opacity 0.5s 0.5s;
+  opacity: 1;
+}
+#learnocaml-main-tryocaml > .step-pane > h3 > span {
+  padding: 10px 0px 10px 0px;
+  flex: 1 1 auto;
+}
+#learnocaml-main-tryocaml > .step-pane > h3 > button {
+  padding: 10px 5px 10px 5px;
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+}
+#learnocaml-main-tryocaml > .step-pane > h3 > button .label {
+  display: none;
+}
+#learnocaml-main-tryocaml > .step-pane > div {
+  padding: 10px;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+#learnocaml-main-tryocaml > .step-pane > div > code {
+  margin: 5px -5px 5px -5px;
+  display: block;
+  padding: 2px 7px 2px 7px;
+  background: #fff8b8;
+  cursor: pointer;
+}
+#learnocaml-main-tryocaml > .step-pane > div > code:hover {
+  background: #ffffdd;
+}
+#learnocaml-main-tryocaml > .step-pane > div > code:last-child {
+  margin-bottom: -5px;
+}
+#learnocaml-main-tryocaml > .navigation::after {
+  position: absolute;
+  left:0; bottom: -9px; right: 0px; height: 8px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+  content:"";
+}
+#learnocaml-main-tryocaml > .navigation > button {
+  flex: 0;
+  padding: 0 10px 0 10px;
+  background: none;
+  border: none;
+  position: relative;
+  display: block;
+}
+#learnocaml-main-tryocaml > .navigation > button > * {
+  padding: 5px;
+  color: black;
+  text-align: center;
+}
+#learnocaml-main-tryocaml > .navigation > select {
+  flex: 1 1 auto;
+  padding: 0 10px 0 10px;
+  background: none;
+  border: none;
+  position: relative;
+  display: block;
+  text-align: center;
+  color: black;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+}
+#learnocaml-main-tryocaml > .navigation > select[disabled] {
+  transition: background 0.5s 0.5s;
+  background: rgba(128,128,128,0.4);
+}
+#learnocaml-main-tryocaml > .navigation > select:not([disabled]):hover {
+  background: rgba(170,204,255,0.3);
+}
+#learnocaml-main-tryocaml > .toplevel-pane {
+  overflow: hidden;
+}
+#learnocaml-main-tryocaml > .buttons > button {
+  flex: 1 1 auto;
+  background: none;
+  border: none;
+  color: #222;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  border-top: 1px #666 solid;
+  position: relative;
+  padding: 0;
+}
+#learnocaml-main-tryocaml > .buttons > button:not(:first-child) {
+  border-left: 1px #666 solid;
+}
+@media (min-width: 550px) {
+  #learnocaml-main-tryocaml > .navigation {
+    flex: 0 0 60px;
+  }
+  #learnocaml-main-tryocaml > .step-pane > h3 > span,
+  #learnocaml-main-tryocaml > .navigation > select {
+    font-weight: bold;
+    font-size: 22px;
+  }
+  #learnocaml-main-tryocaml > .step-pane > h3 > button,
+  #learnocaml-main-tryocaml > .navigation > button {
+    min-width: 80px;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-main-tryocaml > .buttons > button > .label {
+    display: none;
+  }
+  #learnocaml-main-tryocaml > .navigation {
+    flex: 0 0 40px;
+  }
+  #learnocaml-main-tryocaml > .navigation > button > .label {
+    display: none;
+  }
+  #learnocaml-main-tryocaml > .step-pane > h3 > span,
+  #learnocaml-main-tryocaml > .navigation > select {
+    font-weight: bold;
+    font-size: 18px;
+  }
+  #learnocaml-main-tryocaml > .step-pane > h3 > button,
+  #learnocaml-main-tryocaml > .navigation > button {
+    min-width: 40px;
+  }
+}

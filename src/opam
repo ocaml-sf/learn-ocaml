@@ -1,0 +1,23 @@
+opam-version: "1.2"
+name: "tryocaml-fun-deps"
+version: "~private"
+maintainer: "Gregoire Henry <gregoire.henry@ocamlpro.com>"
+authors: "Gregoire Henry <gregoire.henry@ocamlpro.com>"
+depends: [
+  "ocamlfind" {build}
+  "ocp-build" {build}
+  "base64"
+  "ezjsonm"
+  "higlo"
+  "js_of_ocaml" {>= "2.7"}
+  "lwt"
+  "ocp-indent" {>= "1.6"}
+  "ocp-ocamlres"
+  "ocplib-json-typed"
+  "optcomp"
+  "pprint"
+  "ppx_tools" {>= "5.0+4.02.0"}
+  "react"
+  "reactiveData"
+  "tyxml" {< "4" }
+]

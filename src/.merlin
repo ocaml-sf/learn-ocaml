@@ -1,0 +1,14 @@
+PKG lwt
+PKG ocplib-ocamlres
+PKG compiler-libs
+PKG ezjsonm
+PKG ocplib-json-typed
+PKG js_of_ocaml
+PKG tyxml
+PKG tyxml.functor
+PKG js_of_ocaml.tyxml
+PKG ocp-indent.lib
+S ./*
+B ../_obuild/*
+EXT syntax
+EXT js

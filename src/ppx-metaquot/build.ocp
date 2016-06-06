@@ -1,0 +1,52 @@
+begin program "genlifter"
+  files = [
+    "genlifter.ml"
+  ]
+  requires = [
+    "ppx_tools"
+    "compiler-libs"
+  ]
+end
+
+begin library "ppx_metaquot_lib"
+  has_asm = true
+  build_rules = [
+    "ast_lifter.ml" (
+      build_target = true
+      sources = [ %byte_exe( p = "genlifter") ]
+      commands = [ {
+        %byte_exe( p = "genlifter")
+          "-I" "%{compiler-libs_SRC_DIR}%"
+          "Parsetree.expression"
+      } ( stdout = "ast_lifter.ml" ) ]
+    )
+  ]
+  files = [
+    "ast_lifter.ml"   ( comp += [ "-w" "-17" ] )
+    "ppx_metaquot.ml"
+  ]
+  requires = [
+    "ppx_tools"
+    "compiler-libs"
+  ]
+end
+
+begin program "ppx_metaquot"
+  has_asm = true
+  has_byte = false
+  requires = [
+    "ppx_metaquot_lib"
+  ]
+  files = [
+    "ppx_metaquot_main.ml"
+  ]
+end
+
+begin library "ty"
+  files = [
+    "ty.ml"
+  ]
+  requires = [
+    "compiler-libs"
+  ]
+end

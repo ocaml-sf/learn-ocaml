@@ -1,0 +1,199 @@
+{
+    "learnocaml_version": "1",
+    "title": "A Taste of Imperative Programming",
+    "steps": [
+      {
+        "title": "Variables",
+        "contents": [
+          {
+            "html": "As in other languages, you can associate a name to a value. To do that, we use the <code>let</code> syntax which associates the result of some computation with a name:"
+          },
+          {
+            "code": "let x = 6 * 7"
+          },
+          {
+            "html": "We can now check the value associated with <code>x</code> in the toplevel:"
+          },
+          {
+            "code": "x"
+          },
+          {
+            "html": "And we can use the name where we would like the value:"
+          },
+          {
+            "code": "let y = x + 1"
+          }
+        ]
+      },
+      {
+        "title": "Mutable Variables",
+        "contents": [
+          {
+            "html": "In OCaml, you cannot change the value associated with a name after its definition. Trying to do so will trigger a compilation error:"
+          },
+          {
+            "code": "x <- x + 1"
+          },
+          {
+            "html": "You will better understand the error message later.If you really want to modify the value associated with a name, you must use a trick. OCaml provides a function <code>ref</code> that creates a special value that can be modified later (a reference):"
+          },
+          {
+            "code": "let x = ref 42"
+          },
+          {
+            "html": "You can then change the value of the reference associated with <code>x</code> using the <code>:=</code> operator:"
+          },
+          {
+            "code": "x := 100 / 4"
+          },
+          {
+            "html": "You can also access the value contained in the reference using the operator <code>!</code>:"
+          },
+          {
+            "code": "let y = !x + 1"
+          }
+        ]
+      },
+      {
+        "title": "Sequences and Printing",
+        "contents": [
+          {
+            "html": "OCaml provides different functions to print basic types. For example:"
+          },
+          {
+            "code": "print_int 3"
+          },
+          {
+            "html": "and:"
+          },
+          {
+            "code": "print_string \"Hello\""
+          },
+          {
+            "html": "Sequences of expressions are separated by <code>;</code>:"
+          },
+          {
+            "code": "print_string \"x = \";\nprint_int !x;\nprint_newline ()"
+          },
+          {
+            "html": "A more powerful method to print values is <code>Printf.printf</code>, whose behavior is similar to <code>printf</code> in C:"
+          },
+          {
+            "code": "Printf.printf \"x = %d. Bye %s\\n\" !x \"John\""
+          }
+        ]
+      },
+      {
+        "title": "For loops",
+        "contents": [
+          {
+            "html": "Let's define a reference on a list:"
+          },
+          {
+            "code": "let xl = ref []"
+          },
+          {
+            "html": "OCaml provides a simple <code>for</code> loop to iterate on integers in a range:"
+          },
+          {
+            "code": "for i = 1 to 10 do\n  xl := i :: !xl;\ndone;\n!xl"
+          },
+          {
+            "html": "Here, for each value between 1 and 10, we have added it in this order at the head of the reference.Of course, if we want them in the correct order, we need to reverse the list:"
+          },
+          {
+            "code": "List.rev !xl"
+          },
+          {
+            "html": "Or we can just execute the loop directly from the upper bound to the lower bound:"
+          },
+          {
+            "code": "for i = 10 downto 1 do\n xl := i :: !xl\ndone;\n!xl"
+          }
+        ]
+      },
+      {
+        "title": "Computing Conditions",
+        "contents": [
+          {
+            "html": "Boolean values in OCaml can be either <code>true</code> or <code>false</code>. They are often created from comparing other values. For example:"
+          },
+          {
+            "code": "1 > 2"
+          },
+          {
+            "html": "OCaml's comparison operators can be used on values of any type, not only on numerical values. We can compare strings and characters too:"
+          },
+          {
+            "code": "\"aaaaaa\" < \"bbb\""
+          },
+          {
+            "code": "\"3\" <= \"22\""
+          },
+          {
+            "code": "22 >= 3"
+          },
+          {
+            "html": "To test equality, you can use<quote>=</quote>, and for inequality, there is<quote>&lt;&gt;</quote>. For example:"
+          },
+          {
+            "code": "1 = 1"
+          },
+          {
+            "code": "1 <> 1"
+          },
+          {
+            "code": "\"1\" = 1"
+          },
+          {
+            "html": "Oops, OCaml does not allow you to compare values with different types, so we must be more careful:"
+          },
+          {
+            "code": "\"1\" = string_of_int 1"
+          }
+        ]
+      },
+      {
+        "title": "If then else",
+        "contents": [
+          {
+            "html": "Now that we know how to test conditions, we can use them to choose between computations. Let's define two values :"
+          },
+          {
+            "code": "let a = 1 and b = 2"
+          },
+          {
+            "html": "We can compute the minimum of them:"
+          },
+          {
+            "code": "Printf.printf \"min(%d,%d) = %d\\n\" a b\n    (if a < b then a else b)"
+          },
+          {
+            "html": "We can of course execute sequences within branches:"
+          },
+          {
+            "code": "let z = if a < 100 then begin\n    print_string \"return at least 100 !\";\n    print_newline ();\n    100\n end else a"
+          }
+        ]
+      },
+      {
+        "title": "While loops",
+        "contents": [
+          {
+            "html": "OCaml also provides a <code>while</code> loop, to execute some code as long as an expression is true:"
+          },
+          {
+            "code": "while !x > 20 do\n  print_int !x; print_newline ();\n  x := !x - 2\ndone"
+          }
+        ]
+      },
+      {
+        "title": "Congratulations",
+        "contents": [
+          {
+            "html": "You have seen that OCaml allows you to use some imperative style of programming. Some functional programmers will tell you that side-effects are bad: they are right, in many cases, but don't listen to them too early !In the next lessons, you will see that by combining both imperative and functional programming styles, you can do wonders !Use <code>next()</code> to go to the next lesson !"
+          }
+        ]
+      }
+    ]
+}

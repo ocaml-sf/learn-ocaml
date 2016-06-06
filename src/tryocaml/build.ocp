@@ -1,0 +1,49 @@
+begin program "learnocaml-tryocaml-worker"
+  link += [ "-linkall" ]
+  requires = [
+    "jsutils"
+    "js_of_ocaml"
+    "toploop_jsoo"
+    "toploop_results"
+    "ocplib-ocamlres.runtime"
+    "embedded_cmis"
+  ]
+  files = [
+    "tryocaml_worker_messages.mli"
+    "tryocaml_worker_main.ml" ( pp = camlp4_js )
+  ]
+  build_rules = [
+    "%{learnocaml-tryocaml-worker_FULL_DST_DIR}%/learnocaml-tryocaml-worker.js" (
+      build_target = true
+      sources = %byte_exe( p = "learnocaml-tryocaml-worker" )
+      commands = [ {
+        "js_of_ocaml"
+           "+weak.js"
+           "+cstruct/cstruct.js"
+           "+dynlink.js"
+           "+toplevel.js"
+           "--toplevel"
+           "--nocmis"
+           %byte_exe( p = "learnocaml-tryocaml-worker" )
+      } ]
+    )
+  ]
+end
+
+begin library "tryocaml"
+  requires = [
+    "toploop_results"
+    "jsutils"
+    "js_of_ocaml"
+    "ocp-indent.lib"
+    "ace"
+  ]
+  files = [
+    "tryocaml_worker_messages.mli"
+    "tryocaml_worker.ml" ( pp = camlp4_js )
+    "tryocaml_history.ml" ( pp = camlp4_js )
+    "tryocaml_output.ml" ( pp = camlp4_js )
+    "tryocaml_input.ml" ( pp = camlp4_js )
+    "tryocaml.ml" ( pp = camlp4_optcomp_js )
+  ]
+end

@@ -1,0 +1,21 @@
+
+begin library "jsutils"
+  files = [
+    "js_utils.ml"    ( pp = camlp4_optcomp_js )
+    "lwt_request.ml" ( pp = camlp4_optcomp_js )
+  ]
+  requires = [
+    "lwt"
+    "js_of_ocaml.tyxml"
+  ]
+end
+
+begin library "xor"
+  has_asm = true
+  files = [
+    "xor.ml"
+  ]
+  requires = [
+    "base64"
+  ]
+end

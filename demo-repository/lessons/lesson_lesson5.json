@@ -1,0 +1,108 @@
+{
+    "learnocaml_version": "1",
+    "title": "Syntax Traps",
+    "steps": [
+      {
+        "title": "Sequence of expressions",
+        "contents": [
+          {
+            "html": "It is easy to get confused by OCaml syntax since it's different from mainstream languages. So you'd better be aware of a few things before digging any deeper. To begin with, you should know that a proper command must normally end with <code>';;'</code> to be processed by the top-level.  This tutorial automatically adds the double semicolon as soon as you hit enter but the normal top-level won't. The double semicolon is only required when interacting with the top level interpreter and as such is not part of OCaml syntax. What <em>is</em> part of OCaml syntax, though, is the simple semicolon <code>';'</code> which is commonly used as an expression terminator, except that in OCaml it's a <b>separator</b>. In other words, you must not write <code>expr1; expr2;</code> but <code>expr1 ; expr2</code>. You may now enter <code>next ()</code> to check your understanding."
+          }
+        ]
+      },
+      {
+        "title": "Exercise: Get the Punctuation Right!",
+        "contents": [
+          {
+            "html": "Let's see if you got this right. Here is a sequence of <strong>erroneous</strong> commands. Your task is to fix all of them in order to get the correct answer at the end."
+          },
+          {
+            "code": "let fernand = \"King of Castille\";"
+          },
+          {
+            "code": "let rodrigue = \"The cid\"; let diegue = \"cid's father\""
+          },
+          {
+            "code": "characters = [ fernand;; rodrigue;; diegue ]"
+          },
+          {
+            "code": "rodrigue.[4] <- 'C' ; diegue.[0] <- rodrigue.[4] ;"
+          },
+          {
+            "code": "characters"
+          }
+        ]
+      },
+      {
+        "title": "The <code>let</code> keyword",
+        "contents": [
+          {
+            "html": "The other source of confusion for newcomers is the <code>let</code> keyword which acts differently in the toplevel than in normal OCaml expressions.In the toplevel <code>let x = 1</code> binds the name <code>x</code> to the integer 1 as seen in <code>lesson 2</code>. If <code>x</code> was already bound to something its previous binding is lost:"
+          },
+          {
+            "code": "let x = \"I am now a string!\""
+          },
+          {
+            "html": "The <code>let</code> keyword is also used to form an expression in which a name is given to some value temporarily, for the evaluation of a subexpression only:<br> <code>let x = 41 in x + 1</code> <br> The value of <code>x</code> is <code>41</code> during the evaluation of <code>x + 1</code> only; the global binding of <code>x</code> to <code>\"I am now a string!\"</code> is preserved. See what <code>x</code> is evaluated to now, and type <code>next ()</code> for a little practice."
+          }
+        ]
+      },
+      {
+        "title": "Exercise: let there be lets!",
+        "contents": [
+          {
+            "html": "Fix all these <code>let</code> expressions in order to get the expected result at the end:"
+          },
+          {
+            "code": "let xy =\n  let x = 'x' and let y = 'y' in x ::[y]"
+          },
+          {
+            "code": "let ab =\n  let a = 'a'\n  let b = 'B' in Char.lowercase b\n  in a ::[b]"
+          },
+          {
+            "code": "let up = Char.uppercase in\n  big_xy = List.map up xy ;\n  big_ab = List.map up ab ;\n  big_ab @ big_xy"
+          }
+        ]
+      },
+      {
+        "title": "Parentheses",
+        "contents": [
+          {
+            "html": "With regard to grouping expression or enforcing order of evaluation, OCaml syntax is surprisingly easy: you can use pervasively either parentheses or <code>begin</code>/<code>end</code> keywords.Example grouping expressions in an <code>if</code> form:"
+          },
+          {
+            "code": "if 1+2 = 3 then (\n  print_string \"did you knew that?\\n\" ;\n  print_string \"amazing!\\n\"\n)"
+          },
+          {
+            "html": "Or forcing order of evaluation with <code>begin</code>/<code>end</code> (although\nyou won't find this often!):"
+          },
+          {
+            "code": "begin 1 + 2 end * 3"
+          },
+          {
+            "html": "Also, as function application takes precedence over infix operators you will frequently uses parentheses to make explicit the expected evaluation order, as in: <code>square (1 + 1)</code> since <code>square 1+1</code> would yield <code>2</code>. Enter <code>next ()</code> when you are ready to practice."
+          }
+        ]
+      },
+      {
+        "title": "Exercise: Fix the grouping",
+        "contents": [
+          {
+            "html": "A Lisp programmer stole all our parentheses! Get them back in order to get the proper result at the end."
+          },
+          {
+            "code": "let ten =\n  let double x = x+x in\n  double 3 + 2"
+          },
+          {
+            "code": "let hundred =\n  if true || false then\n    print_string \"May I help you?\\n\" ;\n    100\n  else 0"
+          },
+          {
+            "code": "let one =\n  let accum = ref -54 in\n  for i = 1 to ten do accum := !accum + i done ;\n  !accum"
+          },
+          {
+            "code": "one + match hundred with\n  | 42  -> match ten with 10 -> 52  | _ -> 0\n  | 100 -> match ten with 10 -> 110 | _ -> 0\n  | _ -> -1"
+          }
+        ]
+      }
+    ]
+}
