@@ -146,8 +146,8 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
     disable_button_group toplevel_buttons_group (* enabled after init *) ;
     Tryocaml.create
       ~display_welcome: false
-      ~disable_input_hook: (fun _ -> disable_button_group toplevel_buttons_group)
-      ~enable_input_hook: (fun _ -> enable_button_group toplevel_buttons_group)
+      ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
+      ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
       ~history ~timeout_prompt ~flood_prompt
       ~container: main_div
       () >>= fun top ->
@@ -268,10 +268,10 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_launch =
     Tryocaml.create
-      ~disable_input_hook: (fun _ ->
+      ~on_disable_input: (fun _ ->
           Manip.addClass step_div "disabled" ;
           disable_button_group toplevel_buttons_group)
-      ~enable_input_hook: (fun _ ->
+      ~on_enable_input: (fun _ ->
           Manip.removeClass step_div "disabled" ;
           enable_button_group toplevel_buttons_group)
       ~history ~timeout_prompt ~flood_prompt
@@ -422,15 +422,13 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~container: buttons_div ~theme: "dark"
       ~icon:"reload" "Reset" @@ fun () ->
     toplevel_launch >>= fun top ->
-    let timeout _ = Lwt_js.sleep 2. in
-    disabling_button_group toplevel_buttons_group
-      (Tryocaml.reset ~timeout top)
+    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
   end ;
   begin button
       ~container: buttons_div ~theme: "dark"
       ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
     toplevel_launch >>= fun top ->
-    Tryocaml.execute top () >>= fun _ ->
+    Tryocaml.execute top ;
     Lwt.return ()
   end ;
   toplevel_launch >>= fun _ ->
@@ -465,8 +463,8 @@ let toplevel_tab select _ () =
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   Tryocaml.create
-    ~disable_input_hook: (fun _ -> disable_button_group toplevel_buttons_group)
-    ~enable_input_hook: (fun _ -> enable_button_group toplevel_buttons_group)
+    ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
+    ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
     ~history ~timeout_prompt ~flood_prompt
     ~container
     () >>= fun top ->
@@ -479,13 +477,11 @@ let toplevel_tab select _ () =
   end ;
   begin button
       ~icon:"reload" "Reset" @@ fun () ->
-    let timeout _ = Lwt_js.sleep 2. in
-    disabling_button_group toplevel_buttons_group
-      (Tryocaml.reset ~timeout top)
+    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
   end ;
   begin button
       ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
-    Tryocaml.execute top () >>= fun _ ->
+    Tryocaml.execute top ;
     Lwt.return ()
   end ;
   hide_loading ~id:"learnocaml-main-loading" () ;

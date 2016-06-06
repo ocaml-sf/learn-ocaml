@@ -135,8 +135,8 @@ let () =
   let tryocaml_launch =
     Tryocaml.create
       ~after_init ~timeout_prompt ~flood_prompt
-      ~disable_input_hook: (fun _ -> disable_button_group toplevel_buttons_group)
-      ~enable_input_hook: (fun _ -> enable_button_group toplevel_buttons_group)
+      ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
+      ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
       ~container:(find_component "learnocaml-exo-toplevel-pane")
       ~history () in
   init_tabs () ;
@@ -158,15 +158,13 @@ let () =
   end ;
   begin toplevel_button
       ~icon: "reload" "Reset" @@ fun () ->
-    let timeout _ = Lwt_js.sleep 2. in
     tryocaml_launch >>= fun top ->
-    disabling_button_group toplevel_buttons_group
-      (Tryocaml.reset ~timeout top)
+    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
   end ;
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "run" "Eval phrase" @@ fun () ->
-    Tryocaml.execute top () >>= fun _ ->
+    Tryocaml.execute top ;
     Lwt.return ()
   end ;
   (* ---- text pane ----------------------------------------------------- *)

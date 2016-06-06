@@ -22,48 +22,63 @@ open Tyxml_js
 (** An abstract type representing a toplevel instance. *)
 type t
 
-(** Create a toplevel instance whose input and output will be in a given [div].
+(** Create a toplevel instance in a given container [div].
 
-   @param container_id the identifier of a [div] in the current DOM
-          that will be used for the toplevel input and output.
-
-   @param async should the toplevel should be runned in a Web Worker ?
-         (default [true])
-
-   @param timeout default value for the optional parameter of the
-          {!val:execute}, {!val:load} and {!val:reset} functions, use
-          {!make_timeout_popup} to build one conveniently.
-
-   @param flood_limit the number of bytes after which the
-          [after_flood] function is called. The default limit is to
-          8000 bytes, 0 means unlimited.
-
-   @param flood a function called when an execution is printing
-           too much on a named channel. If the function returns
-           [false], the flooding continues.  Otherwise, nothing more
-           until the end of the current evaluation. You can use
-           {!make_flood_popup} to build such a callback.
-
-   @param after_init a function that will be called whenever the
-          toplevel is initialized or reseted.
-
-   @param oldify by default the toplevel container content is emptied
-          when the toplevel is reseted. When [~oldify:true] is used,
-          the previous content is kept and wrapped in [div] with the
-          class [old]. When [~oldify:false] is used, the toplevel
-          content is untouched.
-*)
+   @param container
+     The [div] that will contain the toplevel input and output.
+   @param timeout_delay
+     Time before the [timeout_prompt] function is launched.
+   @param timeout_prompt
+     A function called when an operation has taken more than
+     [timeout_delay] to execute. The resulting thread triggers the
+     cancelation of this operation when it terminate, and is conversely
+     canceled if the operation terminates before.
+     It is the default value for the optional parameter of the
+     {!val:execute}, {!val:load} and {!val:reset} functions.
+     You can use {!make_timeout_popup} to build such a callback.
+   @param flood_limit
+     Number of bytes after which the [after_flood] function is called.
+     The default limit is to 8000 bytes, 0 means unlimited.
+   @param flood
+     A function called when a (single) execution is printing
+     too much on an output channel. From this point, the output
+     is buffered until the resulting thread terminates.
+     If the function returns [false], the buffered output is released.
+     Otherwise, it is dropped, along with any other output until
+     the end of the current evaluation.
+     The thread may be canceled if the toplevel is reset.
+     You can use {!make_flood_popup} to build such a callback.
+   @param after_init
+     A function that is called whenever the toplevel is initialized or reset.
+   @param on_resize
+     A callback called when the input or output of the toplevel change,
+     so that the page layout may be updated if needed.
+   @param on_disable_input
+    A callback called when the input is disabled (when an operation starts).
+   @param on_enable_input
+    A callback called when the input is enabled (when an operation ends).
+   @param oldify
+     When [~oldify:true] is used (by default), and when the toplevel is reset,
+     the previous outputs are kept and marked as old
+     (see {!Tryocaml_output.oldify}). Otherwise, the output console is cleaned.
+   @param input_sizing
+     See (!Tryocaml_input.sizing}.
+   @param history
+     The history storage to use. If none, a new volatile one is created.
+   @param display_welcome
+     Tells if the welcome message with some help and the version of OCaml
+     is to be displayed or not. *)
 val create:
   ?worker_js_file:string ->
   ?timeout_delay: float ->
-  ?timeout_prompt:(t -> unit Lwt.t) ->
+  timeout_prompt:(t -> unit Lwt.t) ->
   ?flood_limit: int ->
-  ?flood_prompt: (t -> string -> (unit -> int) -> bool Lwt.t) ->
+  flood_prompt: (t -> string -> (unit -> int) -> bool Lwt.t) ->
   ?after_init:(t -> unit Lwt.t) ->
   ?input_sizing: Tryocaml_input.sizing ->
   ?on_resize:(unit -> unit) ->
-  ?disable_input_hook:(t -> unit) ->
-  ?enable_input_hook:(t -> unit) ->
+  ?on_disable_input:(t -> unit) ->
+  ?on_enable_input:(t -> unit) ->
   ?history:Tryocaml_history.history ->
   ?oldify:bool ->
   ?display_welcome: bool ->
@@ -88,31 +103,30 @@ val make_flood_popup:
   unit ->
   (t -> string -> (unit -> int) -> bool Lwt.t)
 
-(** Execute the content of the input [textarea]. This is equivalent to
-    pressing [Enter] when the toplevel is focused.
+(** Execute a given piece of code.
 
-    @param timeout  a Lwt thread that will interrupt the computation
-           whenever it terminates.
+    @param timeout
+      See {!create}.
+    @returns
+      Returns [Success true] whenever the code was correctly
+      typechecked and its evaluation did not raise an exception nor
+      timeouted and [false] otherwise. *)
+val execute_phrase: t ->
+  ?timeout:(t -> unit Lwt.t) ->
+  string -> bool Lwt.t
 
-    @returns Returns [Success true] whenever the code were correctly
-             typechecked and its evaluation did not raised an
-             exception not timeouted and [false] otherwise.
+(** Execute a given piece of code without displaying it.
 
- *)
-val execute: t -> ?timeout:(t -> unit Lwt.t) -> unit -> bool Lwt.t
-val execute_phrase: t -> ?timeout:(t -> unit Lwt.t) -> string -> bool Lwt.t
-
-
-(** Compile and load a given source code.
-
-    @param timeout  a Lwt thread that will interrupt the computation
-           whenever it terminates.
-
-    @returns Returns [Success true] whenever the code were correctly
-             typechecked and its evaluation did not raised an exception
-             and [false] otherwise.
-
- *)
+    @param timeout
+      See {!create}.
+    @param print_outcome
+      Tells if answers of the toplevel are to be displayed.
+    @param message
+      Displays [(* message *)] where the code should have been echoed.
+    @returns
+       Returns [Success true] whenever the code was correctly
+       typechecked and its evaluation did not raise an exception nor
+       timeouted and [false] otherwise. *)
 val load:
   t ->
   ?print_outcome:bool ->
@@ -120,54 +134,44 @@ val load:
   ?message: string ->
   string -> bool Lwt.t
 
-(** Parse and typecheck a given source code.
-
-    @returns Returns [Success ()] if the code typechecks.
-
- *)
-val check:
-  t -> string -> unit Toploop_results.toplevel_result Lwt.t
+(** Parse and typecheck a given source code. *)
+val check: t -> string -> unit Toploop_results.toplevel_result Lwt.t
 
 (** Freezes the environment for future calls to {!check}. *)
-val set_checking_environment:
-  t -> unit Lwt.t
+val set_checking_environment: t -> unit Lwt.t
 
 (** Empty the toplevel container content. *)
 val clear: t -> unit
 
-
-(** Reset the toplevel environment.
-
-    @param oldify override the [oldify] parameter passed to {!val:create}.
-
-    @param timeout  a Lwt thread that will interrupt the computation
-           whenever it terminates.
-
- *)
-val reset:
-  t ->
-  ?oldify:bool option ->
-  ?timeout:(t -> unit Lwt.t) ->
-  unit -> unit Lwt.t
-
+(** Reset the toplevel environment. *)
+val reset: t -> unit Lwt.t
 
 (** Print a message in the toplevel standard output. This is equivalent
-    to calling [Pervasives.print_string] in the toplevel session. *)
+    to calling [Pervasives.print_string] in the toplevel session.
+    Calls {!Tryocaml_output.output_stdout}. *)
 val print_string: t -> string -> unit
 
 (** Print a message in the toplevel standard error output. This is
     equivalent to calling [Pervasives.prerr_string] in the toplevel
-    session. *)
+    session. Calls {!Tryocaml_output.output_stderr}. *)
 val prerr_string: t -> string -> unit
 
-(** Print a block of HTML in the toplevel output. *)
+(** Print a block of HTML in the toplevel output.
+    Calls {!Tryocaml_output.output_html}. *)
 val print_html: t -> string -> unit
 
-(** scroll the view to show the last phrase. *)
+(** scroll the view to show the last phrase.
+    Calls {!Tryocaml_output.scroll. *)
 val scroll: t -> unit
 
-val set_timeout_prompt: t -> (t -> unit Lwt.t) -> unit
-val set_flood_prompt: t -> (t -> Html5_types.nmtoken -> (unit -> int) -> bool Lwt.t) -> unit
+(** Execute the content of the input [textarea].
+    This is equivalent to pressing [Enter] when the toplevel is focused. *)
+val execute: t -> unit
 
-val set_enable_input_hook: t -> (t -> unit) -> unit
-val set_disable_input_hook: t -> (t -> unit) -> unit
+(** Go backward in the input's history.
+    This is equivalent to pressing [Up] when the toplevel is focused. *)
+val go_backward: t -> unit
+
+(** Go forward in the input's history.
+    This is equivalent to pressing [Down] when the toplevel is focused. *)
+val go_forward: t -> unit

@@ -78,7 +78,8 @@ type input =
     mutable focused : bool ;
     mutable disabled : bool ;
     history : Tryocaml_history.history ;
-    on_resize : unit -> unit }
+    on_resize : unit -> unit ;
+    execute : string -> unit }
 
 let disable ({ textbox ; container } as input) =
   textbox##disabled <- Js._true ;
@@ -112,10 +113,30 @@ let resize { textbox ; sizing ; on_resize } =
       textbox##style##fontSize <- (Js.string (string_of_int line_height ^ "px")) ;
       textbox##style##height <- Js.string (Printf.sprintf "%dpx" (line_height * lines))
 
+let execute ({ history ; textbox ; execute } as input) =
+  let code = Js.to_string textbox##value in
+  Tryocaml_history.update history code ;
+  Tryocaml_history.push history ;
+  textbox##value <- Js.string (Tryocaml_history.current history) ;
+  resize input ;
+  execute code
+
+let go_backward ({ history ; textbox } as input) =
+  Tryocaml_history.update history (Js.to_string textbox##value) ;
+  Tryocaml_history.go_backward history ;
+  textbox##value <- Js.string (Tryocaml_history.current history) ;
+  resize input
+
+let go_forward ({ history ; textbox } as input) =
+    Tryocaml_history.update history (Js.to_string textbox##value) ;
+    Tryocaml_history.go_forward history ;
+    textbox##value <- Js.string (Tryocaml_history.current history) ;
+    resize input
+
 let setup
     ?sizing ?history
     ?(on_resize = (fun () -> ()))
-    ~execute ~container () =
+    ~execute:execute_callback ~container () =
   let textbox =
     Dom_html.createTextarea Dom_html.document in
   Js_utils.Manip.addClass container "toplevel-input" ;
@@ -124,37 +145,26 @@ let setup
     | Some history -> history in
   let input =
     { textbox ; sizing ; container ; history ; on_resize ;
-      focused = false ; disabled = false } in
+      focused = false ; disabled = false ; execute = execute_callback } in
   textbox##onkeydown <- Dom_html.handler (fun e ->
       let ctrl = Js.to_bool e##ctrlKey || Js.to_bool e##metaKey in
       let shift = Js.to_bool e##shiftKey in
       match e##keyCode with
       (* Enter *)
       | 13 when not (shift || ctrl) ->
-          let code = Js.to_string textbox##value in
-          Tryocaml_history.update history code ;
-          Tryocaml_history.push history ;
-          textbox##value <- Js.string (Tryocaml_history.current history) ;
-          resize input ;
-          execute code ;
+          execute input ;
           Js._false
       (* Tab *)
-      | 09 ->
+      | 09 when not shift ->
           indent_ocaml_textarea textbox ;
           Js._false
       (* Up arrow *)
       | 38 when ctrl ->
-          Tryocaml_history.update history (Js.to_string textbox##value) ;
-          Tryocaml_history.go_backward history ;
-          textbox##value <- Js.string (Tryocaml_history.current history) ;
-          resize input ;
+          go_backward input ;
           Js._false
       (* Down arrow *)
       | 40 when ctrl ->
-          Tryocaml_history.update history (Js.to_string textbox##value) ;
-          Tryocaml_history.go_forward history ;
-          textbox##value <- Js.string (Tryocaml_history.current history) ;
-          resize input ;
+          go_forward input ;
           Js._false
       (* Defaults *)
       | 13 ->

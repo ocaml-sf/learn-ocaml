@@ -42,8 +42,8 @@ type t = {
   container: [ `Div ] Html5.elt;
   oldify: bool;
   mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u) | `Execute of unit Lwt.t | `Idle ] ;
-  mutable enable_input_hook: t -> unit;
-  mutable disable_input_hook: t -> unit;
+  mutable on_enable_input: t -> unit;
+  mutable on_disable_input: t -> unit;
   mutable disabled : int;
   output: Tryocaml_output.output;
   input: Tryocaml_input.input;
@@ -51,8 +51,8 @@ type t = {
 
 let set_timeout_prompt t f = t.timeout_prompt <- f
 let set_flood_prompt t f = t.flood_prompt <- f
-let set_enable_input_hook t f = t.enable_input_hook <- f
-let set_disable_input_hook t f = t.disable_input_hook <- f
+let set_on_enable_input t f = t.on_enable_input <- f
+let set_on_disable_input t f = t.on_disable_input <- f
 
 let trim s =
   let ws c = c = ' ' || c = '\t' || c = '\n' in
@@ -68,14 +68,14 @@ let trim s =
 let disable_input top =
   top.disabled <- top.disabled + 1 ;
   if top.disabled = 1 then begin
-    top.disable_input_hook top ;
+    top.on_disable_input top ;
     Tryocaml_input.disable top.input
   end
 
 let enable_input top =
   top.disabled <- top.disabled - 1 ;
   if top.disabled = 0 then begin
-    top.enable_input_hook top ;
+    top.on_enable_input top ;
     Tryocaml_input.enable top.input
   end
 
@@ -84,9 +84,8 @@ let scroll { output } =
 
 let clear { output } =
   Tryocaml_output.clear output ;
-  Tryocaml_output.output_warning output
-    Toploop_results.{ msg = "The toplevel has been cleared." ;
-                      locs = []; if_highlight = "" }
+  Tryocaml_output.output_stdout output
+    "The toplevel has been cleared.\n"
 
 let never_ending =
   let t = fst (Lwt.wait ()) in
@@ -111,7 +110,7 @@ let start_timeout top name timeout =
       top.current_timeout_prompt <- top.timeout_prompt top ;
       top.current_timeout_prompt
 
-let reset top ?oldify ?timeout () =
+let reset_with_timeout top ?timeout () =
   match top.status with
   | `Reset (t, _) -> t
   | `Idle ->
@@ -136,6 +135,10 @@ let reset top ?oldify ?timeout () =
       t >>= fun () ->
       Lwt.cancel task ;
       Lwt.return ()
+
+let reset top =
+  let timeout _ = Lwt_js.sleep 2. in
+  reset_with_timeout top ~timeout ()
 
 let protect_execution top exec =
   wait_for_prompts top >>= fun () ->
@@ -186,7 +189,7 @@ let execute_phrase top ?timeout content =
     (Lwt.protected t >>= fun _ -> Lwt.return_unit) ;
     (start_timeout top "execute" timeout >>= fun () ->
      let timeout _ = Lwt.return () in
-     reset top ~timeout ());
+     reset_with_timeout top ~timeout ());
   ] >>= fun () ->
   t >>= fun result ->
   let warnings, result = match result with
@@ -199,10 +202,14 @@ let execute_phrase top ?timeout content =
     warnings ;
   Lwt.return result
 
-let execute top ?timeout () =
-  let content = Tryocaml_input.get top.input in
-  protect_execution top @@ fun () ->
-  execute_phrase top ?timeout content
+let execute top =
+  Tryocaml_input.execute top.input
+
+let go_backward top =
+  Tryocaml_input.go_backward top.input
+
+let go_forward top =
+  Tryocaml_input.go_forward top.input
 
 let check top code =
   protect_execution top @@ fun () ->
@@ -237,8 +244,7 @@ let load top ?(print_outcome = true) ?timeout ?message content =
   Lwt.pick [
     (Lwt.protected t >>= fun _ -> Lwt.return_unit) ;
     (start_timeout top "load" timeout >>= fun () ->
-     let timeout _ = Lwt_js.sleep 2. in
-     reset top ~timeout ());
+     reset top);
   ] >>= fun () ->
   t >>= fun result ->
   let warnings, result = match result with
@@ -380,20 +386,30 @@ let wrap_flusher_to_prevent_flood top name hook real =
       flooded := total
     end
 
+let welcome_phrase =
+  "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version) ;\
+   print_endline \" - type your OCaml phrase in the box below and press [Enter]\" ;\
+   print_endline \" - use [Shift-Enter] to break lines without triggering execution\" ;\
+   print_endline \" - use [Ctrl-↑] once to reuse the previous entry\" ;\
+   print_endline \" - use [Ctrl-↑] / [Ctrl-↓] to navigate through history\" ;;"
+
 let create
     ?worker_js_file
     ?(timeout_delay = 5.)
-    ?(timeout_prompt = never_ending)
+    ~timeout_prompt
     ?(flood_limit = 8000)
-    ?(flood_prompt = (fun _ _ _ -> Lwt.return true))
+    ~flood_prompt
     ?after_init
-    ?(input_sizing = Tryocaml_input.{ line_height = 18 ;
-                                      min_lines = 1 ;
-                                      max_lines = 6 })
+    ?(input_sizing =
+      { Tryocaml_input.line_height = 18 ;
+        min_lines = 1 ; max_lines = 6 })
     ?on_resize
-    ?(disable_input_hook = fun _ -> ()) ?(enable_input_hook = fun _ -> ())
-    ?history ?(oldify = true)
-    ?(display_welcome = true) ~container () =
+    ?(on_disable_input = fun _ -> ())
+    ?(on_enable_input = fun _ -> ())
+    ?history
+    ?(oldify = true)
+    ?(display_welcome = true)
+    ~container () =
   let output_div = Html5.div [] in
   let input_div = Html5.div [] in
   Manip.appendChild container output_div;
@@ -417,13 +433,14 @@ let create
   let pp_stderr_hook = ref ignore in
   let pp_stderr s = !pp_stderr_hook s in
   let flood_reset top =
+    let phrase = Tryocaml_output.phrase () in
     Lwt.cancel top.current_flood_prompt ;
     wrap_flusher_to_prevent_flood top
       "stdout" pp_stdout_hook
-      (Tryocaml_output.output_stdout output) ;
+      (Tryocaml_output.output_stdout ~phrase output) ;
     wrap_flusher_to_prevent_flood top
       "stderr" pp_stderr_hook
-      (Tryocaml_output.output_stderr output) in
+      (Tryocaml_output.output_stderr ~phrase output) in
   Tryocaml_worker.create
     ?js_file:worker_js_file
     ~pp_stdout ~pp_stderr () >>= fun worker ->
@@ -439,8 +456,8 @@ let create
     container;
     oldify;
     status = `Reset (Lwt.wait ());
-    enable_input_hook;
-    disable_input_hook;
+    on_enable_input;
+    on_disable_input;
     disabled = 1;
     input;
     output;
@@ -470,18 +487,14 @@ let create
         Tryocaml_worker.execute
           ~pp_answer: (fun _ -> ())
           ~print_outcome: false
-          worker "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version) ;\
-                  print_endline \" - type your OCaml phrase in the box below and press [Enter]\" ;\
-                  print_endline \" - use [Shift-Enter] to break lines without triggering execution\" ;\
-                  print_endline \" - use [Ctrl-↑] once to reuse the previous entry\" ;\
-                  print_endline \" - use [Ctrl-↑] / [Ctrl-↓] to navigate through history\" ;;" >>= fun _ ->
+          worker welcome_phrase >>= fun _ ->
         Lwt.return ()
       else Lwt.return ()
     end >>= fun _ ->
     if not !first_time then
-      Tryocaml_output.output_warning output
-        Toploop_results.{ msg = "The toplevel has been reset." ;
-                          locs = []; if_highlight = "" }
+      let phrase = Tryocaml_output.phrase () in
+      Tryocaml_output.output_stdout output ~phrase
+        "The toplevel has been reset.\n"
     else
       first_time := false ;
     Tryocaml_worker.register_callback worker "print_html"
@@ -494,5 +507,7 @@ let create
   Lwt.return top
 
 let print_string { output } = Tryocaml_output.output_stdout output
+
 let prerr_string { output } = Tryocaml_output.output_stderr output
+
 let print_html { output } = Tryocaml_output.output_html output

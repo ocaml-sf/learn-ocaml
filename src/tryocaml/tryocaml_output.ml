@@ -65,38 +65,6 @@ let scroll { container ; on_resize } =
   on_resize () ;
   Lwt.return_unit
 
-let output_html output html =
-  enforce_limit output ;
-  let div = Tyxml_js.Html5.(div ~a: [ a_class [ "toplevel-html-block" ] ]) [] in
-  output.blocks <- (Html (html, div)) :: output.blocks ;
-  Js_utils.Manip.setInnerHtml div html ;
-  Js_utils.Manip.appendChild output.container div ;
-  scroll output
-
-let output_std output (str, chan) =
-  enforce_limit output ;
-  let buf, pre =
-    match output.blocks with
-    | Std (buf, pre) :: _ -> buf, pre
-    | _ ->
-        let buf, pre =
-          ref [],
-          Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-output" ] ]) [] in
-        output.blocks <- Std (buf, pre) :: output.blocks ;
-        Js_utils.Manip.appendChild output.container pre ;
-        buf, pre in
-  let cls = match chan with `Err -> "stderr" | `Out -> "stdout" in
-  Js_utils.Manip.appendChild pre
-    (Tyxml_js.Html5.(span ~a: [ a_class [ cls ] ] [ pcdata str ])) ;
-  buf := (str, chan) :: !buf ;
-  scroll output
-
-let output_stdout output str =
-  output_std output (str, `Out)
-
-let output_stderr output str =
-  output_std output (str, `Err)
-
 let rec pretty_html
   : 'a. pretty list -> ([> `Span | `PCDATA ] as 'a) Tyxml_js.Html5.elt list
   = fun pretty ->
@@ -164,14 +132,60 @@ let insert output ?phrase block elt =
   | Some u ->
       match find_phrase output u with
       | Some l ->
-          l := block :: !l ;
           Js_utils.Manip.insertChildAfter output.container (last_elt !l) elt ;
+          l := block :: !l ;
           scroll output
       | None ->
           output.blocks <- Phrase (u, ref [ block ]) :: output.blocks ;
           Js_utils.Manip.appendChild output.container hr ;
           Js_utils.Manip.appendChild output.container elt ;
           scroll output
+
+let output_std ?phrase output (str, chan) =
+  enforce_limit output ;
+  let buf, pre =
+    match output.blocks with
+    | Phrase (u, l) :: _ when (Some u) = phrase ->
+        let rec find = function
+          | Std (buf, pre) :: _ -> buf, pre
+          | _ :: rest -> find rest
+          | [] ->
+              let buf, pre =
+                ref [],
+                Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-output" ] ]) [] in
+              Js_utils.Manip.insertChildAfter output.container (last_elt !l) pre ;
+              l := Std (buf, pre) :: !l ;
+              Js_utils.Manip.appendChild output.container pre ;
+              buf, pre in
+        find !l
+    | Std (buf, pre) :: _ -> buf, pre
+    | _ ->
+        let hr = Tyxml_js.Html5.hr () in
+        let buf, pre =
+          ref [],
+          Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-output" ] ]) [] in
+        output.blocks <- Std (buf, pre) :: output.blocks ;
+        Js_utils.Manip.appendChild output.container hr ;
+        Js_utils.Manip.appendChild output.container pre ;
+        buf, pre in
+  let cls = match chan with `Err -> "stderr" | `Out -> "stdout" in
+  Js_utils.Manip.appendChild pre
+    (Tyxml_js.Html5.(span ~a: [ a_class [ cls ] ] [ pcdata str ])) ;
+  buf := (str, chan) :: !buf ;
+  scroll output
+
+let output_stdout ?phrase output str =
+  output_std ?phrase output (str, `Out)
+
+let output_stderr ?phrase output str =
+  output_std ?phrase output (str, `Err)
+
+let output_html ?phrase output html =
+  enforce_limit output ;
+  let div = Tyxml_js.Html5.(div ~a: [ a_class [ "toplevel-html-block" ] ]) [] in
+  Js_utils.Manip.setInnerHtml div html ;
+  Js_utils.Manip.appendChild output.container div ;
+  insert output ?phrase (Html (html, div)) div
 
 let output_code ?phrase output code =
   let snapshot =
