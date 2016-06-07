@@ -122,6 +122,7 @@ module type S = sig
     ?test: 'a ref tester -> 'a ref Ty.ty ->
     'a ref arg_mutation_test_callbacks
 
+
   (*----------------------------------------------------------------------------*)
 
   val test_function_1 :
@@ -254,16 +255,27 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   (* Usage: (arg 3 @@ arg "word" @@ last false *)
-  type ('arrow, 'ret) args
-  val last : 'a -> ('a -> 'ret, 'ret) args
-  val arg : 'a -> ('ar -> 'row, 'ret) args -> ('a -> 'ar -> 'row, 'ret) args
+  type ('arrow, 'uarrow, 'ret) args
+  val last :
+    'a ->
+    ('a -> 'ret, 'a -> unit, 'ret) args
+  val arg :
+    'a ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+    ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
-  val apply : ('ar -> 'row) -> ('ar -> 'row, 'ret) args -> 'ret
+  val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-  (* Usage: (arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] *)
-  type ('arrow, 'ret) prot
-  val last_ty : 'a Ty.ty -> 'ret Ty.ty -> (('a -> 'ret) Ty.ty, 'ret) prot
-  val arg_ty : 'a Ty.ty -> (('ar -> 'row) Ty.ty, 'ret) prot -> (('a -> 'ar -> 'row) Ty.ty, 'ret) prot
+  (* Usage: (arg [%ty: int] @@ arg [%ty: string] @@ last [%ty: bool] *)
+  type ('arrow, 'uarrow, 'ret) prot
+  val last_ty :
+    'a Ty.ty ->
+    'ret Ty.ty ->
+    (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) prot
+  val arg_ty :
+    'a Ty.ty ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+    (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
   type 'a lookup = unit -> [ `Found of string * Report.report * 'a | `Unbound of string * Report.report ]
 
@@ -279,11 +291,17 @@ module type S = sig
     ?test: 'ret tester ->
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
-    ?before : (('ar -> 'row, 'ret) args -> unit) ->
-    ?after : (('ar -> 'row, 'ret) args -> ('ret * string * string) -> ('ret * string * string) -> Report.report) ->
-    (('ar -> 'row) Ty.ty, 'ret) prot ->
+    ?before :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       unit) ->
+    ?after :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       ('ret * string * string) ->
+       ('ret * string * string) ->
+       Report.report) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup ->
-    (('ar -> 'row, 'ret) args * (unit -> 'ret)) list ->
+    (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
     Report.report
 
   val test_function_against :
@@ -291,13 +309,20 @@ module type S = sig
     ?test: 'ret tester ->
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
-    ?before_reference : (('ar -> 'row, 'ret) args -> unit) ->
-    ?before_user : (('ar -> 'row, 'ret) args -> unit) ->
-    ?after : (('ar -> 'row, 'ret) args -> ('ret * string * string) -> ('ret * string * string) -> Report.report) ->
-    ?sampler:(unit -> ('ar -> 'row, 'ret) args) ->
-    (('ar -> 'row) Ty.ty, 'ret) prot ->
+    ?before_reference :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+    ?before_user :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+    ?after :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       ('ret * string * string) ->
+       ('ret * string * string) ->
+       Report.report) ->
+    ?sampler:
+      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-    ('ar -> 'row, 'ret) args list ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
     Report.report
 
   (*----------------------------------------------------------------------------*)

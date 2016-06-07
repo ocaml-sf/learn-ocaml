@@ -45,7 +45,7 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
   let ty =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
   Toploop.toplevel_env := begin
-    if String.uncapitalize name = name then
+    if String.uncapitalize_ascii name = name then
       Env.add_value
         (Ident.create name)
         { Types.
@@ -76,20 +76,20 @@ let insert_mod_ast_in_env ~var_name impl_code =
     let open Ast_helper in
     let str =
       let impl_lb = Lexing.from_string impl_code in
-      init_loc impl_lb (String.uncapitalize modname ^ ".ml");
+      init_loc impl_lb (String.uncapitalize_ascii modname ^ ".ml");
       Parse.implementation impl_lb in
     let m =
       match sig_code with
       | None -> (Mod.structure str)
       | Some sig_code ->
         let sig_lb = Lexing.from_string sig_code in
-        init_loc sig_lb (String.uncapitalize modname ^ ".mli");
+        init_loc sig_lb (String.uncapitalize_ascii modname ^ ".mli");
         let s = Parse.interface sig_lb in
         Mod.constraint_ (Mod.structure str) (Mty.signature s) in
     Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ] in
   let phr =
     Toploop_ext.Ppx.preprocess_phrase @@
-    parse_mod_string (String.capitalize var_name) None impl_code in
+    parse_mod_string (String.capitalize_ascii var_name) None impl_code in
   let open Parsetree in
   (match phr with
    | Ptop_def [ { pstr_desc =
@@ -218,7 +218,7 @@ let sample_value ty =
           Exp.ident lid
       | Tconstr (path, tl, _) ->
           let lid = (Location.mknoloc (Longident.Lident ("sample_" ^ Path.name path))) in
-          Exp.apply (Exp.ident lid) (List.map (fun arg -> "", phrase arg) tl)
+          Exp.apply (Exp.ident lid) (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
       | _ -> failwith "unsamplable type"
     in
     let lid = Location.mknoloc lid in
@@ -231,7 +231,7 @@ let sample_value ty =
   if Toploop.execute_phrase false ppf phrase then
     let path, { Types.val_type } =
       Env.lookup_value (Longident.Lident lid) !Toploop.toplevel_env in
-    let gty = Types.{ty with desc = Tarrow ("", Predef.type_unit, ty, Cok) } in
+    let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
     if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then
       (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
     else (failwith "sampler has the wrong type !")

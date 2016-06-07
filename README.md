@@ -7,6 +7,8 @@ This software is still under heavy development.
 How to compile and try
 ----------------------
 
+Note: you need a working ```opam``` environment with OCaml ```4.03.0```.
+
 * Install the dependencies : ```sh install-opam-deps.sh```
 
 * Compile the app : ```make```

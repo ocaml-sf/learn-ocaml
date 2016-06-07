@@ -255,16 +255,27 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   (* Usage: (arg 3 @@ arg "word" @@ last false *)
-  type ('arrow, 'ret) args
-  val last : 'a -> ('a -> 'ret, 'ret) args
-  val arg : 'a -> ('ar -> 'row, 'ret) args -> ('a -> 'ar -> 'row, 'ret) args
+  type ('arrow, 'uarrow, 'ret) args
+  val last :
+    'a ->
+    ('a -> 'ret, 'a -> unit, 'ret) args
+  val arg :
+    'a ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+    ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
-  val apply : ('ar -> 'row) -> ('ar -> 'row, 'ret) args -> 'ret
+  val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
   (* Usage: (arg [%ty: int] @@ arg [%ty: string] @@ last [%ty: bool] *)
-  type ('arrow, 'ret) prot
-  val last_ty : 'a Ty.ty -> 'ret Ty.ty -> (('a -> 'ret) Ty.ty, 'ret) prot
-  val arg_ty : 'a Ty.ty -> (('ar -> 'row) Ty.ty, 'ret) prot -> (('a -> 'ar -> 'row) Ty.ty, 'ret) prot
+  type ('arrow, 'uarrow, 'ret) prot
+  val last_ty :
+    'a Ty.ty ->
+    'ret Ty.ty ->
+    (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) prot
+  val arg_ty :
+    'a Ty.ty ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+    (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
   type 'a lookup = unit -> [ `Found of string * Report.report * 'a | `Unbound of string * Report.report ]
 
@@ -280,11 +291,17 @@ module type S = sig
     ?test: 'ret tester ->
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
-    ?before : (('ar -> 'row, 'ret) args -> unit) ->
-    ?after : (('ar -> 'row, 'ret) args -> ('ret * string * string) -> ('ret * string * string) -> Report.report) ->
-    (('ar -> 'row) Ty.ty, 'ret) prot ->
+    ?before :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       unit) ->
+    ?after :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       ('ret * string * string) ->
+       ('ret * string * string) ->
+       Report.report) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup ->
-    (('ar -> 'row, 'ret) args * (unit -> 'ret)) list ->
+    (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
     Report.report
 
   val test_function_against :
@@ -292,13 +309,20 @@ module type S = sig
     ?test: 'ret tester ->
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
-    ?before_reference : (('ar -> 'row, 'ret) args -> unit) ->
-    ?before_user : (('ar -> 'row, 'ret) args -> unit) ->
-    ?after : (('ar -> 'row, 'ret) args -> ('ret * string * string) -> ('ret * string * string) -> Report.report) ->
-    ?sampler:(unit -> ('ar -> 'row, 'ret) args) ->
-    (('ar -> 'row) Ty.ty, 'ret) prot ->
+    ?before_reference :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+    ?before_user :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+    ?after :
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+       ('ret * string * string) ->
+       ('ret * string * string) ->
+       Report.report) ->
+    ?sampler:
+      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-    ('ar -> 'row, 'ret) args list ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
     Report.report
 
   (*----------------------------------------------------------------------------*)
@@ -408,6 +432,11 @@ module Make
           modules := before ;
           expr
       | { pexp_desc = Pexp_apply (fn, args) } as e ->
+          let args = List.map
+              (function
+                | (Asttypes.Nolabel, v) -> ("", v)
+                | ((Asttypes.Labelled n | Asttypes.Optional n), v) -> (n, v))
+              args in
           add @@ on_function_call (fn, args) ;
           default_mapper.expr mapper e
       | { pexp_desc = Pexp_ident ident } as e ->
@@ -471,8 +500,10 @@ module Make
            | Some vexpr -> ignore (mapper.expr mapper vexpr)
            | None -> ()) ;
           (match label with
-           | "" -> () (* Will break soon, replace by Asttypes.arg_label *)
-           | label -> variables := label :: !variables) ;
+           | Asttypes.Nolabel -> ()
+           | Asttypes.Labelled label
+           | Asttypes.Optional label ->
+               variables := label :: !variables) ;
           ignore (mapper.pat mapper pat) ;
           ignore (mapper.expr mapper iexpr) ;
           variables := before ;
@@ -731,7 +762,7 @@ module Make
       begin match va with
         | Ok v ->
             Report.[ Message ([ Text "Wrong value" ; Code (to_string v) ], Failure) ]
-        | Error (Failure "EXCESS") ->
+        | Error (Failure s) when s = "EXCESS"->
             Report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
         | Error Stack_overflow ->
             Report.[ Message ([ Text "Your code did too many recursions." ], Failure) ]
@@ -746,7 +777,7 @@ module Make
         Report.[ Message ([ Text "Unexpected result" ;
                             Code (to_string v) ;
                             Text "instead of exception" ], Failure) ]
-    | Error (Failure "EXCESS"), _ ->
+    | Error (Failure s), _ when s = "EXCESS" ->
         Report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
     | Error Stack_overflow, _ ->
         Report.[ Message ([ Text "Your code did too many recursions." ], Failure) ]
@@ -1014,33 +1045,33 @@ module Make
 
   (*----------------------------------------------------------------------------*)
 
-  type (_, _) args =
-    | Last : 'a -> ('a -> 'r, 'r) args
-    | Arg : 'a * ('b, 'r) args -> ('a -> 'b, 'r) args
+  type (_, _, _) args =
+    | Last : 'a -> ('a -> 'r, 'a -> unit, 'r) args
+    | Arg : 'a * ('b, 'c, 'r) args -> ('a -> 'b, 'a -> 'c, 'r) args
 
   let last x = Last x
   let arg x r = Arg (x, r)
 
-  type (_, _) prot =
-    | Last_ty : 'a Ty.ty * 'r Ty.ty -> (('a -> 'r) Ty.ty, 'r) prot
-    | Arg_ty : 'a Ty.ty * (('b -> 'c) Ty.ty, 'r) prot -> (('a -> 'b -> 'c) Ty.ty, 'r) prot
+  type (_, _, _) prot =
+    | Last_ty : 'a Ty.ty * 'r Ty.ty -> (('a -> 'r) Ty.ty, 'a -> unit, 'r) prot
+    | Arg_ty : 'a Ty.ty * (('b -> 'c) Ty.ty, 'b -> 'd, 'r) prot -> (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) prot
 
   let last_ty x r = Last_ty (x, r)
   let arg_ty x r = Arg_ty (x, r)
 
-  let rec ty_of_prot : type p a r. ((p -> a) Ty.ty, r) prot -> (p -> a) Ty.ty  = function
+  let rec ty_of_prot : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> (p -> a) Ty.ty  = function
     | Last_ty (a, b) -> Ty.curry a b
     | Arg_ty (x, Last_ty (l, r)) -> Ty.curry x (Ty.curry l r)
     | Arg_ty (x, Arg_ty (y, r)) -> Ty.curry x (ty_of_prot (Arg_ty (y, r)))
 
-  let rec apply : type p a r. (p -> a) -> (p -> a, r) args -> r = fun f x ->
+  let rec apply : type p a c r. (p -> a) -> (p -> a, p -> c, r) args -> r = fun f x ->
     match x with
     | Last x -> f x
     | Arg (x, Last r) -> (f x) r
     | Arg (x, Arg (y, r)) -> apply (f x) (Arg (y, r))
 
   let rec print
-    : type p a r. ((p -> a) Ty.ty, r) prot -> Format.formatter -> (p -> a, r) args -> unit =
+    : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> Format.formatter -> (p -> a, p -> c, r) args -> unit =
     fun t ppf x ->
       match t, x with
       | Last_ty (arg_ty, _), Last x ->
@@ -1054,15 +1085,10 @@ module Make
           Format.fprintf ppf "@ %a%a"
             (typed_printer arg_ty) x
             (print ret_ty) (Arg (y, r))
-      | Arg_ty (arg_ty, _), Last x -> (* what *)
-          Format.fprintf ppf "@ %a"
-            (typed_printer arg_ty) x
-      | Last_ty (arg_ty, _), Arg (x, _) -> (* what *)
-          Format.fprintf ppf "@ %a"
-            (typed_printer arg_ty) x
+      | Last_ty (arg_ty, _), Arg (x, _) -> .
 
   let rec get_ret_ty
-    : type p a r. (p -> a) Ty.ty -> (p -> a, r) args -> r Ty.ty =
+    : type p a c r. (p -> a) Ty.ty -> (p -> a, p -> c, r) args -> r Ty.ty =
     fun ty x ->
       match x with
       | Last x ->
@@ -1076,7 +1102,7 @@ module Make
           get_ret_ty ret_ty (Arg (y, r))
 
   let rec get_sampler
-    : type p a r. ((p -> a) Ty.ty, r) prot -> unit -> (p -> a, r) args =
+    : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> unit -> (p -> a, p -> c, r) args =
     fun wit ->
       match wit with
       | Last_ty (x, _) ->
@@ -1196,14 +1222,10 @@ module Make
   let function_1_adapter after sampler ty =
     let after = match after with
       | None -> (fun _ _ _ -> [])
-      | Some after -> (fun l -> match l with
-          | Last x -> after x
-          | Arg (x, _) -> after x) in
+      | Some after -> (function Last x -> after x) in
     let pre = function
       | None -> (fun _ -> ())
-      | Some pre -> (fun l -> match l with
-          | Last x -> pre x
-          | Arg (x, _) -> pre x) in
+      | Some pre -> (function Last x -> pre x) in
     let sampler = match sampler with
       | None -> None
       | Some sampler -> Some (fun () -> Last (sampler ())) in
@@ -1248,24 +1270,22 @@ module Make
   (*----------------------------------------------------------------------------*)
 
   let function_2_adapter after sampler ty =
-    let after = match after with
-      | None -> (fun _ _ _ -> [])
-      | Some after -> (fun l -> match l with
-          | Arg (x, Last y) -> after x y
-          | Arg (x, Arg (y, _)) -> after x y) in
-    let pre = function
-      | None -> (fun _ -> ())
-      | Some pre -> (fun l -> match l with
-          | Arg (x, Last y) -> pre x y
-          | Arg (x, Arg (y, _)) -> pre x y) in
-    let sampler = match sampler with
-      | None -> None
-      | Some sampler ->
-          Some (fun () -> let a, b = sampler () in Arg (a, Last b)) in
-    let arg1_ty, ret_ty = Ty.domains ty in
-    let arg2_ty, ret_ty = Ty.domains ret_ty in
-    let prot = arg_ty arg1_ty @@ last_ty arg2_ty @@ ret_ty in
-    after, pre, sampler, prot
+      let after = match after with
+        | None -> (fun _ _ _ -> [])
+        | Some after -> (function
+            | Arg (x, Last y) -> after x y) in
+      let pre = function
+        | None -> (fun _ -> ())
+        | Some pre -> (function
+            | Arg (x, Last y) -> pre x y) in
+      let sampler = match sampler with
+        | None -> None
+        | Some sampler ->
+            Some (fun () -> let a, b = sampler () in Arg (a, Last b)) in
+      let arg1_ty, ret_ty = Ty.domains ty in
+      let arg2_ty, ret_ty = Ty.domains ret_ty in
+      let prot = arg_ty arg1_ty @@ last_ty arg2_ty @@ ret_ty in
+      after, pre, sampler, prot
 
   let test_function_2
       ?test ?test_stdout ?test_stderr
@@ -1306,14 +1326,10 @@ module Make
   let function_3_adapter after sampler ty =
     let after = match after with
       | None -> (fun _ _ _-> [])
-      | Some after -> (fun l -> match l with
-          | Arg (w, Arg (x, Last y)) -> after w x y
-          | Arg (w, Arg (x, Arg (y, _))) -> after w x y) in
+      | Some after -> (function Arg (w, Arg (x, Last y)) -> after w x y) in
     let pre = function
       | None -> (fun _ -> ())
-      | Some pre -> (fun l -> match l with
-          | Arg (w, Arg (x, Last y)) -> pre w x y
-          | Arg (w, Arg (x, Arg (y, _))) -> pre w x y) in
+      | Some pre -> (function Arg (w, Arg (x, Last y)) -> pre w x y) in
     let sampler = match sampler with
       | None -> None
       | Some sampler ->
@@ -1366,14 +1382,12 @@ module Make
   let function_4_adapter after sampler ty =
     let after = match after with
       | None -> (fun _ _ _-> [])
-      | Some after -> (fun l -> match l with
-          | Arg (w, Arg (x, Arg (y, Last z))) -> after w x y z
-          | Arg (w, Arg (x, Arg (y, Arg (z, _)))) -> after w x y z) in
+      | Some after ->
+          (function Arg (w, Arg (x, Arg (y, Last z))) -> after w x y z) in
     let pre = function
       | None -> (fun _ -> ())
-      | Some pre -> (fun l -> match l with
-          | Arg (w, Arg (x, Arg (y, Last z))) -> pre w x y z
-          | Arg (w, Arg (x, Arg (y, Arg (z, _)))) -> pre w x y z) in
+      | Some pre ->
+          (function Arg (w, Arg (x, Arg (y, Last z))) -> pre w x y z) in
     let sampler = match sampler with
       | None -> None
       | Some sampler ->

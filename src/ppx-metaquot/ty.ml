@@ -31,6 +31,6 @@ let domains = function
   | _ -> invalid_arg "Ty.domains"
 
 let curry (Ty arg) (Ty ret) =
-  Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow ("", arg, ret) ;
+  Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
     ptyp_loc = Location.none ;
     ptyp_attributes = [] }

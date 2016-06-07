@@ -209,7 +209,7 @@ let handler : type a. a host_msg -> a return Lwt.t = function
             Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "string")) []) in
           let ret =
             Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "unit")) []) in
-          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow ("", arg, ret) ;
+          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
             ptyp_loc = Location.none ;
             ptyp_attributes = [] } in
         Typetexp.transl_type_scheme !Toploop.toplevel_env ast in

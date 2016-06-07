@@ -21,3 +21,4 @@ depends: [
   "reactiveData"
   "tyxml" {< "4" }
 ]
+available: [ ocaml-version >= "4.03.0" ]
