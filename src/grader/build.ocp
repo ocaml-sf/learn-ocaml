@@ -129,19 +129,20 @@ begin library "grading-cli"
     "toploop_unix"
     "grading"
     "ocplib-ocamlres"
+    "ezjsonm"
   ]
   files = [
     "grading_cli.ml"
+    "grader_cli.ml"
   ]
 end
 
 begin program "learnocaml-grader"
   requires = [
     "grading-cli"
-    "ezjsonm"
   ]
   files = [
-    "grader_cli.ml"
+    "grader_cli_main.ml"
   ]
 end
 

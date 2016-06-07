@@ -136,6 +136,20 @@ let args = Arg.align @@
     "-j", Arg.Set_int n_processes,
     "NUMBER grader processes to launch in parallel" ]
 
+
+let () =
+  try
+    ignore (Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK") ;
+    Grader_cli.main () ;
+    exit 0
+  with Not_found -> ()
+
+let spawn_grader args =
+  Lwt_process.exec
+    ~env: (Array.concat [ [| "LEARNOCAML_PROCESS_REPOSITORY_TASK=YES" |] ;
+                          Unix.environment () ])
+    (Sys.argv.(0), Array.concat [ [| Sys.argv.(0) |] ; args ])
+
 let () =
   try
     Arg.parse args
@@ -235,7 +249,6 @@ let () =
                Lwt.return ()
              end else begin
                let args = Array.concat [
-                   [| Sys.argv.(0) |] ;
                    (match dump_outputs with
                     | None -> [||]
                     | Some prefix -> [| "-dump-outputs" ; prefix |]) ;
@@ -247,10 +260,7 @@ let () =
                    (if !Grader_cli.display_std_outputs then [| "-display-stdouts"  |] else [||]) ;
                    [| "-output-json" ; json_path |] ;
                    [| exercise_dir |] ]in
-               Lwt_process.exec
-                 ~env: (Array.concat [ [| "LEARNOCAML_PROCESS_REPOSITORY_TASK=YES" |] ;
-                                       Unix.environment () ])
-                 (Sys.argv.(0), args) >>= function
+               spawn_grader args >>= function
                | Unix.WEXITED 0 ->
                    Format.printf "%-12s     [OK]@." id ;
                    Lwt.return ()

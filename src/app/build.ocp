@@ -2,7 +2,6 @@ begin program "learnocaml-process-repository"
   has_asm = false
   files = [
     "server_index.ml"
-    "../grader/grader_cli.ml"
     "index_builder.ml"
   ]
   requires = [

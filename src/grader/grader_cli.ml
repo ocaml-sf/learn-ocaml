@@ -33,6 +33,20 @@ let display_outcomes = ref false
 (* Where to put the graded exercise *)
 let output_json = ref None
 
+let args = Arg.align @@
+  [ "-output-json", Arg.String (fun s -> output_json := Some s),
+    "PATH save the graded exercise in JSON format in the given file" ;
+    "-display-outcomes", Arg.Set display_outcomes,
+    " display the toplevel's outcomes" ;
+    "-display-progression", Arg.Set display_callback,
+    " display grading progression messages" ;
+    "-display-stdouts", Arg.Set display_std_outputs,
+    " display the toplevel's standard outputs" ;
+    "-dump-outputs", Arg.String (fun s -> dump_outputs := Some s),
+    "PREFIX save the outputs in files with the given prefix" ;
+    "-dump-reports", Arg.String (fun s -> dump_reports := Some s),
+    "PREFIX save the reports in files with the given prefix" ]
+
 open Lwt.Infix
 
 let read_exercise exercise_dir =
@@ -53,118 +67,102 @@ let remove_trailing_slash s =
   let len = String.length s in
   if len <> 0 && s.[len-1] = '/' then String.sub s 0 (len-1) else s
 
-let args = Arg.align @@
-  [ "-output-json", Arg.String (fun s -> output_json := Some s),
-    "PATH save the graded exercise in JSON format in the given file" ;
-    "-display-outcomes", Arg.Set display_outcomes,
-    " display the toplevel's outcomes" ;
-    "-display-progression", Arg.Set display_callback,
-    " display grading progression messages" ;
-    "-display-stdouts", Arg.Set display_std_outputs,
-    " display the toplevel's standard outputs" ;
-    "-dump-outputs", Arg.String (fun s -> dump_outputs := Some s),
-    "PREFIX save the outputs in files with the given prefix" ;
-    "-dump-reports", Arg.String (fun s -> dump_reports := Some s),
-    "PREFIX save the reports in files with the given prefix" ]
-
 let grade exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
   let solution = Exercise.(get solution) exo in
   let callback =
     if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
-  try
-    Grading_cli.get_grade ?callback exo solution
-    >>= fun (report, stdout_contents, stderr_contents, outcomes) ->
-    let (max, failure) = Report.result_of_report report in
-    begin match !dump_reports with
-      | None -> ()
-      | Some prefix ->
-          let oc = open_out (prefix ^ ".report.txt") in
-          Report.print_report (Format.formatter_of_out_channel oc) report ;
-          close_out oc ;
-          let oc = open_out (prefix ^ ".report.html") in
-          Report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
-          close_out oc
-    end ;
-    if stderr_contents <> "" then begin
-      begin match !dump_outputs with
-        | None -> ()
-        | Some prefix ->
-            let oc = open_out (prefix ^ ".stderr") in
-            output_string oc stderr_contents ;
-            close_out oc
-      end ;
-      if !display_std_outputs then
-        Format.eprintf "%s" stderr_contents
-    end ;
-    if stdout_contents <> "" then begin
-      begin match !dump_outputs with
-        | None -> ()
-        | Some prefix ->
-            let oc = open_out (prefix ^ ".stdout") in
-            output_string oc stdout_contents ;
-            close_out oc
-      end ;
-      if !display_std_outputs then
-        Format.printf "%s" stdout_contents
-    end ;
-    if outcomes <> "" then begin
-      begin match !dump_outputs with
-        | None -> ()
-        | Some prefix ->
-            let oc = open_out (exercise_dir ^ ".outcomes") in
-            output_string oc outcomes ;
-            close_out oc
-      end ;
-      if !display_outcomes then
-        Format.printf "%s" outcomes
-    end ;
-    if failure && !display_callback then begin
-      Printf.eprintf "Failure!\n%!" ;
-      Lwt.return 2
-    end
-    else begin
-      if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
-      match output_json with
-      | None ->
-          Lwt.return 0
-      | Some json_file ->
-          let exo = Exercise.(set max_score) max exo in
-          Exercise.write_lwt
-            ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
-            exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
-          Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
-          Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
-          Lwt.return 0
-    end
-  with
-  | e ->
-      Printf.eprintf "Unexpected ERROR: %s\n%!" (Printexc.to_string e) ;
-      Lwt.return 1
+  Lwt.catch
+    (fun () ->
+       Grading_cli.get_grade ?callback exo solution
+       >>= fun (report, stdout_contents, stderr_contents, outcomes) ->
+       let (max, failure) = Report.result_of_report report in
+       begin match !dump_reports with
+         | None -> ()
+         | Some prefix ->
+             let oc = open_out (prefix ^ ".report.txt") in
+             Report.print_report (Format.formatter_of_out_channel oc) report ;
+             close_out oc ;
+             let oc = open_out (prefix ^ ".report.html") in
+             Report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
+             close_out oc
+       end ;
+       if stderr_contents <> "" then begin
+         begin match !dump_outputs with
+           | None -> ()
+           | Some prefix ->
+               let oc = open_out (prefix ^ ".stderr") in
+               output_string oc stderr_contents ;
+               close_out oc
+         end ;
+         if !display_std_outputs then
+           Format.eprintf "%s" stderr_contents
+       end ;
+       if stdout_contents <> "" then begin
+         begin match !dump_outputs with
+           | None -> ()
+           | Some prefix ->
+               let oc = open_out (prefix ^ ".stdout") in
+               output_string oc stdout_contents ;
+               close_out oc
+         end ;
+         if !display_std_outputs then
+           Format.printf "%s" stdout_contents
+       end ;
+       if outcomes <> "" then begin
+         begin match !dump_outputs with
+           | None -> ()
+           | Some prefix ->
+               let oc = open_out (prefix ^ ".outcomes") in
+               output_string oc outcomes ;
+               close_out oc
+         end ;
+         if !display_outcomes then
+           Format.printf "%s" outcomes
+       end ;
+       if failure && !display_callback then begin
+         Printf.eprintf "Failure!\n%!" ;
+         Lwt.return 2
+       end
+       else begin
+         if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
+         match output_json with
+         | None ->
+             Lwt.return 0
+         | Some json_file ->
+             let exo = Exercise.(set max_score) max exo in
+             Exercise.write_lwt
+               ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
+               exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
+             Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
+             Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
+             Lwt.return 0
+       end)
+    (fun exn ->
+       begin match !dump_outputs with
+         | None -> ()
+         | Some prefix ->
+             let oc = open_out (prefix ^ ".error") in
+             Format.fprintf
+               (Format.formatter_of_out_channel oc)
+               "%a@!" Location.report_exception exn ;
+             close_out oc
+       end ;
+       Format.eprintf "%a" Location.report_exception exn ;
+       Lwt.return 1)
 
-(* this main is also linked by the repository processor *)
-let launch_main =
-  if Filename.(chop_extension (basename Sys.argv.(0))) <> "learnocaml-process-repository" then
-    true
-  else try
-      ignore (Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK") ;
-      true
-    with Not_found -> false
-
-let () =
-  if launch_main then begin
-    let anons = ref [] in
-    Arg.parse args
-      (fun anon -> anons := anon :: !anons)
-      "Usage: ./learnocaml-grader [options] <problem directory>" ;
-    match !anons with
-    | [] ->
-        Format.eprintf "A problem directory is expected@." ;
-        exit 1
-    | _ :: _ :: _ ->
-        Format.eprintf "A single problem directory is expected@." ;
-        exit 1
-    | [ single ] ->
-        exit (Lwt_main.run (grade single !output_json))
-  end
+let main () : unit =
+  let anons = ref [] in
+  Arg.parse args
+    (fun anon -> anons := anon :: !anons)
+    "Usage: ./learnocaml-grader [options] <problem directory>" ;
+  match !anons with
+  | [] ->
+      Format.eprintf "A problem directory is expected@." ;
+      exit 1
+  | _ :: _ :: _ ->
+      Format.eprintf "A single problem directory is expected@." ;
+      exit 1
+  | [ single ] ->
+      exit (Lwt_main.run (grade single !output_json))

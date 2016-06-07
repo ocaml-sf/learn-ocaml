@@ -39,6 +39,9 @@ let () =
 let internal_error name err =
   raise (Internal_error (name, err))
 
+let user_code_error err =
+  raise (User_code_error err)
+
 let get_grade ?callback ~divert exo code =
 
   let print_outcome = true in
@@ -106,8 +109,7 @@ let get_grade ?callback ~divert exo code =
     (Exercise.(get prepare) exo) ;
 
   set_progress "Loading your code." ;
-  handle_error
-    (fun err -> raise (User_code_error err)) @@
+  handle_error user_code_error @@
   Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
 
   set_progress "Loading the solution." ;
