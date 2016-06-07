@@ -40,7 +40,7 @@ type sizing =
       {!execute} function is called. *)
 val setup :
   ?sizing: sizing ->
-  ?history:Tryocaml_history.history ->
+  ?history:Learnocaml_toplevel_history.history ->
   ?on_resize:(unit -> unit) ->
   execute: (string -> unit) ->
   container: [ `Div ] Tyxml_js.Html5.elt ->

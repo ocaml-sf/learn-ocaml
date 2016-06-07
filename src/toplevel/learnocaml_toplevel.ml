@@ -18,7 +18,7 @@
 open Js_utils
 open Tyxml_js
 
-module H = Tryocaml_history
+module H = Learnocaml_toplevel_history
 
 let (>>=) = Lwt.(>>=)
 let (>|=) = Lwt.(>|=)
@@ -38,15 +38,15 @@ type t = {
   mutable flood_prompt: t -> Html5_types.nmtoken -> (unit -> int) -> bool Lwt.t;
   mutable current_flood_prompt: unit Lwt.t;
   flood_reset: t -> unit;
-  worker: Tryocaml_worker.t;
+  worker: Learnocaml_toplevel_worker_caller.t;
   container: [ `Div ] Html5.elt;
   oldify: bool;
   mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u) | `Execute of unit Lwt.t | `Idle ] ;
   mutable on_enable_input: t -> unit;
   mutable on_disable_input: t -> unit;
   mutable disabled : int;
-  output: Tryocaml_output.output;
-  input: Tryocaml_input.input;
+  output: Learnocaml_toplevel_output.output;
+  input: Learnocaml_toplevel_input.input;
 }
 
 let set_timeout_prompt t f = t.timeout_prompt <- f
@@ -69,22 +69,22 @@ let disable_input top =
   top.disabled <- top.disabled + 1 ;
   if top.disabled = 1 then begin
     top.on_disable_input top ;
-    Tryocaml_input.disable top.input
+    Learnocaml_toplevel_input.disable top.input
   end
 
 let enable_input top =
   top.disabled <- top.disabled - 1 ;
   if top.disabled = 0 then begin
     top.on_enable_input top ;
-    Tryocaml_input.enable top.input
+    Learnocaml_toplevel_input.enable top.input
   end
 
 let scroll { output } =
-  Tryocaml_output.scroll output
+  Learnocaml_toplevel_output.scroll output
 
 let clear { output } =
-  Tryocaml_output.clear output ;
-  Tryocaml_output.output_stdout output
+  Learnocaml_toplevel_output.clear output ;
+  Learnocaml_toplevel_output.output_stdout output
     "The toplevel has been cleared.\n"
 
 let never_ending =
@@ -121,7 +121,7 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Tryocaml_worker.reset ~timeout top.worker () >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
       t
   | `Execute task ->
       let t, u = Lwt.wait () in
@@ -131,7 +131,7 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Tryocaml_worker.reset ~timeout top.worker () >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
       t >>= fun () ->
       Lwt.cancel task ;
       Lwt.return ()
@@ -144,7 +144,7 @@ let protect_execution top exec =
   wait_for_prompts top >>= fun () ->
   match top.status with
   | `Reset _ | `Execute _ ->
-      Lwt.fail_invalid_arg "Tryocaml.protect_execution"
+      Lwt.fail_invalid_arg "Learnocaml_toplevel.protect_execution"
   | `Idle ->
       let t, u = Lwt.task () in
       top.status <- `Execute t ;
@@ -179,11 +179,11 @@ let protect_execution top exec =
       thread
 
 let execute_phrase top ?timeout content =
-  let phrase = Tryocaml_output.phrase () in
-  let pp_code = Tryocaml_output.output_code ~phrase top.output in
-  let pp_answer = Tryocaml_output.output_answer ~phrase top.output in
+  let phrase = Learnocaml_toplevel_output.phrase () in
+  let pp_code = Learnocaml_toplevel_output.output_code ~phrase top.output in
+  let pp_answer = Learnocaml_toplevel_output.output_answer ~phrase top.output in
   let t =
-    Tryocaml_worker.execute
+    Learnocaml_toplevel_worker_caller.execute
       top.worker ~pp_code ~pp_answer ~print_outcome:true content in
   Lwt.pick [
     (Lwt.protected t >>= fun _ -> Lwt.return_unit) ;
@@ -195,29 +195,29 @@ let execute_phrase top ?timeout content =
   let warnings, result = match result with
     | Toploop_results.Ok (result, warnings) -> warnings, result
     | Toploop_results.Error (error, warnings) ->
-        Tryocaml_output.output_error ~phrase top.output error ;
+        Learnocaml_toplevel_output.output_error ~phrase top.output error ;
         warnings, false in
   List.iter
-    (Tryocaml_output.output_warning ~phrase top.output)
+    (Learnocaml_toplevel_output.output_warning ~phrase top.output)
     warnings ;
   Lwt.return result
 
 let execute top =
-  Tryocaml_input.execute top.input
+  Learnocaml_toplevel_input.execute top.input
 
 let go_backward top =
-  Tryocaml_input.go_backward top.input
+  Learnocaml_toplevel_input.go_backward top.input
 
 let go_forward top =
-  Tryocaml_input.go_forward top.input
+  Learnocaml_toplevel_input.go_forward top.input
 
 let check top code =
   protect_execution top @@ fun () ->
-  Tryocaml_worker.check top.worker code
+  Learnocaml_toplevel_worker_caller.check top.worker code
 
 let set_checking_environment top =
   protect_execution top @@ fun () ->
-  Tryocaml_worker.set_checking_environment top.worker >>= fun _ ->
+  Learnocaml_toplevel_worker_caller.set_checking_environment top.worker >>= fun _ ->
   Lwt.return ()
 
 let execute_phrase top ?timeout content =
@@ -225,21 +225,21 @@ let execute_phrase top ?timeout content =
   execute_phrase top ?timeout content
 
 let load top ?(print_outcome = true) ?timeout ?message content =
-  let phrase = Tryocaml_output.phrase () in
+  let phrase = Learnocaml_toplevel_output.phrase () in
   protect_execution top @@ fun () ->
   begin match message with
     | None -> ()
     | Some message ->
-        Tryocaml_output.output_code ~phrase top.output
+        Learnocaml_toplevel_output.output_code ~phrase top.output
           ("(* " ^ message ^ "*)")
   end ;
   let pp_answer =
     if print_outcome then
-      Tryocaml_output.output_answer ~phrase top.output
+      Learnocaml_toplevel_output.output_answer ~phrase top.output
     else
       ignore in
   let t =
-    Tryocaml_worker.use_string
+    Learnocaml_toplevel_worker_caller.use_string
       top.worker ~pp_answer ~print_outcome content in
   Lwt.pick [
     (Lwt.protected t >>= fun _ -> Lwt.return_unit) ;
@@ -250,10 +250,10 @@ let load top ?(print_outcome = true) ?timeout ?message content =
   let warnings, result = match result with
     | Toploop_results.Ok (result, warnings) -> warnings, result
     | Toploop_results.Error (error, warnings) ->
-        Tryocaml_output.output_error top.output error ;
+        Learnocaml_toplevel_output.output_error top.output error ;
         warnings, false in
   List.iter
-    (Tryocaml_output.output_warning top.output)
+    (Learnocaml_toplevel_output.output_warning top.output)
     warnings ;
   Lwt.return result
 
@@ -401,7 +401,7 @@ let create
     ~flood_prompt
     ?after_init
     ?(input_sizing =
-      { Tryocaml_input.line_height = 18 ;
+      { Learnocaml_toplevel_input.line_height = 18 ;
         min_lines = 1 ; max_lines = 6 })
     ?on_resize
     ?(on_disable_input = fun _ -> ())
@@ -415,13 +415,13 @@ let create
   Manip.appendChild container output_div;
   Manip.appendChild container input_div;
   let output =
-    Tryocaml_output.setup
+    Learnocaml_toplevel_output.setup
       ?on_resize
       ~container:output_div
       () in
   let execute_hook = ref (fun _code -> assert false) in
   let input =
-    Tryocaml_input.setup
+    Learnocaml_toplevel_input.setup
       ~sizing: input_sizing
       ~execute: (fun code -> !execute_hook code)
       ~container:input_div
@@ -433,15 +433,15 @@ let create
   let pp_stderr_hook = ref ignore in
   let pp_stderr s = !pp_stderr_hook s in
   let flood_reset top =
-    let phrase = Tryocaml_output.phrase () in
+    let phrase = Learnocaml_toplevel_output.phrase () in
     Lwt.cancel top.current_flood_prompt ;
     wrap_flusher_to_prevent_flood top
       "stdout" pp_stdout_hook
-      (Tryocaml_output.output_stdout ~phrase output) ;
+      (Learnocaml_toplevel_output.output_stdout ~phrase output) ;
     wrap_flusher_to_prevent_flood top
       "stderr" pp_stderr_hook
-      (Tryocaml_output.output_stderr ~phrase output) in
-  Tryocaml_worker.create
+      (Learnocaml_toplevel_output.output_stderr ~phrase output) in
+  Learnocaml_toplevel_worker_caller.create
     ?js_file:worker_js_file
     ~pp_stdout ~pp_stderr () >>= fun worker ->
   let top = {
@@ -473,9 +473,9 @@ let create
   let first_time = ref true in
   let after_init top =
     if !first_time || not oldify then
-      Tryocaml_output.clear output
+      Learnocaml_toplevel_output.clear output
     else
-      Tryocaml_output.oldify output;
+      Learnocaml_toplevel_output.oldify output;
     enable_input top ;
     top.flood_reset top;
     begin match top.status with
@@ -484,7 +484,7 @@ let create
     end ;
     top.status <- `Idle;
     begin if display_welcome && (!first_time || not oldify) then
-        Tryocaml_worker.execute
+        Learnocaml_toplevel_worker_caller.execute
           ~pp_answer: (fun _ -> ())
           ~print_outcome: false
           worker welcome_phrase >>= fun _ ->
@@ -492,22 +492,22 @@ let create
       else Lwt.return ()
     end >>= fun _ ->
     if not !first_time then
-      let phrase = Tryocaml_output.phrase () in
-      Tryocaml_output.output_stdout output ~phrase
+      let phrase = Learnocaml_toplevel_output.phrase () in
+      Learnocaml_toplevel_output.output_stdout output ~phrase
         "The toplevel has been reset.\n"
     else
       first_time := false ;
-    Tryocaml_worker.register_callback worker "print_html"
-      (Tryocaml_output.output_html output) >>= fun _ ->
+    Learnocaml_toplevel_worker_caller.register_callback worker "print_html"
+      (Learnocaml_toplevel_output.output_html output) >>= fun _ ->
     match after_init with
     | None -> Lwt.return_unit
     | Some f -> f top in
   after_init top >>= fun () ->
-  Tryocaml_worker.set_after_init top.worker (fun _ -> after_init top);
+  Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
 
-let print_string { output } = Tryocaml_output.output_stdout output
+let print_string { output } = Learnocaml_toplevel_output.output_stdout output
 
-let prerr_string { output } = Tryocaml_output.output_stderr output
+let prerr_string { output } = Learnocaml_toplevel_output.output_stderr output
 
-let print_html { output } = Tryocaml_output.output_html output
+let print_html { output } = Learnocaml_toplevel_output.output_html output

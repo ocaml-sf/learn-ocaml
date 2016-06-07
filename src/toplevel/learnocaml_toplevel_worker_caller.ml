@@ -49,7 +49,7 @@ let iter_option f o = match o with | None -> () | Some o -> f o
 
 
 open Worker
-open Tryocaml_worker_messages
+open Learnocaml_toplevel_worker_messages
 
 type u =
     U : 'a msg_ty * 'a Toploop_results.toplevel_result Lwt.u
@@ -197,7 +197,7 @@ and do_reset_worker () =
       Lwt.return_unit
 
 let create
-    ?(js_file = "learnocaml-tryocaml-worker.js")
+    ?(js_file = "learnocaml-toplevel-worker.js")
     ?(after_init = fun _ -> Lwt.return_unit)
     ?(pp_stdout = (fun text -> Firebug.console##log (Js.string text)))
     ?(pp_stderr = (fun text -> Firebug.console##log (Js.string text)))

@@ -62,7 +62,7 @@ begin program "learnocaml-main"
     "report"
     "ace"
     "learnocaml-common"
-    "tryocaml"
+    "learnocaml-toplevel"
   ]
   files = [
     "learnocaml_main.ml" ( pp = camlp4_js )
@@ -96,7 +96,7 @@ begin program "learnocaml-exercise"
     "grading-jsoo"
     "ace"
     "learnocaml-common"
-    "tryocaml"
+    "learnocaml-toplevel"
   ]
   files = [
     "learnocaml_exercise.ml" ( pp = camlp4_js )

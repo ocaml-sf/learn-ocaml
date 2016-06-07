@@ -130,21 +130,21 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
         Tyxml_js.Html5.[ ul [ li [ pcdata "Running OCaml examples" ] ] ]
     end ;
     let timeout_prompt =
-      Tryocaml.make_timeout_popup
+      Learnocaml_toplevel.make_timeout_popup
         ~on_show: (fun () -> Lwt.async select)
         () in
     let flood_prompt =
-      Tryocaml.make_flood_popup
+      Learnocaml_toplevel.make_flood_popup
         ~on_show: (fun () -> Lwt.async select)
         () in
     let history =
-      Tryocaml_history.create
+      Learnocaml_toplevel_history.create
         ~on_update: Client_storage.(store toplevel_history)
         ~max_size: 99
         Client_storage.(retrieve toplevel_history) in
     let toplevel_buttons_group = button_group () in
     disable_button_group toplevel_buttons_group (* enabled after init *) ;
-    Tryocaml.create
+    Learnocaml_toplevel.create
       ~display_welcome: false
       ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
@@ -153,13 +153,13 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
       () >>= fun top ->
     Lwt_list.iter_s
       (fun { step_title ; step_phrases } ->
-         Tryocaml.print_html top ("<h3>" ^ step_title ^ "</h3>") ;
+         Learnocaml_toplevel.print_html top ("<h3>" ^ step_title ^ "</h3>") ;
          let do_phrase = function
            | Text text ->
-               Tryocaml.print_html top text ;
+               Learnocaml_toplevel.print_html top text ;
                Lwt.return ()
            | Code code ->
-               Tryocaml.execute_phrase top code >>= fun _ ->
+               Learnocaml_toplevel.execute_phrase top code >>= fun _ ->
                Lwt.return () in
          Lwt_list.iter_s do_phrase step_phrases >>= fun () ->
          Lwt.return ()
@@ -252,22 +252,22 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     Tyxml_js.Html5.(div ~a: [ a_id "learnocaml-main-tryocaml" ])
       [ navigation_div ; step_div ; toplevel_div ; buttons_div ] in
   let timeout_prompt =
-    Tryocaml.make_timeout_popup
+    Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> Lwt.async select)
       () in
   let flood_prompt =
-    Tryocaml.make_flood_popup
+    Learnocaml_toplevel.make_flood_popup
       ~on_show: (fun () -> Lwt.async select)
       () in
   let history =
-    Tryocaml_history.create
+    Learnocaml_toplevel_history.create
       ~on_update: Client_storage.(store toplevel_history)
       ~max_size: 99
       Client_storage.(retrieve toplevel_history) in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_launch =
-    Tryocaml.create
+    Learnocaml_toplevel.create
       ~on_disable_input: (fun _ ->
           Manip.addClass step_div "disabled" ;
           disable_button_group toplevel_buttons_group)
@@ -358,7 +358,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
                     else
                       disabling_button_group toplevel_buttons_group
                         (fun () ->
-                           Tryocaml.execute_phrase top code >>= fun _ ->
+                           Learnocaml_toplevel.execute_phrase top code >>= fun _ ->
                            Lwt.return ())
                   end ;
                   true) ;
@@ -370,7 +370,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
         step.step_phrases in
     Manip.replaceChildren step_items_container items ;
     toplevel_launch >>= fun top ->
-    Tryocaml.scroll top ;
+    Learnocaml_toplevel.scroll top ;
     Lwt.return () in
   begin button
       ~group: toplevel_buttons_group
@@ -415,20 +415,20 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~container: buttons_div ~theme: "dark"
       ~group: toplevel_buttons_group ~icon: "cleanup" "Clear" @@ fun () ->
     toplevel_launch >>= fun top ->
-    Tryocaml.clear top ;
+    Learnocaml_toplevel.clear top ;
     Lwt.return ()
   end ;
   begin button
       ~container: buttons_div ~theme: "dark"
       ~icon:"reload" "Reset" @@ fun () ->
     toplevel_launch >>= fun top ->
-    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
+    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
   end ;
   begin button
       ~container: buttons_div ~theme: "dark"
       ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
     toplevel_launch >>= fun top ->
-    Tryocaml.execute top ;
+    Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
   toplevel_launch >>= fun _ ->
@@ -448,21 +448,21 @@ let toplevel_tab select _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata "Launching OCaml" ] ] ] ;
   let timeout_prompt =
-    Tryocaml.make_timeout_popup
+    Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> Lwt.async select)
       () in
   let flood_prompt =
-    Tryocaml.make_flood_popup
+    Learnocaml_toplevel.make_flood_popup
       ~on_show: (fun () -> Lwt.async select)
       () in
   let history =
-    Tryocaml_history.create
+    Learnocaml_toplevel_history.create
       ~on_update: Client_storage.(store toplevel_history)
       ~max_size: 99
       Client_storage.(retrieve toplevel_history) in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
-  Tryocaml.create
+  Learnocaml_toplevel.create
     ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
     ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
     ~history ~timeout_prompt ~flood_prompt
@@ -472,16 +472,16 @@ let toplevel_tab select _ () =
   let button = button ~container: buttons_div ~theme: "dark" in
   begin button
       ~group: toplevel_buttons_group ~icon: "cleanup" "Clear" @@ fun () ->
-    Tryocaml.clear top ;
+    Learnocaml_toplevel.clear top ;
     Lwt.return ()
   end ;
   begin button
       ~icon:"reload" "Reset" @@ fun () ->
-    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
+    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
   end ;
   begin button
       ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
-    Tryocaml.execute top ;
+    Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
   hide_loading ~id:"learnocaml-main-loading" () ;

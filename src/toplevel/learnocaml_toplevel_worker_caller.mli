@@ -17,7 +17,7 @@
 
 (** An unified interface for OCaml toplevels running in a Web Worker
     or not. This module signature is very simalar to the signature of
-    {!module:Tryocaml_toploop}, except: {ul {- all blocking functions
+    {!module:Learnocaml_toplevel_toploop}, except: {ul {- all blocking functions
     will kill the underlying Web Worker when cancelled; a new worker
     will be spawned. } {- it uses function of type [string -> unit] as
     outputs instead of [Format.formatter].}}. *)
@@ -41,7 +41,7 @@ type t
            console).
 
     @param js_file the web worker [.js] file.
-           (default: ["learnocaml-tryocaml-worker.js"]). *)
+           (default: ["learnocaml-toplevel-worker.js"]). *)
 val create:
   ?js_file: string ->
   ?after_init:(t -> unit Lwt.t) ->

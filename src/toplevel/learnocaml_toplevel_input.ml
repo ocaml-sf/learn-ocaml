@@ -77,7 +77,7 @@ type input =
     container : [ `Div ] Tyxml_js.Html5.elt ;
     mutable focused : bool ;
     mutable disabled : bool ;
-    history : Tryocaml_history.history ;
+    history : Learnocaml_toplevel_history.history ;
     on_resize : unit -> unit ;
     execute : string -> unit }
 
@@ -115,22 +115,22 @@ let resize { textbox ; sizing ; on_resize } =
 
 let execute ({ history ; textbox ; execute } as input) =
   let code = Js.to_string textbox##value in
-  Tryocaml_history.update history code ;
-  Tryocaml_history.push history ;
-  textbox##value <- Js.string (Tryocaml_history.current history) ;
+  Learnocaml_toplevel_history.update history code ;
+  Learnocaml_toplevel_history.push history ;
+  textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
   resize input ;
   execute code
 
 let go_backward ({ history ; textbox } as input) =
-  Tryocaml_history.update history (Js.to_string textbox##value) ;
-  Tryocaml_history.go_backward history ;
-  textbox##value <- Js.string (Tryocaml_history.current history) ;
+  Learnocaml_toplevel_history.update history (Js.to_string textbox##value) ;
+  Learnocaml_toplevel_history.go_backward history ;
+  textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
   resize input
 
 let go_forward ({ history ; textbox } as input) =
-    Tryocaml_history.update history (Js.to_string textbox##value) ;
-    Tryocaml_history.go_forward history ;
-    textbox##value <- Js.string (Tryocaml_history.current history) ;
+    Learnocaml_toplevel_history.update history (Js.to_string textbox##value) ;
+    Learnocaml_toplevel_history.go_forward history ;
+    textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
     resize input
 
 let setup
@@ -141,7 +141,7 @@ let setup
     Dom_html.createTextarea Dom_html.document in
   Js_utils.Manip.addClass container "toplevel-input" ;
   let history = match history with
-    | None -> Tryocaml_history.create ~max_size: 99 []
+    | None -> Learnocaml_toplevel_history.create ~max_size: 99 []
     | Some history -> history in
   let input =
     { textbox ; sizing ; container ; history ; on_resize ;

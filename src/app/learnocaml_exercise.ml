@@ -110,37 +110,37 @@ let () =
     begin match Exercise.(get prelude) exo with
       | "" -> Lwt.return true
       | prelude ->
-          Tryocaml.load ~print_outcome:true top
+          Learnocaml_toplevel.load ~print_outcome:true top
             ~message: "loading the prelude..."
             prelude
     end >>= fun r1 ->
-    Tryocaml.load ~print_outcome:false top
+    Learnocaml_toplevel.load ~print_outcome:false top
       (Exercise.(get prepare) exo) >>= fun r2 ->
     if not r1 || not r2 then failwith "error in prelude" ;
-    Tryocaml.set_checking_environment top >>= fun () ->
+    Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
   let timeout_prompt =
-    Tryocaml.make_timeout_popup
+    Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> select_tab "toplevel")
       () in
   let flood_prompt =
-    Tryocaml.make_flood_popup
+    Learnocaml_toplevel.make_flood_popup
       ~on_show: (fun () -> select_tab "toplevel")
       () in
   let history =
-    Tryocaml_history.create
+    Learnocaml_toplevel_history.create
       ~on_update: Client_storage.(store (exercise_toplevel_history id))
       ~max_size: 99
       Client_storage.(retrieve (exercise_toplevel_history id)) in
-  let tryocaml_launch =
-    Tryocaml.create
+  let toplevel_launch =
+    Learnocaml_toplevel.create
       ~after_init ~timeout_prompt ~flood_prompt
       ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
       ~container:(find_component "learnocaml-exo-toplevel-pane")
       ~history () in
   init_tabs () ;
-  tryocaml_launch >>= fun top ->
+  toplevel_launch >>= fun top ->
   exercise_fetch >>= fun exo ->
   let solution = match Client_storage.(retrieve (exercise_state id)) with
     | { Client_index.report = Some report ; solution } ->
@@ -153,18 +153,18 @@ let () =
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "cleanup" "Clear" @@ fun () ->
-    Tryocaml.clear top ;
+    Learnocaml_toplevel.clear top ;
     Lwt.return ()
   end ;
   begin toplevel_button
       ~icon: "reload" "Reset" @@ fun () ->
-    tryocaml_launch >>= fun top ->
-    disabling_button_group toplevel_buttons_group (fun () -> Tryocaml.reset top)
+    toplevel_launch >>= fun top ->
+    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
   end ;
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "run" "Eval phrase" @@ fun () ->
-    Tryocaml.execute top ;
+    Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
   (* ---- text pane ----------------------------------------------------- *)
@@ -186,7 +186,7 @@ let () =
                              prelude_btn ] in
     let prelude_container =
       pre ~a: [ a_class [ "toplevel-code" ] ]
-        (Tryocaml_output.format_ocaml_code prelude) in
+        (Learnocaml_toplevel_output.format_ocaml_code prelude) in
     let update () =
       if !state then begin
         Manip.replaceChildren prelude_btn [ pcdata "↳ Hide" ] ;
@@ -260,7 +260,7 @@ let () =
     Lwt.return ()
   end ;
   let typecheck set_class =
-    Tryocaml.check top (Ace.get_contents ace) >>= fun res ->
+    Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
     let error, warnings =
       match res with
       | Toploop_results.Ok ((), warnings) -> None, warnings
@@ -289,7 +289,7 @@ let () =
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "run" "Eval code" @@ fun () ->
-    Tryocaml.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
+    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
     Lwt.return ()
   end ;
   (* ---- main toolbar -------------------------------------------------- *)
@@ -323,7 +323,7 @@ let () =
     show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ] ;
     Lwt_js.sleep 1. >>= fun () ->
     let solution = Ace.get_contents ace in
-    Tryocaml.check top solution >>= fun res ->
+    Learnocaml_toplevel.check top solution >>= fun res ->
     match res with
     | Toploop_results.Ok ((), _) ->
         let grading =
@@ -357,7 +357,7 @@ let () =
         typecheck true
   end ;
   (* ---- return -------------------------------------------------------- *)
-  tryocaml_launch >>= fun _ ->
+  toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()

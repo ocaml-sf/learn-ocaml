@@ -254,7 +254,7 @@ let use_mod_string
     ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code impl_code =
   if String.capitalize modname <> modname then
     invalid_arg
-      "Tryocaml_toploop.use_mod_string: \
+      "Learnocaml_toplevel_toploop.use_mod_string: \
        the module name must start with a capital letter.";
   warnings := [];
   try

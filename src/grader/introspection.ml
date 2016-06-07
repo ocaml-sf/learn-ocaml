@@ -41,7 +41,7 @@ type 'a value =
   | Incompatible of string
 
 let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
-  if name = "" then invalid_arg "Tryocaml_toploop.insert_in_env (1)";
+  if name = "" then invalid_arg "Learnocaml_toplevel_toploop.insert_in_env (1)";
   let ty =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
   Toploop.toplevel_env := begin
@@ -62,7 +62,7 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
           (Ident.create name)
           pack_type
           !Toploop.toplevel_env
-      | _ -> invalid_arg "Tryocaml_toploop.insert_in_env (2)"
+      | _ -> invalid_arg "Learnocaml_toplevel_toploop.insert_in_env (2)"
   end;
   Toploop.setvalue name (Obj.repr value)
 

@@ -60,9 +60,9 @@ type t
    @param oldify
      When [~oldify:true] is used (by default), and when the toplevel is reset,
      the previous outputs are kept and marked as old
-     (see {!Tryocaml_output.oldify}). Otherwise, the output console is cleaned.
+     (see {!Learnocaml_toplevel_output.oldify}). Otherwise, the output console is cleaned.
    @param input_sizing
-     See (!Tryocaml_input.sizing}.
+     See (!Learnocaml_toplevel_input.sizing}.
    @param history
      The history storage to use. If none, a new volatile one is created.
    @param display_welcome
@@ -75,11 +75,11 @@ val create:
   ?flood_limit: int ->
   flood_prompt: (t -> string -> (unit -> int) -> bool Lwt.t) ->
   ?after_init:(t -> unit Lwt.t) ->
-  ?input_sizing: Tryocaml_input.sizing ->
+  ?input_sizing: Learnocaml_toplevel_input.sizing ->
   ?on_resize:(unit -> unit) ->
   ?on_disable_input:(t -> unit) ->
   ?on_enable_input:(t -> unit) ->
-  ?history:Tryocaml_history.history ->
+  ?history:Learnocaml_toplevel_history.history ->
   ?oldify:bool ->
   ?display_welcome: bool ->
   container:[`Div] Html5.elt ->
@@ -148,20 +148,20 @@ val reset: t -> unit Lwt.t
 
 (** Print a message in the toplevel standard output. This is equivalent
     to calling [Pervasives.print_string] in the toplevel session.
-    Calls {!Tryocaml_output.output_stdout}. *)
+    Calls {!Learnocaml_toplevel_output.output_stdout}. *)
 val print_string: t -> string -> unit
 
 (** Print a message in the toplevel standard error output. This is
     equivalent to calling [Pervasives.prerr_string] in the toplevel
-    session. Calls {!Tryocaml_output.output_stderr}. *)
+    session. Calls {!Learnocaml_toplevel_output.output_stderr}. *)
 val prerr_string: t -> string -> unit
 
 (** Print a block of HTML in the toplevel output.
-    Calls {!Tryocaml_output.output_html}. *)
+    Calls {!Learnocaml_toplevel_output.output_html}. *)
 val print_html: t -> string -> unit
 
 (** scroll the view to show the last phrase.
-    Calls {!Tryocaml_output.scroll. *)
+    Calls {!Learnocaml_toplevel_output.scroll. *)
 val scroll: t -> unit
 
 (** Execute the content of the input [textarea].
