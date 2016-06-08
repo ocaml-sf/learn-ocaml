@@ -10,13 +10,14 @@ src/ppx-metaquot/ast_lifter.ml
 src/grader/embedded_cmis.ml
 src/grader/embedded_grading_cmis.ml
 
-exercises/*.stderr
-exercises/*.stdout
-exercises/*.outcomes
-exercises/mooc.*.json
-exercises/*.report.*
+demo-repository/exercises/*.stderr
+demo-repository/exercises/*.stdout
+demo-repository/exercises/*.outcomes
+demo-repository/exercises/*.report.*
 
 www/
+
+sync/
 
 static/*_black.svg
 static/*_dark.svg

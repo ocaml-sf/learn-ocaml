@@ -1,0 +1,12 @@
+begin program "learnocaml-simple-server"
+  files = [
+    "learnocaml_simple_server.ml"
+  ]
+  requires = [
+    "ocplib-json-typed"
+    "ezjsonm"
+    "lwt.unix"
+    "cohttp.lwt"
+    "magic-mime"
+  ]
+end

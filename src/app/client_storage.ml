@@ -66,6 +66,14 @@ let delete_single path enc =
       (fun localStorage ->
          localStorage##removeItem (Js.string mangled))
 
+let sync_token =
+  let path = [ "sync-token" ] in
+  let enc = Json_encoding.(obj1 (req "token" string)) in
+  let store value = store_single path enc value
+  and retrieve () = retrieve_single path enc ()
+  and delete () = delete_single path enc () in
+  { store ; retrieve ; delete }
+
 let cached_exercise name =
   let path = [ "cached-exercise" ; name ] in
   let enc = Exercise.enc in
@@ -76,17 +84,19 @@ let cached_exercise name =
 
 let exercise_toplevel_history name =
   let path = [ "exercise-toplevel-history" ; name ] in
-  let enc = Json_encoding.(list string) in
+  let enc = Learnocaml_toplevel_history.snapshot_enc in
+  let default = Learnocaml_toplevel_history.empty_snapshot in
   let store value = store_single path enc value
-  and retrieve () = retrieve_single ~default: [] path enc ()
+  and retrieve () = retrieve_single ~default path enc ()
   and delete () = delete_single path enc () in
   { store ; retrieve ; delete }
 
-let toplevel_history =
-  let path = [ "toplevel-history" ] in
-  let enc = Json_encoding.(list string) in
+let toplevel_history name =
+  let path = [ "toplevel-history" ; name ] in
+  let enc = Learnocaml_toplevel_history.snapshot_enc in
+  let default = Learnocaml_toplevel_history.empty_snapshot in
   let store value = store_single path enc value
-  and retrieve () = retrieve_single ~default: [] path enc ()
+  and retrieve () = retrieve_single ~default path enc ()
   and delete () = delete_single path enc () in
   { store ; retrieve ; delete }
 

@@ -138,10 +138,18 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
         ~on_show: (fun () -> Lwt.async select)
         () in
     let history =
+      let storage_key =
+        Client_storage.toplevel_history ("lesson-" ^ id) in
+      let on_update self =
+        Client_storage.store storage_key
+          (Learnocaml_toplevel_history.snapshot self) in
+      let snapshot =
+        Client_storage.retrieve storage_key in
       Learnocaml_toplevel_history.create
-        ~on_update: Client_storage.(store toplevel_history)
+        ~gettimeofday
+        ~on_update
         ~max_size: 99
-        Client_storage.(retrieve toplevel_history) in
+        ~snapshot () in
     let toplevel_buttons_group = button_group () in
     disable_button_group toplevel_buttons_group (* enabled after init *) ;
     Learnocaml_toplevel.create
@@ -260,10 +268,18 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~on_show: (fun () -> Lwt.async select)
       () in
   let history =
+    let storage_key =
+      Client_storage.toplevel_history "tryocaml" in
+    let on_update self =
+      Client_storage.store storage_key
+        (Learnocaml_toplevel_history.snapshot self) in
+    let snapshot =
+      Client_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
-      ~on_update: Client_storage.(store toplevel_history)
+      ~gettimeofday
+      ~on_update
       ~max_size: 99
-      Client_storage.(retrieve toplevel_history) in
+      ~snapshot () in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_launch =
@@ -456,10 +472,18 @@ let toplevel_tab select _ () =
       ~on_show: (fun () -> Lwt.async select)
       () in
   let history =
+    let storage_key =
+      Client_storage.toplevel_history "toplevel" in
+    let on_update self =
+      Client_storage.store storage_key
+        (Learnocaml_toplevel_history.snapshot self) in
+    let snapshot =
+      Client_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
-      ~on_update: Client_storage.(store toplevel_history)
+      ~gettimeofday
+      ~on_update
       ~max_size: 99
-      Client_storage.(retrieve toplevel_history) in
+      ~snapshot () in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   Learnocaml_toplevel.create
@@ -488,11 +512,68 @@ let toplevel_tab select _ () =
   Lwt.return div
 ;;
 
-let save_file_format =
-  let open Json_encoding in
-  (obj2
-     (req "exercises" Client_index.client_index_enc)
-     (req "toplevel-history" (list string)))
+let token_format =
+  Json_encoding.(obj1 (req "token" string))
+
+let init_sync_token button_state =
+  catch
+    (fun () ->
+       let id = "learnocaml-save-token-field" in
+       let input = find_component id in
+       let input = Tyxml_js.To_dom.of_input input in
+       begin try
+           Lwt.return Client_storage.(retrieve sync_token)
+         with Not_found ->
+           Lwt_request.raw_get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
+           let token = Js.string token in
+           let json = Js._JSON##parse (token) in
+           let token = Browser_json.Json_encoding.destruct token_format json in
+           Client_storage.(store sync_token) token ;
+           Lwt.return token
+       end >>= fun token ->
+       input##value <- Js.string token ;
+       enable_button button_state ;
+       Lwt.return ())
+    (fun _ -> Lwt.return ())
+
+let set_state_from_save_file (client_index, toplevel_history) =
+  Client_storage.(store client_index) client_index ;
+  Client_storage.(store (toplevel_history "toplevel")) toplevel_history
+
+let get_state_as_save_file () =
+  Client_storage.(retrieve client_index),
+  Client_storage.(retrieve (toplevel_history "toplevel"))
+
+let sync () =
+  let token =
+    let id = "learnocaml-save-token-field" in
+    let input = find_component id in
+    let input = Tyxml_js.To_dom.of_input input in
+    Js.to_string input ## value in
+  let url = "/sync/" ^ token in
+  Lwt_request.raw_get ~headers: [] ~url ~args: [] >>= fun server_contents ->
+  let local_save_file =
+    get_state_as_save_file () in
+  let server_save_file =
+    try
+      let res =
+        Browser_json.Json_encoding.destruct
+          Learnocaml_sync.save_file_format
+          (Js._JSON##parse (Js.string server_contents)) in
+      Client_storage.(store sync_token) token ;
+      res
+    with _ -> local_save_file in
+  let save_file =
+    Learnocaml_sync.sync local_save_file server_save_file in
+  let contents =
+    let json =
+      Browser_json.Json_encoding.construct
+        Learnocaml_sync.save_file_format
+        save_file in
+    Js.to_string (Js._JSON##stringify (json)) in
+  set_state_from_save_file save_file ;
+  Lwt_request.raw_post ~headers: [] ~get_args: [] ~url ~body: (Some contents) >>= fun _ ->
+  Lwt.return ()
 
 let () =
   Lwt.async_exception_hook := begin function
@@ -500,6 +581,9 @@ let () =
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
   end ;
+  let sync_button_state = button_state () in
+  disable_button sync_button_state ;
+  Lwt.async @@ (fun () -> init_sync_token sync_button_state) ;
   Lwt.async @@ fun () ->
   let sync_buttons = find_component "learnocaml-sync-buttons" in
   Manip.removeChildren sync_buttons ;
@@ -510,33 +594,29 @@ let () =
     let contents =
       let json =
         Browser_json.Json_encoding.construct
-          save_file_format
-          (Client_storage.(retrieve client_index),
-           Client_storage.(retrieve toplevel_history)) in
+          Learnocaml_sync.save_file_format
+          (get_state_as_save_file ()) in
       Js._JSON##stringify (json) in
     Learnocaml_common.fake_download ~name ~contents ;
     Lwt.return ()
   end ;
-  let not_implemented_buttons = button_group () in
   begin button
       ~container: sync_buttons
       ~theme:"white" ~icon: "upload" "Restore" @@ fun () ->
-    Learnocaml_common.fake_upload () >>= fun (name, contents) ->
-    let (client_index, toplevel_history) =
+    Learnocaml_common.fake_upload () >>= fun (_, contents) ->
+    let save_file =
       Browser_json.Json_encoding.destruct
-        save_file_format
+        Learnocaml_sync.save_file_format
         (Js._JSON##parse (contents)) in
-    Client_storage.(store client_index) client_index ;
-    Client_storage.(store toplevel_history) toplevel_history ;
+    set_state_from_save_file save_file ;
     Lwt.return ()
   end ;
   begin button
-      ~group: not_implemented_buttons
       ~container: sync_buttons
+      ~state: sync_button_state
       ~theme:"white" ~icon: "sync" "Sync" @@ fun () ->
-    Lwt.return ()
+    sync ()
   end ;
-  disable_button_group not_implemented_buttons ;
   let menu_hidden = ref true in
   let menu = find_component "learnocaml-main-panel" in
   begin button

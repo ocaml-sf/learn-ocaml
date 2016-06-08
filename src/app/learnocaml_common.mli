@@ -17,6 +17,8 @@
 
 val find_div_or_append_to_body : string -> [> Html5_types.div ] Tyxml_js.Html5.elt
 
+val gettimeofday : unit -> float
+
 val fake_download : name: string -> contents: Js.js_string Js.t -> unit
 
 val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t

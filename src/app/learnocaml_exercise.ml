@@ -128,10 +128,18 @@ let () =
       ~on_show: (fun () -> select_tab "toplevel")
       () in
   let history =
+    let storage_key =
+      Client_storage.exercise_toplevel_history id in
+    let on_update self =
+      Client_storage.store storage_key
+        (Learnocaml_toplevel_history.snapshot self) in
+    let snapshot =
+      Client_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
-      ~on_update: Client_storage.(store (exercise_toplevel_history id))
+      ~gettimeofday
+      ~on_update
       ~max_size: 99
-      Client_storage.(retrieve (exercise_toplevel_history id)) in
+      ~snapshot () in
   let toplevel_launch =
     Learnocaml_toplevel.create
       ~after_init ~timeout_prompt ~flood_prompt
@@ -249,7 +257,8 @@ let () =
       | { Client_index.report ; grade } -> report, grade
       | exception Not_found -> None, None in
     Client_storage.(store (exercise_state id))
-      { Client_index.report ; grade ; solution } ;
+      { Client_index.report ; grade ; solution ;
+        mtime = gettimeofday () } ;
     Lwt.return ()
   end ;
   begin editor_button
@@ -338,7 +347,8 @@ let () =
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
         Client_storage.(store (exercise_state id))
-          { Client_index.grade = Some grade ; solution ; report = Some report } ;
+          { Client_index.grade = Some grade ; solution ; report = Some report ;
+            mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
@@ -350,7 +360,8 @@ let () =
         let report = Report.[ Message (msg, Failure) ] in
         let grade = display_report exo report in
         Client_storage.(store (exercise_state id))
-          { Client_index.grade = Some grade ; solution ; report = Some report } ;
+          { Client_index.grade = Some grade ; solution ; report = Some report ;
+            mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;

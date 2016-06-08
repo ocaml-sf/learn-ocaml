@@ -20,7 +20,8 @@ module StringMap = Map.Make (String)
 type exercise_state =
   { solution : string ;
     grade : int (* \in [0, 100] *) option ;
-    report : Report.report option }
+    report : Report.report option ;
+    mtime : float }
 
 type client_index =
   exercise_state StringMap.t
@@ -43,12 +44,15 @@ let exercise_state_enc =
          else s)
       int in
   conv
-    (fun { grade ; solution ; report } -> (grade, solution, report))
-    (fun (grade, solution, report) -> { grade ; solution ; report })
-    (obj3
+    (fun { grade ; solution ; report ; mtime } ->
+       (grade, solution, report, mtime))
+    (fun (grade, solution, report, mtime) ->
+       { grade ; solution ; report ; mtime })
+    (obj4
        (opt "grade" grade_enc)
        (req "solution" string)
-       (opt "report" Report.report_enc))
+       (opt "report" Report.report_enc)
+       (dft "mtime" float 0.))
 
 let client_index_enc =
   map_enc exercise_state_enc

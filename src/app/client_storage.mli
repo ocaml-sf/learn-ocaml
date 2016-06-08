@@ -27,8 +27,10 @@ val cached_exercise : string -> Exercise.t storage_key
 
 val exercise_state : string -> Client_index.exercise_state storage_key
 
-val exercise_toplevel_history : string -> string list storage_key
+val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val toplevel_history : string list storage_key
+val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
 val client_index : Client_index.client_index storage_key
+
+val sync_token : string storage_key

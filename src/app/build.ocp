@@ -25,6 +25,7 @@ begin library "learnocaml-common"
     "learnocaml_common.ml" ( pp = camlp4_js )
   ]
   requires = [
+    "learnocaml-toplevel"
     "browser-json"
     "exercise"
     "report"
@@ -53,6 +54,7 @@ begin program "learnocaml-main"
     "learnocaml-toplevel"
   ]
   files = [
+    "learnocaml_sync.ml"
     "learnocaml_main.ml" ( pp = camlp4_js )
   ]
   build_rules = [

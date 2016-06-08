@@ -37,6 +37,7 @@ begin library "learnocaml-toplevel"
     "js_of_ocaml"
     "ocp-indent.lib"
     "ace"
+    "ocplib-json-typed"
   ]
   files = [
     "learnocaml_toplevel_worker_messages.mli"

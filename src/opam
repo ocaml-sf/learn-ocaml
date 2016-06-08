@@ -20,5 +20,6 @@ depends: [
   "react"
   "reactiveData"
   "tyxml" {< "4" }
+  "magic-mime"
 ]
 available: [ ocaml-version >= "4.03.0" ]

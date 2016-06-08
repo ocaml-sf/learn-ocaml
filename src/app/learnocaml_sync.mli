@@ -15,33 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-type history
+type save_file =
+  Client_index.client_index *
+  Learnocaml_toplevel_history.snapshot
 
-type snapshot =
-  { phrases : string list ;
-    mtime : float }
+val save_file_format : save_file Json_encoding.encoding
 
-val snapshot_enc : snapshot Json_encoding.encoding
-
-val empty_snapshot : snapshot
-
-val create:
-  gettimeofday: (unit -> float) ->
-  ?on_update: (history -> unit) ->
-  ?max_size: int ->
-  ?snapshot: snapshot ->
-  unit -> history
-
-val current : history -> string
-
-val update : history -> string -> unit
-
-val go_backward : history -> unit
-
-val go_forward : history -> unit
-
-val push : history -> unit
-
-val discard : history -> unit
-
-val snapshot : history -> snapshot
+val sync : save_file -> save_file -> save_file

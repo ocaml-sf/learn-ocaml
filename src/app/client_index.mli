@@ -18,7 +18,8 @@
 type exercise_state =
   { solution : string ;
     grade : int (* \in [0, 100] *) option ;
-    report : Report.report option }
+    report : Report.report option ;
+    mtime : float }
 
 type client_index =
   exercise_state Map.Make (String).t

@@ -8,6 +8,9 @@ PKG tyxml
 PKG tyxml.functor
 PKG js_of_ocaml.tyxml
 PKG ocp-indent.lib
+PKG cohttp
+PKG cohttp.lwt_unix
+PKG magic-mime
 S ./*
 B ../_obuild/*
 EXT syntax

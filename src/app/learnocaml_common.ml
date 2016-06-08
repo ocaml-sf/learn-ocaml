@@ -161,14 +161,16 @@ let enable_button_group (buttons, _, cpt) =
 
 let disable_button (disabled, self) =
   match !self with
-  | None -> assert false
+  | None ->
+      disabled := true
   | Some (_, button) ->
       disabled := true ;
       button##disabled <- Js.bool true
 
 let enable_button (disabled, self) =
   match !self with
-  | None -> assert false
+  | None ->
+      disabled := false
   | Some ((_, _, cpt), button) ->
       disabled := false ;
       if !cpt = 0 then
@@ -194,7 +196,7 @@ let disable_with_button_group component (buttons, _, _) =
     :: !buttons
 
 let button ~container ~theme ?group ?state ~icon lbl cb =
-  let (others, mutex, _) as group =
+  let (others, mutex, cnt) as group =
     match group with
     | None -> button_group ()
     | Some group -> group in
@@ -221,4 +223,10 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
         self := Some (group, dom_button) ;
         disabled in
   others := (dom_button, self_disabled) :: !others ;
+  if !self_disabled || !cnt > 0 then
+    dom_button##disabled <- Js.bool true ;
   Manip.appendChild container button
+
+let gettimeofday () =
+  let now = jsnew Js.date_now () in
+  floor ((now ## getTime ()) *. 1000.) +. float (now ## getTimezoneOffset ())

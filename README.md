@@ -20,16 +20,21 @@ contributed exercises of the platform are in the git repository
 ```learn-ocaml-repository```. An exmple configuration is
 ```make REPO_DOR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml```.
 
-* Put the resulting directory ```www/``` behind a Web server.
+* Alternatively, put the resulting directory ```www/``` behind a Web server.
 
-This last step is mandatory. If you try to open the ```index.html```
-file directly from the local file system, it will fail for security
-restrictions enforced by modern Web browsers. If you do not have a Web
-server configured, you can probably use some other tool that is
-already present on your machine. For instance, running ```python3 -m
-http.server 9090``` or ```php -S localhost:9090``` in the ```www```
-directory and pointing you browser to ```http://localhost:9090/```
-should do the job.
+Either this step or the next is mandatory.
+If you try to open the ```index.html``` file directly from the local
+file system, it will fail for security restrictions enforced by modern
+Web browsers. If you do not have a Web server configured, you can
+probably use some other tool that is already present on your
+machine. For instance, running ```python3 -m http.server 9090``` or
+```php -S localhost:9090``` in the ```www``` directory and pointing
+you browser to ```http://localhost:9090/``` should do the job.
+
+* Alternatively, a minimal server is included that also does the job,
+  and includes a minimal server-side synchronization mechanism.
+
+You can launch it via ```./_obuild/*/learnocaml-simple-server.byte```.
 
 License and copyright
 ---------------------

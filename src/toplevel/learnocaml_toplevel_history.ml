@@ -22,23 +22,46 @@ type history =
     mutable stored : int ;
     mutable current : [ `Floating | `Index of int ] ;
     mutable floating : string ;
-    on_update : (string list -> unit) option}
+    on_update : (history -> unit) option ;
+    mutable mtime : float ;
+    gettimeofday : unit -> float }
 
-let call_on_update { storage ; on_update ; first ; stored } =
-  match on_update with
+type snapshot =
+  { phrases : string list ;
+    mtime : float }
+
+let empty_snapshot =
+  { phrases = [] ; mtime = 0. }
+
+let snapshot_enc =
+  let open Json_encoding in
+  union
+    [ case (list string)
+        (function { phrases ; mtime = 0. } -> Some phrases | _ -> None)
+        (fun phrases -> { phrases ; mtime = 0. }) ;
+      case (obj2 (req "phrases" (list string)) (req "mtime" float))
+        (function { phrases ; mtime } -> Some (phrases, mtime))
+        (fun (phrases, mtime) -> { phrases ; mtime }) ]
+
+let snapshot { storage ; first ; stored ; mtime } =
+  let rec to_list acc i n =
+    if n = 0 then
+      List.rev acc
+    else
+      to_list
+        (storage.(i) :: acc)
+        ((i + 1) mod Array.length storage)
+        (n - 1) in
+  { phrases = to_list [] first stored ;
+    mtime }
+
+let call_on_update (self : history) =
+  self.mtime <- self.gettimeofday () ;
+  match self.on_update with
   | None -> ()
-  | Some callback ->
-      let rec to_list acc i n =
-        if n = 0 then
-          List.rev acc
-        else
-          to_list
-            (storage.(i) :: acc)
-            ((i + 1) mod Array.length storage)
-            (n - 1) in
-      callback (to_list [] first stored)
+  | Some callback -> callback self
 
-let create ?on_update ?(max_size = 0) init =
+let create ~gettimeofday ?on_update ?(max_size = 0) ?snapshot () =
   let history =
     { storage = Array.make max_size "" ;
       updated = Array.make max_size "" ;
@@ -46,14 +69,21 @@ let create ?on_update ?(max_size = 0) init =
       stored = 0 ;
       current = `Floating ;
       floating = "" ;
-      on_update } in
-  List.iteri (fun i code ->
-      if i >= max_size then () else begin
-        history.storage.(i) <- code ;
-        history.updated.(i) <- code ;
-        history.stored <- history.stored + 1
-      end)
-    init ;
+      on_update ;
+      mtime = 0. ;
+      gettimeofday } in
+  begin match snapshot with
+    | None -> ()
+    | Some { phrases ; mtime } ->
+        history.mtime <- mtime ;
+        List.iteri (fun i code ->
+            if i >= max_size then () else begin
+              history.storage.(i) <- code ;
+              history.updated.(i) <- code ;
+              history.stored <- history.stored + 1
+            end)
+          phrases
+  end ;
   history
 
 let current history =

@@ -141,7 +141,9 @@ let setup
     Dom_html.createTextarea Dom_html.document in
   Js_utils.Manip.addClass container "toplevel-input" ;
   let history = match history with
-    | None -> Learnocaml_toplevel_history.create ~max_size: 99 []
+    | None ->
+        let gettimeofday () = 0. (* unsaved history *) in
+        Learnocaml_toplevel_history.create ~gettimeofday ~max_size: 99 ()
     | Some history -> history in
   let input =
     { textbox ; sizing ; container ; history ; on_resize ;
