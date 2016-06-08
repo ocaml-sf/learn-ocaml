@@ -8,7 +8,6 @@ depends: [
   "ocp-build" {build}
   "base64"
   "ezjsonm"
-  "higlo"
   "js_of_ocaml" {>= "2.7"}
   "lwt"
   "ocp-indent" {>= "1.6"}
@@ -20,6 +19,7 @@ depends: [
   "react"
   "reactiveData"
   "tyxml" {< "4" }
+  "cohttp"
   "magic-mime"
 ]
 available: [ ocaml-version >= "4.03.0" ]
