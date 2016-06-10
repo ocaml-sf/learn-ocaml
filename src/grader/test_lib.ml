@@ -813,9 +813,10 @@ module Make
 
   (*----------------------------------------------------------------------------*)
 
-  let exec v = try
-      Introspection.grab_stdout () ;
-      Introspection.grab_stderr () ;
+  let exec v =
+    Introspection.grab_stdout () ;
+    Introspection.grab_stderr () ;
+    try
       let res = v () in
       let out = Introspection.release_stdout () in
       let err = Introspection.release_stderr () in

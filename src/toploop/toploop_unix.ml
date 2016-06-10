@@ -44,6 +44,7 @@ let redirect_channel ?tee name channel append =
   let stack = try List.assq target_fd !redirections with Not_found -> [] in
   let read_fd, write_fd = Unix.pipe () in
   Unix.dup2 write_fd target_fd ;
+  Unix.close write_fd ;
   Unix.set_nonblock read_fd ;
   let redirected_channel =
     { target_fd ; backup_fd ; read_fd ; append ; channel } in
@@ -71,6 +72,7 @@ let stop_channel_redirection ({ target_fd ; read_fd ; backup_fd } as redirection
       if redirection' != redirection then fail () ;
       flush_redirected_channel redirection ;
       Unix.dup2 backup_fd target_fd ;
+      Unix.close backup_fd ;
       Unix.close read_fd ;
       redirections :=
         List.filter (fun (fd, _) -> fd != target_fd) !redirections ;
