@@ -21,4 +21,4 @@
 val get_grade:
   ?callback:(string -> unit) ->
   Exercise.t -> string ->
-  (Report.report * string * string * string) Lwt.t
+  ((Report.report, exn) result * string * string * string) Lwt.t

@@ -24,7 +24,7 @@ let () =
     (function
       | Internal_error (msg, error) ->
           let msg =
-            Printf.sprintf "Internal ERROR %s:\n\n%s\n%!"
+            Printf.sprintf "Internal error %s:\n\n%s\n%!"
               msg error.Toploop_ext.msg in
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
@@ -93,64 +93,65 @@ let get_grade ?callback ~divert exo code =
         !flush_stdout () ;
         fail err in
 
-  handle_error (internal_error "while preparing the tests") @@
-  Toploop_ext.use_string ~print_outcome ~ppf_answer {|
-    let print_html _ = assert false
-  |};
+  let result = try
+      handle_error (internal_error "while preparing the tests") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        {|let print_html _ = assert false|};
 
-  set_progress "Loading the prelude." ;
-  handle_error (internal_error "while loading the prelude") @@
-  Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
-    (Exercise.(get prelude) exo) ;
+      set_progress "Loading the prelude." ;
+      handle_error (internal_error "while loading the prelude") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
+        (Exercise.(get prelude) exo) ;
 
-  set_progress "Preparing the test environment." ;
-  handle_error (internal_error "while preparing the tests") @@
-  Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
-    (Exercise.(get prepare) exo) ;
+      set_progress "Preparing the test environment." ;
+      handle_error (internal_error "while preparing the tests") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
+        (Exercise.(get prepare) exo) ;
 
-  set_progress "Loading your code." ;
-  handle_error user_code_error @@
-  Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
+      set_progress "Loading your code." ;
+      handle_error user_code_error @@
+      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
 
-  set_progress "Loading the solution." ;
-  handle_error (internal_error "while loading the solution") @@
-  Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-    (Exercise.(get solution) exo) ;
+      set_progress "Loading the solution." ;
+      handle_error (internal_error "while loading the solution") @@
+      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
+        (Exercise.(get solution) exo) ;
 
-  set_progress "Preparing to launch the tests." ;
-  Introspection.allow_introspection ~divert ;
-  Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
-  let get_result =
-    Introspection.create_ref "results"
-      [%ty: Report.report option]
-      None in
-  Introspection.register_callback "set_progress"
-    [%ty: string]
-    set_progress ;
-  handle_error (internal_error "while preparing the tests") @@
-  Toploop_ext.use_string ~print_outcome ~ppf_answer {|
-    module Test_lib = Test_lib.Make(struct
-      let results = results
-      let set_progress = set_progress
-      module Introspection = Introspection
-    end)
-  |} ;
+      set_progress "Preparing to launch the tests." ;
+      Introspection.allow_introspection ~divert ;
+      Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
+      let get_result =
+        Introspection.create_ref "results"
+          [%ty: Report.report option]
+          None in
+      Introspection.register_callback "set_progress"
+        [%ty: string]
+        set_progress ;
+      handle_error (internal_error "while preparing the tests") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        "module Test_lib = Test_lib.Make(struct\n\
+        \  let results = results\n\
+        \  let set_progress = set_progress\n\
+        \  module Introspection = Introspection\n\
+         end)" ;
 
-  set_progress "Launching the test bench." ;
-  handle_error (internal_error "while testing your solution") @@
-  Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
-    (Exercise.(get test) exo) ;
+      set_progress "Launching the test bench." ;
+      handle_error (internal_error "while testing your solution") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
+        (Exercise.(get test) exo) ;
 
-  (* Memory cleanup... *)
-  Toploop.initialize_toplevel_env () ;
-  (* TODO: Also clear the object table, once the OCaml's Toploop allows to. *)
-
-  !flush_stderr () ;
-  !flush_stdout () ;
+      (* Memory cleanup... *)
+      Toploop.initialize_toplevel_env () ;
+      (* TODO: Also clear the object table, once the OCaml's Toploop allows to. *)
+      !flush_stderr () ;
+      !flush_stdout () ;
+      match get_result () with
+      | Some report -> Ok report
+      | None -> Error Invalid_grader
+    with exn ->
+      Error exn in
   Format.fprintf ppf_answer "@." ;
-  ((match get_result () with
-      | Some report -> report
-      | None -> raise Invalid_grader),
+  (result,
    Buffer.contents stdout_buffer,
    Buffer.contents stderr_buffer,
    Buffer.contents outcomes_buffer)

@@ -29,4 +29,4 @@ exception Invalid_grader
 val get_grade:
   ?callback:(string -> unit) ->
   divert:(string -> out_channel -> (string -> unit) -> (unit -> unit)) ->
-  Exercise.t -> string -> Report.report * string * string * string
+  Exercise.t -> string -> (Report.report, exn) result * string * string * string

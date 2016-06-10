@@ -46,21 +46,22 @@ let () =
     let json = Browser_json.Json_encoding.construct from_worker_enc msg in
     Worker.post_message json in
   let ans =
-    try
-      let report, stdout, stderr, outcomes =
-        get_grade ~callback exercise solution in
-      Answer (report, stdout, stderr, outcomes)
-    with exn ->
-      let msg = match exn with
-        | Grading.User_code_error { Toploop_results.msg } ->
-            "Error in your solution:\n" ^ msg
-        | Grading.Internal_error (step, { Toploop_results.msg }) ->
-            "Internal error " ^ step ^ "\n" ^ msg
-        | Grading.Invalid_grader ->
-            "Internal error:\nThe grader did not return a report."
-        | exn ->
-            "Unexpected error:\n" ^ Printexc.to_string exn in
-      let report = Report.[ Message ([ Code msg ], Failure) ] in
-      Answer (report, "", "" ,"") in
+    let result, stdout, stderr, outcomes =
+      get_grade ~callback exercise solution in
+    match result with
+    | Ok report ->
+        Answer (report, stdout, stderr, outcomes)
+    | Error exn ->
+        let msg = match exn with
+          | Grading.User_code_error { Toploop_results.msg } ->
+              "Error in your solution:\n" ^ msg
+          | Grading.Internal_error (step, { Toploop_results.msg }) ->
+              "Internal error " ^ step ^ "\n" ^ msg
+          | Grading.Invalid_grader ->
+              "Internal error:\nThe grader did not return a report."
+          | exn ->
+              "Unexpected error:\n" ^ Printexc.to_string exn in
+        let report = Report.[ Message ([ Code msg ], Failure) ] in
+        Answer (report, stdout, stderr, outcomes) in
   let json = Browser_json.Json_encoding.construct from_worker_enc ans in
   Worker.post_message json

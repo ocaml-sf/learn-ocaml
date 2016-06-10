@@ -76,69 +76,92 @@ let grade exercise_dir output_json =
   Lwt.catch
     (fun () ->
        Grading_cli.get_grade ?callback exo solution
-       >>= fun (report, stdout_contents, stderr_contents, outcomes) ->
-       let (max, failure) = Report.result_of_report report in
-       begin match !dump_reports with
-         | None -> ()
-         | Some prefix ->
-             let oc = open_out (prefix ^ ".report.txt") in
-             Report.print_report (Format.formatter_of_out_channel oc) report ;
-             close_out oc ;
-             let oc = open_out (prefix ^ ".report.html") in
-             Report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
-             close_out oc
-       end ;
-       if stderr_contents <> "" then begin
-         begin match !dump_outputs with
-           | None -> ()
-           | Some prefix ->
-               let oc = open_out (prefix ^ ".stderr") in
-               output_string oc stderr_contents ;
-               close_out oc
-         end ;
-         if !display_std_outputs then
-           Format.eprintf "%s" stderr_contents
-       end ;
-       if stdout_contents <> "" then begin
-         begin match !dump_outputs with
-           | None -> ()
-           | Some prefix ->
-               let oc = open_out (prefix ^ ".stdout") in
-               output_string oc stdout_contents ;
-               close_out oc
-         end ;
-         if !display_std_outputs then
-           Format.printf "%s" stdout_contents
-       end ;
-       if outcomes <> "" then begin
-         begin match !dump_outputs with
-           | None -> ()
-           | Some prefix ->
-               let oc = open_out (prefix ^ ".outcomes") in
-               output_string oc outcomes ;
-               close_out oc
-         end ;
-         if !display_outcomes then
-           Format.printf "%s" outcomes
-       end ;
-       if failure && !display_callback then begin
-         Printf.eprintf "Failure!\n%!" ;
-         Lwt.return 2
-       end
-       else begin
-         if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
-         match output_json with
-         | None ->
-             Lwt.return 0
-         | Some json_file ->
-             let exo = Exercise.(set max_score) max exo in
-             Exercise.write_lwt
-               ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
-               exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
-             Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
-             Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
-             Lwt.return 0
-       end)
+       >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
+       match result with
+       | Error exn ->
+           let dump_error ppf =
+             Format.fprintf ppf "%a@." Location.report_exception exn ;
+             if stdout_contents <> "" then begin
+               Format.fprintf ppf "grader stdout:@.%s@." stdout_contents
+             end ;
+             if stderr_contents <> "" then begin
+               Format.fprintf ppf "grader stderr:@.%s@." stderr_contents
+             end ;
+             if outcomes <> "" then begin
+               Format.fprintf ppf "grader outcomes:@.%s@." outcomes
+             end in
+           begin match !dump_outputs with
+             | None -> ()
+             | Some prefix ->
+                 let oc = open_out (prefix ^ ".error") in
+                 dump_error (Format.formatter_of_out_channel oc) ;
+                 close_out oc
+           end ;
+           dump_error Format.err_formatter ;
+           Lwt.return 1
+       | Ok report ->
+           let (max, failure) = Report.result_of_report report in
+           begin match !dump_reports with
+             | None -> ()
+             | Some prefix ->
+                 let oc = open_out (prefix ^ ".report.txt") in
+                 Report.print_report (Format.formatter_of_out_channel oc) report ;
+                 close_out oc ;
+                 let oc = open_out (prefix ^ ".report.html") in
+                 Report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
+                 close_out oc
+           end ;
+           if stderr_contents <> "" then begin
+             begin match !dump_outputs with
+               | None -> ()
+               | Some prefix ->
+                   let oc = open_out (prefix ^ ".stderr") in
+                   output_string oc stderr_contents ;
+                   close_out oc
+             end ;
+             if !display_std_outputs then
+               Format.eprintf "%s" stderr_contents
+           end ;
+           if stdout_contents <> "" then begin
+             begin match !dump_outputs with
+               | None -> ()
+               | Some prefix ->
+                   let oc = open_out (prefix ^ ".stdout") in
+                   output_string oc stdout_contents ;
+                   close_out oc
+             end ;
+             if !display_std_outputs then
+               Format.printf "%s" stdout_contents
+           end ;
+           if outcomes <> "" then begin
+             begin match !dump_outputs with
+               | None -> ()
+               | Some prefix ->
+                   let oc = open_out (prefix ^ ".outcomes") in
+                   output_string oc outcomes ;
+                   close_out oc
+             end ;
+             if !display_outcomes then
+               Format.printf "%s" outcomes
+           end ;
+           if failure && !display_callback then begin
+             Printf.eprintf "Failure!\n%!" ;
+             Lwt.return 2
+           end
+           else begin
+             if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
+             match output_json with
+             | None ->
+                 Lwt.return 0
+             | Some json_file ->
+                 let exo = Exercise.(set max_score) max exo in
+                 Exercise.write_lwt
+                   ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
+                   exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
+                 Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
+                 Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
+                 Lwt.return 0
+           end)
     (fun exn ->
        begin match !dump_outputs with
          | None -> ()
