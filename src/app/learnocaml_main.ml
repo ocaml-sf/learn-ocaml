@@ -22,67 +22,83 @@ open Learnocaml_common
 
 let exercises_tab _ _ () =
   let module StringMap = Map.Make (String) in
-  let client_index = Client_storage.(retrieve all_exercise_states) in
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata "Loading exercises" ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   Server_caller.fetch_exercise_index () >>= fun index ->
   let content_div = find_component "learnocaml-main-content" in
-  let rec format_contents lvl acc contents =
-    let open Tyxml_js.Html5 in
-    match contents with
-    | Exercises exercises ->
-        StringMap.fold
-          (fun exercise_id { exercise_kind ;
-                             exercise_title ;
-                             exercise_short_description ;
-                             exercise_stars } acc ->
-            let pct, status_classes =
-              match StringMap.find exercise_id client_index with
-              | exception Not_found -> "--", []
-              | { Client_index.grade = None } -> "0%", [ "failure" ]
-              | { Client_index.grade = Some 0 } -> "0%", [ "failure" ]
-              | { Client_index.grade = Some pct } ->
-                  (string_of_int pct ^ "%"),
-                  (if pct >= 100 then [ "success" ] else [ "partial" ]) in
-            a ~a:[ a_href ("exercise.html#id=" ^ exercise_id ^ "&action=open") ;
-                   a_class [ "exercise" ] ] [
-              div ~a:[ a_class [ "descr" ] ] [
-                h1 [ pcdata exercise_title ] ;
-                p [ match exercise_short_description with
-                    | None -> pcdata "No description available."
-                    | Some text -> pcdata text ] ;
-              ] ;
-              div ~a:[ a_class ("stats" :: status_classes) ] [
-                div ~a:[ a_class [ "stars" ] ] [
-                  let num = 5 * int_of_float (exercise_stars *. 2.) in
-                  let num = max (min num 40) 0 in
-                  let alt = Format.asprintf "difficulty: %d / 40" num in
-                  let src = Format.asprintf "stars_%02d.svg" num in
-                  img ~alt ~src ()
+  let format_client_index client_index =
+    let rec format_contents lvl acc contents =
+      let open Tyxml_js.Html5 in
+      match contents with
+      | Exercises exercises ->
+          StringMap.fold
+            (fun exercise_id { exercise_kind ;
+                               exercise_title ;
+                               exercise_short_description ;
+                               exercise_stars } acc ->
+              let pct_init =
+                match StringMap.find exercise_id client_index with
+                | exception Not_found -> None
+                | { Client_index.grade } -> grade in
+              let pct_signal, pct_signal_set = React.S.create pct_init in
+              Client_storage.(listener (exercise_state exercise_id)) :=
+                Some (fun { Client_index.grade } -> pct_signal_set grade) ;
+              let pct_text_signal =
+                React.S.map
+                  (function
+                    | None -> "--"
+                    | Some 0 -> "0%"
+                    | Some pct -> string_of_int pct ^ "%")
+                  pct_signal in
+              let status_classes_signal =
+                React.S.map
+                  (function
+                    | None -> []
+                    | Some 0 -> [ "failure" ]
+                    | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
+                    | Some _ -> [ "stats" ; "partial" ])
+                  pct_signal in
+              a ~a:[ a_href ("exercise.html#id=" ^ exercise_id ^ "&action=open") ;
+                     a_class [ "exercise" ] ] [
+                div ~a:[ a_class [ "descr" ] ] [
+                  h1 [ pcdata exercise_title ] ;
+                  p [ match exercise_short_description with
+                      | None -> pcdata "No description available."
+                      | Some text -> pcdata text ] ;
                 ] ;
-                div ~a:[ a_class [ "length" ] ] [
-                  match exercise_kind with
-                  | Project -> pcdata "project"
-                  | Problem -> pcdata "problem"
-                  | Exercise -> pcdata "exercise" ] ;
-                div ~a:[ a_class [ "score" ] ] [
-                  pcdata pct
-                ]
-              ] ] ::
-            acc)
-          exercises acc
-    | Groups groups ->
-        let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
-        StringMap.fold
-          (fun _ { group_title ; group_contents } acc ->
-             format_contents (succ lvl)
-               (h ~a:[ a_class [ "pack" ] ] [ pcdata group_title ] :: acc)
-               group_contents)
-          groups acc in
+                div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
+                  div ~a:[ a_class [ "stars" ] ] [
+                    let num = 5 * int_of_float (exercise_stars *. 2.) in
+                    let num = max (min num 40) 0 in
+                    let alt = Format.asprintf "difficulty: %d / 40" num in
+                    let src = Format.asprintf "stars_%02d.svg" num in
+                    img ~alt ~src ()
+                  ] ;
+                  div ~a:[ a_class [ "length" ] ] [
+                    match exercise_kind with
+                    | Project -> pcdata "project"
+                    | Problem -> pcdata "problem"
+                    | Exercise -> pcdata "exercise" ] ;
+                  div ~a:[ a_class [ "score" ] ] [
+                    Tyxml_js.R.Html5.pcdata pct_text_signal
+                  ]
+                ] ] ::
+              acc)
+            exercises acc
+      | Groups groups ->
+          let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
+          StringMap.fold
+            (fun _ { group_title ; group_contents } acc ->
+               format_contents (succ lvl)
+                 (h ~a:[ a_class [ "pack" ] ] [ pcdata group_title ] :: acc)
+                 group_contents)
+            groups acc in
+    List.rev (format_contents 1 [] index) in
+  let client_index = Client_storage.(retrieve all_exercise_states) in
   let list_div =
-    Tyxml_js.Html5.(div ~a: [ a_id "learnocaml-main-exercise-list" ])
-      (List.rev (format_contents 1 [] index)) in
+    Tyxml_js.Html5.(div ~a: [ Tyxml_js.Html5.a_id "learnocaml-main-exercise-list" ])
+      (format_client_index client_index) in
   Manip.appendChild content_div list_div ;
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return list_div
