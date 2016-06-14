@@ -17,20 +17,28 @@
 
 type 'a storage_key
 
+val init : unit -> unit
+
 val store : 'a storage_key -> 'a -> unit
 
 val retrieve : 'a storage_key -> 'a
 
 val delete : 'a storage_key -> unit
 
+val listener : 'a storage_key -> ('a -> unit) option ref
+
 val cached_exercise : string -> Exercise.t storage_key
 
 val exercise_state : string -> Client_index.exercise_state storage_key
 
+val all_exercise_states : Client_index.exercise_state Map.Make (String).t storage_key
+
 val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
+
+val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot Map.Make (String).t storage_key
 
 val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val client_index : Client_index.client_index storage_key
+val all_toplevel_histories : Learnocaml_toplevel_history.snapshot Map.Make (String).t storage_key
 
 val sync_token : string storage_key

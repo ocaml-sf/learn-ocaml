@@ -96,6 +96,7 @@ let () =
     | exn -> fatal (Printexc.to_string exn)
   end ;
   Lwt.async @@ fun () ->
+  Client_storage.init () ;
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;

@@ -21,8 +21,4 @@ type exercise_state =
     report : Report.report option ;
     mtime : float }
 
-type client_index =
-  exercise_state Map.Make (String).t
-
 val exercise_state_enc : exercise_state Json_encoding.encoding
-val client_index_enc : client_index Json_encoding.encoding

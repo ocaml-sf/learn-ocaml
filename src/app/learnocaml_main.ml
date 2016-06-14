@@ -22,12 +22,11 @@ open Learnocaml_common
 
 let exercises_tab _ _ () =
   let module StringMap = Map.Make (String) in
-  let client_index = Client_storage.(retrieve client_index) in
+  let client_index = Client_storage.(retrieve all_exercise_states) in
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata "Loading exercises" ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   Server_caller.fetch_exercise_index () >>= fun index ->
-  let module StringMap = Map.Make (String) in
   let content_div = find_component "learnocaml-main-content" in
   let rec format_contents lvl acc contents =
     let open Tyxml_js.Html5 in
@@ -536,13 +535,24 @@ let init_sync_token button_state =
        Lwt.return ())
     (fun _ -> Lwt.return ())
 
-let set_state_from_save_file (client_index, toplevel_history) =
-  Client_storage.(store client_index) client_index ;
-  Client_storage.(store (toplevel_history "toplevel")) toplevel_history
+let set_state_from_save_file
+    { Learnocaml_sync.all_exercise_states ;
+      all_toplevel_histories ;
+      all_exercise_toplevel_histories } =
+  Client_storage.(store all_exercise_states)
+    all_exercise_states ;
+  Client_storage.(store all_toplevel_histories)
+    all_toplevel_histories ;
+  Client_storage.(store all_exercise_toplevel_histories)
+    all_exercise_toplevel_histories
 
 let get_state_as_save_file () =
-  Client_storage.(retrieve client_index),
-  Client_storage.(retrieve (toplevel_history "toplevel"))
+  { Learnocaml_sync.all_exercise_states =
+      Client_storage.(retrieve all_exercise_states) ;
+    all_toplevel_histories =
+      Client_storage.(retrieve all_toplevel_histories) ;
+    all_exercise_toplevel_histories =
+      Client_storage.(retrieve all_exercise_toplevel_histories) }
 
 let sync () =
   let token =
@@ -581,10 +591,11 @@ let () =
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
   end ;
+  Lwt.async @@ fun () ->
+  Client_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
   Lwt.async @@ (fun () -> init_sync_token sync_button_state) ;
-  Lwt.async @@ fun () ->
   let sync_buttons = find_component "learnocaml-sync-buttons" in
   Manip.removeChildren sync_buttons ;
   begin button

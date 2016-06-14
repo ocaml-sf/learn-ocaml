@@ -16,8 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type save_file =
-  Client_index.client_index *
-  Learnocaml_toplevel_history.snapshot
+  { all_exercise_states :
+      Client_index.exercise_state Map.Make (String).t  ;
+    all_toplevel_histories :
+      Learnocaml_toplevel_history.snapshot Map.Make (String).t ;
+    all_exercise_toplevel_histories :
+      Learnocaml_toplevel_history.snapshot Map.Make (String).t }
 
 val save_file_format : save_file Json_encoding.encoding
 

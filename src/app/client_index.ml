@@ -15,24 +15,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-module StringMap = Map.Make (String)
-
 type exercise_state =
   { solution : string ;
     grade : int (* \in [0, 100] *) option ;
     report : Report.report option ;
     mtime : float }
 
-type client_index =
-  exercise_state StringMap.t
-
 open Json_encoding
-
-let map_enc enc =
-  conv
-    StringMap.bindings
-    (List.fold_left (fun s (k,v) -> StringMap.add k v s) StringMap.empty)
-    (assoc enc)
 
 let exercise_state_enc =
   let grade_enc =
@@ -53,6 +42,3 @@ let exercise_state_enc =
        (req "solution" string)
        (opt "report" Report.report_enc)
        (dft "mtime" float 0.))
-
-let client_index_enc =
-  map_enc exercise_state_enc
