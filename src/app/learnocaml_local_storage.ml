@@ -209,7 +209,7 @@ let exercise_list,
   listed
     [ "exercise-list" ]
     [ "exercise-state" ]
-    Client_index.exercise_state_enc
+    Learnocaml_exercise_state.exercise_state_enc
 
 let toplevel_history_list,
     toplevel_history,

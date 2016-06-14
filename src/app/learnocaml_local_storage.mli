@@ -29,9 +29,9 @@ val listener : 'a storage_key -> ('a -> unit) option ref
 
 val cached_exercise : string -> Exercise.t storage_key
 
-val exercise_state : string -> Client_index.exercise_state storage_key
+val exercise_state : string -> Learnocaml_exercise_state.exercise_state storage_key
 
-val all_exercise_states : Client_index.exercise_state Map.Make (String).t storage_key
+val all_exercise_states : Learnocaml_exercise_state.exercise_state Map.Make (String).t storage_key
 
 val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 

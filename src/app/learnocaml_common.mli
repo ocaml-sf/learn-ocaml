@@ -17,6 +17,8 @@
 
 val find_div_or_append_to_body : string -> [> Html5_types.div ] Tyxml_js.Html5.elt
 
+val find_component : string -> 'a Tyxml_js.Html5.elt
+
 val gettimeofday : unit -> float
 
 val fake_download : name: string -> contents: Js.js_string Js.t -> unit
@@ -28,8 +30,6 @@ val fatal : string -> unit
 val hide_loading : ?id: string -> unit -> unit
 
 val show_loading : ?id: string -> [< Html5_types.div_content_fun ] Tyxml_js.Html5.elt list -> unit
-
-val find_component : string -> 'a Tyxml_js.Html5.elt
 
 val set_assoc : string -> 'a -> (string * 'a) list -> (string * 'a) list
 

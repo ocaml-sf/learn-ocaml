@@ -96,7 +96,7 @@ let () =
     | exn -> fatal (Printexc.to_string exn)
   end ;
   Lwt.async @@ fun () ->
-  Client_storage.init () ;
+  Learnocaml_local_storage.init () ;
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
@@ -130,12 +130,12 @@ let () =
       () in
   let history =
     let storage_key =
-      Client_storage.exercise_toplevel_history id in
+      Learnocaml_local_storage.exercise_toplevel_history id in
     let on_update self =
-      Client_storage.store storage_key
+      Learnocaml_local_storage.store storage_key
         (Learnocaml_toplevel_history.snapshot self) in
     let snapshot =
-      Client_storage.retrieve storage_key in
+      Learnocaml_local_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
       ~gettimeofday
       ~on_update
@@ -151,11 +151,11 @@ let () =
   init_tabs () ;
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun exo ->
-  let solution = match Client_storage.(retrieve (exercise_state id)) with
-    | { Client_index.report = Some report ; solution } ->
+  let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
+    | { Learnocaml_exercise_state.report = Some report ; solution } ->
         let _ : int = display_report exo report in
         Some solution
-    | { Client_index.report = None ; solution } ->
+    | { Learnocaml_exercise_state.report = None ; solution } ->
         Some solution
     | exception Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
@@ -254,11 +254,11 @@ let () =
       ~icon: "save" "Save" @@ fun () ->
     let solution = Ace.get_contents ace in
     let report, grade =
-      match Client_storage.(retrieve (exercise_state id)) with
-      | { Client_index.report ; grade } -> report, grade
+      match Learnocaml_local_storage.(retrieve (exercise_state id)) with
+      | { Learnocaml_exercise_state.report ; grade } -> report, grade
       | exception Not_found -> None, None in
-    Client_storage.(store (exercise_state id))
-      { Client_index.report ; grade ; solution ;
+    Learnocaml_local_storage.(store (exercise_state id))
+      { Learnocaml_exercise_state.report ; grade ; solution ;
         mtime = gettimeofday () } ;
     Lwt.return ()
   end ;
@@ -347,8 +347,8 @@ let () =
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
-        Client_storage.(store (exercise_state id))
-          { Client_index.grade = Some grade ; solution ; report = Some report ;
+        Learnocaml_local_storage.(store (exercise_state id))
+          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
@@ -360,8 +360,8 @@ let () =
                    Text "Cannot start the grader if your code does not typecheck." ] in
         let report = Report.[ Message (msg, Failure) ] in
         let grade = display_report exo report in
-        Client_storage.(store (exercise_state id))
-          { Client_index.grade = Some grade ; solution ; report = Some report ;
+        Learnocaml_local_storage.(store (exercise_state id))
+          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->

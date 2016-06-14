@@ -19,7 +19,7 @@ module StringMap = Map.Make (String)
 
 type save_file =
   { all_exercise_states :
-      Client_index.exercise_state Map.Make (String).t  ;
+      Learnocaml_exercise_state.exercise_state Map.Make (String).t  ;
     all_toplevel_histories :
       Learnocaml_toplevel_history.snapshot Map.Make (String).t ;
     all_exercise_toplevel_histories :
@@ -50,7 +50,7 @@ let save_file_format =
         all_toplevel_histories ;
         all_exercise_toplevel_histories }) @@
   (obj3
-     (dft "exercises" (map_enc Client_index.exercise_state_enc) StringMap.empty)
+     (dft "exercises" (map_enc Learnocaml_exercise_state.exercise_state_enc) StringMap.empty)
      (dft "toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) StringMap.empty)
      (dft "exercise-toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) StringMap.empty))
 
@@ -68,13 +68,13 @@ let sync
     else
       snapshot_b in
   let sync_exercise_state state_a state_b =
-    let open Client_index in
+    let open Learnocaml_exercise_state in
     if state_a.mtime > state_b.mtime then
       state_a
     else
       state_b in
   let sync_map sync_item index_a index_b =
-    let open Client_index in
+    let open Learnocaml_exercise_state in
     StringMap.merge
       (fun _id a b -> match a, b with
          | None, None -> assert false

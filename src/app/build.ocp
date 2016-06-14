@@ -2,7 +2,7 @@ begin program "learnocaml-process-repository"
   has_asm = false
   files = [
     "server_index.ml"
-    "index_builder.ml"
+    "learnocaml_process_repository_main.ml"
   ]
   requires = [
     "ocplib-json-typed"
@@ -18,8 +18,8 @@ begin library "learnocaml-common"
   files = [
     "server_index.ml"
     "lesson.ml"
-    "client_index.ml"
-    "client_storage.ml" ( pp = camlp4_js )
+    "learnocaml_exercise_state.ml"
+    "learnocaml_local_storage.ml" ( pp = camlp4_js )
     "server_paths.ml"
     "server_caller.ml" ( pp = camlp4_js )
     "learnocaml_common.ml" ( pp = camlp4_js )
@@ -55,7 +55,7 @@ begin program "learnocaml-main"
   ]
   files = [
     "learnocaml_sync.ml"
-    "learnocaml_main.ml" ( pp = camlp4_js )
+    "learnocaml_index_main.ml" ( pp = camlp4_js )
   ]
   build_rules = [
     "%{learnocaml-main_FULL_DST_DIR}%/learnocaml-main.js" (
@@ -89,7 +89,7 @@ begin program "learnocaml-exercise"
     "learnocaml-toplevel"
   ]
   files = [
-    "learnocaml_exercise.ml" ( pp = camlp4_js )
+    "learnocaml_exercise_main.ml" ( pp = camlp4_js )
   ]
   build_rules = [
     "%{learnocaml-exercise_FULL_DST_DIR}%/learnocaml-exercise.js" (

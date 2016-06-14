@@ -17,7 +17,7 @@
 
 type save_file =
   { all_exercise_states :
-      Client_index.exercise_state Map.Make (String).t  ;
+      Learnocaml_exercise_state.exercise_state Map.Make (String).t  ;
     all_toplevel_histories :
       Learnocaml_toplevel_history.snapshot Map.Make (String).t ;
     all_exercise_toplevel_histories :

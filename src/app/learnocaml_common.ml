@@ -26,6 +26,11 @@ let find_div_or_append_to_body id =
       Manip.(appendChild Elt.body) div;
       div
 
+let find_component id =
+  match Js_utils.Manip.by_id id with
+  | Some div -> div
+  | None -> failwith ("Cannot find id " ^ id)
+
 let fake_download ~name ~contents =
   (* TODO: add some primitives to jsoo and clean this up  *)
   let blob : (Js.js_string Js.t Js.js_array Js.t -> File.blob Js.t) Js.constr =
@@ -98,11 +103,6 @@ let show_loading ?(id = "ocp-loading-layer") contents =
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
       div ~a: [ a_class [ "messages" ] ] contents
     ]
-
-let rec find_component id =
-  match Js_utils.Manip.by_id id with
-  | Some div -> div
-  | None -> failwith ("Cannot find id " ^ id)
 
 let set_assoc name value =
   let rec set acc = function

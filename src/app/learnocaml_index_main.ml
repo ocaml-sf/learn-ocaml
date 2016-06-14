@@ -27,7 +27,7 @@ let exercises_tab _ _ () =
   Lwt_js.sleep 0.5 >>= fun () ->
   Server_caller.fetch_exercise_index () >>= fun index ->
   let content_div = find_component "learnocaml-main-content" in
-  let format_client_index client_index =
+  let format_exercise_list all_exercise_states =
     let rec format_contents lvl acc contents =
       let open Tyxml_js.Html5 in
       match contents with
@@ -38,12 +38,12 @@ let exercises_tab _ _ () =
                                exercise_short_description ;
                                exercise_stars } acc ->
               let pct_init =
-                match StringMap.find exercise_id client_index with
+                match StringMap.find exercise_id all_exercise_states with
                 | exception Not_found -> None
-                | { Client_index.grade } -> grade in
+                | { Learnocaml_exercise_state.grade } -> grade in
               let pct_signal, pct_signal_set = React.S.create pct_init in
-              Client_storage.(listener (exercise_state exercise_id)) :=
-                Some (fun { Client_index.grade } -> pct_signal_set grade) ;
+              Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
+                Some (fun { Learnocaml_exercise_state.grade } -> pct_signal_set grade) ;
               let pct_text_signal =
                 React.S.map
                   (function
@@ -95,10 +95,9 @@ let exercises_tab _ _ () =
                  group_contents)
             groups acc in
     List.rev (format_contents 1 [] index) in
-  let client_index = Client_storage.(retrieve all_exercise_states) in
   let list_div =
     Tyxml_js.Html5.(div ~a: [ Tyxml_js.Html5.a_id "learnocaml-main-exercise-list" ])
-      (format_client_index client_index) in
+      (format_exercise_list Learnocaml_local_storage.(retrieve all_exercise_states)) in
   Manip.appendChild content_div list_div ;
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return list_div
@@ -154,12 +153,12 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
         () in
     let history =
       let storage_key =
-        Client_storage.toplevel_history ("lesson-" ^ id) in
+        Learnocaml_local_storage.toplevel_history ("lesson-" ^ id) in
       let on_update self =
-        Client_storage.store storage_key
+        Learnocaml_local_storage.store storage_key
           (Learnocaml_toplevel_history.snapshot self) in
       let snapshot =
-        Client_storage.retrieve storage_key in
+        Learnocaml_local_storage.retrieve storage_key in
       Learnocaml_toplevel_history.create
         ~gettimeofday
         ~on_update
@@ -284,12 +283,12 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       () in
   let history =
     let storage_key =
-      Client_storage.toplevel_history "tryocaml" in
+      Learnocaml_local_storage.toplevel_history "tryocaml" in
     let on_update self =
-      Client_storage.store storage_key
+      Learnocaml_local_storage.store storage_key
         (Learnocaml_toplevel_history.snapshot self) in
     let snapshot =
-      Client_storage.retrieve storage_key in
+      Learnocaml_local_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
       ~gettimeofday
       ~on_update
@@ -488,12 +487,12 @@ let toplevel_tab select _ () =
       () in
   let history =
     let storage_key =
-      Client_storage.toplevel_history "toplevel" in
+      Learnocaml_local_storage.toplevel_history "toplevel" in
     let on_update self =
-      Client_storage.store storage_key
+      Learnocaml_local_storage.store storage_key
         (Learnocaml_toplevel_history.snapshot self) in
     let snapshot =
-      Client_storage.retrieve storage_key in
+      Learnocaml_local_storage.retrieve storage_key in
     Learnocaml_toplevel_history.create
       ~gettimeofday
       ~on_update
@@ -537,13 +536,13 @@ let init_sync_token button_state =
        let input = find_component id in
        let input = Tyxml_js.To_dom.of_input input in
        begin try
-           Lwt.return Client_storage.(retrieve sync_token)
+           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found ->
            Lwt_request.raw_get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
            let token = Js.string token in
            let json = Js._JSON##parse (token) in
            let token = Browser_json.Json_encoding.destruct token_format json in
-           Client_storage.(store sync_token) token ;
+           Learnocaml_local_storage.(store sync_token) token ;
            Lwt.return token
        end >>= fun token ->
        input##value <- Js.string token ;
@@ -555,20 +554,20 @@ let set_state_from_save_file
     { Learnocaml_sync.all_exercise_states ;
       all_toplevel_histories ;
       all_exercise_toplevel_histories } =
-  Client_storage.(store all_exercise_states)
+  Learnocaml_local_storage.(store all_exercise_states)
     all_exercise_states ;
-  Client_storage.(store all_toplevel_histories)
+  Learnocaml_local_storage.(store all_toplevel_histories)
     all_toplevel_histories ;
-  Client_storage.(store all_exercise_toplevel_histories)
+  Learnocaml_local_storage.(store all_exercise_toplevel_histories)
     all_exercise_toplevel_histories
 
 let get_state_as_save_file () =
   { Learnocaml_sync.all_exercise_states =
-      Client_storage.(retrieve all_exercise_states) ;
+      Learnocaml_local_storage.(retrieve all_exercise_states) ;
     all_toplevel_histories =
-      Client_storage.(retrieve all_toplevel_histories) ;
+      Learnocaml_local_storage.(retrieve all_toplevel_histories) ;
     all_exercise_toplevel_histories =
-      Client_storage.(retrieve all_exercise_toplevel_histories) }
+      Learnocaml_local_storage.(retrieve all_exercise_toplevel_histories) }
 
 let sync () =
   let token =
@@ -586,7 +585,7 @@ let sync () =
         Browser_json.Json_encoding.destruct
           Learnocaml_sync.save_file_format
           (Js._JSON##parse (Js.string server_contents)) in
-      Client_storage.(store sync_token) token ;
+      Learnocaml_local_storage.(store sync_token) token ;
       res
     with _ -> local_save_file in
   let save_file =
@@ -608,7 +607,7 @@ let () =
     | exn -> fatal (Printexc.to_string exn)
   end ;
   Lwt.async @@ fun () ->
-  Client_storage.init () ;
+  Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
   Lwt.async @@ (fun () -> init_sync_token sync_button_state) ;
