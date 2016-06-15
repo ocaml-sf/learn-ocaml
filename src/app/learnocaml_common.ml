@@ -72,18 +72,37 @@ let fake_upload () =
 
 let fatal message =
   let id = "ocp-fatal-layer" in
-  let div = find_div_or_append_to_body id in
-  Manip.SetCss.(begin
-      display div "block" ;
-      position div "absolute" ;
-      topPx div 0 ; leftPx div 0 ;
-      rightPx div 0 ; bottomPx div 0 ;
-      backgroundColor div "black" ;
-      color div "white" ;
-      zIndex div "22222"
-    end) ;
+  let div = match Manip.by_id id with
+    | Some div -> div
+    | None ->
+        let sty =
+          "display: flex;\
+           flex-direction: column;\
+           position: absolute;\
+           top: 0; left: 0; bottom: 0; right: 0;\
+           background: rgba(0,0,0,0.8);\
+           color: white;\
+           z-index: 22222;" in
+        let div = Tyxml_js.Html5.(div ~a:[ a_id id ; a_style sty ]) [] in
+        Manip.(appendChild Elt.body) div;
+        div in
   Manip.replaceChildren div
-    Tyxml_js.Html5.[ p [ strong [ pcdata "Internal error: " ] ; pcdata message ] ]
+    Tyxml_js.Html5.
+      [ div ~a: [ a_style "flex: 1" ] [] ;
+        div ~a: [ a_style "border: 3px white double;\
+                           font-family: 'Inconsolata', monospace;\
+                           flex: 0 0 auto;\
+                           background: black;\
+                           margin: auto;"]
+          [ h3 ~a: [ a_style "margin: 0;\
+                              padding: 10px;\
+                              text-align: center;" ]
+              [ pcdata "INTERNAL ERROR" ] ;
+            pre ~a: [ a_style "margin: 0;\
+                               border-top: 1px white solid;\
+                               padding: 20px;" ]
+              [ pcdata (String.trim message) ] ] ;
+        div ~a: [ a_style "flex: 1" ] [] ]
 
 let hide_loading ?(id = "ocp-loading-layer") () =
   let elt = find_div_or_append_to_body id in
