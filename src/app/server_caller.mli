@@ -17,7 +17,7 @@
 
 exception Cannot_fetch of string
 
-val fetch : string ->string Lwt.t
+val fetch : string -> string Lwt.t
 
 val fetch_exercise_index : unit -> Server_index.group_contents Lwt.t
 
@@ -26,3 +26,9 @@ val fetch_exercise : string -> Exercise.t Lwt.t
 val fetch_lesson_index : unit -> (string * string) list Lwt.t
 
 val fetch_lesson : string -> Lesson.lesson Lwt.t
+
+val gimme_sync_token : unit -> string Lwt.t
+
+val fetch_save_file : token: string -> Learnocaml_sync.save_file Lwt.t
+
+val upload_save_file : token: string -> Learnocaml_sync.save_file -> unit Lwt.t

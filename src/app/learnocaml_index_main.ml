@@ -538,7 +538,7 @@ let init_sync_token button_state =
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found ->
-           Lwt_request.raw_get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
+           Lwt_request.get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
            let token = Js.string token in
            let json = Js._JSON##parse (token) in
            let token = Browser_json.Json_encoding.destruct token_format json in
@@ -575,30 +575,13 @@ let sync () =
     let input = find_component id in
     let input = Tyxml_js.To_dom.of_input input in
     Js.to_string input ## value in
-  let url = "/sync/" ^ token in
-  Lwt_request.raw_get ~headers: [] ~url ~args: [] >>= fun server_contents ->
-  let local_save_file =
-    get_state_as_save_file () in
-  let server_save_file =
-    try
-      let res =
-        Browser_json.Json_encoding.destruct
-          Learnocaml_sync.save_file_format
-          (Js._JSON##parse (Js.string server_contents)) in
-      Learnocaml_local_storage.(store sync_token) token ;
-      res
-    with _ -> local_save_file in
-  let save_file =
-    Learnocaml_sync.sync local_save_file server_save_file in
-  let contents =
-    let json =
-      Browser_json.Json_encoding.construct
-        Learnocaml_sync.save_file_format
-        save_file in
-    Js.to_string (Js._JSON##stringify (json)) in
+  let req = Server_caller.fetch_save_file ~token in
+  let local_save_file = get_state_as_save_file () in
+  req >>= fun server_save_file ->
+  Learnocaml_local_storage.(store sync_token) token ;
+  let save_file = Learnocaml_sync.sync local_save_file server_save_file in
   set_state_from_save_file save_file ;
-  Lwt_request.raw_post ~headers: [] ~get_args: [] ~url ~body: (Some contents) >>= fun _ ->
-  Lwt.return ()
+  Server_caller.upload_save_file ~token save_file
 
 let () =
   Lwt.async_exception_hook := begin function
@@ -620,7 +603,7 @@ let () =
     let contents =
       let json =
         Browser_json.Json_encoding.construct
-          Learnocaml_sync.save_file_format
+          Learnocaml_sync.save_file_enc
           (get_state_as_save_file ()) in
       Js._JSON##stringify (json) in
     Learnocaml_common.fake_download ~name ~contents ;
@@ -632,7 +615,7 @@ let () =
     Learnocaml_common.fake_upload () >>= fun (_, contents) ->
     let save_file =
       Browser_json.Json_encoding.destruct
-        Learnocaml_sync.save_file_format
+        Learnocaml_sync.save_file_enc
         (Js._JSON##parse (contents)) in
     set_state_from_save_file save_file ;
     Lwt.return ()

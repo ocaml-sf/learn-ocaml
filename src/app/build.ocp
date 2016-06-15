@@ -20,6 +20,7 @@ begin library "learnocaml-common"
     "lesson.ml"
     "learnocaml_exercise_state.ml"
     "learnocaml_local_storage.ml" ( pp = camlp4_js )
+    "learnocaml_sync.ml"
     "server_paths.ml"
     "server_caller.ml" ( pp = camlp4_js )
     "learnocaml_common.ml" ( pp = camlp4_js )
@@ -54,7 +55,6 @@ begin program "learnocaml-main"
     "learnocaml-toplevel"
   ]
   files = [
-    "learnocaml_sync.ml"
     "learnocaml_index_main.ml" ( pp = camlp4_js )
   ]
   build_rules = [

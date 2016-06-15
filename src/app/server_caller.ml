@@ -21,22 +21,41 @@ exception Cannot_fetch of string
 
 let cannot_fetch msg = Lwt.fail (Cannot_fetch msg)
 
-let fetch filename =
-  let path = Regexp.(split (regexp "/")) filename in
-  let rel_uri = String.concat "_" path in
-  Lwt_request.get_file rel_uri >>= function
-  | None -> cannot_fetch ("Cannot download " ^ filename ^ ".")
-  | Some text -> Lwt.return text
+let fetch ?message filename =
+  Lwt.catch
+    (fun () -> Lwt_request.get filename [])
+    (fun exn ->
+       let message = match message with
+         | None -> "cannot download " ^ filename
+         | Some message -> message in
+       let msg = match exn with
+         | Lwt_request.Request_failed (0, _) ->
+             Printf.sprintf "%s (server unreachable)"
+               message
+         | Lwt_request.Request_failed (code, _) ->
+             Printf.sprintf "%s (code %d)"
+               message code
+         | exn ->
+             Printf.sprintf "%s\n%s"
+               message (Printexc.to_string exn) in
+       Lwt.fail (Cannot_fetch msg))
 
 let fetch_json filename =
   fetch filename >>= fun text ->
-  try Lwt.return (Js._JSON##parse (Js.string text)) with
-  | _ -> cannot_fetch ("Invalid JSON for " ^ filename)
+  try Lwt.return (Js._JSON##parse (Js.string text)) with Js.Error err ->
+    let msg =
+      Format.asprintf "bad format for %s\n%s"
+        filename (Js.to_string err ## message) in
+    Lwt.fail (Cannot_fetch msg)
 
 let fetch_and_decode_json enc filename =
   fetch_json filename >>= fun json ->
-  try Lwt.return (Browser_json.Json_encoding.destruct enc json) with
-  | Json_encoding.Cannot_destruct _ -> cannot_fetch ("Invalid structure for " ^ filename)
+  try Lwt.return (Browser_json.Json_encoding.destruct enc json) with exn ->
+    let msg =
+      Format.asprintf "bad structure for %s@.%a"
+        filename
+        (fun ppf -> Json_encoding.print_error ppf) exn in
+    Lwt.fail (Cannot_fetch msg)
 
 let fetch_exercise_index () =
   fetch_and_decode_json
@@ -57,3 +76,52 @@ let fetch_lesson id =
   fetch_and_decode_json
     Lesson.lesson_enc
     (Server_paths.lesson_path id)
+
+let gimme_sync_token () =
+  fetch ~message: "cannot obtain a token" "/sync/gimme"
+
+let fetch_save_file ~token =
+  let message = "cannot download server data" in
+  fetch ~message ("/sync/" ^ token) >>= fun text ->
+  let text = if text = "" then "{}" else text in
+  (try Lwt.return (Js._JSON##parse (Js.string text)) with Js.Error err ->
+     let msg =
+       Format.asprintf "bad format for server data\n%s"
+         (Js.to_string err ## message) in
+     Lwt.fail (Cannot_fetch msg)) >>= fun json ->
+  try Lwt.return @@
+    Browser_json.Json_encoding.destruct Learnocaml_sync.save_file_enc json
+  with exn ->
+    let msg =
+      Format.asprintf "bad structure for server data@.%a"
+        (fun ppf -> Json_encoding.print_error ppf) exn in
+    Lwt.fail (Cannot_fetch msg)
+
+let upload_save_file ~token save_file =
+  let json =
+    Browser_json.Json_encoding.construct
+      Learnocaml_sync.save_file_enc
+      save_file in
+  let body =
+    Some (Js.to_string (Js._JSON##stringify (json))) in
+  Lwt.catch
+    (fun () -> Lwt_request.post ~headers: [] ~get_args: []
+        ~url: ("/sync/" ^ token) ~body)
+    (fun exn ->
+       let message = "cannot upload data to the server" in
+       let msg = match exn with
+         | Lwt_request.Request_failed (0, _) ->
+             Printf.sprintf "%s (server unreachable)"
+               message
+         | Lwt_request.Request_failed (code, _) ->
+             Printf.sprintf "%s (code %d)"
+               message code
+         | exn ->
+             Printf.sprintf "%s\n%s"
+               message (Printexc.to_string exn) in
+       Lwt.fail (Cannot_fetch msg)) >>= fun _ ->
+  Lwt.return ()
+
+let fetch filename =
+  (* erase message argument in the interface *)
+  fetch filename

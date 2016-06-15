@@ -34,7 +34,7 @@ let map_enc enc =
        StringMap.empty)
     (assoc enc)
 
-let save_file_format =
+let save_file_enc =
   let open Json_encoding in
   conv
     (fun { all_exercise_states ;

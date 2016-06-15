@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-val raw_post:
+exception Request_failed of (int * string)
+
+val post:
   ?headers:(string * string) list ->
   ?get_args:(string * string) list ->
   url:string -> body:string option -> string Lwt.t
 
-val raw_get:
+val get:
   ?headers:(string * string) list ->
   url:string -> args:(string * string) list -> string Lwt.t
-
-val get_file: string -> string option Lwt.t

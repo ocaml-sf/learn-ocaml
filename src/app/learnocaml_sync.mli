@@ -23,6 +23,6 @@ type save_file =
     all_exercise_toplevel_histories :
       Learnocaml_toplevel_history.snapshot Map.Make (String).t }
 
-val save_file_format : save_file Json_encoding.encoding
+val save_file_enc : save_file Json_encoding.encoding
 
 val sync : save_file -> save_file -> save_file
