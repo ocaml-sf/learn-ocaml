@@ -43,7 +43,9 @@ let exercises_tab _ _ () =
                 | { Learnocaml_exercise_state.grade } -> grade in
               let pct_signal, pct_signal_set = React.S.create pct_init in
               Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
-                Some (fun { Learnocaml_exercise_state.grade } -> pct_signal_set grade) ;
+                Some (function
+                    | Some { Learnocaml_exercise_state.grade } -> pct_signal_set grade
+                    | None -> pct_signal_set None) ;
               let pct_text_signal =
                 React.S.map
                   (function
@@ -54,8 +56,8 @@ let exercises_tab _ _ () =
               let status_classes_signal =
                 React.S.map
                   (function
-                    | None -> []
-                    | Some 0 -> [ "failure" ]
+                    | None -> [ "stats" ]
+                    | Some 0 -> [ "stats" ; "failure" ]
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in

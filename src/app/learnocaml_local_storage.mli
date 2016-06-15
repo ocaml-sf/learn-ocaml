@@ -25,7 +25,7 @@ val retrieve : 'a storage_key -> 'a
 
 val delete : 'a storage_key -> unit
 
-val listener : 'a storage_key -> ('a -> unit) option ref
+val listener : 'a storage_key -> ('a option -> unit) option ref
 
 val cached_exercise : string -> Exercise.t storage_key
 

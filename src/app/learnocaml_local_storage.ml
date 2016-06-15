@@ -21,7 +21,7 @@ type 'a storage_key =
     store : 'a -> unit ;
     retrieve : unit -> 'a ;
     delete : unit -> unit ;
-    mutable listeners : ('a -> unit) option ref list }
+    mutable listeners : ('a option -> unit) option ref list }
 
 type any_key = Key : _ storage_key -> any_key
 
@@ -41,7 +41,11 @@ let notify = function
                       | None -> acc
                       | Some cb ->
                           let acc, value = match acc with
-                            | (acc, None) -> acc, storage_key.retrieve ()
+                            | (acc, None) ->
+                                let value =
+                                  try Some (storage_key.retrieve ())
+                                  with Not_found -> None in
+                                acc, value
                             | (acc, Some value) -> acc, value in
                           cb value ;
                           (listener :: acc, Some value))
@@ -67,15 +71,15 @@ let init () =
     Js._true |> ignore
 
 let store { store ; key } v =
-  notify key ;
-  store v
+  store v ;
+  notify key
 
 let retrieve { retrieve } =
   retrieve ()
 
 let delete { delete ; key } =
-  notify key ;
-  delete ()
+  delete () ;
+  notify key
 
 let listener key =
   let listener = ref None in
@@ -174,9 +178,11 @@ let listed list_key item_prefix ?default enc =
       store ; retrieve ; delete ; listeners = []  } in
   let assoc =
     let retrieve () =
-      List.fold_left
-        (fun acc name -> StringMap.add name (retrieve (item name)) acc)
-        StringMap.empty (retrieve list)
+      try
+        List.fold_left
+          (fun acc name -> StringMap.add name (retrieve (item name)) acc)
+          StringMap.empty (retrieve list)
+      with Not_found -> StringMap.empty
     and delete () =
       let all = retrieve list in
       List.iter (fun name -> delete (item name)) all ;
@@ -195,7 +201,7 @@ let listed list_key item_prefix ?default enc =
       name = list_key ||
       let rec is_prefix p l = match (p, l) with
         | [], [ _ ] -> true
-        | [], _ | _, []-> false
+        | [], _ | _, [] -> false
         | pw :: p, lw :: l ->
             pw = lw && is_prefix p l in
       is_prefix item_prefix name in
@@ -207,7 +213,7 @@ let exercise_list,
     exercise_state,
     all_exercise_states =
   listed
-    [ "exercise-list" ]
+    [ "exercise-state-list" ]
     [ "exercise-state" ]
     Learnocaml_exercise_state.exercise_state_enc
 
@@ -224,7 +230,7 @@ let exercise_toplevel_history_list,
     exercise_toplevel_history,
     all_exercise_toplevel_histories =
   listed
-    [ "toplevel-history-list" ]
-    [ "toplevel-history" ]
+    [ "exercise-toplevel-history-list" ]
+    [ "exercise-toplevel-history" ]
     ~default: Learnocaml_toplevel_history.empty_snapshot
     Learnocaml_toplevel_history.snapshot_enc
