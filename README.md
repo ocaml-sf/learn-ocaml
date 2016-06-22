@@ -1,8 +1,15 @@
+Learn-OCaml
+===========
+
 This is Learn OCaml, a Web platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-This software is still under heavy development.
+This software is still under development, no public announcement has been made yet.
+
+A demo is available at: [http://try.ocamlpro.com/learn-ocaml-demo/].
+
+![Build status logo](https://travis-ci.org/OCamlPro/learn-ocaml.svg)
 
 How to compile and try
 ----------------------
