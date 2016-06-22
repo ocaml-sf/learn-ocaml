@@ -2,6 +2,9 @@ all: build
 
 # config variables ------------------------------------------------------------
 
+# parallelism when processing the repository
+PROCESSING_JOBS ?= 4
+
 # where the result Web site will be put
 DEST_DIR ?= ${CURDIR}/www
 
@@ -25,7 +28,7 @@ build:
 	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/
 	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/
 	@mkdir -p $(DEST_DIR)
-	_obuild/*/learnocaml-process-repository.byte -j 4 \
+	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
           -exercises-dir ${EXERCISES_DIR} \
           -dest-dir ${DEST_DIR} \
           -dump-outputs ${EXERCISES_DIR} \

@@ -1,0 +1,6 @@
+language: c
+sudo: required
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-ocaml.sh
+script: bash -c '. .travis-ocaml.sh && . install-opam-deps.sh && make PROCESSING_JOBS=1'
+env:
+  - OCAML_VERSION="4.03"

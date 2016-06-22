@@ -223,52 +223,58 @@ let () =
              | Some dir -> Some (dir / id) in
            id, exercise_dir, json_path, changed, dump_outputs,dump_reports)
         (List.sort_uniq compare !all_exercises) in
-    Lwt_main.run
-      (if !n_processes = 1 then
-         Lwt_list.iter_s (fun (id, exercise_dir, json_path, changed, dump_outputs,dump_reports) ->
-             if not changed then begin
-               Format.printf "%-12s (no changes)@." id ;
-               Lwt.return ()
-             end else begin
-               Grader_cli.dump_outputs := dump_outputs ;
-               Grader_cli.dump_reports := dump_reports ;
-               Grader_cli.grade exercise_dir (Some json_path) >>= fun result ->
-               begin match result with
-                 | 0 -> Format.printf "%-12s     [OK]@." id
-                 | _ -> Format.printf "%-12s   [FAILED]@." id
-               end ;
-               Lwt.return ()
-             end)
-           processes_arguments
-       else
-         let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
-         Lwt_list.iter_p (fun (id, exercise_dir, json_path, changed, dump_outputs, dump_reports) ->
-             Lwt_pool.use pool @@ fun () ->
-             if not changed then begin
-               Format.printf "%-12s (no changes)@." id ;
-               Lwt.return ()
-             end else begin
-               let args = Array.concat [
-                   (match dump_outputs with
-                    | None -> [||]
-                    | Some prefix -> [| "-dump-outputs" ; prefix |]) ;
-                   (match dump_reports with
-                    | None -> [||]
-                    | Some prefix -> [| "-dump-reports" ; prefix |]) ;
-                   (if !Grader_cli.display_outcomes then [| "-display-outcomes" |] else [||]) ;
-                   (if !Grader_cli.display_callback then [| "-display-progression" |] else [||]) ;
-                   (if !Grader_cli.display_std_outputs then [| "-display-stdouts"  |] else [||]) ;
-                   [| "-output-json" ; json_path |] ;
-                   [| exercise_dir |] ]in
-               spawn_grader args >>= function
-               | Unix.WEXITED 0 ->
-                   Format.printf "%-12s     [OK]@." id ;
-                   Lwt.return ()
-               | _ ->
-                   Format.printf "%-12s   [FAILED]@." id ;
-                   Lwt.return ()
-             end)
-           processes_arguments)
+    let results = Lwt_main.run @@
+      if !n_processes = 1 then
+        Lwt_list.map_s (fun (id, exercise_dir, json_path, changed, dump_outputs,dump_reports) ->
+            if not changed then begin
+              Format.printf "%-12s (no changes)@." id ;
+              Lwt.return true
+            end else begin
+              Grader_cli.dump_outputs := dump_outputs ;
+              Grader_cli.dump_reports := dump_reports ;
+              Grader_cli.grade exercise_dir (Some json_path) >>= fun result ->
+              match result with
+              | 0 ->
+                  Format.printf "%-12s     [OK]@." id ;
+                  Lwt.return true
+              | _ ->
+                  Format.printf "%-12s   [FAILED]@." id ;
+                  Lwt.return false
+            end)
+          processes_arguments
+      else
+        let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
+        Lwt_list.map_p (fun (id, exercise_dir, json_path, changed, dump_outputs, dump_reports) ->
+            Lwt_pool.use pool @@ fun () ->
+            if not changed then begin
+              Format.printf "%-12s (no changes)@." id ;
+              Lwt.return true
+            end else begin
+              let args = Array.concat [
+                  (match dump_outputs with
+                   | None -> [||]
+                   | Some prefix -> [| "-dump-outputs" ; prefix |]) ;
+                  (match dump_reports with
+                   | None -> [||]
+                   | Some prefix -> [| "-dump-reports" ; prefix |]) ;
+                  (if !Grader_cli.display_outcomes then [| "-display-outcomes" |] else [||]) ;
+                  (if !Grader_cli.display_callback then [| "-display-progression" |] else [||]) ;
+                  (if !Grader_cli.display_std_outputs then [| "-display-stdouts"  |] else [||]) ;
+                  [| "-output-json" ; json_path |] ;
+                  [| exercise_dir |] ]in
+              spawn_grader args >>= function
+              | Unix.WEXITED 0 ->
+                  Format.printf "%-12s     [OK]@." id ;
+                  Lwt.return true
+              | _ ->
+                  Format.printf "%-12s   [FAILED]@." id ;
+                  Lwt.return false
+            end)
+          processes_arguments in
+    if List.exists ((=) false) results then
+      exit 1
+    else
+      exit 0
   with exn ->
     Json_encoding.print_error Format.err_formatter exn ;
     Format.eprintf "@." ;

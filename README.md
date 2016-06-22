@@ -11,6 +11,8 @@ Note: you need a working ```opam``` environment with OCaml ```4.03.0```.
 
 * Install the dependencies : ```sh install-opam-deps.sh```
 
+You may wnt to read the script to know what it does first.
+
 * Compile the app : ```make```
 
 You can customise the exercise repository and output directory using

@@ -22,7 +22,7 @@ let find_div_or_append_to_body id =
   match Manip.by_id id with
   | Some div -> div
   | None ->
-      let div = Tyxml_js.Html5.(div ~a:[ a_id id ]) [] in
+      let div = Tyxml_js.Html.(div ~a:[ a_id id ]) [] in
       Manip.(appendChild Elt.body) div;
       div
 
@@ -83,11 +83,11 @@ let fatal message =
            background: rgba(0,0,0,0.8);\
            color: white;\
            z-index: 22222;" in
-        let div = Tyxml_js.Html5.(div ~a:[ a_id id ; a_style sty ]) [] in
+        let div = Tyxml_js.Html.(div ~a:[ a_id id ; a_style sty ]) [] in
         Manip.(appendChild Elt.body) div;
         div in
   Manip.replaceChildren div
-    Tyxml_js.Html5.
+    Tyxml_js.Html.
       [ div ~a: [ a_style "flex: 1" ] [] ;
         div ~a: [ a_style "border: 3px white double;\
                            font-family: 'Inconsolata', monospace;\
@@ -118,7 +118,7 @@ let show_loading ?(id = "ocp-loading-layer") contents =
   let chamo_src =
     "tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
   Manip.replaceChildren elt
-    Tyxml_js.Html5.[
+    Tyxml_js.Html.[
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
       div ~a: [ a_class [ "messages" ] ] contents
     ]
@@ -220,7 +220,7 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | None -> button_group ()
     | Some group -> group in
   let button =
-    Tyxml_js.Html5.(button [
+    Tyxml_js.Html.(button [
         img ~alt:(lbl ^ " icon") ~src:("icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
         span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]

@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "tryocaml-fun-deps"
+name: "learn-ocaml-deps"
 version: "~private"
 maintainer: "Gregoire Henry <gregoire.henry@ocamlpro.com>"
 authors: "Gregoire Henry <gregoire.henry@ocamlpro.com>"
@@ -8,7 +8,7 @@ depends: [
   "ocp-build" {build}
   "base64"
   "ezjsonm"
-  "js_of_ocaml" {>= "2.7"}
+  "js_of_ocaml" {>= "2.8"}
   "lwt"
   "ocp-indent" {>= "1.6"}
   "ocp-ocamlres"
@@ -18,7 +18,7 @@ depends: [
   "ppx_tools" {>= "5.0+4.02.0"}
   "react"
   "reactiveData"
-  "tyxml" {< "4" }
+  "tyxml" {>= "4.0.0"}
   "cohttp"
   "magic-mime"
 ]

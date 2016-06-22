@@ -35,7 +35,7 @@ type t = {
   mutable timeout_prompt: t -> unit Lwt.t;
   mutable current_timeout_prompt: unit Lwt.t;
   flood_limit: int;
-  mutable flood_prompt: t -> Html5_types.nmtoken -> (unit -> int) -> bool Lwt.t;
+  mutable flood_prompt: t -> Html_types.nmtoken -> (unit -> int) -> bool Lwt.t;
   mutable current_flood_prompt: unit Lwt.t;
   flood_reset: t -> unit;
   worker: Learnocaml_toplevel_worker_caller.t;

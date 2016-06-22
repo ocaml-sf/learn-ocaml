@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-val find_div_or_append_to_body : string -> [> Html5_types.div ] Tyxml_js.Html5.elt
+val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
 
-val find_component : string -> 'a Tyxml_js.Html5.elt
+val find_component : string -> 'a Tyxml_js.Html.elt
 
 val gettimeofday : unit -> float
 
@@ -29,7 +29,7 @@ val fatal : string -> unit
 
 val hide_loading : ?id: string -> unit -> unit
 
-val show_loading : ?id: string -> [< Html5_types.div_content_fun ] Tyxml_js.Html5.elt list -> unit
+val show_loading : ?id: string -> [< Html_types.div_content_fun ] Tyxml_js.Html.elt list -> unit
 
 val set_assoc : string -> 'a -> (string * 'a) list -> (string * 'a) list
 
@@ -66,7 +66,7 @@ val disable_with_button_group :
   button_group -> unit
 
 val button :
-  container: 'a Tyxml_js.Html5.elt ->
+  container: 'a Tyxml_js.Html.elt ->
   theme: string ->
   ?group: button_group ->
   ?state: button_state ->

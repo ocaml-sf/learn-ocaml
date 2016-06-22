@@ -20,7 +20,9 @@ type any
 (* Not for the faint of heart. *)
 
 module Repr : Json_repr.Repr with type value = any Js.t = struct
+
   type value = any Js.t
+
   let repr = function
     | `String s -> Js.Unsafe.coerce (Js.string s)
     | `Float f -> Js.Unsafe.coerce (Obj.magic f)
@@ -68,6 +70,9 @@ module Repr : Json_repr.Repr with type value = any Js.t = struct
                 (fun f -> Js.to_string f, Js.Unsafe.get v f)
                 fields)
     | _ -> invalid_arg "Browser_json.Repr.view"
+
+  let repr_uid = Json_repr.repr_uid ()
+
 end
 
 module Json_encoding = Json_encoding.Make (Repr)
