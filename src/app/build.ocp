@@ -18,6 +18,7 @@ begin library "learnocaml-common"
   files = [
     "server_index.ml"
     "lesson.ml"
+    "tutorial.ml"
     "learnocaml_exercise_state.ml"
     "learnocaml_local_storage.ml" ( pp = camlp4_js )
     "learnocaml_sync.ml"
