@@ -34,8 +34,18 @@ and group_contents =
   | Exercises of exercise Map.Make (String).t
   | Groups of group Map.Make (String).t
 
+type tutorial =
+  { tutorial_name : string ;
+    tutorial_title : string }
+
+and series =
+  { series_title : string ;
+    series_tutorials : tutorial list }
+
 val exercise_index_enc : group_contents Json_encoding.encoding
 
 val lesson_index_enc : (string * string) list Json_encoding.encoding
+
+val tutorial_index_enc : series Map.Make (String).t Json_encoding.encoding
 
 val check_version_1 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding

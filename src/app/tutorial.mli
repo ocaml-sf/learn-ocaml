@@ -29,5 +29,6 @@ and text =
   | Code of { code : string ; runnable : bool }
   | Emph of text list
   | Image of { alt : string ; mime : string ; contents : bytes }
+  | Math of string
 
 val tutorial_enc : tutorial Json_encoding.encoding

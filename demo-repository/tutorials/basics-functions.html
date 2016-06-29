@@ -1,0 +1,66 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <title>Functions</title>
+    </head>
+  <body>
+    <h1>Functions</h1>
+    <h2>Defining a one-argument function</h2>
+    <p>In OCaml defining a function with one argument, will look like this:</p>
+    <p><code runnable="true">let incr n = n + 1</code></p>
+    <p>You can also use tuples:</p>
+    <p><code runnable="true">let plus_and_divide (x, y, z) = (x + y) / z</code></p>
+    <p>Note that even though you have <code>x</code>, <code>y</code> and <code>z</code> as arguments, this syntax with tuples means that you call the function plus_and_divide with<strong>one</strong>argument which is a triple in this case.<br>To call a function, nothing is simpler:</p>
+    <p><code runnable="true">incr 42</code></p>
+    <p><code runnable="true">plus_and_divide (10, 20, 2)</code></p>
+    <h2>Defining a multiple-arguments function</h2>
+    <p>In C or Java, a function <code>plus</code>, will look like:int plus (int x, int y) { return x + y; }Then the call to this function, will be:plus (1, 2);In OCaml, the same function <code>plus</code> will be define like follow:</p>
+    <p><code runnable="true">let plus x y = x + y</code></p>
+    <p>To call this function, nothing is simpler:</p>
+    <p><code runnable="true">plus 1 2</code></p>
+    <p>Note that there is no need to bracket or comma between function's parameters.</p>
+    <h2>Returning multiple values</h2>
+    <p>You will notice that in OCaml, there is no <code>return</code> statement; to return a value, the whole body expression is implicitly returned.To return multiple values, we will use tuples. For example:</p>
+    <p><code runnable="true">(2, 3, 4, 5)</code></p>
+    <p>We can write functions which will return multiple values thanks to tuples. For example:</p>
+    <p><code runnable="true">let divide x y = (x / y, x mod y)</code></p>
+    <p>Then we get:</p>
+    <p><code runnable="true">divide 10 3</code></p>
+    <h2>Partial application</h2>
+    <p>It is possible to apply a number of parameters less than what is required by a function. The result would be a partial application of a function.Let's take the <code>plus</code> example:</p>
+    <p><code runnable="true">let plus x y = x + y</code></p>
+    <p>Using the partial application, we could rewrite the function <code>incr</code>, by giving just one argument to the function <code>plus</code>:</p>
+    <p><code runnable="true">let incr = plus 1</code></p>
+    <p>In this way, <code>plus 1</code> will return a function arity 1: <code> val incr : int -&gt; int = &lt;fun&gt;</code>. To increment an integer by one, you can now use the function <code>incr</code>:</p>
+    <p><code runnable="true">incr 42</code></p>
+    <p>Similarly, we can define a function which double each integer passed as argument of the function:</p>
+    <p><code runnable="true">let mul x y = x * y</code></p>
+    <p><code runnable="true">let double = mul 2</code></p>
+    <p><code runnable="true">double 8</code></p>
+    <h2>Anonymous functions</h2>
+    <p>In OCaml, we can write anonymous functions, functions defined without being bound to an identifier. For example:</p>
+    <p><code runnable="true">(fun x -> x + 1) 42</code></p>
+    <p>We can bound an anonymous function to an identifier. That's way, we have severals ways to define functions:</p>
+    <p><code runnable="true">let incr = fun x -> x + 1</code></p>
+    <p><code runnable="true">incr 42</code></p>
+    <h2>Iterators</h2>
+    <p>What is really fun is that you can now mix anonymous functions and iterators. Let's take an example with list. If you want to increment all elements of a list, you will use <code>List.map</code>:</p>
+    <p><code runnable="true">List.map (fun x -> x + 1) [ 1; 2; 3; 4 ]</code></p>
+    <p>Here, <code>x</code> is an element of the list, <code>x + 1</code> is the operation that will be done on <code>x</code>. The result will be a list with all its elements incremented by 1.Here is an example with <code>fold_left</code>. If you want to compute the sum of all elements of a list:</p>
+    <p><pre runnable="true">
+List.fold_left
+     (fun acc x -> acc + x)
+     0
+     [ 1; 2; 3; 4 ]
+    </pre></p>
+    <p>If we have :</p>
+    <p><code runnable="true">let plus = fun acc x -> acc + x</code></p>
+    <p>then:</p>
+    <p><code runnable="true">List.fold_left plus 0 [ 1; 2; 3; 4 ]</code></p>
+    <p>is equivalent to:</p>
+    <p><code runnable="true">plus (plus (plus (plus 0 1) 2) 3) 4</code></p>
+    <p>To finish, you may need to print values from a list:</p>
+    <p><code runnable="true">List.iter print_int [ 1; 2; 3; 4 ]</code></p>
+    <p>You can do the same sort of things on arrays too.</p>
+  </body>
+</html>

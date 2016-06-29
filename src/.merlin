@@ -11,6 +11,8 @@ PKG ocp-indent.lib
 PKG cohttp
 PKG cohttp.lwt_unix
 PKG magic-mime
+PKG omd
+PKG markup
 S ./*
 B ../_obuild/*
 EXT syntax

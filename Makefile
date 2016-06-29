@@ -15,6 +15,7 @@ REPO_DIR ?= ${CURDIR}/demo-repository
 
 EXERCISES_DIR ?= ${REPO_DIR}/exercises
 LESSONS_DIR ?= ${REPO_DIR}/lessons
+TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
 
 build:
 	@ocp-build init
@@ -30,6 +31,7 @@ build:
 	@mkdir -p $(DEST_DIR)
 	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
           -exercises-dir ${EXERCISES_DIR} \
+          -tutorials-dir ${TUTORIALS_DIR} \
           -dest-dir ${DEST_DIR} \
           -dump-outputs ${EXERCISES_DIR} \
           -dump-reports ${EXERCISES_DIR}

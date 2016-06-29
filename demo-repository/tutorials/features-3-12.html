@@ -1,0 +1,43 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <title>New Features in OCaml 3.12</title>
+    </head>
+  <body>
+    <h1>New Features in OCaml 3.12</h1>
+    <h2>Local opens</h2>
+    <p>Since OCaml 3.12, you can locally open a module within an expression, using the<code>let open</code>syntax. It can be very useful when accessing multiple values of a modules, without exposing them elsewhere:</p>
+    <p><pre runnable="true">
+let open List in
+map fst (map (fun x -> (x,1)) [1;2;3;4])
+    </pre></p>
+    <h2>Local opens</h2>
+    <p>You can also open a module for an expression within parenthesis:</p>
+    <p><code runnable="true">let int_6L = Int64.(add 1L (sub 7L 2L))</code></p>
+    <h2>Abbreviated Record Notation</h2>
+    <p>A new notation has been introduced to switch between record labels and local variables.If you have defined a record for vectors like:</p>
+    <p><code runnable="true">type vect = { x : float; y : float; }</code></p>
+    <p>You can easily bind its labels to canonical variables in a pattern matching:</p>
+    <p><code runnable="true">let norm { x; y } = sqrt (x *. x +. y *. y)</code></p>
+    <p>You can also create new records using the same notation:</p>
+    <p><code runnable="true">let vect x y = { x ; y }</code></p>
+    <h2>Record Labels Exhaustiveness</h2>
+    <p>You can now verify the exhaustiveness of pattern-matchings on records, when the<code>R</code>(or<code>9</code>) warning is activated.Let's activate this warning with the default ones:</p>
+    <p><code runnable="true">#warnings "+a-4-6-7-27..29"</code></p>
+    <p>We can now implement a function that does not use all the labels and see what happens:</p>
+    <p><code runnable="true">let abs { x } = x</code></p>
+    <p>To avoid the warning, we must tell the compiler that we are aware that some labels are missing:</p>
+    <p><code runnable="true">let abs { x; _ } = x</code></p>
+    <h2>Explicit Polymorphic Type Annotations</h2>
+    <p>OCaml 3.12 introduces a new syntax to require that a type be polymorphic.Let's start with what was there before. Many people thought that they could already force a polymorphic type on a function:</p>
+    <p><code runnable="true">let f : 'a -> 'a = function x -> x + 1</code></p>
+    <p>Although you might have thought you were forcing a polymorphic type on the function, you were only enforcing a constraint of equality between the argument type and the result type.With explicit polymorphism, you can force the polymorphism (and get an error, of course):</p>
+    <p><code runnable="true">let f : 'a.'a -> 'a = function x -> x + 1</code></p>
+    <p>This notation can also be used to define really polymorphic recursive methods.Let's define a new tree type:</p>
+    <p><code runnable="true">type 'a t = Leaf of 'a | Node of ('a * 'a) t</code></p>
+    <p>If we try to compute the depth of that tree, OCaml will complain:</p>
+    <p><code runnable="true">let rec depth = function Leaf _ -> 1 | Node x -> 1 + depth x</code></p>
+    <p>Indeed, depth is a recursive function, and the typer does not allow to use it will two different types of arguments. But now, with explicit polymorphism, you can tell the typer that it's ok to do so, since the function is polymorphic:</p>
+    <p><code runnable="true">let rec depth : 'a. 'a t -> _ = function Leaf _ -> 1 | Node x -> 1 + depth x</code></p>
+  </body>
+</html>

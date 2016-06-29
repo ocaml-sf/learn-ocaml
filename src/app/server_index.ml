@@ -124,3 +124,32 @@ let exercise_index_enc =
 let lesson_index_enc =
   check_version_1 @@
   obj1 (req "lessons" (list @@ tup2 string string))
+
+type tutorial =
+  { tutorial_name : string ;
+    tutorial_title : string }
+
+and series =
+  { series_title : string ;
+    series_tutorials : tutorial list }
+
+let tutorial_index_enc =
+  let open Json_encoding in
+  let tutorial_enc =
+    conv
+      (fun { tutorial_name ; tutorial_title } ->
+         (tutorial_name, tutorial_title))
+      (fun (tutorial_name, tutorial_title) ->
+         { tutorial_name ; tutorial_title })
+      (tup2 string string) in
+  let series_enc =
+    conv
+      (fun { series_title ; series_tutorials } ->
+         (series_title, series_tutorials))
+      (fun (series_title, series_tutorials) ->
+         { series_title ; series_tutorials }) @@
+    obj2
+      (req "title" string)
+      (req "tutorials" (list tutorial_enc)) in
+  check_version_1 @@
+  obj1 (req "series" (map_enc series_enc))

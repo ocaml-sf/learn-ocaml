@@ -1,0 +1,14 @@
+{ "learnocaml_version": "1",
+  "series":
+  { "basics":
+    { "title": "The very basics of OCaml",
+      "tutorials":
+      [ "basics-expressions",
+        "basics-imperative",
+        "basics-functions",
+        "basics-patternmatching",
+        "basics-traps" ]},
+    "news":
+    { "title": "New features of OCaml versions",
+      "tutorials":
+      [ "features-3-12" ] } } }

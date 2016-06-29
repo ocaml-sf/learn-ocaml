@@ -29,6 +29,7 @@ and text =
   | Code of { code : string ; runnable : bool }
   | Emph of text list
   | Image of { alt : string ; mime : string ; contents : bytes }
+  | Math of string
 
 open Json_encoding
 
@@ -50,6 +51,10 @@ let text_enc =
         (obj2 (req "code" string) (dft "runnable" bool true))
         (function Code { code ; runnable } -> Some (code, runnable) | _ -> None)
         (fun (code, runnable) -> Code { code ; runnable }) ;
+      case
+        (obj1 (req "math" string))
+        (function Math math-> Some math | _ -> None)
+        (fun math -> Math math) ;
       case
         (obj3 (req "image" bytes) (req "alt" string) (req "mime" string))
         (function Image { alt ; mime ; contents = image } -> Some (image, alt, mime) | _ -> None)
