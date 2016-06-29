@@ -125,9 +125,56 @@ let lesson_index_enc =
   check_version_1 @@
   obj1 (req "lessons" (list @@ tup2 string string))
 
+type word =
+  | Text of string
+  | Code of { code : string ; runnable : bool }
+  | Emph of text
+  | Image of { alt : string ; mime : string ; contents : bytes }
+  | Math of string
+and text =
+  word list
+
+let text_enc =
+  mu "text" @@ fun content_enc ->
+  let word_enc =
+    union
+      [ case string
+          (function Text text -> Some text | _ -> None)
+          (fun text -> Text text) ;
+        case
+          (obj1 (req "text" string))
+          (function Text text -> Some text | _ -> None)
+          (fun text -> Text text) ;
+        case
+          (obj1 (req "emph" content_enc))
+          (function Emph content -> Some content | _ -> None)
+          (fun content -> Emph content) ;
+        case
+          (obj2 (req "code" string) (dft "runnable" bool false))
+          (function Code { code ; runnable } -> Some (code, runnable) | _ -> None)
+          (fun (code, runnable) -> Code { code ; runnable }) ;
+        case
+          (obj1 (req "math" string))
+          (function Math math-> Some math | _ -> None)
+          (fun math -> Math math) ;
+        case
+          (obj3 (req "image" bytes) (req "alt" string) (req "mime" string))
+          (function
+            | Image { alt ; mime ; contents = image } -> Some (image, alt, mime)
+            | _ -> None)
+          (fun (image, alt, mime) ->
+             Image { alt ; mime ; contents = image }) ] in
+  union
+    [ case
+        word_enc
+        (function [ ctns ] -> Some ctns | _ -> None) (fun ctns -> [ ctns ]) ;
+      case
+        (list @@ word_enc)
+        (fun ctns -> Some ctns) (fun ctns -> ctns) ]
+
 type tutorial =
   { tutorial_name : string ;
-    tutorial_title : string }
+    tutorial_title : text }
 
 and series =
   { series_title : string ;
@@ -141,7 +188,7 @@ let tutorial_index_enc =
          (tutorial_name, tutorial_title))
       (fun (tutorial_name, tutorial_title) ->
          { tutorial_name ; tutorial_title })
-      (tup2 string string) in
+      (tup2 string text_enc) in
   let series_enc =
     conv
       (fun { series_title ; series_tutorials } ->

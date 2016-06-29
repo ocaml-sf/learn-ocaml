@@ -37,30 +37,84 @@ let parse_html_tutorial tutorial_name filename =
         `Elt (name, skip_white_space [] @@ List.map strip children)
     | `Text text -> `Text (String.concat "" (List.map String.trim text)) in
   match tree with
-  | None -> Lwt.fail (Failure ("cannot parse " ^ filename))
+  | None -> Lwt.fail_with ("cannot parse " ^ filename)
   | Some tree -> match strip tree with
     | `Elt ("html", [ `Elt ("head", _) ; `Elt ("body", contents) ])
     | `Elt ("html", [ `Elt ("body", contents) ]) ->
         begin match contents with
           | `Elt ("h1", title) :: rest ->
-              let strip_title = function
-                | [] -> Lwt.return ""
-                | [ `Text title ] -> Lwt.return title
-                | _ ->
-                    let msg = "non textual element in title" in
-                    Lwt.fail (Failure (Format.asprintf "in file %s, %s" filename msg)) in
-              let rec steps acc = function
-                | _ -> Lwt.return acc in
-              strip_title title >>= fun tutorial_title ->
-              steps [] rest >>= fun tutorial_steps ->
+              let rec parse_code acc = function
+                | [] -> Lwt.return (String.concat "" (List.rev acc))
+                | `Text text :: rest ->
+                    parse_code (text :: acc) rest
+                | `Elt (tag, _) :: _ ->
+                    let msg = "unsupported markup " ^ tag ^ " in code" in
+                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
+              let rec parse_text acc = function
+                | [] -> Lwt.return (List.rev acc)
+                | `Text t1 :: `Text t2 :: rest ->
+                    parse_text acc (`Text (t1 ^ t2) :: rest)
+                | `Elt ("br", _) :: rest ->
+                    parse_text acc rest
+                | `Text text :: rest ->
+                    parse_text (Text text :: acc) rest
+                | `Elt (("code" | "quote"), children) :: rest ->
+                    parse_code [] children >>= fun code ->
+                    parse_text (Code { code ; runnable = false } :: acc) rest
+                | `Elt (("strong" | "em" | "b"), children) :: rest ->
+                    parse_text [] children >>= fun contents ->
+                    parse_text (Emph contents :: acc) rest
+                | `Elt (tag, _) :: _ ->
+                    let msg = "unsupported markup " ^ tag ^ " in text" in
+                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
+              let rec parse_contents acc = function
+                | `Elt ("p", children) :: rest ->
+                    parse_text [] children >>= fun contents ->
+                    parse_contents (Tutorial.Paragraph contents :: acc) rest
+                | `Elt ("pre", [ `Text code]) :: rest ->
+                    let contents = [ Code { code ; runnable = false } ] in
+                    parse_contents (Tutorial.Paragraph contents :: acc) rest
+                | `Elt (tag, _) :: _ ->
+                    let msg = "the only markups supported at toplevel are \
+                               h2, p, ul and pre, " ^ tag ^ "is not allowed" in
+                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
+                | `Text _ :: _ ->
+                    let msg = "text is not allowed at the toplevel, \
+                               use a p markup" in
+                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
+                | [] -> Lwt.return (List.rev acc) in
+              let rec parse_steps = function
+                | acc, None, []  ->
+                    Lwt.return (List.rev acc)
+                | acc, Some (step_title, sacc), [] ->
+                    parse_contents [] (List.rev sacc) >>= fun step_contents ->
+                    let acc = Tutorial.{ step_title ; step_contents } :: acc in
+                    Lwt.return (List.rev acc)
+                | acc, None, `Elt ("h2", title) :: rest ->
+                    parse_text [] title >>= fun step_title ->
+                    parse_steps (acc, Some (step_title, []), rest)
+                | acc, None, elt :: rest ->
+                    let msg = "step title (h2 markup) expected \
+                               after the tutorial title (h1 markup)" in
+                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
+                | acc, Some (step_title, sacc), (`Elt ("h2", _) :: _ as rest) ->
+                    parse_contents [] (List.rev sacc) >>= fun step_contents ->
+                    let acc = Tutorial.{ step_title ; step_contents } :: acc in
+                    parse_steps (acc, None, rest)
+                | acc, Some (step_title, sacc), elt :: rest ->
+                    parse_steps (acc, Some (step_title, elt :: sacc), rest)
+              in
+              parse_text [] title >>= fun tutorial_title ->
+              parse_steps ([], None, rest) >>= fun tutorial_steps ->
               Lwt.return
                 (Server_index.{ tutorial_title ; tutorial_name },
-                 Tutorial.{ tutorial_title ; tutorial_steps = [] })
+                 Tutorial.{ tutorial_title ; tutorial_steps })
           | _ ->
-              let msg = "h1 markup expected a the beginning og the body" in
-              Lwt.fail (Failure (Format.asprintf "in file %s, %s" filename msg))
+              let msg = "tutorial title (h1 markup) expected \
+                         at the beginning of the body" in
+              Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
         end
-    | _ -> Lwt.fail (Failure ("bad HTML structure for " ^ filename))
+    | _ -> Lwt.fail_with ("bad HTML structure for " ^ filename)
 
 let parse_md_tutorial tutorial_name filename =
   Lwt_io.(with_file ~mode: Input) filename @@ fun chan ->
@@ -71,25 +125,45 @@ let parse_md_tutorial tutorial_name filename =
       | Omd.NL :: rest -> strip acc rest
       | oth :: rest -> strip (oth :: acc) rest in
     strip [] md in
-  let strip_title md =
-    let rec strip acc = function
+  let rec parse_title md =
+    let rec parse acc = function
       | [] -> Lwt.return (List.rev acc)
-      | Omd.NL :: rest -> strip acc rest
-      | Omd.Text text :: rest -> strip (text :: acc) rest
+      | Omd.NL :: rest -> parse acc rest
+      | Omd.Code (_, text) :: rest ->
+          let elt =
+            if String.length text >= 2 &&
+               String.get text 0 = '|' &&
+               String.get text (String.length text - 1) = '|'  then
+              Code { code = String.sub text 1 (String.length text - 2) ;
+                     runnable = true }
+            else
+            if String.length text >= 2 &&
+               String.get text 0 = '$' &&
+               String.get text (String.length text - 1) = '$'  then
+              Math (String.sub text 1 (String.length text - 2))
+            else
+              Code { code = text ; runnable = false } in
+          parse (elt :: acc) rest
+      | Omd.Text t1 :: Omd.Text t2 :: rest ->
+          parse acc (Omd.Text (t1 ^ t2) :: rest)
+      | Omd.Text text :: rest ->
+          parse (Text text :: acc) rest
+      | Omd.Emph t :: rest | Omd.Bold t :: rest ->
+          parse_title t >>= fun text ->
+          parse (Emph text :: acc) rest
       | _ ->
-          let msg = "unexpected non textual element in title" in
-          Lwt.fail (Failure (Format.asprintf "in file %s, %s" filename msg)) in
-    strip [] md >>= fun words ->
-    Lwt.return (String.concat "" words) in
+          let msg = "unexpected element in title" in
+          Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
+    parse [] md in
   match Omd.of_string str |> strip with
   | Omd.H1 title :: contents ->
-      strip_title title >>= fun tutorial_title ->
+      parse_title title >>= fun tutorial_title ->
       Lwt.return
         (Server_index.{ tutorial_title ; tutorial_name },
          Tutorial.{ tutorial_title ; tutorial_steps = [] })
   | _ ->
       let msg = "files must start with a level 1 title" in
-      Lwt.fail (Failure (Format.asprintf "in file %s, %s" filename msg))
+      Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
 
 let tutorials_dir = ref "./tutorials"
 
@@ -141,7 +215,7 @@ let main dest_dir =
           | [] ->
               Format.eprintf "No index file, no .md or .html file.@." ;
               Format.eprintf "This does not look like a LearnOCaml tutorial repository.@." ;
-              Lwt.fail (Failure  "cannot continue")
+              Lwt.fail_with  "cannot continue"
           | files ->
               Format.eprintf "Missing index file, using all .dm and .html files.@." ;
               Lwt.return [ "tutorials", ("All tutorials", files) ]) >>= fun series ->
@@ -155,12 +229,14 @@ let main dest_dir =
            if Sys.file_exists html_file then
              parse_html_tutorial name html_file
            else
-             Lwt.fail (Failure (Format.asprintf "missing file %s.{html|md}" base_name )) in
+             Lwt.fail_with (Format.asprintf "missing file %s.{html|md}" base_name ) in
        List.fold_left
          (fun acc (name, (series_title, tutorials)) ->
             Lwt_list.map_p
               (fun name ->
                  retrieve_tutorial name >>= fun (server_index_handle, tutorial) ->
+                 let json_path = dest_dir / "tutorial_" ^ name ^ ".json" in
+                 to_file Tutorial.tutorial_enc json_path tutorial >>= fun () ->
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
             acc >>= fun acc ->

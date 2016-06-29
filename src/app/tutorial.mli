@@ -16,19 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type tutorial =
-  { tutorial_title : string ;
+  { tutorial_title : text ;
     tutorial_steps : step list }
 and step =
-  { step_title : string ;
+  { step_title : text ;
     step_contents : phrase list }
 and phrase =
-  | Paragraph of text list
-  | Enum of text list list
-and text =
-  | Text of string
-  | Code of { code : string ; runnable : bool }
-  | Emph of text list
-  | Image of { alt : string ; mime : string ; contents : bytes }
-  | Math of string
+  | Paragraph of text
+  | Enum of text list
+and text = Server_index.text
 
 val tutorial_enc : tutorial Json_encoding.encoding

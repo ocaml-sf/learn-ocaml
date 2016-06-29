@@ -2,6 +2,7 @@ begin program "learnocaml-process-repository"
   has_asm = false
   files = [
     "server_index.ml"
+    "lesson.ml"
     "tutorial.ml"
     "learnocaml_process_exercise_repository.ml"
     "learnocaml_process_tutorial_repository.ml"

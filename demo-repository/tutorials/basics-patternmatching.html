@@ -7,101 +7,101 @@
     <h1>Pattern-matching</h1>
     <h2>Pattern-matching on integers</h2>
     <p>A powerful feature of OCaml is pattern-matching. For simple values as integers, pattern-matching is quite similar to case switches in other languages (<code>_</code> corresponds to the default case). Moreover, each case is handled in chronological order:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let string_of_int x = match x with
    | 0 -> "zero"
    | 1 -> "one"
    | 2 -> "two"
    | _ -> "many"
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let string_of_int2 = function
     | 0 -> "zero"
     | 1 -> "one"
     | 2 -> "two"
     | _ -> "many"
-    </pre></p>
+    </pre>
     <h2>Pattern-matching on chars</h2>
     <p>Pattern-matching on characters is also possible, with a special syntax to denote character ranges:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let is_capital = function
   | 'a' .. 'z' -> false
   | 'A' .. 'Z' -> true
   | _          -> failwith "Not a valid letter"
-    </pre></p>
+    </pre>
     <p>as</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let capitalize = function
   | 'a' .. 'z' as letter -> Char.uppercase letter
   | 'A' .. 'Z' as letter -> letter
   | _                    -> failwith "Not a valid letter"
-    </pre></p>
+    </pre>
     <h2>Pattern-matching on tuples</h2>
     <p>Pattern-matching is also possible on tuples:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let fit str len = match (str,len) with
   | ("foo", 51) -> true
   | ("bar", 51) -> true
   | (_    , 42) -> false
   | _           -> (String.length str) = len
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let fit str len = match (str,len) with
   | ("foo", 51)
   | ("bar", 51) -> true
   | (_    , 42) -> false
   | _           -> (String.length str) = len
-    </pre></p>
+    </pre>
     <p>when</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let fit str len = match (str,len) with
   | (_,51) when (str="foo" || str="bar") -> true
   | (_, x) when x=42 -> false
   | _ -> (String.length str) = len
-    </pre></p>
+    </pre>
     <h2>Pattern-matching on lists</h2>
     <p>However, the real power of pattern-matching appears when we start using more structured values, when we start needing giving a name to matched patterns. For instance, a list is either the empty list <code>[]</code> or a head and a tail, denoted by the pattern <code>h::t</code> where <code>h</code> and <code>t</code> are fresh variables bound to the matched patterns:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let head = function
   | []   -> failwith "empty list"
   | h::t -> h
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let second_element = function
   | []      -> failwith "the list is empty"
   | [_]     -> failwith "the list contains only one element"
   | _::e::_ -> e
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let head_head = function
   | []        -> failwith "the list is empty"
   | []::_     -> failwith "the head is the empty list"
   | (h::_)::_ -> h
-    </pre></p>
+    </pre>
     <h2>Pattern-matching on arrays</h2>
     <p>You can also pattern match on arrays:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let has_size_two = function
   | [| _; _ |] -> true
   | _          -> false
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let f = function
   | []                 -> failwith "empty list"
   | [| _; (_, x) |]::_ -> x
   | _                  -> failwith "the first array should be of size two"
-    </pre></p>
+    </pre>
     <h2>Exhaustiveness</h2>
     <p>One of the benefit of pattern-matching is the exhaustiveness check done by the compiler statically. Indeed, the OCaml compiler can verify that all the cases are handled. For instance, when pattern-matching on a list, the compiler will warn the user if she forgets to handle the empty list case:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let head_partial = function
   | h::_ -> h
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let head = function
   | []   -> failwith "empty list"
   | h::_ -> h
   | [h]  -> h
-    </pre></p>
+    </pre>
   </body>
 </html>

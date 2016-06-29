@@ -7,10 +7,10 @@
     <h1>New Features in OCaml 3.12</h1>
     <h2>Local opens</h2>
     <p>Since OCaml 3.12, you can locally open a module within an expression, using the<code>let open</code>syntax. It can be very useful when accessing multiple values of a modules, without exposing them elsewhere:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let open List in
 map fst (map (fun x -> (x,1)) [1;2;3;4])
-    </pre></p>
+    </pre>
     <h2>Local opens</h2>
     <p>You can also open a module for an expression within parenthesis:</p>
     <p><code runnable="true">let int_6L = Int64.(add 1L (sub 7L 2L))</code></p>

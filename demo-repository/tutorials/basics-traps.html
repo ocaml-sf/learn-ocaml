@@ -20,59 +20,59 @@
     <p>The <code>let</code> keyword is also used to form an expression in which a name is given to some value temporarily, for the evaluation of a subexpression only:<br> <code>let x = 41 in x + 1</code> <br> The value of <code>x</code> is <code>41</code> during the evaluation of <code>x + 1</code> only; the global binding of <code>x</code> to <code>"I am now a string!"</code> is preserved. See what <code>x</code> is evaluated to now, and type <code>next ()</code> for a little practice.</p>
     <h2>Exercise: let there be lets!</h2>
     <p>Fix all these <code>let</code> expressions in order to get the expected result at the end:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let xy =
   let x = 'x' and let y = 'y' in x ::[y]
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let ab =
   let a = 'a'
   let b = 'B' in Char.lowercase b
   in a ::[b]
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let up = Char.uppercase in
   big_xy = List.map up xy ;
   big_ab = List.map up ab ;
   big_ab @ big_xy
-    </pre></p>
+    </pre>
     <h2>Parentheses</h2>
     <p>With regard to grouping expression or enforcing order of evaluation, OCaml syntax is surprisingly easy: you can use pervasively either parentheses or <code>begin</code>/<code>end</code> keywords.Example grouping expressions in an <code>if</code> form:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 if 1+2 = 3 then (
   print_string "did you knew that?\n" ;
   print_string "amazing!\n"
 )
-    </pre></p>
+    </pre>
     <p>Or forcing order of evaluation with <code>begin</code>/<code>end</code> (although
 you won't find this often!):</p>
     <p><code runnable="true">begin 1 + 2 end * 3</code></p>
     <p>Also, as function application takes precedence over infix operators you will frequently uses parentheses to make explicit the expected evaluation order, as in: <code>square (1 + 1)</code> since <code>square 1+1</code> would yield <code>2</code>. Enter <code>next ()</code> when you are ready to practice.</p>
     <h2>Exercise: Fix the grouping</h2>
     <p>A Lisp programmer stole all our parentheses! Get them back in order to get the proper result at the end.</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let ten =
   let double x = x+x in
   double 3 + 2
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let hundred =
   if true || false then
     print_string "May I help you?\n" ;
     100
   else 0
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 let one =
   let accum = ref -54 in
   for i = 1 to ten do accum := !accum + i done ;
   !accum
-    </pre></p>
-    <p><pre runnable="true">
+    </pre>
+    <pre runnable="true">
 one + match hundred with
   | 42  -> match ten with 10 -> 52  | _ -> 0
   | 100 -> match ten with 10 -> 110 | _ -> 0
   | _ -> -1
-    </pre></p>
+    </pre>
   </body>
 </html>

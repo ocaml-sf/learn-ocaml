@@ -27,32 +27,32 @@
     <p>and:</p>
     <p><code runnable="true">print_string "Hello"</code></p>
     <p>Sequences of expressions are separated by <code>;</code>:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 print_string "x = ";
 print_int !x;
 print_newline ()
-    </pre></p>
+    </pre>
     <p>A more powerful method to print values is <code>Printf.printf</code>, whose behavior is similar to <code>printf</code> in C:</p>
     <p><code runnable="true">Printf.printf "x = %d. Bye %s\n" !x "John"</code></p>
     <h2>For loops</h2>
     <p>Let's define a reference on a list:</p>
     <p><code runnable="true">let xl = ref []</code></p>
     <p>OCaml provides a simple <code>for</code> loop to iterate on integers in a range:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 for i = 1 to 10 do
   xl := i :: !xl;
 done;
 !xl
-    </pre></p>
+    </pre>
     <p>Here, for each value between 1 and 10, we have added it in this order at the head of the reference.Of course, if we want them in the correct order, we need to reverse the list:</p>
     <p><code runnable="true">List.rev !xl</code></p>
     <p>Or we can just execute the loop directly from the upper bound to the lower bound:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 for i = 10 downto 1 do
  xl := i :: !xl
 done;
 !xl
-    </pre></p>
+    </pre>
     <h2>Computing Conditions</h2>
     <p>Boolean values in OCaml can be either <code>true</code> or <code>false</code>. They are often created from comparing other values. For example:</p>
     <p><code runnable="true">1 > 2</code></p>
@@ -70,26 +70,26 @@ done;
     <p>Now that we know how to test conditions, we can use them to choose between computations. Let's define two values :</p>
     <p><code runnable="true">let a = 1 and b = 2</code></p>
     <p>We can compute the minimum of them:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 Printf.printf "min(%d,%d) = %d\n" a b
     (if a < b then a else b)
-    </pre></p>
+    </pre>
     <p>We can of course execute sequences within branches:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 let z = if a < 100 then begin
     print_string "return at least 100 !";
     print_newline ();
     100
  end else a
-    </pre></p>
+    </pre>
     <h2>While loops</h2>
     <p>OCaml also provides a <code>while</code> loop, to execute some code as long as an expression is true:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 while !x > 20 do
   print_int !x; print_newline ();
   x := !x - 2
 done
-    </pre></p>
+    </pre>
     <h2>Congratulations</h2>
     <p>You have seen that OCaml allows you to use some imperative style of programming. Some functional programmers will tell you that side-effects are bad: they are right, in many cases, but don't listen to them too early !In the next lessons, you will see that by combining both imperative and functional programming styles, you can do wonders !Use <code>next()</code> to go to the next lesson !</p>
   </body>

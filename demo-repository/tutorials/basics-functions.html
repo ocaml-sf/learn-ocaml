@@ -47,12 +47,12 @@
     <p>What is really fun is that you can now mix anonymous functions and iterators. Let's take an example with list. If you want to increment all elements of a list, you will use <code>List.map</code>:</p>
     <p><code runnable="true">List.map (fun x -> x + 1) [ 1; 2; 3; 4 ]</code></p>
     <p>Here, <code>x</code> is an element of the list, <code>x + 1</code> is the operation that will be done on <code>x</code>. The result will be a list with all its elements incremented by 1.Here is an example with <code>fold_left</code>. If you want to compute the sum of all elements of a list:</p>
-    <p><pre runnable="true">
+    <pre runnable="true">
 List.fold_left
      (fun acc x -> acc + x)
      0
      [ 1; 2; 3; 4 ]
-    </pre></p>
+    </pre>
     <p>If we have :</p>
     <p><code runnable="true">let plus = fun acc x -> acc + x</code></p>
     <p>then:</p>
