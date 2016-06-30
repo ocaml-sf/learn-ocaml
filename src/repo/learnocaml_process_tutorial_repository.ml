@@ -167,9 +167,13 @@ let parse_md_tutorial tutorial_name filename =
 
 let tutorials_dir = ref "./tutorials"
 
+let tutorials_index = ref None
+
 let args = Arg.align @@
   [ "-tutorials-dir", Arg.Set_string tutorials_dir,
-    "PATH path to the tutorial repository (default: [./tutorials])" ]
+    "PATH path to the tutorial repository (default: [./tutorials])" ;
+    "-tutorials-index", Arg.String (fun fn -> tutorials_index := Some fn),
+    "PATH path to the tutorials index (default: [<tutorials-dir>/index.json])" ]
 
 let index_enc =
   let open Json_encoding in
@@ -198,12 +202,16 @@ let from_file encoding fn =
 module StringMap = Map.Make (String)
 
 let main dest_dir =
+  let (/) dir f =
+    String.concat Filename.dir_sep [ dir ; f ] in
+  let tutorials_index =
+    match !tutorials_index with
+    | Some tutorials_index -> tutorials_index
+    | None -> !tutorials_dir / "index.json" in
   Lwt.catch
     (fun () ->
-       let (/) dir f =
-         String.concat Filename.dir_sep [ dir ; f ] in
-       (if Sys.file_exists (!tutorials_dir / "index.json") then
-          from_file index_enc (!tutorials_dir / "index.json")
+       (if Sys.file_exists tutorials_index then
+          from_file index_enc tutorials_index
         else
           match
             Array.to_list (Sys.readdir !tutorials_dir) |>

@@ -102,6 +102,8 @@ let read_exercise exercise_dir =
 
 let exercises_dir = ref "./exercises"
 
+let exercises_index = ref None
+
 let dump_outputs = ref None
 
 let dump_reports = ref None
@@ -111,6 +113,8 @@ let n_processes = ref 1
 let args = Arg.align @@
   [ "-exercises-dir", Arg.Set_string exercises_dir,
     "PATH path to the exercise repository (default: [./exercises])" ;
+    "-exercises-index", Arg.String (fun fn -> exercises_index := Some fn),
+    "PATH path to the exercises index (default: [<exercises-dir>/index.json])" ;
     "-display-outcomes", Arg.Set Grader_cli.display_outcomes,
     " display the toplevel's outcomes" ;
     "-display-progression", Arg.Set Grader_cli.display_callback,
@@ -139,12 +143,16 @@ let spawn_grader args =
     (Sys.argv.(0), Array.concat [ [| Sys.argv.(0) |] ; args ])
 
 let main dest_dir =
+  let (/) dir f =
+    String.concat Filename.dir_sep [ dir ; f ] in
+  let exercises_index =
+    match !exercises_index with
+    | Some exercises_index -> exercises_index
+    | None -> !exercises_dir / "index.json" in
   Lwt.catch
     (fun () ->
-       let (/) dir f =
-         String.concat Filename.dir_sep [ dir ; f ] in
-       (if Sys.file_exists (!exercises_dir / "index.json") then
-          from_file index_enc (!exercises_dir / "index.json")
+       (if Sys.file_exists exercises_index then
+          from_file index_enc exercises_index
         else
           match
             Array.to_list (Sys.readdir !exercises_dir) |>
