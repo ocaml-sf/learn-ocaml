@@ -130,11 +130,9 @@ let args = Arg.align @@
 
 
 let () =
-  try
-    ignore (Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK") ;
-    Grader_cli.main () ;
-    exit 0
-  with Not_found -> ()
+  match Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK" with
+  | _ -> Grader_cli.main () ; exit 0
+  | exception Not_found -> ()
 
 let spawn_grader args =
   Lwt_process.exec
@@ -216,8 +214,7 @@ let main dest_dir =
                 | Some dir -> Some (dir / id) in
               id, exercise_dir, json_path, changed, dump_outputs,dump_reports)
            (List.sort_uniq compare !all_exercises) in
-       let results = Lwt_main.run @@
-         if !n_processes = 1 then
+       begin if !n_processes = 1 then
            Lwt_list.map_s (fun (id, exercise_dir, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
@@ -263,12 +260,13 @@ let main dest_dir =
                      Format.printf "%-12s   [FAILED]@." id ;
                      Lwt.return false
                end)
-             processes_arguments in
+             processes_arguments
+       end >>= fun results ->
        Lwt.return (List.for_all ((=) true) results))
     (fun exn ->
        let print_unknown ppf = function
-         | Failure msg -> Format.fprintf ppf "Fatal: %s" msg
-         | exn -> Format.fprintf ppf "Fatal: %s"  (Printexc.to_string exn) in
+         | Failure msg -> Format.fprintf ppf "Cannot process exercises: %s" msg
+         | exn -> Format.fprintf ppf "Cannot process exercises: %s"  (Printexc.to_string exn) in
        Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
        Format.eprintf "@." ;
        Lwt.return false)
