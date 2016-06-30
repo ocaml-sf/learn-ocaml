@@ -38,12 +38,12 @@ let get_grade ?callback exo solution =
 open Grader_jsoo_messages
 
 let () =
-  Worker.set_onmessage @@ fun (json : Browser_json.Repr.value) ->
+  Worker.set_onmessage @@ fun (json : Json_repr_browser.Repr.value) ->
   let { exercise ; solution } =
-    Browser_json.Json_encoding.destruct to_worker_enc json in
+    Json_repr_browser.Json_encoding.destruct to_worker_enc json in
   let callback msg =
     let msg = Callback msg in
-    let json = Browser_json.Json_encoding.construct from_worker_enc msg in
+    let json = Json_repr_browser.Json_encoding.construct from_worker_enc msg in
     Worker.post_message json in
   let ans =
     let result, stdout, stderr, outcomes =
@@ -61,7 +61,7 @@ let () =
               "Internal error:\nThe grader did not return a report."
           | exn ->
               "Unexpected error:\n" ^ Printexc.to_string exn in
-        let report = Report.[ Message ([ Code msg ], Failure) ] in
+        let report = Learnocaml_report.[ Message ([ Code msg ], Failure) ] in
         Answer (report, stdout, stderr, outcomes) in
-  let json = Browser_json.Json_encoding.construct from_worker_enc ans in
+  let json = Json_repr_browser.Json_encoding.construct from_worker_enc ans in
   Worker.post_message json

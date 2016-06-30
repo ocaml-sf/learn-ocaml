@@ -34,10 +34,10 @@ val has: 'a field -> t -> bool
 (** Access a field in an exercise *)
 val set: 'a field -> 'a -> t -> t
 
-(** Exercise id accessor *)
+(** Learnocaml_exercise id accessor *)
 val id: string field
 
-(** Exercise title / name accessor *)
+(** Learnocaml_exercise title / name accessor *)
 val title: string field
 
 (** Maximum score for the exercise *)

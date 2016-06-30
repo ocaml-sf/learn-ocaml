@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 
-open Server_index
+open Learnocaml_index
 
 open Lwt.Infix
 
@@ -70,10 +70,10 @@ let parse_html_tutorial tutorial_name filename =
               let rec parse_contents acc = function
                 | `Elt ("p", children) :: rest ->
                     parse_text [] children >>= fun contents ->
-                    parse_contents (Tutorial.Paragraph contents :: acc) rest
+                    parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
                 | `Elt ("pre", [ `Text code]) :: rest ->
                     let contents = [ Code { code ; runnable = false } ] in
-                    parse_contents (Tutorial.Paragraph contents :: acc) rest
+                    parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
                 | `Elt (tag, _) :: _ ->
                     let msg = "the only markups supported at toplevel are \
                                h2, p, ul and pre, " ^ tag ^ "is not allowed" in
@@ -88,7 +88,7 @@ let parse_html_tutorial tutorial_name filename =
                     Lwt.return (List.rev acc)
                 | acc, Some (step_title, sacc), [] ->
                     parse_contents [] (List.rev sacc) >>= fun step_contents ->
-                    let acc = Tutorial.{ step_title ; step_contents } :: acc in
+                    let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
                     Lwt.return (List.rev acc)
                 | acc, None, `Elt ("h2", title) :: rest ->
                     parse_text [] title >>= fun step_title ->
@@ -99,7 +99,7 @@ let parse_html_tutorial tutorial_name filename =
                     Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
                 | acc, Some (step_title, sacc), (`Elt ("h2", _) :: _ as rest) ->
                     parse_contents [] (List.rev sacc) >>= fun step_contents ->
-                    let acc = Tutorial.{ step_title ; step_contents } :: acc in
+                    let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
                     parse_steps (acc, None, rest)
                 | acc, Some (step_title, sacc), elt :: rest ->
                     parse_steps (acc, Some (step_title, elt :: sacc), rest)
@@ -107,8 +107,8 @@ let parse_html_tutorial tutorial_name filename =
               parse_text [] title >>= fun tutorial_title ->
               parse_steps ([], None, rest) >>= fun tutorial_steps ->
               Lwt.return
-                (Server_index.{ tutorial_title ; tutorial_name },
-                 Tutorial.{ tutorial_title ; tutorial_steps })
+                (Learnocaml_index.{ tutorial_title ; tutorial_name },
+                 Learnocaml_tutorial.{ tutorial_title ; tutorial_steps })
           | _ ->
               let msg = "tutorial title (h1 markup) expected \
                          at the beginning of the body" in
@@ -159,8 +159,8 @@ let parse_md_tutorial tutorial_name filename =
   | Omd.H1 title :: contents ->
       parse_title title >>= fun tutorial_title ->
       Lwt.return
-        (Server_index.{ tutorial_title ; tutorial_name },
-         Tutorial.{ tutorial_title ; tutorial_steps = [] })
+        (Learnocaml_index.{ tutorial_title ; tutorial_name },
+         Learnocaml_tutorial.{ tutorial_title ; tutorial_steps = [] })
   | _ ->
       let msg = "files must start with a level 1 title" in
       Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
@@ -236,7 +236,7 @@ let main dest_dir =
               (fun name ->
                  retrieve_tutorial name >>= fun (server_index_handle, tutorial) ->
                  let json_path = dest_dir / "tutorial_" ^ name ^ ".json" in
-                 to_file Tutorial.tutorial_enc json_path tutorial >>= fun () ->
+                 to_file Learnocaml_tutorial.tutorial_enc json_path tutorial >>= fun () ->
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
             acc >>= fun acc ->

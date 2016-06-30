@@ -18,7 +18,7 @@
 type exercise_state =
   { solution : string ;
     grade : int (* \in [0, 100] *) option ;
-    report : Report.report option ;
+    report : Learnocaml_report.report option ;
     mtime : float }
 
 open Json_encoding
@@ -40,5 +40,5 @@ let exercise_state_enc =
     (obj4
        (opt "grade" grade_enc)
        (req "solution" string)
-       (opt "report" Report.report_enc)
+       (opt "report" Learnocaml_report.report_enc)
        (dft "mtime" float 0.))

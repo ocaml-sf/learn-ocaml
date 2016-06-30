@@ -57,7 +57,7 @@ val output_html_of_report : ?bare: bool -> Format.formatter -> report -> unit
 (** JSON serializer *)
 val report_enc : report Json_encoding.encoding
 
-(** {2 Report building combinators} *)
+(** {2 Learnocaml_report building combinators} *)
 
 val failure : message:string -> item
 val success : points:int -> message:string -> item

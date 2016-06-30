@@ -24,6 +24,6 @@ and step =
 and phrase =
   | Paragraph of text
   | Enum of text list
-and text = Server_index.text
+and text = Learnocaml_index.text
 
 val tutorial_enc : tutorial Json_encoding.encoding

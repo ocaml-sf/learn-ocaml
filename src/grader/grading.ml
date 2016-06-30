@@ -101,12 +101,12 @@ let get_grade ?callback ~divert exo code =
       set_progress "Loading the prelude." ;
       handle_error (internal_error "while loading the prelude") @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
-        (Exercise.(get prelude) exo) ;
+        (Learnocaml_exercise.(get prelude) exo) ;
 
       set_progress "Preparing the test environment." ;
       handle_error (internal_error "while preparing the tests") @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
-        (Exercise.(get prepare) exo) ;
+        (Learnocaml_exercise.(get prepare) exo) ;
 
       set_progress "Loading your code." ;
       handle_error user_code_error @@
@@ -115,14 +115,14 @@ let get_grade ?callback ~divert exo code =
       set_progress "Loading the solution." ;
       handle_error (internal_error "while loading the solution") @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-        (Exercise.(get solution) exo) ;
+        (Learnocaml_exercise.(get solution) exo) ;
 
       set_progress "Preparing to launch the tests." ;
       Introspection.allow_introspection ~divert ;
       Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
       let get_result =
         Introspection.create_ref "results"
-          [%ty: Report.report option]
+          [%ty: Learnocaml_report.report option]
           None in
       Introspection.register_callback "set_progress"
         [%ty: string]
@@ -134,11 +134,13 @@ let get_grade ?callback ~divert exo code =
         \  let set_progress = set_progress\n\
         \  module Introspection = Introspection\n\
          end)" ;
-
+      handle_error (internal_error "while preparing the tests") @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        "module Report = Learnocaml_report" ;
       set_progress "Launching the test bench." ;
       handle_error (internal_error "while testing your solution") @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
-        (Exercise.(get test) exo) ;
+        (Learnocaml_exercise.(get test) exo) ;
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;

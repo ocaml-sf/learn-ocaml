@@ -1,0 +1,10 @@
+begin library "learnocaml-state"
+  has_asm = false
+  files = [
+    "learnocaml_report.ml"
+    "learnocaml_exercise_state.ml"
+  ]
+  requires = [
+    "learnocaml-repository"
+  ]
+end

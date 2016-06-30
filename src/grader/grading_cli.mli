@@ -20,5 +20,5 @@
     exceptions defined in module {!Grading}. *)
 val get_grade:
   ?callback:(string -> unit) ->
-  Exercise.t -> string ->
-  ((Report.report, exn) result * string * string * string) Lwt.t
+  Learnocaml_exercise.t -> string ->
+  ((Learnocaml_report.report, exn) result * string * string * string) Lwt.t

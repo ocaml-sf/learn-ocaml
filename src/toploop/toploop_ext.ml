@@ -238,21 +238,21 @@ let parse_mod_string modname sig_code impl_code =
   let open Ast_helper in
   let str =
     let impl_lb = Lexing.from_string impl_code in
-    init_loc impl_lb (String.uncapitalize modname ^ ".ml");
+    init_loc impl_lb (String.uncapitalize_ascii modname ^ ".ml");
     Parse.implementation impl_lb in
   let m =
     match sig_code with
     | None -> (Mod.structure str)
     | Some sig_code ->
         let sig_lb = Lexing.from_string sig_code in
-        init_loc sig_lb (String.uncapitalize modname ^ ".mli");
+        init_loc sig_lb (String.uncapitalize_ascii modname ^ ".mli");
         let s = Parse.interface sig_lb in
         Mod.constraint_ (Mod.structure str) (Mty.signature s) in
   Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ]
 
 let use_mod_string
     ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code impl_code =
-  if String.capitalize modname <> modname then
+  if String.capitalize_ascii modname <> modname then
     invalid_arg
       "Learnocaml_toplevel_toploop.use_mod_string: \
        the module name must start with a capital letter.";

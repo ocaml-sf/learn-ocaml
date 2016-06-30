@@ -20,7 +20,7 @@ module StringMap = Map.Make (String)
 type exercise_kind =
   | Project
   | Problem
-  | Exercise
+  | Learnocaml_exercise
 
 type exercise =
   { exercise_kind : exercise_kind ;
@@ -33,7 +33,7 @@ and group =
     group_contents : group_contents }
 
 and group_contents =
-  | Exercises of exercise Map.Make (String).t
+  | Learnocaml_exercises of exercise Map.Make (String).t
   | Groups of group Map.Make (String).t
 
 open Json_encoding
@@ -59,7 +59,7 @@ let exercise_kind_enc =
   string_enum
     [ "problem", Problem ;
       "project", Project ;
-      "exercise", Exercise ]
+      "exercise", Learnocaml_exercise ]
 
 let exercise_enc =
   conv
@@ -93,9 +93,9 @@ let group_enc =
            (req "title" string)
            (req "exercises" (map_enc exercise_enc)))
         (function
-          | (title, Exercises map) -> Some (title, map)
+          | (title, Learnocaml_exercises map) -> Some (title, map)
           | _ -> None)
-        (fun (title, map) -> (title, Exercises map)) ;
+        (fun (title, map) -> (title, Learnocaml_exercises map)) ;
       case
         (obj2
            (req "title" string)
@@ -111,9 +111,9 @@ let exercise_index_enc =
     [ case
         (obj1 (req "exercises" (map_enc exercise_enc)))
         (function
-          | Exercises map -> Some map
+          | Learnocaml_exercises map -> Some map
           | _ -> None)
-        (fun map -> Exercises map) ;
+        (fun map -> Learnocaml_exercises map) ;
       case
         (obj1 (req "groups" (map_enc group_enc)))
         (function
@@ -200,3 +200,11 @@ let tutorial_index_enc =
       (req "tutorials" (list tutorial_enc)) in
   check_version_1 @@
   obj1 (req "series" (map_enc series_enc))
+
+let exercise_index_path = "exercises.json"
+
+let exercise_path id = "exercise_" ^ id ^ ".json"
+
+let lesson_index_path = "lessons.json"
+
+let lesson_path id = "lesson_" ^ id ^ ".json"

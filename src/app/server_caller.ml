@@ -50,7 +50,7 @@ let fetch_json filename =
 
 let fetch_and_decode_json enc filename =
   fetch_json filename >>= fun json ->
-  try Lwt.return (Browser_json.Json_encoding.destruct enc json) with exn ->
+  try Lwt.return (Json_repr_browser.Json_encoding.destruct enc json) with exn ->
     let msg =
       Format.asprintf "bad structure for %s@.%a"
         filename
@@ -59,23 +59,23 @@ let fetch_and_decode_json enc filename =
 
 let fetch_exercise_index () =
   fetch_and_decode_json
-    Server_index.exercise_index_enc
-    Server_paths.exercise_index_path
+    Learnocaml_index.exercise_index_enc
+    Learnocaml_index.exercise_index_path
 
 let fetch_exercise id =
   fetch_and_decode_json
-    Exercise.enc
-    (Server_paths.exercise_path id)
+    Learnocaml_exercise.enc
+    (Learnocaml_index.exercise_path id)
 
 let fetch_lesson_index () =
   fetch_and_decode_json
-    Server_index.lesson_index_enc
-    Server_paths.lesson_index_path
+    Learnocaml_index.lesson_index_enc
+    Learnocaml_index.lesson_index_path
 
 let fetch_lesson id =
   fetch_and_decode_json
-    Lesson.lesson_enc
-    (Server_paths.lesson_path id)
+    Learnocaml_lesson.lesson_enc
+    (Learnocaml_index.lesson_path id)
 
 let gimme_sync_token () =
   fetch ~message: "cannot obtain a token" "/sync/gimme"
@@ -90,7 +90,7 @@ let fetch_save_file ~token =
          (Js.to_string err ## message) in
      Lwt.fail (Cannot_fetch msg)) >>= fun json ->
   try Lwt.return @@
-    Browser_json.Json_encoding.destruct Learnocaml_sync.save_file_enc json
+    Json_repr_browser.Json_encoding.destruct Learnocaml_sync.save_file_enc json
   with exn ->
     let msg =
       Format.asprintf "bad structure for server data@.%a"
@@ -99,7 +99,7 @@ let fetch_save_file ~token =
 
 let upload_save_file ~token save_file =
   let json =
-    Browser_json.Json_encoding.construct
+    Json_repr_browser.Json_encoding.construct
       Learnocaml_sync.save_file_enc
       save_file in
   let body =

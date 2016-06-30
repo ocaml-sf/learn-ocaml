@@ -102,7 +102,7 @@ let store_single name enc value =
     (Dom_html.window##localStorage)
     (fun () -> failwith "local storage support required")
     (fun localStorage ->
-       let json = Browser_json.Json_encoding.construct enc value in
+       let json = Json_repr_browser.Json_encoding.construct enc value in
        localStorage##setItem (Js.string name, Js._JSON##stringify (json)))
 
 let retrieve_single ?default name enc () =
@@ -117,7 +117,7 @@ let retrieve_single ?default name enc () =
             | Some default -> default
             | None -> raise Not_found)
          (fun v ->
-            let open Browser_json.Json_encoding in
+            let open Json_repr_browser.Json_encoding in
             try
               destruct enc (Js._JSON##parse (v))
             with exn ->
@@ -142,7 +142,7 @@ let sync_token =
 
 let cached_exercise name =
   let key = mangle [ "cached-exercise" ; name ] in
-  let enc = Exercise.enc in
+  let enc = Learnocaml_exercise.enc in
   let store value = store_single key enc value
   and retrieve () = retrieve_single key enc ()
   and delete () = delete_single key enc () in

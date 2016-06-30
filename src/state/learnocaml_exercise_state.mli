@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-val exercise_index_path : string
+type exercise_state =
+  { solution : string ;
+    grade : int (* \in [0, 100] *) option ;
+    report : Learnocaml_report.report option ;
+    mtime : float }
 
-val exercise_path : string -> string
-
-val lesson_index_path : string
-
-val lesson_path : string -> string
+val exercise_state_enc : exercise_state Json_encoding.encoding

@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type to_worker =
-  { exercise : Exercise.t ;
+  { exercise : Learnocaml_exercise.t ;
     solution : string }
 type from_worker =
   | Callback of string
-  | Answer of Report.report * string * string * string
+  | Answer of Learnocaml_report.report * string * string * string
 
 open Json_encoding
 
@@ -30,13 +30,13 @@ let to_worker_enc =
     (fun (solution, exercise) -> { solution ; exercise })
     (obj2
        (req "solution" string)
-       (req "exercise" Exercise.enc))
+       (req "exercise" Learnocaml_exercise.enc))
 
 let from_worker_enc =
   union
     [ case
         (obj4
-           (req "report" Report.report_enc)
+           (req "report" Learnocaml_report.report_enc)
            (dft "stdout" string "")
            (dft "stderr" string "")
            (dft "outcomes" string ""))

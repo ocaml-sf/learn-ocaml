@@ -19,7 +19,6 @@ begin program "learnocaml-toplevel-worker"
       commands = [ {
         "js_of_ocaml"
            "+weak.js"
-           "+cstruct/cstruct.js"
            "+dynlink.js"
            "+toplevel.js"
            "--toplevel"

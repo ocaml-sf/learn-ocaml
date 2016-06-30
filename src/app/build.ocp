@@ -1,64 +1,28 @@
-begin program "learnocaml-process-repository"
-  has_asm = false
+begin library "learnocaml-app-common"
   files = [
-    "server_index.ml"
-    "lesson.ml"
-    "tutorial.ml"
-    "learnocaml_process_exercise_repository.ml"
-    "learnocaml_process_tutorial_repository.ml"
-    "learnocaml_process_repository_main.ml"
-  ]
-  requires = [
-    "ocplib-json-typed"
-    "ezjsonm"
-    "str"
-    "lwt.unix"
-    "omd"
-    "markup"
-    "exercise"
-    "grading-cli"
-  ]
-end
-
-begin library "learnocaml-common"
-  files = [
-    "server_index.ml"
-    "lesson.ml"
-    "tutorial.ml"
-    "learnocaml_exercise_state.ml"
     "learnocaml_local_storage.ml" ( pp = camlp4_js )
     "learnocaml_sync.ml"
-    "server_paths.ml"
     "server_caller.ml" ( pp = camlp4_js )
     "learnocaml_common.ml" ( pp = camlp4_js )
   ]
   requires = [
-    "learnocaml-toplevel"
-    "browser-json"
-    "exercise"
-    "report"
-    "jsutils"
-    "ocplib-json-typed"
+    "ocplib-json-typed.browser"
     "js_of_ocaml"
     "js_of_ocaml.syntax"
     "js_of_ocaml.tyxml"
+    "jsutils"
+    "learnocaml-toplevel"
+    "learnocaml-repository"
+    "learnocaml-state"
   ]
 end
 
 begin program "learnocaml-main"
   requires = [
-    "jsutils"
-    "ocplib-json-typed"
-    "js_of_ocaml"
-    "js_of_ocaml.syntax"
-    "js_of_ocaml.tyxml"
     "ezjsonm"
-    "cstruct"
-    "browser-json"
-    "exercise"
-    "report"
     "ace"
-    "learnocaml-common"
+    "learnocaml-repository"
+    "learnocaml-app-common"
     "learnocaml-toplevel"
   ]
   files = [
@@ -71,7 +35,6 @@ begin program "learnocaml-main"
       commands = [ {
         "js_of_ocaml"
            "+weak.js"
-           "+cstruct/cstruct.js"
            "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
            %byte_exe( p = "learnocaml-main" )
       } ]
@@ -81,18 +44,11 @@ end
 
 begin program "learnocaml-exercise"
   requires = [
-    "jsutils"
-    "ocplib-json-typed"
-    "js_of_ocaml"
-    "js_of_ocaml.syntax"
-    "js_of_ocaml.tyxml"
-    "browser-json"
     "ezjsonm"
-    "cstruct"
-    "exercise"
     "grading-jsoo"
     "ace"
-    "learnocaml-common"
+    "learnocaml-repository"
+    "learnocaml-app-common"
     "learnocaml-toplevel"
   ]
   files = [
@@ -105,7 +61,6 @@ begin program "learnocaml-exercise"
       commands = [ {
         "js_of_ocaml"
            "+weak.js"
-           "+cstruct/cstruct.js"
            "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
            %byte_exe( p = "learnocaml-exercise" )
       } ]

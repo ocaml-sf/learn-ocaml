@@ -22,5 +22,5 @@ exception Timeout
 val get_grade :
   ?callback:(string -> unit) ->
   ?timeout: float ->
-  Exercise.t -> string ->
-  (Report.report * string * string * string) Lwt.t
+  Learnocaml_exercise.t -> string ->
+  (Learnocaml_report.report * string * string * string) Lwt.t

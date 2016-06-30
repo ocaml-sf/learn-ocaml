@@ -19,13 +19,13 @@ exception Cannot_fetch of string
 
 val fetch : string -> string Lwt.t
 
-val fetch_exercise_index : unit -> Server_index.group_contents Lwt.t
+val fetch_exercise_index : unit -> Learnocaml_index.group_contents Lwt.t
 
-val fetch_exercise : string -> Exercise.t Lwt.t
+val fetch_exercise : string -> Learnocaml_exercise.t Lwt.t
 
 val fetch_lesson_index : unit -> (string * string) list Lwt.t
 
-val fetch_lesson : string -> Lesson.lesson Lwt.t
+val fetch_lesson : string -> Learnocaml_lesson.lesson Lwt.t
 
 val gimme_sync_token : unit -> string Lwt.t
 

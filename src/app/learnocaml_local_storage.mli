@@ -27,7 +27,7 @@ val delete : 'a storage_key -> unit
 
 val listener : 'a storage_key -> ('a option -> unit) option ref
 
-val cached_exercise : string -> Exercise.t storage_key
+val cached_exercise : string -> Learnocaml_exercise.t storage_key
 
 val exercise_state : string -> Learnocaml_exercise_state.exercise_state storage_key
 

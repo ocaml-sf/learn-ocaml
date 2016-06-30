@@ -17,7 +17,7 @@
 
 open Js_utils
 open Lwt
-open Server_index
+open Learnocaml_index
 open Learnocaml_common
 
 let exercises_tab _ _ () =
@@ -31,7 +31,7 @@ let exercises_tab _ _ () =
     let rec format_contents lvl acc contents =
       let open Tyxml_js.Html5 in
       match contents with
-      | Exercises exercises ->
+      | Learnocaml_exercises exercises ->
           StringMap.fold
             (fun exercise_id { exercise_kind ;
                                exercise_title ;
@@ -81,7 +81,7 @@ let exercises_tab _ _ () =
                     match exercise_kind with
                     | Project -> pcdata "project"
                     | Problem -> pcdata "problem"
-                    | Exercise -> pcdata "exercise" ] ;
+                    | Learnocaml_exercise -> pcdata "exercise" ] ;
                   div ~a:[ a_class [ "score" ] ] [
                     Tyxml_js.R.Html5.pcdata pct_text_signal
                   ]
@@ -106,7 +106,7 @@ let exercises_tab _ _ () =
 ;;
 
 let lessons_tab select (arg, set_arg, delete_arg) () =
-  let open Lesson in
+  let open Learnocaml_lesson in
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata "Loading lessons" ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -255,7 +255,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
 ;;
 
 let tryocaml_tab select (arg, set_arg, delete_arg) () =
-  let open Lesson in
+  let open Learnocaml_lesson in
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
   let step_title_container =
@@ -543,7 +543,7 @@ let init_sync_token button_state =
            Lwt_request.get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
            let token = Js.string token in
            let json = Js._JSON##parse (token) in
-           let token = Browser_json.Json_encoding.destruct token_format json in
+           let token = Json_repr_browser.Json_encoding.destruct token_format json in
            Learnocaml_local_storage.(store sync_token) token ;
            Lwt.return token
        end >>= fun token ->
@@ -604,7 +604,7 @@ let () =
     let name = "learnocaml-main.json" in
     let contents =
       let json =
-        Browser_json.Json_encoding.construct
+        Json_repr_browser.Json_encoding.construct
           Learnocaml_sync.save_file_enc
           (get_state_as_save_file ()) in
       Js._JSON##stringify (json) in
@@ -616,7 +616,7 @@ let () =
       ~theme:"white" ~icon: "upload" "Restore" @@ fun () ->
     Learnocaml_common.fake_upload () >>= fun (_, contents) ->
     let save_file =
-      Browser_json.Json_encoding.destruct
+      Json_repr_browser.Json_encoding.destruct
         Learnocaml_sync.save_file_enc
         (Js._JSON##parse (contents)) in
     set_state_from_save_file save_file ;

@@ -18,13 +18,3 @@ begin library "xor"
     "base64"
   ]
 end
-
-begin library "browser-json"
-  files = [
-    "browser_json.ml"
-  ]
-  requires = [
-    "ocplib-json-typed"
-    "js_of_ocaml"
-  ]
-end

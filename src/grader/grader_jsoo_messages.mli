@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type to_worker =
-  { exercise : Exercise.t ;
+  { exercise : Learnocaml_exercise.t ;
     solution : string }
 type from_worker =
   | Callback of string
-  | Answer of Report.report * string * string * string
+  | Answer of Learnocaml_report.report * string * string * string
 
 val to_worker_enc : to_worker Json_encoding.encoding
 val from_worker_enc : from_worker Json_encoding.encoding

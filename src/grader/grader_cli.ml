@@ -59,7 +59,7 @@ let read_exercise exercise_dir =
       Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read >>= fun content ->
       Lwt.return (Some content)
   in
-  Exercise.read_lwt ~read_field
+  Learnocaml_exercise.read_lwt ~read_field
     ~id:(Filename.basename exercise_dir)
     ~decipher:false ()
 
@@ -70,7 +70,7 @@ let remove_trailing_slash s =
 let grade exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
-  let solution = Exercise.(get solution) exo in
+  let solution = Learnocaml_exercise.(get solution) exo in
   let callback =
     if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
   Lwt.catch
@@ -100,15 +100,15 @@ let grade exercise_dir output_json =
            dump_error Format.err_formatter ;
            Lwt.return 1
        | Ok report ->
-           let (max, failure) = Report.result_of_report report in
+           let (max, failure) = Learnocaml_report.result_of_report report in
            begin match !dump_reports with
              | None -> ()
              | Some prefix ->
                  let oc = open_out (prefix ^ ".report.txt") in
-                 Report.print_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.print_report (Format.formatter_of_out_channel oc) report ;
                  close_out oc ;
                  let oc = open_out (prefix ^ ".report.html") in
-                 Report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
                  close_out oc
            end ;
            if stderr_contents <> "" then begin
@@ -154,8 +154,8 @@ let grade exercise_dir output_json =
              | None ->
                  Lwt.return 0
              | Some json_file ->
-                 let exo = Exercise.(set max_score) max exo in
-                 Exercise.write_lwt
+                 let exo = Learnocaml_exercise.(set max_score) max exo in
+                 Learnocaml_exercise.write_lwt
                    ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
                    exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
                  Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->

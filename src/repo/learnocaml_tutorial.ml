@@ -24,34 +24,34 @@ and step =
 and phrase =
   | Paragraph of text
   | Enum of text list
-and text = Server_index.text
+and text = Learnocaml_index.text
 
 open Json_encoding
 
 let phrase_enc =
   union
     [ case
-        Server_index.text_enc
+        Learnocaml_index.text_enc
         (function Paragraph phrase -> Some phrase | _ -> None)
         (fun phrase -> Paragraph phrase) ;
       case
-        (obj1 (req "paragraph" Server_index.text_enc))
+        (obj1 (req "paragraph" Learnocaml_index.text_enc))
         (function Paragraph phrase -> Some phrase | _ -> None)
         (fun phrase -> Paragraph phrase) ;
       case
-        (obj1 (req "enum" (list Server_index.text_enc)))
+        (obj1 (req "enum" (list Learnocaml_index.text_enc)))
         (function Enum items -> Some items | _ -> None)
         (fun items -> Enum items) ]
 
 let tutorial_enc =
-  Server_index.check_version_1 @@
+  Learnocaml_index.check_version_1 @@
   conv
     (fun { tutorial_title ; tutorial_steps } ->
        (tutorial_title, tutorial_steps))
     (fun (tutorial_title, tutorial_steps) ->
        { tutorial_title ; tutorial_steps }) @@
   obj2
-    (req "title" Server_index.text_enc)
+    (req "title" Learnocaml_index.text_enc)
     (req "steps"
        (list @@
         conv
@@ -60,5 +60,5 @@ let tutorial_enc =
           (fun (step_title, step_contents) ->
              { step_title ; step_contents }) @@
         (obj2
-           (req "title" Server_index.text_enc)
+           (req "title" Learnocaml_index.text_enc)
            (req "contents" (list phrase_enc)))))

@@ -1,34 +1,14 @@
-begin library "exercise"
-  has_asm = true
-  requires = [
-    "lwt"
-    "ocplib-json-typed"
-    "xor"
-  ]
-  files = [
-    "exercise.ml"
-  ]
-end
-
-begin library "report"
-  requires = [
-    "ocplib-json-typed"
-  ]
-  files = [
-    "report.ml"
-  ]
-end
-
 begin library "testing"
   comp_requires = "ppx_metaquot:asm"
   link += [ "-linkall" ]
   requires = [
     "ty"
-    "report"
     "toploop"
     "ppx_metaquot"
     "ppx_metaquot_lib"
     "ocplib-json-typed"
+    "learnocaml-state"
+    "learnocaml-repository"
   ]
   files = [
     "introspection_intf.mli"
@@ -76,7 +56,7 @@ embedded_grading_cmis = [
   "%{compiler-libs_FULL_DST_DIR}%/parse.cmi"
   "%{ty_FULL_DST_DIR}%/ty.cmi"
   "%{testing_FULL_DST_DIR}%/introspection_intf.cmi"
-  "%{report_FULL_DST_DIR}%/report.cmi"
+  "%{learnocaml-state_FULL_DST_DIR}%/learnocaml_report.cmi"
   "%{testing_FULL_DST_DIR}%/test_lib.cmi"
 
 ]
@@ -103,7 +83,6 @@ begin library "grading"
   comp_requires = "ppx_metaquot:asm"
   link += [ "-linkall" ]
   requires = [
-    "exercise"
     "testing"
     "ppx_metaquot"
     "ocplib-ocamlres.runtime"
@@ -148,13 +127,12 @@ end
 
 begin library "grading-jsoo"
   requires = [
-    "exercise"
-    "report"
     "js_of_ocaml"
     "js_of_ocaml.syntax"
     "ezjsonm"
-    "ocplib-json-typed"
-    "browser-json"
+    "ocplib-json-typed.browser"
+    "learnocaml-repository"
+    "learnocaml-state"
   ]
   files = [
     "grader_jsoo_messages.ml"
@@ -166,12 +144,12 @@ begin program "learnocaml-grader-worker"
   requires = [
     "toploop_jsoo"
     "grading"
-    "exercise"
-    "browser-json"
     "ezjsonm"
-    "ocplib-json-typed"
+    "ocplib-json-typed.browser"
     "js_of_ocaml"
     "js_of_ocaml.syntax"
+    "learnocaml-repository"
+    "learnocaml-state"
   ]
   files = [
     "grader_jsoo_messages.ml"
@@ -184,7 +162,6 @@ begin program "learnocaml-grader-worker"
       commands = [ {
         "js_of_ocaml"
            "+weak.js"
-           "+cstruct/cstruct.js"
            "+dynlink.js"
            "+toplevel.js"
            "--toplevel"

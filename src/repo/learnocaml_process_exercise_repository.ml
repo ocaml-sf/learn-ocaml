@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Server_index
+open Learnocaml_index
 
 open Lwt.Infix
 
@@ -58,7 +58,7 @@ let exercise_kind_enc =
   string_enum
     [ "problem", Problem ;
       "project", Project ;
-      "exercise", Exercise ]
+      "exercise", Learnocaml_exercise ]
 
 let exercise_meta_enc =
   let open Json_encoding in
@@ -96,7 +96,7 @@ let read_exercise exercise_dir =
       Lwt.return (Some content)
   in
   Lwt_main.run
-    (Exercise.read_lwt ~read_field
+    (Learnocaml_exercise.read_lwt ~read_field
        ~id:(Filename.basename exercise_dir)
        ~decipher:false ())
 
@@ -178,12 +178,12 @@ let main dest_dir =
                     read_exercise (!exercises_dir / id) in
                   let exercise =
                     { exercise_kind ; exercise_stars ;
-                      exercise_title = Exercise.(get title) exercise ;
+                      exercise_title = Learnocaml_exercise.(get title) exercise ;
                       exercise_short_description} in
                   acc >>= fun acc ->
                   Lwt.return (StringMap.add id exercise acc))
                (Lwt.return StringMap.empty) ids >>= fun exercises ->
-             Lwt.return (Exercises exercises) in
+             Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
        to_file exercise_index_enc (dest_dir / "exercises.json") index >>= fun () ->
        let processes_arguments =

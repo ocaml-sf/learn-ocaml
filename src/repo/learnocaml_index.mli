@@ -18,7 +18,7 @@
 type exercise_kind =
   | Project
   | Problem
-  | Exercise
+  | Learnocaml_exercise
 
 type exercise =
   { exercise_kind : exercise_kind ;
@@ -31,7 +31,7 @@ and group =
     group_contents : group_contents }
 
 and group_contents =
-  | Exercises of exercise Map.Make (String).t
+  | Learnocaml_exercises of exercise Map.Make (String).t
   | Groups of group Map.Make (String).t
 
 val exercise_index_enc : group_contents Json_encoding.encoding
@@ -60,3 +60,11 @@ and series =
 val tutorial_index_enc : series Map.Make (String).t Json_encoding.encoding
 
 val check_version_1 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
+
+val exercise_index_path : string
+
+val exercise_path : string -> string
+
+val lesson_index_path : string
+
+val lesson_path : string -> string
