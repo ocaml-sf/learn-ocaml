@@ -7,49 +7,58 @@
     <h1>Simple Expressions</h1>
     <h2>Simple Expressions</h2>
     <p>Numerical expressions are easy to compute in OCaml. For example:</p>
-    <p><code runnable="true">1+2</code></p>
+    <p><code>| 1+2 |</code></p>
     <p>Strings are also easy to define. For example, you can define a string with your name:</p>
-    <p><code runnable="true">"Mary"</code></p>
+    <p><code>| "Mary" |</code></p>
     <p>The basic element of a string is a char:</p>
-    <p><code runnable="true">'a'</code></p>
+    <p><code>| 'a' |</code></p>
     <h2>Lists and arrays</h2>
     <p>Lists and arrays are predefined data structures, for example you can have a list of integers:</p>
-    <p><code runnable="true">[ 42; 1; 55 ]</code></p>
+    <p><code>| [ 42; 1; 55 ] |</code></p>
     <p>An array of strings:</p>
-    <p><code runnable="true">[|"John"; "Doe"|]</code></p>
+    <p><code>| [|"John"; "Doe"|] |</code></p>
     <h2>Operations on lists</h2>
     <p>You can use some predefined functions on lists such as reversing the list</p>
-    <p><code runnable="true">List.rev [1; 2; 3]</code></p>
+    <p><code>| List.rev [1; 2; 3] |</code></p>
     <p>Get the first element of the list:</p>
-    <p><code runnable="true">List.hd [1; 2; 3]</code></p>
+    <p><code>| List.hd [1; 2; 3] |</code></p>
     <h2>Operations on arrays</h2>
     <p>You can also use some predefined functions on arrays such as concatenate two arrays</p>
-    <p><code runnable="true">Array.append [| 1; 2 |] [| 3; 4; 5 |]</code></p>
-    <p>To get the element number <code>i</code> of an array, you have two ways to do this (don't forget, the first element has number <code>0</code>):</p>
-    <p><code runnable="true">Array.get [| 42; 51; 32 |] 2</code></p>
+    <p><code>| Array.append [| 1; 2 |] [| 3; 4; 5 |] |</code></p>
+    <p>To get the element number <code>i</code> of an array, you have
+    two ways to do this (don't forget, the first element has
+    number <code>0</code>):</p>
+    <p><code>| Array.get [| 42; 51; 32 |] 2 |</code></p>
     <p>or</p>
-    <p><code runnable="true">[| 42; 51; 32 |].(2)</code></p>
+    <p><code>| [| 42; 51; 32 |].(2) |</code></p>
     <h2>Basic operations on strings</h2>
     <p>Strings are sequences of chars. It is possible to create a string from just one char, using:</p>
-    <p><code runnable="true">String.make 10 'x'</code></p>
+    <p><code>| String.make 10 'x' |</code></p>
     <p>Strings can also be created by joining other strings:</p>
-    <p><code runnable="true">"Mary" ^ " and " ^ "John"</code></p>
+    <p><code>| "Mary" ^ " and " ^ "John" |</code></p>
     <p>It might also be interesting to get the length of a string:</p>
-    <p><code runnable="true">String.length "abcdefghijklmnopqstuvwxyz"</code></p>
+    <p><code>| String.length "abcdefghijklmnopqstuvwxyz" |</code></p>
     <p>(and yes, one character is missing !)</p>
     <h2>More operations on strings</h2>
-    <p>There are many operations available on strings, like a function which returns a copy of the argument, with all uppercase letters translated to lowercase:</p>
-    <p><code runnable="true">String.lowercase "MARY"</code></p>
+    <p>There are many operations available on strings, like a function
+    which returns a copy of the argument, with all uppercase letters
+    translated to lowercase:</p>
+    <p><code>| String.lowercase "MARY" |</code></p>
     <p>Here's a more practical example, generating a filename from components:</p>
-    <p><code runnable="true">String.concat "/" [""; "usr"; "local"; "bin"]</code></p>
-    <p>Note that the second argument is a list of strings.It is sometimes useful to extract an integer from a string. This is easy in OCaml:</p>
-    <p><code runnable="true">int_of_string "546"</code></p>
+    <p><code>| String.concat "/" [""; "usr"; "local"; "bin"] |</code></p>
+    <p>Note that the second argument is a list of strings.It is
+    sometimes useful to extract an integer from a string. This is easy
+    in OCaml:</p>
+    <p><code>| int_of_string "546" |</code></p>
     <h2>Operations on Tuples</h2>
-    <p>A tuple consists of values (zero or more), enclosed in parentheses and separated by commas. Note that you can have differents types for each element, remember</p>
-    <p><code runnable="true">(42, "John", true)</code></p>
-    <p>When you have a pair (a tuple with two elements), you can use some predefined functions like get the first element:</p>
-    <p><code runnable="true">fst (42, "John")</code></p>
+    <p>A tuple consists of values (zero or more), enclosed in
+    parentheses and separated by commas. Note that you can have
+    differents types for each element, remember</p>
+    <p><code>| (42, "John", true) |</code></p>
+    <p>When you have a pair (a tuple with two elements), you can use
+    some predefined functions like get the first element:</p>
+    <p><code>| fst (42, "John") |</code></p>
     <p>Or the second element:</p>
-    <p><code runnable="true">snd (42, "John")</code></p>
+    <p><code>| snd (42, "John") |</code></p>
   </body>
 </html>

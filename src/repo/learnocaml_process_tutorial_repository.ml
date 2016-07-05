@@ -20,22 +20,115 @@ open Learnocaml_index
 
 open Lwt.Infix
 
+let parse_code_notation code =
+  let len = String.length code in
+  if String.contains code '\n' then
+    let len = String.length code in
+    let lines_margin lines =
+      let rec line_margin start prev line =
+        if start >= String.length line then start
+        else if start >= prev then prev
+        else match String.get line start with
+          | ' ' | '\t' -> line_margin (start + 1) prev line
+          | _ -> start in
+      List.fold_left (line_margin 0) len lines in
+    let trailing_whitespace margin line =
+      let rec loop i =
+        if i < margin then i
+        else match String.get line i with
+          | ' ' | '\t' -> loop (i - 1)
+          | _ -> i in
+      let last = max (margin - 1) (String.length line - 1) in
+      last - loop last in
+    let cut_margin margin lines =
+      let rec cut acc = function
+        | [] -> List.rev acc
+        | line :: lines ->
+            let len = String.length line
+                      - margin
+                      - trailing_whitespace margin line in
+            cut (String.sub line margin len :: acc) lines
+      in cut [] lines in
+    let drop_padding_lines lines =
+      let rec drop_start = function
+        | [] -> []
+        | line :: rest ->
+            let len = String.length line in
+            let rec empty i =
+              if i >= len then true
+              else match String.get line i with
+                | ' ' | '\t' -> empty (i + 1)
+                | _ -> false in
+            if empty 0 then drop_start rest else line :: rest in
+      lines |> drop_start |> List.rev |> drop_start |> List.rev in
+    let lines = Stringext.split code ~on: '\n' in
+    let lines = drop_padding_lines lines in
+    let margin = lines_margin lines in
+    let lines = cut_margin margin lines in
+    let left_line lines =
+      List.fold_left
+        (fun acc line ->
+           if String.length line = 0 then
+             `None
+           else
+             match acc, String.get line 0 with
+             | `Init, c -> `Some c
+             | `Some c', c when c = c' -> `Some c
+             | _ -> `None) `Init lines |> function
+      | `Init | `None -> None
+      | `Some char -> Some char in
+    match left_line lines with
+    | Some ('$' | '|' as c) ->
+        let cut_first_char line =
+          String.sub line 1 (String.length line - 1) in
+        let lines = List.map cut_first_char lines in
+        let lines = drop_padding_lines lines in
+        let margin = lines_margin lines in
+        let lines = cut_margin margin lines in
+        let code = String.concat "\n" lines in
+        begin match c with
+        | '|' -> Code { code ; runnable = true }
+        | '$' -> Math code
+        | _ -> assert false end
+    | None | Some _ ->
+        let code = String.concat "\n" lines in
+        Code { code ; runnable = false }
+  else if len > 2
+       && (String.get code 0 = String.get code (len - 1))
+       && (String.get code 0 <> String.get code 1) then
+    match String.get code 0 with
+    | '|' ->
+        let code = String.trim (String.sub code 1 (len - 2)) in
+        Code { code ; runnable = true }
+    | '$' ->
+        let code = String.trim (String.sub code 1 (len - 2)) in
+        Math code
+    | _ -> Code { code ; runnable = false }
+  else
+    Code { code ; runnable = false }
+
+let print_code_notation ppf = function
+  | Code { code ; runnable = false } ->
+      Format.fprintf ppf "%s" code
+  | _ -> assert false
+
 let parse_html_tutorial tutorial_name filename =
   Lwt_io.(with_file ~mode: Input) filename @@ fun chan ->
   Lwt_io.read chan >>= fun contents ->
   let tree =
     let open Markup in
     string contents |> parse_html |> signals |> tree
-      ~text: (fun text -> `Text text)
+      ~text: (fun text -> `Text (String.concat "" text))
       ~element: (fun (_, name) _ children -> `Elt (name, children)) in
   let rec strip = function
+    | `Elt ("pre", children) as elt -> elt
     | `Elt (name, children) ->
         let rec skip_white_space acc = function
           | [] -> List.rev acc
           | `Text "" :: rest -> skip_white_space acc rest
           | oth :: rest -> skip_white_space (oth :: acc) rest in
         `Elt (name, skip_white_space [] @@ List.map strip children)
-    | `Text text -> `Text (String.concat "" (List.map String.trim text)) in
+    | `Text text -> `Text (String.trim text) in
   match tree with
   | None -> Lwt.fail_with ("cannot parse " ^ filename)
   | Some tree -> match strip tree with
@@ -60,7 +153,7 @@ let parse_html_tutorial tutorial_name filename =
                     parse_text (Text text :: acc) rest
                 | `Elt (("code" | "quote"), children) :: rest ->
                     parse_code [] children >>= fun code ->
-                    parse_text (Code { code ; runnable = false } :: acc) rest
+                    parse_text (parse_code_notation code :: acc) rest
                 | `Elt (("strong" | "em" | "b"), children) :: rest ->
                     parse_text [] children >>= fun contents ->
                     parse_text (Emph contents :: acc) rest
@@ -71,8 +164,9 @@ let parse_html_tutorial tutorial_name filename =
                 | `Elt ("p", children) :: rest ->
                     parse_text [] children >>= fun contents ->
                     parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
-                | `Elt ("pre", [ `Text code]) :: rest ->
-                    let contents = [ Code { code ; runnable = false } ] in
+                | `Elt ("pre", children) :: rest ->
+                    parse_code [] children >>= fun code ->
+                    let contents = [ parse_code_notation code ] in
                     parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
                 | `Elt (tag, _) :: _ ->
                     let msg = "the only markups supported at toplevel are \

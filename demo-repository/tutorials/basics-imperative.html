@@ -6,91 +6,117 @@
   <body>
     <h1>A Taste of Imperative Programming</h1>
     <h2>Variables</h2>
-    <p>As in other languages, you can associate a name to a value. To do that, we use the <code>let</code> syntax which associates the result of some computation with a name:</p>
-    <p><code runnable="true">let x = 6 * 7</code></p>
-    <p>We can now check the value associated with <code>x</code> in the toplevel:</p>
-    <p><code runnable="true">x</code></p>
+    <p>As in other languages, you can associate a name to a value. To
+    do that, we use the <code>let</code> syntax which associates the
+    result of some computation with a name:</p>
+    <p><code>| let x = 6 * 7 |</code></p>
+    <p>We can now check the value associated with <code>x</code> in
+    the toplevel:</p>
+    <p><code>| x |</code></p>
     <p>And we can use the name where we would like the value:</p>
-    <p><code runnable="true">let y = x + 1</code></p>
+    <p><code>| let y = x + 1 |</code></p>
     <h2>Mutable Variables</h2>
-    <p>In OCaml, you cannot change the value associated with a name after its definition. Trying to do so will trigger a compilation error:</p>
-    <p><code runnable="true">x <- x + 1</code></p>
-    <p>You will better understand the error message later.If you really want to modify the value associated with a name, you must use a trick. OCaml provides a function <code>ref</code> that creates a special value that can be modified later (a reference):</p>
-    <p><code runnable="true">let x = ref 42</code></p>
-    <p>You can then change the value of the reference associated with <code>x</code> using the <code>:=</code> operator:</p>
-    <p><code runnable="true">x := 100 / 4</code></p>
-    <p>You can also access the value contained in the reference using the operator <code>!</code>:</p>
-    <p><code runnable="true">let y = !x + 1</code></p>
+    <p>In OCaml, you cannot change the value associated with a name
+    after its definition. Trying to do so will trigger a compilation
+    error:</p>
+    <p><code>| x <- x + 1 |</code></p>
+    <p>You will better understand the error message later.If you
+    really want to modify the value associated with a name, you must
+    use a trick. OCaml provides a function <code>ref</code> that
+    creates a special value that can be modified later (a
+    reference):</p>
+    <p><code>| let x = ref 42 |</code></p>
+    <p>You can then change the value of the reference associated
+    with <code>x</code> using the <code>:=</code> operator:</p>
+    <p><code>| x := 100 / 4 |</code></p>
+    <p>You can also access the value contained in the reference using
+    the operator <code>!</code>:</p>
+    <p><code>| let y = !x + 1 |</code></p>
     <h2>Sequences and Printing</h2>
     <p>OCaml provides different functions to print basic types. For example:</p>
-    <p><code runnable="true">print_int 3</code></p>
+    <p><code>| print_int 3 |</code></p>
     <p>and:</p>
-    <p><code runnable="true">print_string "Hello"</code></p>
+    <p><code>| print_string "Hello" |</code></p>
     <p>Sequences of expressions are separated by <code>;</code>:</p>
-    <pre runnable="true">
-print_string "x = ";
-print_int !x;
-print_newline ()
+    <pre>
+      | print_string "x = ";
+      | print_int !x;
+      | print_newline ()
     </pre>
-    <p>A more powerful method to print values is <code>Printf.printf</code>, whose behavior is similar to <code>printf</code> in C:</p>
-    <p><code runnable="true">Printf.printf "x = %d. Bye %s\n" !x "John"</code></p>
+    <p>A more powerful method to print values
+    is <code>Printf.printf</code>, whose behavior is similar
+    to <code>printf</code> in C:</p>
+    <p><code>| Printf.printf "x = %d. Bye %s\n" !x "John" |</code></p>
     <h2>For loops</h2>
     <p>Let's define a reference on a list:</p>
-    <p><code runnable="true">let xl = ref []</code></p>
+    <p><code>| let xl = ref [] |</code></p>
     <p>OCaml provides a simple <code>for</code> loop to iterate on integers in a range:</p>
-    <pre runnable="true">
-for i = 1 to 10 do
-  xl := i :: !xl;
-done;
-!xl
+    <pre>
+      | for i = 1 to 10 do
+      |   xl := i :: !xl;
+      | done;
+      | !xl
     </pre>
-    <p>Here, for each value between 1 and 10, we have added it in this order at the head of the reference.Of course, if we want them in the correct order, we need to reverse the list:</p>
-    <p><code runnable="true">List.rev !xl</code></p>
+    <p>Here, for each value between 1 and 10, we have added it in this
+    order at the head of the reference.Of course, if we want them in
+    the correct order, we need to reverse the list:</p>
+    <p><code>| List.rev !xl |</code></p>
     <p>Or we can just execute the loop directly from the upper bound to the lower bound:</p>
-    <pre runnable="true">
-for i = 10 downto 1 do
- xl := i :: !xl
-done;
-!xl
+    <pre>
+      | for i = 10 downto 1 do
+      |  xl := i :: !xl
+      | done;
+      | !xl
     </pre>
     <h2>Computing Conditions</h2>
-    <p>Boolean values in OCaml can be either <code>true</code> or <code>false</code>. They are often created from comparing other values. For example:</p>
-    <p><code runnable="true">1 > 2</code></p>
-    <p>OCaml's comparison operators can be used on values of any type, not only on numerical values. We can compare strings and characters too:</p>
-    <p><code runnable="true">"aaaaaa" < "bbb"</code></p>
-    <p><code runnable="true">"3" <= "22"</code></p>
-    <p><code runnable="true">22 >= 3</code></p>
-    <p>To test equality, you can use<quote>=</quote>, and for inequality, there is<quote>&lt;&gt;</quote>. For example:</p>
-    <p><code runnable="true">1 = 1</code></p>
-    <p><code runnable="true">1 <> 1</code></p>
-    <p><code runnable="true">"1" = 1</code></p>
+    <p>Boolean values in OCaml can be either <code>true</code>
+    or <code>false</code>. They are often created from comparing other
+    values. For example:</p>
+    <p><code>| 1 > 2 |</code></p>
+    <p>OCaml's comparison operators can be used on values of any type,
+    not only on numerical values. We can compare strings and
+    characters too:</p>
+    <p><code>| "aaaaaa" < "bbb" |</code></p>
+    <p><code>| "3" <= "22" |</code></p>
+    <p><code>| 22 >= 3 |</code></p>
+    <p>To test equality, you can use<quote>=</quote>, and for
+    inequality, there is<quote>&lt;&gt;</quote>. For example:</p>
+    <p><code>| 1 = 1 |</code></p>
+    <p><code>| 1 <> 1 |</code></p>
+    <p><code>| "1" = 1 |</code></p>
     <p>Oops, OCaml does not allow you to compare values with different types, so we must be more careful:</p>
-    <p><code runnable="true">"1" = string_of_int 1</code></p>
+    <p><code>| "1" = string_of_int 1 |</code></p>
     <h2>If then else</h2>
     <p>Now that we know how to test conditions, we can use them to choose between computations. Let's define two values :</p>
-    <p><code runnable="true">let a = 1 and b = 2</code></p>
+    <p><code>| let a = 1 and b = 2 |</code></p>
     <p>We can compute the minimum of them:</p>
-    <pre runnable="true">
-Printf.printf "min(%d,%d) = %d\n" a b
-    (if a < b then a else b)
+    <pre>
+      | Printf.printf "min(%d,%d) = %d\n" a b
+      |     (if a < b then a else b)
     </pre>
     <p>We can of course execute sequences within branches:</p>
-    <pre runnable="true">
-let z = if a < 100 then begin
-    print_string "return at least 100 !";
-    print_newline ();
-    100
- end else a
+    <pre>
+      | let z = if a < 100 then begin
+      |     print_string "return at least 100 !";
+      |     print_newline ();
+      |     100
+      |  end else a
     </pre>
     <h2>While loops</h2>
-    <p>OCaml also provides a <code>while</code> loop, to execute some code as long as an expression is true:</p>
-    <pre runnable="true">
-while !x > 20 do
-  print_int !x; print_newline ();
-  x := !x - 2
-done
+    <p>OCaml also provides a <code>while</code> loop, to execute some
+    code as long as an expression is true:</p>
+    <pre>
+      | while !x > 20 do
+      |   print_int !x; print_newline ();
+      |   x := !x - 2
+      | done
     </pre>
     <h2>Congratulations</h2>
-    <p>You have seen that OCaml allows you to use some imperative style of programming. Some functional programmers will tell you that side-effects are bad: they are right, in many cases, but don't listen to them too early !In the next lessons, you will see that by combining both imperative and functional programming styles, you can do wonders !Use <code>next()</code> to go to the next lesson !</p>
+    <p>You have seen that OCaml allows you to use some imperative
+    style of programming. Some functional programmers will tell you
+    that side-effects are bad: they are right, in many cases, but
+    don't listen to them too early !In the next lessons, you will see
+    that by combining both imperative and functional programming
+    styles!</p>
   </body>
 </html>
