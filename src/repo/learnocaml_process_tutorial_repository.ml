@@ -107,12 +107,11 @@ let parse_code_notation code =
   else
     Code { code ; runnable = false }
 
-let print_code_notation ppf = function
-  | Code { code ; runnable = false } ->
-      Format.fprintf ppf "%s" code
-  | _ -> assert false
-
 let parse_html_tutorial tutorial_name filename =
+  let fail fmt =
+    Format.kasprintf
+      (fun res -> Lwt.fail_with (Format.sprintf "in file %s, %s" filename res))
+      fmt in
   Lwt_io.(with_file ~mode: Input) filename @@ fun chan ->
   Lwt_io.read chan >>= fun contents ->
   let tree =
@@ -129,88 +128,86 @@ let parse_html_tutorial tutorial_name filename =
           | oth :: rest -> skip_white_space (oth :: acc) rest in
         `Elt (name, skip_white_space [] @@ List.map strip children)
     | `Text text -> `Text (String.trim text) in
+  let rec parse_code acc = function
+    | [] -> Lwt.return (String.concat "" (List.rev acc))
+    | `Text text :: rest ->
+        parse_code (text :: acc) rest
+    | `Elt (tag, _) :: _ ->
+        fail "unsupported markup <%s> in code" tag in
+  let rec parse_text acc = function
+    | [] -> Lwt.return (List.rev acc)
+    | `Text t1 :: `Text t2 :: rest ->
+        parse_text acc (`Text (t1 ^ t2) :: rest)
+    | `Elt ("br", _) :: rest ->
+        parse_text acc rest
+    | `Text text :: rest ->
+        parse_text (Text text :: acc) rest
+    | `Elt (("code" | "quote"), children) :: rest ->
+        parse_code [] children >>= fun code ->
+        parse_text (parse_code_notation code :: acc) rest
+    | `Elt (("strong" | "em" | "b"), children) :: rest ->
+        parse_text [] children >>= fun contents ->
+        parse_text (Emph contents :: acc) rest
+    | `Elt (tag, _) :: _ ->
+        fail "unsupported markup <%s> in text" tag in
+  let rec parse_contents acc = function
+    | `Elt ("p", children) :: rest ->
+        parse_text [] children >>= fun contents ->
+        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+    | `Elt ("pre", children) :: rest ->
+        parse_code [] children >>= fun code ->
+        let contents = [ parse_code_notation code ] in
+        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+    | `Elt (tag, _) :: _ ->
+        fail "the only markups supported at toplevel are \
+              <h2>, <p>, <ul> and <pre>, <%s> is not allowed" tag
+    | `Text _ :: _ ->
+        fail "text is not allowed at the toplevel, \
+              wrap it in a <p> markup"
+    | [] -> Lwt.return (List.rev acc) in
+  let rec parse_steps = function
+    | acc, None, []  ->
+        Lwt.return (List.rev acc)
+    | acc, Some (step_title, sacc), [] ->
+        parse_contents [] (List.rev sacc) >>= fun step_contents ->
+        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        Lwt.return (List.rev acc)
+    | acc, None, `Elt ("h2", title) :: rest ->
+        parse_text [] title >>= fun step_title ->
+        parse_steps (acc, Some (step_title, []), rest)
+    | acc, None, elt :: rest ->
+        fail "step title (<h2> markup) expected \
+              after the tutorial title (<h1> markup)"
+    | acc, Some (step_title, sacc), (`Elt ("h2", _) :: _ as rest) ->
+        parse_contents [] (List.rev sacc) >>= fun step_contents ->
+        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        parse_steps (acc, None, rest)
+    | acc, Some (step_title, sacc), elt :: rest ->
+        parse_steps (acc, Some (step_title, elt :: sacc), rest) in
   match tree with
-  | None -> Lwt.fail_with ("cannot parse " ^ filename)
+  | None -> fail "unparsable HTML file"
   | Some tree -> match strip tree with
     | `Elt ("html", [ `Elt ("head", _) ; `Elt ("body", contents) ])
     | `Elt ("html", [ `Elt ("body", contents) ]) ->
         begin match contents with
           | `Elt ("h1", title) :: rest ->
-              let rec parse_code acc = function
-                | [] -> Lwt.return (String.concat "" (List.rev acc))
-                | `Text text :: rest ->
-                    parse_code (text :: acc) rest
-                | `Elt (tag, _) :: _ ->
-                    let msg = "unsupported markup " ^ tag ^ " in code" in
-                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
-              let rec parse_text acc = function
-                | [] -> Lwt.return (List.rev acc)
-                | `Text t1 :: `Text t2 :: rest ->
-                    parse_text acc (`Text (t1 ^ t2) :: rest)
-                | `Elt ("br", _) :: rest ->
-                    parse_text acc rest
-                | `Text text :: rest ->
-                    parse_text (Text text :: acc) rest
-                | `Elt (("code" | "quote"), children) :: rest ->
-                    parse_code [] children >>= fun code ->
-                    parse_text (parse_code_notation code :: acc) rest
-                | `Elt (("strong" | "em" | "b"), children) :: rest ->
-                    parse_text [] children >>= fun contents ->
-                    parse_text (Emph contents :: acc) rest
-                | `Elt (tag, _) :: _ ->
-                    let msg = "unsupported markup " ^ tag ^ " in text" in
-                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
-              let rec parse_contents acc = function
-                | `Elt ("p", children) :: rest ->
-                    parse_text [] children >>= fun contents ->
-                    parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
-                | `Elt ("pre", children) :: rest ->
-                    parse_code [] children >>= fun code ->
-                    let contents = [ parse_code_notation code ] in
-                    parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
-                | `Elt (tag, _) :: _ ->
-                    let msg = "the only markups supported at toplevel are \
-                               h2, p, ul and pre, " ^ tag ^ "is not allowed" in
-                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
-                | `Text _ :: _ ->
-                    let msg = "text is not allowed at the toplevel, \
-                               use a p markup" in
-                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
-                | [] -> Lwt.return (List.rev acc) in
-              let rec parse_steps = function
-                | acc, None, []  ->
-                    Lwt.return (List.rev acc)
-                | acc, Some (step_title, sacc), [] ->
-                    parse_contents [] (List.rev sacc) >>= fun step_contents ->
-                    let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
-                    Lwt.return (List.rev acc)
-                | acc, None, `Elt ("h2", title) :: rest ->
-                    parse_text [] title >>= fun step_title ->
-                    parse_steps (acc, Some (step_title, []), rest)
-                | acc, None, elt :: rest ->
-                    let msg = "step title (h2 markup) expected \
-                               after the tutorial title (h1 markup)" in
-                    Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
-                | acc, Some (step_title, sacc), (`Elt ("h2", _) :: _ as rest) ->
-                    parse_contents [] (List.rev sacc) >>= fun step_contents ->
-                    let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
-                    parse_steps (acc, None, rest)
-                | acc, Some (step_title, sacc), elt :: rest ->
-                    parse_steps (acc, Some (step_title, elt :: sacc), rest)
-              in
               parse_text [] title >>= fun tutorial_title ->
               parse_steps ([], None, rest) >>= fun tutorial_steps ->
               Lwt.return
                 (Learnocaml_index.{ tutorial_title ; tutorial_name },
                  Learnocaml_tutorial.{ tutorial_title ; tutorial_steps })
           | _ ->
-              let msg = "tutorial title (h1 markup) expected \
-                         at the beginning of the body" in
-              Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
+              fail "tutorial title (<h1> markup) expected \
+                    at the beginning of the <body>"
         end
-    | _ -> Lwt.fail_with ("bad HTML structure for " ^ filename)
+    | _ -> fail "wrong HTML structure, \
+                 expecting a standard <html> with a <body>"
 
 let parse_md_tutorial tutorial_name filename =
+  let fail fmt =
+    Format.kasprintf
+      (fun res -> Lwt.fail_with (Format.sprintf "in file %s, %s" filename res))
+      fmt in
   Lwt_io.(with_file ~mode: Input) filename @@ fun chan ->
   Lwt_io.read chan >>= fun str ->
   let strip md =
@@ -219,45 +216,61 @@ let parse_md_tutorial tutorial_name filename =
       | Omd.NL :: rest -> strip acc rest
       | oth :: rest -> strip (oth :: acc) rest in
     strip [] md in
-  let rec parse_title md =
-    let rec parse acc = function
-      | [] -> Lwt.return (List.rev acc)
-      | Omd.NL :: rest -> parse acc rest
-      | Omd.Code (_, text) :: rest ->
-          let elt =
-            if String.length text >= 2 &&
-               String.get text 0 = '|' &&
-               String.get text (String.length text - 1) = '|'  then
-              Code { code = String.sub text 1 (String.length text - 2) ;
-                     runnable = true }
-            else
-            if String.length text >= 2 &&
-               String.get text 0 = '$' &&
-               String.get text (String.length text - 1) = '$'  then
-              Math (String.sub text 1 (String.length text - 2))
-            else
-              Code { code = text ; runnable = false } in
-          parse (elt :: acc) rest
-      | Omd.Text t1 :: Omd.Text t2 :: rest ->
-          parse acc (Omd.Text (t1 ^ t2) :: rest)
-      | Omd.Text text :: rest ->
-          parse (Text text :: acc) rest
-      | Omd.Emph t :: rest | Omd.Bold t :: rest ->
-          parse_title t >>= fun text ->
-          parse (Emph text :: acc) rest
-      | _ ->
-          let msg = "unexpected element in title" in
-          Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg) in
-    parse [] md in
+  let rec parse_text acc = function
+    | [] -> Lwt.return (List.rev acc)
+    | Omd.NL :: rest -> parse_text acc rest
+    | Omd.Code (_, code) :: rest ->
+        let elt = parse_code_notation code in
+        parse_text (elt :: acc) rest
+    | Omd.Text t1 :: Omd.Text t2 :: rest ->
+        parse_text acc (Omd.Text (t1 ^ t2) :: rest)
+    | Omd.Text text :: rest ->
+        parse_text (Text text :: acc) rest
+    | Omd.Emph t :: rest | Omd.Bold t :: rest ->
+        parse_text [] t >>= fun text ->
+        parse_text (Emph text :: acc) rest
+    | elt :: _  ->
+        fail "unexpected content in title (%s)"
+          (Omd.to_markdown [ elt ]) in
+  let rec parse_contents acc = function
+    | Omd.Paragraph children :: rest ->
+        parse_text [] children >>= fun contents ->
+        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+    | Omd.Code_block (_, code) :: rest ->
+        let contents = [ parse_code_notation (code ^ "\n") ] in
+        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+    | elt :: _ ->
+        fail "unexpected content at toplevel (%s)"
+          (Omd.to_markdown [ elt ])
+    | [] -> Lwt.return (List.rev acc) in
+  let rec parse_steps = function
+    | acc, None, []  ->
+        Lwt.return (List.rev acc)
+    | acc, Some (step_title, sacc), [] ->
+        parse_contents [] (List.rev sacc) >>= fun step_contents ->
+        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        Lwt.return (List.rev acc)
+    | acc, None, Omd.H2 title :: rest ->
+        parse_text [] title >>= fun step_title ->
+        parse_steps (acc, Some (step_title, []), rest)
+    | acc, None, elt :: rest ->
+        fail "step title (<h2> markup) expected \
+              after the tutorial title (<h1> markup)"
+    | acc, Some (step_title, sacc), (Omd.H2 _ :: _ as rest) ->
+        parse_contents [] (List.rev sacc) >>= fun step_contents ->
+        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        parse_steps (acc, None, rest)
+    | acc, Some (step_title, sacc), elt :: rest ->
+        parse_steps (acc, Some (step_title, elt :: sacc), rest) in
   match Omd.of_string str |> strip with
-  | Omd.H1 title :: contents ->
-      parse_title title >>= fun tutorial_title ->
+  | Omd.H1 title :: rest ->
+      parse_text [] title >>= fun tutorial_title ->
+      parse_steps ([], None, rest) >>= fun tutorial_steps ->
       Lwt.return
         (Learnocaml_index.{ tutorial_title ; tutorial_name },
-         Learnocaml_tutorial.{ tutorial_title ; tutorial_steps = [] })
+         Learnocaml_tutorial.{ tutorial_title ; tutorial_steps })
   | _ ->
-      let msg = "files must start with a level 1 title" in
-      Lwt.fail_with (Format.asprintf "in file %s, %s" filename msg)
+      fail "expecting a level 1 title at file beginning"
 
 let tutorials_dir = ref "./tutorials"
 
