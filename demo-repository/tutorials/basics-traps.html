@@ -1,116 +1,127 @@
 <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Syntax Traps</title>
-    </head>
-  <body>
-    <h1>Syntax Traps</h1>
-    <h2>Sequence of expressions</h2>
-    <p>It is easy to get confused by OCaml syntax since it's different
-    from mainstream languages. So you'd better be aware of a few
-    things before digging any deeper. To begin with, you should know
-    that a proper command must normally end with <code>';;'</code> to
-    be processed by the top-level.  This tutorial automatically adds
-    the double semicolon as soon as you hit enter but the normal
-    top-level won't. The double semicolon is only required when
-    interacting with the top level interpreter and as such is not part
-    of OCaml syntax. What <em>is</em> part of OCaml syntax, though, is
-    the simple semicolon <code>';'</code> which is commonly used as an
-    expression terminator, except that in OCaml it's
-    a <b>separator</b>. In other words, you must not
-    write <code>expr1; expr2;</code> but <code>expr1 ;
-    expr2</code>. You may now enter <code>next ()</code> to check your
-    understanding.</p>
-    <h2>Exercise: Get the Punctuation Right!</h2>
-    <p>Let's see if you got this right. Here is a sequence
-    of <strong>erroneous</strong> commands. Your task is to fix all of
-    them in order to get the correct answer at the end.</p>
-    <p><code>| let fernand = "King of Castille"; |</code></p>
-    <p><code>| let rodrigue = "The cid"; let diegue = "cid's father" |</code></p>
-    <p><code>| characters = [ fernand;; rodrigue;; diegue ] |</code></p>
-    <p><code>| rodrigue.[4] <- 'C' ; diegue.[0] <- rodrigue.[4] ; |</code></p>
-    <p><code>| characters |</code></p>
-    <h2>The <code>let</code> keyword</h2>
-    <p>The other source of confusion for newcomers is
-    the <code>let</code> keyword which acts differently in the
-    toplevel than in normal OCaml expressions.In the
-    toplevel <code>let x = 1</code> binds the name <code>x</code> to
-    the integer 1 as seen in <code>lesson 2</code>. If <code>x</code>
-    was already bound to something its previous binding is lost:</p>
-    <p><code>| let x = "I am now a string!" |</code></p>
-    <p>The <code>let</code> keyword is also used to form an expression
-    in which a name is given to some value temporarily, for the
-    evaluation of a subexpression only:<br> <code>let x = 41 in x +
-    1</code> <br> The value of <code>x</code> is <code>41</code>
-    during the evaluation of <code>x + 1</code> only; the global
-    binding of <code>x</code> to <code>"I am now a string!"</code> is
-    preserved. See what <code>x</code> is evaluated to now, and
-    type <code>next ()</code> for a little practice.</p>
-    <h2>Exercise: let there be lets!</h2>
-    <p>Fix all these <code>let</code> expressions in order to get the expected result at the end:</p>
-    <pre>
-      | let xy =
-      |   let x = 'x' and let y = 'y' in x ::[y]
-    </pre>
-    <pre>
-      | let ab =
-      |   let a = 'a'
-      |   let b = 'B' in Char.lowercase b
-      |   in a ::[b]
-    </pre>
-    <pre>
-      | let up = Char.uppercase in
-      |   big_xy = List.map up xy ;
-      |   big_ab = List.map up ab ;
-      |   big_ab @ big_xy
-    </pre>
-    <h2>Parentheses</h2>
-    <p>With regard to grouping expression or enforcing order of
-    evaluation, OCaml syntax is surprisingly easy: you can use
-    pervasively either parentheses
-    or <code>begin</code>/<code>end</code> keywords.Example grouping
-    expressions in an <code>if</code> form:</p>
-    <pre>
-      | if 1+2 = 3 then (
-      |   print_string "did you knew that?\n" ;
-      |   print_string "amazing!\n"
-      | )
-    </pre>
-    <p>Or forcing order of evaluation
-      with <code>begin</code>/<code>end</code> (although you won't
-      find this often!):</p>
-    <p><code>| begin 1 + 2 end * 3 |</code></p>
-    <p>Also, as function application takes precedence over infix
-    operators you will frequently uses parentheses to make explicit
-    the expected evaluation order, as in: <code>square (1 + 1)</code>
-    since <code>square 1+1</code> would
-    yield <code>2</code>. Enter <code>next ()</code> when you are
+  <head>
+  <meta charset='UTF-8'>
+  <title>basics-traps</title>
+  </head>
+<body>
+  <h1>Syntax Traps</h1>
+  <h2>Sequence of expressions</h2>
+  <p>It is easy to get confused by OCaml syntax since it's different from
+    mainstream languages. So you'd better be aware of a few things before
+    digging any deeper. To begin with, you should know that a proper command
+    must normally end with <code>';;'</code> to be processed by the
+    top-level. This tutorial automatically adds the double semicolon as soon
+    as you hit enter but the normal top-level won't. The double semicolon is
+    only required when interacting with the top level interpreter and as such
+    is not part of OCaml syntax. What <em>is</em> part of OCaml syntax,
+    though, is the simple semicolon <code>';'</code> which is commonly used
+    as an expression terminator, except that in OCaml it's a
+    <em>separator</em> . In other words, you must not write <code>expr1;
+    expr2;</code> but <code>expr1 ;
+    expr2</code> . You may now enter
+    <code>next ()</code> to check your understanding.</p>
+  <h2>Exercise: Get the Punctuation Right!</h2>
+  <p>Let's see if you got this right. Here is a sequence of
+    <em>erroneous</em> commands. Your task is to fix all of them in order to
+    get the correct answer at the end.</p>
+  <pre data-run>
+    let fernand = "King of Castille";
+  </pre>
+  <pre data-run>
+    let rodrigue = "The cid"; let diegue = "cid's father"
+  </pre>
+  <pre data-run>
+    characters = [ fernand;; rodrigue;; diegue ]
+  </pre>
+  <pre data-run>
+    rodrigue.[4] &lt;- 'C' ; diegue.[0] &lt;- rodrigue.[4] ;
+  </pre>
+  <pre data-run>
+    characters
+  </pre>
+  <h2>The <code>let</code> keyword</h2>
+  <p>The other source of confusion for newcomers is the <code>let</code>
+    keyword which acts differently in the toplevel than in normal OCaml
+    expressions.In the toplevel <code>let x = 1</code> binds the name
+    <code>x</code> to the integer 1 as seen in <code>lesson 2</code> . If
+    <code>x</code> was already bound to something its previous binding is
+    lost:</p>
+  <pre data-run>
+    let x = "I am now a string!"
+  </pre>
+  <p>The <code>let</code> keyword is also used to form an expression in which
+    a name is given to some value temporarily, for the evaluation of a
+    subexpression only: <code>let x = 41 in x +
+    1</code> The value of
+    <code>x</code> is <code>41</code> during the evaluation of <code>x +
+    1</code> only; the global binding of <code>x</code> to <code>"I am now a
+    string!"</code> is preserved. See what <code>x</code> is evaluated to
+    now, and type <code>next ()</code> for a little practice.</p>
+  <h2>Exercise: let there be lets!</h2>
+  <p>Fix all these <code>let</code> expressions in order to get the expected
+    result at the end:</p>
+  <pre data-run>
+    let xy =
+      let x = 'x' and let y = 'y' in x ::[y]
+  </pre>
+  <pre data-run>
+    let ab =
+      let a = 'a'
+      let b = 'B' in Char.lowercase b
+      in a ::[b]
+  </pre>
+  <pre data-run>
+    let up = Char.uppercase in
+      big_xy = List.map up xy ;
+      big_ab = List.map up ab ;
+      big_ab @ big_xy
+  </pre>
+  <h2>Parentheses</h2>
+  <p>With regard to grouping expression or enforcing order of evaluation,
+    OCaml syntax is surprisingly easy: you can use pervasively either
+    parentheses or <code>begin</code> / <code>end</code> keywords.Example
+    grouping expressions in an <code>if</code> form:</p>
+  <pre data-run>
+    if 1+2 = 3 then (
+      print_string "did you knew that?\n" ;
+      print_string "amazing!\n"
+    )
+  </pre>
+  <p>Or forcing order of evaluation with <code>begin</code> /
+    <code>end</code> (although you won't find this often!):</p>
+  <pre data-run>
+    begin 1 + 2 end * 3
+  </pre>
+  <p>Also, as function application takes precedence over infix operators you
+    will frequently uses parentheses to make explicit the expected evaluation
+    order, as in: <code>square (1 + 1)</code> since <code>square 1+1</code>
+    would yield <code>2</code> . Enter <code>next ()</code> when you are
     ready to practice.</p>
-    <h2>Exercise: Fix the grouping</h2>
-    <p>A Lisp programmer stole all our parentheses! Get them back in order to get the proper result at the end.</p>
-    <pre>
-      | let ten =
-      |   let double x = x+x in
-      |   double 3 + 2
-    </pre>
-    <pre>
-      | let hundred =
-      |   if true || false then
-      |     print_string "May I help you?\n" ;
-      |     100
-      |   else 0
-    </pre>
-    <pre>
-      | let one =
-      |   let accum = ref -54 in
-      |   for i = 1 to ten do accum := !accum + i done ;
-      |   !accum
-    </pre>
-    <pre>
-      | one + match hundred with
-      |   | 42  -> match ten with 10 -> 52  | _ -> 0
-      |   | 100 -> match ten with 10 -> 110 | _ -> 0
-      |   | _ -> -1
-    </pre>
-  </body>
+  <h2>Exercise: Fix the grouping</h2>
+  <p>A Lisp programmer stole all our parentheses! Get them back in order to
+    get the proper result at the end.</p>
+  <pre data-run>
+    let ten =
+      let double x = x+x in
+      double 3 + 2
+  </pre>
+  <pre data-run>
+    let hundred =
+      if true || false then
+        print_string "May I help you?\n" ;
+        100
+      else 0
+  </pre>
+  <pre data-run>
+    let one =
+      let accum = ref -54 in
+      for i = 1 to ten do accum := !accum + i done ;
+      !accum
+  </pre>
+  <pre data-run>
+    one + match hundred with
+      | 42  -&gt; match ten with 10 -&gt; 52  | _ -&gt; 0
+      | 100 -&gt; match ten with 10 -&gt; 110 | _ -&gt; 0
+      | _ -&gt; -1
+  </pre></body>
 </html>

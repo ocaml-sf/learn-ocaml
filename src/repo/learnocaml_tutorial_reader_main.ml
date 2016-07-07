@@ -72,18 +72,28 @@ let main () =
                    else
                      Lwt.fail_with "unrecognized file extension, expecting .md, .html or .json"
                  end >>= fun (_, tutorial) ->
-                 begin match !output_json with
-                   | None -> Lwt.return ()
-                   | Some file_name ->
-                       let json =
-                         Json_encoding.construct Learnocaml_tutorial.tutorial_enc tutorial in
-                       match json with
-                       | `O _ | `A _ as json ->
+                 Lwt.join
+                   [ begin match !output_html with
+                       | None -> Lwt.return ()
+                       | Some file_name ->
+                           let text =
+                             Learnocaml_tutorial_parser.print_html_tutorial
+                               ~tutorial_name tutorial in
                            Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
-                           let text = Ezjsonm.to_string json in
                            Lwt_io.write chan text
-                       | _ -> assert false
-                 end >>= fun () ->
+                     end ;
+                     begin match !output_json with
+                       | None -> Lwt.return ()
+                       | Some file_name ->
+                           let json =
+                             Json_encoding.construct Learnocaml_tutorial.tutorial_enc tutorial in
+                           match json with
+                           | `O _ | `A _ as json ->
+                               Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
+                               let text = Ezjsonm.to_string json in
+                               Lwt_io.write chan text
+                           | _ -> assert false
+                     end ] >>= fun () ->
                  Lwt.return 0)
           (fun exn ->
              let print_unknown ppf = function

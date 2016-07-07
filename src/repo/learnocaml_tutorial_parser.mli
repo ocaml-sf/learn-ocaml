@@ -26,3 +26,8 @@ val parse_html_tutorial :
   file_name: string ->
   (Learnocaml_index.tutorial
    * Learnocaml_tutorial.tutorial) Lwt.t
+
+val print_html_tutorial :
+  tutorial_name: string ->
+  Learnocaml_tutorial.tutorial ->
+  string
