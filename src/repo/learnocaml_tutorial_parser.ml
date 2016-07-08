@@ -218,7 +218,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         parse_steps (acc, Some (step_title, []), rest)
     | acc, None, elt :: rest ->
         fail "step title (<h2> markup) expected \
-              after the tutorial title (<h1> markup)"
+                after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (`Elt ("h2", _, _) :: _ as rest) ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
         let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
@@ -397,4 +397,70 @@ let print_html_tutorial ~tutorial_name tutorial =
     tutorial_name
     pp_text tutorial_title
     (Format.pp_print_list pp_step) tutorial_steps ;
+  Buffer.contents buffer
+
+let print_md_tutorial ~tutorial_name tutorial =
+  let open Learnocaml_tutorial in
+  let buffer = Buffer.create 10000 in
+  let ppf = Format.formatter_of_buffer buffer in
+  let { tutorial_title ; tutorial_steps } = tutorial in
+  let pp_sep ppf () = Format.fprintf ppf "@,@," in
+  let drop_newlines code =
+    Stringext.split ~on:'\n' code
+    |> List.map String.trim
+    |> String.concat " " in
+  let rec pp_text ppf = function
+    | [] -> ()
+    |  Code { code ; runnable = false} :: rest ->
+        let code = drop_newlines code in
+        let code = Omd_backend.markdown_of_md [ Omd.Code ("", code) ] in
+        Format.fprintf ppf "%s" code ;
+        if rest <> [] then Format.fprintf ppf "@ " ;
+        pp_text ppf rest
+    |  Code { code ; runnable = true} :: rest ->
+        let code = drop_newlines code in
+        let code = Omd_backend.markdown_of_md [ Omd.Code ("", "| " ^ code ^ " |") ] in
+        Format.fprintf ppf "%s" code ;
+        pp_text ppf rest
+    |  Math code :: rest ->
+        let code = drop_newlines code in
+        let code = Omd_backend.markdown_of_md [ Omd.Code ("", "$ " ^ code ^ " $") ] in
+        Format.fprintf ppf "%s" code ;
+        if rest <> [] then Format.fprintf ppf "@ " ;
+        pp_text ppf rest
+    |  Emph text :: rest ->
+        Format.fprintf ppf "*%a*@," pp_text text ;
+        if rest <> [] then Format.fprintf ppf "@ " ;
+        pp_text ppf rest
+    | Text t :: rest ->
+        Format.pp_print_text ppf
+          (Omd_backend.escape_markdown_characters t) ;
+        if rest <> [] then Format.fprintf ppf "@ " ;
+        pp_text ppf rest
+    | _ -> assert false in
+  let rec pp_content ppf = function
+    | Paragraph [ Code { code ; runnable} ] ->
+        let prefix = if runnable then "| " else "" in
+        let lines = Stringext.split ~on:'\n' code in
+        Format.pp_print_list
+          (fun ppf -> Format.fprintf ppf "    %s%s" prefix)
+          ppf lines
+    | Paragraph text ->
+        Format.fprintf ppf "@[<hov 0>%a@]" pp_text text
+    | Enum items ->
+        Format.pp_print_list ~pp_sep
+          (fun ppf item ->
+             Format.fprintf ppf "@[<hov 4>  * %a@]" pp_text item)
+          ppf items in
+  let pp_step ppf { step_title ; step_contents } =
+    let title = Format.asprintf "@[<h 0>%a@]" pp_text step_title in
+    Format.fprintf ppf "%s@,%s@,@,%a"
+      title (String.make (String.length title) '-')
+      (Format.pp_print_list ~pp_sep pp_content) step_contents in
+  let title = Format.asprintf "@[<h 0>%a@]" pp_text tutorial_title in
+  Format.fprintf ppf "@[<v 0>\
+                      %s@,%s@,@,\
+                      %a@."
+    title (String.make (String.length title) '=')
+    (Format.pp_print_list ~pp_sep pp_step) tutorial_steps ;
   Buffer.contents buffer
