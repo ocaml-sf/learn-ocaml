@@ -1,14 +1,12 @@
 { "learnocaml_version": "1",
   "series":
-  { "basics":
-    { "title": "The very basics of OCaml",
+  { "tutorials-doc":
+    { "title": "Tutorial Syntaxes Documentation",
       "tutorials":
-      [ "basics-expressions",
-        "basics-imperative",
-        "basics-functions",
-        "basics-patternmatching",
-        "basics-traps" ]},
-    "news":
-    { "title": "New features of OCaml versions",
+      [ "html-syntax",
+        "md-syntax" ]},
+    "demo-tutorials":
+    { "title": "Tutorial Examples",
       "tutorials":
-      [ "features-3-12" ] } } }
+      [ "html-demo",
+        "md-demo" ]} } }

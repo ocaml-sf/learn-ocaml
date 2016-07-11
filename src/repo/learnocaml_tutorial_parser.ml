@@ -181,6 +181,15 @@ let parse_html_tutorial ~tutorial_name ~file_name =
     | `Elt ("p", _, children) :: rest ->
         parse_text [] children >>= fun contents ->
         parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+    | `Elt ("ul" | "ol" as tag, _, children) :: rest ->
+        let rec parse_items tag acc = function
+          | [] -> Lwt.return (List.rev acc)
+          | `Elt ("li", _, children) :: rest ->
+              parse_text [] children >>= fun contents ->
+              parse_items tag (contents :: acc) rest
+          | _ -> fail "unexpected non <li> element in <%s>" tag in
+        parse_items tag [] children >>= fun items ->
+        parse_contents (Learnocaml_tutorial.Enum items :: acc) rest
     | `Elt ("pre", [], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
@@ -271,9 +280,13 @@ let parse_md_tutorial ~tutorial_name ~file_name =
         parse_text [] t >>= fun text ->
         parse_text (Emph text :: acc) rest
     | elt :: _  ->
-        fail "unexpected content in title (%s)"
+        fail "unexpected content in text (%s)"
           (Omd.to_markdown [ elt ]) in
   let rec parse_contents acc = function
+    | (Omd.Ul l | Omd.Ol l | Omd.Ulp l | Omd.Olp l) :: rest ->
+        let parse_item ([ Omd.Paragraph l ] | l) = parse_text [] l in
+        Lwt_list.map_p parse_item l >>= fun items ->
+        parse_contents (Learnocaml_tutorial.Enum items :: acc) rest
     | Omd.Paragraph children :: rest ->
         parse_text [] children >>= fun contents ->
         parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
@@ -350,7 +363,7 @@ let print_html_tutorial ~tutorial_name tutorial =
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest
     |  Emph text :: rest ->
-        Format.fprintf ppf "<em>%a</em>@," pp_text text ;
+        Format.fprintf ppf "<em>%a</em>" pp_text text ;
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest
     | Text t :: rest ->
@@ -377,7 +390,7 @@ let print_html_tutorial ~tutorial_name tutorial =
         Format.fprintf ppf "@[<hov 2><p>%a@]</p>" pp_text text
     | Enum items ->
         let pp_item ppf text =
-          Format.fprintf ppf "@[<hov 2><p>%a@]</p>" pp_text text in
+          Format.fprintf ppf "@[<hov 2><li>%a@]</li>" pp_text text in
         Format.fprintf ppf "@[<v 2><ul>%a@]</ul>"
           (Format.pp_print_list pp_item) items in
   let pp_step ppf { step_title ; step_contents } =
@@ -385,10 +398,10 @@ let print_html_tutorial ~tutorial_name tutorial =
       pp_text step_title
       (Format.pp_print_list pp_content) step_contents in
   Format.fprintf ppf "@[<v 2><html>@,\
-                      @[<v 2><head>@]@,\
+                      @[<v 2><head>@,\
                       <meta charset='UTF-8'>@,\
-                      <title>%s</title>@,\
-                      </head>@]@,\
+                      <title>%s</title>@]@,\
+                      </head>@,\
                       @[<v 2><body>@,\
                       @[<hov 2><h1>%a</h1>@]@,\
                       %a@]@,\
