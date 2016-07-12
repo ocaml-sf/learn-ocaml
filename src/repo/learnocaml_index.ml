@@ -127,12 +127,14 @@ let lesson_index_enc =
 
 type word =
   | Text of string
-  | Code of { code : string ; runnable : bool }
+  | Code of code
   | Emph of text
   | Image of { alt : string ; mime : string ; contents : bytes }
   | Math of string
 and text =
   word list
+and code =
+  { code : string ; runnable : bool }
 
 let text_enc =
   mu "text" @@ fun content_enc ->
@@ -208,3 +210,7 @@ let exercise_path id = "exercise_" ^ id ^ ".json"
 let lesson_index_path = "lessons.json"
 
 let lesson_path id = "lesson_" ^ id ^ ".json"
+
+let tutorial_index_path = "tutorials.json"
+
+let tutorial_path id = "tutorial_" ^ id ^ ".json"

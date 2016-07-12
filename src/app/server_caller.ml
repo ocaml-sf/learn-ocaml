@@ -77,6 +77,16 @@ let fetch_lesson id =
     Learnocaml_lesson.lesson_enc
     (Learnocaml_index.lesson_path id)
 
+let fetch_tutorial_index () =
+  fetch_and_decode_json
+    Learnocaml_index.tutorial_index_enc
+    Learnocaml_index.tutorial_index_path
+
+let fetch_tutorial id =
+  fetch_and_decode_json
+    Learnocaml_tutorial.tutorial_enc
+    (Learnocaml_index.tutorial_path id)
+
 let gimme_sync_token () =
   fetch ~message: "cannot obtain a token" "/sync/gimme"
 

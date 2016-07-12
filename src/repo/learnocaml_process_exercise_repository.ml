@@ -191,12 +191,12 @@ let main dest_dir =
                (Lwt.return StringMap.empty) ids >>= fun exercises ->
              Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
-       to_file exercise_index_enc (dest_dir / "exercises.json") index >>= fun () ->
+       to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
        let processes_arguments =
          List.map
            (fun id ->
               let exercise_dir = !exercises_dir / id in
-              let json_path = dest_dir / ("exercise_" ^ id ^ ".json") in
+              let json_path = dest_dir / exercise_path id in
               let changed = try
                   let { Unix.st_mtime = json_time } = Unix.stat json_path in
                   Sys.readdir exercise_dir |>

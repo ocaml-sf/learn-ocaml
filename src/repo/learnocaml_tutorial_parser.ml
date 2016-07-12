@@ -177,43 +177,51 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         parse_text (Emph contents :: acc) rest
     | `Elt (tag, _, _) :: _ ->
         fail "unsupported markup <%s> in text" tag in
-  let rec parse_contents acc = function
+  let rec parse_contents ?(require_p = true) acc = function
     | `Elt ("p", _, children) :: rest ->
         parse_text [] children >>= fun contents ->
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | `Elt ("ul" | "ol" as tag, _, children) :: rest ->
         let rec parse_items tag acc = function
           | [] -> Lwt.return (List.rev acc)
           | `Elt ("li", _, children) :: rest ->
-              parse_text [] children >>= fun contents ->
+              parse_contents ~require_p: false [] children >>= fun contents ->
               parse_items tag (contents :: acc) rest
           | _ -> fail "unexpected non <li> element in <%s>" tag in
         parse_items tag [] children >>= fun items ->
-        parse_contents (Learnocaml_tutorial.Enum items :: acc) rest
+        parse_contents ~require_p (Learnocaml_tutorial.Enum items :: acc) rest
     | `Elt ("pre", [], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let contents = [ Code { code ; runnable = false } ] in
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = false } in
+        parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-run", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let contents = [ Code { code ; runnable = true } ] in
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = true } in
+        parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-math", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
         let contents = [ Math code ] in
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | `Elt ("pre", _ , children) :: rest ->
         fail "the <pre> markup expects either \
               one data-math, one data-run or zero attribute"
-    | `Elt (tag, _, _) :: _ ->
-        fail "the only markups supported at toplevel are \
-              <h2>, <p>, <ul> and <pre>, <%s> is not allowed" tag
-    | `Text _ :: _ ->
-        fail "text is not allowed at the toplevel, \
-              wrap it in a <p> markup"
+    | `Elt (tag, _, _) :: _ as l ->
+        if require_p || acc <> [] then
+          fail "the only markups supported at toplevel are \
+                <h2>, <p>, <ul> and <pre>, <%s> is not allowed" tag
+        else
+          parse_text [] l >>= fun text ->
+          Lwt.return [ Learnocaml_tutorial.Paragraph text ]
+    | `Text _ :: _ as l ->
+        if require_p || acc <> [] then
+          fail "text is not allowed at the toplevel, \
+                wrap it in a <p> markup"
+        else
+          parse_text [] l >>= fun text ->
+          Lwt.return [ Learnocaml_tutorial.Paragraph text ]
     | [] -> Lwt.return (List.rev acc) in
   let rec parse_steps = function
     | acc, None, []  ->
@@ -227,7 +235,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         parse_steps (acc, Some (step_title, []), rest)
     | acc, None, elt :: rest ->
         fail "step title (<h2> markup) expected \
-                after the tutorial title (<h1> markup)"
+              after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (`Elt ("h2", _, _) :: _ as rest) ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
         let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
@@ -272,6 +280,8 @@ let parse_md_tutorial ~tutorial_name ~file_name =
     | Omd.Code (_, code) :: rest ->
         let elt = parse_md_code_notation code in
         parse_text (elt :: acc) rest
+    | Omd.Text t1 :: Omd.NL :: Omd.Text t2 :: rest ->
+        parse_text acc (Omd.Text (t1 ^ " " ^ t2) :: rest)
     | Omd.Text t1 :: Omd.Text t2 :: rest ->
         parse_text acc (Omd.Text (t1 ^ t2) :: rest)
     | Omd.Text text :: rest ->
@@ -284,15 +294,16 @@ let parse_md_tutorial ~tutorial_name ~file_name =
           (Omd.to_markdown [ elt ]) in
   let rec parse_contents acc = function
     | (Omd.Ul l | Omd.Ol l | Omd.Ulp l | Omd.Olp l) :: rest ->
-        let parse_item ([ Omd.Paragraph l ] | l) = parse_text [] l in
-        Lwt_list.map_p parse_item l >>= fun items ->
+        Lwt_list.map_p (parse_contents []) l >>= fun items ->
         parse_contents (Learnocaml_tutorial.Enum items :: acc) rest
     | Omd.Paragraph children :: rest ->
         parse_text [] children >>= fun contents ->
         parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | Omd.Code_block (_, code) :: rest ->
-        let contents = [ parse_md_code_notation (code ^ "\n") ] in
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        begin match parse_md_code_notation (code ^ "\n") with
+          | Code code -> parse_contents (Learnocaml_tutorial.Code_block code :: acc) rest
+          | contents -> parse_contents (Learnocaml_tutorial.Paragraph [ contents ] :: acc) rest
+        end
     | elt :: _ ->
         fail "unexpected content at toplevel (%s)"
           (Omd.to_markdown [ elt ])
@@ -372,7 +383,7 @@ let print_html_tutorial ~tutorial_name tutorial =
         pp_text ppf rest
     | _ -> assert false in
   let rec pp_content ppf = function
-    | Paragraph [ Code { code ; runnable} ] ->
+    | Code_block { code ; runnable } ->
         Format.fprintf ppf "@[<v 2><pre%s>@," (if runnable then " data-run" else "") ;
         let code = reshape_code_block code in
         Uutf.String.fold_utf_8 (fun () _ cp ->
@@ -389,8 +400,9 @@ let print_html_tutorial ~tutorial_name tutorial =
     | Paragraph text ->
         Format.fprintf ppf "@[<hov 2><p>%a@]</p>" pp_text text
     | Enum items ->
-        let pp_item ppf text =
-          Format.fprintf ppf "@[<hov 2><li>%a@]</li>" pp_text text in
+        let pp_item ppf contents =
+          Format.fprintf ppf "@[<hov 2><li>%a@]</li>"
+            (Format.pp_print_list pp_content) contents in
         Format.fprintf ppf "@[<v 2><ul>%a@]</ul>"
           (Format.pp_print_list pp_item) items in
   let pp_step ppf { step_title ; step_contents } =
@@ -452,7 +464,7 @@ let print_md_tutorial ~tutorial_name tutorial =
         pp_text ppf rest
     | _ -> assert false in
   let rec pp_content ppf = function
-    | Paragraph [ Code { code ; runnable} ] ->
+    | Code_block { code ; runnable} ->
         let prefix = if runnable then "| " else "" in
         let lines = Stringext.split ~on:'\n' code in
         Format.pp_print_list
@@ -463,7 +475,8 @@ let print_md_tutorial ~tutorial_name tutorial =
     | Enum items ->
         Format.pp_print_list ~pp_sep
           (fun ppf item ->
-             Format.fprintf ppf "@[<hov 4>  * %a@]" pp_text item)
+             Format.fprintf ppf "@[<hov 4>  * %a@]"
+               (Format.pp_print_list ~pp_sep pp_content) item)
           ppf items in
   let pp_step ppf { step_title ; step_contents } =
     let title = Format.asprintf "@[<h 0>%a@]" pp_text step_title in

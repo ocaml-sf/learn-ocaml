@@ -73,3 +73,10 @@ val button :
   icon:string ->
   string -> (unit -> unit Lwt.t) ->
   unit
+
+val render_rich_text :
+  ?on_runnable_clicked: (string -> unit) ->
+  Learnocaml_index.text ->
+  [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list
+
+val extract_text_from_rich_text : Learnocaml_index.text -> string

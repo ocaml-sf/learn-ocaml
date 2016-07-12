@@ -16,32 +16,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type tutorial =
-  { tutorial_title : text ;
+  { tutorial_title : Learnocaml_index.text ;
     tutorial_steps : step list }
 and step =
-  { step_title : text ;
+  { step_title : Learnocaml_index.text ;
     step_contents : phrase list }
 and phrase =
-  | Paragraph of text
-  | Enum of text list
-and text = Learnocaml_index.text
+  | Paragraph of Learnocaml_index.text
+  | Enum of phrase list list
+  | Code_block of Learnocaml_index.code
 
 open Json_encoding
 
 let phrase_enc =
+  mu "phrase" @@ fun phrase_enc ->
   union
     [ case
-        Learnocaml_index.text_enc
-        (function Paragraph phrase -> Some phrase | _ -> None)
-        (fun phrase -> Paragraph phrase) ;
-      case
         (obj1 (req "paragraph" Learnocaml_index.text_enc))
         (function Paragraph phrase -> Some phrase | _ -> None)
         (fun phrase -> Paragraph phrase) ;
       case
-        (obj1 (req "enum" (list Learnocaml_index.text_enc)))
+        (obj1 (req "enum" (list (list phrase_enc))))
         (function Enum items -> Some items | _ -> None)
-        (fun items -> Enum items) ]
+        (fun items -> Enum items) ;
+      case
+        (obj2 (req "code" string) (dft "runnable" bool false))
+        (function Code_block { Learnocaml_index.code ; runnable } ->
+           Some (code, runnable) | _ -> None)
+        (fun (code, runnable) ->
+           Code_block { Learnocaml_index.code ; runnable }) ;
+      case
+        Learnocaml_index.text_enc
+        (function Paragraph phrase -> Some phrase | _ -> None)
+        (fun phrase -> Paragraph phrase) ]
 
 let tutorial_enc =
   Learnocaml_index.check_version_1 @@

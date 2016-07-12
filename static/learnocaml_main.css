@@ -747,17 +747,33 @@ body {
   flex: 1 1 auto;
   overflow: auto;
 }
-#learnocaml-main-tryocaml > .step-pane > div > code {
+#learnocaml-main-tryocaml > .step-pane ul,
+#learnocaml-main-tryocaml > .step-pane p {
+    margin: 0;
+}
+#learnocaml-main-tryocaml > .step-pane ul + ul,
+#learnocaml-main-tryocaml > .step-pane ul + p,
+#learnocaml-main-tryocaml > .step-pane p + ul,
+#learnocaml-main-tryocaml > .step-pane p + p {
+    margin-top: 5px;
+}
+#learnocaml-main-tryocaml > .step-pane pre.runnable {
   margin: 5px -5px 5px -5px;
   display: block;
   padding: 2px 7px 2px 7px;
   background: #fff8b8;
   cursor: pointer;
 }
-#learnocaml-main-tryocaml > .step-pane > div > code:hover {
+#learnocaml-main-tryocaml > .step-pane code.runnable {
+  padding: 2px;
+  background: #fff8b8;
+  cursor: pointer;
+}
+#learnocaml-main-tryocaml > .step-pane pre.runnable:hover,
+#learnocaml-main-tryocaml > .step-pane code.runnable:hover {
   background: #ffffdd;
 }
-#learnocaml-main-tryocaml > .step-pane > div > code:last-child {
+#learnocaml-main-tryocaml > .step-pane > div > pre.runnable:last-child {
   margin-bottom: -5px;
 }
 #learnocaml-main-tryocaml > .navigation::after {

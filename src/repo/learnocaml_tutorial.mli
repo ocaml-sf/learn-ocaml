@@ -16,14 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 type tutorial =
-  { tutorial_title : text ;
+  { tutorial_title : Learnocaml_index.text ;
     tutorial_steps : step list }
 and step =
-  { step_title : text ;
+  { step_title : Learnocaml_index.text ;
     step_contents : phrase list }
 and phrase =
-  | Paragraph of text
-  | Enum of text list
-and text = Learnocaml_index.text
+  | Paragraph of Learnocaml_index.text
+  | Enum of phrase list list
+  | Code_block of Learnocaml_index.code
 
 val tutorial_enc : tutorial Json_encoding.encoding

@@ -20,8 +20,9 @@ open Lwt
 open Learnocaml_index
 open Learnocaml_common
 
+module StringMap = Map.Make (String)
+
 let exercises_tab _ _ () =
-  let module StringMap = Map.Make (String) in
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata "Loading exercises" ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -255,7 +256,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
 ;;
 
 let tryocaml_tab select (arg, set_arg, delete_arg) () =
-  let open Learnocaml_lesson in
+  let open Learnocaml_tutorial in
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
   let step_title_container =
@@ -272,7 +273,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     Tyxml_js.Html5.(div ~a: [ a_class [ "toplevel-pane" ] ] []) in
   let buttons_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "buttons" ] ] []) in
-  let lesson_div =
+  let tutorial_div =
     Tyxml_js.Html5.(div ~a: [ a_id "learnocaml-main-tryocaml" ])
       [ navigation_div ; step_div ; toplevel_div ; buttons_div ] in
   let timeout_prompt =
@@ -310,17 +311,23 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~container: toplevel_div
       () in
   show_loading ~id:"learnocaml-main-loading"
-    Tyxml_js.Html5.[ ul [ li [ pcdata "Loading lessons" ] ] ] ;
+    Tyxml_js.Html5.[ ul [ li [ pcdata "Loading tutorials" ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   let content_div = find_component "learnocaml-main-content" in
-  Manip.appendChild content_div lesson_div ;
-  Server_caller.fetch_lesson_index () >>= fun index ->
+  Manip.appendChild content_div tutorial_div ;
+  Server_caller.fetch_tutorial_index () >>= fun index ->
+  let index =
+    List.flatten @@ StringMap.fold
+      (fun _ { series_tutorials } acc ->
+         series_tutorials :: acc)
+      index [] in
   let options =
     List.map
-      (fun (lesson_id, lesson_title) ->
-         lesson_id,
+      (fun { tutorial_name; tutorial_title } ->
+         tutorial_name,
          Tyxml_js.Html5.
-           (option ~a: [ a_value lesson_id ] (pcdata lesson_title)))
+           (option ~a: [ a_value tutorial_name ]
+              (pcdata (extract_text_from_rich_text tutorial_title))))
       index in
   let selector =
     Tyxml_js.Html5.(select (snd (List.split options))) in
@@ -330,15 +337,19 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     let rec loop = function
       | [] -> assert false
       | [ _ ] (* assumes single id *) -> None, None
-      | (one, _) :: (two, _) :: _ when id = one -> None, Some two
-      | (one, _) :: (two, _) :: [] when id = two -> Some one, None
-      | (one, _) :: (two, _) :: (three, _) :: _ when id = two -> Some one, Some three
+      | { tutorial_name = one } ::
+        { tutorial_name = two } :: _ when id = one -> None, Some two
+      | { tutorial_name = one } ::
+        { tutorial_name = two } :: [] when id = two -> Some one, None
+      | { tutorial_name = one } ::
+        { tutorial_name = two } ::
+        { tutorial_name = three } :: _ when id = two -> Some one, Some three
       |  _ :: rest -> loop rest
     in loop index in
-  let current_lesson_id = ref @@
-    match arg "lesson" with
-    | exception Not_found -> fst (List.hd index)
-    | lesson_id -> lesson_id in
+  let current_tutorial_name = ref @@
+    match arg "tutorial" with
+    | exception Not_found -> (List.hd index).tutorial_name
+    | tutorial_name -> tutorial_name in
   let current_step_id = ref @@
     match int_of_string (arg "step") with
     | exception _ -> 0
@@ -347,11 +358,11 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   let next_button_state = button_state () in
   let prev_step_button_state = button_state () in
   let next_step_button_state = button_state () in
-  let rec load_lesson lesson_id step_id () =
-    Server_caller.fetch_lesson lesson_id >>= fun { lesson_steps } ->
-    set_arg "lesson" lesson_id ;
+  let rec load_tutorial tutorial_name step_id () =
+    Server_caller.fetch_tutorial tutorial_name >>= fun { tutorial_steps } ->
+    set_arg "tutorial" tutorial_name ;
     set_arg "step" (string_of_int step_id) ;
-    let prev, next = prev_and_next lesson_id in
+    let prev, next = prev_and_next tutorial_name in
     begin match prev with
       | None -> disable_button prev_button_state
       | Some _ -> enable_button prev_button_state
@@ -361,45 +372,54 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       | Some _ -> enable_button next_button_state
     end ;
     let option =
-      Tyxml_js.To_dom.of_option (List.assoc lesson_id options) in
+      Tyxml_js.To_dom.of_option (List.assoc tutorial_name options) in
     option##selected <- Js._true ;
     let step = try
-        List.nth lesson_steps step_id
+        List.nth tutorial_steps step_id
       with _ -> failwith "unknown step" in
     if step_id = 0 then
       disable_button prev_step_button_state
     else
       enable_button prev_step_button_state ;
-    if step_id = List.length lesson_steps - 1 then
+    if step_id = List.length tutorial_steps - 1 then
       disable_button next_step_button_state
     else
       enable_button next_step_button_state ;
-    current_lesson_id := lesson_id ;
+    current_tutorial_name := tutorial_name ;
     current_step_id := step_id ;
-    Manip.setInnerHtml step_title step.step_title ;
+    Manip.replaceChildren step_title
+      (render_rich_text step.step_title) ;
     let items =
-      List.map
-        (function
-          | Code code ->
-              let elt = Tyxml_js.Html5.code [ Tyxml_js.Html5.pcdata code ] in
-              Manip.Ev.onclick elt (fun _ ->
-                  begin Lwt.async @@ fun () ->
-                    toplevel_launch >>= fun top ->
-                    if button_group_disabled toplevel_buttons_group then
-                      Lwt.return ()
-                    else
-                      disabling_button_group toplevel_buttons_group
-                        (fun () ->
-                           Learnocaml_toplevel.execute_phrase top code >>= fun _ ->
-                           Lwt.return ())
-                  end ;
-                  true) ;
-              elt
-          | Text text ->
-              let elt = Tyxml_js.Html5.div [] in
-              Manip.setInnerHtml elt text ;
-              elt)
-        step.step_phrases in
+      let on_runnable_clicked code =
+        Lwt.async @@ fun () ->
+        toplevel_launch >>= fun top ->
+        if button_group_disabled toplevel_buttons_group then
+          Lwt.return ()
+        else
+          disabling_button_group toplevel_buttons_group
+            (fun () ->
+               Learnocaml_toplevel.execute_phrase top code >>= fun _ ->
+               Lwt.return ()) in
+      let rec render_phrases phrases =
+        List.map
+          (function
+            | Paragraph text ->
+                Tyxml_js.Html5.p
+                  (render_rich_text ~on_runnable_clicked text)
+            | Code_block { code ; runnable } ->
+                let elt = Tyxml_js.Html.pre [ Tyxml_js.Html.pcdata code ] in
+                if runnable then begin
+                  Manip.addClass elt "runnable" ;
+                  Manip.Ev.onclick elt (fun _ -> on_runnable_clicked code ; true)
+                end ;
+                elt
+            | Enum items ->
+                Tyxml_js.Html5.ul
+                  (List.map (fun phrases ->
+                       Tyxml_js.Html5.li (render_phrases phrases))
+                      items))
+          phrases in
+      render_phrases step.step_contents in
     Manip.replaceChildren step_items_container items ;
     toplevel_launch >>= fun top ->
     Learnocaml_toplevel.scroll top ;
@@ -408,9 +428,9 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~group: toplevel_buttons_group
       ~state: prev_button_state ~container: navigation_div
       ~theme: "black" ~icon: "left" "Prev" @@ fun () ->
-    match prev_and_next !current_lesson_id with
+    match prev_and_next !current_tutorial_name with
     | Some prev, _ ->
-        load_lesson prev 0 ()
+        load_tutorial prev 0 ()
     | _ -> Lwt.return ()
   end ;
   Manip.appendChild navigation_div selector ;
@@ -419,30 +439,30 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   dom_selector##onchange <-
     Dom_html.handler (fun _ ->
         let id = Js.to_string (dom_selector##value) in
-        Lwt.async (load_lesson id 0) ;
+        Lwt.async (load_tutorial id 0) ;
         Js._true) ;
   begin button
       ~group: toplevel_buttons_group
       ~state: next_button_state ~container: navigation_div
       ~theme: "black" ~icon: "right" "Next" @@ fun () ->
-    match prev_and_next !current_lesson_id with
-    | _, Some next ->load_lesson next 0 ()
+    match prev_and_next !current_tutorial_name with
+    | _, Some next ->load_tutorial next 0 ()
     | _ -> Lwt.return ()
   end ;
   begin button
       ~group: toplevel_buttons_group
       ~state: prev_step_button_state ~container: step_title_container
       ~theme: "black" ~icon: "left" "" @@ fun () ->
-    load_lesson !current_lesson_id (!current_step_id - 1) ()
+    load_tutorial !current_tutorial_name (!current_step_id - 1) ()
   end ;
   Manip.appendChild step_title_container step_title ;
   begin button
       ~group: toplevel_buttons_group
       ~state: next_step_button_state ~container: step_title_container
       ~theme: "black" ~icon: "right" "" @@ fun () ->
-    load_lesson !current_lesson_id (!current_step_id + 1) ()
+    load_tutorial !current_tutorial_name (!current_step_id + 1) ()
   end ;
-  load_lesson !current_lesson_id !current_step_id () >>= fun () ->
+  load_tutorial !current_tutorial_name !current_step_id () >>= fun () ->
   begin button
       ~container: buttons_div ~theme: "dark"
       ~group: toplevel_buttons_group ~icon: "cleanup" "Clear" @@ fun () ->
@@ -465,7 +485,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   end ;
   toplevel_launch >>= fun _ ->
   hide_loading ~id:"learnocaml-main-loading" () ;
-  Lwt.return lesson_div
+  Lwt.return tutorial_div
 ;;
 
 let toplevel_tab select _ () =

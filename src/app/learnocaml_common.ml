@@ -249,3 +249,49 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
 let gettimeofday () =
   let now = jsnew Js.date_now () in
   floor ((now ## getTime ()) *. 1000.) +. float (now ## getTimezoneOffset ())
+
+let render_rich_text ?on_runnable_clicked text =
+  let open Learnocaml_index in
+  let rec render acc text =
+    match text with
+    | [] -> List.rev acc
+    | Text text :: rest ->
+        render
+          (Tyxml_js.Html.pcdata text :: acc)
+          rest
+    | Code { code ; runnable } :: rest ->
+        let elt = Tyxml_js.Html.code [ Tyxml_js.Html.pcdata code ] in
+        (match runnable, on_runnable_clicked with
+         | true, Some cb ->
+             Manip.addClass elt "runnable" ;
+             Manip.Ev.onclick elt (fun _ -> cb code ; true)
+         | _ -> ()) ;
+        render (elt :: acc) rest ;
+    | Emph text :: rest ->
+        render
+          (Tyxml_js.Html.em (render [] text) :: acc)
+          rest
+    | Image _ :: _ -> assert false
+    | Math code :: rest ->
+        render
+          (Tyxml_js.Html.pcdata ("`" ^ code ^ "`") :: acc)
+          rest in
+  (render [] text
+   :> [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list)
+
+let extract_text_from_rich_text text =
+  let open Learnocaml_index in
+  let rec render acc text =
+    match text with
+    | [] -> String.concat " " (List.rev acc)
+    | Text text :: rest ->
+        render (text :: acc) rest
+    | Code { code } :: rest ->
+        render (("[" ^ code ^ "]") :: acc) rest
+    | Emph text :: rest ->
+        render (("*" ^ render [] text ^ "*") :: acc) rest
+    | Image { alt } :: rest ->
+        render (("(" ^ alt ^ ")") :: acc) rest
+    | Math code :: rest ->
+        render (("$" ^ code ^ "$") :: acc) rest in
+  render [] text

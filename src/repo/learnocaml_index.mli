@@ -40,12 +40,14 @@ val lesson_index_enc : (string * string) list Json_encoding.encoding
 
 type word =
   | Text of string
-  | Code of { code : string ; runnable : bool }
+  | Code of code
   | Emph of text
   | Image of { alt : string ; mime : string ; contents : bytes }
   | Math of string
 and text =
   word list
+and code =
+  { code : string ; runnable : bool }
 
 val text_enc : text Json_encoding.encoding
 
@@ -68,3 +70,7 @@ val exercise_path : string -> string
 val lesson_index_path : string
 
 val lesson_path : string -> string
+
+val tutorial_index_path : string
+
+val tutorial_path : string -> string

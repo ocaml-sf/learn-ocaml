@@ -100,7 +100,7 @@ let main dest_dir =
             Lwt_list.map_p
               (fun name ->
                  retrieve_tutorial name >>= fun (server_index_handle, tutorial) ->
-                 let json_path = dest_dir / "tutorial_" ^ name ^ ".json" in
+                 let json_path = dest_dir / tutorial_path name in
                  to_file Learnocaml_tutorial.tutorial_enc json_path tutorial >>= fun () ->
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
@@ -108,7 +108,7 @@ let main dest_dir =
             Lwt.return (StringMap.add name { series_title ; series_tutorials } acc))
          (Lwt.return StringMap.empty)
          series >>= fun index ->
-       to_file tutorial_index_enc (dest_dir / "tutorials.json") index >>= fun () ->
+       to_file tutorial_index_enc (dest_dir / tutorial_index_path) index >>= fun () ->
        Lwt.return true)
     (fun exn ->
        let print_unknown ppf = function

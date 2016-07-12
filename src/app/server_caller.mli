@@ -27,6 +27,10 @@ val fetch_lesson_index : unit -> (string * string) list Lwt.t
 
 val fetch_lesson : string -> Learnocaml_lesson.lesson Lwt.t
 
+val fetch_tutorial_index : unit -> Learnocaml_index.series Map.Make(String).t Lwt.t
+
+val fetch_tutorial : string -> Learnocaml_tutorial.tutorial Lwt.t
+
 val gimme_sync_token : unit -> string Lwt.t
 
 val fetch_save_file : token: string -> Learnocaml_sync.save_file Lwt.t
