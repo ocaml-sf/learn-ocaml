@@ -1,3 +1,5 @@
+S ./*
+B ../_obuild/*
 PKG lwt
 PKG ocplib-ocamlres
 PKG compiler-libs
@@ -8,12 +10,9 @@ PKG tyxml
 PKG tyxml.functor
 PKG js_of_ocaml.tyxml
 PKG ocp-indent.lib
-PKG cohttp
-PKG cohttp.lwt_unix
+PKG cohttp.lwt
 PKG magic-mime
 PKG omd
 PKG markup
-S ./*
-B ../_obuild/*
 EXT syntax
 EXT js

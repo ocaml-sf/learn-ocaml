@@ -8,7 +8,7 @@ depends: [
   "ocp-build" {build}
   "base64"
   "ezjsonm"
-  "js_of_ocaml" {>= "2.8"}
+  "js_of_ocaml" {= "2.8"}
   "lwt"
   "ocp-indent" {>= "1.6"}
   "ocp-ocamlres"

@@ -17,34 +17,6 @@ begin library "testing"
   ]
 end
 
-embedded_cmis = [
-
-  "%{stdlib_SRC_DIR}%/pervasives.cmi"
-  "%{stdlib_SRC_DIR}%/array.cmi"
-  "%{stdlib_SRC_DIR}%/arrayLabels.cmi"
-  "%{stdlib_SRC_DIR}%/list.cmi"
-  "%{stdlib_SRC_DIR}%/camlinternalFormatBasics.cmi"
-  "%{stdlib_SRC_DIR}%/camlinternalFormat.cmi"
-  "%{stdlib_SRC_DIR}%/printf.cmi"
-  "%{stdlib_SRC_DIR}%/random.cmi"
-  "%{stdlib_SRC_DIR}%/string.cmi"
-  "%{stdlib_SRC_DIR}%/bytes.cmi"
-  "%{stdlib_SRC_DIR}%/sys.cmi"
-  "%{stdlib_SRC_DIR}%/format.cmi"
-  "%{stdlib_SRC_DIR}%/char.cmi"
-  "%{stdlib_SRC_DIR}%/printexc.cmi"
-  "%{stdlib_SRC_DIR}%/digest.cmi"
-  "%{stdlib_SRC_DIR}%/lexing.cmi"
-  "%{stdlib_SRC_DIR}%/buffer.cmi"
-  "%{stdlib_SRC_DIR}%/hashtbl.cmi"
-  "%{stdlib_SRC_DIR}%/set.cmi"
-  "%{stdlib_SRC_DIR}%/map.cmi"
-  "%{stdlib_SRC_DIR}%/topdirs.cmi"
-
-  (* TODO... add the required stdlib... *)
-
-]
-
 embedded_grading_cmis = [
 
   "%{compiler-libs_FULL_DST_DIR}%/longident.cmi"
@@ -162,6 +134,7 @@ begin program "learnocaml-grader-worker"
       commands = [ {
         "js_of_ocaml"
            "+weak.js"
+           "+cstruct/cstruct.js"
            "+dynlink.js"
            "+toplevel.js"
            "--toplevel"
