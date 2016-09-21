@@ -9,6 +9,9 @@ This software is still under development, no public announcement has been made y
 
 A demo is available at: [http://try.ocamlpro.com/learn-ocaml-demo/].
 
+The exercises and lessons are in another github repository:
+[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository).
+
 ![Build status logo](https://travis-ci.org/OCamlPro/learn-ocaml.svg)
 
 How to compile and try
@@ -23,13 +26,14 @@ You may wnt to read the script to know what it does first.
 * Compile the app : ```make```
 
 You can customise the exercise repository and output directory using
-make variables ```REPO_DIR``` and ```DEST_DIR```. By default,
-the repository used is an included demo repository. The user
-contributed exercises of the platform are in the git repository
-```learn-ocaml-repository```. An exmple configuration is
+make variables ```REPO_DIR``` and ```DEST_DIR```. By default, the
+repository used is an included demo repository. The user contributed
+exercises of the publue platform is in the github
+[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository)
+repository. An exmple configuration is
 ```make REPO_DOR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml```.
 
-* Alternatively, put the resulting directory ```www/``` behind a Web server.
+* Then either put the resulting directory ```www/``` behind a Web server.
 
 Either this step or the next is mandatory.
 If you try to open the ```index.html``` file directly from the local
@@ -40,7 +44,7 @@ machine. For instance, running ```python3 -m http.server 9090``` or
 ```php -S localhost:9090``` in the ```www``` directory and pointing
 you browser to ```http://localhost:9090/``` should do the job.
 
-* Alternatively, a minimal server is included that also does the job,
+* Or alternatively, use the provided minimal server, that also does the job,
   and includes a minimal server-side synchronization mechanism.
 
 You can launch it via ```./_obuild/*/learnocaml-simple-server.byte```.
@@ -50,10 +54,9 @@ License and copyright
 
 Unless explicitly written below or in the files themselves, the source
 code for the app, images, static files, course content and exercises
-and most of the are placed under the GNU Affero General Public License
-version 3. This practically means that any instance of the app must
-provide its source code to its users.
-See [http://www.gnu.org/licenses/agpl-3.0.html].
+are placed under the GNU Affero General Public License version 3. This
+practically means that any instance of the app must provide its source
+code to its users.  See [http://www.gnu.org/licenses/agpl-3.0.html].
 
 Lightly modified third party components ACE and ppx_metaquot are
 included, under their original licenses (respectively BSD and MIT).
