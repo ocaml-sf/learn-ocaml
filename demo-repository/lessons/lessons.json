@@ -1,16 +1,6 @@
 {"learnocaml_version": "1",
  "lessons": [
-     [ "lesson1",
-       "Simple Expressions" ],
-     [ "lesson2",
-       "A Taste of Imperative Programming" ],
-     [ "lesson3",
-       "Functions" ],
-     [ "lesson4",
-       "Pattern-matching" ],
-     [ "lesson5",
-       "Syntax Traps" ],
-     [ "lesson20",
-       "New Features in OCaml 3.12" ]
+     [ "demo",
+       "Lesson Demo" ]
  ]
 }
