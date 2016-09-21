@@ -242,14 +242,16 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
     Tyxml_js.Html5.(div ~a: [ a_id "learnocaml-main-lesson" ])
       [ navigation_div ; main_div ] in
   Manip.appendChild content_div lesson_div ;
-  begin match arg "lesson" with
-    | exception Not_found -> Lwt.return ()
-    | id ->
-        try
-          let option = Tyxml_js.To_dom.of_option (List.assoc id options) in
-          option##selected <- Js._true ;
-          load_lesson ~loading: false ()
-        with Not_found -> failwith "lesson not found"
+  begin try
+      let id = match arg "lesson" with
+        | id -> id
+        | exception Not_found -> match index with
+          | [] -> raise Not_found
+          | (id, _) :: _ -> id in
+      let option = Tyxml_js.To_dom.of_option (List.assoc id options) in
+      option##selected <- Js._true ;
+      load_lesson ~loading: false ()
+    with Not_found -> failwith "lesson not found"
   end >>= fun () ->
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return lesson_div
