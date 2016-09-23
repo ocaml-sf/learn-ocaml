@@ -300,10 +300,12 @@ let parse_md_tutorial ~tutorial_name ~file_name =
         parse_text [] children >>= fun contents ->
         parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | Omd.Code_block (_, code) :: rest ->
-        begin match parse_md_code_notation (code ^ "\n") with
-          | Code code -> parse_contents (Learnocaml_tutorial.Code_block code :: acc) rest
-          | contents -> parse_contents (Learnocaml_tutorial.Paragraph [ contents ] :: acc) rest
-        end
+        let blocks = List.map (fun code ->
+            match parse_md_code_notation (code ^ "\n") with
+            | Code code -> Learnocaml_tutorial.Code_block code
+            | contents -> Learnocaml_tutorial.Paragraph [ contents ])
+            (Re.split (Re.compile (Re.str "\n\n")) code) in
+        parse_contents (List.rev blocks @ acc) rest
     | elt :: _ ->
         fail "unexpected content at toplevel (%s)"
           (Omd.to_markdown [ elt ])
