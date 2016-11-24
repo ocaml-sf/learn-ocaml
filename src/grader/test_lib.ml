@@ -724,11 +724,11 @@ module Make
     let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
     match Env.find_type path !Toploop.toplevel_env with
     | { Types. type_kind = Types.Type_abstract } ->
-        true, [ Message ([Text "Type" ; Code "Exp.e" ; Text "is abstract as expected." ], Success 5) ]
+        true, [ Message ([Text "Type" ; Code name ; Text "is abstract as expected." ], Success 5) ]
     | { Types. type_kind = _ ; type_private = Asttypes.Private } when allow_private ->
-        true, [ Message ([Text "Type" ; Code "Exp.e" ; Text "is private, I'll accept that :-)." ], Success 5) ]
+        true, [ Message ([Text "Type" ; Code name ; Text "is private, I'll accept that :-)." ], Success 5) ]
     | { Types. type_kind = _ } ->
-        false, [ Message ([Text "Type" ; Code "Exp.e" ; Text "should be abstract!" ], Failure) ]
+        false, [ Message ([Text "Type" ; Code name ; Text "should be abstract!" ], Failure) ]
 
   let test_student_code ty cb =
     let open Learnocaml_report in
