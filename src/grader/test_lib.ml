@@ -711,7 +711,7 @@ module Make
     let open Learnocaml_report in
     [ Message ([ Text "Checking that " ; Code got ;
                  Text "is compatible with " ; Code exp ], Informative) ;
-      match Introspection.compatible_type exp got with
+      match Introspection.compatible_type exp ("Code." ^ got) with
       | Introspection.Absent ->
           Message ([ Text "Type not found" ], Failure)
       | Introspection.Incompatible msg ->
