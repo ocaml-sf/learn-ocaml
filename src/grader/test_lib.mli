@@ -70,6 +70,9 @@ module type S = sig
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
+  val test_module_property :
+    'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+
   (*----------------------------------------------------------------------------*)
 
   type 'a result =

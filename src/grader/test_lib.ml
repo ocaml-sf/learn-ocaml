@@ -70,6 +70,9 @@ module type S = sig
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
+  val test_module_property :
+    'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+
   (*----------------------------------------------------------------------------*)
 
   type 'a result =
@@ -739,6 +742,16 @@ module Make
     | Introspection.Incompatible msg ->
         [ Message ([ Text "Your code doesn't match the expected signature." ; Break ;
                      Code msg (* TODO: hide or fix locations *) ], Failure) ]
+
+  let test_module_property ty name cb =
+    let open Learnocaml_report in
+    match Introspection.get_value ("Code." ^ name) ty with
+    | Introspection.Present v -> cb v
+    | Introspection.Absent ->
+       [ Message ([ Text "Module" ; Code name ; Text "not found." ], Failure) ]
+    | Introspection.Incompatible msg ->
+       [ Message ([ Text "Module" ; Code name ; Text "doesn't match the expected signature." ;
+                    Break ; Code msg (* TODO: hide or fix locations *) ], Failure) ]
 
   let typed_printer ty ppf v =
     Introspection.print_value ppf v ty
