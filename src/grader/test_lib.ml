@@ -66,7 +66,7 @@ module type S = sig
 
   val compatible_type : expected:string -> string -> Learnocaml_report.report
 
-  val abstract_type : ?allow_private:bool -> string -> bool * Learnocaml_report.report
+  val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.report
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
@@ -722,14 +722,14 @@ module Make
       | Introspection.Present () ->
           Message ([ Text "Type found and compatible" ], Success 5) ]
 
-  let abstract_type ?(allow_private = true) name =
+  let abstract_type ?(allow_private = true) ?(score = 5) name =
     let open Learnocaml_report in
     try let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
         match Env.find_type path !Toploop.toplevel_env with
         | { Types. type_kind = Types.Type_abstract ; Types. type_manifest = None } ->
-           true, [ Message ([Text "Type" ; Code name ; Text "is abstract as expected." ], Success 5) ]
+           true, [ Message ([Text "Type" ; Code name ; Text "is abstract as expected." ], Success score) ]
         | { Types. type_kind = _ ; type_private = Asttypes.Private } when allow_private ->
-           true, [ Message ([Text "Type" ; Code name ; Text "is private, I'll accept that :-)." ], Success 5) ]
+           true, [ Message ([Text "Type" ; Code name ; Text "is private, I'll accept that :-)." ], Success score) ]
         | { Types. type_kind = _ } ->
            false, [ Message ([Text "Type" ; Code name ; Text "should be abstract!" ], Failure) ]
     with Not_found -> false, [ Message ( [Text "Type" ; Code name ; Text "not found." ], Failure) ]

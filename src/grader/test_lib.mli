@@ -66,7 +66,7 @@ module type S = sig
 
   val compatible_type : expected:string -> string -> Learnocaml_report.report
 
-  val abstract_type : ?allow_private:bool -> string -> bool * Learnocaml_report.report
+  val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.report
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
