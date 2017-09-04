@@ -393,7 +393,7 @@ module Manip = struct
     let onreturn elt f =
       let f ev =
 	let key = ev##keyCode in
-	if key = Keycode.return then f ev;
+	if key = 13 then f ev;
 	true in
       onkeydown elt f
     let onchange elt f =

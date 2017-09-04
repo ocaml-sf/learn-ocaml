@@ -8,6 +8,7 @@ begin library "ace"
   requires = [
     "jsutils"
     "js_of_ocaml"
+    "js_of_ocaml-lwt"
     "lwt"
     "ocp-indent.lib"
   ]

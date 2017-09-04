@@ -65,9 +65,12 @@ let init () =
   Dom_html.addEventListener
     Dom_html.window storage_event_typ
     (Dom_html.handler (fun evt ->
-         let name = Js.to_string evt##key in
-         notify (Some name) ;
-         Js._true))
+         Js.Opt.case (evt##key)
+           (fun () -> Js._false)
+           (fun name ->
+              let name = Js.to_string name in
+              notify (Some name) ;
+              Js._true)))
     Js._true |> ignore
 
 let store { store ; key } v =

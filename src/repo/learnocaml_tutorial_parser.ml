@@ -347,20 +347,22 @@ let print_html_tutorial ~tutorial_name tutorial =
   let utf8_of_cp =
     let tmp = Buffer.create 513 in
     fun cp ->
-      Buffer.clear tmp ;
-      Uutf.Buffer.add_utf_8 tmp cp ;
-      Buffer.contents tmp in
+    Buffer.clear tmp ;
+    Uutf.Buffer.add_utf_8 tmp cp ;
+    Buffer.contents tmp in
   let pp_escaped ppf t =
     Uutf.String.fold_utf_8 (fun () _ cp ->
         match cp with
-        | `Uchar 0x20 -> Format.fprintf ppf "@ "
-        | `Uchar 0x26 -> Format.fprintf ppf "&amp;"
-        | `Uchar 0x3C -> Format.fprintf ppf "&lt;"
-        | `Uchar 0x3E -> Format.fprintf ppf "&gt;"
-        | `Uchar 0xA0 -> Format.fprintf ppf "&nbsp;"
-        | `Uchar cp -> Format.fprintf ppf "%s" (utf8_of_cp cp)
-        | `Malformed _ -> ())
-      () t in
+        | `Uchar c ->
+           begin match Uchar.to_int c with
+           | 0x20 -> Format.fprintf ppf "@ "
+           | 0x26 -> Format.fprintf ppf "&amp;"
+           | 0x3C -> Format.fprintf ppf "&lt;"
+           | 0x3E -> Format.fprintf ppf "&gt;"
+           | 0xA0 -> Format.fprintf ppf "&nbsp;"
+           | cp -> Format.fprintf ppf "%s" (utf8_of_cp c)
+           end
+        | `Malformed _ -> ())() t in
   let rec pp_text ppf = function
     | [] -> ()
     |  Code { code ; runnable = false} :: rest ->
@@ -380,37 +382,38 @@ let print_html_tutorial ~tutorial_name tutorial =
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest
     | Text t :: rest ->
-        pp_escaped ppf t ;
-        if rest <> [] then Format.fprintf ppf "@ " ;
-        pp_text ppf rest
+       pp_escaped ppf t ;
+       if rest <> [] then Format.fprintf ppf "@ " ;
+       pp_text ppf rest
     | _ -> assert false in
   let rec pp_content ppf = function
     | Code_block { code ; runnable } ->
-        Format.fprintf ppf "@[<v 2><pre%s>@," (if runnable then " data-run" else "") ;
-        let code = reshape_code_block code in
-        Uutf.String.fold_utf_8 (fun () _ cp ->
-            match cp with
-            | `Uchar 0x0A -> Format.fprintf ppf "@,"
-            | `Uchar 0x26 -> Format.fprintf ppf "&amp;"
-            | `Uchar 0x3C -> Format.fprintf ppf "&lt;"
-            | `Uchar 0x3E -> Format.fprintf ppf "&gt;"
-            | `Uchar 0xA0 -> Format.fprintf ppf "&nbsp;"
-            | `Uchar cp -> Format.fprintf ppf "%s" (utf8_of_cp cp)
-            | `Malformed _ -> ())
-          () code ;
-        Format.fprintf ppf "@]@,</pre>"
+       Format.fprintf ppf "@[<v 2><pre%s>@," (if runnable then " data-run" else "") ;
+       let code = reshape_code_block code in
+       Uutf.String.fold_utf_8 (fun () _ cp ->
+           match cp with
+           | `Uchar c ->
+              begin match Uchar.to_int c with
+              | 0x26 -> Format.fprintf ppf "&amp;"
+              | 0x3C -> Format.fprintf ppf "&lt;"
+              | 0x3E -> Format.fprintf ppf "&gt;"
+              | 0xA0 -> Format.fprintf ppf "&nbsp;"
+              | cp -> Format.fprintf ppf "%s" (utf8_of_cp c)
+              end
+           | `Malformed _ -> ()) () code ;
+       Format.fprintf ppf "@]@,</pre>"
     | Paragraph text ->
-        Format.fprintf ppf "@[<hov 2><p>%a@]</p>" pp_text text
+       Format.fprintf ppf "@[<hov 2><p>%a@]</p>" pp_text text
     | Enum items ->
-        let pp_item ppf contents =
-          Format.fprintf ppf "@[<hov 2><li>%a@]</li>"
-            (Format.pp_print_list pp_content) contents in
-        Format.fprintf ppf "@[<v 2><ul>%a@]</ul>"
-          (Format.pp_print_list pp_item) items in
+       let pp_item ppf contents =
+         Format.fprintf ppf "@[<hov 2><li>%a@]</li>"
+                        (Format.pp_print_list pp_content) contents in
+       Format.fprintf ppf "@[<v 2><ul>%a@]</ul>"
+                      (Format.pp_print_list pp_item) items in
   let pp_step ppf { step_title ; step_contents } =
     Format.fprintf ppf "@[<hov 2><h2>%a</h2>@]@,%a"
-      pp_text step_title
-      (Format.pp_print_list pp_content) step_contents in
+                   pp_text step_title
+                   (Format.pp_print_list pp_content) step_contents in
   Format.fprintf ppf "@[<v 2><html>@,\
                       @[<v 2><head>@,\
                       <meta charset='UTF-8'>@,\
@@ -421,9 +424,9 @@ let print_html_tutorial ~tutorial_name tutorial =
                       %a@]@,\
                       </body>@]@,\
                       </html>@."
-    tutorial_name
-    pp_text tutorial_title
-    (Format.pp_print_list pp_step) tutorial_steps ;
+                 tutorial_name
+                 pp_text tutorial_title
+                 (Format.pp_print_list pp_step) tutorial_steps ;
   Buffer.contents buffer
 
 let print_md_tutorial ~tutorial_name tutorial =

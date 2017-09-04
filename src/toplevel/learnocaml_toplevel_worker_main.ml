@@ -257,9 +257,9 @@ let () =
         Lwt.return_unit
   in
   let path = "/worker_cmis" in
-  Sys_js.register_autoload ~path
-    (fun (prefix, suffix) ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string suffix) Embedded_cmis.root with
+  Sys_js.mount ~path
+    (fun ~prefix ~path ->
+       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
            Some cmi

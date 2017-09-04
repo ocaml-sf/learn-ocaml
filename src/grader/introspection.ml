@@ -121,8 +121,10 @@ let treat_lookup_errors fn = match fn () with
 
 let compatible_type nexp ngot =
   treat_lookup_errors @@ fun () ->
-  let path_exp, decl_exp = Env.lookup_type nexp !Toploop.toplevel_env in
-  let path_got, decl_got = Env.lookup_type ngot !Toploop.toplevel_env in
+  let path_exp = Env.lookup_type nexp !Toploop.toplevel_env in
+  let decl_exp = Env.find_type path_exp !Toploop.toplevel_env in
+  let path_got = Env.lookup_type ngot !Toploop.toplevel_env in
+  let decl_got = Env.find_type path_got !Toploop.toplevel_env in
   let texp = Ctype.newconstr path_exp (List.map (fun _ -> Ctype.newvar ()) decl_exp.Types.type_params) in
   let tgot = Ctype.newconstr path_got (List.map (fun _ -> Ctype.newvar ()) decl_got.Types.type_params) in
   Ctype.unify !Toploop.toplevel_env tgot texp ;

@@ -15,7 +15,7 @@ module Main : sig end = struct
   open Ast_helper
   open Ast_convenience
 
-  let selfcall ?(this = "this") m args = app (Exp.send (evar this) m) args
+  let selfcall ?(this = "this") m args = app (Exp.send (evar this) (mknoloc m)) args
 
   (*************************************************************************)
 
@@ -38,19 +38,19 @@ module Main : sig end = struct
 
   let existential_method =
     Cf.(method_ (mknoloc "existential") Public
-          (virtual_ Typ.(poly ["a"] (arrow Nolabel (var "a") (var "res"))))
+          (virtual_ Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res"))))
        )
 
   let arrow_method =
     Cf.(method_ (mknoloc "arrow") Public
-          (virtual_ Typ.(poly ["a"] (arrow Nolabel (var "a") (var "res"))))
+          (virtual_ Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res"))))
        )
 
   let rec gen ty =
     if Hashtbl.mem printed ty then ()
     else let tylid = Longident.parse ty in
-      let (_, td) =
-        try Env.lookup_type tylid env
+      let td =
+        try Env.find_type (Env.lookup_type tylid env) env
         with Not_found ->
           Format.eprintf "** Cannot resolve type %s@." ty;
           exit 2
@@ -63,8 +63,9 @@ module Main : sig end = struct
         | Lapply _ -> assert false
       in
       Hashtbl.add printed ty ();
-      let params = List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params in
-      let env = List.map2 (fun s t -> t.id, evar s) params td.type_params in
+      let sparams = List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params in
+      let params = List.map mknoloc sparams in
+      let env = List.map2 (fun s t -> t.id, evar s.txt) params td.type_params in
       let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res")) in
       let make_t tyargs =
         List.fold_right
@@ -72,11 +73,11 @@ module Main : sig end = struct
              Typ.(arrow Asttypes.Nolabel (arrow Asttypes.Nolabel arg (var "res")) t))
           tyargs (make_result_t tyargs)
       in
-      let tyargs = List.map (fun t -> Typ.var t) params in
+      let tyargs = List.map (fun t -> Typ.var t.txt) params in
       let t = Typ.poly params (make_t tyargs) in
       let concrete e =
-        let e = List.fold_right (fun x e -> lam x e) (List.map (fun x -> pvar x) params) e in
-        let tyargs = List.map (fun t -> Typ.constr (lid t) []) params in
+        let e = List.fold_right (fun x e -> lam x e) (List.map (fun x -> pvar x.txt) params) e in
+        let tyargs = List.map (fun t -> Typ.constr (lid t.txt) []) params in
         let e = Exp.constraint_ e (make_t tyargs) in
         let e = List.fold_right (fun x e -> Exp.newtype x e) params e in
         let body = Exp.poly e (Some t) in

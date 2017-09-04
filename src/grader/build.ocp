@@ -100,6 +100,7 @@ end
 begin library "grading-jsoo"
   requires = [
     "js_of_ocaml"
+    "js_of_ocaml-lwt"
     "js_of_ocaml.syntax"
     "ezjsonm"
     "ocplib-json-typed.browser"

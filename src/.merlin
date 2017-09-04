@@ -8,11 +8,14 @@ PKG ocplib-json-typed
 PKG js_of_ocaml
 PKG tyxml
 PKG tyxml.functor
+PKG js_of_ocaml.compiler
 PKG js_of_ocaml.tyxml
+PKG js_of_ocaml.lwt
 PKG ocp-indent.lib
 PKG cohttp.lwt
 PKG magic-mime
 PKG omd
 PKG markup
+PKG uutf
 EXT syntax
 EXT js

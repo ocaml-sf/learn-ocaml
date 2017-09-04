@@ -352,7 +352,7 @@ module Manip : sig
 end
 
 val window : Dom_html.window Js.t
-val window_open: ?features:string -> string -> string -> Dom_html.window Js.t
+val window_open: ?features:string -> string -> string -> Dom_html.window Js.t Js.opt
 
 module Window : sig
   val close: Dom_html.window Js.t -> unit

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Compiler
+open Js_of_ocaml_compiler
 
 let split_primitives p =
   let len = String.length p in
@@ -41,7 +41,7 @@ let setup = lazy (
   (* Workaround Marshal bug triggered by includemod.ml:607 *)
   Clflags.error_size := 0 ;
   (* Disable inlining of JSOO which may blow the JS stack *)
-  Compiler.Option.Optim.disable "inline" ;
+  Option.Optim.disable "inline" ;
   Topdirs.dir_directory "/cmis";
   let initial_primitive_count =
     Array.length (split_primitives (Symtable.data_primitive_names ())) in
@@ -71,8 +71,14 @@ let setup = lazy (
     Js.Unsafe.global##toplevelEval(res)
   in
   Js.Unsafe.global##toplevelCompile <- compile (*XXX HACK!*);
-  Js.Unsafe.global##toplevelEval <- (fun x -> Js.Unsafe.eval_string x);
-  ())
+  Js.Unsafe.global##toplevelEval <- (fun x ->
+      let f : < .. > Js.t -> < .. > Js.t = Js.Unsafe.eval_string x in
+      (fun () ->
+         let res = f Js.Unsafe.global in
+         Format.(pp_print_flush std_formatter ());
+         Format.(pp_print_flush err_formatter ());
+         flush stdout; flush stderr;
+         res)))
 
 let initialize () =
   Lazy.force setup ;
