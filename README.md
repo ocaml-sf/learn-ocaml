@@ -31,7 +31,7 @@ repository used is an included demo repository. The user contributed
 exercises of the publue platform is in the github
 [learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository)
 repository. An exmple configuration is
-```make REPO_DOR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml```.
+```make REPO_DIR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml```.
 
 * Then either put the resulting directory ```www/``` behind a Web server.
 
