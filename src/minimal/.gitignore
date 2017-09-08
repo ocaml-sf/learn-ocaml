@@ -1,0 +1,32 @@
+parser.ml
+parser.mli
+lexer.ml
+minimal
+minimal.opt
+opt-stripped
+
+# makefile ignores
+.depend
+
+# general OCaml ignores
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+
+# ocamlbuild working directory
+_build/
+
+# ocamlbuild targets
+*.byte
+*.native
+
+# oasis generated files
+setup.data
+setup.log
+
