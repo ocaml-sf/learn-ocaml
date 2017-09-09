@@ -58,8 +58,9 @@ are placed under the GNU Affero General Public License version 3. This
 practically means that any instance of the app must provide its source
 code to its users.  See [http://www.gnu.org/licenses/agpl-3.0.html].
 
-Lightly modified third party components ACE and ppx_metaquot are
-included, under their original licenses (respectively BSD and MIT).
+Lightly modified third party components ACE, ppx_metaquot and minimal
+are included, under their original licenses (respectively BSD, BSD and
+MIT).
 
 The OCamlPro logo images are (c) OCamPro. Redistribution is permitted,
 alteration requires prior written authorization by OCamlPro.
@@ -98,6 +99,7 @@ Learn OCaml is a software by OCamlPro.
 
  * We heavily use js_of_ocaml, so thanks to the Ocsigen team.
 
- * The text editing component is a cutomized version of ACE.
+ * The text editing component is a customized version of ACE.
 
- * We also include a derivative of ppx_metaquot by Alain Frisch.
+ * We also include a derivative of ppx_metaquot by Alain Frisch and a
+   derivative of minimal by Jacques Garrigue.

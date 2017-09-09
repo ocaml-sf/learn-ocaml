@@ -241,8 +241,8 @@ let minimal () =
 	flush stdout; flush stderr;
         let ok = ref true in
         for i = lexbuf.lex_curr_pos to lexbuf.lex_buffer_len - 1 do
-          let c = lexbuf.lex_buffer.[i] in
-          if c <> ' ' & c <> '\t' & c <> '\r' & c <> '\n' then ok := false
+          let c = Bytes.get lexbuf.lex_buffer i in
+          if c <> ' ' && c <> '\t' && c <> '\r' && c <> '\n' then ok := false
         done;
         if !ok then begin
 	  prompt := "# ";

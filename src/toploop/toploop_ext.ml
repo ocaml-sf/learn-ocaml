@@ -300,3 +300,4 @@ let check ?(setenv = false) code =
   | End_of_file -> return_success ()
   | exn -> return_exn exn
 
+let truc = Minimal.Toplooop.minimal

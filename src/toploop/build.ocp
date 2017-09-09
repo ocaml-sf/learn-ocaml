@@ -4,9 +4,35 @@ begin library "toploop_results"
   ]
 end
 
+begin library "minimal"
+  files = [
+    pack Minimal  [
+	"misc.ml"
+	"common.ml"
+	"syntax.ml"
+	"parser.mly"
+	"lexer.mll"
+	"typs.ml"
+	"define.ml"
+	"unify.ml"
+	"predef.ml"
+	"printer.ml"
+	"typechk.ml"
+	"untyped.ml"
+	"translate.ml"
+	"compile.ml"
+	"builtins.ml"
+	"toplooop.ml"
+     ] (subdir += [ "minimal" ])
+  ]
+  requires = [
+  ]
+end
+
 begin library "toploop"
   requires = [
     "compiler-libs.toplevel"
+    "minimal"
     "toploop_results"
   ]
   files = [

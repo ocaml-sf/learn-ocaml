@@ -64,7 +64,7 @@ parser.ml: parser.cmi
 lexer.ml: lexer.mll
 	$(CAMLLEX) lexer.mll
 
-depend:
+.depend:
 	ocamldep *.ml *.mli > .depend
 
 clean:

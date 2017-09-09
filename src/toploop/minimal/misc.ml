@@ -15,7 +15,7 @@ let suffix s1 s2 =
 
 let code =
   let lang = get_var ["MINIMAL_LANG"; "LC_ALL"; "LC_CTYPE"; "LANG"] in
-  let lang = String.lowercase lang in
+  let lang = String.lowercase_ascii lang in
   if lang = "ja" || suffix lang "euc" || suffix lang "eucjp" then EUC else
   if suffix lang "sjis" || suffix lang "pck" then SJIS else
   if suffix lang "utf8" || suffix lang "utf-8" then UTF8 else
@@ -41,7 +41,7 @@ let rec hi_bits n =
     let c = Char.code s.[!pos] in
     incr pos;
     let n = hi_bits c in
-    if n < 2 or n > 6 then c else
+    if n < 2 || n > 6 then c else
     let u = ref (c land (1 lsl (7-n) - 1)) in
     let len = String.length s in
     for i = 1 to n-1 do
@@ -58,7 +58,7 @@ let rec hi_bits n =
 let to_ucstring s : wchar array =
   let pos = ref 0 in
   let len = String.length s in
-  let r = Array.create len 0 in
+  let r = Array.make len 0 in
   let i = ref 0 in
   while !pos < len do r.(!i) <- to_unichar s ~pos; incr i done;
   Array.sub r 0 !i
@@ -70,22 +70,22 @@ let rec log64 n =
   
 let write_unichar s ~pos (c : wchar) =
   if c < 0x80 then begin
-    s.[!pos] <- Char.chr c; incr pos
+    Bytes.set s !pos (Char.chr c); incr pos
   end else begin
     let len = log64 c and p = !pos in
     pos := !pos + len;
-    s.[p] <- Char.chr (((1 lsl len - 1) lsl (8-len)) lor (c lsr (len*6-6)));
+    Bytes.set s p (Char.chr (((1 lsl len - 1) lsl (8-len)) lor (c lsr (len*6-6))));
     for i = 1 to len-1 do
-      s.[p+i] <- Char.chr (((c lsr ((len-i-1)*6)) land 0x3f) lor 0x80)
+      Bytes.set s(p+i) (Char.chr (((c lsr ((len-i-1)*6)) land 0x3f) lor 0x80))
     done
   end
     
 let of_ucstring (s : wchar array) =
   let len = Array.length s in
-  let r = String.create (len*6) in
+  let r = Bytes.create (len*6) in
   let pos = ref 0 in
   for i = 0 to len-1 do write_unichar r ~pos s.(i) done;
-  String.sub r 0 !pos
+  Bytes.sub_string r 0 !pos
 ;;
 
 let print_wchar c =
@@ -100,36 +100,36 @@ let print_wchar c =
 let string_of_array arr =
   let len = Array.length arr in
   if code = NOCONV then
-    let s = String.create len in
-    for i = 0 to len-1 do s.[i] <- char_of_int arr.(i) done;
-    s
+    let s = Bytes.create len in
+    for i = 0 to len-1 do Bytes.set s i (char_of_int arr.(i)) done;
+    Bytes.to_string s
   else if code = UTF8 then of_ucstring arr else
   let len' = ref 0 in
   for i = 0 to len - 1 do
     incr len';
     if arr.(i) > 0xff then incr len'
   done;
-  let s = String.create !len' and j = ref 0 in
+  let s = Bytes.create !len' and j = ref 0 in
   for i = 0 to len - 1 do
     let c = arr.(i) in
-    if c <= 0xff then s.[!j] <- char_of_int c else begin
-      s.[!j] <- char_of_int (c lsr 8);
+    if c <= 0xff then Bytes.set s !j (char_of_int c) else begin
+      Bytes.set s !j (char_of_int (c lsr 8));
       incr j;
-      s.[!j] <- char_of_int (c land 0xff)
+      Bytes.set s !j (char_of_int (c land 0xff))
     end;
     incr j
   done;
-  s
+  Bytes.to_string s
 ;;
 
 let array_of_string s =
   let len = String.length s in
   if code = NOCONV then
-    let arr = Array.create len 32 in
+    let arr = Array.make len 32 in
     for i = 0 to len-1 do arr.(i) <- int_of_char s.[i] done;
     arr
   else if code = UTF8 then to_ucstring s else
-  let ws = Array.create len 0 in
+  let ws = Array.make len 0 in
   let len' = ref 0 and i = ref 0 in
   while !i < len do
     let c = Char.code s.[!i] in
