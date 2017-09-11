@@ -8,5 +8,6 @@ begin program "learnocaml-simple-server"
     "lwt.unix"
     "cohttp.lwt"
     "magic-mime"
+    "learnocaml-sync"
   ]
 end

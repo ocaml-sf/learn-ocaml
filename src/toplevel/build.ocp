@@ -29,6 +29,15 @@ begin program "learnocaml-toplevel-worker"
   ]
 end
 
+begin library "learnocaml-toplevel-history"
+  requires = [
+    "ocplib-json-typed"
+  ]
+  files = [
+    "learnocaml_toplevel_history.ml" ( pp = camlp4_js )
+  ]
+end
+
 begin library "learnocaml-toplevel"
   requires = [
     "toploop_results"
@@ -37,11 +46,11 @@ begin library "learnocaml-toplevel"
     "ocp-indent.lib"
     "ace"
     "ocplib-json-typed"
+    "learnocaml-toplevel-history"
   ]
   files = [
     "learnocaml_toplevel_worker_messages.mli"
     "learnocaml_toplevel_worker_caller.ml" ( pp = camlp4_js )
-    "learnocaml_toplevel_history.ml" ( pp = camlp4_js )
     "learnocaml_toplevel_output.ml" ( pp = camlp4_js )
     "learnocaml_toplevel_input.ml" ( pp = camlp4_js )
     "learnocaml_toplevel.ml" ( pp = camlp4_optcomp_js )

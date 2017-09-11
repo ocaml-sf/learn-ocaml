@@ -76,10 +76,25 @@ let parse_token =
           String.sub token 8 3 ;
           String.sub token 12 3 ]
 
+let check_token token =
+  try ignore (parse_token token) ; true
+  with _ -> false
+
 let retrieve token =
   let path =
     String.concat Filename.dir_sep (!sync_dir :: parse_token token) in
   Lwt_io.(with_file ~mode: Input path (fun chan -> read chan))
+
+
+module StringMap = Map.Make(String)
+
+let check_save_file contents =
+  try
+    let json = Ezjsonm.from_string contents in
+    let _save = Json_encoding.destruct Learnocaml_sync.save_file_enc json in
+    (* Should we do more test ?? *)
+    true
+  with _ -> false
 
 let store token contents =
   let path =
@@ -114,6 +129,30 @@ let gimme () =
       create !sync_dir token in
   next ()
 
+
+exception Too_long_body
+
+let string_of_stream ?(max_size = 64 * 1024) s =
+  let b = Bytes.create max_size in
+  let pos = ref 0 in
+  let add_string s =
+    let len = String.length s in
+    pos := !pos + len ;
+    if !pos > max_size then
+      Lwt.fail Too_long_body
+    else begin
+      String.blit s 0 b (!pos - len) len ;
+      Lwt.return_unit
+    end
+  in
+  Lwt.catch begin function () ->
+    Lwt_stream.iter_s add_string s >>= fun () ->
+    Lwt.return (Some (Bytes.sub_string b 0 !pos))
+  end begin function
+    | Too_long_body -> Lwt.return None
+    | e -> Lwt.fail e
+  end
+
 let launch () =
   let open Lwt in
   let open Cohttp in
@@ -141,13 +180,20 @@ let launch () =
         gimme () >>= fun token ->
         let body = Printf.sprintf "{\"token\":\"%s\"}" token in
         Server.respond_string ~status:`OK ~body ()
-    | `GET, [ "sync" ; token ] ->
+    | `GET, [ "sync" ; token ] when check_token token ->
         retrieve token >>= fun body ->
         Server.respond_string ~status:`OK ~body ()
-    | `POST, [ "sync" ; token ] ->
-        Cohttp_lwt_body.to_string body >>= fun body ->
-        store token body >>= fun () ->
-        Server.respond_string ~status:`OK ~body: "Stored." ()
+    | `POST, [ "sync" ; token ] when check_token token -> begin
+        string_of_stream (Cohttp_lwt_body.to_stream body) >>= function
+        | None ->
+            Server.respond_string ~status:`Bad_request ~body: "Too much data" ()
+        | Some body ->
+            if check_save_file body then
+              store token body >>= fun () ->
+              Server.respond_string ~status:`OK ~body: "Stored." ()
+            else
+              Server.respond_string ~status:`Bad_request ~body: "Invalid save file" ()
+      end
     | `GET, path -> respond_static path
     | _ -> Server.respond_error ~status: `Bad_request ~body: "Bad request" () in
   Random.self_init () ;

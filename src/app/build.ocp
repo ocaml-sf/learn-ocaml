@@ -1,7 +1,16 @@
+begin library "learnocaml-sync"
+  files = [
+    "learnocaml_sync.ml"
+  ]
+  requires = [
+    "learnocaml-toplevel-history"
+    "learnocaml-state"
+  ]
+end
+
 begin library "learnocaml-app-common"
   files = [
     "learnocaml_local_storage.ml" ( pp = camlp4_js )
-    "learnocaml_sync.ml"
     "server_caller.ml" ( pp = camlp4_js )
     "learnocaml_common.ml" ( pp = camlp4_js )
   ]
@@ -14,6 +23,7 @@ begin library "learnocaml-app-common"
     "learnocaml-toplevel"
     "learnocaml-repository"
     "learnocaml-state"
+    "learnocaml-sync"
   ]
 end
 
