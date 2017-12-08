@@ -351,6 +351,7 @@ module Make
     (Params : sig
        val results : Learnocaml_report.report option ref
        val set_progress : string -> unit
+       val timeout : int option
        module Introspection : Introspection_intf.INTROSPECTION
      end) : S = struct
 
@@ -820,7 +821,7 @@ module Make
   (*----------------------------------------------------------------------------*)
 
 let sigalrm_handler = Sys.Signal_handle (fun _ -> raise Timeout) 
-let timeout ?(time = 4) v =
+let run_timeout ~time v =
   let old_behavior = Sys.signal Sys.sigalrm sigalrm_handler in
   let reset_sigalrm () = Sys.set_signal Sys.sigalrm old_behavior
   in ignore (Unix.alarm time);
@@ -834,7 +835,9 @@ let timeout ?(time = 4) v =
     Introspection.grab_stdout () ;
     Introspection.grab_stderr () ;
     try
-      let res = timeout v in
+      let res = match timeout with
+        | Some time -> run_timeout ~time v
+        | None -> v () in
       let out = Introspection.release_stdout () in
       let err = Introspection.release_stderr () in
       Ok (res, out, err)

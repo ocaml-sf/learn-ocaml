@@ -42,7 +42,7 @@ let internal_error name err =
 let user_code_error err =
   raise (User_code_error err)
 
-let get_grade ?callback ~divert exo code =
+let get_grade ?callback ?timeout ~divert exo code =
 
   let print_outcome = true in
   let outcomes_buffer = Buffer.create 503 in
@@ -127,11 +127,13 @@ let get_grade ?callback ~divert exo code =
       Introspection.register_callback "set_progress"
         [%ty: string]
         set_progress ;
+      Introspection.insert_in_env "timeout" [%ty: int option] timeout ;
       handle_error (internal_error "while preparing the tests") @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Test_lib = Test_lib.Make(struct\n\
         \  let results = results\n\
         \  let set_progress = set_progress\n\
+        \  let timeout = timeout\n\
         \  module Introspection = Introspection\n\
          end)" ;
       handle_error (internal_error "while preparing the tests") @@
