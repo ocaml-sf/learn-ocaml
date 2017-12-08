@@ -752,6 +752,8 @@ module Make
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
+  exception Timeout
+
   let test_generic eq canon ty va vb =
     let to_string v = Format.asprintf "%a" (typed_printer ty) v in
     if eq (canon va) (canon vb) then
@@ -768,6 +770,8 @@ module Make
             Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
         | Error Stack_overflow ->
             Learnocaml_report.[ Message ([ Text "Your code did too many recursions." ], Failure) ]
+        | Error Timeout ->
+            Learnocaml_report.[ Message ([ Text "Your code exceeded the time limit. Too many recursions?" ], Failure) ]
         | Error exn ->
             Learnocaml_report.[ Message ([ Text "Wrong exception" ; Code (Printexc.to_string exn) ], Failure) ] end
 
@@ -815,11 +819,22 @@ module Make
 
   (*----------------------------------------------------------------------------*)
 
+let sigalrm_handler = Sys.Signal_handle (fun _ -> raise Timeout) 
+let timeout ?(time = 4) v =
+  let old_behavior = Sys.signal Sys.sigalrm sigalrm_handler in
+  let reset_sigalrm () = Sys.set_signal Sys.sigalrm old_behavior
+  in ignore (Unix.alarm time);
+     try
+       let res = v () in
+       reset_sigalrm (); res
+     with exc ->
+       reset_sigalrm (); raise exc
+
   let exec v =
     Introspection.grab_stdout () ;
     Introspection.grab_stderr () ;
     try
-      let res = v () in
+      let res = timeout v in
       let out = Introspection.release_stdout () in
       let err = Introspection.release_stderr () in
       Ok (res, out, err)
