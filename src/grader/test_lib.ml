@@ -66,6 +66,8 @@ module type S = sig
 
   val compatible_type : expected:string -> string -> Learnocaml_report.report
 
+  val existing_type : ?score:int -> string -> bool * Learnocaml_report.report
+
   val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.report
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
@@ -721,6 +723,13 @@ module Make
           Message ([ Text msg ], Failure)
       | Introspection.Present () ->
           Message ([ Text "Type found and compatible" ], Success 5) ]
+
+  let existing_type ?(score = 1) name =
+    let open Learnocaml_report in
+    try let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
+        let _ = Env.find_type path !Toploop.toplevel_env in
+        true, [ Message ( [ Text "Type" ; Code name ; Text "found" ], Success score ) ]
+    with Not_found -> false, [ Message ( [ Text "type" ; Code name ; Text "not found" ], Failure ) ]
 
   let abstract_type ?(allow_private = true) ?(score = 5) name =
     let open Learnocaml_report in
