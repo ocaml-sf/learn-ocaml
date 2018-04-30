@@ -11,13 +11,13 @@ depends: [
   "ocp-build" {build}
   "base64"
   "ezjsonm"
-  "js_of_ocaml" {>= "3.0" }
+  "js_of_ocaml" {= "3.1.0" }
   "js_of_ocaml-camlp4"
   "js_of_ocaml-toplevel"
   "js_of_ocaml-compiler"
   "js_of_ocaml-lwt"
   "js_of_ocaml-tyxml"
-  "lwt"
+  "lwt" {= "3.1.0"}
   "ocp-indent"
   "ocp-ocamlres"
   "ocplib-json-typed"
@@ -27,7 +27,8 @@ depends: [
   "react"
   "reactiveData"
   "tyxml"
-  "cohttp"
+  "base" {= "v0.9.4"}
+  "cohttp" {= "0.99.0"}
   "cohttp-lwt-unix" {>= "0.99.0"}
   "magic-mime"
   "omd"
