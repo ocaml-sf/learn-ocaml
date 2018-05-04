@@ -58,11 +58,17 @@ you need a local web server.
 * Or alternatively, use the provided minimal server, that also does the job,
   and includes a minimal server-side synchronization mechanism.
 
-  You can launch it via
+You can launch it via
 
-```
-./_obuild/*/learnocaml-simple-server.byte
-```
+```./learnocaml-simple-server.byte```.
+
+An Docker container can be generated using this minimal server, via the provided
+script: ```sudo sh scripts scripts/build-docker-image.sh -repo-dir ../learn-ocaml-repository```.
+This generates an image named ```learnocaml-docker``` (by default, but can be
+renamed using the option ```-image-name <my_image>```).
+The server can then be launch using a wrapper around docker CLI:
+```sudo sh scripts/docker-server.sh init```, and the argument ```stop``` to kill
+the server. After the first initialization, it can be restarted using ```start```.
 
 License and copyright
 ---------------------
