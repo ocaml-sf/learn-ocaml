@@ -2,7 +2,7 @@
 
 root="$PWD"
 repo_dir="$root"/demo-repository
-build_init=1
+image_name="learnocaml-docker"
 
 function print_usage() {
     printf "Usage: %s <OPTIONS>\n\
@@ -15,6 +15,11 @@ while [[ $# -gt 0 ]]; do
   curr="$1"
 
   case $curr in
+      -image-name)
+      image_name="$2"
+      shift
+      shift
+      ;;
       -repo-dir)
       repo_dir="$2"
       shift
@@ -41,6 +46,6 @@ fi
 
 cp -r "$repo_dir" "$exercises_repository" 
 
-docker build -f "$root/Dockerfile" -t learn-ocaml-docker "$root"
+docker build -f "$root/Dockerfile" -t "$image_name" "$root"
 
 rm -rf "$exercises_repository"
