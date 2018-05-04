@@ -1,4 +1,4 @@
-all: build
+all: build install process-repo
 
 # config variables ------------------------------------------------------------
 
@@ -23,6 +23,16 @@ build-deps:
 build:
 	@ocp-build init
 	@ocp-build
+
+process-repo: install
+	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
+          -exercises-dir ${EXERCISES_DIR} \
+          -tutorials-dir ${TUTORIALS_DIR} \
+          -dest-dir ${DEST_DIR} \
+          -dump-outputs ${EXERCISES_DIR} \
+          -dump-reports ${EXERCISES_DIR}
+
+install:
 	@mkdir -p ${DEST_DIR}
 	@${MAKE} -C  static
 	cp static/* ${DEST_DIR}
@@ -32,12 +42,7 @@ build:
 	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/
 	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/
 	@mkdir -p $(DEST_DIR)
-	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-          -exercises-dir ${EXERCISES_DIR} \
-          -tutorials-dir ${TUTORIALS_DIR} \
-          -dest-dir ${DEST_DIR} \
-          -dump-outputs ${EXERCISES_DIR} \
-          -dump-reports ${EXERCISES_DIR}
+	@cp _obuild/*/learnocaml-simple-server.byte .
 
 clean:
 	@ocp-build clean
