@@ -18,7 +18,7 @@ LESSONS_DIR ?= ${REPO_DIR}/lessons
 TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
 
 build-deps:
-	sh ./install-opam-deps.sh
+	sh scripts/install-opam-deps.sh
 
 build:
 	@ocp-build init
