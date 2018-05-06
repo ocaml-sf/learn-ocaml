@@ -24,7 +24,7 @@ Note: you need a working ```opam``` environment with OCaml ```4.03.0```.
 make build-deps
 ```
 
-(You may want to read the script to know what it does first.)
+(You may want to first read the script to know what it does.)
 
 * Compile the app using:
 ```
