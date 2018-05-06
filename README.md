@@ -20,14 +20,16 @@ How to compile and try
 Note: you need a working ```opam``` environment with OCaml ```4.03.0```.
 
 * Install the dependencies using: 
-
-```make build-deps```
+```
+make build-deps
+```
 
 (You may want to read the script to know what it does first.)
 
 * Compile the app using:
-
-```make```
+```
+make
+```
 
 You can customise the exercise repository and output directory using
 make variables ```REPO_DIR``` and ```DEST_DIR```. By default, the
@@ -36,7 +38,9 @@ exercises of the public platform is in the github
 [learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository)
 repository. An example configuration is
 
-```make REPO_DIR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml```.
+```
+make REPO_DIR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml
+```
 
 * Then either put the resulting directory ```www/``` behind a Web server.
 
@@ -56,7 +60,9 @@ you need a local web server.
 
   You can launch it via
 
-```./_obuild/*/learnocaml-simple-server.byte```.
+```
+./_obuild/*/learnocaml-simple-server.byte
+```
 
 License and copyright
 ---------------------
