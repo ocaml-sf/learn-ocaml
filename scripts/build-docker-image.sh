@@ -1,14 +1,35 @@
 #! /bin/sh
 
-root="$PWD"
+root=${PWD}
 repo_dir="$root"/demo-repository
 image_name="learnocaml-docker"
 
 function print_usage() {
     printf "Usage: %s <OPTIONS>\n\
 Options:\n\
-  -repo-dir (default = demo-repository): Repository containing the exercises.\n\
-  -root (default = %s): Root of the learn-ocaml repository.\n" "$0" "$pwd"
+  -repo-dir <directory> (default = demo-repository): \n\
+\t Repository containing the exercises.\n\
+  -root <directory> (default = %s): \n\
+\t Root of the learn-ocaml repository.\n" "$0" "$pwd"
+}
+
+function option_error () {
+    printf "Incorrect option $1\n" 1>&2
+    print_usage
+    exit 2
+}
+
+function option_value_error () {
+    printf "Incorrect value $2 for option $1\n" 1>&2
+    print_usage
+    exit 2
+}
+
+function check_directory () {
+    if ! [ -d "$2" ]; then
+        printf "$2 is not a valid directory.\n" 1>&2
+        option_value_error "$1" "$2"
+    fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -16,22 +37,22 @@ while [[ $# -gt 0 ]]; do
 
   case $curr in
       -image-name)
-      image_name="$2"
-      shift 2
-      ;;
+          image_name="$2"
+          shift 2
+          ;;
       -repo-dir)
-      repo_dir="$2"
-      shift 2
-      ;;
+          check_directory "$1" "$2"
+          repo_dir="$2"
+          shift 2
+          ;;
       -root)
-      root="$2"
-      shift 2
-      ;;
+          check_directory "$1" "$2"
+          root="$2"
+          shift 2
+          ;;
       *)    # unknown option
-      echo "Unknown option $1"
-      print_usage
-      exit 2
-      ;;
+          option_error $1
+          ;;
   esac
 done
 
@@ -46,3 +67,4 @@ cp -r "$repo_dir" "$exercises_repository"
 docker build -f "$root/Dockerfile" -t "$image_name" "$root"
 
 rm -rf "$exercises_repository"
+
