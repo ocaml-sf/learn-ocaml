@@ -3,6 +3,8 @@
 port="9090"
 docker_image="learn-ocaml-docker"
 container_name="learn-ocaml-docker-container"
+verbose="0"
+fg="-d"
 
 function print_usage() {
     printf "Usage: %s COMMAND <OPTIONS>\n\
@@ -18,14 +20,15 @@ Options:\n\
   -docker-image <string> (default = learn-ocaml-docker): \n\
 \t name of the generated\
   docker image.\n\
-  -container-name (default = learn-ocaml-docker-container): name of the\
-  container in docker container system.\n" "$0"
+  -container-name <string> (default = learn-ocaml-docker-container): \n\
+\t name of the container in docker container system.\n\
+  -v <int> (default): verbose mode.\n\
+    + 0: no output (except errors)\n\
+    + 1: standard output of Docker\n\
+    + 2: command executed\n\
+  -fg: Runs the container in foreground.\n" "$0"
 }
 
-function run_image () { # port, container, image
-    docker run -d \
-           -p "$1":9090 \
-           --name "$2" "$3"
 function print_cmd () {
     if [ "$verbose" -gt 1 ]; then
         set -x
@@ -40,6 +43,11 @@ function verbose_mode () {
     fi
 }
 
+function run_image () {
+    (print_cmd;
+     docker run $fg \
+           -p "$port":9090 \
+           --name "$container_name" "$docker_image")
     
 }
 
@@ -60,6 +68,13 @@ function check_port () {
         option_value_error "$1" "$2"
     fi
 }
+
+function check_verbose () {
+    if ! [[ "$2" =~ ^-?[0-9]+$ ]] || [ "$2" -lt 0 ] || [ "$2" -gt 2 ]; then
+        option_value_error "$1" "$2"
+    fi
+}
+    
 while [[ $# -gt 0 ]]; do
   curr="$1"
   case $curr in
@@ -75,6 +90,16 @@ while [[ $# -gt 0 ]]; do
       -container-name)
           container_name="$2"
           shift 2
+          ;;
+      -v)
+          check_verbose "$1" "$2"
+          verbose="$2"
+          shift 2
+          ;;
+      -fg)
+          fg=""
+          shift
+          ;;
       -*)
           option_error "$1"
           ;;
@@ -91,7 +116,7 @@ verbose_mode
 
 case $1 in
     init)
-    run_image "$port" "$container_name" "$docker_image" 1> /dev/null;
+        run_image "$port" "$container_name" "$docker_image" 1> "$output"
     ;;
     start)
         (print_cmd;
