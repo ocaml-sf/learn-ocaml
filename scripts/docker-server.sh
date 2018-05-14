@@ -32,18 +32,15 @@ while [[ $# -gt 0 ]]; do
   case $curr in
       -port)
       port="$2"
-      shift
-      shift
+      shift 2
       ;;
       -docker-image)
       docker_image="$2"
-      shift
-      shift
+      shift 2
       ;;
       -container-name)
       container_name="$2"
-      shift
-      shift
+      shift 2
       ;;
       -*)
       echo "Unknown option $1"

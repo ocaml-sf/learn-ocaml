@@ -17,18 +17,15 @@ while [[ $# -gt 0 ]]; do
   case $curr in
       -image-name)
       image_name="$2"
-      shift
-      shift
+      shift 2
       ;;
       -repo-dir)
       repo_dir="$2"
-      shift
-      shift
+      shift 2
       ;;
       -root)
       root="$2"
-      shift
-      shift
+      shift 2
       ;;
       *)    # unknown option
       echo "Unknown option $1"
@@ -40,7 +37,7 @@ done
 
 exercises_repository="$root"/exercises_repository
       
-if [ -d "$tmp_repo_dir" ]; then
+if [ -d "$execises_repository" ]; then
     rm -rf "$exercises_repository"
 fi
 
