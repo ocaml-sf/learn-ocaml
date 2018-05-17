@@ -1,7 +1,7 @@
 *~
 
 _obuild
-
+_opam
 .opam-switch
 Makefile.local
 
