@@ -16,7 +16,7 @@ begin library "ppx_metaquot_lib"
       sources = [ %byte_exe( p = "genlifter") ]
       commands = [ {
         %byte_exe( p = "genlifter")
-          "-I" "%{compiler-libs_SRC_DIR}%"
+          "-I" "%{compiler-libs_FULL_DST_DIR}%"
           "Parsetree.expression"
       } ( stdout = "ast_lifter.ml" ) ]
     )

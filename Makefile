@@ -44,6 +44,19 @@ install:
 	@mkdir -p $(DEST_DIR)
 	@cp _obuild/*/learnocaml-simple-server.byte .
 
+.PHONY: learn-ocaml.install
+learn-ocaml.install:
+	@echo 'bin: [' >$@
+	@echo '  "_obuild/learnocaml-simple-server/learnocaml-simple-server.byte" {"learnocaml-simple-server"}' >>$@
+	@echo '  "_obuild/learnocaml-process-repository/learnocaml-process-repository.byte" {"learnocaml-process-repository"}' >>$@
+	@echo ']' >>$@
+	@echo 'share: [' >>$@
+	@$(foreach mod,main exercise toplevel-worker grader-worker,\
+	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/learnocaml-$(mod).js"}' >>$@;)
+	@$(foreach f,$(wildcard static/*.js static/*.html static/*.svg static/*.woff static/*.css static/*.gif),\
+	    echo '  "$(f)" {"www/$(notdir $f)"}' >>$@;)
+	@echo ']' >>$@
+
 clean:
 	@ocp-build clean
 	@${MAKE} -C  static clean

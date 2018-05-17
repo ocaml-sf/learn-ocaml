@@ -49,8 +49,17 @@ pin-depends: [
   ["ocp-indent.1.6.1" "git+https://github.com/OCamlPro/ocp-indent.git#master"]
   ["ocp-ocamlres.0.4" "git+https://github.com/OCamlPro/ocp-ocamlres.git"]
 ]
-build: make
-install: [
-  ["cp" "-r" "www" _:share]
-  ["cp" "_obuild/learnocaml-simple-server/learnocaml-simple-server.byte" bin]
+build: [
+  [make "build"]
+  [make "-C" "static"]
+  [make "learn-ocaml.install"]
 ]
+install: [
+  ["mkdir" "-p" "%{_:share}%"]
+  ["cp" "-r" "demo-repository" "%{_:share}%/repository"]
+]
+synopsis: "The learn-ocaml online platform (engine)"
+description: """
+This contains the binaries forming the engine for the learn-ocaml platform, and
+the common files. A demo exercise repository is also provided as example.
+"""

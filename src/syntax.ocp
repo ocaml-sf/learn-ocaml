@@ -9,16 +9,16 @@ optcomp_opt = %string(strings = [
 
 camlp4_optcomp_js = [
   "camlp4o"
-  "%{optcomp_SRC_DIR}%/optcomp.cma" optcomp_opt
-  "%{js_of_ocaml-camlp4_SRC_DIR}%/pa_js.cma"
+  "%{optcomp_FULL_DST_DIR}%/optcomp.cma" optcomp_opt
+  "%{js_of_ocaml-camlp4_FULL_DST_DIR}%/pa_js.cma"
 ]
 
 camlp4_js = [
   "camlp4o"
-  "%{js_of_ocaml-camlp4_SRC_DIR}%/pa_js.cma"
+  "%{js_of_ocaml-camlp4_FULL_DST_DIR}%/pa_js.cma"
 ]
 
 camlp4_optcomp = [
   "camlp4o"
-  "%{optcomp_SRC_DIR}%/optcomp.cma" optcomp_opt
+  "%{optcomp_FULL_DST_DIR}%/optcomp.cma" optcomp_opt
 ]
