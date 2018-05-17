@@ -6,14 +6,18 @@ container_name="learnocaml-docker-container"
 verbose="0"
 fg="-d"
 
+replace_archive=0
+
 function print_usage() {
     printf "Usage: %s COMMAND <OPTIONS>\n\
 Commands:\n\
-  init  \t Initializes the server and runs it in background.\n\
-  start \t Starts an already initialized server.\n\
-  restart\t Restarts the current server (starts it if it is not running).\n\
-  stop  \t Stops the server.\n\
-  remove\t Stops the server and removes it from the existing containers.\n\
+  init  \t\t Initializes the server and runs it in background.\n\
+  start \t\t Starts an already initialized server.\n\
+  restart\t\t Restarts the current server (starts it if it is not running).\n\
+  stop  \t\t Stops the server.\n\
+  backup <archive.tar> \t Backup the content of the synchronized users' code in <archive.tar>.\n\
+  remove <archive.tar> \t Stops the server and removes it from the existing containers.\n\
+  \t\t\t The content of the synchronized users' code is put in <archive.tar>.\n\
 Options:\n\
   -port <[0-65535]> (default = 9090): \n\
 \t Port used to communicate with the server.\n\
@@ -26,7 +30,9 @@ Options:\n\
     + 0: no output (except errors)\n\
     + 1: standard output of Docker\n\
     + 2: command executed\n\
-  -fg: Runs the container in foreground.\n" "$0"
+  -fg: Runs the container in foreground.\n\
+  -replace-archive:
+\t Used for command `remove` and `backup`. Allows to replace an existing archive for the backup." "$0"
 }
 
 function print_cmd () {
@@ -74,7 +80,38 @@ function check_verbose () {
         option_value_error "$1" "$2"
     fi
 }
+
+function backup () {
+    if [ -f "$1" ] && [ $replace_archive = 0 ]; then
+        echo "File $1 already exists. Either use option -replace-archive or use\
+ another name.";
+        exit 2
+    fi
+
+    (print_cmd;
+     docker cp "$container_name":"/home/opam/learn-ocaml/sync" - 1> "$1");
+}
+
+function export_sync_and_remove () {
+    # function `backup` is not used, since it does not stop the server before
+    # the backup
+    if [ -f "$1" ] && [ $replace_archive = 0 ]; then
+        echo "File $1 already exists. Either use option -replace-archive or use\
+ another name.";
+        exit 2
+    fi
     
+    (print_cmd;
+     docker container stop "$container_name" 1> "$output";
+     docker cp "$container_name":"/home/opam/learn-ocaml/sync" - 1> "$1") &&
+        
+    if [ ! -r "$1" ]; then
+        echo "Unreadable file $1, the container has not been removed."
+    else
+        (print_cmd; docker container rm "$container_name" 1> "$output")
+    fi
+}
+
 while [[ $# -gt 0 ]]; do
   curr="$1"
   case $curr in
@@ -98,6 +135,10 @@ while [[ $# -gt 0 ]]; do
           ;;
       -fg)
           fg=""
+          shift
+          ;;
+      -replace-archive)
+          replace_archive=1
           shift
           ;;
       -*)
@@ -130,10 +171,21 @@ case $1 in
         (print_cmd;
          docker container stop "$container_name" > "$output")
     ;;    
+    backup)
+        if [ $# -lt 3 ]; then
+            backup "$2"
+        else
+            print_usage
+            exit 2
+        fi
+    ;;    
     remove)
-        (print_cmd;
-         docker container stop "$container_name" 1> "$output";
-         docker container rm "$container_name" 1> "$output")
+        if [ $# -lt 3 ]; then
+            export_sync_and_remove "$2"
+        else
+            print_usage
+            exit 2
+        fi
     ;;
     *)
         echo "Unknown command $1"
