@@ -1,8 +1,8 @@
 #! /bin/sh
 
 port="9090"
-docker_image="learn-ocaml-docker"
-container_name="learn-ocaml-docker-container"
+docker_image="learnocaml-docker"
+container_name="learnocaml-docker-container"
 verbose="0"
 fg="-d"
 
@@ -17,10 +17,10 @@ Commands:\n\
 Options:\n\
   -port <[0-65535]> (default = 9090): \n\
 \t Port used to communicate with the server.\n\
-  -docker-image <string> (default = learn-ocaml-docker): \n\
+  -docker-image <string> (default = learnocaml-docker): \n\
 \t name of the generated\
   docker image.\n\
-  -container-name <string> (default = learn-ocaml-docker-container): \n\
+  -container-name <string> (default = learnocaml-docker-container): \n\
 \t name of the container in docker container system.\n\
   -v <int> (default): verbose mode.\n\
     + 0: no output (except errors)\n\
