@@ -7,6 +7,7 @@ verbose="0"
 fg="-d"
 
 replace_archive=0
+force=0
 
 function print_usage() {
     printf "Usage: %s COMMAND <OPTIONS>\n\
@@ -31,8 +32,9 @@ Options:\n\
     + 1: standard output of Docker\n\
     + 2: command executed\n\
   -fg: Runs the container in foreground.\n\
+  -force: Used for 'remove'. Removes the container without backup.\n\
   -replace-archive:
-\t Used for command `remove` and `backup`. Allows to replace an existing archive for the backup." "$0"
+\t Used for command 'remove' and 'backup'. Allows to replace an existing archive for the backup." "$0"
 }
 
 function print_cmd () {
@@ -112,6 +114,13 @@ function export_sync_and_remove () {
     fi
 }
 
+function force_remove () {
+    echo "Removing container without backup."
+    (print_cmd;
+     docker container stop "$container_name" 1> "$output";
+     docker container rm "$container_name" 1> "$output")
+}
+
 while [[ $# -gt 0 ]]; do
   curr="$1"
   case $curr in
@@ -135,6 +144,10 @@ while [[ $# -gt 0 ]]; do
           ;;
       -fg)
           fg=""
+          shift
+          ;;
+      -force)
+          force=1
           shift
           ;;
       -replace-archive)
@@ -180,9 +193,11 @@ case $1 in
         fi
     ;;    
     remove)
-        if [ $# -lt 3 ]; then
+        if [ $# -gt 2 ]; then
             export_sync_and_remove "$2"
-        else
+        elif [ $force -gt 0 ]; then
+            force_remove
+        else 
             print_usage
             exit 2
         fi
