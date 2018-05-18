@@ -11,7 +11,7 @@ PKG tyxml.functor
 PKG js_of_ocaml.compiler
 PKG js_of_ocaml.tyxml
 PKG js_of_ocaml.lwt
-PKG ocp-indent.lib
+PKG ocp-indent-nlfork.lib
 PKG cohttp.lwt
 PKG magic-mime
 PKG omd

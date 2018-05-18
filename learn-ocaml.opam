@@ -24,7 +24,7 @@ depends: [
   "js_of_ocaml-lwt"
   "js_of_ocaml-tyxml"
   "lwt" {= "3.1.0"}
-  "ocp-indent"
+  "ocp-indent-nlfork"
   "ocp-ocamlres"
   "ocplib-json-typed"
   "optcomp"
@@ -46,7 +46,7 @@ depends: [
   "ppx_cstruct"
 ]
 pin-depends: [
-  ["ocp-indent.1.6.1" "git+https://github.com/OCamlPro/ocp-indent.git#master"]
+  ["ocp-indent-nlfork.1.6.1" "git+https://github.com/OCamlPro/ocp-indent.git#nlfork"]
   ["ocp-ocamlres.0.4" "git+https://github.com/OCamlPro/ocp-ocamlres.git"]
 ]
 build: [
