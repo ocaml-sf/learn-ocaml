@@ -17,7 +17,7 @@ The exercises and lessons are in another github repository:
 How to compile and try
 ----------------------
 
-Note: you need a working ```opam``` environment with OCaml ```4.03.0```.
+Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
 
 * Install the dependencies using: 
 ```
