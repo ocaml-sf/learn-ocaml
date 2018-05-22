@@ -10,7 +10,7 @@ Options:\n\
   -repo-dir <directory> (default = demo-repository): \n\
 \t Repository containing the exercises.\n\
   -root <directory> (default = %s): \n\
-\t Root of the learn-ocaml repository.\n" "$0" "$pwd"
+\t Root of the learn-ocaml repository.\n" "$0" "$PWD"
 }
 
 function option_error () {
