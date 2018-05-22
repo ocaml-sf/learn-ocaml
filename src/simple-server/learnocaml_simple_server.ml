@@ -214,8 +214,21 @@ let launch () =
     | `GET, path -> respond_static path
     | _ -> Server.respond_error ~status: `Bad_request ~body: "Bad request" () in
   Random.self_init () ;
-  Server.create
-    ~on_exn: (function
-        | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
-        | exn -> raise exn)
-    ~mode:(`TCP (`Port !port)) (Server.make ~callback ())
+  Lwt.catch (fun () ->
+      Server.create
+        ~on_exn: (function
+            | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
+            | exn -> raise exn)
+        ~mode:(`TCP (`Port !port)) (Server.make ~callback ()) >>= fun () ->
+      Lwt.return true)
+  @@ function
+  | Sys.Break ->
+      Lwt.return true
+  | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
+      Printf.eprintf
+        "Could not bind port %d, another instance may still be running?\n%!"
+        !port;
+      Lwt.return false
+  | e ->
+      Printf.eprintf "Server error: %s\n%!" (Printexc.to_string e);
+      Lwt.return false

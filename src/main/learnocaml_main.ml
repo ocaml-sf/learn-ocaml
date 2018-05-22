@@ -80,6 +80,7 @@ let () =
          Printf.sprintf "Could not find base app contents at %s" !contents_dir
        else
          Lwt.return_unit) >>= fun () ->
+      Printf.printf "Updating app at %s\n%!" !dest_dir;
       copy_tree !contents_dir !dest_dir >>= fun () ->
       (if Sys.file_exists (!repo_dir/"lessons") then
          copy_tree (!repo_dir/"lessons") !dest_dir
@@ -92,14 +93,19 @@ let () =
   in
   let run_server () =
     if !server_only || not !generate_only then
-      Learnocaml_simple_server.launch ()
+      (Printf.printf "Starting server on port %d\n%!"
+         !Learnocaml_simple_server.port;
+       Learnocaml_simple_server.launch ())
     else
-      Lwt.return_unit
+      Lwt.return true
   in
-  let success =
+  let ret =
     Lwt_main.run
       (generate >>= fun success ->
-       if success then run_server () >>= fun () -> Lwt.return true
-       else Lwt.return success)
+       if success then
+         run_server () >>= fun r ->
+         if r then Lwt.return 0 else Lwt.return 10
+       else
+         Lwt.return 1)
   in
-  exit (if success then 0 else 1)
+  exit ret

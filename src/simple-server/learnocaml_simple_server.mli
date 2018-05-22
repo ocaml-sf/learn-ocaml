@@ -25,4 +25,5 @@ val args: (Arg.key * Arg.spec * Arg.doc) list
 
 (** Main *)
 
-val launch: unit -> unit Lwt.t
+(* Returns [false] if interrupted prematurely due to an error *)
+val launch: unit -> bool Lwt.t
