@@ -30,13 +30,12 @@ begin program "learnocaml-tutorial-reader"
   ]
 end
 
-begin program "learnocaml-process-repository"
+begin library "learnocaml-process-repository-lib"
   has_asm = false
   files = [
     "learnocaml_process_exercise_repository.ml"
     "learnocaml_tutorial_parser.ml"
     "learnocaml_process_tutorial_repository.ml"
-    "learnocaml_process_repository_main.ml"
   ]
   requires = [
     "ezjsonm"
@@ -46,5 +45,15 @@ begin program "learnocaml-process-repository"
     "markup"
     "grading-cli"
     "learnocaml-repository"
+  ]
+end
+
+begin program "learnocaml-process-repository"
+  has_asm = false
+  files = [
+    "learnocaml_process_repository_main.ml"
+  ]
+  requires = [
+    "learnocaml-process-repository-lib"
   ]
 end

@@ -219,9 +219,3 @@ let launch () =
         | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
         | exn -> raise exn)
     ~mode:(`TCP (`Port !port)) (Server.make ~callback ())
-
-let () =
-  Arg.parse args
-    (fun _ -> raise (Arg.Bad "unexpected argument"))
-    "Usage: learnocaml-simple-server [options]" ;
-  ignore (Lwt_main.run (launch ()))

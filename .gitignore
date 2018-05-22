@@ -7,6 +7,9 @@ Makefile.local
 
 src/ppx-metaquot/ast_lifter.ml
 
+learnocaml-simple-server.byte
+learn-ocaml.install
+
 src/grader/embedded_cmis.ml
 src/grader/embedded_grading_cmis.ml
 
