@@ -6,8 +6,6 @@ RUN opam config exec -- opam update
 
 WORKDIR learn-ocaml
 
-RUN sudo chown -R opam:nogroup .
-
 COPY src/opam src/opam
 COPY scripts/install-opam-deps.sh scripts/install-opam-deps.sh 
 COPY Makefile Makefile
