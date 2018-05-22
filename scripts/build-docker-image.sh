@@ -58,7 +58,7 @@ done
 
 exercises_repository="$root"/exercises_repository
       
-if [ -d "$execises_repository" ]; then
+if [ -d "$exercises_repository" ]; then
     rm -rf "$exercises_repository"
 fi
 
