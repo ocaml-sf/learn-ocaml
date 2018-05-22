@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 port="9090"
 docker_image="learnocaml-docker"
