@@ -5,6 +5,7 @@ opam pin add --yes --no-action ocp-indent \
      "https://github.com/OCamlPro/ocp-indent.git#master"
 opam pin add --yes --no-action ocp-ocamlres \
 	   "https://github.com/OCamlPro/ocp-ocamlres.git"
+opam pin add --yes --no-action ocplib-json-typed 0.6
 opam pin add --yes --no-action learn-ocaml-deps src
 opam install camlp4 --yes
 opam depext learn-ocaml-deps
