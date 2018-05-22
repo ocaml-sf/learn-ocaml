@@ -1,4 +1,4 @@
-all: build install process-repo
+all: build
 
 # config variables ------------------------------------------------------------
 
@@ -47,8 +47,7 @@ install:
 .PHONY: learn-ocaml.install
 learn-ocaml.install:
 	@echo 'bin: [' >$@
-	@echo '  "_obuild/learnocaml-simple-server/learnocaml-simple-server.byte" {"learnocaml-simple-server"}' >>$@
-	@echo '  "_obuild/learnocaml-process-repository/learnocaml-process-repository.byte" {"learnocaml-process-repository"}' >>$@
+	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
 	@echo ']' >>$@
 	@echo 'share: [' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
@@ -56,6 +55,9 @@ learn-ocaml.install:
 	@$(foreach f,$(wildcard static/*.js static/*.html static/*.svg static/*.woff static/*.css static/*.gif),\
 	    echo '  "$(f)" {"www/$(notdir $f)"}' >>$@;)
 	@echo ']' >>$@
+
+opaminstall: build learn-ocaml.install
+	@opam-installer --prefix `opam var prefix` learn-ocaml.install
 
 clean:
 	@ocp-build clean
