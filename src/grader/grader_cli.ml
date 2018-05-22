@@ -33,14 +33,14 @@ let display_outcomes = ref false
 (* Where to put the graded exercise *)
 let output_json = ref None
 
-(* Should the tool grade 'student.ml' instead of 'solution.ml' ? *)
-let grade_student = ref false
+(* Should the tool grade a student file instead of 'solution.ml' ? *)
+let grade_student = ref None
 
 let args = Arg.align @@
   [ "-output-json", Arg.String (fun s -> output_json := Some s),
     "PATH save the graded exercise in JSON format in the given file" ;
-    "-grade-student", Arg.Set grade_student,
-    " grade file 'student.ml' instead of 'solution.ml'";
+    "-grade-student", Arg.String (fun s -> grade_student := Some s),
+    "PATH grade the given student file instead of 'solution.ml'";
     "-display-outcomes", Arg.Set display_outcomes,
     " display the toplevel's outcomes" ;
     "-display-progression", Arg.Set display_callback,
@@ -91,8 +91,8 @@ let grade exercise_dir output_json =
        let exercise_dir = remove_trailing_slash exercise_dir in
        read_exercise exercise_dir >>= fun exo ->
        let code_to_grade = match !grade_student with
-         | true -> read_student_file exercise_dir "student.ml"
-         | false -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
+         | Some path -> read_student_file exercise_dir path
+         | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
          if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
        code_to_grade >>= fun code ->
