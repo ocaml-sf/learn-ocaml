@@ -72,25 +72,31 @@ let remove_trailing_slash s =
   let len = String.length s in
   if len <> 0 && s.[len-1] = '/' then String.sub s 0 (len-1) else s
 
-let read_file f =
-  let ic = open_in f in
-  let n = in_channel_length ic in
-  let s = Bytes.create n in
-  really_input ic s 0 n;
-  close_in ic;
-  Bytes.to_string s;;
+let read_student_file exercise_dir path =
+  let fn =
+    if Filename.is_relative path
+    then Filename.concat exercise_dir path
+    else path in
+  Lwt_unix.file_exists fn >>= fun exists ->
+  if not exists
+  then (Format.eprintf "Cannot find '%s': No such file@." fn; exit 1)
+  else
+    Lwt_io.with_file ~mode:Lwt_io.Input fn @@ fun chan ->
+      Lwt_io.read chan >>= fun content ->
+      Lwt.return content
 
 let grade exercise_dir output_json =
   Lwt.catch
     (fun () ->
        let exercise_dir = remove_trailing_slash exercise_dir in
        read_exercise exercise_dir >>= fun exo ->
-       let solution = if !grade_student then
-                        read_file (Filename.concat exercise_dir "student.ml")
-                      else Learnocaml_exercise.(get solution) exo in
+       let code_to_grade = match !grade_student with
+         | true -> read_student_file exercise_dir "student.ml"
+         | false -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
          if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
-       Grading_cli.get_grade ?callback exo solution
+       code_to_grade >>= fun code ->
+       Grading_cli.get_grade ?callback exo code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        match result with
        | Error exn ->
