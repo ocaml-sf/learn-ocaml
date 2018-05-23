@@ -75,7 +75,9 @@ renamed using the option ```-image-name <my_image>```).
 
 The server can then be launched using a wrapper around docker CLI:
 
-```bash scripts/docker-server.sh init```
+```
+bash scripts/docker-server.sh init
+```
 
 The same command with the argument ```stop``` will kill the
 server. After the first initialization, the server can be restarted
