@@ -75,7 +75,7 @@ introspect the abstract syntax tree to detect some patterns. Testing functions
 are available in `src/grader/test_lib.mli`: we can observe this module is
 actually functorized, but it is applied in the context of `test.ml`.
 
-## `Test_lib`
+## `Test_lib`: checking values and output
 
 Lets take the code that checks the first question of the exercise:
 ```ocaml
@@ -201,3 +201,47 @@ let report_2 =
   
 ```
 
+###  `Test_lib`: checking the AST
+
+Since the user's code is reified, the parsed _abstract syntax tree_ is available
+in the testing environment, as a variable named `code_ast`, with type
+`Parsetree.structure`. As such, it can be checked using the iterators in the
+module `Ast_mapper` from `compiler-libs`. However, `Test_lib` provides some
+functions to check the Parsetree.
+
+```ocaml
+
+  type 'a ast_checker =
+    ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
+    ?on_pattern: (Parsetree.pattern -> Learnocaml_report.report) ->
+    ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.report) ->
+    ?on_external: (Parsetree.value_description -> Learnocaml_report.report) ->
+    ?on_include: (Parsetree.include_declaration -> Learnocaml_report.report) ->
+    ?on_open: (Parsetree.open_description -> Learnocaml_report.report) ->
+    ?on_module_occurence: (string -> Learnocaml_report.report) ->
+    ?on_variable_occurence: (string -> Learnocaml_report.report) ->
+    ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.report) ->
+    'a -> Learnocaml_report.report
+
+  val ast_check_expr : Parsetree.expression ast_checker
+  val ast_check_structure : Parsetree.structure ast_checker
+
+  val ast_location_stripper : Ast_mapper.mapper
+
+  val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
+  val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
+  val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
+
+  val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
+
+  val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
+
+  val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
+```
+
+These functions scan the AST, looking for specific expressions which can be
+forbidden or required. The two functions `ast_check_expr` and
+`ast_check_structure` takes functions for each syntactic category and allows
+pattern-matching on some specific patterns into the code. The function
+`find_binding` look for a toplevel value and apply a given function on its
+syntax tree.
