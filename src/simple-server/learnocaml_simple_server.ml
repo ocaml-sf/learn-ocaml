@@ -201,7 +201,7 @@ let launch () =
          | Not_found -> Server.respond_string ~status:`OK ~body:"" ()
          | e -> raise e)
     | `POST, [ "sync" ; token ] when check_token token -> begin
-        string_of_stream (Cohttp_lwt_body.to_stream body) >>= function
+        string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
         | None ->
             Server.respond_string ~status:`Bad_request ~body: "Too much data" ()
         | Some body ->

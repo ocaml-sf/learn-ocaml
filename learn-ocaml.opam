@@ -34,8 +34,8 @@ depends: [
   "reactiveData"
   "tyxml"
   "base" {= "v0.9.4"}
-  "cohttp" {= "0.99.0"}
-  "cohttp-lwt-unix" {>= "0.99.0"}
+  "cohttp" {>= "1.0.0"}
+  "cohttp-lwt-unix" {>= "1.0.0"}
   "magic-mime"
   "omd"
   "markup"
