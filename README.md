@@ -19,7 +19,7 @@ How to compile and try
 
 Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
 
-* Install the dependencies using: 
+* Install the dependencies using:
 ```
 make build-deps
 ```
