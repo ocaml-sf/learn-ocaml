@@ -62,7 +62,7 @@ You can launch it via
 
 ```
 ./learnocaml-simple-server.byte
-```.
+```
 
 A Docker container can also be generated using this minimal server, via the provided
 script:
