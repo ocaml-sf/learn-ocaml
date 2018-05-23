@@ -6,10 +6,10 @@ exercises, tutorial and lessons.
 
 ## Groups
 
-A group is a set of exercices, or other groups. As such exercices are classified
+A group is either a set of exercices or other groups. As such exercices are classified
 into a tree representation, where groups are nodes and leafs are exercises. This
 tree (or index of exercises) can be described by a file `index.json` at the root
-of the root of the `exercises` directory from the repository. If no `index.json`
+of the `exercises` directory from the repository. If no `index.json`
 is found, the subdirectories are scanned and all exercises found are returned.
 
 The file `index.json` has the following format (in version "1"):
@@ -58,7 +58,7 @@ An exercise is described by a directory containing at most the following files:
 
 ### meta.json
 
-Json descriptor for the exercises, with the following format (in version "1"):
+Json description with the following format (in version "1"):
 ```
 { "learnocaml_version": <string>,
   "kind": "exercise" | "problem" | "project",
@@ -79,15 +79,15 @@ Description of the exercise in HTML format.
 OCaml file containing the definitions that are known by the user. In the
 web-application, the prelude is shown after the exercise description. The
 prelude is loaded in the environment before any other `.ml` files from the
-exercise.
+exercise directory.
 
 ### prepare.ml
 
 OCaml file containing some definitions that are unknown by the user. As such, it
-can be used to to redefine some functions, or execute some code before student
-code. For example, it is useful to redefine some standard library functions to
-track their usage for algorithmic purpose. `prepare.ml` is loaded directly after
-`prelude.ml` in the environment.
+can be used to to redefine some functions, or execute some code. For example, it
+is useful to redefine some standard library functions to track their usage for
+algorithmic purpose. `prepare.ml` is loaded directly after `prelude.ml` in the
+environment.
 
 ### template.ml
 
@@ -98,7 +98,7 @@ exercise.
 ### solution.ml
 
 OCaml file containing the solution for the exercise. It can be used for testing
-the user's code by comparing it's results with a code reference.
+the user's code by comparing its results with a code reference.
 
 ### test.ml
 
