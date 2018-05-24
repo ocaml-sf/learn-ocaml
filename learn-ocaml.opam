@@ -26,7 +26,7 @@ depends: [
   "lwt" {= "3.1.0"}
   "ocp-indent-nlfork"
   "ocp-ocamlres"
-  "ocplib-json-typed"
+  "ocplib-json-typed" {= "0.6"}
   "optcomp"
   "pprint"
   "ppx_tools"
