@@ -45,13 +45,6 @@ depends: [
   "ppx_cstruct" {= "3.2.1"}
   "ppx_tools" {= "5.0+4.05.0"}
 ]
-pin-depends: [
-  ["ocp-ocamlres.0.4" "git+https://github.com/OCamlPro/ocp-ocamlres.git"]
-  [
-    "ocp-indent-nlfork.dev"
-    "git+https://github.com/OCamlPro/ocp-indent.git#nlfork"
-  ]
-]
 build: [
   [make "build"]
   [make "-C" "static"]
