@@ -50,6 +50,7 @@ learn-ocaml.install:
 	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
 	@echo ']' >>$@
 	@echo 'share: [' >>$@
+	@echo '  "scripts/complete.sh"' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
 	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/learnocaml-$(mod).js"}' >>$@;)
 	@$(foreach f,$(wildcard static/*.js static/*.html static/*.svg static/*.woff static/*.css static/*.gif),\

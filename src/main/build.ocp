@@ -4,6 +4,7 @@ begin program "learnocaml"
     "learnocaml_main.ml"
   ]
   requires = [
+    "cmdliner"
     "learnocaml-process-repository-lib"
     "learnocaml-simple-server-lib"
   ]
