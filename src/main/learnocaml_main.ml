@@ -90,6 +90,10 @@ module Args = struct
       value & opt (some string) None & info ["dump-reports"] ~docv:"PREFIX" ~doc:
         "save the reports in files with the given prefix"
 
+    let timeout =
+      value & opt (some int) None & info ["timeout"] ~docv:"SECONDS" ~doc:
+        "Limit every test to the given timeout"
+
     type t = {
       exercises: string list;
       output_json: string option;
@@ -99,7 +103,7 @@ module Args = struct
       let apply
           repo_dir exercises
           output_json grade_student display_outcomes display_callback
-          display_std_outputs dump_outputs dump_reports =
+          display_std_outputs dump_outputs dump_reports timeout =
         let exercises = List.flatten exercises in
         Grader_cli.output_json := output_json;
         Grader_cli.grade_student := grade_student;
@@ -108,13 +112,15 @@ module Args = struct
         Grader_cli.display_std_outputs := display_std_outputs;
         Grader_cli.dump_outputs := dump_outputs;
         Grader_cli.dump_reports := dump_reports;
+        Grader_cli.individual_timeout := timeout;
         Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         { exercises; output_json }
       in
       Term.(const apply $repo_dir
             $exercises $output_json $grade_student $display_outcomes
-            $display_callback $display_std_outputs $dump_outputs $dump_reports)
+            $display_callback $display_std_outputs $dump_outputs $dump_reports
+            $timeout)
   end
 
   module Builder = struct
