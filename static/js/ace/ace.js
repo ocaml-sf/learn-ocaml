@@ -1416,18 +1416,22 @@ exports.getButton = function(e) {
 };
 
 exports.capture = function(el, eventHandler, releaseCaptureHandler) {
+    var doc = el;
+    while (doc.tagName != "BODY" && doc.parentNode != null)
+        doc = doc.parentNode;
+
     function onMouseUp(e) {
         eventHandler && eventHandler(e);
         releaseCaptureHandler && releaseCaptureHandler(e);
 
-        exports.removeListener(document, "mousemove", eventHandler, true);
-        exports.removeListener(document, "mouseup", onMouseUp, true);
-        exports.removeListener(document, "dragstart", onMouseUp, true);
+        exports.removeListener(doc, "mousemove", eventHandler, true);
+        exports.removeListener(doc, "mouseup", onMouseUp, true);
+        exports.removeListener(doc, "dragstart", onMouseUp, true);
     }
 
-    exports.addListener(document, "mousemove", eventHandler, true);
-    exports.addListener(document, "mouseup", onMouseUp, true);
-    exports.addListener(document, "dragstart", onMouseUp, true);
+    exports.addListener(doc, "mousemove", eventHandler, true);
+    exports.addListener(doc, "mouseup", onMouseUp, true);
+    exports.addListener(doc, "dragstart", onMouseUp, true);
     
     return onMouseUp;
 };
@@ -8118,7 +8122,7 @@ var BackgroundTokenizer = function(tokenizer, editor) {
         var line = this.doc.getLine(row);
         var state = this.states[row - 1];
 
-        var data = this.tokenizer.getLineTokens(line, state, row);
+        var data = this.tokenizer.getLineTokens(line, state, row, this.doc);
 
         if (this.states[row] + "" !== data.state + "") {
             this.states[row] = data.state;
