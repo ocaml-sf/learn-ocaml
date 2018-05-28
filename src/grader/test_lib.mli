@@ -66,9 +66,14 @@ module type S = sig
 
   val compatible_type : expected:string -> string -> Learnocaml_report.report
 
-  val abstract_type : ?allow_private:bool -> string -> bool * Learnocaml_report.report
+  val existing_type : ?score:int -> string -> bool * Learnocaml_report.report
+
+  val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.report
 
   val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+
+  val test_module_property :
+    'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
 
@@ -351,5 +356,6 @@ module Make : functor
   (Params : sig
      val results : Learnocaml_report.report option ref
      val set_progress : string -> unit
+     val timeout : int option
      module Introspection : Introspection_intf.INTROSPECTION
    end) -> S
