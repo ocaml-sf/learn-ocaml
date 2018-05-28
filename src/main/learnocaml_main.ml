@@ -42,9 +42,7 @@ module Args = struct
         "build", Build;
         "serve", Serve;
       ]) [Build; Serve] &
-    info [] ~docs:"COMMANDS" ~doc:
-      "One or several of $(b,grade), $(b,build) and $(b,serve). If \
-       unspecified, defaults to build and serve"
+    info [] ~docs:"COMMANDS" ~docv:"COMMAND"
 
   let repo_dir =
     value & opt dir "." & info ["repo"] ~docv:"DIR" ~doc:
@@ -151,7 +149,7 @@ module Args = struct
 
     let sync_dir =
       value & opt string "./sync" & info ["sync-dir"] ~docv:"DIR" ~doc:
-        "Directory where to store user sync tokens."
+        "Directory where to store user sync tokens"
 
     let port =
       value & opt int 8080 & info ["port";"p"] ~docv:"PORT" ~doc:
@@ -271,6 +269,8 @@ let man = [
   `P "This program performs various tasks related to generating, serving and \
       administrating a learn-ocaml web-app.";
   `S "COMMANDS";
+  `P "The $(i,COMMAND) argument may be one or more of the following. If no \
+      command is specified, '$(b,build) $(b,serve)' is assumed.";
   `I ("$(b,grade)", "Runs the automatic grader on exercise solutions.");
   `I ("$(b,build)", "Generates the application based on a repository \
                      containing the lessons, tutorials and exercises (see \
