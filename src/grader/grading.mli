@@ -28,5 +28,6 @@ exception Invalid_grader
     {!Toploop_unix} and {!Toploop_jsoo}. *)
 val get_grade:
   ?callback:(string -> unit) ->
+  ?timeout:int ->
   divert:(string -> out_channel -> (string -> unit) -> (unit -> unit)) ->
   Learnocaml_exercise.t -> string -> (Learnocaml_report.report, exn) result * string * string * string

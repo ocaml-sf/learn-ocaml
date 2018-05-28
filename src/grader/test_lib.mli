@@ -356,5 +356,6 @@ module Make : functor
   (Params : sig
      val results : Learnocaml_report.report option ref
      val set_progress : string -> unit
+     val timeout : int option
      module Introspection : Introspection_intf.INTROSPECTION
    end) -> S

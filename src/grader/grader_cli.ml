@@ -36,11 +36,16 @@ let output_json = ref None
 (* Should the tool grade a student file instead of 'solution.ml' ? *)
 let grade_student = ref None
 
+(* Should each test be run with a specific timeout (in secs) ? *)
+let individual_timeout = ref None
+
 let args = Arg.align @@
   [ "-output-json", Arg.String (fun s -> output_json := Some s),
     "PATH save the graded exercise in JSON format in the given file" ;
     "-grade-student", Arg.String (fun s -> grade_student := Some s),
     "PATH grade the given student file instead of 'solution.ml'";
+    "-timeout", Arg.Int (fun i -> individual_timeout := Some i),
+    "INT run each test with the specified timeout (in secs)" ;
     "-display-outcomes", Arg.Set display_outcomes,
     " display the toplevel's outcomes" ;
     "-display-progression", Arg.Set display_callback,
@@ -95,8 +100,9 @@ let grade exercise_dir output_json =
          | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
          if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
+       let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
-       Grading_cli.get_grade ?callback exo code
+       Grading_cli.get_grade ?callback ?timeout exo code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        match result with
        | Error exn ->
