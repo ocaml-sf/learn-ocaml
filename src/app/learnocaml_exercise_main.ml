@@ -217,7 +217,9 @@ let () =
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        let mathjax_url =
-         "http://cdn.mathjax.org/mathjax/2.1-latest/MathJax.js?config=AM_HTMLorMML-full" in
+         "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.1.0/MathJax.js\
+          ?config=AM_HTMLorMML-full"
+       in
        let html = Format.asprintf
            "<!DOCTYPE html>\
             <html><head>\
