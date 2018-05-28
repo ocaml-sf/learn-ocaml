@@ -54,48 +54,48 @@ button[disabled]::before {
 /* -------------------- font faces -------------------------------- */
 @font-face {
   font-family: "Linux Biolinum";
-  src: url('LinBiolinum_R.woff') format('woff');
+  src: url('../fonts/LinBiolinum_R.woff') format('woff');
 }
 @font-face {
   font-family: "Linux Biolinum";
   font-style: italic;
-  src: url('LinBiolinum_RI.woff') format('woff');
+  src: url('../fonts/LinBiolinum_RI.woff') format('woff');
 }
 @font-face {
   font-family: "Linux Biolinum";
   font-weight: bold;
-  src: url('LinBiolinum_RB.woff') format('woff');
+  src: url('../fonts/LinBiolinum_RB.woff') format('woff');
 }
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
-  src: url("Fontin-Regular.woff") format("woff"),
-       url("Fontin-Regular.ttf") format("truetype");
+  src: url("../fonts/Fontin-Regular.woff") format("woff"),
+       url("../fonts/Fontin-Regular.ttf") format("truetype");
 }
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
   font-style: italic;
-  src: url("Fontin-Italic.woff") format("woff"),
-       url("Fontin-Italic.ttf") format("truetype");
+  src: url("../fonts/Fontin-Italic.woff") format("woff"),
+       url("../fonts/Fontin-Italic.ttf") format("truetype");
 }
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
   font-weight: bold;
-  src: url("Fontin-Bold.woff") format("woff"),
-       url("Fontin-Bold.ttf") format("truetype");
+  src: url("../fonts/Fontin-Bold.woff") format("woff"),
+       url("../fonts/Fontin-Bold.ttf") format("truetype");
 }
 @font-face {
   font-family: "Inconsolata";
-  src: url("InconsolataGo-Regular.woff") format("woff"),
-       url("InconsolataGo-Regular.ttf") format("truetype");
+  src: url("../fonts/InconsolataGo-Regular.woff") format("woff"),
+       url("../fonts/InconsolataGo-Regular.ttf") format("truetype");
 }
 @font-face {
   font-family: "Inconsolata";
   font-weight: bold;
-  src: url("InconsolataGo-Bold.woff") format("woff"),
-       url("InconsolataGo-Bold.ttf") format("truetype");
+  src: url("../fonts/InconsolataGo-Bold.woff") format("woff"),
+       url("../fonts/InconsolataGo-Bold.ttf") format("truetype");
 }
 /* -------------------- loading splash screen --------------------- */
 .loading-layer {
