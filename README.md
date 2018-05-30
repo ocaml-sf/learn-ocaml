@@ -20,9 +20,15 @@ How to compile and try
 Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
 
 * Install the dependencies using:
-  - if you have opam >=2.0 available: `opam switch create . --deps && eval $(opam env)`
-  - otherwise: `make build-deps` (You may want to first read the script
-    `install-opam-deps.sh` to know what it does.)
+  - if you have opam >=2.0 available:
+``
+opam switch create . --deps && opam install opam-installer && eval $(opam env)
+``
+  - otherwise:
+``
+make build-deps
+``
+(You may want to first read the script `install-opam-deps.sh` to know what it does.)
 
 * Compile the app using:
 ```

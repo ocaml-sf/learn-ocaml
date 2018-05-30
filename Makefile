@@ -35,13 +35,12 @@ process-repo: install
 install:
 	@mkdir -p ${DEST_DIR}
 	@${MAKE} -C  static
-	cp static/* ${DEST_DIR}
+	cp -r static/* ${DEST_DIR}
 	cp ${LESSONS_DIR}/* ${DEST_DIR}
-	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/
-	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/
-	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/
-	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/
-	@mkdir -p $(DEST_DIR)
+	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
+	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
+	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
+	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-simple-server.byte .
 
 .PHONY: learn-ocaml.install
@@ -52,9 +51,9 @@ learn-ocaml.install:
 	@echo 'share: [' >>$@
 	@echo '  "scripts/complete.sh"' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
-	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/learnocaml-$(mod).js"}' >>$@;)
-	@$(foreach f,$(wildcard static/*.js static/*.html static/*.svg static/*.woff static/*.css static/*.gif),\
-	    echo '  "$(f)" {"www/$(notdir $f)"}' >>$@;)
+	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
+	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
+	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
 	@echo ']' >>$@
 
 opaminstall: build learn-ocaml.install
