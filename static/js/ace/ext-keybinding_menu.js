@@ -1,4 +1,4 @@
-ace.define("ace/ext/menu_tools/overlay_page",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
+ace.define("ace/ext/menu_tools/overlay_page",[], function(require, exports, module) {
 'use strict';
 var dom = require("../../lib/dom");
 var cssText = "#ace_settingsmenu, #kbshortcutmenu {\
@@ -22,7 +22,6 @@ color: black;\
 }\
 .ace_optionsMenuEntry:hover {\
 background-color: rgba(100, 100, 100, 0.1);\
--webkit-transition: all 0.5s;\
 transition: all 0.3s\
 }\
 .ace_closeButton {\
@@ -33,7 +32,7 @@ padding: 7px;\
 position: absolute;\
 right: -8px;\
 top: -8px;\
-z-index: 1000;\
+z-index: 100000;\
 }\
 .ace_closeButton{\
 background: rgba(245, 146, 146, 0.9);\
@@ -45,6 +44,22 @@ font-weight: bold;\
 .ace_optionsMenuCommand {\
 color: darkcyan;\
 font-weight: normal;\
+}\
+.ace_optionsMenuEntry input, .ace_optionsMenuEntry button {\
+vertical-align: middle;\
+}\
+.ace_optionsMenuEntry button[ace_selected_button=true] {\
+background: #e7e7e7;\
+box-shadow: 1px 0px 2px 0px #adadad inset;\
+border-color: #adadad;\
+}\
+.ace_optionsMenuEntry button {\
+background: white;\
+border: 1px solid lightgray;\
+margin: 0px;\
+}\
+.ace_optionsMenuEntry button:hover{\
+background: #f0f0f0;\
 }";
 dom.importCssString(cssText);
 module.exports.overlayPage = function overlayPage(editor, contentElement, top, right, bottom, left) {
@@ -52,10 +67,6 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, top, r
     bottom = bottom ? 'bottom: ' + bottom + ';' : '';
     right = right ? 'right: ' + right + ';' : '';
     left = left ? 'left: ' + left + ';' : '';
-
-    var doc = editor.container;
-    while (doc.tagName != "BODY" && doc.parentNode != null)
-        doc = doc.parentNode;
 
     var closer = document.createElement('div');
     var contentContainer = document.createElement('div');
@@ -71,12 +82,12 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, top, r
         'z-index: 9990; ' +
         'background-color: rgba(0, 0, 0, 0.3);';
     closer.addEventListener('click', function() {
-        doc.removeEventListener('keydown', documentEscListener);
+        document.removeEventListener('keydown', documentEscListener);
         closer.parentNode.removeChild(closer);
         editor.focus();
         closer = null;
     });
-    doc.addEventListener('keydown', documentEscListener);
+    document.addEventListener('keydown', documentEscListener);
 
     contentContainer.style.cssText = top + right + bottom + left;
     contentContainer.addEventListener('click', function(e) {
@@ -97,13 +108,13 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, top, r
     
     contentContainer.appendChild(contentElement);
     closer.appendChild(contentContainer);
-    doc.appendChild(closer);
+    document.body.appendChild(closer);
     editor.blur();
 };
 
 });
 
-ace.define("ace/ext/menu_tools/get_editor_keyboard_shortcuts",["require","exports","module","ace/lib/keys"], function(require, exports, module) {
+ace.define("ace/ext/menu_tools/get_editor_keyboard_shortcuts",[], function(require, exports, module) {
 "use strict";
 var keys = require("../../lib/keys");
 module.exports.getEditorKeybordShortcuts = function(editor) {
@@ -119,7 +130,7 @@ module.exports.getEditorKeybordShortcuts = function(editor) {
                 commands = [commands];
             commands.forEach(function(command) {
                 if (typeof command != "string")
-                    command  = command.name
+                    command  = command.name;
                 if (commandMap[command]) {
                     commandMap[command].key += "|" + key;
                 } else {
@@ -134,7 +145,7 @@ module.exports.getEditorKeybordShortcuts = function(editor) {
 
 });
 
-ace.define("ace/ext/keybinding_menu",["require","exports","module","ace/editor","ace/ext/menu_tools/overlay_page","ace/ext/menu_tools/get_editor_keyboard_shortcuts"], function(require, exports, module) {
+ace.define("ace/ext/keybinding_menu",[], function(require, exports, module) {
     "use strict";
     var Editor = require("ace/editor").Editor;
     function showKeyboardShortcuts (editor) {
@@ -153,7 +164,7 @@ ace.define("ace/ext/keybinding_menu",["require","exports","module","ace/editor",
             el.innerHTML = '<h1>Keyboard Shortcuts</h1>' + commands + '</div>';
             overlayPage(editor, el, '0', '0', '0', null);
         }
-    };
+    }
     module.exports.init = function(editor) {
         Editor.prototype.showKeyboardShortcuts = function() {
             showKeyboardShortcuts(this);
@@ -169,6 +180,10 @@ ace.define("ace/ext/keybinding_menu",["require","exports","module","ace/editor",
 
 });
                 (function() {
-                    ace.require(["ace/ext/keybinding_menu"], function() {});
+                    ace.require(["ace/ext/keybinding_menu"], function(m) {
+                        if (typeof module == "object" && typeof exports == "object" && module) {
+                            module.exports = m;
+                        }
+                    });
                 })();
             
