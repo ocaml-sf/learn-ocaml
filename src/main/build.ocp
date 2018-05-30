@@ -1,0 +1,11 @@
+begin program "learnocaml"
+  has_asm = false
+  files = [
+    "learnocaml_main.ml"
+  ]
+  requires = [
+    "cmdliner"
+    "learnocaml-process-repository-lib"
+    "learnocaml-simple-server-lib"
+  ]
+end

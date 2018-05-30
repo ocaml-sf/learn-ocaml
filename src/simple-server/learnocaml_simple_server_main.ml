@@ -15,22 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Lwt.Infix
-
-let dest_dir = ref "./www"
-
-let args = Arg.align @@
-  [ "-dest-dir", Arg.Set_string dest_dir,
-    "PATH path to the exercise repository (default: [./www])" ] @
-  Learnocaml_process_exercise_repository.args @
-  Learnocaml_process_tutorial_repository.args
+open Learnocaml_simple_server
 
 let () =
   Arg.parse args
-    (fun anon -> raise (Arg.Bad "unexpected anonymous argument"))
-    (Printf.sprintf "Usage: %s [options]" Sys.argv.(0));
-  let ret = Lwt_main.run @@
-    (Learnocaml_process_tutorial_repository.main !dest_dir >>= fun e_ret ->
-     Learnocaml_process_exercise_repository.main !dest_dir >>= fun t_ret ->
-     Lwt.return (e_ret && t_ret)) in
-  exit (if ret then 0 else 1)
+    (fun _ -> raise (Arg.Bad "unexpected argument"))
+    "Usage: learnocaml-simple-server [options]" ;
+  ignore (Lwt_main.run (launch ()))

@@ -1,4 +1,4 @@
-begin program "learnocaml-simple-server"
+begin library "learnocaml-simple-server-lib"
   files = [
     "learnocaml_simple_server.ml"
   ]
@@ -9,5 +9,14 @@ begin program "learnocaml-simple-server"
     "cohttp.lwt"
     "magic-mime"
     "learnocaml-sync"
+  ]
+end
+
+begin program "learnocaml-simple-server"
+  files = [
+    "learnocaml_simple_server_main.ml"
+  ]
+  requires = [
+    "learnocaml-simple-server-lib"
   ]
 end

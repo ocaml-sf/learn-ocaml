@@ -13,6 +13,10 @@ body {
   display: flex;
   background: #222;
 }
+#learnocaml-exo-toolbar a {
+  text-decoration: none;
+  color: #fff;
+}
 #learnocaml-exo-toolbar > button {
   border-left: 1px #eee solid !important;
   padding: 0 10px 0 10px;

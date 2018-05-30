@@ -81,9 +81,13 @@ let check_token token =
   with _ -> false
 
 let retrieve token =
-  let path =
-    String.concat Filename.dir_sep (!sync_dir :: parse_token token) in
-  Lwt_io.(with_file ~mode: Input path (fun chan -> read chan))
+  Lwt.catch (fun () ->
+      let path =
+        String.concat Filename.dir_sep (!sync_dir :: parse_token token) in
+      Lwt_io.(with_file ~mode: Input path (fun chan -> read chan)))
+  @@ function
+  | Unix.Unix_error (Unix.ENOENT, _, _) -> raise Not_found
+  | e -> raise e
 
 
 module StringMap = Map.Make(String)
@@ -96,9 +100,33 @@ let check_save_file contents =
     true
   with _ -> false
 
+let create_token_file token =
+  let rec create acc path =
+    begin if Sys.file_exists acc then
+        if Sys.is_directory acc then
+          Lwt.return ()
+        else
+          Lwt.fail (Failure "bad sync directory structure")
+      else
+        Lwt_unix.mkdir acc 0o750
+    end >>= fun () ->
+    match path with
+    | [] -> assert false
+    | [ file ] ->
+        let fn = (Filename.concat acc file) in
+        Lwt_io.(with_file ~mode: Output fn (fun chan -> write chan "")) >>= fun () ->
+        Lwt.return_unit
+    | dir :: path ->
+        create (Filename.concat acc dir) path
+  in
+  create !sync_dir token
+
 let store token contents =
+  let token = parse_token token in
   let path =
-    String.concat Filename.dir_sep (!sync_dir :: parse_token token) in
+    String.concat Filename.dir_sep (!sync_dir :: token) in
+  (if not (Sys.file_exists path) then create_token_file token
+   else Lwt.return_unit) >>= fun _ ->
   Lwt_io.(with_file ~mode: Output path (fun chan -> write chan contents))
 
 let gimme () =
@@ -109,24 +137,8 @@ let gimme () =
     if Sys.file_exists (String.concat Filename.dir_sep (!sync_dir :: token)) then
       next ()
     else
-      let rec create acc path =
-        begin if Sys.file_exists acc then
-            if Sys.is_directory acc then
-              Lwt.return ()
-            else
-              Lwt.fail (Failure "bad sync directory structure")
-          else
-            Lwt_unix.mkdir acc 0o750
-        end >>= fun () ->
-        match path with
-        | [] -> assert false
-        | [ file ] ->
-            let fn = (Filename.concat acc file) in
-            Lwt_io.(with_file ~mode: Output fn (fun chan -> write chan "")) >>= fun () ->
-            Lwt.return (String.concat "-" token)
-        | dir :: path ->
-            create (Filename.concat acc dir) path in
-      create !sync_dir token in
+      create_token_file token >|= fun () -> String.concat "-" token
+  in
   next ()
 
 
@@ -181,10 +193,15 @@ let launch () =
         let body = Printf.sprintf "{\"token\":\"%s\"}" token in
         Server.respond_string ~status:`OK ~body ()
     | `GET, [ "sync" ; token ] when check_token token ->
-        retrieve token >>= fun body ->
-        Server.respond_string ~status:`OK ~body ()
+        (Lwt.catch
+           (fun () ->
+              retrieve token >>= fun body ->
+              Server.respond_string ~status:`OK ~body ())
+         @@ function
+         | Not_found -> Server.respond_string ~status:`OK ~body:"" ()
+         | e -> raise e)
     | `POST, [ "sync" ; token ] when check_token token -> begin
-        string_of_stream (Cohttp_lwt_body.to_stream body) >>= function
+        string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
         | None ->
             Server.respond_string ~status:`Bad_request ~body: "Too much data" ()
         | Some body ->
@@ -197,14 +214,21 @@ let launch () =
     | `GET, path -> respond_static path
     | _ -> Server.respond_error ~status: `Bad_request ~body: "Bad request" () in
   Random.self_init () ;
-  Server.create
-    ~on_exn: (function
-        | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
-        | exn -> raise exn)
-    ~mode:(`TCP (`Port !port)) (Server.make ~callback ())
-
-let () =
-  Arg.parse args
-    (fun _ -> raise (Arg.Bad "unexpected argument"))
-    "Usage: learnocaml-simple-server [options]" ;
-  ignore (Lwt_main.run (launch ()))
+  Lwt.catch (fun () ->
+      Server.create
+        ~on_exn: (function
+            | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
+            | exn -> raise exn)
+        ~mode:(`TCP (`Port !port)) (Server.make ~callback ()) >>= fun () ->
+      Lwt.return true)
+  @@ function
+  | Sys.Break ->
+      Lwt.return true
+  | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
+      Printf.eprintf
+        "Could not bind port %d, another instance may still be running?\n%!"
+        !port;
+      Lwt.return false
+  | e ->
+      Printf.eprintf "Server error: %s\n%!" (Printexc.to_string e);
+      Lwt.return false
