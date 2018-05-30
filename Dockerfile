@@ -1,26 +1,23 @@
-FROM ocaml/opam2-staging:alpine
-LABEL Description="learn-ocaml running container" Vendor="OCamlPro" Version="0.1"
+FROM ocaml/opam
+
+RUN cd /home/opam/opam-repository && git pull
+
+RUN opam config exec -- opam update
 
 WORKDIR learn-ocaml
 
-COPY learn-ocaml.opam .
-RUN sudo chown opam:nogroup learn-ocaml.opam
+COPY src/opam src/opam
+COPY scripts/install-opam-deps.sh scripts/install-opam-deps.sh 
+COPY Makefile Makefile
 
-ENV OPAMYES true
-RUN opam switch 4.05
-RUN opam pin learn-ocaml . -n
-RUN opam depext learn-ocaml
-RUN opam install . --deps-only --locked
+RUN opam config exec -- make build-deps
 
-ADD . .
+COPY . .
+
 RUN sudo chown -R opam:nogroup .
 
-RUN opam install .
+RUN opam config exec -- make REPO_DIR=exercises_repository
 
-ARG port=8080
-ENV port=${port}
+EXPOSE 9090
 
-EXPOSE $port
-
-CMD ["build","serve"]
-ENTRYPOINT ["/bin/bash","-c","opam exec -- learn-ocaml --sync-dir=/sync --repo=/repository --port=${port} \"$@\""]
+CMD ["/home/opam/learn-ocaml/learnocaml-simple-server.byte", "-port", "9090" ]
