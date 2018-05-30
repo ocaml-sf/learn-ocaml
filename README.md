@@ -24,8 +24,11 @@ Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
 ``
 opam switch create . --deps && opam install opam-installer && eval $(opam env)
 ``
-  - otherwise: `make build-deps` (You may want to first read the script
-    `install-opam-deps.sh` to know what it does.)
+  - otherwise:
+``
+make build-deps
+``
+(You may want to first read the script `install-opam-deps.sh` to know what it does.)
 
 * Compile the app using:
 ```

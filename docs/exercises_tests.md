@@ -1,3 +1,9 @@
+Technical documentation about the grading infrastructure
+========================================================
+
+If you are a beginner, please read the tutorial
+`howto-write-exercises.md` first.
+
 This section explains how to write tests for exercices, using the modules
 `Test_lib`, `Introspection` and `Report` of the grader.
 
