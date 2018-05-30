@@ -97,7 +97,7 @@ let fatal message =
           [ h3 ~a: [ a_style "margin: 0;\
                               padding: 10px;\
                               text-align: center;" ]
-              [ pcdata "INTERNAL ERROR" ] ;
+              [ pcdata [%i"INTERNAL ERROR"] ] ;
             pre ~a: [ a_style "margin: 0;\
                                border-top: 1px white solid;\
                                padding: 20px;" ]

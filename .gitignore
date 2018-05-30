@@ -27,3 +27,5 @@ static/*_dark.svg
 static/*_light.svg
 static/*_white.svg
 static/Fontin*
+
+translations/*.pot

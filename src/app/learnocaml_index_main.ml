@@ -24,7 +24,7 @@ module StringMap = Map.Make (String)
 
 let exercises_tab _ _ () =
   show_loading ~id:"learnocaml-main-loading"
-    Tyxml_js.Html5.[ ul [ li [ pcdata "Loading exercises" ] ] ] ;
+    Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   Server_caller.fetch_exercise_index () >>= fun index ->
   let content_div = find_component "learnocaml-main-content" in
@@ -67,22 +67,22 @@ let exercises_tab _ _ () =
                 div ~a:[ a_class [ "descr" ] ] [
                   h1 [ pcdata exercise_title ] ;
                   p [ match exercise_short_description with
-                      | None -> pcdata "No description available."
+                      | None -> pcdata [%i"No description available."]
                       | Some text -> pcdata text ] ;
                 ] ;
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   div ~a:[ a_class [ "stars" ] ] [
                     let num = 5 * int_of_float (exercise_stars *. 2.) in
                     let num = max (min num 40) 0 in
-                    let alt = Format.asprintf "difficulty: %d / 40" num in
+                    let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
                     let src = Format.asprintf "icons/stars_%02d.svg" num in
                     img ~alt ~src ()
                   ] ;
                   div ~a:[ a_class [ "length" ] ] [
                     match exercise_kind with
-                    | Project -> pcdata "project"
-                    | Problem -> pcdata "problem"
-                    | Learnocaml_exercise -> pcdata "exercise" ] ;
+                    | Project -> pcdata [%i"project"]
+                    | Problem -> pcdata [%i"problem"]
+                    | Learnocaml_exercise -> pcdata [%i"exercise"] ] ;
                   div ~a:[ a_class [ "score" ] ] [
                     Tyxml_js.R.Html5.pcdata pct_text_signal
                   ]
@@ -109,7 +109,7 @@ let exercises_tab _ _ () =
 let lessons_tab select (arg, set_arg, delete_arg) () =
   let open Learnocaml_lesson in
   show_loading ~id:"learnocaml-main-loading"
-    Tyxml_js.Html5.[ ul [ li [ pcdata "Loading lessons" ] ] ] ;
+    Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading lessons"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   Server_caller.fetch_lesson_index () >>= fun index ->
   let content_div = find_component "learnocaml-main-content" in
@@ -144,7 +144,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
     Manip.removeChildren main_div ;
     if loading then begin
       show_loading ~id:"learnocaml-main-loading"
-        Tyxml_js.Html5.[ ul [ li [ pcdata "Running OCaml examples" ] ] ]
+        Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Running OCaml examples"] ] ] ]
     end ;
     let timeout_prompt =
       Learnocaml_toplevel.make_timeout_popup
@@ -212,7 +212,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
   let group = button_group () in
   begin button
       ~group ~state: prev_button_state ~container: navigation_div
-      ~theme: "black" ~icon: "left" "Prev" @@ fun () ->
+      ~theme: "black" ~icon: "left" [%i"Prev"] @@ fun () ->
     let selector = Tyxml_js.To_dom.of_select selector in
     let id = Js.to_string selector##.value in
     match prev_and_next id with
@@ -228,7 +228,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
     Dom_html.handler (fun _ -> Lwt.async (load_lesson ~loading: true) ; Js._true) ;
   begin button
       ~group ~state: next_button_state ~container: navigation_div
-      ~theme: "black" ~icon: "right" "Next" @@ fun () ->
+      ~theme: "black" ~icon: "right" [%i"Next"] @@ fun () ->
     let selector = Tyxml_js.To_dom.of_select selector in
     let id = Js.to_string selector##.value in
     match prev_and_next id with
@@ -313,7 +313,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       ~container: toplevel_div
       () in
   show_loading ~id:"learnocaml-main-loading"
-    Tyxml_js.Html5.[ ul [ li [ pcdata "Loading tutorials" ] ] ] ;
+    Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading tutorials"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div tutorial_div ;
@@ -429,7 +429,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   begin button
       ~group: toplevel_buttons_group
       ~state: prev_button_state ~container: navigation_div
-      ~theme: "black" ~icon: "left" "Prev" @@ fun () ->
+      ~theme: "black" ~icon: "left" [%i"Prev"] @@ fun () ->
     match prev_and_next !current_tutorial_name with
     | Some prev, _ ->
         load_tutorial prev 0 ()
@@ -446,7 +446,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   begin button
       ~group: toplevel_buttons_group
       ~state: next_button_state ~container: navigation_div
-      ~theme: "black" ~icon: "right" "Next" @@ fun () ->
+      ~theme: "black" ~icon: "right" [%i"Next"] @@ fun () ->
     match prev_and_next !current_tutorial_name with
     | _, Some next ->load_tutorial next 0 ()
     | _ -> Lwt.return ()
@@ -467,20 +467,20 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   load_tutorial !current_tutorial_name !current_step_id () >>= fun () ->
   begin button
       ~container: buttons_div ~theme: "dark"
-      ~group: toplevel_buttons_group ~icon: "cleanup" "Clear" @@ fun () ->
+      ~group: toplevel_buttons_group ~icon: "cleanup" [%i"Clear"] @@ fun () ->
     toplevel_launch >>= fun top ->
     Learnocaml_toplevel.clear top ;
     Lwt.return ()
   end ;
   begin button
       ~container: buttons_div ~theme: "dark"
-      ~icon:"reload" "Reset" @@ fun () ->
+      ~icon:"reload" [%i"Reset"] @@ fun () ->
     toplevel_launch >>= fun top ->
     disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
   end ;
   begin button
       ~container: buttons_div ~theme: "dark"
-      ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
+      ~group: toplevel_buttons_group ~icon: "run" [%i"Eval phrase"] @@ fun () ->
     toplevel_launch >>= fun top ->
     Learnocaml_toplevel.execute top ;
     Lwt.return ()
@@ -500,7 +500,7 @@ let toplevel_tab select _ () =
     Tyxml_js.Html5.(div ~a: [ a_id "learnocaml-main-toplevel" ])
       [ container ; buttons_div ] in
   show_loading ~id:"learnocaml-main-loading"
-    Tyxml_js.Html5.[ ul [ li [ pcdata "Launching OCaml" ] ] ] ;
+    Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Launching OCaml"] ] ] ] ;
   let timeout_prompt =
     Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> Lwt.async select)
@@ -533,16 +533,16 @@ let toplevel_tab select _ () =
   Manip.appendChild content_div div ;
   let button = button ~container: buttons_div ~theme: "dark" in
   begin button
-      ~group: toplevel_buttons_group ~icon: "cleanup" "Clear" @@ fun () ->
+      ~group: toplevel_buttons_group ~icon: "cleanup" [%i"Clear"] @@ fun () ->
     Learnocaml_toplevel.clear top ;
     Lwt.return ()
   end ;
   begin button
-      ~icon:"reload" "Reset" @@ fun () ->
+      ~icon:"reload" [%i"Reset"] @@ fun () ->
     disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
   end ;
   begin button
-      ~group: toplevel_buttons_group ~icon: "run" "Eval phrase" @@ fun () ->
+      ~group: toplevel_buttons_group ~icon: "run" [%i"Eval phrase"] @@ fun () ->
     Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
@@ -607,6 +607,45 @@ let sync () =
   set_state_from_save_file save_file ;
   Server_caller.upload_save_file ~token save_file
 
+let set_string_translations () =
+  let translations = [
+    "txt_welcome",
+    [%i"Welcome to <emph>LearnOCaml</emph> by OCamlPro."];
+    "txt_construction",
+    [%i"This App is still under construction."];
+    "txt_choose_activity",
+    [%i"Choose your activity below."];
+    "txt_token_doc",
+    [%i"Your storage token on OCamlPro's servers:"];
+    "txt_token_share",
+    [%i"You can share it between devices."];
+    "txt_progression_local",
+    [%i"Progression is saved locally in the browser."];
+    "txt_save_doc",
+    [%i"Save it to a file using the <img src=\"icons/icon_download_white.svg\" \
+        class=\"icon\" alt=\"save\"> button above."];
+    "txt_restore_doc",
+    [%i"Restore it from a file using the <img \
+        src=\"icons/icon_upload_white.svg\" class=\"icon\" alt=\"restore\"> \
+        button above."];
+    "txt_sync_doc",
+    [%i"Save online using the <img src=\"icons/icon_sync_white.svg\" \
+        class=\"icon\" alt=\"sync\"> button above."];
+  ] in
+  List.iter
+    (fun (id, text) ->
+       Manip.setInnerHtml (find_component id) text)
+    translations
+
+let set_lang () =
+  match Js.Optdef.to_option (Dom_html.window##.navigator##.language) with
+  | Some l -> Ocplib_i18n.set_lang (Js.to_string l)
+  | None ->
+      match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
+      with
+      | Some l -> Ocplib_i18n.set_lang (Js.to_string l)
+      | None -> ()
+
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
@@ -614,6 +653,8 @@ let () =
     | exn -> fatal (Printexc.to_string exn)
   end ;
   Lwt.async @@ fun () ->
+  set_lang ();
+  set_string_translations ();
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
@@ -622,7 +663,7 @@ let () =
   Manip.removeChildren sync_buttons ;
   begin button
       ~container: sync_buttons
-      ~theme:"white" ~icon: "download" "Save" @@ fun () ->
+      ~theme:"white" ~icon: "download" [%i"Save"] @@ fun () ->
     let name = "learnocaml-main.json" in
     let contents =
       let json =
@@ -635,7 +676,7 @@ let () =
   end ;
   begin button
       ~container: sync_buttons
-      ~theme:"white" ~icon: "upload" "Restore" @@ fun () ->
+      ~theme:"white" ~icon: "upload" [%i"Restore"] @@ fun () ->
     Learnocaml_common.fake_upload () >>= fun (_, contents) ->
     let save_file =
       Json_repr_browser.Json_encoding.destruct
@@ -647,14 +688,14 @@ let () =
   begin button
       ~container: sync_buttons
       ~state: sync_button_state
-      ~theme:"white" ~icon: "sync" "Sync" @@ fun () ->
+      ~theme:"white" ~icon: "sync" [%i"Sync"] @@ fun () ->
     sync ()
   end ;
   let menu_hidden = ref true in
   let menu = find_component "learnocaml-main-panel" in
   begin button
       ~container: (find_component "learnocaml-main-toolbar")
-      ~theme:"white" ~icon: "menu" "Menu" @@ fun () ->
+      ~theme:"white" ~icon: "menu" [%i"Menu"] @@ fun () ->
     menu_hidden := not !menu_hidden ;
     if !menu_hidden then
       Manip.addClass menu "hidden"
@@ -663,10 +704,10 @@ let () =
     Lwt.return ()
   end ;
   let tabs =
-    [ "tryocaml", ("Try OCaml", tryocaml_tab) ;
-      "lessons", ("Lessons", lessons_tab) ;
-      "exercises", ("Exercises", exercises_tab) ;
-      "toplevel", ("Toplevel", toplevel_tab) ] in
+    [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ;
+      "lessons", ([%i"Lessons"], lessons_tab) ;
+      "exercises", ([%i"Exercises"], exercises_tab) ;
+      "toplevel", ([%i"Toplevel"], toplevel_tab) ] in
   let tabs =
     let container = find_component "learnocaml-tab-buttons-container" in
     let content_div = find_component "learnocaml-main-content" in
@@ -728,7 +769,7 @@ let () =
     let content_div = find_component "learnocaml-main-content" in
     let div =
       Tyxml_js.Html5.(div ~a: [ a_class [ "placeholder" ] ])
-        Tyxml_js.Html5.[ div [ pcdata "Choose an activity." ]] in
+        Tyxml_js.Html5.[ div [ pcdata [%i"Choose an activity."] ]] in
     Manip.appendChild content_div div ;
     Lwt.return ()
 ;;
