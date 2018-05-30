@@ -226,7 +226,7 @@ type config = {
 
 let config =
   ref {
-    indent = IndentConfig.(update_from_string default "match_clause=4");
+    indent = IndentConfig.({default with i_match_clause = 4});
     forced = true;
   }
 
