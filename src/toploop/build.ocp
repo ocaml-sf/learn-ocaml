@@ -10,7 +10,7 @@ begin library "toploop"
     "toploop_results"
   ]
   files = [
-    "toploop_ext.ml" ( pp = camlp4_optcomp )
+    "toploop_ext.ml"
   ]
 end
 
@@ -20,7 +20,7 @@ begin library "toploop_jsoo"
     "toploop"
   ]
   files = [
-    "toploop_jsoo.ml" ( pp = camlp4_js )
+    "toploop_jsoo.ml" ( comp = ppx_js )
   ]
 end
 

@@ -42,10 +42,10 @@ let fetch ?message filename =
 
 let fetch_json filename =
   fetch filename >>= fun text ->
-  try Lwt.return (Js._JSON##parse (Js.string text)) with Js.Error err ->
+  try Lwt.return (Js._JSON##(parse (Js.string text))) with Js.Error err ->
     let msg =
       Format.asprintf "bad format for %s\n%s"
-        filename (Js.to_string err ## message) in
+        filename (Js.to_string err ##. message) in
     Lwt.fail (Cannot_fetch msg)
 
 let fetch_and_decode_json enc filename =
@@ -94,10 +94,10 @@ let fetch_save_file ~token =
   let message = "cannot download server data" in
   fetch ~message ("/sync/" ^ token) >>= fun text ->
   let text = if text = "" then "{}" else text in
-  (try Lwt.return (Js._JSON##parse (Js.string text)) with Js.Error err ->
+  (try Lwt.return (Js._JSON##(parse (Js.string text))) with Js.Error err ->
      let msg =
        Format.asprintf "bad format for server data\n%s"
-         (Js.to_string err ## message) in
+         (Js.to_string err ##. message) in
      Lwt.fail (Cannot_fetch msg)) >>= fun json ->
   try Lwt.return @@
     Json_repr_browser.Json_encoding.destruct Learnocaml_sync.save_file_enc json
@@ -113,7 +113,7 @@ let upload_save_file ~token save_file =
       Learnocaml_sync.save_file_enc
       save_file in
   let body =
-    Some (Js.to_string (Js._JSON##stringify (json))) in
+    Some (Js.to_string (Js._JSON##(stringify json))) in
   Lwt.catch
     (fun () -> Lwt_request.post ~headers: [] ~get_args: []
         ~url: ("/sync/" ^ token) ~body)

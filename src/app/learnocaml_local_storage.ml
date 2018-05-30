@@ -65,7 +65,7 @@ let init () =
   Dom_html.addEventListener
     Dom_html.window storage_event_typ
     (Dom_html.handler (fun evt ->
-         Js.Opt.case (evt##key)
+         Js.Opt.case (evt##.key)
            (fun () -> Js._false)
            (fun name ->
               let name = Js.to_string name in
@@ -102,19 +102,19 @@ let demangle str =
 
 let store_single name enc value =
   Js.Optdef.case
-    (Dom_html.window##localStorage)
+    (Dom_html.window##.localStorage)
     (fun () -> failwith "local storage support required")
     (fun localStorage ->
        let json = Json_repr_browser.Json_encoding.construct enc value in
-       localStorage##setItem (Js.string name, Js._JSON##stringify (json)))
+       localStorage##(setItem (Js.string name) (Js._JSON##(stringify json))))
 
 let retrieve_single ?default name enc () =
   Js.Optdef.case
-    (Dom_html.window##localStorage)
+    (Dom_html.window##.localStorage)
     (fun () -> failwith "local storage support required")
     (fun localStorage ->
        Js.Opt.case
-         (localStorage##getItem (Js.string name))
+         (localStorage##(getItem (Js.string name)))
          (fun () ->
             match default with
             | Some default -> default
@@ -122,17 +122,17 @@ let retrieve_single ?default name enc () =
          (fun v ->
             let open Json_repr_browser.Json_encoding in
             try
-              destruct enc (Js._JSON##parse (v))
+              destruct enc (Js._JSON##(parse v))
             with exn ->
               raise (Json_encoding.Cannot_destruct
                        ([ `Field "localStorage" ; `Field name ], exn))))
 
 let delete_single name enc () =
   Js.Optdef.case
-    (Dom_html.window##localStorage)
+    (Dom_html.window##.localStorage)
     (fun () -> failwith "local storage support required")
     (fun localStorage ->
-       localStorage##removeItem (Js.string name))
+       localStorage##(removeItem (Js.string name)))
 
 let sync_token =
   let key = mangle [ "sync-token" ] in

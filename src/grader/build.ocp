@@ -106,10 +106,11 @@ begin library "grading-jsoo"
     "ocplib-json-typed.browser"
     "learnocaml-repository"
     "learnocaml-state"
+    "js_of_ocaml.ppx"
   ]
   files = [
     "grader_jsoo_messages.ml"
-    "grading_jsoo.ml" ( pp = camlp4_js )
+    "grading_jsoo.ml" ( comp = ppx_js )
   ]
 end
 
@@ -123,10 +124,11 @@ begin program "learnocaml-grader-worker"
     "js_of_ocaml.syntax"
     "learnocaml-repository"
     "learnocaml-state"
+    "js_of_ocaml.ppx"
   ]
   files = [
     "grader_jsoo_messages.ml"
-    "grader_jsoo_worker.ml" ( pp = camlp4_js )
+    "grader_jsoo_worker.ml" ( comp = ppx_js )
   ]
   build_rules = [
     "%{learnocaml-grader-worker_FULL_DST_DIR}%/learnocaml-grader-worker.js" (

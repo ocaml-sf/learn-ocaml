@@ -34,16 +34,16 @@ let find_component id =
 let fake_download ~name ~contents =
   (* TODO: add some primitives to jsoo and clean this up  *)
   let blob : (Js.js_string Js.t Js.js_array Js.t -> File.blob Js.t) Js.constr =
-    Js.Unsafe.global ## _Blob in
-  let blob = jsnew blob (Js.array [| contents |]) in
+    Js.Unsafe.global ##. _Blob in
+  let blob = new%js blob (Js.array [| contents |]) in
   let url =
-    Js.Unsafe.meth_call (Js.Unsafe.global##_URL) "createObjectURL" [| Js.Unsafe.inject blob |] in
+    Js.Unsafe.meth_call (Js.Unsafe.global##._URL) "createObjectURL" [| Js.Unsafe.inject blob |] in
   let link = Dom_html.createA Dom_html.document in
-  link##href <- url ;
+  link##.href := url ;
   Js.Unsafe.set link (Js.string "download") (Js.string name) ;
-  ignore (Dom_html.document##body##appendChild ((link :> Dom.node Js.t))) ;
+  ignore (Dom_html.document##.body##(appendChild ((link :> Dom.node Js.t)))) ;
   ignore (Js.Unsafe.meth_call link "click" [||]) ;
-  ignore (Dom_html.document##body##removeChild ((link :> Dom.node Js.t)))
+  ignore (Dom_html.document##.body##(removeChild ((link :> Dom.node Js.t))))
 
 let fake_upload () =
   let input_files_load =
@@ -53,19 +53,19 @@ let fake_upload () =
     Lwt.wakeup_exn result_wakener
       (Failure "file loading not implemented for this browser") ;
     Js._true in
-  input_files_load##onchange <- Dom.handler (fun ev ->
-      Js.Opt.case (ev##target) fail @@ fun target ->
+  input_files_load##.onchange := Dom.handler (fun ev ->
+      Js.Opt.case (ev##.target) fail @@ fun target ->
       Js.Opt.case (Dom_html.CoerceTo.input target) fail @@ fun input ->
-      Js.Optdef.case (input##files) fail @@ fun files ->
-      Js.Opt.case (files##item (0)) fail @@ fun file ->
-      let name = Js.to_string file##name in
-      let fileReader = jsnew File.fileReader() in
-      fileReader##onload <- Dom.handler (fun ev ->
-          Js.Opt.case (ev##target) fail @@ fun target ->
-          Js.Opt.case (File.CoerceTo.string (target##result)) fail @@ fun result ->
+      Js.Optdef.case (input##.files) fail @@ fun files ->
+      Js.Opt.case (files##(item (0))) fail @@ fun file ->
+      let name = Js.to_string file##.name in
+      let fileReader = new%js File.fileReader in
+      fileReader##.onload := Dom.handler (fun ev ->
+          Js.Opt.case (ev##.target) fail @@ fun target ->
+          Js.Opt.case (File.CoerceTo.string (target##.result)) fail @@ fun result ->
           Lwt.wakeup result_wakener (name, result) ;
           Js._true) ;
-      fileReader##readAsText (file) ;
+      fileReader##(readAsText file) ;
       Js._true) ;
   ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
   result_t
@@ -166,7 +166,7 @@ let disable_button_group (buttons, _, cpt) =
   if !cpt = 1 then
     List.iter
       (fun (button, _) ->
-         button##disabled <- Js.bool true)
+         button##.disabled := Js.bool true)
       !buttons
 
 let enable_button_group (buttons, _, cpt) =
@@ -175,7 +175,7 @@ let enable_button_group (buttons, _, cpt) =
     List.iter
       (fun (button, state) ->
          if not !state then
-           button##disabled <- Js.bool false)
+           button##.disabled := Js.bool false)
       !buttons
 
 let disable_button (disabled, self) =
@@ -184,7 +184,7 @@ let disable_button (disabled, self) =
       disabled := true
   | Some (_, button) ->
       disabled := true ;
-      button##disabled <- Js.bool true
+      button##.disabled := Js.bool true
 
 let enable_button (disabled, self) =
   match !self with
@@ -193,7 +193,7 @@ let enable_button (disabled, self) =
   | Some ((_, _, cpt), button) ->
       disabled := false ;
       if !cpt = 0 then
-        button##disabled <- Js.bool false
+        button##.disabled := Js.bool false
 
 let button_group_disabled (_, _, cpt) =
   !cpt > 0
@@ -243,12 +243,12 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
         disabled in
   others := (dom_button, self_disabled) :: !others ;
   if !self_disabled || !cnt > 0 then
-    dom_button##disabled <- Js.bool true ;
+    dom_button##.disabled := Js.bool true ;
   Manip.appendChild container button
 
 let gettimeofday () =
-  let now = jsnew Js.date_now () in
-  floor ((now ## getTime ()) *. 1000.) +. float (now ## getTimezoneOffset ())
+  let now = new%js Js.date_now in
+  floor ((now ## getTime) *. 1000.) +. float (now ## getTimezoneOffset)
 
 let render_rich_text ?on_runnable_clicked text =
   let open Learnocaml_index in

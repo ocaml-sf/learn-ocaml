@@ -213,7 +213,7 @@ let () =
       Tyxml_js.Html5.[ prelude_title ; prelude_container ]
   end ;
   Js.Opt.case
-    (text_iframe##contentDocument)
+    (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        let mathjax_url =
@@ -235,9 +235,9 @@ let () =
            (Learnocaml_exercise.(get title) exo)
            mathjax_url
            (Learnocaml_exercise.(get descr) exo) in
-       d##open_ ();
+       d##open_;
        d##write (Js.string html);
-       d##close ()) ;
+       d##close) ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
@@ -309,7 +309,7 @@ let () =
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
   begin toolbar_button
       ~icon: "list" "Exercises" @@ fun () ->
-    Dom_html.window##location##assign
+    Dom_html.window##.location##assign
       (Js.string "index.html#activity=exercises") ;
     Lwt.return ()
   end ;

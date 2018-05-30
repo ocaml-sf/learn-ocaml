@@ -50,18 +50,18 @@ let setup
 
 let enforce_limit { limit ; container } =
   let container = Tyxml_js.To_dom.of_div container in
-  while container##childNodes##length > limit do
+  while container##.childNodes##.length > limit do
     Js.Opt.case
-      (container##firstChild)
+      (container##.firstChild)
       (fun () -> ())
-      (fun child -> ignore (container##removeChild (child)))
+      (fun child -> ignore (container##(removeChild child)))
   done
 
 let scroll { container ; on_resize } =
   let container = Tyxml_js.To_dom.of_div container in
   Lwt.async @@ fun () ->
   Lwt.bind (Lwt_js.yield ()) @@ fun () ->
-  container##scrollTop <- container##scrollHeight - container##clientHeight ;
+  container##.scrollTop := container##.scrollHeight - container##.clientHeight ;
   on_resize () ;
   Lwt.return_unit
 
