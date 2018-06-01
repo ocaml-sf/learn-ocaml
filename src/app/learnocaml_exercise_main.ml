@@ -225,7 +225,7 @@ let () =
             <html><head>\
             <title>%s - exercise text</title>\
             <meta charset='UTF-8'>\
-            <link rel='stylesheet' href='learnocaml_standalone_description.css'>\
+            <link rel='stylesheet' href='css/learnocaml_standalone_description.css'>\
             <script type='text/javascript' src='%s'></script>\
             </head>\
             <body>\

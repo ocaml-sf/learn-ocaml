@@ -24,7 +24,7 @@ let get_grade
     ?(timeout = infinity)
     exercise =
   let t, u = Lwt.task () in
-  let worker = Worker.create "learnocaml-grader-worker.js" in
+  let worker = Worker.create "js/learnocaml-grader-worker.js" in
   Lwt.on_cancel t (fun () -> worker##terminate ()) ;
   let onmessage (ev : Json_repr_browser.Repr.value Worker.messageEvent Js.t) =
     let json = ev##data in

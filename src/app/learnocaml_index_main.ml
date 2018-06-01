@@ -75,7 +75,7 @@ let exercises_tab _ _ () =
                     let num = 5 * int_of_float (exercise_stars *. 2.) in
                     let num = max (min num 40) 0 in
                     let alt = Format.asprintf "difficulty: %d / 40" num in
-                    let src = Format.asprintf "stars_%02d.svg" num in
+                    let src = Format.asprintf "icons/stars_%02d.svg" num in
                     img ~alt ~src ()
                   ] ;
                   div ~a:[ a_class [ "length" ] ] [
