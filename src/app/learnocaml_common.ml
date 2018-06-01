@@ -116,7 +116,7 @@ let show_loading ?(id = "ocp-loading-layer") contents =
   Manip.(removeClass elt "loaded") ;
   Manip.(addClass elt "loading") ;
   let chamo_src =
-    "tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
+    "icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
   Manip.replaceChildren elt
     Tyxml_js.Html.[
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -221,7 +221,7 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     Tyxml_js.Html.(button [
-        img ~alt:(lbl ^ " icon") ~src:("icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        img ~alt:(lbl ^ " icon") ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
         span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
       ]) in
