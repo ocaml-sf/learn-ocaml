@@ -68,38 +68,6 @@ You can launch it via
 ./learnocaml-simple-server.byte
 ```
 
-A Docker container can also be generated using this minimal server, via the provided
-script:
-```
-bash scripts/build-docker-image.sh -repo-dir ../learn-ocaml-repository
-```
-
-This generates an image named ```learnocaml-docker``` (by default, but it can be
-renamed using the option ```-image-name <my_image>```).
-
-The server can then be launched using a wrapper around docker CLI:
-
-```
-bash scripts/docker-server.sh init
-```
-
-The same command with the argument ```stop``` will kill the
-server. After the first initialization, the server can be restarted
-using ```start```. Finally, be aware that the ```remove``` command
-removes the container from the docker system. As such, it will remove
-every saved sessions from the ```sync``` directory, __i.e.__ every
-saved users' code. For this reason, this command also needs a `.tar`
-argument that will contain a backup of these files.
-
-As a reminder, the Docker deamon's socket is owned by default by
-`root`. Hence, these scripts cannot work without ```sudo``` or adding
-your current user to the group ```docker```. For more information, see
-[post installation steps for
-Linux](https://docs.docker.com/install/linux/linux-postinstall/) from
-the documentation. However, be advised there exists security flaws in
-the Docker daemon (see
-[documentation](https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface)).
-
 License and copyright
 ---------------------
 

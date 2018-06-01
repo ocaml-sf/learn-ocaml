@@ -56,7 +56,7 @@ function run_image () {
      docker run $fg \
            -p "$port":9090 \
            --name "$container_name" "$docker_image")
-    
+
 }
 
 function option_error () {
@@ -102,11 +102,11 @@ function export_sync_and_remove () {
  another name.";
         exit 2
     fi
-    
+
     (print_cmd;
      docker container stop "$container_name" 1> "$output";
      docker cp "$container_name":"/home/opam/learn-ocaml/sync" - 1> "$1") &&
-        
+
     if [ ! -r "$1" ]; then
         echo "Unreadable file $1, the container has not been removed."
     else
@@ -159,7 +159,7 @@ while [[ $# -gt 0 ]]; do
           ;;
       *)
           POSITIONAL+=("$1") # save it in an array for later
-          shift 
+          shift
           ;;
   esac
 done
@@ -183,7 +183,7 @@ case $1 in
     stop)
         (print_cmd;
          docker container stop "$container_name" > "$output")
-    ;;    
+    ;;
     backup)
         if [ $# -lt 3 ]; then
             backup "$2"
@@ -191,19 +191,19 @@ case $1 in
             print_usage
             exit 2
         fi
-    ;;    
+    ;;
     remove)
         if [ $# -gt 2 ]; then
             export_sync_and_remove "$2"
         elif [ $force -gt 0 ]; then
             force_remove
-        else 
+        else
             print_usage
             exit 2
         fi
     ;;
     *)
         echo "Unknown command $1"
-        print_usage  
+        print_usage
         exit 2
 esac
