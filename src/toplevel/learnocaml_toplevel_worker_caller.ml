@@ -85,7 +85,7 @@ let check_equal
   | String, _ -> raise Not_equal
 
 let onmessage worker (ev : _ Worker.messageEvent Js.t) =
-  match Json.unsafe_input ev##data with
+  match Json.unsafe_input ev##.data with
   | Write (fd, s) ->  begin
       if !debug then Js_utils.debug "Host: Write %d %S" fd s;
       try
@@ -93,8 +93,8 @@ let onmessage worker (ev : _ Worker.messageEvent Js.t) =
         Js._false
       with
       | Not_found ->
-          Firebug.console##warn
-            (Js.string (Printf.sprintf "Missing channels (%d)" fd));
+          Firebug.console##(warn
+            (Js.string (Printf.sprintf "Missing channels (%d)" fd)));
           Js._false
     end
   | ReturnSuccess (id, ty_v, v, w) -> begin
@@ -107,12 +107,12 @@ let onmessage worker (ev : _ Worker.messageEvent Js.t) =
         Js._false
       with
       | Not_found ->
-          Firebug.console##warn
-            (Js.string (Printf.sprintf "Missing wakeners (%d)" id));
+          Firebug.console##(warn
+            (Js.string (Printf.sprintf "Missing wakeners (%d)" id)));
           Js._false
       | Not_equal ->
-          Firebug.console##warn
-            (Js.string (Printf.sprintf "Unexpected wakeners (%d)" id));
+          Firebug.console##(warn
+            (Js.string (Printf.sprintf "Unexpected wakeners (%d)" id)));
           Js._false
     end
   | ReturnError (id, e, w) -> begin
@@ -123,13 +123,13 @@ let onmessage worker (ev : _ Worker.messageEvent Js.t) =
         Lwt.wakeup u (Toploop_results.Error (e, w));
         Js._false
       with Not_found ->
-        Firebug.console##warn
-          (Js.string (Printf.sprintf "Missing wakeners (%d)" id));
+        Firebug.console##(warn
+          (Js.string (Printf.sprintf "Missing wakeners (%d)" id)));
         Js._false
     end
 
 let terminate worker =
-  worker.worker##terminate () ;
+  (worker.worker)##terminate ;
   IntMap.iter
     (fun id (U (_, _, t)) ->
        worker.wakeners <- IntMap.remove id worker.wakeners;
@@ -165,7 +165,7 @@ let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.
       (fun () -> Lwt.async (fun () -> worker.reset_worker worker));
     worker.wakeners <- IntMap.add msg_id (U (msg_ty, u, t)) worker.wakeners;
     worker.counter <- msg_id + 1;
-    worker.worker##postMessage (Json.output (msg_id, msg));
+    worker.worker##(postMessage (Json.output (msg_id, msg)));
     t
 
 and do_reset_worker () =
@@ -188,7 +188,7 @@ and do_reset_worker () =
       worker.wakeners <- IntMap.empty;
       worker.counter <- 0;
       worker.reset_worker <- do_reset_worker ();
-      (Obj.magic worker.worker)##onmessage <-
+      (Obj.magic worker.worker)##.onmessage :=
         Js.wrap_callback (onmessage worker);
       post worker @@ Init >>= fun _ ->
       worker.after_init worker >>= fun _ ->
@@ -199,8 +199,8 @@ and do_reset_worker () =
 let create
     ?(js_file = "js/learnocaml-toplevel-worker.js")
     ?(after_init = fun _ -> Lwt.return_unit)
-    ?(pp_stdout = (fun text -> Firebug.console##log (Js.string text)))
-    ?(pp_stderr = (fun text -> Firebug.console##log (Js.string text)))
+    ?(pp_stdout = (fun text -> Firebug.console##(log (Js.string text))))
+    ?(pp_stderr = (fun text -> Firebug.console##(log (Js.string text))))
     () =
   let worker = Worker.create js_file in
   let fds =
@@ -213,7 +213,7 @@ let create
       reset_worker = do_reset_worker ();
       after_init; pp_stdout; pp_stderr;
     } in
-  (Obj.magic worker.worker)##onmessage <- Js.wrap_callback (onmessage worker);
+  (Obj.magic worker.worker)##.onmessage := Js.wrap_callback (onmessage worker);
   post worker @@ Init >>= fun _ ->
   worker.after_init worker >>= fun () ->
   Lwt.return worker

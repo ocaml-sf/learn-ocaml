@@ -10,14 +10,14 @@ end
 
 begin library "learnocaml-app-common"
   files = [
-    "learnocaml_local_storage.ml" ( pp = camlp4_js )
-    "server_caller.ml" ( pp = camlp4_js )
-    "learnocaml_common.ml" ( pp = camlp4_js )
+    "learnocaml_local_storage.ml" ( comp = ppx_js )
+    "server_caller.ml" ( comp = ppx_js )
+    "learnocaml_common.ml" ( comp = ppx_js )
   ]
   requires = [
     "ocplib-json-typed.browser"
     "js_of_ocaml"
-    "js_of_ocaml.syntax"
+    "js_of_ocaml.ppx"
     "js_of_ocaml.tyxml"
     "jsutils"
     "learnocaml-toplevel"
@@ -34,9 +34,10 @@ begin program "learnocaml-main"
     "learnocaml-repository"
     "learnocaml-app-common"
     "learnocaml-toplevel"
+    "js_of_ocaml.ppx"
   ]
   files = [
-    "learnocaml_index_main.ml" ( pp = camlp4_js )
+    "learnocaml_index_main.ml" ( comp = ppx_js )
   ]
   build_rules = [
     "%{learnocaml-main_FULL_DST_DIR}%/learnocaml-main.js" (
@@ -61,9 +62,10 @@ begin program "learnocaml-exercise"
     "learnocaml-repository"
     "learnocaml-app-common"
     "learnocaml-toplevel"
+    "js_of_ocaml.ppx"
   ]
   files = [
-    "learnocaml_exercise_main.ml" ( pp = camlp4_js )
+    "learnocaml_exercise_main.ml" ( comp = ppx_js )
   ]
   build_rules = [
     "%{learnocaml-exercise_FULL_DST_DIR}%/learnocaml-exercise.js" (

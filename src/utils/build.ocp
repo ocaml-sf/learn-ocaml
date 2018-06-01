@@ -1,10 +1,11 @@
 begin library "jsutils"
   files = [
-    "js_utils.ml"    ( pp = camlp4_optcomp_js )
-    "lwt_request.ml" ( pp = camlp4_optcomp_js )
+    "js_utils.ml" ( comp = ppx_js )
+    "lwt_request.ml" ( comp = ppx_js )
   ]
   requires = [
     "lwt"
+    "js_of_ocaml.ppx"
     "js_of_ocaml.tyxml"
   ]
 end

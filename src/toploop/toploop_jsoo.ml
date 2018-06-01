@@ -68,10 +68,10 @@ let setup = lazy (
     flush stdout; flush stderr;
     let res = Buffer.contents b in
     let res = String.concat "" !stubs ^ res in
-    Js.Unsafe.global##toplevelEval(res)
+    Js.Unsafe.global##(toplevelEval res)
   in
-  Js.Unsafe.global##toplevelCompile <- compile (*XXX HACK!*);
-  Js.Unsafe.global##toplevelEval <- (fun x ->
+  Js.Unsafe.global##.toplevelCompile := compile (*XXX HACK!*);
+  Js.Unsafe.global##.toplevelEval := (fun x ->
       let f : < .. > Js.t -> < .. > Js.t = Js.Unsafe.eval_string x in
       (fun () ->
          let res = f Js.Unsafe.global in
@@ -124,7 +124,7 @@ let stop_channel_redirection redir =
         redirections :=
           List.filter (fun (ch, _) -> ch != redir.channel) !redirections ;
         let append text =
-          Firebug.console##log (Js.string text) in
+          Firebug.console##(log (Js.string text)) in
         Sys_js.set_channel_flusher redir.channel append ;
   with Not_found ->
     fail ()

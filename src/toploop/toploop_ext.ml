@@ -73,7 +73,6 @@ let convert_loc loc =
   let _file2,line2,col2 = Location.get_pos_info (loc.Location.loc_end) in
   { loc_start = (line1, col1) ; loc_end = (line2, col2) }
 
-#if ocaml_full_version >= (4,02,2)
 let () =
   Location.warning_printer :=
     (fun loc _fmt w ->
@@ -89,7 +88,6 @@ let () =
          let loc = convert_loc loc in
          warnings := { msg; locs = [loc]; if_highlight } :: !warnings
        end)
-#endif
 
 let return_success e = Ok (e, !warnings)
 let return_error e = Error (e, !warnings)

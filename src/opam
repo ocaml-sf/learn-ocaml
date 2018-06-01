@@ -12,7 +12,7 @@ depends: [
   "base64"
   "ezjsonm"
   "js_of_ocaml" {= "3.1.0" }
-  "js_of_ocaml-camlp4"
+  "js_of_ocaml-ppx"
   "js_of_ocaml-toplevel"
   "js_of_ocaml-compiler"
   "js_of_ocaml-lwt"

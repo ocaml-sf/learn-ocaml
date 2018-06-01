@@ -2,8 +2,8 @@ begin library "ace"
   link += [ "-linkall" ]
   files = [
     "ace_types.mli"
-    "ace.ml"        ( pp = camlp4_optcomp_js )
-    "ocaml_mode.ml" ( pp = camlp4_optcomp_js )
+    "ace.ml" ( comp = ppx_js )
+    "ocaml_mode.ml"
   ]
   requires = [
     "jsutils"

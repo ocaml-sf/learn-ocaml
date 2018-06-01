@@ -139,7 +139,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
   let next_button_state = button_state () in
   let load_lesson ~loading () =
     let selector = Tyxml_js.To_dom.of_select selector in
-    let id = Js.to_string selector##value in
+    let id = Js.to_string selector##.value in
     Server_caller.fetch_lesson id >>= fun { lesson_steps } ->
     Manip.removeChildren main_div ;
     if loading then begin
@@ -214,27 +214,27 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
       ~group ~state: prev_button_state ~container: navigation_div
       ~theme: "black" ~icon: "left" "Prev" @@ fun () ->
     let selector = Tyxml_js.To_dom.of_select selector in
-    let id = Js.to_string selector##value in
+    let id = Js.to_string selector##.value in
     match prev_and_next id with
     | Some prev, _ ->
         let option = Tyxml_js.To_dom.of_option (List.assoc prev options) in
-        option##selected <- Js._true ;
+        option##.selected := Js._true ;
         load_lesson ~loading: true ()
     | _ -> Lwt.return ()
   end ;
   Manip.appendChild navigation_div selector ;
   disable_with_button_group (Tyxml_js.To_dom.of_select selector) group ;
-  (Tyxml_js.To_dom.of_select selector)##onchange <-
+  (Tyxml_js.To_dom.of_select selector)##.onchange :=
     Dom_html.handler (fun _ -> Lwt.async (load_lesson ~loading: true) ; Js._true) ;
   begin button
       ~group ~state: next_button_state ~container: navigation_div
       ~theme: "black" ~icon: "right" "Next" @@ fun () ->
     let selector = Tyxml_js.To_dom.of_select selector in
-    let id = Js.to_string selector##value in
+    let id = Js.to_string selector##.value in
     match prev_and_next id with
     | _, Some next ->
         let option = Tyxml_js.To_dom.of_option (List.assoc next options) in
-        option##selected <- Js._true ;
+        option##.selected := Js._true ;
         load_lesson ~loading: true ()
     | _ -> Lwt.return ()
   end ;
@@ -249,7 +249,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
           | [] -> raise Not_found
           | (id, _) :: _ -> id in
       let option = Tyxml_js.To_dom.of_option (List.assoc id options) in
-      option##selected <- Js._true ;
+      option##.selected := Js._true ;
       load_lesson ~loading: false ()
     with Not_found -> failwith "lesson not found"
   end >>= fun () ->
@@ -375,7 +375,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     end ;
     let option =
       Tyxml_js.To_dom.of_option (List.assoc tutorial_name options) in
-    option##selected <- Js._true ;
+    option##.selected := Js._true ;
     let step = try
         List.nth tutorial_steps step_id
       with _ -> failwith "unknown step" in
@@ -438,9 +438,9 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   Manip.appendChild navigation_div selector ;
   disable_with_button_group (Tyxml_js.To_dom.of_select selector)
     toplevel_buttons_group ;
-  dom_selector##onchange <-
+  dom_selector##.onchange :=
     Dom_html.handler (fun _ ->
-        let id = Js.to_string (dom_selector##value) in
+        let id = Js.to_string (dom_selector##.value) in
         Lwt.async (load_tutorial id 0) ;
         Js._true) ;
   begin button
@@ -564,12 +564,12 @@ let init_sync_token button_state =
          with Not_found ->
            Lwt_request.get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
            let token = Js.string token in
-           let json = Js._JSON##parse (token) in
+           let json = Js._JSON##(parse token) in
            let token = Json_repr_browser.Json_encoding.destruct token_format json in
            Learnocaml_local_storage.(store sync_token) token ;
            Lwt.return token
        end >>= fun token ->
-       input##value <- Js.string token ;
+       input##.value := Js.string token ;
        enable_button button_state ;
        Lwt.return ())
     (fun _ -> Lwt.return ())
@@ -598,7 +598,7 @@ let sync () =
     let id = "learnocaml-save-token-field" in
     let input = find_component id in
     let input = Tyxml_js.To_dom.of_input input in
-    Js.to_string input ## value in
+    Js.to_string input ##. value in
   let req = Server_caller.fetch_save_file ~token in
   let local_save_file = get_state_as_save_file () in
   req >>= fun server_save_file ->
@@ -629,7 +629,7 @@ let () =
         Json_repr_browser.Json_encoding.construct
           Learnocaml_sync.save_file_enc
           (get_state_as_save_file ()) in
-      Js._JSON##stringify (json) in
+      Js._JSON##(stringify json) in
     Learnocaml_common.fake_download ~name ~contents ;
     Lwt.return ()
   end ;
@@ -640,7 +640,7 @@ let () =
     let save_file =
       Json_repr_browser.Json_encoding.destruct
         Learnocaml_sync.save_file_enc
-        (Js._JSON##parse (contents)) in
+        (Js._JSON##(parse contents)) in
     set_state_from_save_file save_file ;
     Lwt.return ()
   end ;

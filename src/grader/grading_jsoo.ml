@@ -25,24 +25,24 @@ let get_grade
     exercise =
   let t, u = Lwt.task () in
   let worker = Worker.create "js/learnocaml-grader-worker.js" in
-  Lwt.on_cancel t (fun () -> worker##terminate ()) ;
+  Lwt.on_cancel t (fun () -> worker##terminate) ;
   let onmessage (ev : Json_repr_browser.Repr.value Worker.messageEvent Js.t) =
-    let json = ev##data in
+    let json = ev##.data in
     begin match Json_repr_browser.Json_encoding.destruct from_worker_enc json with
       | Callback text -> callback text
       | Answer (report, stdout, stderr, outcomes) ->
-          worker##terminate () ;
+          worker##terminate ;
           Lwt.wakeup u (report, stdout, stderr, outcomes)
     end ;
     Js._true
   in
-  worker##onmessage <- Dom.handler onmessage ;
+  worker##.onmessage := Dom.handler onmessage ;
   fun solution ->
     let req = { exercise ; solution } in
     let json = Json_repr_browser.Json_encoding.construct to_worker_enc req in
-    worker##postMessage (json) ;
+    worker##(postMessage json) ;
     let timer =
       Lwt.bind (Lwt_js.sleep timeout) @@ fun () ->
-      worker##terminate () ;
+      worker##terminate ;
       Lwt.fail Timeout in
     Lwt.pick [ timer ; t ]

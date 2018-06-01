@@ -1,24 +1,3 @@
+ppx_js = [ "-ppx" "%{js_of_ocaml-ppx_FULL_DST_DIR}%/ppx.exe --as-ppx" ]
 
-optcomp_opt = %string(strings = [
-  "-let ocaml_full_version=("
-    ocaml_major_version ","
-    ocaml_minor_version ","
-    ocaml_point_version
-  ")"
-])
-
-camlp4_optcomp_js = [
-  "camlp4o"
-  "%{optcomp_FULL_DST_DIR}%/optcomp.cma" optcomp_opt
-  "%{js_of_ocaml-camlp4_FULL_DST_DIR}%/pa_js.cma"
-]
-
-camlp4_js = [
-  "camlp4o"
-  "%{js_of_ocaml-camlp4_FULL_DST_DIR}%/pa_js.cma"
-]
-
-camlp4_optcomp = [
-  "camlp4o"
-  "%{optcomp_FULL_DST_DIR}%/optcomp.cma" optcomp_opt
-]
+ppx_lang = [ "-ppx" %asm_exe( p = "ppx_lang" ) ]

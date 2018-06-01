@@ -39,10 +39,10 @@ let indent_ocaml_textarea textbox =
     | [] -> assert false
     | (i,(lo,up))::_ when up >= c -> c,i,lo,up
     | (_,(lo,up))::rem -> find rem c in
-  let v = textbox##value in
+  let v = textbox##.value in
   let pos =
-    let c1 = (Obj.magic textbox)##selectionStart
-    and c2 = (Obj.magic textbox)##selectionEnd in
+    let c1 = (Obj.magic textbox)##.selectionStart
+    and c2 = (Obj.magic textbox)##.selectionEnd in
     if Js.Opt.test (Obj.magic c1) && Js.Opt.test (Obj.magic c2)
     then begin
       let l = loop (Js.to_string v) [] (0,0) in
@@ -53,7 +53,7 @@ let indent_ocaml_textarea textbox =
     | None -> (fun _ -> true)
     | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) -> (fun l -> l>=(line1+1) && l<=(line2+1)) in
   let v = indent_caml (Js.to_string v) f in
-  textbox##value<-Js.string v;
+  textbox##.value:=Js.string v;
   begin match pos with
     | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) ->
       let l = loop v [] (0,0) in
@@ -61,8 +61,8 @@ let indent_ocaml_textarea textbox =
       let (lo2'',up2'') = List.assoc line2 l in
       let n1 = max (c1 + up1'' - up1) lo1'' in
       let n2 = max (c2 + up2'' - up2) lo2'' in
-      let () = (Obj.magic textbox)##setSelectionRange(n1,n2) in
-      textbox##focus();
+      let () = (Obj.magic textbox)##(setSelectionRange n1 n2) in
+      textbox##focus;
       ()
     | None -> () end
 
@@ -82,21 +82,21 @@ type input =
     execute : string -> unit }
 
 let disable ({ textbox ; container } as input) =
-  textbox##disabled <- Js._true ;
+  textbox##.disabled := Js._true ;
   Js_utils.Manip.addClass container "disabled" ;
   input.disabled <- true
 
 let enable ({ textbox ; container } as input) =
-  textbox##disabled <- Js._false ;
+  textbox##.disabled := Js._false ;
   Js_utils.Manip.removeClass container "disabled" ;
-  if input.focused then textbox##focus () ;
+  if input.focused then textbox##focus ;
   input.disabled <- false
 
 let set { textbox } text =
-  textbox##value <- Js.string text
+  textbox##.value := Js.string text
 
 let get { textbox } =
-  Js.to_string textbox##value
+  Js.to_string textbox##.value
 
 let resize { textbox ; sizing ; on_resize } =
   match sizing with
@@ -104,33 +104,33 @@ let resize { textbox ; sizing ; on_resize } =
   | Some { line_height ; min_lines ; max_lines } ->
       on_resize () ;
       let lines =
-        let text = textbox##value in
+        let text = textbox##.value in
         let res = ref 1 in
-        for i = 0 to text##length - 1 do
-          if text##charAt (i) = Js.string "\n" then incr res
+        for i = 0 to text##.length - 1 do
+          if text##(charAt i) = Js.string "\n" then incr res
         done ;
         !res |> min max_lines |> max min_lines in
-      textbox##style##fontSize <- (Js.string (string_of_int line_height ^ "px")) ;
-      textbox##style##height <- Js.string (Printf.sprintf "%dpx" (line_height * lines))
+      textbox##.style##.fontSize := (Js.string (string_of_int line_height ^ "px")) ;
+      textbox##.style##.height := Js.string (Printf.sprintf "%dpx" (line_height * lines))
 
 let execute ({ history ; textbox ; execute } as input) =
-  let code = Js.to_string textbox##value in
+  let code = Js.to_string textbox##.value in
   Learnocaml_toplevel_history.update history code ;
   Learnocaml_toplevel_history.push history ;
-  textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
+  textbox##.value := Js.string (Learnocaml_toplevel_history.current history) ;
   resize input ;
   execute code
 
 let go_backward ({ history ; textbox } as input) =
-  Learnocaml_toplevel_history.update history (Js.to_string textbox##value) ;
+  Learnocaml_toplevel_history.update history (Js.to_string textbox##.value) ;
   Learnocaml_toplevel_history.go_backward history ;
-  textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
+  textbox##.value := Js.string (Learnocaml_toplevel_history.current history) ;
   resize input
 
 let go_forward ({ history ; textbox } as input) =
-    Learnocaml_toplevel_history.update history (Js.to_string textbox##value) ;
+    Learnocaml_toplevel_history.update history (Js.to_string textbox##.value) ;
     Learnocaml_toplevel_history.go_forward history ;
-    textbox##value <- Js.string (Learnocaml_toplevel_history.current history) ;
+    textbox##.value := Js.string (Learnocaml_toplevel_history.current history) ;
     resize input
 
 let setup
@@ -148,10 +148,10 @@ let setup
   let input =
     { textbox ; sizing ; container ; history ; on_resize ;
       focused = false ; disabled = false ; execute = execute_callback } in
-  textbox##onkeydown <- Dom_html.handler (fun e ->
-      let ctrl = Js.to_bool e##ctrlKey || Js.to_bool e##metaKey in
-      let shift = Js.to_bool e##shiftKey in
-      match e##keyCode with
+  textbox##.onkeydown := Dom_html.handler (fun e ->
+      let ctrl = Js.to_bool e##.ctrlKey || Js.to_bool e##.metaKey in
+      let shift = Js.to_bool e##.shiftKey in
+      match e##.keyCode with
       (* Enter *)
       | 13 when not (shift || ctrl) ->
           execute input ;
@@ -174,17 +174,17 @@ let setup
           Js._true
       | _ -> Js._true
     );
-  textbox##onfocus <-
+  textbox##.onfocus :=
     Dom_html.handler (fun _ ->
         if not (input.disabled) then input.focused <- true ;
         Js._true);
-  textbox##onblur <-
+  textbox##.onblur :=
     Dom_html.handler (fun _ ->
         if not (input.disabled) then input.focused <- false ;
         Js._true);
-  textbox##onkeyup <-
+  textbox##.onkeyup :=
     Dom_html.handler (fun _ -> resize input ; Js._true);
-  textbox##onchange <-
+  textbox##.onchange :=
     Dom_html.handler (fun _ -> resize input ; Js._true);
   Js_utils.Manip.replaceChildren container
     [ Tyxml_js.Of_dom.of_textArea textbox ] ;
