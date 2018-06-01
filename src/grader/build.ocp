@@ -125,6 +125,7 @@ begin program "learnocaml-grader-worker"
     "js_of_ocaml.syntax"
     "learnocaml-repository"
     "learnocaml-state"
+    "jsutils"
     "js_of_ocaml.ppx"
   ]
   files = [

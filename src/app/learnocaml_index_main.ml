@@ -637,23 +637,14 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations
 
-let set_lang () =
-  match Js.Optdef.to_option (Dom_html.window##.navigator##.language) with
-  | Some l -> Ocplib_i18n.set_lang (Js.to_string l)
-  | None ->
-      match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
-      with
-      | Some l -> Ocplib_i18n.set_lang (Js.to_string l)
-      | None -> ()
-
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
   end ;
+  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
-  set_lang ();
   set_string_translations ();
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in

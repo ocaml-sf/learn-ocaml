@@ -31,6 +31,9 @@ val js_error: 'a -> unit
 
 val reload: unit -> unit
 
+(** Gets the language configured in the browser *)
+val get_lang: unit -> string option
+
 module Manip : sig
 
   (* à la Eliom_content.Manip ... *)
