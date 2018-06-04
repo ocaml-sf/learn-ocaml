@@ -14,7 +14,7 @@ Please make sure that the following tools are available on your machine:
 - opam   (>= 2.00)
 
 To install opam, please follow the instructions described on the
-[[https://opam.ocaml.org/doc/Install.html|official opam website]].
+[Official OPAM website](https://opam.ocaml.org/doc/Install.html).
 
 The other dependencies are installed automatically by opam.
 
