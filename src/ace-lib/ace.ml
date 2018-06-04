@@ -84,6 +84,7 @@ let create_editor editor_div =
   let data =
     { editor; editor_div; marks = []; keybinding_menu = false; } in
   editor##.customData := (data, None);
+  editor##setOption (Js.string "displayIndentGuides") (Js.bool false);
   data
 
 let get_custom_data { editor } =

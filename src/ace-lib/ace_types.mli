@@ -99,6 +99,7 @@ class type ['a] editor = object
   method setSession : editSession Js.t -> unit Js.meth
   method setTheme : Js.js_string Js.t -> unit Js.meth
   method setValue : Js.js_string Js.t -> unit Js.meth
+  method setOption : Js.js_string Js.t -> 'b Js.t -> unit Js.meth
   method toggleCommentLines : unit Js.meth
   method focus : unit Js.meth
   method setFontSize : int -> unit Js.meth
