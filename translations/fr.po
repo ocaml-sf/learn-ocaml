@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-06-01 18:53+0200\n"
+"PO-Revision-Date: 2018-06-04 13:30+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -52,7 +52,7 @@ msgstr "@[<v 2>Échec: %a@]"
 
 #: src/state/learnocaml_report.ml:530,56--78
 msgid "@[<v 2>Warning: %a@]"
-msgstr "@[<v 2>Attention: %a@]"
+msgstr "@[<v 2>Avertissement: %a@]"
 
 #: src/state/learnocaml_report.ml:532,58--82
 msgid "@[<v 2>Important: %a@]"
