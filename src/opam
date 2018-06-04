@@ -8,7 +8,7 @@ bug-reports: "https://github.com/OCamlPro/learn-ocaml/issues"
 dev-repo: "git://git@github.com:OCamlPro/learn-ocaml"
 depends: [
   "ocamlfind" {build}
-  "ocp-build" {build}
+  "ocp-build" {build & != "1.99.20-beta"}
   "base64"
   "ezjsonm"
   "js_of_ocaml" {= "3.1.0" }
