@@ -85,3 +85,56 @@ the documentation. In any case, be advised there exists security flaws
 in the Docker daemon (see
 [documentation](https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface)).
 
+## Manual compilation
+
+Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
+
+* Install the dependencies using:
+  - if you have opam >=2.0 available:
+``
+opam switch create . --deps && opam install opam-installer && eval $(opam env)
+``
+  - otherwise:
+``
+make build-deps
+``
+(You may want to first read the script `install-opam-deps.sh` to know what it does.)
+
+* Compile the app using:
+```
+make
+```
+
+You can customise the exercise repository and output directory using
+make variables ```REPO_DIR``` and ```DEST_DIR```. By default, the
+repository used is an included demo repository. The user contributed
+exercises of the public platform is in the github
+[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository)
+repository. An example configuration is
+
+```
+make REPO_DIR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml
+```
+
+* Then either put the resulting directory ```www/``` behind a Web server.
+
+Either this step or the next is mandatory. Indeed, if you try to open
+the ```index.html``` file directly from the local file system, it will
+fail for security restrictions enforced by modern Web browsers. Hence,
+you need a local web server.
+
+* If you do not have a Web server configured, you can probably use some
+  other tool that is already present on your machine. For instance,
+  running ```python3 -m http.server 9090``` or ```php -S
+  localhost:9090``` in the ```www``` directory and pointing you browser
+  to ```http://localhost:9090/``` should do the job.
+
+* Or alternatively, use the provided minimal server, that also does the job,
+  and includes a minimal server-side synchronization mechanism.
+
+You can launch it via
+
+```
+./learnocaml-simple-server.byte
+```
+
