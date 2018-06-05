@@ -13,7 +13,7 @@ bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 depends: [
   "ocaml" {>= "4.05.0"}
   "ocamlfind" {build}
-  "ocp-build" {build & != "1.99.20-beta"}
+  "ocp-build" {build & >= "1.99.19-beta"}
   "base64"
   "ezjsonm"
   "js_of_ocaml" {= "3.1.0" }

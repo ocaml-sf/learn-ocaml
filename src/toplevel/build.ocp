@@ -33,10 +33,9 @@ end
 begin library "learnocaml-toplevel-history"
   requires = [
     "ocplib-json-typed"
-    "js_of_ocaml.ppx"
   ]
   files = [
-    "learnocaml_toplevel_history.ml" ( comp = ppx_js )
+    "learnocaml_toplevel_history.ml"
   ]
 end
 
