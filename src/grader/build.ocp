@@ -138,7 +138,6 @@ begin program "learnocaml-grader-worker"
       sources = %byte_exe( p = "learnocaml-grader-worker" )
       commands = [ {
         "js_of_ocaml"
-           "+weak.js"
            "+cstruct/cstruct.js"
            "+dynlink.js"
            "+toplevel.js"
