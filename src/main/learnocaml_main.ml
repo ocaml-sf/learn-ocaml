@@ -128,7 +128,7 @@ module Args = struct
 
     let contents_dir =
       let default =
-        readlink (Filename.dirname (Filename.dirname (Sys.argv.(0)))
+        readlink (Filename.dirname (Filename.dirname (Sys.executable_name))
                   /"share"/"learn-ocaml"/"www")
       in
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
