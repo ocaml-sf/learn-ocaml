@@ -59,11 +59,12 @@ learn-ocaml.install:
 opaminstall: build learn-ocaml.install
 	@opam-installer --prefix `opam var prefix` learn-ocaml.install
 
-docker-image: Dockerfile learn-ocaml.opam
+docker-images: Dockerfile learn-ocaml.opam
 	@rm -rf docker
 	@git clone . docker
 	@cp Dockerfile docker
-	@docker build -t learn-ocaml docker
+	@docker build -t learn-ocaml-compilation --target compilation docker
+	@docker build -t learn-ocaml --target program docker
 	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
 clean:
