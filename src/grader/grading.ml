@@ -24,13 +24,13 @@ let () =
     (function
       | Internal_error (msg, error) ->
           let msg =
-            Printf.sprintf "Internal error %s:\n\n%s\n%!"
+            Printf.sprintf [%if"Internal error %s:\n\n%s\n%!"]
               msg error.Toploop_ext.msg in
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
       | User_code_error error ->
           let msg =
-            Printf.sprintf "Error in user code:\n\n%s\n%!" error.Toploop_ext.msg in
+            Printf.sprintf [%if"Error in user code:\n\n%s\n%!"] error.Toploop_ext.msg in
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
       | _ -> None)
@@ -94,30 +94,30 @@ let get_grade ?callback ?timeout ~divert exo code =
         fail err in
 
   let result = try
-      handle_error (internal_error "while preparing the tests") @@
+      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         {|let print_html _ = assert false|};
 
-      set_progress "Loading the prelude." ;
-      handle_error (internal_error "while loading the prelude") @@
+      set_progress [%i"Loading the prelude."] ;
+      handle_error (internal_error [%i"while loading the prelude"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
         (Learnocaml_exercise.(get prelude) exo) ;
 
-      set_progress "Preparing the test environment." ;
-      handle_error (internal_error "while preparing the tests") @@
+      set_progress [%i"Preparing the test environment."] ;
+      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
         (Learnocaml_exercise.(get prepare) exo) ;
 
-      set_progress "Loading your code." ;
+      set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
 
-      set_progress "Loading the solution." ;
-      handle_error (internal_error "while loading the solution") @@
+      set_progress [%i"Loading the solution."] ;
+      handle_error (internal_error [%i"while loading the solution"]) @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
         (Learnocaml_exercise.(get solution) exo) ;
 
-      set_progress "Preparing to launch the tests." ;
+      set_progress [%i"Preparing to launch the tests."] ;
       Introspection.allow_introspection ~divert ;
       Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
       let get_result =
@@ -128,7 +128,7 @@ let get_grade ?callback ?timeout ~divert exo code =
         [%ty: string]
         set_progress ;
       Introspection.insert_in_env "timeout" [%ty: int option] timeout ;
-      handle_error (internal_error "while preparing the tests") @@
+      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Test_lib = Test_lib.Make(struct\n\
         \  let results = results\n\
@@ -136,11 +136,11 @@ let get_grade ?callback ?timeout ~divert exo code =
         \  let timeout = timeout\n\
         \  module Introspection = Introspection\n\
          end)" ;
-      handle_error (internal_error "while preparing the tests") @@
+      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Report = Learnocaml_report" ;
-      set_progress "Launching the test bench." ;
-      handle_error (internal_error "while testing your solution") @@
+      set_progress [%i"Launching the test bench."] ;
+      handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
         (Learnocaml_exercise.(get test) exo) ;
 

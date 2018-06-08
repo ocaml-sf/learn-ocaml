@@ -52,13 +52,14 @@ begin library "embedded_cmis"
 end
 
 begin library "grading"
-  comp_requires = "ppx_metaquot:asm"
+  comp_requires = [ "ppx_metaquot:asm" "ppx_ocplib_i18n:asm" ]
   link += [ "-linkall" ]
   requires = [
     "testing"
     "ppx_metaquot"
     "ocplib-ocamlres.runtime"
     "embedded_cmis"
+    "ocplib_i18n"
   ]
   build_rules = [
     "embedded_grading_cmis.ml" (
@@ -71,7 +72,7 @@ begin library "grading"
   ]
   files = [
     "embedded_grading_cmis.ml"
-    "grading.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
+    "grading.ml" ( comp += [ ppx_ocplib_i18n "-ppx" %asm_exe( p = "ppx_metaquot") ] )
   ]
 end
 
@@ -124,6 +125,7 @@ begin program "learnocaml-grader-worker"
     "js_of_ocaml.syntax"
     "learnocaml-repository"
     "learnocaml-state"
+    "jsutils"
     "js_of_ocaml.ppx"
   ]
   files = [

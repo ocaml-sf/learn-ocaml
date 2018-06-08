@@ -10,6 +10,28 @@ begin library "jsutils"
   ]
 end
 
+begin program "ppx_ocplib_i18n"
+  has_asm = true
+  has_byte = false
+  requires = [
+    "compiler-libs.common"
+  ]
+  files = [
+    "ppx_ocplib_i18n.ml" ( more_deps = [ "../../translations/fr.po" ] )
+  ]
+end
+
+begin library "ocplib_i18n"
+  comp_requires = "ppx_ocplib_i18n:asm"
+  requires = "ppx_ocplib_i18n"
+  has_asm = true
+  has_byte = true
+  files = [
+    "ocplib_i18n.ml" ( comp = ppx_ocplib_i18n )
+  ]
+end
+
+
 begin library "xor"
   has_asm = true
   files = [
