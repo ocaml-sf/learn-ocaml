@@ -16,14 +16,14 @@ platform using your local directory of exercises.
 
 All the files used in that tutorial are available on a GIT repository:
 
-```
+```bash
 git clone git@github.com:yurug/learn-ocaml-tutorial.git
 ```
 
 Each step of the tutorial is a branch in the repository. Therefore,
 do
 
-```
+```bash
 git checkout step-1
 ```
 
@@ -68,7 +68,7 @@ The complete format specification for exercise description is given in
   exercises `exo1` and `exo2`. The file `index.json` puts some structure
   over this set of exercises, for instance:
 
-```
+```json
 {
   "learnocaml_version": "1",
   "groups":
@@ -118,7 +118,7 @@ real effort from the student: any valid OCaml code will be a valid
 answer for this exercise.
 
 Let us focus on `test.ml`:
-```
+```ocaml
 open Test_lib
 open Report
 
@@ -162,7 +162,7 @@ give 1 point to the student.
    directory.
 2. Update index.json
 3. Build and run the new instance of your local learn-ocaml platform:
-```
+```ocaml
 learn-ocaml build; learn-ocaml serve
 ```
 
@@ -173,13 +173,13 @@ on `http://localhost:8080`. Click on grade to get your point!
 
 Let us now move to the development a basic grader. We ask the student
 to implement the identity function and provide the following `template.ml`:
-```
+```ocaml
 let identity x = "Put your code here"
 ```
 
 Our goal is to check that this function is modified by the student
 in such a way that it behaves as our `solution.ml`:
-```
+```ocaml
 let identity x = x
 ```
 
@@ -191,7 +191,7 @@ the student gets one point.
 
 Assuming that we choose `int` for this ground type, the behavior described
 in the previous paragraph is implemented as follows:
-```
+```ocaml
 open Test_lib
 open Report
 
