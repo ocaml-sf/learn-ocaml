@@ -153,7 +153,7 @@ an informative report.
 
 In that example, we do not test the user code: therefore only the
 typechecking and the sanity checks are performed. If these checks
-pass, then the report generate the message `That was easy!` and
+pass, then the report generates the message `That was easy!` and
 give 1 point to the student.
 
 ### Do it yourself!
