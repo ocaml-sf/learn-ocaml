@@ -33,6 +33,11 @@ First, clone the current learn-ocaml source tree:
 git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
 
+If you do not have a GitHub account, do instead:
+```
+git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
+```
+
 Second, compile and install the platform:
 ```
 make && make opaminstall
