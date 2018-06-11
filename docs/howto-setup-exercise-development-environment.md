@@ -12,6 +12,7 @@ Please make sure that the following tools are available on your machine:
 - git    (>= 2.00)
 - make   (>= 4)
 - opam   (>= 2.00)
+- ocaml  (>= 4.05.0)
 
 To install opam, please follow the instructions described on the
 [Official OPAM website](https://opam.ocaml.org/doc/Install.html).
