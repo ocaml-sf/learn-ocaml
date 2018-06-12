@@ -41,8 +41,11 @@ git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
 
 Second, compile and install the platform:
 ```
-make && make opaminstall
+make build-deps && make && make opaminstall
 ```
+
+Notice that the `make build-deps` command will probably ask for the
+installation of required opam packages.
 
 At this point, you should get a working `learn-ocaml` program in
 your path. Try:
