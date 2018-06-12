@@ -54,6 +54,7 @@ learn-ocaml.install:
 	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
 	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
 	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
+	@(cd static && find js/mathjax -name '*.js' -exec echo '  "static/{}" {"www/{}"}' ';'; ) >>$@
 	@echo ']' >>$@
 
 # Generates up-to-date translation template for lang % from the sources
