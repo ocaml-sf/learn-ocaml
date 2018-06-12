@@ -374,7 +374,7 @@ let print_html_tutorial ~tutorial_name tutorial =
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest
     |  Math code :: rest ->
-        Format.fprintf ppf "<code data-math>%a</code>" pp_escaped code ;
+        Format.fprintf ppf "<script type=\"math/asciimath\">%a</script>" pp_escaped code ;
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest
     |  Emph text :: rest ->

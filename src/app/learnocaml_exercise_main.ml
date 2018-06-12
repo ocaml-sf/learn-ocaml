@@ -234,8 +234,26 @@ let () =
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        let mathjax_url =
-         "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.1.0/MathJax.js\
-          ?config=AM_HTMLorMML-full"
+         "js/mathjax/MathJax.js"
+       in
+       let mathjax_config =
+         "MathJax.Hub.Config({\n\
+         \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
+         \  extensions: [],\n\
+         \  elements: [\"learnocaml-exo-tab-text\"],\n\
+         \  showMathMenu: false,\n\
+         \  showMathMenuMSIE: false,\n\
+         \  \"HTML-CSS\": {\n\
+         \    imageFont: null\n\
+         \  }
+          });"
+        (* the following would allow comma instead of dot for the decimal separator,
+           but should depend on the language the exercise is in, not the language of the
+           app
+           "AsciiMath: {\n\
+           \  decimal: \"" ^[%i"."]^ "\"\n\
+            },\n"
+         *)
        in
        let html = Format.asprintf
            "<!DOCTYPE html>\
@@ -243,6 +261,7 @@ let () =
             <title>%s - exercise text</title>\
             <meta charset='UTF-8'>\
             <link rel='stylesheet' href='css/learnocaml_standalone_description.css'>\
+            <script type='text/x-mathjax-config'>%s</script>
             <script type='text/javascript' src='%s'></script>\
             </head>\
             <body>\
@@ -250,6 +269,7 @@ let () =
             </body>\
             </html>"
            (Learnocaml_exercise.(get title) exo)
+           mathjax_config
            mathjax_url
            (Learnocaml_exercise.(get descr) exo) in
        d##open_;
