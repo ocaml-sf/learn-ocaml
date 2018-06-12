@@ -4,7 +4,7 @@ Technical documentation about the grading infrastructure
 If you are a beginner, please read the tutorial
 `howto-write-exercises.md` first.
 
-This section explains how to write tests for exercices, using the modules
+This section explains how to write tests for exercises, using the modules
 `Test_lib`, `Introspection` and `Report` of the grader.
 
 # `test.ml` format
@@ -34,7 +34,7 @@ let () =
 
 ```
 
-The values `exercice_x` are values of type `Learnocaml_report.report`, which is
+The values `exercise_x` are values of type `Learnocaml_report.report`, which is
 a representation of the report given by the grader. In this example, each of
 these values are refering to a specific question from the exercise. Their
 content is detailed in the next section. These reports are then given to the
