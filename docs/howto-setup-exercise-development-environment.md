@@ -41,7 +41,7 @@ git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
 
 Second, compile and install the platform:
 ```
-make build-deps && make && make opaminstall
+opam install . --deps && make && make opaminstall
 ```
 
 Notice that the `make build-deps` command will probably ask for the
