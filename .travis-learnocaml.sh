@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 
-bash -c '. .travis-ocaml.sh && make build-deps && make PROCESSING_JOBS=1 && make opaminstall'
+
+. .travis-ocaml.sh
+opam install -y opam-devel
+opam install . -y --deps
+make PROCESSING_JOBS=1
+make opaminstall
