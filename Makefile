@@ -32,9 +32,12 @@ process-repo: install
           -dump-outputs ${EXERCISES_DIR} \
           -dump-reports ${EXERCISES_DIR}
 
-install:
+.PHONY: static
+static:
+	@${MAKE} -C static
+
+install: static
 	@mkdir -p ${DEST_DIR}
-	@${MAKE} -C  static
 	cp -r static/* ${DEST_DIR}
 	cp ${LESSONS_DIR}/* ${DEST_DIR}
 	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
@@ -44,7 +47,7 @@ install:
 	@cp _obuild/*/learnocaml-simple-server.byte .
 
 .PHONY: learn-ocaml.install
-learn-ocaml.install:
+learn-ocaml.install: static
 	@echo 'bin: [' >$@
 	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
 	@echo ']' >>$@
