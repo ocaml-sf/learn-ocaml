@@ -1,11 +1,11 @@
 #!/bin/sh
 
 opam list --installed depext || opam install depext
-opam pin add --yes --no-action ocp-indent-nlfork \
-     "https://github.com/OCamlPro/ocp-indent.git#master"
-opam pin add --yes --no-action ocp-ocamlres \
-	   "https://github.com/OCamlPro/ocp-ocamlres.git"
-opam pin add --yes --no-action ocplib-json-typed 0.6
+#opam pin add --yes --no-action ocp-indent-nlfork \
+#     "https://github.com/OCamlPro/ocp-indent.git#master"
+#opam pin add --yes --no-action ocp-ocamlres \
+#	   "https://github.com/OCamlPro/ocp-ocamlres.git"
+#opam pin add --yes --no-action ocplib-json-typed 0.6
 opam pin add --yes --no-action learn-ocaml-deps src
 opam depext learn-ocaml-deps
 if opam list --installed learn-ocaml-deps
