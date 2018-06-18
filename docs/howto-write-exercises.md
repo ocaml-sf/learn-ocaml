@@ -60,7 +60,7 @@ specific shape, illustrated by the following ascii art:
 ```
 
 The complete format specification for exercise description is given in
-[docs/exercices_format.md](exercices_format.md).
+[docs/exercices_format.md](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/exercices_format.md).
 
 - The directory `exercises` must contain the descriptions of the
   exercises. Each exercise description is stored in a dedicated
