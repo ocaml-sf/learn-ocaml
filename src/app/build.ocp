@@ -9,10 +9,11 @@ begin library "learnocaml-sync"
 end
 
 begin library "learnocaml-app-common"
+  comp_requires = "ppx_ocplib_i18n:asm"
   files = [
     "learnocaml_local_storage.ml" ( comp = ppx_js )
     "server_caller.ml" ( comp = ppx_js )
-    "learnocaml_common.ml" ( comp = ppx_js )
+    "learnocaml_common.ml" ( comp = [ ppx_js ppx_ocplib_i18n ] )
   ]
   requires = [
     "ocplib-json-typed.browser"
@@ -24,10 +25,12 @@ begin library "learnocaml-app-common"
     "learnocaml-repository"
     "learnocaml-state"
     "learnocaml-sync"
+    "ocplib_i18n"
   ]
 end
 
 begin program "learnocaml-main"
+  comp_requires = "ppx_ocplib_i18n:asm"
   requires = [
     "ezjsonm"
     "ace"
@@ -35,9 +38,10 @@ begin program "learnocaml-main"
     "learnocaml-app-common"
     "learnocaml-toplevel"
     "js_of_ocaml.ppx"
+    "ocplib_i18n"
   ]
   files = [
-    "learnocaml_index_main.ml" ( comp = ppx_js )
+    "learnocaml_index_main.ml" ( comp = [ ppx_js ppx_ocplib_i18n ])
   ]
   build_rules = [
     "%{learnocaml-main_FULL_DST_DIR}%/learnocaml-main.js" (
@@ -45,7 +49,6 @@ begin program "learnocaml-main"
       sources = %byte_exe( p = "learnocaml-main" )
       commands = [ {
         "js_of_ocaml"
-           "+weak.js"
            "+cstruct/cstruct.js"
            "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
            %byte_exe( p = "learnocaml-main" )
@@ -55,6 +58,7 @@ begin program "learnocaml-main"
 end
 
 begin program "learnocaml-exercise"
+  comp_requires = "ppx_ocplib_i18n:asm"
   requires = [
     "ezjsonm"
     "grading-jsoo"
@@ -63,9 +67,10 @@ begin program "learnocaml-exercise"
     "learnocaml-app-common"
     "learnocaml-toplevel"
     "js_of_ocaml.ppx"
+    "ocplib_i18n"
   ]
   files = [
-    "learnocaml_exercise_main.ml" ( comp = ppx_js )
+    "learnocaml_exercise_main.ml" ( comp = [ ppx_ocplib_i18n ppx_js ] )
   ]
   build_rules = [
     "%{learnocaml-exercise_FULL_DST_DIR}%/learnocaml-exercise.js" (
@@ -73,7 +78,6 @@ begin program "learnocaml-exercise"
       sources = %byte_exe( p = "learnocaml-exercise" )
       commands = [ {
         "js_of_ocaml"
-           "+weak.js"
            "+cstruct/cstruct.js"
            "%{ace_FULL_SRC_DIR}%/ace_bindings.js"
            %byte_exe( p = "learnocaml-exercise" )

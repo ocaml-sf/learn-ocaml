@@ -54,6 +54,16 @@ let is_hidden div =
 
 let reload () = window##.location##reload
 
+let get_lang () =
+  match Js.Optdef. to_option (Dom_html.window##.navigator##.language) with
+  | Some l -> Some (Js.to_string l)
+  | None ->
+      match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
+      with
+      | Some l -> Some (Js.to_string l)
+      | None -> None
+
+
 module Manip = struct
 
   let option_map f = function None -> None | Some x -> Some (f x)

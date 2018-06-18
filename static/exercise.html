@@ -27,7 +27,7 @@
          Set to .loading while loading, then to .loaded. -->
     <div id="learnocaml-exo-loading" class="loading-layer initial">
       <div id="chamo"><img id="chamo-img" src="icons/tryocaml_loading_5.gif"></div>
-      <div class="messages"><ul><li>Preparing the environment</li></ul></div>
+      <div class="messages"><ul><li id="txt_preparing">Preparing the environment</li></ul></div>
     </div>
     <script language="JavaScript">
       var n = Math.floor (Math.random () * 7.99) + 1;
@@ -122,10 +122,11 @@
              style="position: absolute; top: 50%; left: 50%;
                     margin: -100px 0 0 -100px; width: 200px;
                     opacity: 0.2">
-        <span style="position: absolute; top: 50%; margin: -12px 0 0 0;
+        <span id="txt_grade_report"
+              style="position: absolute; top: 50%; margin: -12px 0 0 0;
                      line-height: 24px; font-size: 24px; text-shadow: 0 0 5px #888;
                      width: 100%; text-align: center;">
-          Click the Grade button to get your report
+          <!--Click the Grade button to get your report-->
         </span>
       </div>
       <!-- Any tab can be added. -->

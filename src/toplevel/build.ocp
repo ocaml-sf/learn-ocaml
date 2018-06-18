@@ -19,7 +19,6 @@ begin program "learnocaml-toplevel-worker"
       sources = %byte_exe( p = "learnocaml-toplevel-worker" )
       commands = [ {
         "js_of_ocaml"
-           "+weak.js"
            "+dynlink.js"
            "+toplevel.js"
            "--toplevel"
@@ -33,10 +32,9 @@ end
 begin library "learnocaml-toplevel-history"
   requires = [
     "ocplib-json-typed"
-    "js_of_ocaml.ppx"
   ]
   files = [
-    "learnocaml_toplevel_history.ml" ( comp = ppx_js )
+    "learnocaml_toplevel_history.ml"
   ]
 end
 

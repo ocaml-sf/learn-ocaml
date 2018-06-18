@@ -1,10 +1,12 @@
 begin library "learnocaml-state"
+  comp_requires = "ppx_ocplib_i18n:asm"
   has_asm = false
   files = [
-    "learnocaml_report.ml"
+    "learnocaml_report.ml" ( comp = ppx_ocplib_i18n )
     "learnocaml_exercise_state.ml"
   ]
   requires = [
     "learnocaml-repository"
+    "ocplib_i18n"
   ]
 end

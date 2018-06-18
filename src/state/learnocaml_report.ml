@@ -217,17 +217,17 @@ let format_report items =
           | (n, false) ->
               "success folded",
               [ E ("span", [ "class", "score" ],
-                   [ T (Format.asprintf "Completed, %d pts" n) ]) ],
+                   [ T (Format.asprintf [%if"Completed, %d pts"] n) ]) ],
               unfolder
           | (0, true) ->
               "failure",
               [ E ("span", [ "class", "score" ],
-                   [ T "Failed" ]) ],
+                   [ T [%i"Failed"] ]) ],
               folder
           | (s, true) ->
               "warning",
               [ E ("span", [ "class", "score" ],
-                   [ T (Format.asprintf "Incomplete, %d pts" s) ]) ],
+                   [ T (Format.asprintf [%if"Incomplete, %d pts"] s) ]) ],
               folder in
         result,
         E ("div", [ "class", "section " ^ result_class ],
@@ -251,17 +251,17 @@ let format_report items =
   let result_class, score = match result with
     | (0, false) -> "informative", []
     | (0, true) ->
-        "failure", [ T "Exercise failed" ;
+        "failure", [ T [%i"Exercise failed"] ;
                      E ("span", [ "class", "score" ],
-                        [ T "0 pt" ]) ]
+                        [ T [%i"0 pt"] ]) ]
     | (n, false) ->
-        "success", [ T "Exercise complete" ;
+        "success", [ T [%i"Exercise complete"] ;
                      E ("span", [ "class", "score" ],
-                        [ T (Format.asprintf "%d pts" n) ]) ]
+                        [ T (Format.asprintf [%if"%d pts"] n) ]) ]
     | (s, true) ->
-        "warning", [ T "Exercise incomplete" ;
+        "warning", [ T [%i"Exercise incomplete"] ;
                      E ("span", [ "class", "score" ],
-                        [ T (Format.asprintf "%d pts" s) ]) ] in
+                        [ T (Format.asprintf [%if"%d pts"] s) ]) ] in
 
   let js = "var div = this.parentElement.parentElement;\
             if (div.classList.contains ('folded')) {\
@@ -526,11 +526,11 @@ let print_report ppf items =
     Format.pp_print_list format_item ppf items
   and format_item ppf = function
     | Section (text, contents) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@]@,%a@]" print_text text print_report contents
-    | Message (text, Failure) -> Format.fprintf ppf "@[<v 2>Failure: %a@]" print_text text
-    | Message (text, Warning) -> Format.fprintf ppf "@[<v 2>Warning: %a@]" print_text text
+    | Message (text, Failure) -> Format.fprintf ppf [%if"@[<v 2>Failure: %a@]"] print_text text
+    | Message (text, Warning) -> Format.fprintf ppf [%if"@[<v 2>Warning: %a@]"] print_text text
     | Message (text, Informative) -> Format.fprintf ppf "@[<v 2>%a@]" print_text text
-    | Message (text, Important) -> Format.fprintf ppf "@[<v 2>Important: %a@]" print_text text
-    | Message (text, Success n) -> Format.fprintf ppf "@[<v 2>Success %d: %a@]" n print_text text
+    | Message (text, Important) -> Format.fprintf ppf [%if"@[<v 2>Important: %a@]"] print_text text
+    | Message (text, Success n) -> Format.fprintf ppf [%if"@[<v 2>Success %d: %a@]"] n print_text text
   and print_text ppf = function
     | (Code wa | Output wa) :: Text wb :: rest when not (String.contains (String.trim wa) '\n') ->
         print_text ppf (Text ("[" ^ String.trim wa ^ "] " ^ wb) :: rest)
