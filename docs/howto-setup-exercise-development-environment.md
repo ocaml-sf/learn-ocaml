@@ -6,6 +6,18 @@ local machine. At the end of this tutorial, you will be able to follow
 the tutorial `howto-write-an-exercise.md`. For the moment, only
 GNU/Linux and MacOS X are supported.
 
+> An alternative to following the instructions below is to use a pre-built
+> Docker container. Assuming you have an exercise repository in directory
+> `REPOSITORY` (absolute path), and a recent enough version of Docker installed,
+> use:
+>
+>     docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server altgr/learn-ocaml
+>
+> This will start an instance of the learn-ocaml server on port 80 (ignore the
+> message about 8080, this is the port used internally).
+> An example repository can be obtained in the `demo-repository` directory of
+> [learn-ocaml](https://github.com/ocaml-sf/learn-ocaml/archive/master.zip).
+
 ## Software requirements
 
 Please make sure that the following tools are available on your machine:
@@ -33,6 +45,17 @@ First, clone the current learn-ocaml source tree:
 ```
 git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
+
+Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
+ready:
+```
+opam switch create . --deps-only --locked
+eval $(opam env)
+```
+(Alternatively, use `opam install . --deps-only` to install the dependencies in
+your current opam switch, without creating a dedicated one)
+
+Then, compile and install the platform:
 
 If you do not have a GitHub account, do instead:
 ```
@@ -66,8 +89,7 @@ cd $DIR && cp -fr learn-ocaml/demo-repository my-learn-ocaml-repository
 
 Check that your installation works:
 ```
-cd $DIR/my-learn-ocaml-repository
-learn-ocaml build
+learn-ocaml build --repo my-learn-ocaml-repository
 learn-ocaml serve
 ```
 

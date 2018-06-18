@@ -1,6 +1,8 @@
 language: c
 sudo: required
-install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-ocaml.sh
-script: bash .travis-learnocaml.sh
-env:
-  - OCAML_VERSION="4.05"
+services:
+  - docker
+before_install:
+  - docker build -t learn-ocaml .
+script:
+  - sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'

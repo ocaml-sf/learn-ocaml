@@ -10,9 +10,9 @@ This software is still under development, no public announcement has been made y
 A demo is available at: [http://try.ocamlpro.com/learn-ocaml-demo/].
 
 The exercises and lessons are in another github repository:
-[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository).
+[learn-ocaml-repository](https://github.com/ocaml-sf/learn-ocaml-repository).
 
-![Build status logo](https://travis-ci.org/OCamlPro/learn-ocaml.svg)
+![Build status logo](https://travis-ci.org/ocaml-sf/learn-ocaml.svg)
 
 Howtos
 ------

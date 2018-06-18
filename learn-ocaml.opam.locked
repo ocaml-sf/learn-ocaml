@@ -36,7 +36,7 @@ depends: [
   "js_of_ocaml-lwt" {= "3.1.0"}
   "js_of_ocaml-toplevel" {= "3.1.0"}
   "js_of_ocaml-tyxml" {= "3.1.0"}
-  "ocp-indent-nlfork" {= "dev"}
+  "ocp-indent-nlfork" {= "1.5.3"}
   "ocp-ocamlres" {= "0.4"}
   "ocplib-json-typed" {= "0.6"}
   "omd" {= "1.3.1"}
