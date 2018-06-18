@@ -60,7 +60,7 @@ specific shape, illustrated by the following ascii art:
 ```
 
 The complete format specification for exercise description is given in
-[https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/exercices_format.md](learn-ocaml/docs/exercices_format.md).
+[docs/exercices_format.md](exercices_format.md).
 
 - The directory `exercises` must contain the descriptions of the
   exercises. Each exercise description is stored in a dedicated
@@ -134,10 +134,10 @@ This code is executed to grade the student answer. It has access to
 all the toplevel definitions introduced by the student answer.
 
 The interface for the module `Test_lib` can be found in
-[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/test_lib.mli](test_lib.mli).
+[test_lib.mli](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/test_lib.mli).
 
 The interface for the module `Report` can be found in
-[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_report.mli](learnocaml_report.mli).
+[learnocaml_report.mli](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_report.mli).
 
 `Test_lib.set_result` waits for the final `report`. A value of type
 `report` can be built from the constructors defined in the module
