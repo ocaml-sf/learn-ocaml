@@ -22,6 +22,15 @@ Howtos
 * [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-a-learn-ocaml-instance.md)
 
+Contacts
+--------
+
+To ask any question about how to use Learn OCaml, subscribe to
+the mailing-list [learn-ocaml-club](https://sympa.inria.fr/sympa/subscribe/learn-ocaml-club).
+
+To discuss about the development of Learn OCaml, subscribe to
+the mailing-list [learn-ocaml-dev](https://sympa.inria.fr/sympa/subscribe/learn-ocaml-dev).
+
 License and copyright
 ---------------------
 
