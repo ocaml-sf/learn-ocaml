@@ -2,50 +2,40 @@ all: build
 
 # config variables ------------------------------------------------------------
 
-# parallelism when processing the repository
-PROCESSING_JOBS ?= 4
-
-# where the result Web site will be put
-DEST_DIR ?= ${CURDIR}/www
-
-# the exercise repository to use
-REPO_DIR ?= ${CURDIR}/demo-repository
+# where the static data should be put
+PREFIX ?= /usr/local
+WWW ?= $(PREFIX)/share/learn-ocaml/www
 
 # end of config variables -----------------------------------------------------
 
-EXERCISES_DIR ?= ${REPO_DIR}/exercises
-LESSONS_DIR ?= ${REPO_DIR}/lessons
-TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
-
 build-deps:
-	sh scripts/install-opam-deps.sh
+	opam install . --deps-only --locked
 
 build:
 	@ocp-build init
 	@ocp-build
 
-process-repo: install
-	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-          -exercises-dir ${EXERCISES_DIR} \
-          -tutorials-dir ${TUTORIALS_DIR} \
-          -dest-dir ${DEST_DIR} \
-          -dump-outputs ${EXERCISES_DIR} \
-          -dump-reports ${EXERCISES_DIR}
-
 .PHONY: static
 static:
 	@${MAKE} -C static
 
+.PHONY: install
 install: static
-	@mkdir -p ${DEST_DIR}
-	cp -r static/* ${DEST_DIR}
-	cp ${LESSONS_DIR}/* ${DEST_DIR}
-	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-simple-server.byte .
-	@cp _obuild/*/learnocaml-client.byte .
+	@cp _obuild/learnocaml/learnocaml.byte ${PREFIX}/bin/learn-ocaml
+	@cp _obuild/learnocaml-client/learnocaml-client.byte ${PREFIX}/bin/learn-ocaml-client
+	@mkdir -p ${WWW}
+	@cp -r static/* ${WWW}
+	@cp _obuild/*/learnocaml-main.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-exercise.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-toplevel-worker.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-grader-worker.js ${WWW}/js/
+	@cp -r demo-repository/* ${PREFIX}/share/learn-ocaml/repository/
+	@cp scripts/complete.sh ${PREFIX}/share/bash-completion/completions/learn-ocaml
+
+uninstall:
+	@rm -f ${PREFIX}/bin/learn-ocaml
+	@rm -rf ${PREFIX}/share/learn-ocaml
+	@rm -f ${PREFIX}/share/bash-completion/completions/learn-ocaml
 
 .PHONY: learn-ocaml.install travis
 learn-ocaml.install: static
