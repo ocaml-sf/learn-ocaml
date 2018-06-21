@@ -18,7 +18,11 @@
 let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
+(*
+let allow_teacher_account_creation = ref true
 
+let auth_file () = Filename.concat !sync_dir "auth.json"
+*)
 let port = ref 8080
 
 let args = Arg.align @@
@@ -44,26 +48,20 @@ let read_static_file path =
     resolve [] path in
   let path =
     String.concat Filename.dir_sep (!static_dir :: shorten path) in
-  Lwt_io.(with_file ~mode: Input path (fun chan -> read chan))
+  Lwt_io.(with_file ~mode: Input path read)
 
 let retrieve token =
   Lwt.catch (fun () ->
       let path =
         Filename.concat !sync_dir
-          Learnocaml_sync.Token.(to_path (parse token)) in
-      Lwt_io.(with_file ~mode: Input path (fun chan -> read chan)))
+          Learnocaml_sync.Token.(to_path token) in
+      Lwt_io.(with_file ~mode:Input path (fun chan ->
+          read chan >|= fun str ->
+          let json = Ezjsonm.from_string str in
+          Json_encoding.destruct Learnocaml_sync.save_file_enc json)))
   @@ function
   | Unix.Unix_error (Unix.ENOENT, _, _) -> raise Not_found
   | e -> raise e
-
-
-let check_save_file contents =
-  try
-    let json = Ezjsonm.from_string contents in
-    let _save = Json_encoding.destruct Learnocaml_sync.save_file_enc json in
-    (* Should we do more test ?? *)
-    true
-  with _ -> false
 
 let create_token_file token =
   let path = Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token) in
@@ -71,7 +69,6 @@ let create_token_file token =
   Lwt_io.(with_file ~mode: Output ~perm:0o700 path (fun chan -> write chan ""))
 
 let store token contents =
-  let token = Learnocaml_sync.Token.parse token in
   let path =
     Filename.concat !sync_dir
       (Learnocaml_sync.Token.to_path token) in
@@ -84,9 +81,54 @@ let rec gimme () =
   if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
     gimme ()
   else
-    create_token_file token >|= fun () ->
-    Learnocaml_sync.Token.to_string token
+    create_token_file token >|= fun () -> token
 
+(* let auth_encoding =
+ *   let open Json_encoding in
+ *   let teacher_encoding =
+ *     obj2
+ *       (req "login" string)
+ *       (req "password" string)
+ *     |> conv
+ *       (fun {teacher_login; teacher_password} ->
+ *          teacher_login, teacher_password)
+ *       (fun (teacher_login, teacher_password) ->
+ *          {teacher_login; teacher_password})
+ *   in
+ *   list teacher_encoding |> conv
+ *     (fun { one_time_token = _; teachers } -> teachers)
+ *     (fun teachers -> { one_time_token = None; teachers })
+ * 
+ * let read_auth file =
+ *   let open Lwt_io in
+ *   with_file ~mode:Input file @@ fun ic ->
+ *   read ic >|= fun str ->
+ *   (Ezjsonm.from_string str |>
+ *    Json_encoding.destruct auth_encoding)
+ * 
+ * let write_auth file auth =
+ *   let open Lwt_io in
+ *   with_file ~mode:Output file @@ fun oc ->
+ *   Json_encoding.construct auth_encoding auth |> function
+ *   | `O _ | `A _ as json ->
+ *       write oc (Ezjsonm.to_string json)
+ *   | _ -> assert false
+ * 
+ * let get_auth ?(url="URL") () =
+ *   let f = auth_file () in
+ *   Lwt_unix.file_exists f >>= function
+ *   | true -> read_auth f
+ *   | false ->
+ *       let token = Learnocaml_sync.Token.random ~admin:true () in
+ *       let auth = {
+ *         one_time_token = Some token;
+ *         teachers = [];
+ *       } in
+ *       write_auth f auth >|= fun () ->
+ *       Printf.printf
+ *         "Use %s/first-login/%s to initialise a teacher account.\n%!"
+ *         url (Learnocaml_sync.Token.to_string token);
+ *       auth *)
 
 exception Too_long_body
 
@@ -111,54 +153,109 @@ let string_of_stream ?(max_size = 64 * 1024) s =
     | e -> Lwt.fail e
   end
 
+module Api = Learnocaml_api
+
+module Json_codec = struct
+  let decode enc s =
+      Ezjsonm.from_string s |>
+      Json_encoding.destruct enc
+
+  let encode enc x =
+    match Json_encoding.construct enc x with
+    | `A _ | `O _ as json -> Ezjsonm.to_string json
+    | _ -> assert false
+end
+
+open Cohttp_lwt_unix
+
+let respond_static path =
+  Lwt.catch
+    (fun () ->
+       read_static_file path >|= fun body ->
+       Ok (body, Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)))
+    (fun e ->
+       Lwt.return (Error (`Not_found, Printexc.to_string e)))
+
+let respond_json = fun x ->
+  Lwt.return (Ok (x, "application/json"))
+
+module Request_handler = struct
+
+  type 'a ret = ('a * string, Cohttp.Code.status_code * string) result Lwt.t
+
+  let map_ret f r =
+    r >|= function
+    | Ok (x, content_type) -> Ok (f x, content_type)
+    | Error (code, msg) -> Error (code, msg)
+
+  let callback
+    : type resp. resp Api.request -> resp ret
+    = function
+      | Api.Version () ->
+          respond_json "LEARNOCAML_VERSION_FILLME"
+      | Api.Static path ->
+          respond_static path
+      | Api.Static_json _ -> assert false
+      | Api.Create_token () ->
+          gimme () >>= respond_json
+      | Api.Create_teacher_token _key ->
+          gimme () >>= respond_json (* FIXME *)
+      | Api.Fetch_save token ->
+          Lwt.catch
+            (fun () -> retrieve token >>= Lwt.return_some >>= respond_json)
+            (function
+              | Not_found -> respond_json None
+              | e ->
+                  Lwt.return
+                    (Error (`Internal_server_error, Printexc.to_string e)))
+      | Api.Update_save (token, save) ->
+          (* TODO: do the merge here, server-side, with a mutex *)
+          let s = Json_codec.encode Learnocaml_sync.save_file_enc save in
+          store token s >>= fun () -> respond_json save
+      | Api.Exercise_index _token ->
+          (* TODO: check token; retrieve dedicated exercise assignment *)
+          read_static_file [Learnocaml_index.exercise_index_path] >|=
+          Ezjsonm.from_string >|=
+          Json_encoding.destruct Learnocaml_index.exercise_index_enc >>=
+          respond_json
+      | Api.Invalid_request s ->
+          Lwt.return (Error (`Bad_request, s))
+
+end
+
+module Api_server = Api.Server (Json_codec) (Request_handler)
+
 let launch () =
-  let open Lwt in
-  let open Cohttp_lwt_unix in
+  (* Learnocaml_store.init ~exercise_index:
+   *   (String.concat Filename.dir_sep
+   *      (!static_dir :: Learnocaml_index.exercise_index_path)); *)
   let callback _ req body =
     let path = Uri.path (Request.uri req) in
     let path = Stringext.split ~on:'/' path in
     let path = List.filter ((<>) "") path in
-    let respond_static path =
-      catch
-        (fun () ->
-           read_static_file path >>= fun body ->
-           let headers =
-             try
-               Cohttp.Header.init_with "Content-Type"
-                 (Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path))
-             with _ -> Cohttp.Header.init () in
-           Server.respond_string ~headers ~status:`OK ~body ())
-        (fun _ ->
-           Server.respond_not_found ()) in
-    match Request.meth req, path with
-    | `GET, [] ->
-        respond_static [ "index.html" ]
-    | `GET, [ "sync" ; "gimme" ] ->
-        gimme () >>= fun token ->
-        let body = Printf.sprintf "{\"token\":\"%s\"}" token in
-        Server.respond_string ~status:`OK ~body ()
-    | `GET, [ "sync" ; token ] when Learnocaml_sync.Token.check token ->
-        (Lwt.catch
-           (fun () ->
-              retrieve token >>= fun body ->
-              Server.respond_string ~status:`OK ~body ())
-         @@ function
-         | Not_found -> Server.respond_string ~status:`OK ~body:"" ()
-         | e -> raise e)
-    | `POST, [ "sync" ; token ] when Learnocaml_sync.Token.check token -> begin
-        string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
-        | None ->
-            Server.respond_string ~status:`Bad_request ~body: "Too much data" ()
-        | Some body ->
-            if check_save_file body then
-              store token body >>= fun () ->
-              Server.respond_string ~status:`OK ~body: "Stored." ()
-            else
-              Server.respond_string ~status:`Bad_request ~body: "Invalid save file" ()
-      end
-    | `GET, path -> respond_static path
-    | _ -> Server.respond_error ~status: `Bad_request ~body: "Bad request" () in
+    (* let cookies = Cohttp.Cookie.Cookie_hdr.extract (Cohttp.Request.headers req) in *)
+    let respond = function
+      | Ok (str, content_type) ->
+          let headers = Cohttp.Header.init_with "Content-Type" content_type in
+          Server.respond_string ~headers ~status:`OK ~body:str ()
+      | Error (status, body) ->
+          Server.respond_error ~status ~body ()
+    in
+    match req.Request.meth with
+    | `GET ->
+        Api_server.handler {Api.meth = `GET; path} >>= respond
+    | `POST ->
+        (string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
+          | Some s ->
+              Api_server.handler {Api.meth = `POST s; path} >>= respond
+          | None ->
+              respond (Error (`Bad_request, "Missing POST body")))
+    | _ ->
+        respond (Error (`Bad_request, "Unsupported method"))
+  in
   Random.self_init () ;
+  (* get_auth () >>= fun auth ->
+   * let callback = callback auth in *)
   Lwt.catch (fun () ->
       Server.create
         ~on_exn: (function

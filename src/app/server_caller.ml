@@ -17,8 +17,7 @@
 
 open Lwt.Infix
 
-exception Cannot_fetch of string
-
+(*
 let cannot_fetch msg = Lwt.fail (Cannot_fetch msg)
 
 let fetch ?message filename =
@@ -26,7 +25,7 @@ let fetch ?message filename =
     (fun () -> Lwt_request.get filename [])
     (fun exn ->
        let message = match message with
-         | None -> "cannot download " ^ filename
+         | None -> "cannot retrieve " ^ filename
          | Some message -> message in
        let msg = match exn with
          | Lwt_request.Request_failed (0, _) ->
@@ -39,7 +38,81 @@ let fetch ?message filename =
              Printf.sprintf "%s\n%s"
                message (Printexc.to_string exn) in
        Lwt.fail (Cannot_fetch msg))
+*)
+module Json_codec = struct
 
+  let decode enc s =
+    Js._JSON##(parse (Js.string s)) |>
+    Json_repr_browser.Json_encoding.destruct enc
+
+  let encode enc x =
+    let json = Json_repr_browser.Json_encoding.construct enc x in
+    Js.to_string Js._JSON##(stringify json)
+
+end
+
+module Api_client = Learnocaml_api.Client (Json_codec)
+
+
+let request req =
+  let do_req = function
+    | { Learnocaml_api.meth = `GET; path } ->
+        Lwt_request.get ?headers:None ~url:(String.concat "/" path) ~args:[]
+    | { Learnocaml_api.meth = `POST body; path } ->
+        Lwt_request.post ?headers:None ?get_args:None
+          ~url:(String.concat "/" path) ~body:(Some body)
+  in
+  Lwt.catch (fun () ->
+      Api_client.make_request (fun http_request ->
+          Lwt.catch (fun () -> do_req http_request >|= fun body -> Ok (body))
+          @@ function
+          | Lwt_request.Request_failed (code, s) ->
+              if code = 0 then
+                Lwt.return @@
+                Error (Printf.sprintf "Cannot access %s (server unreachable)" s)
+              else
+                Lwt.return @@
+                Error (Printf.sprintf "Cannot access %s (code %d)" s code)
+          | e ->
+              Lwt.return @@
+              Error (Printf.sprintf "Server request failed: %s"
+                       (Printexc.to_string e)))
+        req)
+  @@ fun e ->
+  Lwt.return @@
+  Error (Printf.sprintf "Could not decode server response: %s"
+           (Printexc.to_string e))
+
+exception Cannot_fetch of string
+
+let request_exn req =
+  request req >>= function
+  | Ok x -> Lwt.return x
+  | Error msg -> Lwt.fail (Cannot_fetch msg)
+
+(* FIXME: define proper API call *)
+let fetch_lesson_index () =
+  request_exn (Learnocaml_api.Static_json
+                 (Learnocaml_index.lesson_index_path, Learnocaml_index.lesson_index_enc))
+
+(* FIXME: define proper API call *)
+let fetch_lesson id =
+  request_exn (Learnocaml_api.Static_json
+                 (Learnocaml_index.lesson_path id, Learnocaml_lesson.lesson_enc))
+
+let fetch_exercise id =
+  request_exn (Learnocaml_api.Static_json
+                 (Learnocaml_index.exercise_path id, Learnocaml_exercise.enc))
+
+let fetch_tutorial_index () =
+  request_exn (Learnocaml_api.Static_json
+                 (Learnocaml_index.tutorial_index_path, Learnocaml_index.tutorial_index_enc))
+
+let fetch_tutorial id =
+  request_exn (Learnocaml_api.Static_json
+                 (Learnocaml_index.tutorial_path id, Learnocaml_tutorial.tutorial_enc))
+
+(*
 let fetch_json filename =
   fetch filename >>= fun text ->
   try Lwt.return (Js._JSON##(parse (Js.string text))) with Js.Error err ->
@@ -137,3 +210,4 @@ let upload_save_file ~token save_file =
 let fetch filename =
   (* erase message argument in the interface *)
   fetch filename
+*)

@@ -94,13 +94,14 @@ let display_report exo report =
 
 let sync () =
   let get_token =
-    try Lwt.return Learnocaml_local_storage.(retrieve sync_token) with
+    try
+      Learnocaml_local_storage.(retrieve sync_token) |>
+      Lwt.return
+    with
     | Not_found ->
-        Lwt_request.get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
-        let token = Js.string token in
-        let json = Js._JSON##(parse token) in
-        let token = Json_repr_browser.Json_encoding.destruct token_format json in
-        Learnocaml_local_storage.(store sync_token) token
+        Server_caller.request_exn (Learnocaml_api.Create_token ()) >|= fun token ->
+        Learnocaml_local_storage.(store sync_token) token;
+        token
   in
   let local_save_file = {
     Learnocaml_sync.all_exercise_states =
@@ -110,15 +111,19 @@ let sync () =
     all_exercise_toplevel_histories =
       Learnocaml_local_storage.(retrieve all_exercise_toplevel_histories) ;
   } in
-  token >>= fun token ->
-  Server_caller.fetch_save_file ~token >>= function
+  get_token >>= fun token ->
+  (* FIXME: once the merge is done server-side, a single call to Update_save
+     should be required *)
+  Server_caller.request_exn (Learnocaml_api.Fetch_save token) >>= function
   | None ->
       Learnocaml_local_storage.(store sync_token) token ;
-      Server_caller.upload_save_file ~token local_save_file
+      Server_caller.request_exn
+        (Learnocaml_api.Update_save (token, local_save_file))
   | Some server_save_file ->
       Learnocaml_local_storage.(store sync_token) token ;
       let save_file = Learnocaml_sync.sync local_save_file server_save_file in
-      Server_caller.upload_save_file ~token save_file
+      Server_caller.request_exn
+        (Learnocaml_api.Update_save (token, save_file))
 
 let set_string_translations () =
   let translations = [
@@ -340,7 +345,7 @@ let () =
     Learnocaml_local_storage.(store (exercise_state id))
       { Learnocaml_exercise_state.report ; grade ; solution ;
         mtime = gettimeofday () } ;
-    sync ()
+    sync () >>= fun _ -> Lwt.return_unit (* FIXME: update using fetched save *)
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -430,7 +435,7 @@ let () =
         Learnocaml_local_storage.(store (exercise_state id))
           { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
-        sync () >>= fun () ->
+        sync () >>= fun _ -> (* FIXME: don't discard fetched save *)
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;

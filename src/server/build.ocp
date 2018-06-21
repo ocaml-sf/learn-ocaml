@@ -1,3 +1,14 @@
+begin library "learnocaml-api"
+  files = [
+    "learnocaml_api.ml"
+  ]
+  requires = [
+    "ocplib-json-typed"
+    "ezjsonm"
+    "learnocaml-sync"
+  ]
+end
+
 begin library "learnocaml-server-lib"
   files = [
     "learnocaml_server.ml"
@@ -10,6 +21,7 @@ begin library "learnocaml-server-lib"
     "cohttp.lwt"
     "magic-mime"
     "learnocaml-sync"
+    "learnocaml-api"
   ]
 end
 

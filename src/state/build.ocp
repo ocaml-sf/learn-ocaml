@@ -4,6 +4,7 @@ begin library "learnocaml-state"
   files = [
     "learnocaml_report.ml" ( comp = ppx_ocplib_i18n )
     "learnocaml_exercise_state.ml"
+    (*"learnocaml_store.ml"*)
   ]
   requires = [
     "learnocaml-repository"

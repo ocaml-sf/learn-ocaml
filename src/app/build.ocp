@@ -25,6 +25,7 @@ begin library "learnocaml-app-common"
     "learnocaml-repository"
     "learnocaml-state"
     "learnocaml-sync"
+    "learnocaml-api"
     "ocplib_i18n"
   ]
 end

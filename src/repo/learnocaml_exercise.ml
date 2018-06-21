@@ -19,8 +19,10 @@
 open Learnocaml_meta
 open Learnocaml_index
 
+type id = string
+
 type t =
-  { id : string ;
+  { id : id ;
     meta : meta ;
     prelude : string ;
     template : string ;

@@ -41,4 +41,4 @@ val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_ke
 
 val all_toplevel_histories : Learnocaml_toplevel_history.snapshot Map.Make (String).t storage_key
 
-val sync_token : string storage_key
+val sync_token : Learnocaml_sync.Token.t storage_key

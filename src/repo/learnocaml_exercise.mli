@@ -20,6 +20,8 @@
 
 type t
 
+type id = string
+
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)
 val encoding: t Json_encoding.encoding
@@ -47,7 +49,7 @@ module File : sig
   val set: 'a file -> 'a -> files -> files
 
   (** Learnocaml_exercise id accessor *)
-  val id: string file
+  val id: id file
 
   (** Learnocaml_exercise title / name accessor *)
   val title: string file

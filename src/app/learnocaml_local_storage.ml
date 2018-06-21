@@ -137,8 +137,8 @@ let delete_single name enc () =
 let sync_token =
   let key = mangle [ "sync-token" ] in
   let enc = Json_encoding.(obj1 (req "token" string)) in
-  let store value = store_single key enc value
-  and retrieve () = retrieve_single key enc ()
+  let store value = store_single key enc (Learnocaml_sync.Token.to_string value)
+  and retrieve () = retrieve_single key enc () |> Learnocaml_sync.Token.parse
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
