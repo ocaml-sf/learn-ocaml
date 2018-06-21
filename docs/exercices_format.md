@@ -60,9 +60,26 @@ An exercise is described by a directory containing at most the following files:
 
 Json description with the following format (in version "1"):
 ```
-{ "learnocaml_version": <string>,
-  "kind": "exercise" | "problem" | "project",
-  "stars": [1 .. 5]
+{ "learnocaml_version" : "1",
+  "kind"               : "exercise" | "problem" | "project",
+  "stars"              : [1 .. 5]
+}
+```
+
+Json description in version "2" contains more metadata:
+```
+{
+  "learnocaml_version" : "2",
+  "kind"               : "exercise" | "problem" | "project",
+  "stars"              : [1 .. 5],
+  "identifier"         : "some_unique_identifier",
+  "authors"            : ["Xavier Leroy", "Damien Doligez"],
+  "focus"              : ["skill1", ..., "skillN", ..., "concept1", ..., "conceptM"],
+  "requirements"       : ["skill1", ..., "skillN", ..., "concept1", ..., "conceptM"],
+  "forward_exercises"  : [ "exercise1", "exercise2", ... ],
+  "backward_exercises" : [ "exercise1", "exercise2", ... ],
+  "comments"           : ["comment1", "comment2", ...],
+  "popularity"         : 1234
 }
 ```
 
