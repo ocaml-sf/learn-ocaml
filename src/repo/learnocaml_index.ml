@@ -205,12 +205,18 @@ let tutorial_index_enc =
 
 let exercise_index_path = "exercises.json"
 
-let exercise_path id = "exercise_" ^ id ^ ".json"
+let exercises_dir = "exercises"
+
+let exercise_path id = exercises_dir ^ "/" ^ id ^ ".json"
 
 let lesson_index_path = "lessons.json"
 
-let lesson_path id = "lesson_" ^ id ^ ".json"
+let lessons_dir = "lessons"
+
+let lesson_path id = lessons_dir ^ "/" ^ "lesson_" ^ id ^ ".json"
 
 let tutorial_index_path = "tutorials.json"
 
-let tutorial_path id = "tutorial_" ^ id ^ ".json"
+let tutorials_dir = "tutorials"
+
+let tutorial_path id = tutorials_dir ^ "/" ^ id ^ ".json"
