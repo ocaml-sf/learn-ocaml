@@ -638,6 +638,15 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations
 
+class type learnocaml_config = object
+  method enableTryocaml: bool Js.prop
+  method enableLessons: bool Js.prop
+  method enableExercises: bool Js.prop
+  method enableToplevel: bool Js.prop
+end
+
+let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
+
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
@@ -696,10 +705,14 @@ let () =
     Lwt.return ()
   end ;
   let tabs =
-    [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ;
-      "lessons", ([%i"Lessons"], lessons_tab) ;
-      "exercises", ([%i"Exercises"], exercises_tab) ;
-      "toplevel", ([%i"Toplevel"], toplevel_tab) ] in
+    (if config##.enableTryocaml
+     then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
+    (if config##.enableLessons
+     then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
+    (if config##.enableExercises
+     then [ "exercises", ([%i"Exercises"], exercises_tab) ] else []) @
+    (if config##.enableToplevel
+     then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) in
   let tabs =
     let container = find_component "learnocaml-tab-buttons-container" in
     let content_div = find_component "learnocaml-main-content" in

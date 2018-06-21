@@ -58,7 +58,7 @@ learn-ocaml.install: static
 	@echo '  "scripts/complete.sh"' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
 	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
-	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
+	@$(foreach f,$(wildcard static/js/*.js static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
 	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
 	@(cd static && find js/mathjax -name '*.js' -exec echo '  "static/{}" {"www/{}"}' ';'; ) >>$@
 	@echo ']' >>$@
