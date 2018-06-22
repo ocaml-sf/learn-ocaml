@@ -26,3 +26,13 @@ type save_file =
 val save_file_enc : save_file Json_encoding.encoding
 
 val sync : save_file -> save_file -> save_file
+
+module Token: sig
+  type t
+  val to_path: t -> string
+  val to_string: t -> string
+  val parse: string -> t
+  val check: string -> bool
+  val random: ?admin:bool -> unit -> t
+  val is_admin: t -> bool
+end
