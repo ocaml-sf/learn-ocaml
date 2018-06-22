@@ -77,9 +77,7 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  type 'a result =
-    | Ok of 'a
-    | Error of exn
+  type nonrec 'a result = ('a, exn) result
 
   val exec : (unit -> 'a) -> ('a * string * string) result
   val result : (unit -> 'a) -> 'a result
@@ -355,7 +353,7 @@ end
 module Make
     (Params : sig
        val results : Learnocaml_report.report option ref
-       val set_progress : string -> unit
+       (* val set_progress : string -> unit *)
        val timeout : int option
        module Introspection : Introspection_intf.INTROSPECTION
      end) : S = struct
@@ -406,13 +404,13 @@ module Make
       treat_module_prefixes ident ;
       match Longident.flatten txt with
       | [ m ] | m :: _  when List.mem m !modules (* shadowed *) -> ()
-      | txt -> add @@ on_module_occurence (name ident) in
+      | _ -> add @@ on_module_occurence (name ident) in
     let treat_variable ({ Location.txt } as ident) =
       treat_module_prefixes ident ;
       match Longident.flatten txt with
       | m :: _ :: _  when List.mem m !modules (* shadowed *) -> ()
       | [ v ] when List.mem v !variables (* shadowed *) -> ()
-      | txt -> add @@ on_variable_occurence (name ident) in
+      | _ -> add @@ on_variable_occurence (name ident) in
     let expr mapper expr =
       add @@ on_expression expr ;
       match expr with
@@ -562,7 +560,7 @@ module Make
       | { ptyp_desc = Ptyp_class (lid, _) } as t ->
           treat_module_prefixes lid ;
           default_mapper.typ mapper t
-      | t -> default_mapper.typ mapper typ
+      | typ -> default_mapper.typ mapper typ
     in
     let module_expr mapper module_expr =
       match module_expr with
@@ -652,7 +650,7 @@ module Make
         Learnocaml_report.[ Message ([ Text "The " ; Code (pr n) ; Text " " ; Text k ;
                             Text " is not allowed" ], Failure) ]
 
-  let require k pr l =
+  let require k pr _ =
     let already = ref false in
     fun n ->
       if !already then [] else begin
@@ -768,9 +766,7 @@ module Make
 
   (*----------------------------------------------------------------------------*)
 
-  type 'a result =
-    | Ok of 'a
-    | Error of exn
+  type nonrec 'a result = ('a, exn) result
 
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
@@ -1128,19 +1124,19 @@ let run_timeout ~time v =
           Format.fprintf ppf "@ %a%a"
             (typed_printer arg_ty) x
             (print ret_ty) (Arg (y, r))
-      | Last_ty (arg_ty, _), Arg (x, _) -> .
+      | Last_ty (_, _), Arg (_, _) -> .
 
   let rec get_ret_ty
     : type p a c r. (p -> a) Ty.ty -> (p -> a, p -> c, r) args -> r Ty.ty =
     fun ty x ->
       match x with
-      | Last x ->
+      | Last _ ->
           let _, ret_ty = Ty.domains ty in
           ret_ty
-      | Arg (x, Last r) ->
+      | Arg (_, Last r) ->
           let _, ret_ty = Ty.domains ty in
           get_ret_ty ret_ty (Last r)
-      | Arg (x, Arg (y, r)) ->
+      | Arg (_, Arg (y, r)) ->
           let _, ret_ty = Ty.domains ty in
           get_ret_ty ret_ty (Arg (y, r))
 
@@ -1192,7 +1188,8 @@ let run_timeout ~time v =
 
   let test_function_against_generic ?gen
       ?test ?test_stdout ?test_stderr
-      ?(before_reference = fun _ -> ()) ?before_user ?after ?sampler ?ty prot uf rf tests =
+      ?(before_reference = fun _ -> ()) ?before_user ?after ?sampler
+      prot uf rf tests =
     test_value rf @@ fun rf ->
     let gen = match gen with
       | Some n -> n
@@ -1228,13 +1225,12 @@ let run_timeout ~time v =
     let sam = ref None in
     let got = ref None in
     let exp = ref None in
-    let blit src dst = match src with None -> () | Some src -> blit src dst in
     let before_reference a =
       sam := Some (dup a) in
     let before_user a =
       exp := Some (dup a) ;
       got := Some a ;
-      match !sam with None -> () | Some src -> blit !sam a in
+      match !sam with None -> () | Some src -> blit src a in
     let test ?(test_result = test_ignore) ret_ty va vb =
       let result_report = test_result ret_ty va vb in
       let report = match va, vb with

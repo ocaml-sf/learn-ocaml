@@ -41,7 +41,6 @@ let index_enc =
             | _ -> None)
           (fun (title, map) -> (title, `Groups map)) ] in
   let open Json_encoding in
-  mu "group" @@ fun group_enc ->
   check_version_2 @@
   union
     [ case

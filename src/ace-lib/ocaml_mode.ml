@@ -420,7 +420,7 @@ let get_indent state line =
       IndentBlock.indent block
 
 let do_indent ace_editor =
-  let ((row, col), _) =
+  let ((row, _col), _) =
     (* TODO when multiple line are selected... *)
     Ace.read_range (Ace.get_selection_range ace_editor) in
   let state = get_state ace_editor (row - 1) in
@@ -461,7 +461,7 @@ let remove_trailing_spaces line =
     line
 
 let may_reset_indent ace_editor =
-  let (_, (row, col)) =
+  let (_, (row, _col)) =
     Ace.read_range (Ace.get_selection_range ace_editor) in
   let line = Ace.get_line ace_editor row in
   if all_spaces line 0 (String.length line) then begin

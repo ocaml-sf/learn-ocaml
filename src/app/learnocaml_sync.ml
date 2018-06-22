@@ -74,7 +74,6 @@ let sync
     else
       state_b in
   let sync_map sync_item index_a index_b =
-    let open Learnocaml_exercise_state in
     StringMap.merge
       (fun _id a b -> match a, b with
          | None, None -> assert false

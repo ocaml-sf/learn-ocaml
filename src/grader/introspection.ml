@@ -137,7 +137,7 @@ let get_value lid ty =
       begin match Env.lookup_module ~load:false lid !Toploop.toplevel_env with
         | exception Not_found -> Absent
         | path ->
-            let { Types.md_type ; md_loc } = Env.find_module path !Toploop.toplevel_env in
+            let { Types.md_loc; _ } = Env.find_module path !Toploop.toplevel_env in
             let phrase =
               let open Ast_helper in
               with_default_loc md_loc @@ fun () ->

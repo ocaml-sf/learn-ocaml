@@ -33,6 +33,5 @@ val print_html_tutorial :
   string
 
 val print_md_tutorial :
-  tutorial_name: string ->
   Learnocaml_tutorial.tutorial ->
   string

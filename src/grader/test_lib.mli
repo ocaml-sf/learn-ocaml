@@ -77,9 +77,7 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  type 'a result =
-    | Ok of 'a
-    | Error of exn
+  type nonrec 'a result = ('a, exn) result
 
   val exec : (unit -> 'a) -> ('a * string * string) result
   val result : (unit -> 'a) -> 'a result

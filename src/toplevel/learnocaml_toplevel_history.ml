@@ -43,7 +43,7 @@ let snapshot_enc =
         (function { phrases ; mtime } -> Some (phrases, mtime))
         (fun (phrases, mtime) -> { phrases ; mtime }) ]
 
-let snapshot { storage ; first ; stored ; mtime } =
+let snapshot { storage ; first ; stored ; mtime ; _} =
   let rec to_list acc i n =
     if n = 0 then
       List.rev acc

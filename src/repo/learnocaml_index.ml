@@ -138,9 +138,6 @@ let exercise_enc =
        exercise_enc_v1
        exercise_enc_v2)
 
-let server_exercise_meta_enc =
-  check_version_2 exercise_enc
-
 let group_enc =
   mu "group" @@ fun group_enc ->
   conv
