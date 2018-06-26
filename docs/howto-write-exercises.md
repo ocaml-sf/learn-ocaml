@@ -224,6 +224,7 @@ here. Let us take a moment to understand how it is called:
 - The final argument `[0]` is the unique input on which we want to test
   the function.
 
+
 ### Do it yourself!
 
 1. Copy this exercise source to your own exercise directory.
@@ -234,7 +235,7 @@ here. Let us take a moment to understand how it is called:
 
 4. Open `http://localhost:8080` in your browser.
 
-5. Check that the templace does not get the point.
+5. Check that the template does not get the point.
 
 6. Modify the code, get your point!
 
@@ -242,9 +243,78 @@ here. Let us take a moment to understand how it is called:
    rebuild your learn-ocaml instance.
 
 8. Grade your answer and observe the effect of the previous
-   change. This is the topic of the next of this tutorial!
+   change. This is the topic of the next step of this tutorial!
+   
+### Multiple arguments 
+To grade a function with multiple arguments you simply need to use the
+corresponding test function which follows this pattern :
+`Test_lib.test_function_<function arity>_against_solution` and pass
+the right number of inputs as n-uplets for the fixed tests : 
+
+```ocaml
+open Test_lib
+open Report
+
+let exercise_1 =
+    Section ([ Text "Function:" ; Code "op" ],
+             test_function_2_against_solution
+               [%ty: int -> int -> int] "op"
+               ~gen:5 
+			   [ (1,2) ; (0,1) ]
+      )
+  
+
+let () =
+  set_result @@
+  ast_sanity_check code_ast @@ fun () ->
+  [ exercise_1 ]
+	
+```
+
+
+You can find this example in the
+`exercices/grade-function-multiple_args` directory on the same branch
+(step-2).
+
+### Polymorphic functions : testing several types
+For a polymorphic functions, you may want to test the function with
+different types. To do so, you can concat the result of numerous test
+functions.
+
+```ocaml
+open Test_lib
+open Report
+
+let () =
+  set_result @@
+  ast_sanity_check code_ast @@ fun () ->
+  [
+    Section ([ Text "The identity of 0 is 0." ],
+             test_function_1_against_solution
+               [%ty: int -> int] "identity"
+               ~gen:5 [] @
+             test_function_1_against_solution
+               [%ty: char -> char] "identity"
+               ~gen:5 [] @
+             test_function_1_against_solution
+               [%ty: float -> float] "identity"
+               ~gen:5 []
+            );
+  ]
+```
+
+You can find this example in the
+`exercices/grade-function-polymorphism` directory on the same branch
+(step-2).
 
 ## Step 3: Grading with generators
+
+
+
+## Step 4 : Other test functions
+
+The function `Test_lib.test_function_1_against_solution` is not the
+only test functions. 
 
 To be continued.
 
