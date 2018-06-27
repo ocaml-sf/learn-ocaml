@@ -68,21 +68,9 @@ let check_save_file contents =
   with _ -> false
 
 let create_token_file token =
-  let rec mkdir_p dir =
-    Lwt_unix.file_exists dir >>= function
-    | true ->
-        if Sys.is_directory dir then
-          Lwt.return ()
-        else
-          Lwt.fail (Failure "bad sync directory structure")
-    | false ->
-        mkdir_p (Filename.dirname dir) >>= fun () ->
-        Lwt_unix.mkdir dir 0o750
-  in
   let path = Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token) in
-  mkdir_p (Filename.dirname path) >>= fun () ->
-  Lwt_io.(with_file ~mode: Output path (fun chan -> write chan "")) >>= fun () ->
-  Lwt.return_unit
+  Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname path) >>= fun () ->
+  Lwt_io.(with_file ~mode: Output ~perm:0o700 path (fun chan -> write chan ""))
 
 let store token contents =
   let token = Learnocaml_sync.Token.parse token in
