@@ -238,7 +238,9 @@ let main o =
            | e -> Lwt.fail e)
        >>= fun () ->
        Lwt.catch
-         (fun () -> copy_tree (o.repo_dir/"lessons") o.app_dir)
+         (fun () ->
+            copy_tree (o.repo_dir/"lessons") (o.app_dir/"lessons") >|= fun () ->
+            Lwt_unix.rename (o.app_dir/"lessons"/"lessons.json") (o.app_dir/"lessons.json"))
          (function Failure _ -> Lwt.return_unit
                  | e -> Lwt.fail e)
        >>= fun () ->

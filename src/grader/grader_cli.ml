@@ -96,7 +96,7 @@ let grade exercise_dir output_json =
        let exercise_dir = remove_trailing_slash exercise_dir in
        read_exercise exercise_dir >>= fun exo ->
        let code_to_grade = match !grade_student with
-         | Some path -> read_student_file exercise_dir path
+         | Some path -> read_student_file (Sys.getcwd ()) path
          | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
          if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
