@@ -60,9 +60,30 @@ An exercise is described by a directory containing at most the following files:
 
 Json description with the following format (in version "1"):
 ```
-{ "learnocaml_version": <string>,
-  "kind": "exercise" | "problem" | "project",
-  "stars": [1 .. 5]
+{ "learnocaml_version" : "1",
+  "kind"               : "exercise" | "problem" | "project",
+  "stars"              : [1 .. 5]
+}
+```
+
+Json description in version "2" contains more metadata:
+```
+{
+  "learnocaml_version" : "2",
+  "kind"               : "exercise" | "problem" | "project",
+  "stars"              : [1 .. 5],
+  /* In an exercise repository, each exercise must have a unique identifier. */
+  "identifier"         : "some_unique_identifier",
+  /* Authors with their emails. */
+  "authors"            : [["Xavier Leroy", "some@email"], ["Damien Doligez", "someother@email"]],
+  /* The skills and concepts that are practiced by this exercise. */
+  "focus"              : ["skill1", ..., "skillN", ..., "concept1", ..., "conceptM"],
+  /* The skills and concepts that are required to do this exercise. */
+  "requirements"       : ["skill1", ..., "skillN", ..., "concept1", ..., "conceptM"],
+  /* The suggested exercises in case of success */
+  "forward_exercises"  : [ "exercise1", "exercise2", ... ],
+  /* The suggested exercises in case of difficulty */
+  "backward_exercises" : [ "exercise1", "exercise2", ... ],
 }
 ```
 
