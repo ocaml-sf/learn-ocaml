@@ -62,9 +62,12 @@ let check_version_2 enc =
   conv
     (fun exercise -> ("2", exercise))
     (fun (version, exercise) ->
-       if version <> "2" || version <> "1" then begin
-         let msg = Format.asprintf "unknown version %s" version in
-         raise (Cannot_destruct ([], Failure msg))
+       begin
+         match version with
+           "1" | "2" -> ()
+         | _ ->
+           let msg = Format.asprintf "unknown version %s" version in
+           raise (Cannot_destruct ([], Failure msg))
        end ;
        exercise)
     (merge_objs (obj1 (req "learnocaml_version" string)) enc)
@@ -164,7 +167,7 @@ let exercise_index_enc =
         (fun map -> Groups map) ]
 
 let lesson_index_enc =
-  check_version_1 @@
+  check_version_2 @@
   obj1 (req "lessons" (list @@ tup2 string string))
 
 type word =
