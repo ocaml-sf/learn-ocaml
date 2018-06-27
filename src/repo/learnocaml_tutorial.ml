@@ -51,7 +51,7 @@ let phrase_enc =
         (fun phrase -> Paragraph phrase) ]
 
 let tutorial_enc =
-  Learnocaml_index.check_version_1 @@
+  Learnocaml_index.check_version_2 @@
   conv
     (fun { tutorial_title ; tutorial_steps } ->
        (tutorial_title, tutorial_steps))

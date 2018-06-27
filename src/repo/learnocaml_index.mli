@@ -20,11 +20,20 @@ type exercise_kind =
   | Problem
   | Learnocaml_exercise
 
+type identifier = string
+
 type exercise =
   { exercise_kind : exercise_kind ;
     exercise_title : string ;
     exercise_short_description : string option ;
-    exercise_stars : float (* \in [0.,4.] *) }
+    exercise_stars : float (* \in [0.,4.] *) ;
+    exercise_identifier : identifier option ;
+    exercise_author : (string * string) list ;
+    exercise_focus : string list ;
+    exercise_requirements : string list ;
+    exercise_forward : identifier list ;
+    exercise_backward : identifier list ;
+  }
 
 and group =
   { group_title : string ;

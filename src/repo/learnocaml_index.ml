@@ -22,11 +22,20 @@ type exercise_kind =
   | Problem
   | Learnocaml_exercise
 
+type identifier = string
+
 type exercise =
   { exercise_kind : exercise_kind ;
     exercise_title : string ;
     exercise_short_description : string option ;
-    exercise_stars : float (* \in [0.,4.] *) }
+    exercise_stars : float (* \in [0.,4.] *);
+    exercise_identifier : identifier option ;
+    exercise_author : (string * string) list ;
+    exercise_focus : string list ;
+    exercise_requirements : string list ;
+    exercise_forward : identifier list ;
+    exercise_backward : identifier list ;
+  }
 
 and group =
   { group_title : string ;
@@ -77,21 +86,43 @@ let exercise_enc =
     (fun { exercise_kind = kind ;
            exercise_title = title ;
            exercise_short_description = short ;
-           exercise_stars = stars } ->
-      (kind, title, short, stars))
-    (fun (kind, title, short, stars) ->
+           exercise_stars = stars ;
+           exercise_identifier = identifier ;
+           exercise_author = author ;
+           exercise_focus = focus ;
+           exercise_requirements = requirements ;
+           exercise_forward = forward ;
+           exercise_backward = backward ;
+         } ->
+      (kind, title, short, stars, identifier,
+       author, focus, requirements, forward, backward))
+    (fun (kind, title, short, stars, identifier,
+       author, focus, requirements, forward, backward) ->
        { exercise_kind = kind ;
          exercise_title = title ;
          exercise_short_description = short ;
-         exercise_stars = stars })
-    (obj4
+         exercise_stars = stars;
+         exercise_identifier = identifier ;
+         exercise_author = author ;
+         exercise_focus = focus ;
+         exercise_requirements = requirements ;
+         exercise_forward = forward ;
+         exercise_backward = backward ;
+       })
+    (obj10
        (req "kind" exercise_kind_enc)
        (req "title" string)
        (opt "shortDescription" string)
-       (req "stars" float))
+       (req "stars" float)
+       (opt "identifier" string)
+       (req "author" (list (tup2 string string)))
+       (req "focus" (list string))
+       (req "requirements" (list string))
+       (req "forward" (list string))
+       (req "backward" (list string)))
 
 let server_exercise_meta_enc =
-  check_version_1 exercise_enc
+  check_version_2 exercise_enc
 
 let group_enc =
   mu "group" @@ fun group_enc ->
@@ -117,7 +148,7 @@ let group_enc =
         (fun (title, map) -> (title, Groups map)) ]
 
 let exercise_index_enc =
-  check_version_1 @@
+  check_version_2 @@
   union
     [ case
         (obj1 (req "exercises" (map_enc exercise_enc)))

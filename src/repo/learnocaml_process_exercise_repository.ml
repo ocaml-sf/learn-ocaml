@@ -42,7 +42,7 @@ let index_enc =
           (fun (title, map) -> (title, `Groups map)) ] in
   let open Json_encoding in
   mu "group" @@ fun group_enc ->
-  check_version_1 @@
+  check_version_2 @@
   union
     [ case
         (obj1 (req "exercises" (list string)))
@@ -203,7 +203,14 @@ let main dest_dir =
                   let exercise =
                     { exercise_kind ; exercise_stars ;
                       exercise_title = Learnocaml_exercise.(get title) exercise ;
-                      exercise_short_description} in
+                      exercise_short_description;
+                      exercise_identifier ;
+                      exercise_author = opt_to_list_enc author ;
+                      exercise_focus = opt_to_list_enc focus ;
+                      exercise_requirements = opt_to_list_enc requirements ;
+                      exercise_forward = opt_to_list_enc forward ;
+                      exercise_backward = opt_to_list_enc backward ;
+                    } in
                   acc >>= fun acc ->
                   Lwt.return (StringMap.add id exercise acc))
                (Lwt.return StringMap.empty) ids >>= fun exercises ->

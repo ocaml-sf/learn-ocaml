@@ -28,7 +28,7 @@ and phrase =
 open Json_encoding
 
 let lesson_enc =
-  Learnocaml_index.check_version_1 @@
+  Learnocaml_index.check_version_2 @@
   conv
     (fun { lesson_title ; lesson_steps } -> (lesson_title, lesson_steps))
     (fun (lesson_title, lesson_steps) -> { lesson_title ; lesson_steps }) @@
