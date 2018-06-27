@@ -62,10 +62,22 @@ let exercise_kind_enc =
 
 let exercise_meta_enc =
   let open Json_encoding in
-  check_version_1
-    (obj2
-       (req "kind" exercise_kind_enc)
-       (req "stars" float))
+  check_version_2
+    (merge_objs
+       (obj8
+          (req "kind" exercise_kind_enc)
+          (req "stars" float)
+          (opt "identifier" string)
+          (opt "author" (list (tup2 string string)))
+          (opt "focus" (list string))
+          (opt "requirements" (list string))
+          (opt "forward" (list string))
+          (opt "backward" (list string)))
+       unit)
+
+let opt_to_list_enc = function
+    None -> []
+  | Some l -> l
 
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
@@ -182,7 +194,9 @@ let main dest_dir =
                (fun acc id ->
                   all_exercises := id :: !all_exercises ;
                   from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun (exercise_kind, exercise_stars) ->
+                  >>= fun ((exercise_kind, exercise_stars, exercise_identifier,
+                            author, focus, requirements,
+                            forward, backward), _) ->
                   let exercise_short_description = None in
                   let exercise =
                     read_exercise (!exercises_dir / id) in

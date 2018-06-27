@@ -49,6 +49,17 @@ let check_version_1 enc =
        exercise)
     (merge_objs (obj1 (req "learnocaml_version" string)) enc)
 
+let check_version_2 enc =
+  conv
+    (fun exercise -> ("2", exercise))
+    (fun (version, exercise) ->
+       if version <> "2" || version <> "1" then begin
+         let msg = Format.asprintf "unknown version %s" version in
+         raise (Cannot_destruct ([], Failure msg))
+       end ;
+       exercise)
+    (merge_objs (obj1 (req "learnocaml_version" string)) enc)
+
 let map_enc enc =
   conv
     StringMap.bindings
