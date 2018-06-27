@@ -75,7 +75,7 @@ Json description in version "2" contains more metadata:
   /* In an exercise repository, each exercise must have a unique identifier. */
   "identifier"         : "some_unique_identifier",
   /* Authors with their emails. */
-  "authors"            : ["Xavier Leroy <some@email>", "Damien Doligez <someother@email>"],
+  "authors"            : [["Xavier Leroy", "some@email"], ["Damien Doligez", "someother@email"]],
   /* The skills and concepts that are practiced by this exercise. */
   "focus"              : ["skill1", ..., "skillN", ..., "concept1", ..., "conceptM"],
   /* The skills and concepts that are required to do this exercise. */
@@ -84,10 +84,6 @@ Json description in version "2" contains more metadata:
   "forward_exercises"  : [ "exercise1", "exercise2", ... ],
   /* The suggested exercises in case of difficulty */
   "backward_exercises" : [ "exercise1", "exercise2", ... ],
-  /* Comments (in markdown) by the authors or users of this exercise. */
-  "comments"           : ["comment1", "comment2", ...],
-  /* Number of times the exercise has been checked out. */
-  "popularity"         : 1234
 }
 ```
 
