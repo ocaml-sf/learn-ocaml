@@ -24,7 +24,6 @@ Please make sure that the following tools are available on your machine:
 - git    (>= 2.00)
 - make   (>= 4)
 - opam   (>= 2.00)
-- ocaml  (>= 4.05.0)
 
 To install opam, please follow the instructions described on the
 [Official OPAM website](https://opam.ocaml.org/doc/Install.html).
@@ -46,6 +45,11 @@ First, clone the current learn-ocaml source tree:
 git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
 
+If you do not have a GitHub account, do instead:
+```
+git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
+```
+
 Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
 ready:
 ```
@@ -55,13 +59,11 @@ eval $(opam env)
 (Alternatively, use `opam install . --deps-only` to install the dependencies in
 your current opam switch, without creating a dedicated one)
 
-Then, compile and install the platform:
-```
-opam install . --deps && make && make opaminstall
-```
 
-Notice that the `make build-deps` command will probably ask for the
-installation of required opam packages.
+Second, compile and install the platform:
+```
+make && make opaminstall
+```
 
 At this point, you should get a working `learn-ocaml` program in
 your path. Try:
