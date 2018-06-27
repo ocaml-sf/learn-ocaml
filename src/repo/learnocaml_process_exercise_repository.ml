@@ -73,7 +73,7 @@ let exercise_meta_enc =
           (opt "requirements" (list string))
           (opt "forward" (list string))
           (opt "backward" (list string)))
-       unit)
+       unit) (* FIXME: temporary parameter, that allows unknown fields *)
 
 let opt_to_list_enc = function
     None -> []
