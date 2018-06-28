@@ -60,20 +60,34 @@ let exercise_kind_enc =
       "project", Project ;
       "exercise", Learnocaml_exercise ]
 
+let exercise_meta_enc_v1 =
+  let open Json_encoding in
+  check_version_2 @@
+  obj2
+    (req "kind" exercise_kind_enc)
+    (req "stars" float)
+
+let exercise_meta_enc_v2 =
+  let open Json_encoding in
+  check_version_2 @@
+  obj9
+     (opt "title" string)
+     (opt "short_description" string)
+     (opt "identifier" string)
+     (opt "author" (list (tup2 string string)))
+     (opt "focus" (list string))
+     (opt "requirements" (list string))
+     (opt "forward" (list string))
+     (opt "backward" (list string))
+     (opt "max_score" int)
+
 let exercise_meta_enc =
   let open Json_encoding in
   check_version_2
     (merge_objs
-       (obj9
-          (req "kind" exercise_kind_enc)
-          (req "stars" float)
-          (opt "short_description" string)
-          (opt "identifier" string)
-          (opt "author" (list (tup2 string string)))
-          (opt "focus" (list string))
-          (opt "requirements" (list string))
-          (opt "forward" (list string))
-          (opt "backward" (list string)))
+       (merge_objs
+          exercise_meta_enc_v1
+          exercise_meta_enc_v2)
        unit) (* FIXME: temporary parameter, that allows unknown fields *)
 
 let opt_to_list_enc = function
@@ -195,16 +209,22 @@ let main dest_dir =
                (fun acc id ->
                   all_exercises := id :: !all_exercises ;
                   from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun ((exercise_kind, exercise_stars,
-                            exercise_short_description,
-                            exercise_identifier,
-                            author, focus, requirements,
-                            forward, backward), _) ->
+                  >>= fun (((exercise_kind, exercise_stars),
+                            (title, exercise_short_description,
+                             exercise_identifier,
+                             author, focus, requirements,
+                             forward, backward, max_score)),
+                           _) ->
                   let exercise =
                     read_exercise (!exercises_dir / id) in
+                  let exercise_title =
+                    match title with
+                    | Some title -> title
+                    | None -> Learnocaml_exercise.(get title) exercise
+                  in
                   let exercise =
                     { exercise_kind ; exercise_stars ;
-                      exercise_title = Learnocaml_exercise.(get title) exercise ;
+                      exercise_title ;
                       exercise_short_description;
                       exercise_identifier ;
                       exercise_author = opt_to_list_enc author ;
