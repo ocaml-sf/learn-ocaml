@@ -62,14 +62,12 @@ let exercise_kind_enc =
 
 let exercise_meta_enc_v1 =
   let open Json_encoding in
-  check_version_2 @@
   obj2
     (req "kind" exercise_kind_enc)
     (req "stars" float)
 
 let exercise_meta_enc_v2 =
   let open Json_encoding in
-  check_version_2 @@
   obj9
      (opt "title" string)
      (opt "short_description" string)
