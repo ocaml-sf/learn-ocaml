@@ -33,6 +33,7 @@ type exercise =
     exercise_requirements : string list ;
     exercise_forward : identifier list ;
     exercise_backward : identifier list ;
+    exercise_max_score : int option ;
   }
 
 and group =

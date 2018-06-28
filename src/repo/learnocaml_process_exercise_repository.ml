@@ -222,6 +222,13 @@ let main dest_dir =
                     | Some title -> title
                     | None -> Learnocaml_exercise.(get title) exercise
                   in
+                  let exercise_max_score =
+                    match max_score with
+                    | Some max_score -> Some max_score
+                    | None ->
+                        try Some (Learnocaml_exercise.(get max_score) exercise)
+                        with Learnocaml_exercise.Missing_field _ -> None
+                  in
                   let exercise =
                     { exercise_kind ; exercise_stars ;
                       exercise_title ;
@@ -232,6 +239,7 @@ let main dest_dir =
                       exercise_requirements = opt_to_list_enc requirements ;
                       exercise_forward = opt_to_list_enc forward ;
                       exercise_backward = opt_to_list_enc backward ;
+                      exercise_max_score ;
                     } in
                   acc >>= fun acc ->
                   Lwt.return (StringMap.add id exercise acc))

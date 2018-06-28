@@ -35,6 +35,7 @@ type exercise =
     exercise_requirements : string list ;
     exercise_forward : identifier list ;
     exercise_backward : identifier list ;
+    exercise_max_score : int option ;
   }
 
 and group =
@@ -84,6 +85,23 @@ let exercise_kind_enc =
       "project", Project ;
       "exercise", Learnocaml_exercise ]
 
+let exercise_enc_v1 =
+  (obj10
+     (req "kind" exercise_kind_enc)
+     (req "title" string)
+     (opt "shortDescription" string)
+     (req "stars" float)
+     (opt "identifier" string)
+     (req "author" (list (tup2 string string)))
+     (req "focus" (list string))
+     (req "requirements" (list string))
+     (req "forward" (list string))
+     (req "backward" (list string)))
+
+let exercise_enc_v2 =
+  obj1
+    (opt "max_score" int)
+
 let exercise_enc =
   conv
     (fun { exercise_kind = kind ;
@@ -96,11 +114,14 @@ let exercise_enc =
            exercise_requirements = requirements ;
            exercise_forward = forward ;
            exercise_backward = backward ;
+           exercise_max_score = max_score ;
          } ->
-      (kind, title, short, stars, identifier,
-       author, focus, requirements, forward, backward))
-    (fun (kind, title, short, stars, identifier,
-       author, focus, requirements, forward, backward) ->
+      ((kind, title, short, stars, identifier,
+        author, focus, requirements, forward, backward),
+       max_score))
+    (fun ((kind, title, short, stars, identifier,
+           author, focus, requirements, forward, backward),
+          max_score) ->
        { exercise_kind = kind ;
          exercise_title = title ;
          exercise_short_description = short ;
@@ -111,18 +132,11 @@ let exercise_enc =
          exercise_requirements = requirements ;
          exercise_forward = forward ;
          exercise_backward = backward ;
+         exercise_max_score = max_score ;
        })
-    (obj10
-       (req "kind" exercise_kind_enc)
-       (req "title" string)
-       (opt "shortDescription" string)
-       (req "stars" float)
-       (opt "identifier" string)
-       (req "author" (list (tup2 string string)))
-       (req "focus" (list string))
-       (req "requirements" (list string))
-       (req "forward" (list string))
-       (req "backward" (list string)))
+    (merge_objs
+       exercise_enc_v1
+       exercise_enc_v2)
 
 let server_exercise_meta_enc =
   check_version_2 exercise_enc
