@@ -63,14 +63,22 @@ val tutorial_index_enc : series Map.Make (String).t Json_encoding.encoding
 
 val check_version_1 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
 
+(** the following are relative paths to the www root, using [/] as path
+    separator *)
 val exercise_index_path : string
+
+val exercises_dir : string
 
 val exercise_path : string -> string
 
 val lesson_index_path : string
 
+val lessons_dir : string
+
 val lesson_path : string -> string
 
 val tutorial_index_path : string
+
+val tutorials_dir : string
 
 val tutorial_path : string -> string
