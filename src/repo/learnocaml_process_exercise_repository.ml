@@ -64,9 +64,10 @@ let exercise_meta_enc =
   let open Json_encoding in
   check_version_2
     (merge_objs
-       (obj8
+       (obj9
           (req "kind" exercise_kind_enc)
           (req "stars" float)
+          (opt "short_description" string)
           (opt "identifier" string)
           (opt "author" (list (tup2 string string)))
           (opt "focus" (list string))
@@ -194,10 +195,11 @@ let main dest_dir =
                (fun acc id ->
                   all_exercises := id :: !all_exercises ;
                   from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun ((exercise_kind, exercise_stars, exercise_identifier,
+                  >>= fun ((exercise_kind, exercise_stars,
+                            exercise_short_description,
+                            exercise_identifier,
                             author, focus, requirements,
                             forward, backward), _) ->
-                  let exercise_short_description = None in
                   let exercise =
                     read_exercise (!exercises_dir / id) in
                   let exercise =
