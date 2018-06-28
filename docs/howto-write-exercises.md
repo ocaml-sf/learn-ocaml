@@ -12,6 +12,7 @@ explained in `howto-submit-an-exercise.md`. If your exercises are not
 to be shared, you can already deploy an instance of the learn-ocaml
 platform using your local directory of exercises.
 
+
 ## Step -1: Download the source files for this tutorial
 
 All the files used in that tutorial are available on a GIT repository:
@@ -248,7 +249,7 @@ here. Let us take a moment to understand how it is called:
 ### Multiple arguments 
 To grade a function with multiple arguments you simply need to use the
 corresponding test function which follows this pattern :
-`Test_lib.test_function_<function arity>_against_solution` and pass
+`Test_lib.test_function_<function arity>_against_solution` and give
 the right number of inputs as n-uplets for the fixed tests : 
 
 ```ocaml
@@ -273,8 +274,7 @@ let () =
 
 
 You can find this example in the
-`exercices/grade-function-multiple_args` directory on the same branch
-(step-2).
+`exercices/grade-function-multiple_args` directory (branch: step-2).
 
 ### Polymorphic functions : testing several types
 For a polymorphic functions, you may want to test the function with
@@ -292,32 +292,213 @@ let () =
     Section ([ Text "The identity of 0 is 0." ],
              test_function_1_against_solution
                [%ty: int -> int] "identity"
-               ~gen:5 [] @
+               ~gen:0 [1 ; 2] @
              test_function_1_against_solution
                [%ty: char -> char] "identity"
-               ~gen:5 [] @
+               ~gen:0 ['c' ; 'a'] @
              test_function_1_against_solution
                [%ty: float -> float] "identity"
-               ~gen:5 []
+               ~gen:0 [1.1 ; 2.4]
             );
   ]
 ```
 
 You can find this example in the
-`exercices/grade-function-polymorphism` directory on the same branch
-(step-2).
+`exercices/grade-function-polymorphism` directory (branch: step-2).
 
-## Step 3: Grading with generators
+## Step 3: Grading with generators for Ocaml built-in types
+ You can find the examples below in the
+	`exercices/sampler-built-in-types` directory (branch: step-3).
+	
+As see previously, you can either give manually both inputs of the
+tested functions or you can ask the grader to randomly generate
+inputs. 
+
+For built-in types, the grader actually do most of the work for
+you: you only need to precise the number of inputs sets you want to be
+randomly generated.
+
+In the example below, five tests are generated randomly.
+
+```ocaml
+let exercise_1 =
+	Section ([ Text "Function: "; Code "identity" ],
+           test_function_1_against_solution
+             [%ty: int -> int] "identity"
+             ~gen:5 [0]
+          )
+```
+
+However, with this method, you have no control on how the inputs are
+generated. If, for example, you want a function of type `int -> int ->
+int` to be tested for inputs between 12 and 42, you need to give the
+test function the sampler you want. There are 2 ways to do that. 
+
+### Method 1 : using the `~sampler` argument
+One way is to use the optional argument `~sampler` of type `unit ->
+<arg1 type> * <arg2 type> * <arg3 type> etc.`.
+
+```ocaml
+let exercise_2 =
+  Section ([ Text "Function: "; Code "pi1" ],
+           test_function_2_against_solution
+             [%ty: int -> int -> int] "pi1"
+             ~sampler:(fun () -> Random.int 31 + 12, Random.int 31 + 12)
+             ~gen:5
+             []
+          )
+```
+
+### Method 2 : redefining the corresponding sampling function.
+Another way is to define a sampling function of type `unit -> <arg1
+type> * <arg2 type> * <arg3 type> etc.` using the naming convention :
+`sample_<type>`. In this case, nothing needs to be add to the test
+function call.
+
+```ocaml
+let sample_int = Random.int 31 + 12
+
+let exercise_3 =
+	Section ([ Text "Function: "; Code "pi1" ],
+		test_function_2_against_solution
+		[%ty: int -> int -> int] "pi1"
+		~gen:5
+		[]
+	)
+```
 
 
+## Step 4: Grading with generators for user-defined types
 
-## Step 4 : Other test functions
+In the case of user-defined types, it is mandatory to define a
+sampler. Both two previous methods (defining a sampler function
+`sample_my_type` or using the `~sampler` optional argument) can be
+used but required a little more work, especially for parametric types.
+
+### Non parametric type
+For non-parametric type, it is exactly the same than previously. 
+
+You can find the examples below in the
+`exercices/sampler-user-defined-types` directory (branch: step-4).
+
+In the examples, we use the type `color` defined as :
+```ocaml 
+type color = Green | Yellow | Red | Blue
+```
+
+#### Method 1:  using the `~sampler` argument
+
+As previously, you can simply add the argument `~sampler` of type
+`unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
+
+```ocaml
+let exercise_1 =
+  Section ([ Text "Function: "; Code "color_to_string" ],
+           test_function_1_against_solution
+             [%ty: color -> string] "color_to_string"
+             ~sampler: (fun () ->  match Random.int 4 with
+                 | 0 -> Red | 1 -> Green | 2 -> Yellow | _ -> Blue)
+             ~gen:5
+             []
+          )
+```
+		  
+#### Method 2: Defining a sampler 
+ Same than above: a sampler of type `unit -> my_type` has to be named
+ `sample_my_type`.
+
+```ocaml
+let sample_color () : color =
+  match Random.int 4 with
+    | 0 -> Red
+    | 1 -> Green
+    | 2 -> Yellow
+    | _ -> Blue
+
+let exercise_2 =
+  Section ([ Text "Function: "; Code "color_to_string" ],
+           test_function_1_against_solution
+             [%ty: color -> string] "color_to_string"
+             ~gen:5
+             []
+          )
+```
+
+
+### Parametric types
+
+You can find the examples below in the
+`exercices/sampler-user-defined-parametric-types` directory (branch: step-4).
+
+In the examples below, we use the types:
+```ocaml
+type col = R | B
+
+type 'a tree =
+  | Leaf
+  | Node of 'a tree * 'a * 'a tree
+```
+#### Method 1:  using the `~sampler` argument
+
+#### Method 2: Defining a sampler
+
+A sampler of a parametric type ` ('a * 'b * ... ) my_type` has a
+type : `(unit -> 'a) -> (unit -> 'b) -> ... -> -> (unit -> ('a * 'b *
+...) my_type` and must be named `sample_my_type`.
+
+
+So for example, if we want to test a function of type `col tree -> int`, so we need two samplers :
+``` ocaml
+(*Not a parametric type*)
+let sample_col () = match Random.int 2 with
+  | 0 -> B
+  | _ -> R
+      
+(*A parametric type*)
+let sample_tree (sample: unit -> 'a) : unit -> 'a tree =
+  let rec builder h = match h with
+    | 0 -> Leaf
+    | n -> match Random.int 3 with
+      | 0 -> Leaf
+      | _ -> Node (builder (h-1), sample (), builder (h-1))    
+  in
+  let h = Random.int 5 + 2 in
+  fun () -> builder h
+```
+
+The grading function is then simply :
+```ocaml
+let exercise_1 =
+  Section ([ Text "Function: "; Code "height" ],
+           test_function_1_against_solution
+             [%ty: col tree -> int] "height"
+             ~gen:5
+             []
+          )
+```
+
+With these two samplers, we are also be able, with no more effort, to
+graduate a function of type `col tree -> col -> col tree` for
+example. The grader is simply: 
+
+```ocaml
+let exercise_2 =
+  Section ([ Text "Function: "; Code "monochrome" ],
+           test_function_2_against_solution
+             [%ty: col tree -> col -> col tree] "monochrome"
+             ~gen:5
+             []
+          )
+```
+
+
+## Step 5 : Other test functions
 
 The function `Test_lib.test_function_1_against_solution` is not the
-only test functions. 
+only test functions.
 
 To be continued.
 
-## Step 4: Introspection of students code
+## Step 6: Introspection of students code
 
 To be continued.
