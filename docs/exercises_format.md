@@ -72,6 +72,8 @@ Json description in version "2" contains more metadata:
   "learnocaml_version" : "2",
   "kind"               : "exercise" | "problem" | "project",
   "stars"              : [1 .. 5],
+  /* Exercise title, falls back to 'title.txt' if the field is not present. */
+  "title"              : "Title of the exercise",
   /* In an exercise repository, each exercise must have a unique identifier. */
   "identifier"         : "some_unique_identifier",
   /* Authors with their emails. */
@@ -84,12 +86,15 @@ Json description in version "2" contains more metadata:
   "forward_exercises"  : [ "exercise1", "exercise2", ... ],
   /* The suggested exercises in case of difficulty */
   "backward_exercises" : [ "exercise1", "exercise2", ... ],
+  /* Maximum score for the exercise. */
+  "max_score" : [ 0 .. n ],
 }
 ```
 
 ### title.txt
 
-Text file containing the title of the exercise.
+Text file containing the title of the exercise. Overridden by the field `title`
+in `meta.json` if present.
 
 ### descr.html
 
@@ -126,3 +131,8 @@ the user's code by comparing its results with a code reference.
 OCaml file containing the test program that is used to check and grade the user's code and
 the solution. It has access to many functions allowing the introspection of the
 code, which will be described and detailed in another section.
+
+### max_score.txt
+
+Maximum score that is possible to get for this exercise, even if the grader
+grades more. Overridden by the field `max_score`, if present in `meta.json`.
