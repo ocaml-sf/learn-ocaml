@@ -42,7 +42,7 @@ let index_enc =
           (fun (title, map) -> (title, `Groups map)) ] in
   let open Json_encoding in
   mu "group" @@ fun group_enc ->
-  check_version_1 @@
+  check_version_2 @@
   union
     [ case
         (obj1 (req "exercises" (list string)))
@@ -60,12 +60,37 @@ let exercise_kind_enc =
       "project", Project ;
       "exercise", Learnocaml_exercise ]
 
+let exercise_meta_enc_v1 =
+  let open Json_encoding in
+  obj2
+    (req "kind" exercise_kind_enc)
+    (req "stars" float)
+
+let exercise_meta_enc_v2 =
+  let open Json_encoding in
+  obj9
+     (opt "title" string)
+     (opt "short_description" string)
+     (opt "identifier" string)
+     (opt "author" (list (tup2 string string)))
+     (opt "focus" (list string))
+     (opt "requirements" (list string))
+     (opt "forward" (list string))
+     (opt "backward" (list string))
+     (opt "max_score" int)
+
 let exercise_meta_enc =
   let open Json_encoding in
-  check_version_1
-    (obj2
-       (req "kind" exercise_kind_enc)
-       (req "stars" float))
+  check_version_2
+    (merge_objs
+       (merge_objs
+          exercise_meta_enc_v1
+          exercise_meta_enc_v2)
+       unit) (* FIXME: temporary parameter, that allows unknown fields *)
+
+let opt_to_list_enc = function
+    None -> []
+  | Some l -> l
 
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
@@ -182,14 +207,38 @@ let main dest_dir =
                (fun acc id ->
                   all_exercises := id :: !all_exercises ;
                   from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun (exercise_kind, exercise_stars) ->
-                  let exercise_short_description = None in
+                  >>= fun (((exercise_kind, exercise_stars),
+                            (title, exercise_short_description,
+                             exercise_identifier,
+                             author, focus, requirements,
+                             forward, backward, max_score)),
+                           _) ->
                   let exercise =
                     read_exercise (!exercises_dir / id) in
+                  let exercise_title =
+                    match title with
+                    | Some title -> title
+                    | None -> Learnocaml_exercise.(get title) exercise
+                  in
+                  let exercise_max_score =
+                    match max_score with
+                    | Some max_score -> Some max_score
+                    | None ->
+                        try Some (Learnocaml_exercise.(get max_score) exercise)
+                        with Learnocaml_exercise.Missing_field _ -> None
+                  in
                   let exercise =
                     { exercise_kind ; exercise_stars ;
-                      exercise_title = Learnocaml_exercise.(get title) exercise ;
-                      exercise_short_description} in
+                      exercise_title ;
+                      exercise_short_description;
+                      exercise_identifier ;
+                      exercise_author = opt_to_list_enc author ;
+                      exercise_focus = opt_to_list_enc focus ;
+                      exercise_requirements = opt_to_list_enc requirements ;
+                      exercise_forward = opt_to_list_enc forward ;
+                      exercise_backward = opt_to_list_enc backward ;
+                      exercise_max_score ;
+                    } in
                   acc >>= fun acc ->
                   Lwt.return (StringMap.add id exercise acc))
                (Lwt.return StringMap.empty) ids >>= fun exercises ->

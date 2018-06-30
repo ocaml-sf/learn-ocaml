@@ -20,11 +20,21 @@ type exercise_kind =
   | Problem
   | Learnocaml_exercise
 
+type identifier = string
+
 type exercise =
   { exercise_kind : exercise_kind ;
     exercise_title : string ;
     exercise_short_description : string option ;
-    exercise_stars : float (* \in [0.,4.] *) }
+    exercise_stars : float (* \in [0.,4.] *) ;
+    exercise_identifier : identifier option ;
+    exercise_author : (string * string) list ;
+    exercise_focus : string list ;
+    exercise_requirements : string list ;
+    exercise_forward : identifier list ;
+    exercise_backward : identifier list ;
+    exercise_max_score : int option ;
+  }
 
 and group =
   { group_title : string ;
@@ -62,6 +72,8 @@ and series =
 val tutorial_index_enc : series Map.Make (String).t Json_encoding.encoding
 
 val check_version_1 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
+
+val check_version_2 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
 
 (** the following are relative paths to the www root, using [/] as path
     separator *)
