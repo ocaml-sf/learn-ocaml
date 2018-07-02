@@ -1,114 +1,11 @@
-How to write an exercise for the learn-ocaml platform?
-======================================================
-
-This tutorial explains how to write an automatically graded exercise
-for the learn-ocaml platform. As a prerequesite to this tutorial, make
-sure you have followed the tutorial to setup your development
-environment `howto-setup-exercise-development-environment.md`.
-
-After this tutorial, you will be able to submit your exercise to an
-exercise GIT repository if you want. The procedure for submission is
-explained in `howto-submit-an-exercise.md`. If your exercises are not
-to be shared, you can already deploy an instance of the learn-ocaml
-platform using your local directory of exercises.
-
-
-## Download the source files for this tutorial
-
-All the files used in that tutorial are available on a GIT repository:
-
-```bash
-git clone git@github.com:yurug/learn-ocaml-tutorial.git
-```
-
-Each step of the tutorial is a branch in the repository. Therefore,
-do
-
-```bash
-git checkout step-1
-```
-
-to get the files for step 1, and replace `step-1` by `step-2` to
-get the files for the second step, and so on and so forth.
-
-## The tutorials
-[Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md).
-
-[Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md).
-
-[Step 2](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md).
-
-
-## Step 3: Grading with generators for Ocaml built-in types
- You can find the examples below in the
-	`exercises/sampler-built-in-types` directory (branch: step-3).
-	
-As see previously, you can either give manually both inputs of the
-tested functions or you can ask the grader to randomly generate
-inputs. 
-
-For built-in types, the grader actually do most of the work for
-you: you only need to precise the number of inputs sets you want to be
-randomly generated.
-
-In the example below, five tests are generated randomly.
-
-```ocaml
-let exercise_1 =
-	Section ([ Text "Function: "; Code "identity" ],
-           test_function_1_against_solution
-             [%ty: int -> int] "identity"
-             ~gen:5 [0]
-          )
-```
-
-However, with this method, you have no control on how the inputs are
-generated. If, for example, you want a function of type `int -> int ->
-int` to be tested for inputs between 12 and 42, you need to give the
-test function the sampler you want. There are 2 ways to do that. 
-
-### Method 1 : using the `~sampler` argument
-One way is to use the optional argument `~sampler` of type `unit ->
-<arg1 type> * <arg2 type> * <arg3 type> etc.`.
-
-```ocaml
-let exercise_2 =
-  Section ([ Text "Function: "; Code "pi1" ],
-           test_function_2_against_solution
-             [%ty: int -> int -> int] "pi1"
-             ~sampler:(fun () -> Random.int 31 + 12, Random.int 31 + 12)
-             ~gen:5
-             []
-          )
-```
-
-### Method 2 : redefining the corresponding sampling function.
-Another way is to define a sampling function of type `unit -> <arg1
-type> * <arg2 type> * <arg3 type> etc.` using the naming convention :
-`sample_<type>`. In this case, nothing needs to be add to the test
-function call.
-
-```ocaml
-let sample_int = Random.int 31 + 12
-
-let exercise_3 =
-	Section ([ Text "Function: "; Code "pi1" ],
-		test_function_2_against_solution
-		[%ty: int -> int -> int] "pi1"
-		~gen:5
-		[]
-	)
-```
-
-
-## Step 4: Grading with generators for user-defined types
+# Step 4: Grading with generators for user-defined types
 
 In the case of user-defined types, it is mandatory to define a
 sampler. Both two previous methods (defining a sampler function
 `sample_my_type` or using the `~sampler` optional argument) can be
 used but required a little more work, especially for parametric types.
 
-### Non parametric type
+## Non parametric type
 For non-parametric type, it is exactly the same than previously. 
 
 You can find the examples below in the
@@ -119,7 +16,7 @@ In the examples, we use the type `color` defined as :
 type color = Green | Yellow | Red | Blue
 ```
 
-#### Method 1:  using the `~sampler` argument
+### Method 1:  using the `~sampler` argument
 
 As previously, you can simply add the argument `~sampler` of type
 `unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
@@ -135,8 +32,8 @@ let exercise_1 =
              []
           )
 ```
-		  
-#### Method 2: Defining a sampler 
+		 
+### Method 2: Defining a sampler 
  Same than above: a sampler of type `unit -> my_type` has to be named
  `sample_my_type`.
 
@@ -158,7 +55,7 @@ let exercise_2 =
 ```
 
 
-### Parametric types
+## Parametric types
 
 You can find the examples below in the
 `exercises/sampler-user-defined-parametric-types` directory (branch: step-4).
@@ -171,7 +68,7 @@ type 'a tree =
   | Leaf
   | Node of 'a tree * 'a * 'a tree
 ```
-#### Method 1:  using the `~sampler` argument
+### Method 1:  using the `~sampler` argument
 
 No change here, just don't forget that `~sampler` has type 
 `unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
@@ -201,7 +98,7 @@ let exercise_3 =
           )
 ```
 
-#### Method 2: Defining a sampler
+### Method 2: Defining a sampler
 
 A sampler of a parametric type ` ('a * 'b * ... ) my_type` has a
 type : `(unit -> 'a) -> (unit -> 'b) -> ... -> -> (unit -> ('a * 'b *
@@ -255,14 +152,7 @@ let exercise_2 =
 More advanced examples (but nothing new) can be found in
 `exercises/advanced_examples` directory (branch: step-4).
 
-
-## Step 5 : Other test functions
-
-The function `Test_lib.test_function_1_against_solution` is not the
-only test functions.
-
-To be continued.
-
-## Step 6: Introspection of students code
-
-To be continued.
+---
+<div style="text-align: right">[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)</div>
+<div style="text-align: right">[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)</div>
+<div style="text-align: right">[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)</div>
