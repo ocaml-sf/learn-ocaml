@@ -36,7 +36,7 @@ let index_enc =
     obj2
       (req "title" string)
       (req "tutorials" (list string)) in
-  check_version_1 @@
+  check_version_2 @@
   obj1 (req "series" (assoc series_enc))
 
 let to_file encoding fn value =
