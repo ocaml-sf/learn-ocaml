@@ -80,5 +80,5 @@ your list of exercises is probably empty but it will be populated by the
 next step of this tutorial.
 
 ---
-<div style="text-align: right">[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)</div>
-<div style="text-align: right">[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)</div>
+[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)

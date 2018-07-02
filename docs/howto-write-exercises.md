@@ -32,12 +32,23 @@ to get the files for step 1, and replace `step-1` by `step-2` to
 get the files for the second step, and so on and so forth.
 
 ## The tutorials
-[Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md).
+[Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md)
 
-[Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md).
+   - Structure of an exercise
 
-[Step 2](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md).
+   - Purpose of each file
+	
+[Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)
+      
+[Step 2: Basic grading by comparison with your solution](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md)
+   
+   - simple example to grade by comparison with a solution
+   
+   - with polymorphic functions
+   
+   - with multiple arguments functions
 
+[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
 
 
 ## Step 5 : Other test functions
