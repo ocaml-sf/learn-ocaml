@@ -34,30 +34,31 @@ get the files for the second step, and so on and so forth.
 ## The tutorials
 [Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md)
 	
-	- Structure of an exercise
-	- Purpose of each file
+- Structure of an exercise
+	
+- Purpose of each file
 	
 [Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)
       
 [Step 2: Basic grading by comparison with your solution](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md)
 
-	- simple example to grade by comparison with a solution
-	
-	- with polymorphic functions
-	
-	- with multiple arguments functions
+- Simple example to grade by comparison with a solution
 
-[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+- With polymorphic functions
 
-	- generate tests by using the pre-construct samplers 
+- With multiple arguments functions
 
-	- generate tests by defining its own sampler 
+[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3)
+
+- Generate tests by using the pre-construct samplers 
+
+- Generate tests by defining its own sampler 
 
 [Step 4: Grading with generators for user-defined types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
 
-	- generate tests for non-parametric user-defined types 
-    
-	- generate tests for parametric user-defined types 
+- Generate tests for non-parametric user-defined types 
+	
+- Generate tests for parametric user-defined types 
 
 [Step 5 : More test functions](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
 	
