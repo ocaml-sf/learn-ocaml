@@ -53,14 +53,12 @@ get the files for the second step, and so on and so forth.
 	- generate tests by defining its own sampler 
 
 [Step 4: Grading with generators for user-defined types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
+    - generate tests for non-parametric user-defined types 
+    - generate tests for parametric user-defined types 
 
-## Step 5 : Other test functions
-
-The function `Test_lib.test_function_1_against_solution` is not the
-only test functions.
-
-To be continued.
-
-## Step 6: Introspection of students code
-
-To be continued.
+[Step 5 : More test functions](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
+	
+[Step 6 : Grading exercises on List (with pre-defined sampler)](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
+	
+[Step 7 : Introspection of students code](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-7.md)
+	
