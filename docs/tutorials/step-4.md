@@ -18,7 +18,7 @@ type color = Green | Yellow | Red | Blue
 
 ### Method 1:  using the `~sampler` argument
 
-As previously, you can simply add the argument `~sampler` of type
+As in the previous step, you can simply add the argument `~sampler` of type
 `unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
 
 ```ocaml
@@ -34,8 +34,9 @@ let exercise_1 =
 ```
 		 
 ### Method 2: Defining a sampler 
- Same than above: a sampler of type `unit -> my_type` has to be named
- `sample_my_type`.
+You can also define your own sampler and not use the `~sampler`
+argument with the following rule : a sampler of type `unit -> my_type`
+has to be named `sample_my_type`.
 
 ```ocaml
 let sample_color () : color =
@@ -54,6 +55,9 @@ let exercise_2 =
           )
 ```
 
+In this case, the grader will automatically use your sample for the
+type `color`. Be careful to write `sample_my_type` and not
+`sampler_my_type`.
 
 ## Parametric types
 
@@ -153,6 +157,8 @@ More advanced examples (but nothing new) can be found in
 `exercises/advanced_examples` directory (branch: step-4).
 
 ---
-<div style="text-align: right">[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)</div>
-<div style="text-align: right">[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)</div>
-<div style="text-align: right">[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)</div>
+[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+
+[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+
+[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
