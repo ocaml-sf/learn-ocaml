@@ -3,14 +3,13 @@
 	`exercises/sampler-built-in-types` directory (branch: step-3).
 	
 As see previously, you can either give manually both inputs of the
-tested functions or you can ask the grader to randomly generate
+tested functions or you can ask the grader to automatically generate
 inputs. 
 
 For built-in types, the grader actually do most of the work for
-you: you only need to precise the number of inputs sets you want to be
-randomly generated.
+you: you only need to precise the number of inputs sets you want to be generated.
 
-In the example below, five tests are generated randomly.
+In the example below, five tests are automatically generated.
 
 ```ocaml
 let exercise_1 =
