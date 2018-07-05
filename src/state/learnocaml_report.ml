@@ -269,7 +269,7 @@ let format_report items =
             } else {\
             div.classList.add ('folded') ;\
             }" in
-  E ("div", [ "class", "folded" ; "id", "learnocaml-report" ],
+  E ("div", [ "id", "learnocaml-report" ],
      [E ("div", [ "class", " section " ^ result_class ],
          [ E ("span", [ "class", "title clickable" ; "onclick", js], score) ]) ;
       E ("div", [ "class", "main" ], report) ])

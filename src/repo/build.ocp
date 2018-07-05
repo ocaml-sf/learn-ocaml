@@ -10,6 +10,7 @@ begin library "learnocaml-repository"
     "ocplib-json-typed"
     "xor"
     "lwt"
+    "lwt_utils"
   ]
 end
 
