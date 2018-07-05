@@ -68,7 +68,10 @@ let display_report exo report =
   Manip.removeClass report_button "success" ;
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
-  let grade = score * 100 / (Learnocaml_exercise.(get max_score) exo) in
+  let grade =
+    let max = Learnocaml_exercise.(get max_score) exo in
+    if max = 0 then 999 else score * 100 / max
+  in
   if grade >= 100 then begin
     Manip.addClass report_button "success" ;
     Manip.replaceChildren report_button

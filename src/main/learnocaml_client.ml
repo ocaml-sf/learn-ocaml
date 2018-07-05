@@ -480,7 +480,7 @@ let upload_report server token exercise solution report =
   let exercise_state =
     { Learnocaml_exercise_state.
       solution;
-      grade = Some (score * 100 / max_score);
+      grade = if max_score = 0 then None else Some (score * 100 / max_score);
       report = Some report;
       mtime = Unix.gettimeofday ();
     }
