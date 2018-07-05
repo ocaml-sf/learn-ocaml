@@ -193,6 +193,24 @@ module Args = struct
           $Grader.term $Builder.term $Server.term)
 end
 
+let copy_tree src dst =
+  Lwt.catch (fun () ->
+      Lwt_unix.file_exists dst >>= (function
+          | true -> Lwt.return_unit
+          | false -> Lwt_unix.mkdir dst 0o755) >>= fun () ->
+      let cmd =
+        Array.concat
+          [[|"cp"; "-PR"|];
+           Array.map (Filename.concat src) (Sys.readdir src);
+           [|dst|]]
+      in
+      Lwt_process.exec ("", cmd) >>= fun r ->
+      if r <> Unix.WEXITED 0 then Lwt.fail_with "copy_tree"
+      else Lwt.return_unit)
+    (function
+      | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_tree"
+      | e -> raise e)
+
 open Args
 
 let main o =
@@ -211,7 +229,7 @@ let main o =
     if List.mem Build o.commands then
       (Printf.printf "Updating app at %s\n%!" o.app_dir;
        Lwt.catch
-         (fun () -> Lwt_utils.copy_tree o.builder.Builder.contents_dir o.app_dir)
+         (fun () -> copy_tree o.builder.Builder.contents_dir o.app_dir)
          (function
            | Failure _ ->
                Lwt.fail_with @@ Printf.sprintf
