@@ -1196,7 +1196,7 @@ let run_timeout ~time v =
     test_value rf @@ fun rf ->
     let gen = match gen with
       | Some n -> n
-      | None -> 0 in
+      | None -> max 5 (10 - List.length tests) in
     let tests = match gen with
       | 0 -> List.map (fun x () -> x) tests
       | _ -> 
