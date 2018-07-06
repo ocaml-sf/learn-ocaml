@@ -275,7 +275,7 @@ let get_line_tokens line st row doc =
     let open Approx_tokens in
     let open Nstream in
     match Nstream.next_full stream with
-    | None | Some ({token = EOF }, _, _) -> assert false
+    | None | Some ({token = EOF ; _}, _, _) -> assert false
     | Some (tok, lex_ctxt, stream) ->
         let block = IndentBlock.update !config.indent st.block stream tok; in
         let tok, block, offset =
@@ -349,9 +349,9 @@ type editor = {
   mutable current_warnings: warning list;
 }
 
-let get_editor { ace } = ace
-let get_current_error { current_error } = current_error
-let get_current_warnings { current_warnings } = current_warnings
+let get_editor { ace; _ } = ace
+let get_current_error { current_error; _ } = current_error
+let get_current_warnings { current_warnings; _ } = current_warnings
 
 let reset_error editor =
   editor.current_error <- None;
@@ -408,7 +408,7 @@ let get_indent state line =
   debug "Indent!";
   IndentBlock.dump state.block;
   match Nstream.(next (of_string ~st:state.lex_ctxt line)) with
-  | None | Some ({ Nstream.token = Approx_tokens.EOF } , _) ->
+  | None | Some ({ Nstream.token = Approx_tokens.EOF; _ } , _) ->
       IndentBlock.guess_indent state.block
   | Some _ when IndentBlock.is_in_comment state.block ->
       IndentBlock.guess_indent state.block

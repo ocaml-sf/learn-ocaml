@@ -385,10 +385,10 @@ module Make
     let open Ast_mapper in
     let res : Learnocaml_report.report list ref  = ref [] in
     let add l = res := l :: !res in
-    let name { Location.txt } = String.concat "." (Longident.flatten txt) in
+    let name { Location.txt; _ } = String.concat "." (Longident.flatten txt) in
     let variables = ref [] in
     let modules = ref [] in
-    let treat_module_prefixes { Location.txt } =
+    let treat_module_prefixes { Location.txt; _ } =
       match Longident.flatten txt with
       | fst :: _ when List.mem fst !modules (* shadowed *) -> ()
       | txt ->
@@ -400,12 +400,12 @@ module Make
           match List.rev txt with
           | [] -> ()
           | _ :: prefixes -> all prefixes in
-    let treat_module ({ Location.txt } as ident) =
+    let treat_module ({ Location.txt; _ } as ident) =
       treat_module_prefixes ident ;
       match Longident.flatten txt with
       | [ m ] | m :: _  when List.mem m !modules (* shadowed *) -> ()
       | _ -> add @@ on_module_occurence (name ident) in
-    let treat_variable ({ Location.txt } as ident) =
+    let treat_variable ({ Location.txt; _ } as ident) =
       treat_module_prefixes ident ;
       match Longident.flatten txt with
       | m :: _ :: _  when List.mem m !modules (* shadowed *) -> ()
@@ -414,7 +414,7 @@ module Make
     let expr mapper expr =
       add @@ on_expression expr ;
       match expr with
-      | { pexp_desc = Pexp_open (popen_override, popen_lid, iexpr) } ->
+      | { pexp_desc = Pexp_open (popen_override, popen_lid, iexpr); _ } ->
           let o = { popen_lid ; popen_override ;
                     popen_loc = Location.none ;
                     popen_attributes = [] } in
@@ -426,7 +426,7 @@ module Make
           ignore (mapper.expr mapper iexpr) ;
           modules := before ;
           expr
-      | { pexp_desc = Pexp_letmodule ({ Location.txt = name }, mexpr, iexpr) } ->
+      | { pexp_desc = Pexp_letmodule ({ Location.txt = name; _ }, mexpr, iexpr); _ } ->
           let before = !modules in
           let variables_before = !variables in
           ignore (mapper.module_expr mapper mexpr) ;
@@ -435,7 +435,7 @@ module Make
           ignore (mapper.expr mapper iexpr) ;
           modules := before ;
           expr
-      | { pexp_desc = Pexp_apply (fn, args) } as e ->
+      | { pexp_desc = Pexp_apply (fn, args); _ } as e ->
           let args = List.map
               (function
                 | (Asttypes.Nolabel, v) -> ("", v)
@@ -443,51 +443,51 @@ module Make
               args in
           add @@ on_function_call (fn, args) ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_ident ident } as e ->
+      | { pexp_desc = Pexp_ident ident; _ } as e ->
           treat_variable ident ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_construct (ident, _) } as e ->
+      | { pexp_desc = Pexp_construct (ident, _); _ } as e ->
           treat_module_prefixes ident ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_record (fields, _) } as e ->
+      | { pexp_desc = Pexp_record (fields, _); _ } as e ->
           List.iter (fun (ident, _) -> treat_module_prefixes ident) fields ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_field (_, ident) } as e ->
+      | { pexp_desc = Pexp_field (_, ident); _ } as e ->
           treat_module_prefixes ident ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_setfield (_, ident, _) } as e ->
+      | { pexp_desc = Pexp_setfield (_, ident, _); _ } as e ->
           treat_module_prefixes ident ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_new ident } as e ->
+      | { pexp_desc = Pexp_new ident; _ } as e ->
           treat_module_prefixes ident ;
           default_mapper.expr mapper e
-      | { pexp_desc = Pexp_let (Asttypes.Nonrecursive, pvs, iexpr) } ->
+      | { pexp_desc = Pexp_let (Asttypes.Nonrecursive, pvs, iexpr); _ } ->
           let before = !variables in
           let modules_before = !modules in
-          List.iter (fun { pvb_expr } ->
+          List.iter (fun { pvb_expr; _ } ->
               ignore (mapper.expr mapper pvb_expr))
             pvs ;
-          List.iter (fun { pvb_pat } ->
+          List.iter (fun { pvb_pat; _ } ->
               ignore (mapper.pat mapper pvb_pat))
             pvs ;
           ignore (mapper.expr mapper iexpr) ;
           variables := before ;
           modules := modules_before ;
           expr
-      | { pexp_desc = Pexp_let (Asttypes.Recursive, pvs, iexpr) } ->
+      | { pexp_desc = Pexp_let (Asttypes.Recursive, pvs, iexpr); _ } ->
           let before = !variables in
           let modules_before = !modules in
-          List.iter (fun { pvb_pat } ->
+          List.iter (fun { pvb_pat; _ } ->
               ignore (mapper.pat mapper pvb_pat))
             pvs ;
-          List.iter (fun { pvb_expr } ->
+          List.iter (fun { pvb_expr; _ } ->
               ignore (mapper.expr mapper pvb_expr))
             pvs ;
           ignore (mapper.expr mapper iexpr) ;
           variables := before ;
           modules := modules_before ;
           expr
-      | { pexp_desc = Pexp_for (pat, sexpr, eexpr, _, iexpr) } ->
+      | { pexp_desc = Pexp_for (pat, sexpr, eexpr, _, iexpr); _ } ->
           let before = !variables in
           let modules_before = !modules in
           ignore (mapper.expr mapper sexpr) ;
@@ -497,7 +497,7 @@ module Make
           variables := before ;
           modules := modules_before ;
           expr
-      | { pexp_desc = Pexp_fun (label, vexpr, pat, iexpr) } ->
+      | { pexp_desc = Pexp_fun (label, vexpr, pat, iexpr); _ } ->
           let before = !variables in
           let modules_before = !modules in
           (match vexpr with
@@ -517,36 +517,36 @@ module Make
     let structure_item mapper structure_item =
       add @@ on_structure_item structure_item ;
       match structure_item with
-      | { pstr_desc = Pstr_module { pmb_name ; pmb_expr } } ->
+      | { pstr_desc = Pstr_module { pmb_name ; pmb_expr; _ }; _ } ->
           let before = !modules in
           let variables_before = !variables in
           ignore (mapper.module_expr mapper pmb_expr) ;
           modules := pmb_name.Location.txt :: before ;
           variables := variables_before ;
           structure_item
-      | { pstr_desc = Pstr_recmodule mbs } ->
+      | { pstr_desc = Pstr_recmodule mbs; _ } ->
           let variables_before = !variables in
-          List.iter (fun { pmb_name } -> modules := pmb_name.Location.txt :: !modules) mbs  ;
+          List.iter (fun { pmb_name; _ } -> modules := pmb_name.Location.txt :: !modules) mbs  ;
           let before = !modules in
-          List.iter (fun { pmb_expr } ->
+          List.iter (fun { pmb_expr; _ } ->
               ignore (mapper.module_expr mapper pmb_expr) ;
               variables := variables_before ;
               modules := before) mbs  ;
           structure_item
-      | { pstr_desc = Pstr_open o } as si ->
+      | { pstr_desc = Pstr_open o; _ } as si ->
           add @@ on_open o ;
           treat_module o.popen_lid ;
           ignore (default_mapper.structure_item mapper si) ;
           variables := [] ;
           modules := [] (* over approximation *) ;
           structure_item
-      | { pstr_desc = Pstr_include i } as si ->
+      | { pstr_desc = Pstr_include i; _ } as si ->
           add @@ on_include i ;
           ignore (default_mapper.structure_item mapper si) ;
           variables := [] ;
           modules := [] (* over approximation *) ;
           structure_item
-      | { pstr_desc = Pstr_primitive p } as si ->
+      | { pstr_desc = Pstr_primitive p; _ } as si ->
           add @@ on_external p ;
           ignore (default_mapper.structure_item mapper si) ;
           variables := p.pval_name.Location.txt :: !variables ;
@@ -554,17 +554,17 @@ module Make
       | si -> default_mapper.structure_item mapper si in
     let typ mapper typ =
       match typ with
-      | { ptyp_desc = Ptyp_constr (ident, _) } as t ->
+      | { ptyp_desc = Ptyp_constr (ident, _); _ } as t ->
           treat_module_prefixes ident ;
           default_mapper.typ mapper t
-      | { ptyp_desc = Ptyp_class (lid, _) } as t ->
+      | { ptyp_desc = Ptyp_class (lid, _); _ } as t ->
           treat_module_prefixes lid ;
           default_mapper.typ mapper t
       | typ -> default_mapper.typ mapper typ
     in
     let module_expr mapper module_expr =
       match module_expr with
-      | { pmod_desc = Pmod_ident ident } as me ->
+      | { pmod_desc = Pmod_ident ident; _ } as me ->
           treat_module ident ;
           default_mapper.module_expr mapper me
       | me -> default_mapper.module_expr mapper me
@@ -572,19 +572,19 @@ module Make
     let pat mapper pat =
       add @@ on_pattern pat ;
       match pat with
-      | { ppat_desc = (Ppat_var n | Ppat_alias (_, n)) } as p ->
+      | { ppat_desc = (Ppat_var n | Ppat_alias (_, n)); _ } as p ->
           variables := n.Location.txt :: !variables ;
           default_mapper.pat mapper p
-      | { ppat_desc = Ppat_unpack n } as p ->
+      | { ppat_desc = Ppat_unpack n; _ } as p ->
           modules := n.Location.txt :: !modules ;
           default_mapper.pat mapper p
-      | { ppat_desc = Ppat_construct (ident, _) } as p ->
+      | { ppat_desc = Ppat_construct (ident, _); _ } as p ->
           treat_module_prefixes ident ;
           default_mapper.pat mapper p
-      | { ppat_desc = Ppat_record (fields, _) } as p ->
+      | { ppat_desc = Ppat_record (fields, _); _ } as p ->
           List.iter (fun (ident, _) -> treat_module_prefixes ident) fields ;
           default_mapper.pat mapper p
-      | { ppat_desc = Ppat_type ident } as p ->
+      | { ppat_desc = Ppat_type ident; _ } as p ->
           treat_module_prefixes ident ;
           default_mapper.pat mapper p
       | p -> default_mapper.pat mapper p in
@@ -696,10 +696,10 @@ module Make
                            Break ;
                            Text "Check that it is defined as a simple " ; Code "let" ;
                            Text " at top level." ], Failure) ]
-      | { pstr_desc = Pstr_value (_, bds) } :: rest ->
+      | { pstr_desc = Pstr_value (_, bds); _ } :: rest ->
           let rec findvar = function
             | [] -> findlet rest
-            | { pvb_pat = { ppat_desc = Ppat_var { Location.txt } } ; pvb_expr } :: _ when txt = name ->
+            | { pvb_pat = { ppat_desc = Ppat_var { Location.txt; _ }; _ } ; pvb_expr; _ } :: _ when txt = name ->
                 Message ([ Text "Found a toplevel definition for " ; Code name ; Text "."], Informative)
                 :: cb pvb_expr
             | _ :: rest -> findvar rest in
@@ -734,11 +734,11 @@ module Make
     let open Learnocaml_report in
     try let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
         match Env.find_type path !Toploop.toplevel_env with
-        | { Types. type_kind = Types.Type_abstract ; Types. type_manifest = None } ->
+        | { Types. type_kind = Types.Type_abstract ; Types. type_manifest = None; _ } ->
            true, [ Message ([Text "Type" ; Code name ; Text "is abstract as expected." ], Success score) ]
-        | { Types. type_kind = _ ; type_private = Asttypes.Private } when allow_private ->
+        | { Types. type_kind = _ ; type_private = Asttypes.Private; _ } when allow_private ->
            true, [ Message ([Text "Type" ; Code name ; Text "is private, I'll accept that :-)." ], Success score) ]
-        | { Types. type_kind = _ } ->
+        | { Types. type_kind = _; _ } ->
            false, [ Message ([Text "Type" ; Code name ; Text "should be abstract!" ], Failure) ]
     with Not_found -> false, [ Message ( [Text "Type" ; Code name ; Text "not found." ], Failure) ]
 

@@ -26,7 +26,7 @@ type 'a field =
 
 exception Missing_field of string
 
-let get { key ; ciphered ; decode } ex =
+let get { key ; ciphered ; decode ; _ } ex =
   try
     let raw = StringMap.find key ex in
     if ciphered then
@@ -37,10 +37,10 @@ let get { key ; ciphered ; decode } ex =
       decode raw
   with Not_found -> raise (Missing_field key)
 
-let has { key } ex =
+let has { key ; _ } ex =
   StringMap.mem key ex
 
-let set { key ; ciphered ; encode } raw ex =
+let set { key ; ciphered ; encode ; _ } raw ex =
   if ciphered then
     let prefix =
       Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in

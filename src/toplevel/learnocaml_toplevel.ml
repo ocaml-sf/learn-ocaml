@@ -77,10 +77,10 @@ let enable_input top =
     Learnocaml_toplevel_input.enable top.input
   end
 
-let scroll { output } =
+let scroll { output; _ } =
   Learnocaml_toplevel_output.scroll output
 
-let clear { output } =
+let clear { output; _ } =
   Learnocaml_toplevel_output.clear output ;
   Learnocaml_toplevel_output.output_stdout output
     "The toplevel has been cleared.\n"
@@ -259,7 +259,7 @@ let make_timeout_popup
     ?(countdown = 10)
     ?(refill_step = 10)
     ?(on_show = (fun () -> ()))
-    () { container } =
+    () { container; _ } =
   let open Tyxml_js.Html5 in
   let t0 = Sys.time () in
   let countdown = ref countdown in
@@ -310,7 +310,7 @@ let make_timeout_popup
 
 let make_flood_popup
     ?(on_show = (fun () -> ()))
-    () { container } name amount =
+    () { container; _ } name amount =
   let open Tyxml_js.Html5 in
   let answer = ref None in
   let btn_continue =
@@ -504,8 +504,8 @@ let create
   Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
 
-let print_string { output } = Learnocaml_toplevel_output.output_stdout output
+let print_string { output; _ } = Learnocaml_toplevel_output.output_stdout output
 
-let prerr_string { output } = Learnocaml_toplevel_output.output_stderr output
+let prerr_string { output; _ } = Learnocaml_toplevel_output.output_stderr output
 
-let print_html { output } = Learnocaml_toplevel_output.output_html output
+let print_html { output; _ } = Learnocaml_toplevel_output.output_html output
