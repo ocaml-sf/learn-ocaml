@@ -82,6 +82,7 @@ begin library "grading-cli"
     "grading"
     "ocplib-ocamlres"
     "ezjsonm"
+    "lwt_utils"
   ]
   files = [
     "grading_cli.ml"

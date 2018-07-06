@@ -173,9 +173,7 @@ let main dest_dir =
     | Some exercises_index -> exercises_index
     | None -> !exercises_dir / "index.json" in
   let exercises_dest_dir = dest_dir / Learnocaml_index.exercises_dir in
-  Lwt_unix.file_exists exercises_dest_dir >>= fun exists ->
-  (if exists then Lwt.return_unit
-   else Lwt_unix.mkdir exercises_dest_dir 0o755) >>= fun () ->
+  Lwt_utils.mkdir_p exercises_dest_dir >>= fun () ->
   Lwt.catch
     (fun () ->
        (if Sys.file_exists exercises_index then

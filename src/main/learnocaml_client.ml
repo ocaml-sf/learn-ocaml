@@ -17,19 +17,26 @@
 
 open Lwt.Infix
 
+let version = "0.1"
+
 module Args = struct
   open Cmdliner
   open Arg
 
   type t = {
-    server_url: Uri.t;
-    solution_file: string;
-    exercise_id: string;
+    server_url: Uri.t option;
+    solution_file: string option;
+    exercise_id: string option;
     output_format: [`Console|`Json|`Html|`Raw];
     submit: bool;
     color: bool;
     verbosity: int;
-    token: string option;
+    token: Learnocaml_sync.Token.t option;
+    local: bool;
+    set_options: bool;
+    print_token: bool;
+    fetch: bool;
+    version: bool;
   }
 
   let url_conv =
@@ -43,20 +50,21 @@ module Args = struct
   let token_conv =
     conv ~docv:"TOKEN" (
       (fun s ->
-         if Learnocaml_sync.Token.check s then Ok s
-         else Error (`Msg ("Invalid token "^s))),
-      (fun fmt s -> Format.pp_print_string fmt s)
+         try Ok (Learnocaml_sync.Token.parse s)
+         with Failure msg ->
+           Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
+      (fun fmt t -> Format.pp_print_string fmt (Learnocaml_sync.Token.to_string t))
     )
 
   let server_url =
-    value & opt url_conv (Uri.of_string "https://learn-ocaml.org") &
+    value & opt (some url_conv) None &
     info ["s";"server"] ~docv:"URL" ~doc:
       "The URL of the learn-ocaml server"
       ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
             "Sets the learn-ocaml server URL. Overriden by $(b,--server).")
 
   let solution_file =
-    required & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
+    value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
       "The file containing the user's solution to the exercise"
 
   let exercise_id =
@@ -98,14 +106,32 @@ module Args = struct
               "Sets the learn-ocaml user token on the sever. Overriden by \
                $(b,--token).")
 
+  let local =
+    value & flag & info ["local"] ~doc:
+      "Generate a configuration file local to the current directory, rather \
+       than user-wide"
+
+  let set_options =
+    value & flag & info ["set-options"] ~doc:
+      "Overwrite the configuration file with the command-line options \
+       ($(b,--server), $(b,--token)), and exit"
+
+  let print_token =
+    value & flag & info ["print-token"] ~doc:
+      "Just print the configured user token and exit"
+
+  let fetch =
+    value & flag & info ["fetch"] ~doc:
+      "Fetch the user's solutions on the server to the current directory and exit"
+
+  let version =
+    value & flag & info ["version"] ~doc:
+      "Print the version of this program and exit"
+
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token =
-      let exercise_id = match exercise_id with
-        | Some id -> id
-        | None -> Filename.(remove_extension (basename solution_file))
-      in
+        color_when verbose token local set_options print_token fetch version =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -118,12 +144,60 @@ module Args = struct
         submit = not dont_submit;
         color;
         verbosity = List.length verbose;
-        token
+        token;
+        local;
+        set_options;
+        print_token;
+        fetch;
+        version;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token)
+          $color_when $verbose $token $local $set_options $print_token $fetch
+          $version)
+end
+
+module ConfigFile = struct
+
+  type t = {
+    server: Uri.t;
+    token: Learnocaml_sync.Token.t;
+  }
+
+  let local_path, user_path =
+    let ( / ) = Filename.concat in
+    Sys.getcwd () / ".learnocaml-client",
+    (try Sys.getenv "HOME" with Not_found -> ".")
+    / ".config" / "learnocaml" / "client.json"
+
+  let path ?(local=false) () =
+    if local then
+      if Sys.file_exists local_path then Some local_path else None
+    else
+      List.find_opt Sys.file_exists [local_path; user_path]
+
+  let enc =
+    let open Json_encoding in
+    conv
+      (fun {server; token} -> server, token)
+      (fun (server, token) -> {server; token}) @@
+    obj2
+      (req "server" (conv Uri.to_string Uri.of_string string))
+      (req "token" Learnocaml_sync.Token.(conv to_string parse string))
+
+  let read file =
+    Lwt_io.with_file ~mode:Lwt_io.Input file Lwt_io.read >|=
+    Ezjsonm.from_string >|=
+    Json_encoding.destruct enc
+
+  let write path t =
+    Lwt_utils.mkdir_p (Filename.dirname path) >>= fun () ->
+    Lwt_io.(with_file ~mode:Output ~perm:0o600 path) @@ fun oc ->
+    Json_encoding.construct enc t |> function
+    | `O _ | `A _ as json -> Lwt_io.write oc (Ezjsonm.to_string json)
+    | _ -> assert false
+
 end
 
 module Console = struct
@@ -220,6 +294,32 @@ module Console = struct
     for i = 0 to width - 1 do String.blit c 0 b (i * ln) ln done;
     Bytes.set b (width * ln) '\n';
     Bytes.to_string b
+
+  let rec input ?default parse =
+    flush stderr;
+    let on_empty () =
+      match default with
+      | Some d -> d
+      | None ->
+          Printf.eprintf "I beg you pardon? %!";
+          input ?default parse
+    in
+    try match read_line () with
+      | "" -> on_empty ()
+      | s ->
+          try parse s with Failure msg ->
+            Printf.eprintf "Invalid input: %s\nPlease try again: %!" msg;
+            input ?default parse
+    with
+    | End_of_file -> prerr_newline (); on_empty ()
+    | Sys.Break as e -> prerr_newline (); raise e
+
+  let yesno ?(default=false) () =
+    input ~default (fun s -> match String.lowercase_ascii s with
+        | "y" | "yes" -> true
+        | "n" | "no" -> false
+        | _ -> failwith "please answer 'y' or 'n'.")
+
 end
 
 let get_score =
@@ -244,7 +344,7 @@ let print_score ?(max=1) ?color i =
   in
   if i <= 1 then
     Console.button color (Printf.sprintf " %3d pt  " i)
-  else 
+  else
     Console.button color (Printf.sprintf " %3d pts " i)
 
 let console_report ?(verbose=false) exercise report =
@@ -315,16 +415,17 @@ let fetch url =
   match Response.status resp with
   | `OK -> Cohttp_lwt.Body.to_string body
   | status ->
-      Cohttp_lwt.Body.to_string body >>= fun body_str ->
       Printf.ksprintf Lwt.fail_with
-        "Could not fetch data from server: code %d\n        %s"
+        "Error contacting learn-ocaml server: code %d"
         (Code.code_of_status status)
-        body_str
+
+let server_path server_url path =
+  Uri.with_path server_url @@
+  String.concat "/" (Uri.path server_url :: path)
 
 let fetch_exercise server_url id =
   let exercise_json_url =
-    Uri.with_path server_url
-      (Printf.sprintf "%s/exercises/%s.json" (Uri.path server_url) id)
+    server_path server_url ["exercises"; id ^ ".json"]
   in
   fetch exercise_json_url >|=
   Ezjsonm.from_string >|=
@@ -332,8 +433,7 @@ let fetch_exercise server_url id =
 
 let fetch_save server_url token =
   let sync_url =
-    Uri.with_path server_url
-      (Printf.sprintf "%s/sync/%s" (Uri.path server_url) token)
+    server_path server_url ["sync"; Learnocaml_sync.Token.to_string token]
   in
   fetch sync_url >|= fun s ->
   let s = if s = "" then "{}" else s in
@@ -342,8 +442,7 @@ let fetch_save server_url token =
 
 let upload_save server_url token save =
   let sync_url =
-    Uri.with_path server_url
-      (Printf.sprintf "%s/sync/%s" (Uri.path server_url) token)
+    server_path server_url ["sync"; Learnocaml_sync.Token.to_string token]
   in
   let json =
     match Json_encoding.construct Learnocaml_sync.save_file_enc save with
@@ -361,15 +460,27 @@ let upload_save server_url token save =
         "Could not upload the results to the server: code %d"
         (Code.code_of_status status)
 
+module StringMap = Map.Make(String)
+
+let write_save_files save =
+  Lwt_list.iter_s (fun (id, st) ->
+      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
+      if Sys.file_exists f then
+        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+         Lwt.return_unit)
+      else
+        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
+        Lwt_io.write oc st.Learnocaml_exercise_state.solution >|= fun () ->
+        Printf.eprintf "Wrote file %s\n%!" f)
+    (StringMap.bindings (save.Learnocaml_sync.all_exercise_states))
 
 let upload_report server token exercise solution report =
-  let module M = Map.Make(String) in
   let score = get_score report in
   let max_score = max_score exercise in
   let exercise_state =
     { Learnocaml_exercise_state.
       solution;
-      grade = Some (score * 100 / max_score);
+      grade = if max_score = 0 then None else Some (score * 100 / max_score);
       report = Some report;
       mtime = Unix.gettimeofday ();
     }
@@ -377,28 +488,114 @@ let upload_report server token exercise solution report =
   let new_save =
     { Learnocaml_sync.
       all_exercise_states =
-        M.singleton (Learnocaml_exercise.(get id) exercise)
+        StringMap.singleton (Learnocaml_exercise.(get id) exercise)
           exercise_state;
-      all_toplevel_histories = M.empty;
-      all_exercise_toplevel_histories = M.empty;
+      all_toplevel_histories = StringMap.empty;
+      all_exercise_toplevel_histories = StringMap.empty;
     }
   in
   fetch_save server token >>= fun save ->
   upload_save server token (Learnocaml_sync.sync save new_save)
 
-open Args
+let init ?(local=false) ?server ?token () =
+  let path = if local then ConfigFile.local_path else ConfigFile.user_path in
+  let default_server = Uri.of_string "http://learn-ocaml.org" in
+  let server =
+    match server with
+    | Some s -> s
+    | None ->
+        Printf.eprintf
+          "Please specify the address of the learn-ocaml server to use \
+           [default: %s]: " (Uri.to_string default_server);
+        let uri s =
+          let u = Uri.of_string s in
+          match Uri.scheme u with
+          | None -> Uri.with_scheme u (Some "http")
+          | Some ("http" (* | "https" *)) -> u
+          | Some s ->
+              failwith (Printf.sprintf
+                          "unsupported scheme %S, please use http://."
+                          s)
+        in
+        Console.input ~default:default_server uri
+  in
+  let get_new_token () =
+    let url = server_path server ["sync"; "gimme"] in
+    fetch url >|=
+    Ezjsonm.from_string >|=
+    Json_encoding.(
+      destruct @@ conv
+        Learnocaml_sync.Token.to_string Learnocaml_sync.Token.parse
+        (obj1 (req "token" string)))
+  in
+  let get_token () =
+    match token with
+    | Some t -> Lwt.return t
+    | None ->
+        Printf.eprintf
+          "Please provide your user token on %s (leave empty to generate one): "
+          (Uri.to_string server);
+        match
+          Console.input ~default:None
+            (fun s -> Some (Learnocaml_sync.Token.parse s))
+        with
+        | Some t -> Lwt.return t
+        | None -> get_new_token ()
+  in
+  get_token () >>= fun token ->
+  let config = { ConfigFile. server; token } in
+  ConfigFile.write path config >|= fun () ->
+  Printf.eprintf "Configuration written to %s\n%!" path;
+  config
+
+let get_config ?local ?(save_back=false) server_opt token_opt =
+  match ConfigFile.path ?local () with
+  | Some f ->
+      ConfigFile.read f >>= fun c ->
+      let c = match server_opt with
+        | None -> c
+        | Some server -> { c with ConfigFile.server }
+      in
+      let c = match token_opt with
+        | None -> c
+        | Some token -> { c with ConfigFile.token}
+      in
+      (if save_back then
+         ConfigFile.write f c >|= fun () ->
+         Printf.eprintf "Configuration written to %s\n%!" f;
+         exit 0
+       else Lwt.return_unit)
+      >|= fun () -> c
+  | None -> init ?local ?server:server_opt ?token:token_opt ()
 
 let main o =
-  Console.enable_colors := o.color;
-  Console.enable_utf8 := o.color;
+  Console.enable_colors := o.Args.color;
+  Console.enable_utf8 := o.Args.color;
+  if o.Args.version then
+    (print_endline version; exit 0);
+  let open Args in
+  get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
+  >>= fun { ConfigFile.server; token } ->
+  if o.print_token then
+    (print_endline (Learnocaml_sync.Token.to_string token);
+     exit 0);
+  (if o.fetch then
+     (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
+   else Lwt.return_unit) >>= fun () ->
   let status_line =
     if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
   in
+  let solution, exercise_id =
+    match o.solution_file, o.exercise_id with
+    | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
+    | Some f, None -> f, Filename.(remove_extension (basename f))
+    | Some f, Some id -> f, id
+  in
   status_line "Reading solution.";
-  Lwt_io.with_file ~mode:Lwt_io.Input o.solution_file Lwt_io.read
+  Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
   >>= fun solution ->
   status_line "Fetching exercise data from server.";
-  fetch_exercise o.server_url o.exercise_id
+  fetch_exercise server exercise_id
   >>= fun exercise ->
   Grading_cli.get_grade ~callback:status_line ?timeout:None
     exercise solution
@@ -431,17 +628,9 @@ let main o =
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel stdout json
            | _ -> assert false);
-      match o.token with
-      | None ->
-          Printf.eprintf
-            "[ERROR] No token specified, can not submit results to server.\n\
-            \        Get one from the web service and define %s.\n"
-            (Console.color [`Bold] "LEARNOCAML_TOKEN");
-          Lwt.return 11
-      | Some tok ->
-          upload_report o.server_url tok exercise solution report >>= fun () ->
-          Printf.eprintf "Results saved to server\n";
-          Lwt.return 0
+      upload_report server token exercise solution report >>= fun () ->
+      Printf.eprintf "Results saved to server\n";
+      Lwt.return 0
 
 let man = [
   `S "DESCRIPTION";
@@ -461,7 +650,7 @@ let man = [
 let main_cmd =
   Cmdliner.Term.(
     const (fun o -> Pervasives.exit (Lwt_main.run (main o)))
-    $ term),
+    $ Args.term),
   Cmdliner.Term.info
     ~man
     ~doc:"Learn-ocaml grading client"
