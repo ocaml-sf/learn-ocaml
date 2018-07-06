@@ -93,3 +93,56 @@ let sync
     sync_map sync_snapshot
       all_exercise_toplevel_histories_a
       all_exercise_toplevel_histories_b }
+
+module Token = struct
+
+  type t = string list
+
+  let to_string = String.concat "-"
+  let to_path = String.concat (Filename.dir_sep)
+
+  let alphabet =
+    "ABCDEFGH1JKLMNOPORSTUVWXYZO1Z34SG1B9"
+  let visually_equivalent_alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+  let parse =
+    let table = Array.make 256 None in
+    String.iter
+      (fun c -> Array.set table (Char.code c) (Some c))
+      visually_equivalent_alphabet ;
+    let translate part =
+      String.map (fun c ->
+          match Array.get table (Char.code c) with
+          | None -> failwith "bad token character"
+          | Some c -> c)
+        part in
+    fun token ->
+      if String.length token <> 15 then
+        failwith "bad token length"
+      else if String.get token 3 <> '-'
+           || String.get token 7 <> '-'
+           || String.get token 11 <> '-' then
+        failwith "bad token format"
+      else
+        List.map translate
+          [ String.sub token 0 3 ;
+            String.sub token 4 3 ;
+            String.sub token 8 3 ;
+            String.sub token 12 3 ]
+
+  let check token =
+    try ignore (parse token) ; true
+    with _ -> false
+
+  let random ?(admin=false) () =
+    let rand () = String.get alphabet (Random.int (String.length alphabet)) in
+    let part () = String.init 3 (fun _ -> rand ()) in
+    (if admin then ["X"] else []) @
+    [ part () ; part () ; part () ; part () ]
+
+  let is_admin = function
+    | "X"::_ -> true
+    | _ -> false
+
+end

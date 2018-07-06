@@ -45,11 +45,13 @@ install: static
 	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-simple-server.byte .
+	@cp _obuild/*/learnocaml-client.byte .
 
 .PHONY: learn-ocaml.install travis
 learn-ocaml.install: static
 	@echo 'bin: [' >$@
 	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
+	@echo '  "_obuild/learnocaml-client/learnocaml-client.byte" {"learn-ocaml-client"}' >>$@
 	@echo ']' >>$@
 	@echo 'share: [' >>$@
 	@echo '  "scripts/complete.sh"' >>$@

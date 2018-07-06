@@ -259,7 +259,9 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (* Usage: (arg 3 @@ arg "word" @@ last false *)
+  (** The type of arguments, represented as heterogeneous lists.
+
+  Usage: [arg 3 @@ arg "word" @@ last false] *)
   type ('arrow, 'uarrow, 'ret) args
   val last :
     'a ->
@@ -271,7 +273,9 @@ module type S = sig
 
   val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-  (* Usage: (arg [%ty: int] @@ arg [%ty: string] @@ last [%ty: bool] *)
+  (** The type of function prototypes.
+
+  Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
   type ('arrow, 'uarrow, 'ret) prot
   val last_ty :
     'a Ty.ty ->
