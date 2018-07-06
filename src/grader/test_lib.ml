@@ -1194,16 +1194,19 @@ let run_timeout ~time v =
       ?test ?test_stdout ?test_stderr
       ?(before_reference = fun _ -> ()) ?before_user ?after ?sampler ?ty prot uf rf tests =
     test_value rf @@ fun rf ->
-    let sampler =
-      match sampler with
-      | None -> get_sampler prot
-      | Some sampler -> sampler in
     let gen = match gen with
       | Some n -> n
       | None -> max 5 (10 - List.length tests) in
-    let rec make i =
-      if i <= 0 then [] else sampler :: make (i - 1) in
-    let tests = List.map (fun x () -> x) tests @ make gen in
+    let tests = match gen with
+      | 0 -> List.map (fun x () -> x) tests
+      | _ -> 
+         let sampler =
+           match sampler with
+           | None -> get_sampler prot
+           | Some sampler -> sampler in
+         let rec make i =
+           if i <= 0 then [] else sampler :: make (i - 1) in
+         List.map (fun x () -> x) tests @ make gen in
     let tests = List.map (fun a () -> let a = a () in (a, (fun () -> before_reference a ; apply rf a))) tests in
     test_function_generic
       ?test ?test_stdout ?test_stderr
