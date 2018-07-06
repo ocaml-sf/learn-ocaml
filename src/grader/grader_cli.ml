@@ -182,6 +182,7 @@ let grade exercise_dir output_json =
                  Lwt.return 0
              | Some json_file ->
                  let exo = Learnocaml_exercise.(set max_score) max exo in
+                 Lwt_utils.mkdir_p (Filename.dirname json_file)  >>= fun () ->
                  Learnocaml_exercise.write_lwt
                    ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
                    exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
