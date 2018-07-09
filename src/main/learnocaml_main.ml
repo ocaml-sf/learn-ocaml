@@ -101,7 +101,7 @@ module Args = struct
 
     let term =
       let apply
-          repo_dir exercises
+          exercises
           output_json grade_student display_outcomes display_callback
           display_std_outputs dump_outputs dump_reports timeout =
         let exercises = List.flatten exercises in
@@ -117,7 +117,7 @@ module Args = struct
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         { exercises; output_json }
       in
-      Term.(const apply $repo_dir
+      Term.(const apply
             $exercises $output_json $grade_student $display_outcomes
             $display_callback $display_std_outputs $dump_outputs $dump_reports
             $timeout)
@@ -139,14 +139,14 @@ module Args = struct
     }
 
     let term =
-      let apply app_dir repo_dir contents_dir =
+      let apply repo_dir contents_dir =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_tutorial_repository.tutorials_dir := 
           repo_dir/"tutorials";
         { contents_dir }
       in
-      Term.(const apply $app_dir $repo_dir $contents_dir)
+      Term.(const apply $repo_dir $contents_dir)
 
   end
 
@@ -205,7 +205,7 @@ let main o =
            Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
-    else Lwt.return None
+    else Lwt.return_none
   in
   let generate () =
     if List.mem Build o.commands then

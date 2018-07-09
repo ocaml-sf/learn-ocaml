@@ -41,7 +41,6 @@ let index_enc =
             | _ -> None)
           (fun (title, map) -> (title, `Groups map)) ] in
   let open Json_encoding in
-  mu "group" @@ fun group_enc ->
   check_version_2 @@
   union
     [ case
@@ -249,7 +248,7 @@ let main dest_dir =
               let exercise_dir = !exercises_dir / id in
               let json_path = dest_dir / exercise_path id in
               let changed = try
-                  let { Unix.st_mtime = json_time } = Unix.stat json_path in
+                  let { Unix.st_mtime = json_time ; _ } = Unix.stat json_path in
                   Sys.readdir exercise_dir |>
                   Array.to_list |>
                   List.map (fun f -> (Unix.stat (exercise_dir / f)).Unix.st_mtime ) |>

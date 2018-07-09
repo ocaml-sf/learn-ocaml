@@ -26,7 +26,7 @@ type 'a field =
 
 exception Missing_field of string
 
-let get { key ; ciphered ; decode } ex =
+let get { key ; ciphered ; decode ; _ } ex =
   try
     let raw = StringMap.find key ex in
     if ciphered then
@@ -37,10 +37,10 @@ let get { key ; ciphered ; decode } ex =
       decode raw
   with Not_found -> raise (Missing_field key)
 
-let has { key } ex =
+let has { key ; _ } ex =
   StringMap.mem key ex
 
-let set { key ; ciphered ; encode } raw ex =
+let set { key ; ciphered ; encode ; _ } raw ex =
   if ciphered then
     let prefix =
       Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
@@ -97,7 +97,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
             fail (Failure "Exercise.read: conficting ids")
     end >>= fun ex_id ->
     ex := set id ex_id !ex ;
-    let read_field ({ key ; ciphered ; encode ; decode } as field) =
+    let read_field ({ key ; ciphered ; decode ; _ } as field) =
       read_field key >>= function
       | Some raw ->
           let deciphered =
@@ -126,7 +126,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
     let open Concur in
     let acc = ref acc in
     let ex_id = get id ex in
-    let write_field { key ; ciphered ; encode ; decode } =
+    let write_field { key ; ciphered ; _ } =
       try
         let raw = StringMap.find key ex in
         let ciphered = if ciphered && (not cipher) then
@@ -157,7 +157,7 @@ module Seq = struct
   let (>>=) x f = f x
   let return x = x
   let fail = raise
-  let join l = ()
+  let join _ = ()
 end
 
 include MakeReaderAnddWriter (Seq)

@@ -57,8 +57,6 @@ let retrieve token =
   | e -> raise e
 
 
-module StringMap = Map.Make(String)
-
 let check_save_file contents =
   try
     let json = Ezjsonm.from_string contents in
@@ -115,7 +113,6 @@ let string_of_stream ?(max_size = 64 * 1024) s =
 
 let launch () =
   let open Lwt in
-  let open Cohttp in
   let open Cohttp_lwt_unix in
   let callback _ req body =
     let path = Uri.path (Request.uri req) in

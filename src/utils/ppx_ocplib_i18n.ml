@@ -132,20 +132,24 @@ let transl_mapper _argv =
     expr = fun mapper expr ->
       match expr with
       | { pexp_desc =
-            Pexp_extension ({ txt = "lang_ids_array"; loc }, _)} ->
+            Pexp_extension ({ txt = "lang_ids_array"; loc }, _);
+          _ } ->
           Exp.array ~loc
             (List.map (fun (lang, _) ->
                  Exp.constant ~loc (Pconst_string (lang,None)))
                 translations)
       | { pexp_desc =
-            Pexp_extension ({ txt = ("i"|"if" as tag); loc }, pstr)} ->
+            Pexp_extension ({ txt = ("i"|"if" as tag); loc }, pstr);
+          _ } ->
           (match pstr with
            | PStr [{
                pstr_desc =
                  Pstr_eval ({
                      pexp_loc  = loc;
-                     pexp_desc = Pexp_constant (Pconst_string (s, _))
-                   }, _)
+                     pexp_desc = Pexp_constant (Pconst_string (s, _));
+                     _
+                   }, _);
+               _
              }] ->
                let is_format = tag = "if" in
                let translations =

@@ -85,9 +85,7 @@ let main () =
                      begin match !output_md with
                        | None -> Lwt.return ()
                        | Some file_name ->
-                           let text =
-                             Learnocaml_tutorial_parser.print_md_tutorial
-                               ~tutorial_name tutorial in
+                           let text = Learnocaml_tutorial_parser.print_md_tutorial tutorial in
                            Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
                            Lwt_io.write chan text
                      end ;

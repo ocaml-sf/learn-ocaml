@@ -86,9 +86,7 @@ let read_student_file exercise_dir path =
   if not exists
   then (Format.eprintf "Cannot find '%s': No such file@." fn; exit 1)
   else
-    Lwt_io.with_file ~mode:Lwt_io.Input fn @@ fun chan ->
-      Lwt_io.read chan >>= fun content ->
-      Lwt.return content
+    Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
 let grade exercise_dir output_json =
   Lwt.catch

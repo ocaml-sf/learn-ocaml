@@ -26,7 +26,7 @@ let print (Ty ty) =
   Format.asprintf "%a%!" Pprintast.core_type ty
 
 let domains = function
-  | Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg, ret) } ->
+  | Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg, ret) ; _ } ->
       (Ty arg, Ty ret)
   | _ -> invalid_arg "Ty.domains"
 
