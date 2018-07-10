@@ -257,6 +257,8 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  val ty_of : string -> 'a Ty.ty
+
   (* Usage: arg 3 @@ arg "word" @@ last false *)
   type ('arrow, 'uarrow, 'ret) args
   val last :
@@ -1102,6 +1104,8 @@ let run_timeout ~time v =
     | Last_ty (a, b) -> Ty.curry a b
     | Arg_ty (x, Last_ty (l, r)) -> Ty.curry x (Ty.curry l r)
     | Arg_ty (x, Arg_ty (y, r)) -> Ty.curry x (ty_of_prot (Arg_ty (y, r)))
+
+  let ty_of str = Ty.repr (Parse.core_type (Lexing.from_string str))
 
   let rec apply : type p a c r. (p -> a) -> (p -> a, p -> c, r) args -> r = fun f x ->
     match x with

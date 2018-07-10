@@ -257,6 +257,13 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** Parsing function.
+
+      [ty_of "string"] is very similar to the ppx expr [[%ty: string]]
+      but [ty_of "Code.t"] won't trigger a syntax error if the type t
+      is undefined in student's Code. *)
+  val ty_of : string -> 'a Ty.ty
+
   (** The type of arguments, represented as heterogeneous lists.
 
   Usage: [arg 3 @@ arg "word" @@ last false] *)
