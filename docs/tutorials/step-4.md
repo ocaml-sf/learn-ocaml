@@ -155,18 +155,20 @@ let exercise_2 =
 ```
 
 
-### Advances examples
+### Advanced examples
 More advanced examples (but nothing new) can be found in
 `exercises/advanced_examples` directory (branch: step-4).
 
-There is nothing new in these examples, only more complexed types.
+There is nothing new in these examples, only more complexed types, in
+particular examples for functional types graded with both methods.
 
-WIP
+
 
 ### Which method should I use ?
+
 Both method works well for a lot of exercises. However for functional
 types and tuples, you will need do give an alias to your types to be
-able do use the second method.
+able do use the second method (see the examples in `advanced_examples`).
 
 ---
 [Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
