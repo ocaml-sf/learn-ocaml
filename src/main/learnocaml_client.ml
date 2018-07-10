@@ -626,7 +626,7 @@ let main o =
        | `Json ->
            match Json_encoding.construct Learnocaml_report.report_enc report
            with
-           | `O _ | `A _ as json -> Ezjsonm.to_channel stdout json
+           | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
       upload_report server token exercise solution report >>= fun () ->
       Printf.eprintf "Results saved to server\n";
