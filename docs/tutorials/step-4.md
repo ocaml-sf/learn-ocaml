@@ -167,12 +167,12 @@ particular examples for functional types graded with both methods.
 ### Which method should I use ?
 
 Both method works well for a lot of exercises. However for functional
-types and tuples, you will need do give an alias to your types to be
+types and tuples, you will need do give you types an alias to be
 able do use the second method (see the examples in `advanced_examples`).
 
 ---
 [Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
-
+	
 [Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
 
 [Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
