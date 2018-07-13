@@ -86,7 +86,7 @@ let exercise_3 =
 
 ## More avanced examples
  You can find the examples below in the
-	`exercises/advanced_examples` directory (branch: step-3).
+	`exercises/advanced-examples-step-3` directory (branch: step-3).
 
 There is nothing new to learn in this part, there are only more
 examples of how to build a sampler for more complexed types. In

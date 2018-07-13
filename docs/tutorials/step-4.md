@@ -157,7 +157,7 @@ let exercise_2 =
 
 ### Advanced examples
 More advanced examples (but nothing new) can be found in
-`exercises/advanced_examples` directory (branch: step-4).
+`exercises/advanced-examples-step-4` directory (branch: step-4).
 
 There is nothing new in these examples, only more complexed types, in
 particular examples for functional types graded with both methods.
