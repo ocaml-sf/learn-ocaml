@@ -45,3 +45,24 @@ CMD ["build","serve"]
 ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository","--port=8080"]
 
 COPY --from=compilation /home/opam/install-prefix /usr
+
+
+
+FROM alpine:3.7 as client
+LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.2"
+
+RUN addgroup learn-ocaml
+RUN adduser learn-ocaml -DG learn-ocaml
+
+VOLUME ["/repository"]
+RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
+VOLUME ["/sync"]
+EXPOSE 8080
+
+USER learn-ocaml
+WORKDIR /home/learn-ocaml
+
+CMD ["build","serve"]
+ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository","--port=8080"]
+
+COPY --from=compilation /home/opam/install-prefix /usr
