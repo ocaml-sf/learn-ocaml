@@ -48,7 +48,7 @@ get the files for the second step, and so on and so forth.
 
 - With multiple arguments functions
 
-[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3)
+[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
 
 - Generate tests by using the pre-construct samplers 
 
