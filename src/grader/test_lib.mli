@@ -129,7 +129,7 @@ module type S = sig
      return a timeout error. *)
   val result : (unit -> 'a) -> 'a result
 
-  (** {2 Tester} *)
+  (** {2 Testers} *)
 
   (** Testers are essentially used for the optional argument [~test]
      of test functions *) 
@@ -137,7 +137,7 @@ module type S = sig
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
-  (** {3 Pre-defined testers and tester builders} *)
+  (** {3:testers Pre-defined testers and tester builders} *)
     
   val test_ignore : 'a tester
   val test : 'a tester
@@ -150,7 +150,7 @@ module type S = sig
   val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
 
-  (** {2 IO tester} *)
+  (** {2:io_testers IO testers} *)
 
   (** IO testers are essentially used for the optional arguments
      [~test_stdout] [~test_stderr] of test functions *) 
@@ -413,40 +413,77 @@ module type S = sig
   (** {2:optional_arguments Optional arguments for test functions} *)
 
   (** The various test functions use numerous commun optional
-     argument. Here is a list in alphabetic order of each of them and
-     a comment on their utilities. *)
+     argument. Here is a list in alphabetic order of each of them.
 
-  (** {3 ?⁠after} [('a ‑> .. -> ('b * string * string) ‑> ('b * string
-     * string) ‑> Learnocaml_report.report) ]
+  {3 ?⁠after} Defines a function which is called with the current
+     tested inputs, the student {!type:result} and the solution
+     {!type:result} and returns a new report which is concatened to
+     reports built with [~test], [~test_sdtout] and [~test_sdterr].
+     Enables for example to inspect references introduced with
+     [~before], [~before_user] or [~before_reference] and build an
+     appropriate report.
 
-     {3 ?before} [('a ‑> .. -> unit)]
+  {3 ?before} Defines a function called right before the application
+     of student function to the current tested inputs.
 
-     {3 ?before_reference} [('a ‑> .. -> unit)]
+     For [test_function_<args_nb>].
 
-     {3 ?before_user} [('a ‑> .. -> unit)]
+  {3 ?before_reference} Defines a function called right before the
+     application of solution function to the current tested
+     inputs. This function is called {b before} student function
+     evaluation.
 
-     {3 ?gen} [~gen: n]: defined number [n] of automatically generated
-     tested inputs. By default, [gen] is [max 5 (10 - List.length
-     tests)]. Inputs generation is done using either predefined
-     sampler or function defined with [~sampler] optional argument.
+     For [test_function_<args_nb>_against] and
+     [test_function_<args_nb>_against_solution].
+
+  {3 ?before_user} Defines a function called right before the
+     application of student function to the current tested
+     inputs. This function is called {b after} solution function
+     evaluation.
+
+     For [test_function_<args_nb>_against] and
+     [test_function_<args_nb>_against_solution].
+
+  {3 ?gen} Number of automatically generated tested inputs. By
+     default, [gen] is [max 5 (10 - List.length tests)]. Inputs are
+     generated using either predefined sampler or function defined
+     with [~sampler] optional argument.
+
+     For [test_function_<args_nb>_against] and
+     [test_function_<args_nb>_against_solution].
 
      @see <#predefined_samplers>.
 
-    {3 ?sampler} [~sampler] defined the function used to automatically
-     generated inputs. If not used, the test function checks if a
-     sampler is defined for each input type in the current
-     environment. Such sampler for a type [some-type] must be named
-     [sample_some-type] and have a type [unit -> some-type] if not
-     parametric or [(unit -> 'a) -> (unit -> 'b) -> ... -> unit ->
-     some-type] else.
+  {3 ?sampler} Defines the function used to automatically generated
+     inputs. If not used, the test function checks if a sampler is
+     defined for each input type in the current environment. Such
+     sampler for a type [some-type] must be named [sample_some-type]
+     and have a type [unit -> some-type] if not parametric or [(unit
+     -> 'a) -> (unit -> 'b) -> ... -> unit -> some-type] else.
+
+     For [test_function_<args_nb>_against] and
+     [test_function_<args_nb>_against_solution].
 
      @see <#predefined_samplers>.
 
-    {3 ?test} ['b tester]
+  {3 ?test} Redefines the function used to compare the output of
+     student function and the output of solution function.
 
-    {3 ?test_sdterr} [io_tester]
+     @see <#testers> for predefined testers and tester builders.
 
-    {3 ?test_sdtout} [io_tester] *)
+  {3 ?test_sdterr} Redefines the function used to compare the standard
+     output produced by student function and the one produced by
+     solution function.
+
+     @see <#io_testers> for predefined IO testers and IO tester
+     builders.
+
+  {3 ?test_sdtout} Redefines the function used to compare the standard
+     error produced by student function and the one produced by
+     solution function.
+
+     @see <#io_testers> for predefined IO testers and IO tester
+     builders.  *)
 
   (*----------------------------------------------------------------------------*)
 
