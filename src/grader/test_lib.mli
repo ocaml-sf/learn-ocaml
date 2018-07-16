@@ -16,7 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 module type S = sig
+  (** {1 AST checker} 
 
+   Various functions to explore the student's code AST and
+   enforce restrictions on the student's code.  *)
+
+  (** {2 Checker} *)
+  
   type 'a ast_checker =
     ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
     ?on_pattern: (Parsetree.pattern -> Learnocaml_report.report) ->
@@ -34,6 +40,8 @@ module type S = sig
 
   val ast_location_stripper : Ast_mapper.mapper
 
+  (** {2 Functions for optional arguments of checkers} *)
+    
   val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
   val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
   val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
@@ -44,26 +52,54 @@ module type S = sig
   val require_syntax : string -> (_ -> Learnocaml_report.report)
   val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
 
+  (** {2 AST sanity check } *)
+    
   val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
 
+
+  (** {2 Finding in AST}*)
+    
+  (** [find_binding code_ast name cb] looks for variable [name] in
+     [code_ast] and returns an {!LearnOcaml_report.Informative} report
+     concated with the report resulting of [cb] applies to the
+     Parsetree expression associated to variable [name] in [code_ast]
+     if the variable is found and returns a
+     {!LearnOcaml_report.Failure} report else.  *) 
   val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
+    
+  (** {1 Test functions for references and variables } *)
 
+  (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
+     report if reference [got] value is equal to [exp] and
+     {!LearnOcaml_report.Failure} report else.  *)
   val test_ref :
     'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.report
 
+  (** [test_variable ty name r] returns {!LearnOcaml_report.Success 1}
+     report if variable named [name] exists and is equal to [r] and
+     returns {!LearnOcaml_report.Failure} report else.*)
   val test_variable :
     'a Ty.ty -> string -> 'a -> Learnocaml_report.report
 
+  (** [test_variable_property ty name cb] returns the report resulting
+     of application of cb to variable named [name] if it exists and
+     returns {!LearnOcaml_report.Failure} report else.  *)
   val test_variable_property :
     'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
+
+  (** [test_variable ty name r] returns {!LearnOcaml_report.Success 1}
+     report if variable named [name] exists and is equal to variable
+     with the same name defined in solution and returns
+     {!LearnOcaml_report.Failure} report else.*)             
   val test_variable_against_solution :
     'a Ty.ty -> string -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
-
+  (** {1 Test functions for types} *)
+ 
   val compatible_type : expected:string -> string -> Learnocaml_report.report
 
   val existing_type : ?score:int -> string -> bool * Learnocaml_report.report
@@ -76,14 +112,29 @@ module type S = sig
     'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
+  (** {1 Test functions for functions }*)
 
+  (** {2 Result} *)
+    
   type 'a result =
     | Ok of 'a
     | Error of exn
 
+  (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
+     if no exception is raised and where [r] is the result of [v ()],
+     [stdout] the standard output string (possibly empty) and [stderr]
+     the standard error string (possibly empty) or returns [Error exn]
+     is exception [exn] is raised. Mays also return a timeout
+     error. *)  
   val exec : (unit -> 'a) -> ('a * string * string) result
+
+  (** [result v] executes [v ()] and returns [Ok r] where [r] is the
+     result or [Error exn] if exception [exn] is raised. Mays also
+     return a timeout error. *)
   val result : (unit -> 'a) -> 'a result
 
+  (** {2 Tester} *)
+    
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
@@ -97,6 +148,9 @@ module type S = sig
   val test_canon_error : (exn -> exn) -> 'a tester
   val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
+
+  (** {2 IO tester} *)
+    
   type io_tester =
     string -> string -> Learnocaml_report.report
 
@@ -110,6 +164,8 @@ module type S = sig
     ?split: char list -> ?trim: char list -> ?drop: char list ->
     ?skip_empty: bool -> ?test_item: io_tester -> io_tester
 
+  (** {2 Mutation observer builders} *)
+    
   type 'arg arg_mutation_test_callbacks =
     { before_reference : 'arg -> unit ;
       before_user : 'arg -> unit ;
@@ -130,6 +186,10 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** {2 Test functions}*)
+
+  (** {3 For unary functions}*)
+    
   val test_function_1 :
     ?test: 'b tester ->
     ?test_stdout: io_tester ->
@@ -162,6 +222,8 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** {3 For binary functions }*)
+    
   val test_function_2 :
     ?test: 'c tester ->
     ?test_stdout: io_tester ->
@@ -194,6 +256,8 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** {3 For three-arguments functions }*)
+    
   val test_function_3 :
     ?test: 'd tester ->
     ?test_stdout: io_tester ->
@@ -226,6 +290,8 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** {3 For four-arguments functions }*)
+    
   val test_function_4 :
     ?test: 'e tester ->
     ?test_stdout: io_tester ->
@@ -257,6 +323,31 @@ module type S = sig
     ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
     ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
 
+
+  (** {2 Optional arguments for test functions} *)
+  (** The various test functions use numerous common optional
+     argument. Here is a list in alphabetic order of each of them and
+     a comment on their utilities.
+     
+     - after
+
+     - before
+
+     - before_reference
+
+     - before_user
+    
+     - gen
+
+     - sampler  
+
+     - test
+
+     - test_sdterr 
+
+     - test_sdtout
+   *)
+    
   (*----------------------------------------------------------------------------*)
 
   (* Usage: (arg 3 @@ arg "word" @@ last false *)
