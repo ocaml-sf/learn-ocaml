@@ -53,45 +53,6 @@ let index_enc =
         (function | `Groups map -> Some map | _ -> None)
         (fun map -> `Groups map) ]
 
-let exercise_kind_enc =
-  let open Json_encoding in
-  string_enum
-    [ "problem", Problem ;
-      "project", Project ;
-      "exercise", Learnocaml_exercise ]
-
-let exercise_meta_enc_v1 =
-  let open Json_encoding in
-  obj2
-    (req "kind" exercise_kind_enc)
-    (req "stars" float)
-
-let exercise_meta_enc_v2 =
-  let open Json_encoding in
-  obj9
-     (opt "title" string)
-     (opt "short_description" string)
-     (opt "identifier" string)
-     (opt "author" (list (tup2 string string)))
-     (opt "focus" (list string))
-     (opt "requirements" (list string))
-     (opt "forward" (list string))
-     (opt "backward" (list string))
-     (opt "max_score" int)
-
-let exercise_meta_enc =
-  let open Json_encoding in
-  check_version_2
-    (merge_objs
-       (merge_objs
-          exercise_meta_enc_v1
-          exercise_meta_enc_v2)
-       unit) (* FIXME: temporary parameter, that allows unknown fields *)
-
-let opt_to_list_enc = function
-    None -> []
-  | Some l -> l
-
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
   let json = Json_encoding.construct encoding value in
@@ -206,7 +167,7 @@ let main dest_dir =
              List.fold_left
                (fun acc id ->
                   all_exercises := id :: !all_exercises ;
-                  from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
+                  from_file Learnocaml_meta.exercise_meta_enc (!exercises_dir / id / "meta.json")
                   >>= fun (((exercise_kind, exercise_stars),
                             (title, exercise_short_description,
                              exercise_identifier,
