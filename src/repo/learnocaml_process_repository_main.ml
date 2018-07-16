@@ -27,7 +27,7 @@ let args = Arg.align @@
 
 let () =
   Arg.parse args
-    (fun anon -> raise (Arg.Bad "unexpected anonymous argument"))
+    (fun _anon -> raise (Arg.Bad "unexpected anonymous argument"))
     (Printf.sprintf "Usage: %s [options]" Sys.argv.(0));
   let ret = Lwt_main.run @@
     (Learnocaml_process_tutorial_repository.main !dest_dir >>= fun e_ret ->

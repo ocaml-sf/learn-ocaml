@@ -114,11 +114,7 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
   (** {1 Test functions for functions }*)
 
-  (** {2 Result} *)
-    
-  type 'a result =
-    | Ok of 'a
-    | Error of exn
+  type nonrec 'a result = ('a, exn) result
 
   (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
      if no exception is raised and where [r] is the result of [v ()],
@@ -456,7 +452,9 @@ module type S = sig
 
   (** {1 WIP }*)
     
-  (* Usage: (arg 3 @@ arg "word" @@ last false *)
+  (** The type of arguments, represented as heterogeneous lists.
+
+  Usage: [arg 3 @@ arg "word" @@ last false] *)
   type ('arrow, 'uarrow, 'ret) args
   val last :
     'a ->
@@ -468,7 +466,9 @@ module type S = sig
 
   val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-  (* Usage: (arg [%ty: int] @@ arg [%ty: string] @@ last [%ty: bool] *)
+  (** The type of function prototypes.
+
+  Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
   type ('arrow, 'uarrow, 'ret) prot
   val last_ty :
     'a Ty.ty ->

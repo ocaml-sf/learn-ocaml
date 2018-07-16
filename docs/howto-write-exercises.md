@@ -32,21 +32,37 @@ to get the files for step 1, and replace `step-1` by `step-2` to
 get the files for the second step, and so on and so forth.
 
 ## The tutorials
-[Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md).
+[Step 0 : Preliminaries](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md)
+	
+- Structure of an exercise
+	
+- Purpose of each file
+	
+[Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)
+      
+[Step 2: Basic grading by comparison with your solution](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md)
 
-[Step 1: Create a trivial exercise](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md).
+- Simple example to grade by comparison with a solution
 
-[Step 2](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md).
+- With polymorphic functions
 
+- With multiple arguments functions
 
+[Step 3: Grading with generators for Ocaml built-in types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3)
 
-## Step 5 : Other test functions
+- Generate tests by using the pre-construct samplers 
 
-The function `Test_lib.test_function_1_against_solution` is not the
-only test functions.
+- Generate tests by defining its own sampler 
 
-To be continued.
+[Step 4: Grading with generators for user-defined types](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
 
-## Step 6: Introspection of students code
+- Generate tests for non-parametric user-defined types 
+	
+- Generate tests for parametric user-defined types 
 
-To be continued.
+[Step 5 : More test functions](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
+	
+[Step 6 : Grading exercises with lists (with pre-defined sampler)](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
+	
+[Step 7 : Introspection of students code](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-7.md)
+	

@@ -57,7 +57,7 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
     else
       let open Typedtree in
       match ty.ctyp_desc with
-      | Ttyp_package { pack_type } ->
+      | Ttyp_package { pack_type; _ } ->
         Env.add_module
           (Ident.create name)
           pack_type
@@ -94,11 +94,11 @@ let insert_mod_ast_in_env ~var_name impl_code =
   (match phr with
    | Ptop_def [ { pstr_desc =
                     Pstr_module { pmb_expr = { pmod_desc =
-                                                 Pmod_structure s } }}]
+                                                 Pmod_structure s; _ }; _ }; _}]
    | Ptop_def [ { pstr_desc =
                     Pstr_module { pmb_expr = { pmod_desc =
                                                  Pmod_constraint ({ pmod_desc =
-                                                                      Pmod_structure s }, _) } }}] ->
+                                                                      Pmod_structure s; _ }, _); _ }; _ }; _}] ->
        let ty = Ty.repr (Ast_helper.(Typ.constr (Location.mknoloc (parse_lid "Parsetree.structure")) [])) in
        insert_in_env var_name (ty : Parsetree.structure Ty.ty) s
    | _ (* should not happen *) -> assert false)
@@ -117,7 +117,7 @@ let treat_lookup_errors fn = match fn () with
   | exception exn ->
       match Location.error_of_exn exn with
       | None -> Incompatible (Format.asprintf "%a@." Toploop.print_untyped_exception (Obj.repr exn))
-      | Some { Location.msg } -> Incompatible msg
+      | Some { Location.msg; _ } -> Incompatible msg
 
 let compatible_type nexp ngot =
   treat_lookup_errors @@ fun () ->
@@ -133,11 +133,11 @@ let compatible_type nexp ngot =
 let get_value lid ty =
   treat_lookup_errors @@ fun () ->
   match Ty.obj ty, String.get (Longident.last lid) 0 with
-  | { Parsetree.ptyp_desc = Parsetree.Ptyp_package (n, rews) }, 'A'.. 'Z' ->
+  | { Parsetree.ptyp_desc = Parsetree.Ptyp_package (n, rews); _ }, 'A'.. 'Z' ->
       begin match Env.lookup_module ~load:false lid !Toploop.toplevel_env with
         | exception Not_found -> Absent
         | path ->
-            let { Types.md_type ; md_loc } = Env.find_module path !Toploop.toplevel_env in
+            let { Types.md_loc; _ } = Env.find_module path !Toploop.toplevel_env in
             let phrase =
               let open Ast_helper in
               with_default_loc md_loc @@ fun () ->
@@ -158,9 +158,9 @@ let get_value lid ty =
               failwith msg
       end
   | _ ->
-      let { Typedtree.ctyp_type = exp_type } =
+      let { Typedtree.ctyp_type = exp_type; _ } =
         Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
-      let path, { Types.val_type } =
+      let path, { Types.val_type; _ } =
         Env.lookup_value lid !Toploop.toplevel_env in
       if Ctype.moregeneral !Toploop.toplevel_env true val_type exp_type then
         Present (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
@@ -168,7 +168,7 @@ let get_value lid ty =
         failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
 
 let print_value ppf v ty =
-  let { Typedtree.ctyp_type = ty } =
+  let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
   let needs_parentheses =
     let state = ref `Start in
@@ -207,7 +207,7 @@ let print_value ppf v ty =
   end
 
 let sample_value ty =
-  let { Typedtree.ctyp_type = ty } =
+  let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
   let lid = Format.asprintf "sample_%04X" (Random.int 0xFFFF) in
   let phrase =
@@ -231,7 +231,7 @@ let sample_value ty =
   let buf = Buffer.create 100 in
   let ppf = Format.formatter_of_buffer buf in
   if Toploop.execute_phrase false ppf phrase then
-    let path, { Types.val_type } =
+    let path, { Types.val_type; _ } =
       Env.lookup_value (Longident.Lident lid) !Toploop.toplevel_env in
     let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
     if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then

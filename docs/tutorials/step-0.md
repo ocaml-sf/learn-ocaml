@@ -13,8 +13,7 @@ specific shape, illustrated by the following ascii art:
 │   │   ├── prepare.ml
 │   │   ├── solution.ml
 │   │   ├── template.ml
-│   │   ├── test.ml
-│   │   └── title.txt
+│   │   └── test.ml
 │   ├── exo2
 │   │   ├── ...
 │   ├── index.json
@@ -28,7 +27,7 @@ specific shape, illustrated by the following ascii art:
 ```
 
 The complete format specification for exercise description is given in
-[docs/exercices_format.md](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/exercices_format.md).
+[docs/exercises_format.md](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/exercises_format.md).
 
 - The directory `exercises` must contain the descriptions of the
   exercises. Each exercise description is stored in a dedicated
@@ -54,7 +53,7 @@ The complete format specification for exercise description is given in
   - `descr.html` contains the exercise statement as a sequence of
   HTML elements (that can be grafted in a `div`).
 
-  - `meta.json` contains metadata about the exercise.
+  - `meta.json` contains metadata about the exercise including the title of the exercise.
 
   - `prelude.ml` is an OCaml code fragment loaded in the toplevel before
   the student answer.
@@ -69,8 +68,6 @@ The complete format specification for exercise description is given in
 
   - `test.ml` is the grader code.
 
-  - `title.txt` is a one-line file containing the title of the exercise.
-
 - `lessons` and `tutorials` are ignored in this tutorial.
 
 ## Do it yourself!
@@ -80,5 +77,6 @@ your list of exercises is probably empty but it will be populated by the
 next step of this tutorial.
 
 ---
-<div style="text-align: right">[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)</div>
-<div style="text-align: right">[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)</div>
+[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+
+[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)

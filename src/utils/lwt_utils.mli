@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2018 OCamlPro.
  *
  * Learn-OCaml is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,22 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-type repr = Parsetree.core_type
-type 'a ty = Ty of repr
+val mkdir_p: ?perm:int -> string -> unit Lwt.t
 
-let obj (Ty ty) = ty
-
-let repr ty = Ty (ty)
-
-let print (Ty ty) =
-  Format.asprintf "%a%!" Pprintast.core_type ty
-
-let domains = function
-  | Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg, ret) ; _ } ->
-      (Ty arg, Ty ret)
-  | _ -> invalid_arg "Ty.domains"
-
-let curry (Ty arg) (Ty ret) =
-  Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
-    ptyp_loc = Location.none ;
-    ptyp_attributes = [] }
+(** [copy_tree src dst] copies the contents of directory [src] into directory
+    [dst] *)
+val copy_tree: string -> string -> unit Lwt.t

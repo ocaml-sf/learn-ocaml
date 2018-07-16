@@ -1,12 +1,13 @@
 # Step 4: Grading with generators for user-defined types
 
 In the case of user-defined types, it is mandatory to define a
-sampler. Both two previous methods (defining a sampler function
-`sample_my_type` or using the `~sampler` optional argument) can be
-used but required a little more work, especially for parametric types.
+sampler. Both two previous methods (using the `~sampler` optional
+argument or defining a sampler function `sample_my_type`) can be used
+but required a little more work, especially for parametric types.
 
 ## Non parametric type
-For non-parametric type, it is exactly the same than previously. 
+For non-parametric type, it is exactly the same than in the previous
+step.
 
 You can find the examples below in the
 `exercises/sampler-user-defined-types` directory (branch: step-4).
@@ -18,7 +19,7 @@ type color = Green | Yellow | Red | Blue
 
 ### Method 1:  using the `~sampler` argument
 
-As previously, you can simply add the argument `~sampler` of type
+As in the previous step, you can add the argument `~sampler` of type
 `unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
 
 ```ocaml
@@ -34,8 +35,9 @@ let exercise_1 =
 ```
 		 
 ### Method 2: Defining a sampler 
- Same than above: a sampler of type `unit -> my_type` has to be named
- `sample_my_type`.
+You can also define your own sampler and not use the `~sampler`
+argument with the following rule: a sampler of type `unit -> my_type`
+has to be named `sample_my_type`.
 
 ```ocaml
 let sample_color () : color =
@@ -54,6 +56,9 @@ let exercise_2 =
           )
 ```
 
+In this case, the grader will automatically use your sampler
+`sample_color` for the type `color`. Be careful to write
+`sample_color` and not `sampler_color`.
 
 ## Parametric types
 
@@ -70,8 +75,8 @@ type 'a tree =
 ```
 ### Method 1:  using the `~sampler` argument
 
-No change here, just don't forget that `~sampler` has type 
-`unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
+No change here, just don't forget that the optional argument`~sampler`
+has type `unit -> <arg1_type> * <arg2_type> * <arg3_type> * etc.`
 
 ```ocaml
 let sample_col () = match Random.int 2 with
@@ -137,7 +142,7 @@ let exercise_1 =
 
 With these two samplers, we are also be able, with no more effort, to
 graduate a function of type `col tree -> col -> col tree` for
-example. The grader is simply: 
+example. The grader is simply:
 
 ```ocaml
 let exercise_2 =
@@ -149,10 +154,23 @@ let exercise_2 =
           )
 ```
 
+
+### Advances examples
 More advanced examples (but nothing new) can be found in
 `exercises/advanced_examples` directory (branch: step-4).
 
+There is nothing new in these examples, only more complexed types.
+
+WIP
+
+### Which method should I use ?
+Both method works well for a lot of exercises. However for functional
+types and tuples, you will need do give an alias to your types to be
+able do use the second method.
+
 ---
-<div style="text-align: right">[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)</div>
-<div style="text-align: right">[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)</div>
-<div style="text-align: right">[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)</div>
+[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+
+[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+
+[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)

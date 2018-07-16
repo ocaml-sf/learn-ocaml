@@ -134,7 +134,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
           let attribs = List.map (fun ((_, n), v) -> (n, v)) attribs in
           `Elt (name, attribs, children)) in
   let rec strip = function
-    | `Elt ("pre", _, children) as elt -> elt
+    | `Elt ("pre", _, _) as elt -> elt
     | `Elt (name, attribs, children) ->
         let rec skip_white_space acc = function
           | [] -> List.rev acc
@@ -169,7 +169,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         parse_code [] children >>= fun code ->
         let code = String.trim (Str.(global_replace (regexp "\\( *\n[ \t]*\\)+")) " " code) in
         parse_text (Code { code ; runnable = true } :: acc) rest
-    | `Elt (("code" | "quote"), _ , children) :: rest ->
+    | `Elt (("code" | "quote"), _ , _) :: _ ->
         fail "the <code> markup expects either \
               one data-math, one data-run or zero attribute"
     | `Elt (("strong" | "em" | "b"), _, children) :: rest ->
@@ -205,7 +205,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         let code = reshape_code_block code in
         let contents = [ Math code ] in
         parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
-    | `Elt ("pre", _ , children) :: rest ->
+    | `Elt ("pre", _ , _) :: _ ->
         fail "the <pre> markup expects either \
               one data-math, one data-run or zero attribute"
     | `Elt (tag, _, _) :: _ as l ->
@@ -233,7 +233,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
     | acc, None, `Elt ("h2", _, title) :: rest ->
         parse_text [] title >>= fun step_title ->
         parse_steps (acc, Some (step_title, []), rest)
-    | acc, None, elt :: rest ->
+    | _, None, _ :: _ ->
         fail "step title (<h2> markup) expected \
               after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (`Elt ("h2", _, _) :: _ as rest) ->
@@ -320,7 +320,7 @@ let parse_md_tutorial ~tutorial_name ~file_name =
     | acc, None, Omd.H2 title :: rest ->
         parse_text [] title >>= fun step_title ->
         parse_steps (acc, Some (step_title, []), rest)
-    | acc, None, elt :: rest ->
+    | _, None, _ :: _ ->
         fail "step title (<h2> markup) expected \
               after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (Omd.H2 _ :: _ as rest) ->
@@ -360,7 +360,7 @@ let print_html_tutorial ~tutorial_name tutorial =
            | 0x3C -> Format.fprintf ppf "&lt;"
            | 0x3E -> Format.fprintf ppf "&gt;"
            | 0xA0 -> Format.fprintf ppf "&nbsp;"
-           | cp -> Format.fprintf ppf "%s" (utf8_of_cp c)
+           | _ -> Format.fprintf ppf "%s" (utf8_of_cp c)
            end
         | `Malformed _ -> ())() t in
   let rec pp_text ppf = function
@@ -398,7 +398,7 @@ let print_html_tutorial ~tutorial_name tutorial =
               | 0x3C -> Format.fprintf ppf "&lt;"
               | 0x3E -> Format.fprintf ppf "&gt;"
               | 0xA0 -> Format.fprintf ppf "&nbsp;"
-              | cp -> Format.fprintf ppf "%s" (utf8_of_cp c)
+              | _ -> Format.fprintf ppf "%s" (utf8_of_cp c)
               end
            | `Malformed _ -> ()) () code ;
        Format.fprintf ppf "@]@,</pre>"
@@ -429,7 +429,7 @@ let print_html_tutorial ~tutorial_name tutorial =
                  (Format.pp_print_list pp_step) tutorial_steps ;
   Buffer.contents buffer
 
-let print_md_tutorial ~tutorial_name tutorial =
+let print_md_tutorial tutorial =
   let open Learnocaml_tutorial in
   let buffer = Buffer.create 10000 in
   let ppf = Format.formatter_of_buffer buffer in

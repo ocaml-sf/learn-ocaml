@@ -18,17 +18,15 @@
 open Js_utils
 open Tyxml_js
 
-module H = Learnocaml_toplevel_history
-
 let (>>=) = Lwt.(>>=)
-let (>|=) = Lwt.(>|=)
-
-let map_option f = function
-  | None -> None
-  | Some o -> Some (f o)
-let iter_option f o = match o with | None -> () | Some o -> f o
-
-type 'a result = Success of 'a | Timeout of float
+(* let (>|=) = Lwt.(>|=)
+ * 
+ * let map_option f = function
+ *   | None -> None
+ *   | Some o -> Some (f o)
+ * let iter_option f o = match o with | None -> () | Some o -> f o
+ * 
+ * type 'a result = Success of 'a | Timeout of float *)
 
 type t = {
   timeout_delay: float;
@@ -49,21 +47,21 @@ type t = {
   input: Learnocaml_toplevel_input.input;
 }
 
-let set_timeout_prompt t f = t.timeout_prompt <- f
-let set_flood_prompt t f = t.flood_prompt <- f
-let set_on_enable_input t f = t.on_enable_input <- f
-let set_on_disable_input t f = t.on_disable_input <- f
+(* let set_timeout_prompt t f = t.timeout_prompt <- f
+ * let set_flood_prompt t f = t.flood_prompt <- f
+ * let set_on_enable_input t f = t.on_enable_input <- f
+ * let set_on_disable_input t f = t.on_disable_input <- f *)
 
-let trim s =
-  let ws c = c = ' ' || c = '\t' || c = '\n' in
-  let len = String.length s in
-  let start = ref 0 in
-  let stop = ref (len - 1) in
-  while !start < len && (ws s.[!start])
-  do incr start done;
-  while !stop > !start && (ws s.[!stop])
-  do decr stop done;
-  String.sub s !start (!stop - !start + 1)
+(* let trim s =
+ *   let ws c = c = ' ' || c = '\t' || c = '\n' in
+ *   let len = String.length s in
+ *   let start = ref 0 in
+ *   let stop = ref (len - 1) in
+ *   while !start < len && (ws s.[!start])
+ *   do incr start done;
+ *   while !stop > !start && (ws s.[!stop])
+ *   do decr stop done;
+ *   String.sub s !start (!stop - !start + 1) *)
 
 let disable_input top =
   top.disabled <- top.disabled + 1 ;
@@ -79,17 +77,17 @@ let enable_input top =
     Learnocaml_toplevel_input.enable top.input
   end
 
-let scroll { output } =
+let scroll { output; _ } =
   Learnocaml_toplevel_output.scroll output
 
-let clear { output } =
+let clear { output; _ } =
   Learnocaml_toplevel_output.clear output ;
   Learnocaml_toplevel_output.output_stdout output
     "The toplevel has been cleared.\n"
 
-let never_ending =
-  let t = fst (Lwt.wait ()) in
-  fun _ -> t
+(* let never_ending =
+ *   let t = fst (Lwt.wait ()) in
+ *   fun _ -> t *)
 
 let wait_for_prompts top =
   Lwt.join
@@ -100,7 +98,7 @@ let wait_for_prompts top =
         (fun () -> top.current_flood_prompt)
         Lwt.(function Canceled -> return () | exn -> fail exn) ]
 
-let start_timeout top name timeout =
+let start_timeout top _name timeout =
   Lwt.cancel top.current_timeout_prompt ;
   match timeout with
   | Some timeout -> timeout top
@@ -261,7 +259,7 @@ let make_timeout_popup
     ?(countdown = 10)
     ?(refill_step = 10)
     ?(on_show = (fun () -> ()))
-    () { container } =
+    () { container; _ } =
   let open Tyxml_js.Html5 in
   let t0 = Sys.time () in
   let countdown = ref countdown in
@@ -312,7 +310,7 @@ let make_timeout_popup
 
 let make_flood_popup
     ?(on_show = (fun () -> ()))
-    () { container } name amount =
+    () { container; _ } name amount =
   let open Tyxml_js.Html5 in
   let answer = ref None in
   let btn_continue =
@@ -379,7 +377,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
                    hook := real ;
                    Lwt.return ()) ;
            top.current_flood_prompt)
-        (fun exn ->
+        (fun _exn ->
            hook := ignore ;
            Lwt.return ())
     end else begin
@@ -506,8 +504,8 @@ let create
   Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
 
-let print_string { output } = Learnocaml_toplevel_output.output_stdout output
+let print_string { output; _ } = Learnocaml_toplevel_output.output_stdout output
 
-let prerr_string { output } = Learnocaml_toplevel_output.output_stderr output
+let prerr_string { output; _ } = Learnocaml_toplevel_output.output_stderr output
 
-let print_html { output } = Learnocaml_toplevel_output.output_html output
+let print_html { output; _ } = Learnocaml_toplevel_output.output_html output

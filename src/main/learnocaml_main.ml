@@ -101,7 +101,7 @@ module Args = struct
 
     let term =
       let apply
-          repo_dir exercises
+          exercises
           output_json grade_student display_outcomes display_callback
           display_std_outputs dump_outputs dump_reports timeout =
         let exercises = List.flatten exercises in
@@ -117,7 +117,7 @@ module Args = struct
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         { exercises; output_json }
       in
-      Term.(const apply $repo_dir
+      Term.(const apply
             $exercises $output_json $grade_student $display_outcomes
             $display_callback $display_std_outputs $dump_outputs $dump_reports
             $timeout)
@@ -139,14 +139,14 @@ module Args = struct
     }
 
     let term =
-      let apply app_dir repo_dir contents_dir =
+      let apply repo_dir contents_dir =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_tutorial_repository.tutorials_dir := 
           repo_dir/"tutorials";
         { contents_dir }
       in
-      Term.(const apply $app_dir $repo_dir $contents_dir)
+      Term.(const apply $repo_dir $contents_dir)
 
   end
 
@@ -193,24 +193,6 @@ module Args = struct
           $Grader.term $Builder.term $Server.term)
 end
 
-let copy_tree src dst =
-  Lwt.catch (fun () ->
-      Lwt_unix.file_exists dst >>= (function
-          | true -> Lwt.return_unit
-          | false -> Lwt_unix.mkdir dst 0o755) >>= fun () ->
-      let cmd =
-        Array.concat
-          [[|"cp"; "-PR"|];
-           Array.map (Filename.concat src) (Sys.readdir src);
-           [|dst|]]
-      in
-      Lwt_process.exec ("", cmd) >>= fun r ->
-      if r <> Unix.WEXITED 0 then Lwt.fail_with "copy_tree"
-      else Lwt.return_unit)
-    (function
-      | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_tree"
-      | e -> raise e)
-
 open Args
 
 let main o =
@@ -223,13 +205,13 @@ let main o =
            Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
-    else Lwt.return None
+    else Lwt.return_none
   in
   let generate () =
     if List.mem Build o.commands then
       (Printf.printf "Updating app at %s\n%!" o.app_dir;
        Lwt.catch
-         (fun () -> copy_tree o.builder.Builder.contents_dir o.app_dir)
+         (fun () -> Lwt_utils.copy_tree o.builder.Builder.contents_dir o.app_dir)
          (function
            | Failure _ ->
                Lwt.fail_with @@ Printf.sprintf
@@ -239,7 +221,7 @@ let main o =
        >>= fun () ->
        Lwt.catch
          (fun () ->
-            copy_tree (o.repo_dir/"lessons") (o.app_dir/"lessons") >>= fun () ->
+            Lwt_utils.copy_tree (o.repo_dir/"lessons") (o.app_dir/"lessons") >>= fun () ->
             Lwt_unix.rename (o.app_dir/"lessons"/"lessons.json") (o.app_dir/"lessons.json"))
          (function Failure _ -> Lwt.return_unit
                  | e -> Lwt.fail e)

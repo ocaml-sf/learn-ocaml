@@ -89,8 +89,8 @@ let () =
          warnings := { msg; locs = [loc]; if_highlight } :: !warnings
        end)
 
-let return_success e = Ok (e, !warnings)
-let return_error e = Error (e, !warnings)
+let return_success (e: 'a) : 'a toplevel_result = Ok (e, !warnings)
+let return_error e : 'a toplevel_result  = Error (e, !warnings)
 (* let return_unit_success = return_success () *)
 
 (** Error handling *)

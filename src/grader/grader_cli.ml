@@ -86,9 +86,7 @@ let read_student_file exercise_dir path =
   if not exists
   then (Format.eprintf "Cannot find '%s': No such file@." fn; exit 1)
   else
-    Lwt_io.with_file ~mode:Lwt_io.Input fn @@ fun chan ->
-      Lwt_io.read chan >>= fun content ->
-      Lwt.return content
+    Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
 let grade exercise_dir output_json =
   Lwt.catch
@@ -182,6 +180,7 @@ let grade exercise_dir output_json =
                  Lwt.return 0
              | Some json_file ->
                  let exo = Learnocaml_exercise.(set max_score) max exo in
+                 Lwt_utils.mkdir_p (Filename.dirname json_file)  >>= fun () ->
                  Learnocaml_exercise.write_lwt
                    ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
                    exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->

@@ -138,3 +138,10 @@ let () =
 
 You can find this example in the
 `exercises/grade-function-polymorphism` directory (branch: step-2).
+
+---
+[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)
+
+[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+
+[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)

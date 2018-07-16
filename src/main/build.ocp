@@ -9,3 +9,18 @@ begin program "learnocaml"
     "learnocaml-simple-server-lib"
   ]
 end
+
+begin program "learnocaml-client"
+  has_asm = false
+  files = [
+    "learnocaml_client.ml"
+  ]
+  requires = [
+    "cmdliner"
+    "lwt.unix"
+    "lwt_utils"
+    "cohttp.lwt"
+    "grading-cli"
+    "learnocaml-sync"
+  ]
+end

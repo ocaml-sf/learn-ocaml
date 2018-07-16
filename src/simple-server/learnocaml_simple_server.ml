@@ -32,7 +32,7 @@ let args = Arg.align @@
 open Lwt.Infix
 
 let read_static_file path =
-  let rec shorten path =
+  let shorten path =
     let rec resolve acc = function
       | [] -> List.rev acc
       | "." :: rest -> resolve acc rest
@@ -46,51 +46,16 @@ let read_static_file path =
     String.concat Filename.dir_sep (!static_dir :: shorten path) in
   Lwt_io.(with_file ~mode: Input path (fun chan -> read chan))
 
-let alphabet =
-  "ABCDEFGH1JKLMNOPORSTUVWXYZO1Z34SG1B9"
-let visually_equivalent_alphabet =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-let parse_token =
-  let table = Array.make 256 None in
-  String.iter
-    (fun c -> Array.set table (Char.code c) (Some c))
-    visually_equivalent_alphabet ;
-  let translate part =
-    String.map (fun c ->
-        match Array.get table (Char.code c) with
-        | None -> failwith "bad token character"
-        | Some c -> c)
-      part in
-  fun token ->
-    if String.length token <> 15 then
-      failwith "bad token length"
-    else if String.get token 3 <> '-'
-         || String.get token 7 <> '-'
-         || String.get token 11 <> '-' then
-      failwith "bad token format"
-    else
-      List.map translate
-        [ String.sub token 0 3 ;
-          String.sub token 4 3 ;
-          String.sub token 8 3 ;
-          String.sub token 12 3 ]
-
-let check_token token =
-  try ignore (parse_token token) ; true
-  with _ -> false
-
 let retrieve token =
   Lwt.catch (fun () ->
       let path =
-        String.concat Filename.dir_sep (!sync_dir :: parse_token token) in
+        Filename.concat !sync_dir
+          Learnocaml_sync.Token.(to_path (parse token)) in
       Lwt_io.(with_file ~mode: Input path (fun chan -> read chan)))
   @@ function
   | Unix.Unix_error (Unix.ENOENT, _, _) -> raise Not_found
   | e -> raise e
 
-
-module StringMap = Map.Make(String)
 
 let check_save_file contents =
   try
@@ -101,45 +66,26 @@ let check_save_file contents =
   with _ -> false
 
 let create_token_file token =
-  let rec create acc path =
-    begin if Sys.file_exists acc then
-        if Sys.is_directory acc then
-          Lwt.return ()
-        else
-          Lwt.fail (Failure "bad sync directory structure")
-      else
-        Lwt_unix.mkdir acc 0o750
-    end >>= fun () ->
-    match path with
-    | [] -> assert false
-    | [ file ] ->
-        let fn = (Filename.concat acc file) in
-        Lwt_io.(with_file ~mode: Output fn (fun chan -> write chan "")) >>= fun () ->
-        Lwt.return_unit
-    | dir :: path ->
-        create (Filename.concat acc dir) path
-  in
-  create !sync_dir token
+  let path = Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token) in
+  Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname path) >>= fun () ->
+  Lwt_io.(with_file ~mode: Output ~perm:0o700 path (fun chan -> write chan ""))
 
 let store token contents =
-  let token = parse_token token in
+  let token = Learnocaml_sync.Token.parse token in
   let path =
-    String.concat Filename.dir_sep (!sync_dir :: token) in
+    Filename.concat !sync_dir
+      (Learnocaml_sync.Token.to_path token) in
   (if not (Sys.file_exists path) then create_token_file token
    else Lwt.return_unit) >>= fun _ ->
   Lwt_io.(with_file ~mode: Output path (fun chan -> write chan contents))
 
-let gimme () =
-  let rec next () =
-    let rand () = String.get alphabet (Random.int (String.length alphabet)) in
-    let part () = String.init 3 (fun _ -> rand ()) in
-    let token = [ part () ; part () ; part () ; part () ] in
-    if Sys.file_exists (String.concat Filename.dir_sep (!sync_dir :: token)) then
-      next ()
-    else
-      create_token_file token >|= fun () -> String.concat "-" token
-  in
-  next ()
+let rec gimme () =
+  let token = Learnocaml_sync.Token.random () in
+  if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+    gimme ()
+  else
+    create_token_file token >|= fun () ->
+    Learnocaml_sync.Token.to_string token
 
 
 exception Too_long_body
@@ -167,7 +113,6 @@ let string_of_stream ?(max_size = 64 * 1024) s =
 
 let launch () =
   let open Lwt in
-  let open Cohttp in
   let open Cohttp_lwt_unix in
   let callback _ req body =
     let path = Uri.path (Request.uri req) in
@@ -192,7 +137,7 @@ let launch () =
         gimme () >>= fun token ->
         let body = Printf.sprintf "{\"token\":\"%s\"}" token in
         Server.respond_string ~status:`OK ~body ()
-    | `GET, [ "sync" ; token ] when check_token token ->
+    | `GET, [ "sync" ; token ] when Learnocaml_sync.Token.check token ->
         (Lwt.catch
            (fun () ->
               retrieve token >>= fun body ->
@@ -200,7 +145,7 @@ let launch () =
          @@ function
          | Not_found -> Server.respond_string ~status:`OK ~body:"" ()
          | e -> raise e)
-    | `POST, [ "sync" ; token ] when check_token token -> begin
+    | `POST, [ "sync" ; token ] when Learnocaml_sync.Token.check token -> begin
         string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
         | None ->
             Server.respond_string ~status:`Bad_request ~body: "Too much data" ()

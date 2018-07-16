@@ -36,7 +36,7 @@ let index_enc =
     obj2
       (req "title" string)
       (req "tutorials" (list string)) in
-  check_version_1 @@
+  check_version_2 @@
   obj1 (req "series" (assoc series_enc))
 
 let to_file encoding fn value =
@@ -65,9 +65,7 @@ let main dest_dir =
     | None -> !tutorials_dir / "index.json" in
   let tutorials_dest_dir =
     dest_dir / Learnocaml_index.tutorials_dir in
-  Lwt_unix.file_exists tutorials_dest_dir >>= fun exists ->
-  (if exists then Lwt.return_unit
-   else Lwt_unix.mkdir tutorials_dest_dir 0o755) >>= fun () ->
+  Lwt_utils.mkdir_p tutorials_dest_dir >>= fun () ->
   Lwt.catch
     (fun () ->
        (if Sys.file_exists tutorials_index then
