@@ -61,7 +61,7 @@ module type S = sig
     
   (** [find_binding code_ast name cb] looks for variable [name] in
      [code_ast] and returns an {!LearnOcaml_report.Informative} report
-     concated with the report resulting of [cb] applies to the
+     concated with the report resulting of [cb] applied to the
      Parsetree expression associated to variable [name] in [code_ast]
      if the variable is found and returns a
      {!LearnOcaml_report.Failure} report else.  *) 
@@ -134,10 +134,15 @@ module type S = sig
   val result : (unit -> 'a) -> 'a result
 
   (** {2 Tester} *)
+
+  (** Testers are essentially used for the optional argument [~test]
+     of test functions *) 
     
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
+  (** {3 Pre-defined testers and tester builders} *)
+    
   val test_ignore : 'a tester
   val test : 'a tester
   val test_eq : ('a result -> 'a result -> bool) -> 'a tester
@@ -150,10 +155,16 @@ module type S = sig
 
 
   (** {2 IO tester} *)
+
+  (** IO testers are essentially used for the optional arguments
+     [~test_stdout] [~test_stderr] of test functions *) 
     
   type io_tester =
     string -> string -> Learnocaml_report.report
 
+    
+  (** {3 Pre-defined IO testers and IO tester builders} *)
+    
   val io_test_ignore : io_tester
   val io_test_equals :
     ?trim: char list -> ?drop: char list -> io_tester
@@ -188,8 +199,35 @@ module type S = sig
 
   (** {2 Test functions}*)
 
+  (** Three test functions for functions are defined for arity one to
+     four functions:
+
+  - [test_function_<args_nb> ty name tests]
+
+  - [test_function_<args_nb>_against ty name rf tests]
+
+  - [test_function_<args_nb>_against_solution ty name tests]
+
+     They tests the [args_nb]-arity function named [name] with
+     non-polymorphic type [ty] (a polymorphic function must be tested
+     on a completly determined type) through tests [tests]. If a
+     function named [name] is defined in the student code and has the
+     right type (or a more generic one), tests [tests] are checked one
+     by one and the function returns a report concatening reports of each
+     test. Else a {!Learnocaml_report.Failure} report is returned.*)
+    
   (** {3 For unary functions}*)
     
+  (** [test_function_1 ty name tests] tests the function named [name]
+     by directly comparing obtained outputs against expected outputs.
+
+     A test [(arg-1, r, out, err)] results of a
+     {!LearnOcaml_report.Success 1} report if the student function
+     applied to [arg-1] is equal to [r] and if standard output and
+     standard error messages match [out] and [err] respectively. The
+     result of a test is a {!Learnocaml_report.Failure} report else.
+
+     @see <#optional_arguments> for information about optional arguments. *)
   val test_function_1 :
     ?test: 'b tester ->
     ?test_stdout: io_tester ->
@@ -198,6 +236,17 @@ module type S = sig
     ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
     ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.report
 
+
+  (** [test_function_1_against ty name rf tests] tests the function
+     named [name] by comparing outputs obtained with the student
+     function against outputs of [rf].
+
+     A test [arg-1] results of a {!LearnOcaml_report.Success 1} report if
+     the student function applied to [arg-1] gives the same result than
+     the solution function [rf] applied to [arg-1]. Else the result of a
+     test is a {!Learnocaml_report.Failure} report.
+
+     @see <#optional_arguments> for information about optional arguments. *)
   val test_function_1_against :
     ?gen: int ->
     ?test: 'b tester ->
@@ -209,6 +258,15 @@ module type S = sig
     ?sampler : (unit -> 'a) ->
     ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.report
 
+
+
+  (** [test_function_1_against ty name tests] tests the function named
+     [name] by comparison to solution function which must be defined
+     under name [name] in the corresponding [solution.ml] file. Same
+     than [test_function_1_against] else.
+
+     @see <#optional_arguments> for information about optional
+     arguments. *)
   val test_function_1_against_solution :
     ?gen: int ->
     ?test: 'b tester ->
@@ -224,6 +282,18 @@ module type S = sig
 
   (** {3 For binary functions }*)
     
+  (** [test_function_2 ty name tests] tests the function named [name]
+     by directly comparing obtained outputs against expected outputs.
+
+     A test [(arg-1, arg-2, r, out, err)] results of a
+     {!LearnOcaml_report.Success 1} report if the student function
+     applied to [arg-1] and [arg-2] is equal to [r] and if standard
+     output and standard error messages match [out] and [err]
+     respectively. The result of a test is a
+     {!Learnocaml_report.Failure} report else.
+
+     @see <#optional_arguments> for information about optional
+     arguments. *)
   val test_function_2 :
     ?test: 'c tester ->
     ?test_stdout: io_tester ->
@@ -232,6 +302,18 @@ module type S = sig
     ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.report) ->
     ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.report
 
+  (** [test_function_2_against ty name rf tests] tests the function
+     named [name] by comparing outputs obtained with the student
+     function against outputs of [rf].
+
+     A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
+     1} report if the student function applied to [arg-1] and [arg-2]
+     gives the same result than the solution function [rf] applied to
+     the same arguments. Else the result of a test is a
+     {!Learnocaml_report.Failure} report.
+
+     @see <#optional_arguments> for information about optional
+     arguments. *)
   val test_function_2_against :
     ?gen: int ->
     ?test: 'c tester ->
@@ -243,6 +325,14 @@ module type S = sig
     ?sampler : (unit -> 'a * 'b) ->
     ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.report
 
+
+  (** [test_function_2_against ty name tests] tests the function named
+     [name] by comparison to solution function which must be defined
+     under name [name] in the corresponding [solution.ml] file. Same
+     than [test_function_2_against] else.
+
+     @see <#optional_arguments> for information about optional
+     arguments. *)
   val test_function_2_against_solution :
     ?gen: int ->
     ?test: 'c tester ->
@@ -324,32 +414,48 @@ module type S = sig
     ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
 
 
-  (** {2 Optional arguments for test functions} *)
-  (** The various test functions use numerous common optional
+  (** {2:optional_arguments Optional arguments for test functions} *)
+
+  (** The various test functions use numerous commun optional
      argument. Here is a list in alphabetic order of each of them and
-     a comment on their utilities.
-     
-     - after
+     a comment on their utilities. *)
 
-     - before
+  (** {3 ?⁠after} [('a ‑> .. -> ('b * string * string) ‑> ('b * string
+     * string) ‑> Learnocaml_report.report) ]
 
-     - before_reference
+     {3 ?before} [('a ‑> .. -> unit)]
 
-     - before_user
-    
-     - gen
+     {3 ?before_reference} [('a ‑> .. -> unit)]
 
-     - sampler  
+     {3 ?before_user} [('a ‑> .. -> unit)]
 
-     - test
+     {3 ?gen} [~gen: n]: defined number [n] of automatically generated
+     tested inputs. By default, [gen] is [max 5 (10 - List.length
+     tests)]. Inputs generation is done using either predefined
+     sampler or function defined with [~sampler] optional argument.
 
-     - test_sdterr 
+     @see <#predefined_samplers>.
 
-     - test_sdtout
-   *)
-    
+    {3 ?sampler} [~sampler] defined the function used to automatically
+     generated inputs. If not used, the test function checks if a
+     sampler is defined for each input type in the current
+     environment. Such sampler for a type [some-type] must be named
+     [sample_some-type] and have a type [unit -> some-type] if not
+     parametric or [(unit -> 'a) -> (unit -> 'b) -> ... -> unit ->
+     some-type] else.
+
+     @see <#predefined_samplers>.
+
+    {3 ?test} ['b tester]
+
+    {3 ?test_sdterr} [io_tester]
+
+    {3 ?test_sdtout} [io_tester] *)
+
   (*----------------------------------------------------------------------------*)
 
+  (** {1 WIP }*)
+    
   (* Usage: (arg 3 @@ arg "word" @@ last false *)
   type ('arrow, 'uarrow, 'ret) args
   val last :
@@ -427,18 +533,68 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
+  (** {1:predefined_samplers Predefined samplers } *)
+
   type 'a sampler = unit -> 'a
+
+  (** {2 Samplers} *)
+                  
+  (** [sample_int ()] returns a random integer between -5 and 5. *)
   val sample_int : int sampler
+
+  (** [sample_float ()] returns a random float betwenn -5. and 5. *)
   val sample_float : float sampler
-  val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
-  val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
-  val sample_option : 'a sampler -> 'a option sampler
+
+  (** [sample_string ()] returns a randomly long random string. *)
   val sample_string : string sampler
+
+  (** [sample_char ()] returns an alphabet letter randomly. *)
   val sample_char : char sampler
+
+  (** [sample_bool ()] returns randomly [false] or [true]. *)
   val sample_bool : bool sampler
-  val sample_cases : 'a list -> 'a sampler
+
+  (** {2 Sampler builders} *)
+
+  (** [sample_list ~min_size ~max_size sample] returns a list sampler
+     that generates a list of random length between [min_size] ([0] by
+     default) and [max_size] ([10] by default) where each element are
+     generated using [sample].
+
+     If [~sorted:true] ([false] by default) the generated list is
+     sorted.
+
+     If [~dups:false] ([true] by default), all elements of generated
+     list are unique.*)
+  val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
+
+  (** [sample_array ~min_size ~max_size sample] returns an array
+     sampler that generates an array of random length between
+     [min_size] ([0] by default) and [max_size] ([10] by default)
+     where each element are generated using [sample].
+
+     If [~sorted:true] ([false] by default) the generated array is
+     sorted.
+
+     If [~dups:false] ([true] by default), all elements of generated
+     array are unique.*)
+  val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
+
+  (** [sample_alternatively s] returns a sampler that mimics randomly
+     the behavior of one of [s] sampler and change at each call. *)
   val sample_alternatively : 'a sampler list -> 'a sampler
 
+  (** [sample_case cases] returns a sampler that generates randomly
+     one of the value of cases. *)
+  val sample_cases : 'a list -> 'a sampler
+    
+  (** [sample_option sample] returns a sampler that generates an
+     ['a option] value using [sample] to generate an ['a] value if
+     necessary. *)
+  val sample_option : 'a sampler -> 'a option sampler
+
+  (**  {1 Utilities} *)
+    
   val printable_fun : string -> (_ -> _ as 'f) -> 'f
 
 end

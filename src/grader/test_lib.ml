@@ -339,14 +339,14 @@ module type S = sig
   type 'a sampler = unit -> 'a
   val sample_int : int sampler
   val sample_float : float sampler
-  val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
-  val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
-  val sample_option : 'a sampler -> 'a option sampler
   val sample_string : string sampler
   val sample_char : char sampler
   val sample_bool : bool sampler
-  val sample_cases : 'a list -> 'a sampler
+  val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
+  val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
   val sample_alternatively : 'a sampler list -> 'a sampler
+  val sample_cases : 'a list -> 'a sampler
+  val sample_option : 'a sampler -> 'a option sampler
 
   val printable_fun : string -> (_ -> _ as 'f) -> 'f
 
