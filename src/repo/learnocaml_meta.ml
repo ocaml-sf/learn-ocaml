@@ -19,7 +19,7 @@ open Learnocaml_index
 
 open Lwt.Infix
 
-type t = {
+type meta = {
   meta_kind : exercise_kind ;
   meta_stars : float ;
   meta_title : string option ;
