@@ -63,8 +63,8 @@ module type S = sig
      [code_ast] and returns an {!LearnOcaml_report.Informative} report
      concated with the report resulting of [cb] applied to the
      Parsetree expression associated to variable [name] in [code_ast]
-     if the variable is found and returns a
-     {!LearnOcaml_report.Failure} report else.  *) 
+     if the variable is found. Returns a {!LearnOcaml_report.Failure}
+     report else.  *) 
   val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
@@ -78,22 +78,22 @@ module type S = sig
     'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.report
 
   (** [test_variable ty name r] returns {!LearnOcaml_report.Success 1}
-     report if variable named [name] exists and is equal to [r] and
-     returns {!LearnOcaml_report.Failure} report else.*)
+     report if variable named [name] exists and is equal to
+     [r]. Else returns {!LearnOcaml_report.Failure} report.*)
   val test_variable :
     'a Ty.ty -> string -> 'a -> Learnocaml_report.report
 
   (** [test_variable_property ty name cb] returns the report resulting
-     of application of cb to variable named [name] if it exists and
-     returns {!LearnOcaml_report.Failure} report else.  *)
+     of application of cb to variable named [name] if it exists.
+     Else returns {!LearnOcaml_report.Failure} report.  *)
   val test_variable_property :
     'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
 
   (** [test_variable ty name r] returns {!LearnOcaml_report.Success 1}
      report if variable named [name] exists and is equal to variable
-     with the same name defined in solution and returns
-     {!LearnOcaml_report.Failure} report else.*)             
+     with the same name defined in solution. Else returns
+     {!LearnOcaml_report.Failure} report.*)             
   val test_variable_against_solution :
     'a Ty.ty -> string -> Learnocaml_report.report
 
@@ -125,8 +125,8 @@ module type S = sig
   val exec : (unit -> 'a) -> ('a * string * string) result
 
   (** [result v] executes [v ()] and returns [Ok r] where [r] is the
-     result or [Error exn] if exception [exn] is raised. Mays also
-     return a timeout error. *)
+     result of [v ()] or [Error exn] if exception [exn] is
+     raised. Mays also return a timeout error. *)
   val result : (unit -> 'a) -> 'a result
 
   (** {2 Testers} *)
@@ -204,18 +204,19 @@ module type S = sig
 
   - [test_function_<args_nb>_against_solution ty name tests]
 
-     They tests the [args_nb]-arity function named [name] with
+     It tests [args_nb]-arity function named [name] with
      non-polymorphic type [ty] (a polymorphic function must be tested
      on a completly determined type) through tests [tests]. If a
      function named [name] is defined in the student code and has the
      right type (or a more generic one), tests [tests] are checked one
-     by one and the function returns a report concatening reports of each
-     test. Else a {!Learnocaml_report.Failure} report is returned.*)
+     by one and the function returns a report concatening reports of
+     each test. Else a {!Learnocaml_report.Failure} report is
+     returned.*)
     
   (** {3 For unary functions}*)
     
-  (** [test_function_1 ty name tests] tests the function named [name]
-     by directly comparing obtained outputs against expected outputs.
+  (** [test_function_1 ty name tests] tests the function named [name] by
+     directly comparing obtained outputs against expected outputs.
 
      A test [(arg-1, r, out, err)] results of a
      {!LearnOcaml_report.Success 1} report if the student function
@@ -223,7 +224,8 @@ module type S = sig
      standard error messages match [out] and [err] respectively. The
      result of a test is a {!Learnocaml_report.Failure} report else.
 
-     @see <#optional_arguments> for information about optional arguments. *)
+     @see <#optional_arguments> for information about optional
+     arguments. *)
   val test_function_1 :
     ?test: 'b tester ->
     ?test_stdout: io_tester ->
@@ -231,7 +233,6 @@ module type S = sig
     ?before : ('a -> unit) ->
     ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
     ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.report
-
 
   (** [test_function_1_against ty name rf tests] tests the function
      named [name] by comparing outputs obtained with the student
@@ -254,12 +255,10 @@ module type S = sig
     ?sampler : (unit -> 'a) ->
     ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.report
 
-
-
   (** [test_function_1_against ty name tests] tests the function named
      [name] by comparison to solution function which must be defined
      under name [name] in the corresponding [solution.ml] file. Same
-     than [test_function_1_against] else.
+     than [test_function_1_against] for everything else.
 
      @see <#optional_arguments> for information about optional
      arguments. *)
@@ -325,7 +324,7 @@ module type S = sig
   (** [test_function_2_against ty name tests] tests the function named
      [name] by comparison to solution function which must be defined
      under name [name] in the corresponding [solution.ml] file. Same
-     than [test_function_2_against] else.
+     than [test_function_2_against] for everything else.
 
      @see <#optional_arguments> for information about optional
      arguments. *)
@@ -426,7 +425,7 @@ module type S = sig
   {3 ?before} Defines a function called right before the application
      of student function to the current tested inputs.
 
-     For [test_function_<args_nb>].
+     For [test_function_<args_nb>] only.
 
   {3 ?before_reference} Defines a function called right before the
      application of solution function to the current tested
@@ -446,8 +445,8 @@ module type S = sig
 
   {3 ?gen} Number of automatically generated tested inputs. By
      default, [gen] is [max 5 (10 - List.length tests)]. Inputs are
-     generated using either predefined sampler or function defined
-     with [~sampler] optional argument.
+     generated using either sampler defined in the current environment
+     or function defined with [~sampler] optional argument.
 
      For [test_function_<args_nb>_against] and
      [test_function_<args_nb>_against_solution].
