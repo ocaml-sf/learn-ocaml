@@ -20,6 +20,7 @@ TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
 build-deps:
 	sh scripts/install-opam-deps.sh
 
+.PHONY: build
 build:
 	@ocp-build init
 	@ocp-build
