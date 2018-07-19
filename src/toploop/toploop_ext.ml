@@ -131,7 +131,10 @@ let report_error err =
 let error_of_exn exn =
   match Location.error_of_exn exn with
   | None ->
-      let msg = Printexc.to_string exn in
+      let msg = match exn with
+        | Failure msg -> msg
+        | exn -> Printexc.to_string exn
+      in
       { msg; locs = []; if_highlight = msg }
   | Some error -> report_error error
 
