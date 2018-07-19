@@ -1,10 +1,7 @@
-# Step 5: Other ways to test the student code
-
-
-## More test functions
+# Step 5: More test functions
 
 The functions `Test_lib.test_function_<nb args>_against_solution` are not the
-only test functions. There are actually 3 groups in total:
+only test functions. There are actually 3 groups:
 
 * `test_function_<nb_args>_againt_solution`: the usual. Test the student code againt a
   given solution written in the `solution.ml` file.
@@ -31,9 +28,9 @@ only test functions. There are actually 3 groups in total:
 ```
 
 #### Mandatory arguments
-In [`test_function_1_againt_solution_1 ty name tests`]:
+[`test_function_1_againt_solution_1 ty name tests`]:
 
-* `ty`: type of the function for these tests. It must not contain type variables (i.e. `'a`, `'b` etc..). Must match the type of the tests (see examples) and be compatible with the solution.
+* `ty`: type of the function for the tests. It must not contain type variables (i.e. `'a`, `'b` etc..), match the type of the tests (see examples) and be compatible with the solution.
 
 * `name`: name of the tested function in the student code and in `solution.ml`
 
@@ -47,8 +44,8 @@ In [`test_function_1_againt_solution_1 ty name tests`]:
   [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
   for more information.
 
-* `sampler`: used to define sampler for generating tested inputs. See
-  [step
+* `sampler`: used to define sampler for automatically generating
+  inputs for tests. See [step
   3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
   and
   [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
@@ -66,27 +63,35 @@ In [`test_function_1_againt_solution_1 ty name tests`]:
   standart erro channel of the student function and the one of the
   solution. See WIP for more information.
 
-* `before_reference`: enables to introduce a reference or make a side
-  effect before each test. The input of this function is the current
-  test.
+* `before_reference`: is used to redefine a function called right
+  before the application of solution function to the current tested
+  inputs. This enables for example to introduce a reference or make a
+  side effect before each test. See WIP for more information.
 
-* `before_user`: enables to introduce a reference or make a side
-  effect juste before the evaluation of the student function on the
-  current tested inputs.
+* `before_user`: is used to redefine a function called right before
+  the application of the student function to the current tested
+  inputs. This enables to introduce a reference or make a side effect
+  between solution evaluation and student function evaluation. See WIP
+  for more information.
 
-* `after`: enables to change by doing a test after the normal
-  report. 
+* `after`: is used to redefine a function which is called with the
+    current tested inputs, the student result and the solution result
+    and returns a new report which is concatened to reports built with
+    the result of the functions `~test`, `~test_sdtout` and
+    `~test_sdterr`.  Enables for example to inspect references
+    introduced with `~before`, `~before_user` or `~before_reference`
+    and build an appropriate report.  See WIP for more information.
 
 #### Examples
 
-Note: only simple examples can be found here. For more advanced
+Note: only trivial examples can be found here. For more advanced
 examples, see the corresponding tutorials.
 
 
 ### `test_function_<nb_args>_against`
 
 There function is exactly the same than the previous one except it
-takes one more mandatory argument: the solution
+takes one more mandatory argument: the solution.
 
 #### Type of the 1 argument version
 ```ocaml
@@ -120,10 +125,6 @@ val test_function_1_against :
 
 #### Examples
 
-
-## Compare value
-
-## Compare imperative effects
 
 To be continued.
 
