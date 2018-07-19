@@ -39,6 +39,9 @@ let grade_student = ref None
 (* Should each test be run with a specific timeout (in secs) ? *)
 let individual_timeout = ref None
 
+(* Display reports to stderr *)
+let display_reports = ref false
+
 let args = Arg.align @@
   [ "-output-json", Arg.String (fun s -> output_json := Some s),
     "PATH save the graded exercise in JSON format in the given file" ;
@@ -88,7 +91,7 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade exercise_dir output_json =
+let grade ?(print_result=false) exercise_dir output_json =
   Lwt.catch
     (fun () ->
        let exercise_dir = remove_trailing_slash exercise_dir in
@@ -97,11 +100,12 @@ let grade exercise_dir output_json =
          | Some path -> read_student_file (Sys.getcwd ()) path
          | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
-         if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
+         if !display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
        let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
        Grading_cli.get_grade ?callback ?timeout exo code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
+       flush stderr;
        match result with
        | Error exn ->
            let dump_error ppf =
@@ -126,6 +130,8 @@ let grade exercise_dir output_json =
            Lwt.return 1
        | Ok report ->
            let (max, failure) = Learnocaml_report.result_of_report report in
+           if !display_reports then
+             Learnocaml_report.print_report (Format.formatter_of_out_channel stderr) report;
            begin match !dump_reports with
              | None -> ()
              | Some prefix ->
@@ -169,12 +175,16 @@ let grade exercise_dir output_json =
              if !display_outcomes then
                Format.printf "%s" outcomes
            end ;
-           if failure && !display_callback then begin
-             Printf.eprintf "Failure!\n%!" ;
+           if failure then begin
+             if print_result then
+               Printf.eprintf "%-30s - Failure - %d points\n%!"
+                 (Filename.basename exercise_dir) max;
              Lwt.return 2
            end
            else begin
-             if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
+             if print_result then
+               Printf.eprintf "%-30s - Success - %d points\n%!"
+                 (Filename.basename exercise_dir) max;
              match output_json with
              | None ->
                  Lwt.return 0
