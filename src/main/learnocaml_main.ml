@@ -207,8 +207,13 @@ let main o =
          failwith "The 'grade' command is incompatible with 'build' and \
                    'serve'";
        Lwt_list.fold_left_s (fun i ex ->
-           Grader_cli.grade ~print_result:true ex o.grader.Grader.output_json
-           >|= max i)
+           Lwt.catch
+             (fun () ->
+                Grader_cli.grade ~print_result:true ex o.grader.Grader.output_json
+                >|= max i)
+             (fun e ->
+                Printf.ksprintf failwith
+                  "Could not load exercise at %s: %s" ex (Printexc.to_string e)))
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
     else Lwt.return_none
