@@ -166,49 +166,19 @@ let main dest_dir =
          | `Exercises ids ->
              List.fold_left
                (fun acc id ->
-                  all_exercises := id :: !all_exercises ;
-                  from_file Learnocaml_meta.exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun (((exercise_kind, exercise_stars),
-                            (title, exercise_short_description,
-                             exercise_identifier,
-                             author, focus, requirements,
-                             forward, backward, max_score)),
-                           _) ->
                   let exercise =
                     read_exercise (!exercises_dir / id) in
-                  let exercise_title =
-                    match title with
-                    | Some title -> title
-                    | None -> Learnocaml_exercise.(get title) exercise
-                  in
-                  let exercise_max_score =
-                    match max_score with
-                    | Some max_score -> Some max_score
-                    | None ->
-                        try Some (Learnocaml_exercise.(get max_score) exercise)
-                        with Learnocaml_exercise.Missing_field _ -> None
-                  in
-                  let exercise =
-                    { exercise_kind ; exercise_stars ;
-                      exercise_title ;
-                      exercise_short_description;
-                      exercise_identifier ;
-                      exercise_author = opt_to_list_enc author ;
-                      exercise_focus = opt_to_list_enc focus ;
-                      exercise_requirements = opt_to_list_enc requirements ;
-                      exercise_forward = opt_to_list_enc forward ;
-                      exercise_backward = opt_to_list_enc backward ;
-                      exercise_max_score ;
-                    } in
+                  all_exercises := (id, exercise) :: !all_exercises ;
+                  let exercise_indexed = Learnocaml_exercise.to_index exercise in
                   acc >>= fun acc ->
-                  Lwt.return (StringMap.add id exercise acc))
+                  Lwt.return (StringMap.add id exercise_indexed acc))
                (Lwt.return StringMap.empty) ids >>= fun exercises ->
              Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
        to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
        let processes_arguments =
          List.map
-           (fun id ->
+           (fun (id, exercise) ->
               let exercise_dir = !exercises_dir / id in
               let json_path = dest_dir / exercise_path id in
               let changed = try
@@ -226,17 +196,17 @@ let main dest_dir =
                 match !dump_reports with
                 | None -> None
                 | Some dir -> Some (dir / id) in
-              id, exercise_dir, json_path, changed, dump_outputs,dump_reports)
-           (List.sort_uniq compare !all_exercises) in
+              id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports)
+           (List.sort_uniq (fun (id, _) (id', _) -> compare id id') !all_exercises) in
        begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, exercise_dir, json_path, changed, dump_outputs,dump_reports) ->
+           Lwt_list.map_s (fun (id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
                  Lwt.return true
                end else begin
                  Grader_cli.dump_outputs := dump_outputs ;
                  Grader_cli.dump_reports := dump_reports ;
-                 Grader_cli.grade exercise_dir (Some json_path) >>= fun result ->
+                 Grader_cli.grade exercise (Some json_path) >>= fun result ->
                  match result with
                  | 0 ->
                      Format.printf "%-12s     [OK]@." id ;
@@ -248,7 +218,7 @@ let main dest_dir =
              processes_arguments
          else
            let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
-           Lwt_list.map_p (fun (id, exercise_dir, json_path, changed, dump_outputs, dump_reports) ->
+           Lwt_list.map_p (fun (id, exercise_dir, _, json_path, changed, dump_outputs, dump_reports) ->
                Lwt_pool.use pool @@ fun () ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
