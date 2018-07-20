@@ -142,7 +142,7 @@ module Args = struct
       let apply app_dir repo_dir contents_dir =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
-        Learnocaml_process_tutorial_repository.tutorials_dir := 
+        Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
         { contents_dir }
       in
@@ -220,7 +220,7 @@ let main o =
          failwith "The 'grade' command is incompatible with 'build' and \
                    'serve'";
        Lwt_list.fold_left_s (fun i ex ->
-           Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
+           Grader_cli.grade_from_dir ex o.grader.Grader.output_json >|= max i)
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
     else Lwt.return None
