@@ -335,7 +335,7 @@ let get_score =
   get_score 0
 
 let max_score exercise =
-  Learnocaml_exercise.(get max_score) exercise
+  Learnocaml_exercise.(access File.max_score exercise)
 
 let print_score ?(max=1) ?color i =
   let color = match color with
@@ -488,7 +488,7 @@ let upload_report server token exercise solution report =
   let new_save =
     { Learnocaml_sync.
       all_exercise_states =
-        StringMap.singleton (Learnocaml_exercise.(get id) exercise)
+        StringMap.singleton (Learnocaml_exercise.(access File.id) exercise)
           exercise_state;
       all_toplevel_histories = StringMap.empty;
       all_exercise_toplevel_histories = StringMap.empty;
