@@ -30,7 +30,7 @@ let to_worker_enc =
     (fun (solution, exercise) -> { solution ; exercise })
     (obj2
        (req "solution" string)
-       (req "exercise" Learnocaml_exercise.enc))
+       (req "exercise" Learnocaml_exercise.encoding))
 
 let from_worker_enc =
   union

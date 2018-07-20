@@ -91,19 +91,18 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade ?(print_result=false) exercise_dir output_json =
+let grade ?(print_result=false) exercise output_json =
   Lwt.catch
     (fun () ->
-       let exercise_dir = remove_trailing_slash exercise_dir in
-       read_exercise exercise_dir >>= fun exo ->
        let code_to_grade = match !grade_student with
          | Some path -> read_student_file (Sys.getcwd ()) path
-         | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
+         | None ->
+             Lwt.return (Learnocaml_exercise.(decipher File.solution exercise)) in
        let callback =
          if !display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
        let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
-       Grading_cli.get_grade ?callback ?timeout exo code
+       Grading_cli.get_grade ?callback ?timeout exercise code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        flush stderr;
        match result with
@@ -178,24 +177,28 @@ let grade ?(print_result=false) exercise_dir output_json =
            if failure then begin
              if print_result then
                Printf.eprintf "%-30s - Failure - %d points\n%!"
-                 (Filename.basename exercise_dir) max;
+                 Learnocaml_exercise.(access File.id exercise) max;
              Lwt.return 2
            end
            else begin
              if print_result then
                Printf.eprintf "%-30s - Success - %d points\n%!"
-                 (Filename.basename exercise_dir) max;
+                 Learnocaml_exercise.(access File.id exercise) max;
              match output_json with
              | None ->
                  Lwt.return 0
              | Some json_file ->
-                 let exo = Learnocaml_exercise.(set max_score) max exo in
+                 let exo =
+                   Learnocaml_exercise.(update File.max_score max exercise) in
+                 let json =
+                   Json_encoding.construct Learnocaml_exercise.encoding exo in
+                 let json = match json with
+                   | `A _ | `O _ as d -> d
+                   | v -> `A [ v ] in
+                 let str = Ezjsonm.to_string ~minify:false (json :> Ezjsonm.t) in
                  Lwt_utils.mkdir_p (Filename.dirname json_file)  >>= fun () ->
-                 Learnocaml_exercise.write_lwt
-                   ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
-                   exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
                  Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
-                 Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
+                 Lwt_io.write chan str >>= fun () ->
                  Lwt.return 0
            end)
     (fun exn ->
@@ -211,6 +214,12 @@ let grade ?(print_result=false) exercise_dir output_json =
        Format.eprintf "%a" Location.report_exception exn ;
        Lwt.return 1)
 
+let grade_from_dir ?(print_result=false) exercise_dir output_json =
+  let exercise_dir = remove_trailing_slash exercise_dir in
+  read_exercise exercise_dir >>= fun exo ->
+  grade ~print_result exo output_json
+
+
 let main () : unit =
   let anons = ref [] in
   Arg.parse args
@@ -224,4 +233,4 @@ let main () : unit =
       Format.eprintf "A single problem directory is expected@." ;
       exit 1
   | [ single ] ->
-      exit (Lwt_main.run (grade single !output_json))
+      exit (Lwt_main.run (grade_from_dir single !output_json))
