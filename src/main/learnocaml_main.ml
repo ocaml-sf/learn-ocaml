@@ -67,16 +67,16 @@ module Args = struct
         "save the graded exercise in JSON format in the given file"
 
     let grade_student =
-      value & opt (some file) None & info ["grade-student"] ~docv:"FILE" ~doc:
+      value & opt (some file) None & info ["grade-student";"s"] ~docv:"FILE" ~doc:
         "grade the given student file instead of 'solution.ml'"
 
     let display_outcomes =
       value & flag & info ["display-outcomes"] ~doc:
         "display the toplevel's outcomes"
 
-    let display_callback =
-      value & flag & info ["display-progression"] ~doc:
-        "display grading progression messages"
+    let quiet =
+      value & flag & info ["quiet";"q"] ~doc:
+        "Don't display grading progression messages"
 
     let display_std_outputs =
       value & flag & info ["display-stdouts"] ~doc:
@@ -94,6 +94,10 @@ module Args = struct
       value & opt (some int) None & info ["timeout"] ~docv:"SECONDS" ~doc:
         "Limit every test to the given timeout"
 
+    let verbose =
+      value & flag & info ["verbose"; "v"] ~doc:
+        "Display detailed grading reports to stdout"
+
     type t = {
       exercises: string list;
       output_json: string option;
@@ -102,25 +106,26 @@ module Args = struct
     let term =
       let apply
           exercises
-          output_json grade_student display_outcomes display_callback
-          display_std_outputs dump_outputs dump_reports timeout =
+          output_json grade_student display_outcomes quiet
+          display_std_outputs dump_outputs dump_reports timeout verbose =
         let exercises = List.flatten exercises in
         Grader_cli.output_json := output_json;
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
-        Grader_cli.display_callback := display_callback;
+        Grader_cli.display_callback := not quiet;
         Grader_cli.display_std_outputs := display_std_outputs;
         Grader_cli.dump_outputs := dump_outputs;
         Grader_cli.dump_reports := dump_reports;
         Grader_cli.individual_timeout := timeout;
+        Grader_cli.display_reports := verbose;
         Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         { exercises; output_json }
       in
       Term.(const apply
             $exercises $output_json $grade_student $display_outcomes
-            $display_callback $display_std_outputs $dump_outputs $dump_reports
-            $timeout)
+            $quiet $display_std_outputs $dump_outputs $dump_reports
+            $timeout $verbose)
   end
 
   module Builder = struct
@@ -202,7 +207,13 @@ let main o =
          failwith "The 'grade' command is incompatible with 'build' and \
                    'serve'";
        Lwt_list.fold_left_s (fun i ex ->
-           Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
+           Lwt.catch
+             (fun () ->
+                Grader_cli.grade ~print_result:true ex o.grader.Grader.output_json
+                >|= max i)
+             (fun e ->
+                Printf.ksprintf failwith
+                  "Could not load exercise at %s: %s" ex (Printexc.to_string e)))
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
     else Lwt.return_none

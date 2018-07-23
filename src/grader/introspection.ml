@@ -230,14 +230,21 @@ let sample_value ty =
   in
   let buf = Buffer.create 100 in
   let ppf = Format.formatter_of_buffer buf in
-  if Toploop.execute_phrase false ppf phrase then
+  match Toploop.execute_phrase false ppf phrase with
+  | true ->
     let path, { Types.val_type; _ } =
       Env.lookup_value (Longident.Lident lid) !Toploop.toplevel_env in
     let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
     if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then
       (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
     else (failwith "sampler has the wrong type !")
-  else (failwith ("sampler could not be defined, " ^ Buffer.contents buf))
+  | false ->
+      failwith ("sampler could not be defined, " ^ Buffer.contents buf)
+  | exception Typetexp.Error (_loc, env, err) ->
+      Typetexp.report_error env ppf err;
+      failwith ("type error while defining sampler: " ^ Buffer.contents buf)
+  | exception e ->
+      failwith ("error while defining sampler: " ^ Buffer.contents buf ^ Printexc.to_string e)
 
 let register_callback name ty f =
   let unit =
