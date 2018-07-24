@@ -101,6 +101,8 @@ val update: 'a File.file -> 'a -> t -> t
     ciphers it. *)
 val cipher: string File.file -> string -> t -> t
 
+val meta_from_index: Learnocaml_index.exercise -> Learnocaml_meta.meta
+
 (** Generates the exercise representation for the exercises index. *)
 val to_index: t -> Learnocaml_index.exercise
 

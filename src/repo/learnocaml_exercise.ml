@@ -16,8 +16,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Lwt.Infix
-
 open Learnocaml_meta
 open Learnocaml_index
 
@@ -31,16 +29,6 @@ type t =
     test : string ;
     solution : string ;
   }
-
-let cipher ex_id key v =
-  let prefix =
-    Digest.string (ex_id  ^ "_" ^ key) in
-  Xor.decode ~prefix v
-
-let decipher ex_id key v =
-  let prefix =
-    Digest.string (ex_id  ^ "_" ^ key) in
-  Xor.decode ~prefix v
 
 let encoding =
   let open Json_encoding in
@@ -83,7 +71,7 @@ module Seq = struct
   let (>>=) x f = f x
   let return x = x
   let fail = raise
-  let join l = ()
+  let join _ = ()
 end
 
 module File = struct
@@ -102,7 +90,7 @@ module File = struct
 
   exception Missing_file of string
 
-  let get { key ; ciphered ; decode } ex =
+  let get { key ; ciphered ; decode ; _ } ex =
     try
       let raw = StringMap.find key ex in
       if ciphered then
@@ -113,10 +101,10 @@ module File = struct
         decode raw
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
-  let has { key } ex =
+  let has { key ; _ } ex =
     StringMap.mem key ex
 
-  let set { key ; ciphered ; encode } raw ex =
+  let set { key ; ciphered ; encode  ; _ } raw ex =
     if ciphered then
       let prefix =
         Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
@@ -215,7 +203,7 @@ module File = struct
             return (meta_from_string meta_json)
       end >>= fun meta_json ->
       ex := set meta meta_json !ex;
-      let read_field ({ key ; ciphered ; encode ; decode } as field) =
+      let read_field ({ key ; ciphered ; decode ; _ } as field) =
         read_field key >>= function
         | Some raw ->
             let deciphered =
@@ -345,14 +333,14 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           test = field_from_file File.test ex ;
           solution = field_from_file File.solution ex ;
         }
-    with File.Missing_file f as e -> fail e
+    with File.Missing_file _ as e -> fail e
 
   let write ~write_field ex ?(cipher = true) acc =
     let open Concur in
     let open File in
     let acc = ref acc in
     let ex_id = ex.id in
-    let write_field { key ; ciphered ; encode ; decode ; field } =
+    let write_field { key ; ciphered ; encode ; field ; _  } =
       try
         let raw = field ex |> encode in
         let ciphered = if ciphered && (not cipher) then
