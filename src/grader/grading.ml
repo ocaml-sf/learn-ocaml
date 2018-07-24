@@ -24,7 +24,7 @@ let () =
     (function
       | Internal_error (msg, error) ->
           let msg =
-            Printf.sprintf [%if"Internal error %s:\n\n%s\n%!"]
+            Printf.sprintf [%if"Exercise definition error %s:\n%s\n%!"]
               msg error.Toploop_ext.msg in
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
