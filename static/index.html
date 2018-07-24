@@ -41,10 +41,11 @@
       </div>
       <hr class="line">
       <div id="txt_token_doc"><!--Your storage token on OCamlPro's servers:--></div>
-      <input type="text" value="XXX-XXX-XXX-XXX" size="17"
-             pattern="[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+      <input type="text" value="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+             pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
              id="learnocaml-save-token-field">
       <div id="txt_token_share"><!--You can share it between devices.--></div>
+      <input type="text" value="" placeholder="Nickname" size="16" id="learnocaml-nickname">
       <hr class="line">
       <div id="txt_progression_local"><!--Progression is saved locally in the browser.--></div>
       <div id="learnocaml-sync-buttons">

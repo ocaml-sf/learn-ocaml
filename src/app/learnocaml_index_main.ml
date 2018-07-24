@@ -549,7 +549,14 @@ let toplevel_tab select _ () =
   end ;
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return div
-;;
+
+let teacher_tab _select _params () =
+  let content_div = find_component "learnocaml-main-content" in
+  let div =
+    Tyxml_js.Html5.(h3 [cdata "Teacher page"])
+  in
+  Manip.appendChild content_div div;
+  Lwt.return div
 
 let token_format =
   Json_encoding.(obj1 (req "token" string))
@@ -572,8 +579,8 @@ let init_sync_token button_state =
        end >>= fun token ->
        input##.value := Js.string token ;
        enable_button button_state ;
-       Lwt.return ())
-    (fun _ -> Lwt.return ())
+       Lwt.return (Some (Learnocaml_sync.Token.parse token)))
+    (fun _ -> Lwt.return None)
 
 let set_state_from_save_file
     { Learnocaml_sync.all_exercise_states ;
@@ -666,7 +673,7 @@ let () =
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
-  Lwt.async @@ (fun () -> init_sync_token sync_button_state) ;
+  let token = init_sync_token sync_button_state in
   let sync_buttons = find_component "learnocaml-sync-buttons" in
   Manip.removeChildren sync_buttons ;
   begin button
@@ -712,6 +719,7 @@ let () =
     Lwt.return ()
   end ;
   let tabs =
+    token >|= fun token ->
     (if config##.enableTryocaml
      then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
     (if config##.enableLessons
@@ -719,13 +727,19 @@ let () =
     (if config##.enableExercises
      then [ "exercises", ([%i"Exercises"], exercises_tab) ] else []) @
     (if config##.enableToplevel
-     then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) in
+     then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
+    (match token with
+     | Some t (*when Learnocaml_sync.Token.is_admin t*) ->
+         [ "teacher", ([%i"Teach"], teacher_tab) ]
+     | _ -> [])
+  in
   let tabs =
     let container = find_component "learnocaml-tab-buttons-container" in
     let content_div = find_component "learnocaml-main-content" in
     let current_btn = ref None in
     let current_args = ref (ref []) in
     let mutex = Lwt_mutex.create () in
+    tabs >|= fun tabs ->
     Manip.removeChildren container ;
     List.map
       (fun (id, (name, callback)) ->
@@ -770,7 +784,9 @@ let () =
            (fun _ -> Lwt.async select ; true) ;
          Manip.appendChild container btn ;
          id, (name, select))
-      tabs in
+      tabs
+  in
+  tabs >>= fun tabs ->
   try
     let activity = arg "activity" in
     let (_, select) =
