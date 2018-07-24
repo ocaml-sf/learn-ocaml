@@ -33,11 +33,12 @@ let exercises_tab _ _ () =
       let open Tyxml_js.Html5 in
       match contents with
       | Learnocaml_exercises exercises ->
-          StringMap.fold
-            (fun exercise_id { exercise_kind ;
-                               exercise_title ;
-                               exercise_short_description ;
-                               exercise_stars } acc ->
+          List.fold_left
+            (fun acc (exercise_id,
+                      { exercise_kind ;
+                        exercise_title ;
+                        exercise_short_description ;
+                        exercise_stars }) ->
               let pct_init =
                 match StringMap.find exercise_id all_exercise_states with
                 | exception Not_found -> None
@@ -88,15 +89,15 @@ let exercises_tab _ _ () =
                   ]
                 ] ] ::
               acc)
-            exercises acc
+            acc exercises
       | Groups groups ->
           let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
-          StringMap.fold
-            (fun _ { group_title ; group_contents } acc ->
+          List.fold_left
+            (fun acc (_, { group_title ; group_contents }) ->
                format_contents (succ lvl)
                  (h ~a:[ a_class [ "pack" ] ] [ pcdata group_title ] :: acc)
                  group_contents)
-            groups acc in
+            acc groups in
     List.rev (format_contents 1 [] index) in
   let list_div =
     Tyxml_js.Html5.(div ~a: [ Tyxml_js.Html5.a_id "learnocaml-main-exercise-list" ])
@@ -319,10 +320,10 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   Manip.appendChild content_div tutorial_div ;
   Server_caller.fetch_tutorial_index () >>= fun index ->
   let index =
-    List.flatten @@ StringMap.fold
-      (fun _ { series_tutorials } acc ->
+    List.flatten @@ List.fold_left
+      (fun acc (_, { series_tutorials }) ->
          series_tutorials :: acc)
-      index [] in
+      [] index in
   let options =
     List.map
       (fun { tutorial_name; tutorial_title } ->

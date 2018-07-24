@@ -150,32 +150,43 @@ let main dest_dir =
           | dirs ->
               Format.eprintf "Missing index file, using all exercise directories.@." ;
               Lwt.return (`Exercises dirs)) >>= fun structure ->
-       let all_exercises = ref [] in
+       (* Exercises must be unique, since their id refer to the directory. *)
+       let all_exercises = ref StringMap.empty in
        let rec fill_structure = function
          | `Groups groups ->
+             (* Ensures groups of a same parent are unique *)
+             let subgroups : string StringMap.t ref = ref StringMap.empty in
              List.fold_left
                (fun acc (id, (group_title, str)) ->
-                  fill_structure str >>= fun group_contents ->
-                  acc >>= fun acc ->
-                  Lwt.return (StringMap.add id { group_title ; group_contents } acc))
-               (Lwt.return StringMap.empty) groups >>= fun groups ->
+                  if StringMap.mem id !subgroups then acc
+                  else begin
+                    subgroups := StringMap.add id group_title !subgroups ;
+                    fill_structure str >>= fun group_contents ->
+                    acc >>= fun acc ->
+                    Lwt.return ((id, { group_title ; group_contents }) :: acc)
+                  end)
+               (Lwt.return []) (List.rev groups) >>= fun groups ->
              Lwt.return (Groups groups)
          | `Exercises ids ->
              List.fold_left
                (fun acc id ->
-                  let exercise =
-                    read_exercise (!exercises_dir / id) in
-                  all_exercises := (id, exercise) :: !all_exercises ;
-                  let exercise_indexed = Learnocaml_exercise.to_index exercise in
-                  acc >>= fun acc ->
-                  Lwt.return (StringMap.add id exercise_indexed acc))
-               (Lwt.return StringMap.empty) ids >>= fun exercises ->
+                  if StringMap.mem id !all_exercises then acc
+                  else begin
+                    let exercise =
+                      read_exercise (!exercises_dir / id) in
+                    all_exercises := StringMap.add id exercise !all_exercises ;
+                    let exercise_indexed = Learnocaml_exercise.to_index exercise in
+                    acc >>= fun acc ->
+                    Lwt.return
+                      ((id, exercise_indexed) :: acc)
+                  end)
+               (Lwt.return []) (List.rev ids) >>= fun exercises ->
              Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
        to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
        let processes_arguments =
-         List.map
-           (fun (id, exercise) ->
+         StringMap.fold
+           (fun id exercise acc ->
               let exercise_dir = !exercises_dir / id in
               let json_path = dest_dir / exercise_path id in
               let changed = try
@@ -193,10 +204,11 @@ let main dest_dir =
                 match !dump_reports with
                 | None -> None
                 | Some dir -> Some (dir / id) in
-              id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports)
-           (List.sort_uniq (fun (id, _) (id', _) -> compare id id') !all_exercises) in
+              (id, exercise_dir, exercise, json_path,
+               changed, dump_outputs, dump_reports) :: acc)
+           !all_exercises [] in
        begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
+           Lwt_list.map_s (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
                  Lwt.return true
