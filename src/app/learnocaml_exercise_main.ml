@@ -258,6 +258,16 @@ let () =
             },\n"
          *)
        in
+       (* Looking for the description in the correct language. *)
+       let descr =
+         let lang = "" in
+         try
+           List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+         with
+           Not_found ->
+             try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+             with Not_found -> [%i "No description available for this exercise." ]
+         in
        let html = Format.asprintf
            "<!DOCTYPE html>\
             <html><head>\
@@ -274,7 +284,7 @@ let () =
            (Learnocaml_exercise.(access File.title exo))
            mathjax_config
            mathjax_url
-           (Learnocaml_exercise.(access File.descr exo)) in
+           descr in
        d##open_;
        d##write (Js.string html);
        d##close) ;

@@ -24,7 +24,7 @@ type t =
     meta : meta ;
     prelude : string ;
     template : string ;
-    descr : string ;
+    descr : (string * string) list ;
     prepare : string ;
     test : string ;
     solution : string ;
@@ -42,7 +42,7 @@ let encoding =
        (req "meta" Learnocaml_meta.encoding)
        (req "prelude" string)
        (req "template" string)
-       (req "descr" string)
+       (req "descr" (list (tup2 string string)))
        (req "prepare" string)
        (req "test" string)
        (req "solution" string))
@@ -53,6 +53,17 @@ let meta_from_string m =
 
 let meta_to_string m =
   Json_encoding.construct Learnocaml_meta.encoding m
+  |> (function
+    | `A _ | `O _ as d -> d
+    | v -> `A [ v ])
+  |> Ezjsonm.to_string ~minify:true
+
+let descrs_from_string descrs =
+  Ezjsonm.from_string descrs
+  |> Json_encoding.(destruct (list (tup2 string string)))
+
+let descrs_to_string s =
+  Json_encoding.(construct (list (tup2 string string))) s
   |> (function
     | `A _ | `O _ as d -> d
     | v -> `A [ v ])
@@ -158,9 +169,9 @@ module File = struct
       field = (fun ex -> ex.template) ;
       update = (fun template ex -> { ex with template })
      }
-  let descr =
+  let descr : (string * string) list file =
     { key = "descr.html" ; ciphered = false ;
-      decode = (fun v -> v) ; encode = (fun v -> v) ;
+      decode = descrs_from_string ; encode = descrs_to_string ;
       field = (fun ex -> ex.descr) ;
       update = (fun descr ex -> { ex with descr })
      }
@@ -203,7 +214,7 @@ module File = struct
             return (meta_from_string meta_json)
       end >>= fun meta_json ->
       ex := set meta meta_json !ex;
-      let read_field ({ key ; ciphered ; decode ; _ } as field) =
+      let read_file ({ key ; ciphered ; decode ; _ } as field) =
         read_field key >>= function
         | Some raw ->
             let deciphered =
@@ -223,7 +234,7 @@ module File = struct
             ex := set title t !ex;
             return ()
         | None ->
-            read_field title >>= fun () ->
+            read_file title >>= fun () ->
             try
               let t = get title !ex in
               ex := set meta { meta_json with meta_title = Some t } !ex;
@@ -236,7 +247,7 @@ module File = struct
             ex := set max_score (score) !ex;
             return ()
         | None ->
-            read_field max_score >>= fun () ->
+            read_file max_score >>= fun () ->
             try
               let score = get max_score !ex in
               ex := set meta
@@ -244,14 +255,41 @@ module File = struct
               return ()
             with _ -> return ()
       in
+      let descrs = ref [] in
+      let read_descr lang =
+        begin
+          match lang with
+            None -> read_field descr.key
+          | Some lang ->
+              let key =
+                Filename.remove_extension descr.key
+                ^ "." ^ lang ^ "." ^
+                Filename.extension descr.key in
+              read_field key
+        end >>= function
+          None -> return ()
+        | Some raw ->
+
+            descrs := (lang, raw) :: !descrs;
+            return ()
+      in
+      let read_descrs () =
+        let langs = [] in
+       join (read_descr None :: List.map (fun l -> read_descr (Some l)) langs)
+       >>= fun () ->
+       ex := set descr
+           (List.map (function (None, v) -> "", v | (Some l, v) -> l, v) !descrs)
+                !ex;
+            return ()
+      in
       join
         [ read_title () ;
-          read_field prelude ;
-          read_field template ;
-          read_field descr ;
-          read_field prepare ;
-          read_field solution ;
-          read_field test ;
+          read_file prelude ;
+          read_file template ;
+          read_descrs () ;
+          read_file prepare ;
+          read_file solution ;
+          read_file test ;
           read_max_score () ] >>= fun () ->
       return !ex
   end

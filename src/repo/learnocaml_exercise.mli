@@ -18,16 +18,7 @@
 (** Internal representation of the exercises files, including the metadata from
     the repository. *)
 
-type t (* =
-   * { id : string ;
-   *   meta : Learnocaml_meta.meta ;
-   *   prelude : string ;
-   *   template : string ;
-   *   descr : string ;
-   *   prepare : string ;
-   *   test : string ;
-   *   solution : string ;
-   * } *)
+type t
 
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)
@@ -80,7 +71,7 @@ module File : sig
   val template: string file
 
   (** Returns the (public) [descr.html] *)
-  val descr: string file
+  val descr: (string * string) list file
 
 end
 
