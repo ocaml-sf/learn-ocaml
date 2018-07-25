@@ -354,7 +354,8 @@ let console_report ?(verbose=false) exercise report =
   let max_score = max_score exercise in
   print_string (hline ());
   Printf.printf
-    "## %-72s %s\n"
+    "## %-*s %s\n"
+    (65 + String.length (color [`Bold] ""))
     (color [`Bold]
        (if score <= 0 then "Exercise failed"
         else if score >= max_score then "Exercise complete"
@@ -414,6 +415,7 @@ let fetch url =
   Client.get url >>= fun (resp, body) ->
   match Response.status resp with
   | `OK -> Cohttp_lwt.Body.to_string body
+  | `Not_found -> raise Not_found
   | status ->
       Printf.ksprintf Lwt.fail_with
         "Error contacting learn-ocaml server: code %d"
@@ -427,18 +429,32 @@ let fetch_exercise server_url id =
   let exercise_json_url =
     server_path server_url ["exercises"; id ^ ".json"]
   in
-  fetch exercise_json_url >|=
-  Ezjsonm.from_string >|=
-  Json_encoding.destruct Learnocaml_exercise.enc
+  Lwt.catch (fun () ->
+      fetch exercise_json_url >|=
+      Ezjsonm.from_string >|=
+      Json_encoding.destruct Learnocaml_exercise.enc)
+  @@ function
+  | Not_found ->
+      Printf.ksprintf Lwt.fail_with
+        "Exercise %S was not found on the server."
+        id
+  | e -> Lwt.fail e
 
 let fetch_save server_url token =
   let sync_url =
     server_path server_url ["sync"; Learnocaml_sync.Token.to_string token]
   in
-  fetch sync_url >|= fun s ->
-  let s = if s = "" then "{}" else s in
-  Ezjsonm.from_string s |>
-  Json_encoding.destruct Learnocaml_sync.save_file_enc
+  Lwt.catch (fun () ->
+      fetch sync_url >|= fun s ->
+      let s = if s = "" then "{}" else s in
+      Ezjsonm.from_string s |>
+      Json_encoding.destruct Learnocaml_sync.save_file_enc)
+  @@ function
+  | Not_found ->
+      Printf.ksprintf Lwt.fail_with
+        "Token %S not found on the server."
+        (Learnocaml_sync.Token.to_string token)
+  | e -> Lwt.fail e
 
 let upload_save server_url token save =
   let sync_url =
@@ -494,8 +510,15 @@ let upload_report server token exercise solution report =
       all_exercise_toplevel_histories = StringMap.empty;
     }
   in
-  fetch_save server token >>= fun save ->
-  upload_save server token (Learnocaml_sync.sync save new_save)
+  Lwt.catch (fun () ->
+      fetch_save server token >>= fun save ->
+      upload_save server token (Learnocaml_sync.sync save new_save))
+  @@ function
+  | Not_found ->
+      Printf.ksprintf Lwt.fail_with
+        "Token %S not found on the server before upload."
+        (Learnocaml_sync.Token.to_string token)
+  | e -> Lwt.fail e
 
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
