@@ -3,13 +3,12 @@ LABEL Description="learn-ocaml building" Vendor="OCamlPro" Version="0.2"
 
 WORKDIR learn-ocaml
 
-COPY learn-ocaml.opam .
+COPY learn-ocaml.opam learn-ocaml.opam.locked ./
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMYES true
 RUN opam switch 4.05
-RUN opam pin learn-ocaml . -n
-RUN opam depext learn-ocaml
+RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
 RUN opam install . --deps-only --locked
 
 ADD static static
