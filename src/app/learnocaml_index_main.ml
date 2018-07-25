@@ -602,11 +602,18 @@ let sync () =
     Js.to_string input ##. value in
   let req = Server_caller.fetch_save_file ~token in
   let local_save_file = get_state_as_save_file () in
-  req >>= fun server_save_file ->
-  Learnocaml_local_storage.(store sync_token) token ;
-  let save_file = Learnocaml_sync.sync local_save_file server_save_file in
-  set_state_from_save_file save_file ;
-  Server_caller.upload_save_file ~token save_file
+  req >>= function
+  | None ->
+      if token <> Learnocaml_local_storage.(retrieve sync_token) then
+        Lwt.fail_with "Unknown token entered"
+      else
+        (Learnocaml_local_storage.(store sync_token) token ;
+         Server_caller.upload_save_file ~token local_save_file)
+  | Some server_save_file ->
+      Learnocaml_local_storage.(store sync_token) token ;
+      let save_file = Learnocaml_sync.sync local_save_file server_save_file in
+      set_state_from_save_file save_file ;
+      Server_caller.upload_save_file ~token save_file
 
 let set_string_translations () =
   let translations = [

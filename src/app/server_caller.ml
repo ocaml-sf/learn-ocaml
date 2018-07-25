@@ -92,20 +92,22 @@ let gimme_sync_token () =
 
 let fetch_save_file ~token =
   let message = "cannot download server data" in
-  fetch ~message ("/sync/" ^ token) >>= fun text ->
-  let text = if text = "" then "{}" else text in
-  (try Lwt.return (Js._JSON##(parse (Js.string text))) with Js.Error err ->
-     let msg =
-       Format.asprintf "bad format for server data\n%s"
-         (Js.to_string err ##. message) in
-     Lwt.fail (Cannot_fetch msg)) >>= fun json ->
-  try Lwt.return @@
-    Json_repr_browser.Json_encoding.destruct Learnocaml_sync.save_file_enc json
-  with exn ->
-    let msg =
-      Format.asprintf "bad structure for server data@.%a"
-        (fun ppf -> Json_encoding.print_error ppf) exn in
-    Lwt.fail (Cannot_fetch msg)
+  fetch ~message ("/sync/" ^ token) >>= function
+  | "" -> Lwt.return_none
+  | text ->
+      (try Lwt.return (Js._JSON##(parse (Js.string text)))
+       with Js.Error err ->
+         let msg =
+           Format.asprintf "bad format for server data\n%s"
+             (Js.to_string err ##. message) in
+         Lwt.fail (Cannot_fetch msg)) >>= fun json ->
+      try Lwt.return_some @@
+        Json_repr_browser.Json_encoding.destruct Learnocaml_sync.save_file_enc json
+      with exn ->
+        let msg =
+          Format.asprintf "bad structure for server data@.%a"
+            (fun ppf -> Json_encoding.print_error ppf) exn in
+        Lwt.fail (Cannot_fetch msg)
 
 let upload_save_file ~token save_file =
   let json =
