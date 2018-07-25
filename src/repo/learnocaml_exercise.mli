@@ -104,6 +104,8 @@ val cipher: string File.file -> string -> t -> t
 (** Generates the exercise representation for the exercises index. *)
 val to_index: t -> Learnocaml_index.exercise
 
+val meta_from_index: Learnocaml_index.exercise -> Learnocaml_meta.meta
+
 (** Reader and decipherer *)
 val read:
   read_field:(string -> string option) ->

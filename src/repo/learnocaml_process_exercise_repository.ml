@@ -212,7 +212,7 @@ let main dest_dir =
               id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports)
            (List.sort_uniq (fun (id, _) (id', _) -> compare id id') !all_exercises) in
        begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, exercise_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
+           Lwt_list.map_s (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
                  Lwt.return true
