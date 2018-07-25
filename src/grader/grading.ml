@@ -42,7 +42,7 @@ let internal_error name err =
 let user_code_error err =
   raise (User_code_error err)
 
-let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
+let get_grade ?callback ?timeout ~divert exo code =
 
   let print_outcome = true in
   let outcomes_buffer = Buffer.create 503 in
@@ -101,12 +101,12 @@ let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
       set_progress [%i"Loading the prelude."] ;
       handle_error (internal_error [%i"while loading the prelude"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
-        (Learnocaml_exercise.(decipher File.prelude exo)) ;
+        (Learnocaml_exercise.(get prelude) exo) ;
 
       set_progress [%i"Preparing the test environment."] ;
       handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
-        (Learnocaml_exercise.(decipher File.prepare exo)) ;
+        (Learnocaml_exercise.(get prepare) exo) ;
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
@@ -115,7 +115,7 @@ let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
       set_progress [%i"Loading the solution."] ;
       handle_error (internal_error [%i"while loading the solution"]) @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-        (Learnocaml_exercise.(decipher File.solution exo)) ;
+        (Learnocaml_exercise.(get solution) exo) ;
 
       set_progress [%i"Preparing to launch the tests."] ;
       Introspection.allow_introspection ~divert ;
@@ -142,7 +142,7 @@ let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
       set_progress [%i"Launching the test bench."] ;
       handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
-        (Learnocaml_exercise.(decipher File.test exo)) ;
+        (Learnocaml_exercise.(get test) exo) ;
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;

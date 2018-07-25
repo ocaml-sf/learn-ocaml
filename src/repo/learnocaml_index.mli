@@ -48,8 +48,6 @@ val exercise_index_enc : group_contents Json_encoding.encoding
 
 val lesson_index_enc : (string * string) list Json_encoding.encoding
 
-val exercise_enc : exercise Json_encoding.encoding
-
 type word =
   | Text of string
   | Code of code
