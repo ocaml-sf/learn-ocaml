@@ -147,7 +147,7 @@ module Args = struct
       let apply repo_dir contents_dir =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
-        Learnocaml_process_tutorial_repository.tutorials_dir := 
+        Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
         { contents_dir }
       in
@@ -209,7 +209,7 @@ let main o =
        Lwt_list.fold_left_s (fun i ex ->
            Lwt.catch
              (fun () ->
-                Grader_cli.grade ~print_result:true ex o.grader.Grader.output_json
+                Grader_cli.grade_from_dir ~print_result:true ex o.grader.Grader.output_json
                 >|= max i)
              (fun e ->
                 Printf.ksprintf failwith

@@ -69,7 +69,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(get max_score) exo in
+    let max = Learnocaml_exercise.(access File.max_score) exo in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -128,7 +128,7 @@ let () =
   let exercise_fetch = Server_caller.fetch_exercise id in
   let after_init top =
     exercise_fetch >>= fun exo ->
-    begin match Learnocaml_exercise.(get prelude) exo with
+    begin match Learnocaml_exercise.(access File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
           Learnocaml_toplevel.load ~print_outcome:true top
@@ -136,7 +136,7 @@ let () =
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(get prepare) exo) >>= fun r2 ->
+      (Learnocaml_exercise.(access File.prepare exo)) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -200,9 +200,9 @@ let () =
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata (Learnocaml_exercise.(get title) exo) ] ;
+    Tyxml_js.Html5.[ h1 [ pcdata (Learnocaml_exercise.(access File.title exo)) ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
-  let prelude = Learnocaml_exercise.(get prelude) exo in
+  let prelude = Learnocaml_exercise.(access File.prelude exo) in
   if prelude <> "" then begin
     let open Tyxml_js.Html5 in
     let state = ref (match arg "prelude" with
@@ -258,6 +258,16 @@ let () =
             },\n"
          *)
        in
+       (* Looking for the description in the correct language. *)
+       let descr =
+         let lang = "" in
+         try
+           List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+         with
+           Not_found ->
+             try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+             with Not_found -> [%i "No description available for this exercise." ]
+         in
        let html = Format.asprintf
            "<!DOCTYPE html>\
             <html><head>\
@@ -271,10 +281,10 @@ let () =
             %s\
             </body>\
             </html>"
-           (Learnocaml_exercise.(get title) exo)
+           (Learnocaml_exercise.(access File.title exo))
            mathjax_config
            mathjax_url
-           (Learnocaml_exercise.(get descr) exo) in
+           descr in
        d##open_;
        d##write (Js.string html);
        d##close) ;
@@ -285,11 +295,11 @@ let () =
   Ace.set_contents ace
     (match solution with
      | Some solution -> solution
-     | None -> Learnocaml_exercise.(get template) exo) ;
+     | None -> Learnocaml_exercise.(access File.template exo)) ;
   Ace.set_font_size ace 18;
   begin editor_button
       ~icon: "cleanup" [%i"Reset"] @@ fun () ->
-    Ace.set_contents ace (Learnocaml_exercise.(get template) exo) ;
+    Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)) ;
     Lwt.return ()
   end ;
   begin editor_button

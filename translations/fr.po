@@ -171,6 +171,10 @@ msgstr "Prec."
 msgid "Next"
 msgstr "Suiv."
 
+#: src/app/learnocaml_index_main.ml:269,35--80
+msgid "No description available for this exercise."
+msgstr "Aucune description pour cet exercice."
+
 #: src/app/learnocaml_index_main.ml:316,41--60
 msgid "Loading tutorials"
 msgstr "Chargement des tutoriels"

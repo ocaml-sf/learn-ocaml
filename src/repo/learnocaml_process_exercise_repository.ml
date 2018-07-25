@@ -52,45 +52,6 @@ let index_enc =
         (function | `Groups map -> Some map | _ -> None)
         (fun map -> `Groups map) ]
 
-let exercise_kind_enc =
-  let open Json_encoding in
-  string_enum
-    [ "problem", Problem ;
-      "project", Project ;
-      "exercise", Learnocaml_exercise ]
-
-let exercise_meta_enc_v1 =
-  let open Json_encoding in
-  obj2
-    (req "kind" exercise_kind_enc)
-    (req "stars" float)
-
-let exercise_meta_enc_v2 =
-  let open Json_encoding in
-  obj9
-     (opt "title" string)
-     (opt "short_description" string)
-     (opt "identifier" string)
-     (opt "author" (list (tup2 string string)))
-     (opt "focus" (list string))
-     (opt "requirements" (list string))
-     (opt "forward" (list string))
-     (opt "backward" (list string))
-     (opt "max_score" int)
-
-let exercise_meta_enc =
-  let open Json_encoding in
-  check_version_2
-    (merge_objs
-       (merge_objs
-          exercise_meta_enc_v1
-          exercise_meta_enc_v2)
-       unit) (* FIXME: temporary parameter, that allows unknown fields *)
-
-let opt_to_list_enc = function
-    None -> []
-  | Some l -> l
-
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
   let json = Json_encoding.construct encoding value in
@@ -205,62 +166,43 @@ let main dest_dir =
            Format.eprintf "This does not look like a LearnOCaml exercise repository.@." ;
            Lwt.fail (Failure "cannot continue")))
        >>= fun structure ->
-       let all_exercises = ref [] in
+       (* Exercises must be unique, since their id refer to the directory. *)
+       let all_exercises = ref StringMap.empty in
        let rec fill_structure = function
          | `Groups groups ->
+             (* Ensures groups of a same parent are unique *)
+             let subgroups : string StringMap.t ref = ref StringMap.empty in
              List.fold_left
                (fun acc (id, (group_title, str)) ->
-                  fill_structure str >>= fun group_contents ->
-                  acc >>= fun acc ->
-                  Lwt.return (StringMap.add id { group_title ; group_contents } acc))
-               (Lwt.return StringMap.empty) groups >>= fun groups ->
+                  if StringMap.mem id !subgroups then acc
+                  else begin
+                    subgroups := StringMap.add id group_title !subgroups ;
+                    fill_structure str >>= fun group_contents ->
+                    acc >>= fun acc ->
+                    Lwt.return ((id, { group_title ; group_contents }) :: acc)
+                  end)
+               (Lwt.return []) (List.rev groups) >>= fun groups ->
              Lwt.return (Groups groups)
          | `Exercises ids ->
              List.fold_left
                (fun acc id ->
-                  all_exercises := id :: !all_exercises ;
-                  from_file exercise_meta_enc (!exercises_dir / id / "meta.json")
-                  >>= fun (((exercise_kind, exercise_stars),
-                            (title, exercise_short_description,
-                             exercise_identifier,
-                             author, focus, requirements,
-                             forward, backward, max_score)),
-                           _) ->
-                  let exercise =
-                    read_exercise (!exercises_dir / id) in
-                  let exercise_title =
-                    match title with
-                    | Some title -> title
-                    | None -> Learnocaml_exercise.(get title) exercise
-                  in
-                  let exercise_max_score =
-                    match max_score with
-                    | Some max_score -> Some max_score
-                    | None ->
-                        try Some (Learnocaml_exercise.(get max_score) exercise)
-                        with Learnocaml_exercise.Missing_field _ -> None
-                  in
-                  let exercise =
-                    { exercise_kind ; exercise_stars ;
-                      exercise_title ;
-                      exercise_short_description;
-                      exercise_identifier ;
-                      exercise_author = opt_to_list_enc author ;
-                      exercise_focus = opt_to_list_enc focus ;
-                      exercise_requirements = opt_to_list_enc requirements ;
-                      exercise_forward = opt_to_list_enc forward ;
-                      exercise_backward = opt_to_list_enc backward ;
-                      exercise_max_score ;
-                    } in
-                  acc >>= fun acc ->
-                  Lwt.return (StringMap.add id exercise acc))
-               (Lwt.return StringMap.empty) ids >>= fun exercises ->
+                  if StringMap.mem id !all_exercises then acc
+                  else begin
+                    let exercise =
+                      read_exercise (!exercises_dir / id) in
+                    all_exercises := StringMap.add id exercise !all_exercises ;
+                    let exercise_indexed = Learnocaml_exercise.to_index exercise in
+                    acc >>= fun acc ->
+                    Lwt.return
+                      ((id, exercise_indexed) :: acc)
+                  end)
+               (Lwt.return []) (List.rev ids) >>= fun exercises ->
              Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
        to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
        let processes_arguments =
-         List.map
-           (fun id ->
+         StringMap.fold
+           (fun id exercise acc ->
               let exercise_dir = !exercises_dir / id in
               let json_path = dest_dir / exercise_path id in
               let changed = try
@@ -278,17 +220,18 @@ let main dest_dir =
                 match !dump_reports with
                 | None -> None
                 | Some dir -> Some (dir / id) in
-              id, exercise_dir, json_path, changed, dump_outputs,dump_reports)
-           (List.sort_uniq compare !all_exercises) in
+              (id, exercise_dir, exercise, json_path,
+               changed, dump_outputs, dump_reports) :: acc)
+           !all_exercises [] in
        begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, exercise_dir, json_path, changed, dump_outputs,dump_reports) ->
+           Lwt_list.map_s (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
                  Lwt.return true
                end else begin
                  Grader_cli.dump_outputs := dump_outputs ;
                  Grader_cli.dump_reports := dump_reports ;
-                 Grader_cli.grade exercise_dir (Some json_path) >>= fun result ->
+                 Grader_cli.grade exercise (Some json_path) >>= fun result ->
                  match result with
                  | 0 ->
                      Format.printf "%-12s     [OK]@." id ;
@@ -300,7 +243,7 @@ let main dest_dir =
              processes_arguments
          else
            let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
-           Lwt_list.map_p (fun (id, exercise_dir, json_path, changed, dump_outputs, dump_reports) ->
+           Lwt_list.map_p (fun (id, exercise_dir, _, json_path, changed, dump_outputs, dump_reports) ->
                Lwt_pool.use pool @@ fun () ->
                if not changed then begin
                  Format.printf "%-12s (no changes)@." id ;
