@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_simple_server
+open Learnocaml_server
 
 let () =
   Arg.parse args
     (fun _ -> raise (Arg.Bad "unexpected argument"))
-    "Usage: learnocaml-simple-server [options]" ;
+    "Usage: learnocaml-server [options]" ;
   ignore (Lwt_main.run (launch ()))

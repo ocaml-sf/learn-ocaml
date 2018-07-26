@@ -1,6 +1,6 @@
-begin library "learnocaml-simple-server-lib"
+begin library "learnocaml-server-lib"
   files = [
-    "learnocaml_simple_server.ml"
+    "learnocaml_server.ml"
   ]
   requires = [
     "ocplib-json-typed"
@@ -13,11 +13,11 @@ begin library "learnocaml-simple-server-lib"
   ]
 end
 
-begin program "learnocaml-simple-server"
+begin program "learnocaml-server"
   files = [
-    "learnocaml_simple_server_main.ml"
+    "learnocaml_server_main.ml"
   ]
   requires = [
-    "learnocaml-simple-server-lib"
+    "learnocaml-server-lib"
   ]
 end

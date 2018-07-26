@@ -6,7 +6,7 @@ begin program "learnocaml"
   requires = [
     "cmdliner"
     "learnocaml-process-repository-lib"
-    "learnocaml-simple-server-lib"
+    "learnocaml-server-lib"
   ]
 end
 

@@ -213,9 +213,9 @@ module Args = struct
 
     let term =
       let apply app_dir sync_dir port =
-        Learnocaml_simple_server.static_dir := app_dir;
-        Learnocaml_simple_server.sync_dir := sync_dir;
-        Learnocaml_simple_server.port := port;
+        Learnocaml_server.static_dir := app_dir;
+        Learnocaml_server.sync_dir := sync_dir;
+        Learnocaml_server.port := port;
         { sync_dir; port }
       in
       Term.(const apply $app_dir $sync_dir $port)
@@ -312,8 +312,8 @@ let main o =
   let run_server () =
     if List.mem Serve o.commands then
       (Printf.printf "Starting server on port %d\n%!"
-         !Learnocaml_simple_server.port;
-       Learnocaml_simple_server.launch ())
+         !Learnocaml_server.port;
+       Learnocaml_server.launch ())
     else
       Lwt.return true
   in
