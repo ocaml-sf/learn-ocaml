@@ -92,6 +92,34 @@ let display_report exo report =
     (Format.asprintf "%a" Learnocaml_report.(output_html_of_report ~bare: true) report) ;
   grade
 
+let sync () =
+  let get_token =
+    try Lwt.return Learnocaml_local_storage.(retrieve sync_token) with
+    | Not_found ->
+        Lwt_request.get ~headers: [] ~url: "/sync/gimme" ~args: [] >>= fun token ->
+        let token = Js.string token in
+        let json = Js._JSON##(parse token) in
+        let token = Json_repr_browser.Json_encoding.destruct token_format json in
+        Learnocaml_local_storage.(store sync_token) token
+  in
+  let local_save_file = {
+    Learnocaml_sync.all_exercise_states =
+      Learnocaml_local_storage.(retrieve all_exercise_states) ;
+    all_toplevel_histories =
+      Learnocaml_local_storage.(retrieve all_toplevel_histories) ;
+    all_exercise_toplevel_histories =
+      Learnocaml_local_storage.(retrieve all_exercise_toplevel_histories) ;
+  } in
+  token >>= fun token ->
+  Server_caller.fetch_save_file ~token >>= function
+  | None ->
+      Learnocaml_local_storage.(store sync_token) token ;
+      Server_caller.upload_save_file ~token local_save_file
+  | Some server_save_file ->
+      Learnocaml_local_storage.(store sync_token) token ;
+      let save_file = Learnocaml_sync.sync local_save_file server_save_file in
+      Server_caller.upload_save_file ~token save_file
+
 let set_string_translations () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
@@ -312,7 +340,7 @@ let () =
     Learnocaml_local_storage.(store (exercise_state id))
       { Learnocaml_exercise_state.report ; grade ; solution ;
         mtime = gettimeofday () } ;
-    Lwt.return ()
+    sync ()
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -402,6 +430,7 @@ let () =
         Learnocaml_local_storage.(store (exercise_state id))
           { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
+        sync () >>= fun () ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
