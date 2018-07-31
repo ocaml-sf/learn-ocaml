@@ -4,13 +4,15 @@ begin library "learnocaml-repository"
     "learnocaml_index.ml"
     "learnocaml_lesson.ml"
     "learnocaml_tutorial.ml"
+    "learnocaml_meta.ml"
     "learnocaml_exercise.ml"
   ]
   requires = [
     "ocplib-json-typed"
     "xor"
     "lwt"
-  ]
+    "ezjsonm"
+]
 end
 
 begin program "learnocaml-tutorial-reader"

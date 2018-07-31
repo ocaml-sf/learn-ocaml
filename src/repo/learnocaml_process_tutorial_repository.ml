@@ -54,8 +54,6 @@ let from_file encoding fn =
   let json = Ezjsonm.from_string str in
   Lwt.return (Json_encoding.destruct encoding json)
 
-module StringMap = Map.Make (String)
-
 let main dest_dir =
   let (/) dir f =
     String.concat Filename.dir_sep [ dir ; f ] in
@@ -108,8 +106,8 @@ let main dest_dir =
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
             acc >>= fun acc ->
-            Lwt.return (StringMap.add name { series_title ; series_tutorials } acc))
-         (Lwt.return StringMap.empty)
+            Lwt.return ((name, { series_title ; series_tutorials }) :: acc))
+         (Lwt.return [])
          series >>= fun index ->
        to_file tutorial_index_enc (dest_dir / tutorial_index_path) index >>= fun () ->
        Lwt.return true)
