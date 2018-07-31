@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+(** Some introduction *)
 module type S = sig
 
   val set_result : Learnocaml_report.report -> unit
@@ -30,7 +31,7 @@ module type S = sig
 
   module Ast_checker : sig
 
-    (** {3 Checker} *)
+    (** {2 Checker} *)
 
     type 'a ast_checker =
       ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
@@ -79,41 +80,120 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Testers} *)
+  (** {1 Testers and IO testers} *)
 
+  (** Predefined functions and function builders used for the optional
+     argument [~test], [~test_stdout] and [~test_stderr] of the various
+     {{!Test_functions_function.test_functions_fun_sec}test functions
+     for functions}. *)
+
+       
+  (** Functions of type [tester] are used to compare student result
+     with solution result. The first {!S.result} is the student
+     output and the second one is the solution output.  *)
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
+  (** Functions of type [io_tester] are used to compare student
+     standart out or standart error channels with solution ones. *)
   type io_tester =
     string -> string -> Learnocaml_report.report
 
   (*----------------------------------------------------------------------------*)
 
   module Tester : sig
-    (** Testers are essentially used for the optional argument
-        [~test] of test functions *)
+    (** Testers are essentially used for the optional arguments
+       [~test], [~test_stdout], [~test_stderr] of
+       {{!Test_functions_function.test_functions_fun_sec}test
+       functions for functions}. They define the functions which build
+       three of four parts of the global report returned by test functions. *)
 
     (** {2:tester_sec Pre-defined testers and tester builders} *)
-
-    val test_ignore : 'a tester
+    
+    (** [test] is the default value of the optional argument [test] of
+       {{!Test_functions_function.test_functions_fun_sec}test
+       functions for functions}. The comparison function between
+       student output and solution output is Ocaml structural equality
+       [=]. *)(** Tester which compare its two [result] inputs with
+                 structoral equality. Default value ...*)
     val test : 'a tester
-    val test_eq : ('a result -> 'a result -> bool) -> 'a tester
-    val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
-    val test_eq_exn : (exn -> exn -> bool) -> 'a tester
-    val test_canon : ('a result -> 'a result) -> 'a tester
-    val test_canon_ok : ('a -> 'a) -> 'a tester
-    val test_canon_error : (exn -> exn) -> 'a tester
-    val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
+    (** [test_ignore ty] returns a {!LearnOcaml_report.Failure}
+       if the constructor of student {!S.result} and the one of
+       the solution {!S.result} do not match. The content of the
+       result is ignored: only constructors matter. If they match, a
+       empty report is returned. *)
+    val test_ignore : 'a tester
+
+    (** [test_eq eq] enables to redefine function [eq] which is used
+       to compare student and solution outputs. *)
+    val test_eq : ('a result -> 'a result -> bool) -> 'a tester
+
+    (** [test_eq_ok eq] enables to redefine the comparison function
+       [eq] which compare the student and the solution output if they
+       are [Ok] results. [Error] results are compared using structural
+       equality [=]. *)     
+    val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
+
+    (** [test_eq_ok eq] enables to redefine the comparison function
+       [eq] which compare the student and the solution output if they
+       are [Error] results. [Ok] results are compared using structural
+       equality [=]. *)
+    val test_eq_exn : (exn -> exn -> bool) -> 'a tester
+
+    (** [test_canon canon] enables to redefine the function [canon]
+       applied to the student and the solution outputs before
+       comparison with the structural equality [=]. *)
+    val test_canon : ('a result -> 'a result) -> 'a tester
+
+    (** [test_canon_ok canon] enables to redefine the function [canon]
+       applied to [Ok] student and solution outputs before comparison
+       with the structural equality [=]. [Error] results are compared
+       without change. *)
+    val test_canon_ok : ('a -> 'a) -> 'a tester
+
+    (** [test_canon_error canon] enables to redefine the function
+       [canon] applied to [Error] student and solution outputs before
+       comparison with the structural equality [=]. [Ok] results are
+       compared without change. *)
+    val test_canon_error : (exn -> exn) -> 'a tester
+
+    (** [test_translate conv test ty] returns the report resulting of
+       the comparison betwen the translated student and solution
+       outputs. [conv] is used to translate student and solution
+       values under [Ok] constructor to a [ty] value. [test] is used
+       to generate the report resulting of the comparison of the
+       translated results.*)
+    val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
     (** {2:io_tester_sec Pre-defined IO testers and IO tester builders} *)
 
     (** IO testers are essentially used for the optional arguments
-        [ ~test_stdout] [~test_stderr] of test functions *)
+        [ ~test_stdout] [~test_stderr] of test functions. *)
 
+    (** Important warning : when successful, predefined testers return
+       [Success 1] report whereas predefined IO testers returns
+       [Success 5] report *)
+      
+    (** There are two common optional arguments for IO testers :
+
+        - [~trim] : list of chars removed at beginning and end of IO tester
+       input strings.
+
+        - [~drop] : list of chars removed from IO tester input strings *)
+
+      
+    (** [io_test_ignore] is the default value of [~test_stdout] and
+       [~test_stderr]. By default, IO_tester standart and errors
+       outputs are ignored and the corresponding reports are empty.
+       *)
     val io_test_ignore : io_tester
+
+    (** [io_test_equals] *)
     val io_test_equals :
       ?trim: char list -> ?drop: char list -> io_tester
+
+    (** [io_test_lines] *)
     val io_test_lines :
       ?trim: char list -> ?drop: char list ->
       ?skip_empty: bool -> ?test_line: io_tester -> io_tester
@@ -123,19 +203,23 @@ module type S = sig
 
     (** {2 Mutation observer builders} *)
 
+    (** *)
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
         test : 'ret. ?test_result: 'ret tester -> 'ret tester }
 
+    (** *)
     val arg_mutation_test_callbacks:
       ?test: 'a tester -> dup: ('a -> 'a) -> blit:('a -> 'a -> unit) -> 'a Ty.ty ->
       'a arg_mutation_test_callbacks
 
+    (** *)
     val array_arg_mutation_test_callbacks:
       ?test: 'a array tester -> 'a array Ty.ty ->
       'a array arg_mutation_test_callbacks
 
+    (** *)
     val ref_arg_mutation_test_callbacks:
       ?test: 'a ref tester -> 'a ref Ty.ty ->
       'a ref arg_mutation_test_callbacks
@@ -217,7 +301,7 @@ module type S = sig
   (** {1 Test functions for references and variables } *)
 
   module Test_functions_ref_var : sig
-
+    
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
         report if reference [got] value is equal to [exp] and
         {!LearnOcaml_report.Failure} report else.  *)
@@ -268,8 +352,8 @@ module type S = sig
   (** {1 Test functions for functions }*)
 
   module Test_functions_function : sig
-
-    (** {2 Test functions}*)
+    
+    (** {2:test_functions_fun_sec Test functions for functions}*)
 
     (** Three test functions for functions are defined for arity one
        to four functions:
@@ -289,7 +373,26 @@ module type S = sig
        report concatening reports of each test. Else a
        {!Learnocaml_report.Failure} report is returned.*)
 
-    (** {4 For unary functions}*)
+    
+    (** {3 Returned report}*)
+    
+    (** The test functions for functions return a {report} which
+       actually concatened 4 reports generated by (in this order):
+
+      - the tester [~test]
+
+      - the IO tester [~test_stdout]
+
+      - The IO tester [~test_stderr]
+
+      - the post-processing result function [after].
+
+      Each of this report can be empty. However by default, [~test]
+       always returns a non-empty report while the other three returns
+       empty reports. *)
+
+    
+    (** {3 Unary functions}*)
 
     (** [test_function_1 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
@@ -353,7 +456,7 @@ module type S = sig
 
     (*----------------------------------------------------------------------------*)
 
-    (** {3 For binary functions }*)
+    (** {3 Binary functions }*)
 
     (** [test_function_2 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
@@ -420,7 +523,7 @@ module type S = sig
 
     (*----------------------------------------------------------------------------*)
 
-    (** {3 For three-arguments functions }*)
+    (** {3 Three-arguments functions }*)
 
     val test_function_3 :
       ?test: 'd tester ->
@@ -454,7 +557,7 @@ module type S = sig
 
     (*----------------------------------------------------------------------------*)
 
-    (** {3 For four-arguments functions }*)
+    (** {3 Four-arguments functions }*)
 
     val test_function_4 :
       ?test: 'e tester ->

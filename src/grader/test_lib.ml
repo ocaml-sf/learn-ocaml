@@ -68,8 +68,8 @@ module type S = sig
 
   module Tester : sig
 
-    val test_ignore : 'a tester
     val test : 'a tester
+    val test_ignore : 'a tester
     val test_eq : ('a result -> 'a result -> bool) -> 'a tester
     val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
     val test_eq_exn : (exn -> exn -> bool) -> 'a tester
