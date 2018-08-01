@@ -1,8 +1,7 @@
 # Step 5: More about test functions for functions
 
 ## Different test functions for functions
-In addition of the test functions for a various number of arguments,
-there are 2 main tests functions:
+There are 2 main tests functions:
 
 * `test_function_<nb_args>_againt_solution`: the usual. Test the
   student code againt a given solution written in the `solution.ml`
@@ -16,28 +15,28 @@ there are 2 main tests functions:
 
 ## A few words about test function for functions
 
-Test functions for functions returns a global report concataning 4 specific
-reports :
+Test functions for functions return a global report concatening 4 specific
+ones:
 
 - report resulting of comparison between student and solution
   outputs. The function `~test` is used to build this report. By
   default, `~test` uses the structural equality to compare outputs.
 
 - report resulting of comparison between student and solution standart
-  outputs. The function `~test_stdout` is used to buils this
+  outputs. The function `~test_stdout` is used to build this
   report. By default, `~test_stdout` is set to ignore standart output
-  and return an empty report.
+  and returns an empty report.
 
 - report resulting of comparison between student and solution standart
-  errors. The function `~test_stderr` is used to buils this report.
+  errors. The function `~test_stderr` is used to build this report.
   By default, `~test_stderr` is set to ignore standart error and
   returns an empty report.
   
-- report resulting of the result of function `after` and returns an
+- report resulting of the result of function `~after` and returns an
   empty report by default. 
   
 ## `test_function_<nb_args>_against_solution`
-### Signature of test function  for unary function
+### Signature for unary function
 ```ocaml
   val test_function_1_against_solution :
 	?gen: int ->
@@ -54,9 +53,9 @@ reports :
 ### Mandatory arguments
 [`test_function_1_againt_solution_1 ty name tests`]:
 
-* `ty`: type of the function for the tests. It must not contain type
-  variables (i.e. `'a`, `'b` etc..), match the type of the tests (see
-  examples) and be compatible with the solution.
+* `ty`: type of the tested function specified for the given tests. It
+  must not contain type variables (i.e. `'a`, `'b` etc..), match the
+  type of the tests and be compatible with the solution.
 
 * `name`: name of the tested function in the student code and in
   `solution.ml`
@@ -80,9 +79,9 @@ reports :
 ### Mandatory arguments 
 [`test_function_1 ty name tests`]:
 
-* `ty`: type of the function for the tests. It must not contain type
-  variables (i.e. `'a`, `'b` etc..), match the type of the tests (see
-  examples) and be compatible with the solution.
+* `ty`: type of the tested function specified for the given tests. It
+  must not contain type variables (i.e. `'a`, `'b` etc..), match the
+  type of the tests and be compatible with the solution.
 
 * `name`: name of the tested function in the student code and in
   `solution.ml`
@@ -91,20 +90,20 @@ reports :
   the first element `in` is the argument passed to the tested function
   (for a three-arguments functions `tests` will instead matched `(in1,
   in2, in3, out, stderr, stdout)`). The second element `out` is the
-  expected output. `stderr` `stdout` are the expected strings in
+  expected output. `stderr` and `stdout` are the expected strings in
   standart output and error output respectively.
 
 ## Optional arguments of test functions
 
-* `gen`: number of automatically generated tests. See [step
-  3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+* `gen`: number of automatically generated tests. See
+  [step-3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
   and
   [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
   for more information.
 
 * `sampler`: used to define sampler for automatically generating
-  inputs for tests. See [step
-  3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+  inputs for tests. See
+  [step-3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
   and
   [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
   for more information.
@@ -118,27 +117,25 @@ reports :
   solution. See WIP for more information.
 
 * `test_stderr`: is used to redefine the function which compare the
-  standart erro channel of the student function and the one of the
+  standart error channel of the student function and the one of the
   solution. See WIP for more information.
 
 * `after`: is used to redefine a function which is called with the
   current tested inputs, the student result and the solution result
-  and returns a new report which is concatened to reports built with
-  the result of the functions `~test`, `~test_sdtout` and
-  `~test_sdterr`.  Enables for example to inspect references
+  and returns a report.  Enables for example to inspect references
   introduced with `~before`, `~before_user` or `~before_reference` and
   build an appropriate report.  See WIP for more information.
 
 * `before_reference`: is used to redefine a function called right
-  before the application of solution function to the current tested
-  inputs. This enables for example to introduce a reference or make a
-  side effect before each test. See WIP for more information.
+  before the application of the current tested inputs to the
+  solution. This enables for example to introduce a reference or make
+  a side effect before each test. See WIP for more information.
 
 * `before_user`: is used to redefine a function called right before
-  the application of the student function to the current tested
-  inputs. This enables to introduce a reference or make a side effect
-  between solution evaluation and student function evaluation. See WIP
-  for more information.
+  the application the current tested inputs to the student
+  function. This enables to introduce a reference or make a side
+  effect between solution evaluation and student function
+  evaluation. See WIP for more information.
 
 * `before`: same as `before_reference` for
   `test_function_<nb_args>`. Since no solution is evaluated, there is
@@ -219,7 +216,9 @@ ignore the student and solution output. On the contrary,
 `io_test_equals` for `test_stdout` enables to compare standart outputs
 with the structural equality.
 
---- [Previous
+--- 
+
+[Previous
 step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
 
 [Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
