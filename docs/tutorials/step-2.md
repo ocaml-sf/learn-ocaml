@@ -79,10 +79,14 @@ here. Let us take a moment to understand how it is called:
 
 ## Want to learn more about test function ?
 The next steps will bring you progressively to understand most of the
-possibilities of test functions. However you can find
-[in step 5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
-the signature of `test_function_1_against_solution` and a quick resumé
-of each optional arguments' utility with a link to the right tutorial.
+possibilities of test functions. However, if you want to have a better
+overview right now, you can go directly to [step
+5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
+where you will:
+* find the signature of `test_function_1_against_solution`
+* learn a new test function for functions 
+* have a quick resumé of the utility of each optional arguments with a
+link to the right tutorial.
 
 ## Multiple arguments 
 To grade a function with multiple arguments you simply need to use the
