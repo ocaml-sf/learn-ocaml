@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-module StringMap = Map.Make (String)
-
 type exercise_kind =
   | Project
   | Problem
@@ -43,8 +41,8 @@ and group =
     group_contents : group_contents }
 
 and group_contents =
-  | Learnocaml_exercises of exercise Map.Make (String).t
-  | Groups of group Map.Make (String).t
+  | Learnocaml_exercises of (string * exercise) list
+  | Groups of (string * group) list
 
 open Json_encoding
 
@@ -72,12 +70,6 @@ let check_version_2 enc =
        end ;
        exercise)
     (merge_objs (obj1 (req "learnocaml_version" string)) enc)
-
-let map_enc enc =
-  conv
-    StringMap.bindings
-    (List.fold_left (fun s (k,v) -> StringMap.add k v s) StringMap.empty)
-    (assoc enc)
 
 let exercise_kind_enc =
   string_enum
@@ -147,7 +139,7 @@ let group_enc =
     [ case
         (obj2
            (req "title" string)
-           (req "exercises" (map_enc exercise_enc)))
+           (req "exercises" (list (tup2 string exercise_enc))))
         (function
           | (title, Learnocaml_exercises map) -> Some (title, map)
           | _ -> None)
@@ -155,7 +147,7 @@ let group_enc =
       case
         (obj2
            (req "title" string)
-           (req "groups" (map_enc group_enc)))
+           (req "groups" (list (tup2 string group_enc))))
         (function
           | (title, Groups map) -> Some (title, map)
           | _ -> None)
@@ -165,13 +157,13 @@ let exercise_index_enc =
   check_version_2 @@
   union
     [ case
-        (obj1 (req "exercises" (map_enc exercise_enc)))
+        (obj1 (req "exercises" (list (tup2 string exercise_enc))))
         (function
           | Learnocaml_exercises map -> Some map
           | _ -> None)
         (fun map -> Learnocaml_exercises map) ;
       case
-        (obj1 (req "groups" (map_enc group_enc)))
+        (obj1 (req "groups" (list (tup2 string group_enc))))
         (function
           | Groups map -> Some map
           | _ -> None)
@@ -257,7 +249,7 @@ let tutorial_index_enc =
       (req "title" string)
       (req "tutorials" (list tutorial_enc)) in
   check_version_1 @@
-  obj1 (req "series" (map_enc series_enc))
+  obj1 (req "series" (list (tup2 string series_enc)))
 
 let exercise_index_path = "exercises.json"
 
