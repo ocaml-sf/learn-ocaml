@@ -55,6 +55,7 @@ here. Let us take a moment to understand how it is called:
   the function.
 
 
+
 ## Do it yourself!
 
 1. Copy this exercise source to your own exercise directory.
@@ -76,9 +77,14 @@ here. Let us take a moment to understand how it is called:
    change. This is the topic of the next step of this tutorial!
    
 
+## Want to learn more about test function ?
+The next steps will bring you progressively to understand most of the
+possibilities of test functions. However you can find
+[in step 5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
+the signature of `test_function_1_against_solution` and a quick resumé
+of each optional arguments' utility with a link to the right tutorial.
 
-
-### Multiple arguments 
+## Multiple arguments 
 To grade a function with multiple arguments you simply need to use the
 corresponding test function which follows this pattern :
 `Test_lib.test_function_<function arity>_against_solution` and give
@@ -109,7 +115,7 @@ You can find this example in the
 `exercises/grade-function-multiple_args` directory (branch: step-2).
 
 
-### Polymorphic functions : testing several types
+## Polymorphic functions : testing several types
 For a polymorphic functions, you may want to test the function with
 different types. To do so, you can concat the result of numerous test
 functions.

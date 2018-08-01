@@ -1,19 +1,29 @@
-# Step 5: More test functions
-
-The functions `Test_lib.test_function_<nb args>_against_solution` are not the
-only test functions. There are actually 3 groups:
-
-* `test_function_<nb_args>_againt_solution`: the usual. Test the student code againt a
-  given solution written in the `solution.ml` file.
-
-* `test_function_<nb_args>_against`: same than the usual except the solution is given as an input instead of being written in `solution.ml`
-
-* `test_function_<nb_args>`: compare the student code to a serie of tests where both inputs and expected outputs are given.
+# Step 5: More about test functions for functions
 
 
-### `test_function_<nb_args>_against_solution`
+## A few words about test function for functions
 
-#### Type of the 1 argument version
+Test functions for functions (like `test_function_1_against_solution`
+for unary function) returns a report concataning 4 specific reports :
+
+- report resulting of comparison between student and solution
+  outputs. The function `~test` is used to build this report. By
+  default, `~test` uses the structural equality to compare outputs.
+
+- report resulting of comparison between student and solution standart
+  outputs. The function `~test_stdout` is used to buils this
+  report. By default, `~test_stdout` is set to ignore standart output
+  and return an empty report.
+
+- report resulting of comparison between student and solution standart
+  errors. The function `~test_stderr` is used to buils this report.
+  By default, `~test_stderr` is set to ignore standart error and
+  returns an empty report.
+  
+- report resulting of the result of function `after` and returns an
+  empty report by default. 
+  
+## Signature of 1 argument test function
 ```ocaml
   val test_function_1_against_solution :
 	?gen: int ->
@@ -27,7 +37,7 @@ only test functions. There are actually 3 groups:
 	('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.report
 ```
 
-#### Mandatory arguments
+## Mandatory arguments
 [`test_function_1_againt_solution_1 ty name tests`]:
 
 * `ty`: type of the function for the tests. It must not contain type variables (i.e. `'a`, `'b` etc..), match the type of the tests (see examples) and be compatible with the solution.
@@ -36,7 +46,7 @@ only test functions. There are actually 3 groups:
 
 * `tests`: list of inputs for which the function is tested.
 
-#### Optional arguments
+## Optional arguments
 
 * `gen`: number of automatically generated tests. See [step
   3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
@@ -75,61 +85,63 @@ only test functions. There are actually 3 groups:
   for more information.
 
 * `after`: is used to redefine a function which is called with the
-    current tested inputs, the student result and the solution result
-    and returns a new report which is concatened to reports built with
-    the result of the functions `~test`, `~test_sdtout` and
-    `~test_sdterr`.  Enables for example to inspect references
-    introduced with `~before`, `~before_user` or `~before_reference`
-    and build an appropriate report.  See WIP for more information.
+  current tested inputs, the student result and the solution result
+  and returns a new report which is concatened to reports built with
+  the result of the functions `~test`, `~test_sdtout` and
+  `~test_sdterr`.  Enables for example to inspect references
+  introduced with `~before`, `~before_user` or `~before_reference` and
+  build an appropriate report.  See WIP for more information.
 
-#### Examples
+### Examples
 
 Note: only trivial examples can be found here. For more advanced
 examples, see the corresponding tutorials.
 
+### Identity 
 
-### `test_function_<nb_args>_against`
-
-There function is exactly the same than the previous one except it
-takes one more mandatory argument: the solution.
-
-#### Type of the 1 argument version
-```ocaml
-val test_function_1_against :
-	?gen: int ->
-	?test: 'b tester ->
-	?test_stdout: io_tester ->
-	?test_stderr: io_tester ->
-	?before_reference : ('a -> unit) ->
-	?before_user : ('a -> unit) ->
-	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-	?sampler : (unit -> 'a) ->
-	('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.report
-```
-
-#### Examples
-
-### `test_function_<nb_args>`
-
-#### Type of the 1 argument version
+This is a classical example of an unary function, with a user-defined sampler. 
 
 ```ocaml
-  val test_function_1 :
-	?test: 'b tester ->
-	?test_stdout: io_tester ->
-	?test_stderr: io_tester ->
-	?before : ('a -> unit) ->
-	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-	('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.report
+let exercise_1 =
+  Section ([ Text "Function: "; Code "identity" ],
+		   test_function_1_against_solution
+			 [%ty: int -> int]
+			 "identity"
+			 ~gen:10
+			 ~sampler:(fun () -> Random.int 42)
+			 [0 ; 42]
+	)
 ```
 
-#### Examples
+
+### Hello world
+
+`Hello world` is also very classical, however grading this function is
+a little more tricky since by default standart output and error output
+are ignored (meaning the student standart/error output can be
+different from the solution ones without causing a failure).
 
 
-To be continued.
+```ocaml
+let exercise_2 =
+  Section ([ Text "Function: "; Code "hello" ],
+		   test_function_1_against_solution
+			 [%ty: unit -> unit]
+			 ~test:test_ignore
+			 ~test_stdout:io_test_equals
+			 "hello"
+			 ~gen:0
+			 [()]
+		  )
+```
 
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
+The function `test_ignore` for optional argument `test` enables to
+ignore the student and solution output. On the contrary,
+`io_test_equals` for `test_stdout` enables to compare standart outputs
+with the structural equality.
+
+--- [Previous
+step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
 
 [Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
 
