@@ -106,64 +106,63 @@ module type S = sig
        [~test], [~test_stdout], [~test_stderr] of
        {{!Test_functions_function.test_functions_fun_sec}test
        functions for functions}. They define the functions which build
-       three of four parts of the global report returned by test functions. *)
+       three of four parts of the global report returned by test
+       functions.
+
+       {!S.tester} functions compare student output and solution
+       output and return usually a {!Learnocaml_report.Success 1} if
+       they match and a {!Learnocaml_report.Failure} if they don't.
+
+       {!S.io_tester} functions compare the string outputs on standart
+       or error channels for student and solution functions and return
+       usually a {!Learnocaml_report.Success 5} if they match and a
+       {!Learnocaml_report.Failure} if they don't. *)
 
     (** {2:tester_sec Pre-defined testers and tester builders} *)
     
-    (** [test] is the default value of the optional argument [test] of
-       {{!Test_functions_function.test_functions_fun_sec}test
-       functions for functions}. The comparison function between
-       student output and solution output is Ocaml structural equality
-       [=]. *)(** Tester which compare its two [result] inputs with
-                 structoral equality. Default value ...*)
+    (** [test] is a {!S.tester} that compares its two {!S.result} inputs
+       with OCaml structoral equality. This is the default value of [~test]
+       optional argument of test functions for functions.*)
     val test : 'a tester
 
-    (** [test_ignore ty] returns a {!LearnOcaml_report.Failure}
-       if the constructor of student {!S.result} and the one of
-       the solution {!S.result} do not match. The content of the
-       result is ignored: only constructors matter. If they match, a
-       empty report is returned. *)
+    (** [test_ignore] is a {!S.tester} that compares only the constructor of its
+       {S.result} inputs. The content is ignored. If the constructors
+       match, a empty report is returned. *)
     val test_ignore : 'a tester
 
-    (** [test_eq eq] enables to redefine function [eq] which is used
-       to compare student and solution outputs. *)
+    (** [test_eq eq] builds a {!S.tester} with function [eq] as comparison
+       function. *)
     val test_eq : ('a result -> 'a result -> bool) -> 'a tester
 
-    (** [test_eq_ok eq] enables to redefine the comparison function
-       [eq] which compare the student and the solution output if they
-       are [Ok] results. [Error] results are compared using structural
-       equality [=]. *)     
+    (** [test_eq_ok eq] builds a {!S.tester} that compares [Ok] results with
+       [eq] and [Error] results with Ocaml structural equality. *)     
     val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
 
-    (** [test_eq_ok eq] enables to redefine the comparison function
-       [eq] which compare the student and the solution output if they
-       are [Error] results. [Ok] results are compared using structural
-       equality [=]. *)
+    (** [test_eq_exn eq] builds a {!S.tester} that compares [Error] results
+       with [eq] and [Ok] results with Ocaml structural equality. *)
     val test_eq_exn : (exn -> exn -> bool) -> 'a tester
 
-    (** [test_canon canon] enables to redefine the function [canon]
-       applied to the student and the solution outputs before
-       comparison with the structural equality [=]. *)
+    (** [test_canon canon] builds a {!S.tester} that compares its two
+       {S.result} inputs after application to [canon] function with
+       Ocaml structural equality. *)
     val test_canon : ('a result -> 'a result) -> 'a tester
 
-    (** [test_canon_ok canon] enables to redefine the function [canon]
-       applied to [Ok] student and solution outputs before comparison
-       with the structural equality [=]. [Error] results are compared
-       without change. *)
+    (** [test_canon_ok canon] builds a {!S.tester} that compares two
+       [Ok] result inputs after application to [canon] function with
+       Ocaml structural equality. [Error] results are compared
+       normally with Ocaml structural equality. *) 
     val test_canon_ok : ('a -> 'a) -> 'a tester
 
-    (** [test_canon_error canon] enables to redefine the function
-       [canon] applied to [Error] student and solution outputs before
-       comparison with the structural equality [=]. [Ok] results are
-       compared without change. *)
+    (** [test_canon_error canon] builds a {!S.tester} that compares two
+       [Error] result inputs after application to [canon] function with
+       Ocaml structural equality. [Ok] results are compared
+       normally with Ocaml structural equality. *)     
     val test_canon_error : (exn -> exn) -> 'a tester
 
-    (** [test_translate conv test ty] returns the report resulting of
-       the comparison betwen the translated student and solution
-       outputs. [conv] is used to translate student and solution
-       values under [Ok] constructor to a [ty] value. [test] is used
-       to generate the report resulting of the comparison of the
-       translated results.*)
+    (** [test_translate conv test ty] builds a {!S.tester} that
+       translates its inputs [va] and [vb] to ['b results] [va_trans]
+       and [vb_trans] using the conversion function [conv] and returns
+       the report of [test ty va_trans vb_trans].*)
     val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
     (** {2:io_tester_sec Pre-defined IO testers and IO tester builders} *)
@@ -171,37 +170,55 @@ module type S = sig
     (** IO testers are essentially used for the optional arguments
         [ ~test_stdout] [~test_stderr] of test functions. *)
 
-    (** Important warning : when successful, predefined testers return
-       [Success 1] report whereas predefined IO testers returns
-       [Success 5] report *)
+    (** Important warning : when successful, predefined IO testers
+       return [Success 5] reports. *)
       
     (** There are two common optional arguments for IO testers :
 
-        - [~trim] : list of chars removed at beginning and end of IO tester
-       input strings.
+        - [~trim] : list of chars removed at beginning and end of IO
+       testers input strings.
 
-        - [~drop] : list of chars removed from IO tester input strings *)
+        - [~drop] : list of chars removed from IO testers input
+       strings *)
 
       
     (** [io_test_ignore] is the default value of [~test_stdout] and
-       [~test_stderr]. By default, IO_tester standart and errors
-       outputs are ignored and the corresponding reports are empty.
-       *)
+       [~test_stderr]. Returns a empty report whatever its inputs. *)
     val io_test_ignore : io_tester
 
-    (** [io_test_equals] *)
+    (** [io_test_equals] builds a {!S.io_tester} which compares its
+       input strings using Ocaml structural equality. *)
     val io_test_equals :
       ?trim: char list -> ?drop: char list -> io_tester
 
-    (** [io_test_lines] *)
+    (** [io_test_lines ~skip_empty ~test_line] builds a {!S.io_tester}
+       which compares each line (separed with ['\n']) of its two
+       string inputs with [test_line]. The default value of
+       [test_line] is [io_tester_equals]. If [skip_empty] is set to
+       [true], the empty lines are skipped (default value is
+       [false]). *)
     val io_test_lines :
       ?trim: char list -> ?drop: char list ->
       ?skip_empty: bool -> ?test_line: io_tester -> io_tester
+
+    (** [io_test_items ~split ~skip_empty ~test_item] buids a
+       {!S.io_tester} which splits its two string inputs into several
+       items using [split] as separators and compares each item with
+       [test_item] ([io_tester_equals] by default). If [skip_empty] is
+       set to [true], the empty items are skipped (default value is
+       [false]). *)
     val io_test_items :
       ?split: char list -> ?trim: char list -> ?drop: char list ->
       ?skip_empty: bool -> ?test_item: io_tester -> io_tester
 
-    (** {2 Mutation observer builders} *)
+  end
+
+       
+  (*----------------------------------------------------------------------------*)
+
+  (** {1 Mutation observer builders} *)
+       
+  module Mutation : sig
 
     (** *)
     type 'arg arg_mutation_test_callbacks =
@@ -225,7 +242,7 @@ module type S = sig
       'a ref arg_mutation_test_callbacks
 
   end
-
+       
   (*----------------------------------------------------------------------------*)
 
   (** {1 Samplers } *)
@@ -767,6 +784,7 @@ module type S = sig
    (**/**)
    include (module type of Ast_checker)
    include (module type of Tester)
+   include (module type of Mutation)
    include (module type of Sampler)
    include (module type of Test_functions_types)
    include (module type of Test_functions_ref_var)

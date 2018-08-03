@@ -88,6 +88,12 @@ module type S = sig
       ?split: char list -> ?trim: char list -> ?drop: char list ->
       ?skip_empty: bool -> ?test_item: io_tester -> io_tester
 
+  end
+
+  (*----------------------------------------------------------------------------*)
+
+  module Mutation : sig
+
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
@@ -105,8 +111,7 @@ module type S = sig
       ?test: 'a ref tester -> 'a ref Ty.ty ->
       'a ref arg_mutation_test_callbacks
 
-  end
-
+  end 
 
   (*----------------------------------------------------------------------------*)
 
@@ -378,6 +383,7 @@ module type S = sig
   (**/**)
   include (module type of Ast_checker)
   include (module type of Tester)
+  include (module type of Mutation)
   include (module type of Sampler)
   include (module type of Test_functions_types)
   include (module type of Test_functions_ref_var)
@@ -993,44 +999,46 @@ module Make
       in test_items (got, expected)
 
   let io_test_lines
-      ?(trim = []) ?(drop = [])
-      ?(skip_empty = false) ?(test_line = io_test_equals ~trim:[] ~drop:[]) got expected =
+        ?(trim = []) ?(drop = [])
+        ?(skip_empty = false) ?(test_line = io_test_equals ~trim:[] ~drop:[]) got expected =
     io_test_items ~split: [ '\n' ] ~trim ~drop ~skip_empty ~test_item: test_line got expected
+  end 
 
-
-
-  type 'arg arg_mutation_test_callbacks =
-    { before_reference : 'arg -> unit ;
-      before_user : 'arg -> unit ;
-      test : 'ret. ?test_result: 'ret tester -> 'ret tester }
-
-  let arg_mutation_test_callbacks ?(test = test)  ~dup ~blit ty =
-    let sam = ref None in
-    let got = ref None in
-    let exp = ref None in
-    let before_reference a =
-      sam := Some (dup a) in
-    let before_user a =
-      exp := Some (dup a) ;
-      got := Some a ;
-      match !sam with None -> () | Some src -> blit src a in
-    let test ?(test_result = test_ignore) ret_ty va vb =
-      let result_report = test_result ret_ty va vb in
-      let report = match va, vb with
-      | Ok _, Ok _ ->
-          let got = match !got with Some g -> g | None -> invalid_arg "arg_mutation_test_callbacks" in
-          let exp = match !exp with Some e -> e | None -> invalid_arg "arg_mutation_test_callbacks" in
-          test ty (Ok got) (Ok exp)
-      | Error ea, Ok _ ->
-          let exp = match !exp with Some e -> e | None -> invalid_arg "arg_mutation_test_callbacks" in
-          test ty (Error ea) (Ok exp)
-      | Ok _, Error eb ->
-          let got = match !got with Some g -> g | None -> invalid_arg "arg_mutation_test_callbacks" in
-          test ty (Ok got) (Error eb)
-      | Error ea, Error eb ->
-          test ty (Error ea) (Error eb) in
-      result_report @ report in
-    { before_reference ; before_user ; test }
+  module Mutation = struct
+    open Tester
+       
+    type 'arg arg_mutation_test_callbacks =
+      { before_reference : 'arg -> unit ;
+        before_user : 'arg -> unit ;
+        test : 'ret. ?test_result: 'ret tester -> 'ret tester }
+      
+    let arg_mutation_test_callbacks ?(test = test)  ~dup ~blit ty =
+      let sam = ref None in
+      let got = ref None in
+      let exp = ref None in
+      let before_reference a =
+        sam := Some (dup a) in
+      let before_user a =
+        exp := Some (dup a) ;
+        got := Some a ;
+        match !sam with None -> () | Some src -> blit src a in
+      let test ?(test_result = test_ignore) ret_ty va vb =
+        let result_report = test_result ret_ty va vb in
+        let report = match va, vb with
+          | Ok _, Ok _ ->
+             let got = match !got with Some g -> g | None -> invalid_arg "arg_mutation_test_callbacks" in
+             let exp = match !exp with Some e -> e | None -> invalid_arg "arg_mutation_test_callbacks" in
+             test ty (Ok got) (Ok exp)
+          | Error ea, Ok _ ->
+             let exp = match !exp with Some e -> e | None -> invalid_arg "arg_mutation_test_callbacks" in
+             test ty (Error ea) (Ok exp)
+          | Ok _, Error eb ->
+             let got = match !got with Some g -> g | None -> invalid_arg "arg_mutation_test_callbacks" in
+             test ty (Ok got) (Error eb)
+          | Error ea, Error eb ->
+             test ty (Error ea) (Error eb) in
+        result_report @ report in
+      { before_reference ; before_user ; test }
 
   let array_arg_mutation_test_callbacks ?(test = test) ty =
     let blit src dst = Array.blit src 0 dst 0 (Array.length dst) in
@@ -1642,6 +1650,7 @@ module Make
   (**/**)
   include Ast_checker
   include Tester
+  include Mutation
   include Sampler
   include Test_functions_types
   include Test_functions_ref_var
