@@ -142,8 +142,8 @@ let exercise_2bis =
     []
 ```
 
-With these two samplers, we are also be able, with no more effort, to
-graduate a function of type `col tree -> col -> col tree` for
+With these two samplers, we are also able, without more effort, to
+grade a function of type `col tree -> col -> col tree` for
 example. The grader is simply:
 
 ```ocaml
@@ -257,10 +257,10 @@ let exercise_3bis =
 
 ### Which method should I use ?
 
-Both method works well for a lot of exercises. However for functional
-types and tuples, you will need do give your types an alias to be able
-do use the second method (see the examples in `advanced_examples`) but
-it is useful if you need to grade several functions that share some
+Both methods work well for a lot of exercises. However for functional
+types and tuples, you will need do give an alias to your types to be able
+do use the second method (see the examples in `advanced_examples`).
+This is useful if you need to grade several functions that share some
 input types.
 
 ---
