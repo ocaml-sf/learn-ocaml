@@ -24,12 +24,12 @@ in the previous paragraph is implemented as follows:
 open Test_lib
 open Report
 
-let exercise_1 = 
-  Section ([ Text "The identity of 0 is 0." ],
-           test_function_1_against_solution
-             [%ty: int -> int] "identity"
-             ~gen:0 [0]
-          )
+let exercise_1 =
+  grade_function_1_against_solution
+    [%ty: int -> int] (* Type of the tested function *)
+    "identity"        (* identifier of the tested function *)
+    ~gen:0            (* number of automatically generated tests *)
+    [0]               (* List of tested inputs *)
 
 let () =
   set_result @@
@@ -37,12 +37,12 @@ let () =
   [exercise_1]
 ```
 
-The function `Test_lib.test_function_1_against_solution` is the key
+The function `Test_lib.grade_function_1_against_solution` is the key
 here. Let us take a moment to understand how it is called:
 
 - The argument `[%ty: int -> int]` is written in a PPX extension of
   OCaml: it reifies the type `int -> int` as a first-class value. With
-  that information in its hands, `test_function_1_against_solution`
+  that information in its hands, `grade_function_1_against_solution`
   can check that the student has written a function of the right type.
 
 - The string `"identity"` is the identifier of the function to be tested.
@@ -54,7 +54,9 @@ here. Let us take a moment to understand how it is called:
 - The final argument `[0]` is the unique input on which we want to test
   the function.
 
-
+This function also determine the text written in the header of the
+corresponding report. For a function called `my_function`, it will be
+"Function: my_function". 
 
 ## Do it yourself!
 
@@ -77,21 +79,22 @@ here. Let us take a moment to understand how it is called:
    change. This is the topic of the next step of this tutorial!
    
 
-## Want to learn more about test function ?
+## Want to learn more about grade function ?
 The next steps will bring you progressively to understand most of the
-possibilities of test functions. However, if you want to have a better
+possibilities of grade functions. However, if you want to have a better
 overview right now, you can go directly to [step
 5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
 where you will:
-* find the signature of `test_function_1_against_solution`
-* learn a new test function for functions 
+* find the signature of `grade_function_1_against_solution`
+* learn a new grade function for functions
+* learn how to change the header report
 * have a quick resumé of the utility of each optional arguments with a
 link to the right tutorial.
 
 ## Multiple arguments 
 To grade a function with multiple arguments you simply need to use the
-corresponding test function which follows this pattern :
-`Test_lib.test_function_<function arity>_against_solution` and give
+corresponding grade function which follows this pattern :
+`Test_lib.grade_function_<function arity>_against_solution` and give
 the inputs as n-uplets: 
 
 ```ocaml
@@ -99,13 +102,10 @@ open Test_lib
 open Report
 
 let exercise_1 =
-    Section ([ Text "Function:" ; Code "op" ],
-             test_function_2_against_solution
-               [%ty: int -> int -> int] "op"
-               ~gen:5 
-			   [ (1,2) ; (0,1) ]
-      )
-  
+	grade_function_2_against_solution
+		[%ty: int -> int -> int] "op"
+		~gen:5 
+		[ (1,2) ; (0,1) ]
 
 let () =
   set_result @@
@@ -128,22 +128,26 @@ functions.
 open Test_lib
 open Report
 
+let exercise_1 =
+    Section ([ Text "Function: "; Code "identity" ],
+             grade_function_1_against_solution
+               [%ty: int -> int] (* [identity] tested with integer *)
+               "identity"
+               ~gen:0 [1 ; 2] @
+             grade_function_1_against_solution
+               [%ty: char -> char] (* [identity] tested with char *)
+               "identity"
+               ~gen:0 ['c' ; 'a'] @
+             grade_function_1_against_solution
+               [%ty: float -> float] (* [identity] tested with float *)
+               "identity"
+               ~gen:0 [1.1 ; 2.4]
+            )
+
 let () =
   set_result @@
   ast_sanity_check code_ast @@ fun () ->
-  [
-    Section ([ Text "The identity of 0 is 0." ],
-             test_function_1_against_solution
-               [%ty: int -> int] "identity"
-               ~gen:0 [1 ; 2] @
-             test_function_1_against_solution
-               [%ty: char -> char] "identity"
-               ~gen:0 ['c' ; 'a'] @
-             test_function_1_against_solution
-               [%ty: float -> float] "identity"
-               ~gen:0 [1.1 ; 2.4]
-            );
-  ]
+  [ exercise_1 ]
 ```
 
 You can find this example in the
