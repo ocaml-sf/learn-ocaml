@@ -217,16 +217,38 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   (** {1 Mutation observer builders} *)
-       
+   
   module Mutation : sig
+    (** Functions that help building optional arguments for test
+       functions for function to monitor mutations and build
+       corresponding reports. *)
 
-    (** *)
+    
+    (** Record used as an output for the following functions that
+       build simultaneously [~before_reference], [~before_user],
+       [~test] which are optional arguments for
+       {{!S.Test_functions_function}test functions for functions} . *)
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
         test : 'ret. ?test_result: 'ret tester -> 'ret tester }
 
-    (** *)
+    (** [arg_mutation_test_callbacks ~test_ref ~dup ~blit ty] returns
+       a {!Mutation.arg_mutation_test_callbacks}. With [ty] of type
+       ['a Ty.ty], the ouput is such as:
+
+     - [before_reference]: makes a copy of its input of type ['a]
+       using [dup] and puts it into a ['a option ref] name [sam].
+
+     - [before_user]: makes a copy of its input of type ['a] using
+       [dup] and puts it into a [ty option ref] named [exp]. Also
+       copies the reference [sam] into a [ty option ref] name [got]
+       using [blit].
+
+     - [test ~test_result]: is a {S.tester} which builds two reports,
+       one using [test_result] and one which compares its two inputs
+       and the reference [get] and [exp] values using [test_ref]. By
+       default [test_result] is equal to {!Tester.test_ignore}.  *)
     val arg_mutation_test_callbacks:
       ?test: 'a tester -> dup: ('a -> 'a) -> blit:('a -> 'a -> unit) -> 'a Ty.ty ->
       'a arg_mutation_test_callbacks
