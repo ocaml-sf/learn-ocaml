@@ -122,26 +122,28 @@ You can find this example in the
 ## Polymorphic functions : testing several types
 For a polymorphic functions, you may want to test the function with
 different types. To do so, you can concat the result of numerous test
-functions.
+functions and encapsulate it in a `Section` with as two arguments :
+some text and a list of items produced by grade functions.
 
 ```ocaml
 open Test_lib
 open Report
 
+
 let exercise_1 =
-    Section ([ Text "Function: "; Code "identity" ],
-             grade_function_1_against_solution
+    Section ([ Text "Function: "; Code "identity" ; Text " with multiple tested input types." ],
+             [ grade_function_1_against_solution
                [%ty: int -> int] (* [identity] tested with integer *)
                "identity"
-               ~gen:0 [1 ; 2] @
-             grade_function_1_against_solution
-               [%ty: char -> char] (* [identity] tested with char *)
-               "identity"
-               ~gen:0 ['c' ; 'a'] @
-             grade_function_1_against_solution
-               [%ty: float -> float] (* [identity] tested with float *)
-               "identity"
-               ~gen:0 [1.1 ; 2.4]
+               ~gen:0 [1 ; 2];
+               grade_function_1_against_solution
+                 [%ty: char -> char] (* [identity] tested with char *)
+                 "identity"
+                 ~gen:0 ['c' ; 'a'];
+               grade_function_1_against_solution
+                 [%ty: float -> float] (* [identity] tested with float *)
+                 "identity"
+                 ~gen:0 [1.1 ; 2.4]]
             )
 
 let () =
