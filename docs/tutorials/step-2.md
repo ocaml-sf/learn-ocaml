@@ -27,8 +27,8 @@ open Report
 let exercise_1 =
   grade_function_1_against_solution
     [%ty: int -> int] (* Type of the tested function *)
-    "identity"        (* identifier of the tested function *)
-    ~gen:0            (* number of automatically generated tests *)
+    "identity"        (* Identifier of the tested function *)
+    ~gen:0            (* Number of automatically generated tests *)
     [0]               (* List of tested inputs *)
 
 let () =
@@ -54,7 +54,7 @@ here. Let us take a moment to understand how it is called:
 - The final argument `[0]` is the unique input on which we want to test
   the function.
 
-This function also determine the text written in the header of the
+This function also determines the text written in the header of the
 corresponding report. For a function called `my_function`, it will be
 "Function: my_function". 
 
@@ -79,21 +79,21 @@ corresponding report. For a function called `my_function`, it will be
    change. This is the topic of the next step of this tutorial!
    
 
-## Want to learn more about grade function ?
+## Want to learn more about grading function ?
 The next steps will bring you progressively to understand most of the
-possibilities of grade functions. However, if you want to have a better
+possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
 5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
 where you will:
 * find the signature of `grade_function_1_against_solution`
-* learn a new grade function for functions
+* learn a new grading function for functions
 * learn how to change the header report
 * have a quick resumé of the utility of each optional arguments with a
 link to the right tutorial.
 
 ## Multiple arguments 
 To grade a function with multiple arguments you simply need to use the
-corresponding grade function which follows this pattern :
+corresponding grading function which follows this pattern :
 `Test_lib.grade_function_<function arity>_against_solution` and give
 the inputs as n-uplets: 
 
@@ -121,9 +121,9 @@ You can find this example in the
 
 ## Polymorphic functions : testing several types
 For a polymorphic functions, you may want to test the function with
-different types. To do so, you can concat the result of numerous test
-functions and encapsulate it in a `Section` with as two arguments :
-some text and a list of items produced by grade functions.
+different types. To do so, you can concat the result of numerous grading
+functions and encapsulate it in a `Section` which has two arguments :
+some text and a list of items produced by grading functions.
 
 ```ocaml
 open Test_lib

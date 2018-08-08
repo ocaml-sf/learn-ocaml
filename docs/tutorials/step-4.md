@@ -260,8 +260,8 @@ let exercise_3bis =
 Both method works well for a lot of exercises. However for functional
 types and tuples, you will need do give your types an alias to be able
 do use the second method (see the examples in `advanced_examples`) but
-it is usefull if you need to grade several functions that share some
-input types .
+it is useful if you need to grade several functions that share some
+input types.
 
 ---
 [Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
