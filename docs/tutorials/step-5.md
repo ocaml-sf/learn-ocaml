@@ -1,7 +1,7 @@
 # Step 5: More about grading functions for functions
 
 ## Different grading functions for functions
-There are 2 main tests functions:
+There are 2 main grading functions:
 
 * `grade_function_<nb_args>_againt_solution`: the usual. Test the
   student code againt a given solution written in the `solution.ml`
@@ -10,7 +10,7 @@ There are 2 main tests functions:
 * `grade_function_<nb_args>`: compare the student code to a serie of
   tests where both inputs and expected outputs are given. Note that
   you still need to write a solution in `solution.ml` to build your
-  exercise session since `learn-ocaml build` test your grader with
+  exercise session since `learn-ocaml build` tests your grader with
   `solution.ml` as the student copy.
 
 ## A few words about grading function for functions

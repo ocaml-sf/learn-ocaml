@@ -1,4 +1,4 @@
-# Step 6 : Test functions for variables and references
+# Step 6 : Grading functions for variables and references
 
 ## Test functions for variables
 There are 3 test functions for variables.
