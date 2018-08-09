@@ -72,29 +72,61 @@ let retrieve token =
   | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_none
   | e -> Lwt.fail e
 
+let token_file_path token =
+  Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token)
+
 let create_token_file token =
-  let path = Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token) in
+  let path = token_file_path token in
   Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname path) >>= fun () ->
   Lwt_io.(with_file ~mode: Output ~perm:0o700 path (fun chan -> write chan ""))
 
+let token_exists token =
+  Sys.file_exists (token_file_path token)
+
 let store token save =
-  let path =
-    Filename.concat !sync_dir
-      (Learnocaml_sync.Token.to_path token) in
   let contents = Json_codec.encode Learnocaml_sync.save_file_enc save in
-  (if not (Sys.file_exists path) then create_token_file token
+  (if not (token_exists token) then create_token_file token
    else Lwt.return_unit) >>= fun _ ->
-  Lwt_io.(with_file ~mode: Output path (fun chan -> write chan contents))
+  Lwt_io.(with_file ~mode: Output (token_file_path token)
+            (fun chan -> write chan contents))
 
 let rec gimme ?(teacher=false) () =
   let token =
     if teacher then Learnocaml_sync.Token.random_teacher ()
     else Learnocaml_sync.Token.random ()
   in
-  if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+  if token_exists token then
     gimme ~teacher ()
   else
     create_token_file token >|= fun () -> token
+
+let all_students_tokens () =
+  Array.fold_left (fun acc x1 ->
+      let d = Filename.concat !sync_dir x1 in
+      if Sys.is_directory d then
+        Array.fold_left (fun acc x2 ->
+            let d = Filename.concat d x2 in
+            if Sys.is_directory d then
+              Array.fold_left (fun acc x3 ->
+                  let d = Filename.concat d x3 in
+                  if Sys.is_directory d then
+                    Array.fold_left (fun acc x4 ->
+                        try
+                          Learnocaml_sync.Token.parse
+                            (Printf.sprintf "%s-%s-%s-%s" x1 x2 x3 x4)
+                          :: acc
+                        with Failure _ -> acc)
+                      acc
+                      (Sys.readdir d)
+                  else acc)
+                acc
+                (Sys.readdir d)
+            else acc)
+          acc
+          (Sys.readdir d)
+      else acc)
+    []
+    (Sys.readdir !sync_dir)
 
 (* let auth_encoding =
  *   let open Json_encoding in
@@ -203,12 +235,12 @@ module Request_handler = struct
       | Api.Create_token None ->
           gimme () >>= respond_json
       | Api.Create_token (Some token) ->
-          if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+          if token_exists token then
             Lwt.return (Error (`Bad_request, "token already exists"))
           else
             create_token_file token >>= fun () -> respond_json token
       | Api.Create_teacher_token token ->
-          if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+          if token_exists token then
             gimme ~teacher:true () >>= respond_json
           else
             Lwt.return (Error (`Forbidden, "Unknown teacher token"))
@@ -247,6 +279,24 @@ module Request_handler = struct
           read_static_file [Learnocaml_index.exercise_index_path] >|=
           Ezjsonm.from_string >|=
           Json_encoding.destruct Learnocaml_index.exercise_index_enc >>=
+          respond_json
+      | Api.Students_list _token ->
+          Lwt_list.map_p (fun token ->
+              retrieve token >>= function
+              | None -> failwith "TODO"
+              | Some save ->
+                  let nickname = match save.Learnocaml_sync.nickname with
+                    | "" -> None
+                    | n -> Some n
+                  in
+                  let results =
+                    Learnocaml_sync.Map.map
+                      (fun st -> Learnocaml_exercise_state.(st.mtime, st.grade))
+                      save.Learnocaml_sync.all_exercise_states
+                  in
+                  let tags = [] in
+                  Lwt.return Learnocaml_api.Student.{token; nickname; results; tags})
+            (all_students_tokens ()) >>=
           respond_json
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))

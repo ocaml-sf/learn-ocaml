@@ -880,3 +880,85 @@ body {
     min-width: 40px;
   }
 }
+
+/* -- Teacher activity --------------------------------------------------- */
+
+#learnocaml-main-teacher {
+  position: absolute;
+  top:0 ; left:0; right:0; bottom:0;
+  display: grid;
+}
+
+#learnocaml-main-teacher > * {
+  padding: 4px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1399px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+    }
+}
+@media (min-width: 1400px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: fit-content(100%) max-content;
+    }
+}
+  /* #learnocaml-main-teacher {
+   *   display: flex ;
+   *   flex-direction: column;
+   * }
+   * 
+   * #learnocaml-main-teacher > #exercises_pane {
+   *   position: absolute;
+   *   right: 500px; top: 61px; bottom: 40px; left: 0px;
+   *   z-index: 1;
+   * }
+   * #learnocaml-main-teacher > .buttons {
+   *   position: absolute;
+   *   right: 500px; bottom: 0; left: 0px;
+   * } */
+  #learnocaml-main-teacher > #exercises_pane {
+
+  }
+  #learnocaml-main-teacher > #students_pane {
+    /* position: absolute;
+     * right: 0; top: 61px; bottom: 0; width: 500px;
+     * z-index: 2; */
+    background: #fe9;
+    /* padding: 0px;
+     * display: flex;
+     * flex-direction: column; */
+  }
+  #learnocaml-main-teacher > #buttons {
+    grid-column: 1 / 3;
+  }
+  /* #learnocaml-main-teacher > #students_pane::after {
+   *   position: absolute;
+   *   top:0; bottom:0; left: -8px; width: 8px;
+   *   background: linear-gradient(to left, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+   *   content:"";
+   * }
+   * 
+   * 
+   * #learnocaml-main-teacher > .navigation {
+   *   position: relative;
+   *   z-index: 3;
+   *   display: flex;
+   *   flex-direction: row ;
+   *   border-bottom: 1px white solid;
+   *   background: #ddd;
+   *   padding: 0px;
+   *   flex: 0 0 auto;
+   * } */
+
+#learnocaml-main-teacher #exercises_list {
+}
+
+#learnocaml-main-teacher table {
+    width: calc(100% - 8px);
+    margin: 4px;
+    border: 1px solid #aaa;
+}

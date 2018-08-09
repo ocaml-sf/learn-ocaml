@@ -548,12 +548,119 @@ let toplevel_tab select _ () =
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return div
 
-let teacher_tab _select _params () =
-  let content_div = find_component "learnocaml-main-content" in
-  let div =
-    Tyxml_js.Html5.(h3 [cdata "Teacher page"])
+let teacher_tab token _select _params () =
+  let module H = Tyxml_js.Html5 in
+  let buttons_div = H.(div ~a: [ a_class [ "buttons" ] ] []) in
+  let action_button_group = button_group () in
+  let button = button ~container: buttons_div ~theme: "dark" in
+  let () =
+    button ~group:action_button_group ~icon:"new"
+      [%i"Create new teacher token"] @@ fun () ->
+    Server_caller.request_exn (Learnocaml_api.Create_teacher_token token)
+    >|= fun new_token ->
+    alert ~title:[%i"TEACHER TOKEN"]
+      (Printf.sprintf "New teacher token created:\n%s\n\n\
+                       write it down."
+         (Learnocaml_sync.Token.to_string new_token))
   in
+  let indent_style lvl =
+    H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
+  in
+  let rec mk_table group_level acc = function
+    | Groups groups_list ->
+        List.fold_left (fun acc (id, g) ->
+            let acc =
+              H.tr ~a:[H.a_id ("exercise_group_"^id)] [
+                H.th ~a:[H.a_colspan 0; indent_style group_level]
+                  [H.pcdata g.group_title];
+              ] :: acc
+            in
+            mk_table (group_level + 1) acc g.group_contents)
+          acc groups_list
+    | Learnocaml_exercises exlist ->
+        List.fold_left (fun acc (id, ex) ->
+            H.tr ~a:[
+              H.a_id ("learnocaml_exercise_"^id);
+            ] [
+              H.td ~a:[indent_style group_level]
+                [ H.pcdata ex.exercise_title ];
+              H.td (List.map H.pcdata ex.exercise_focus);
+              H.td [H.pcdata (string_of_float ex.exercise_stars)];
+            ] :: acc)
+          acc exlist
+  in
+  let exercises_list_div =
+    H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
+  in
+  let exercises_div =
+    H.div ~a:[H.a_id "exercises_pane"] [
+      H.div ~a:[H.a_id "exercises_filter_box"] [
+        H.pcdata "filtering tools here"
+      ];
+      exercises_list_div;
+    ]
+  in
+  let students_list_div =
+    H.div ~a:[H.a_id "students_list"] [H.pcdata [%i"Loading..."]];
+  in
+  let students_div =
+    H.div ~a:[H.a_id "students_pane"] [
+      H.div ~a:[H.a_id "students_filter_box"] [
+        H.pcdata "filtering tools here"
+      ];
+      students_list_div;
+    ]
+  in
+  let div =
+    H.div ~a: [H.a_id "learnocaml-main-teacher"] [
+      exercises_div;
+      students_div;
+      buttons_div;
+    ]
+  in
+  let fill_exercises_pane =
+    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+    >>= fun exercises ->
+    let exercises = Groups [
+        "1", {group_title = "1"; group_contents = exercises};
+        "2", {group_title = "2"; group_contents = exercises};
+        "3", {group_title = "3"; group_contents = exercises};
+        "4", {group_title = "4"; group_contents = exercises};
+        "5", {group_title = "5"; group_contents = exercises};
+        "6", {group_title = "6"; group_contents = exercises};
+        "7", {group_title = "7"; group_contents = exercises};
+        "8", {group_title = "8"; group_contents = exercises};
+        "9", {group_title = "9"; group_contents = exercises};
+        "10", {group_title = "10"; group_contents = exercises};
+        "11", {group_title = "11"; group_contents = exercises};
+        "12", {group_title = "12"; group_contents = exercises};
+        "13", {group_title = "13"; group_contents = exercises};
+        "14", {group_title = "14"; group_contents = exercises};
+        "15", {group_title = "15"; group_contents = exercises};
+      ]
+    in
+    let table = List.rev (mk_table 0 [] exercises) in
+    Manip.replaceChildren exercises_list_div [H.table table];
+    Lwt.return_unit
+  in
+  let fill_students_pane =
+    Server_caller.request_exn (Learnocaml_api.Students_list token)
+    >>= fun students ->
+    let table =
+      List.map (fun st ->
+          let open Learnocaml_api.Student in
+          H.tr [
+            H.td [H.pcdata (Learnocaml_sync.Token.to_string st.token)];
+            H.td (match st.nickname with Some n -> [H.pcdata n] | _ -> []);
+          ])
+        students
+    in
+    Manip.replaceChildren students_list_div [H.table table];
+    Lwt.return_unit
+  in
+  let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
+  Lwt.join [fill_exercises_pane; fill_students_pane] >>= fun () ->
   Lwt.return div
 
 let token_format =
@@ -688,7 +795,7 @@ let () =
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
       (match token with
        | Some t when Learnocaml_sync.Token.is_teacher t ->
-           [ "teacher", ([%i"Teach"], teacher_tab) ]
+           [ "teacher", ([%i"Teach"], teacher_tab t) ]
        | _ -> [])
     in
     let container = find_component "learnocaml-tab-buttons-container" in

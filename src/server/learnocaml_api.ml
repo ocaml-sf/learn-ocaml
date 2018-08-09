@@ -20,6 +20,37 @@ type 'a token = Learnocaml_sync.Token.t
 type student
 type teacher
 
+module Student = struct
+
+  type t = {
+    token: student token;
+    nickname: string option;
+    results: (float * int option) Learnocaml_sync.Map.t;
+    tags: string list;
+  }
+
+  let enc =
+    let open Json_encoding in
+    obj4
+      (req "token" string)
+      (opt "nickname" string)
+      (dft "results" (assoc (tup2 float (option int))) [])
+      (dft "tags" (list string) [])
+    |> conv
+      (fun t ->
+         Learnocaml_sync.Token.to_string t.token,
+         t.nickname, Learnocaml_sync.Map.bindings t.results, t.tags)
+      (fun (token, nickname, results, tags) -> {
+           token = Learnocaml_sync.Token.parse token;
+           nickname;
+           results =
+             List.fold_left (fun m (s, r) -> Learnocaml_sync.Map.add s r m)
+               Learnocaml_sync.Map.empty
+               results;
+           tags;
+         })
+end
+
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
@@ -30,6 +61,7 @@ type _ request =
       'a token * Learnocaml_sync.save_file ->
       Learnocaml_sync.save_file request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
+  | Students_list: teacher token -> Student.t list request
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
   (** [Static_json] is to help transition: do not use *)
   | Invalid_request: string -> string request
@@ -71,6 +103,8 @@ module Conversions (Json: JSON_CODEC) = struct
           json Learnocaml_sync.save_file_enc
       | Exercise_index _ ->
           json Learnocaml_index.exercise_index_enc
+      | Students_list _ ->
+          json Json_encoding.(list Student.enc)
       | Static_json (_, enc) ->
           json enc
       | Invalid_request _ ->
@@ -95,7 +129,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Create_teacher_token token ->
           assert (Learnocaml_sync.Token.is_teacher token);
           let stoken = Learnocaml_sync.Token.to_string token in
-          { meth = `GET; path = ["teacher"; "gen"; stoken] }
+          { meth = `GET; path = ["teacher"; stoken; "gen"] }
       | Fetch_save token ->
           let stoken = Learnocaml_sync.Token.to_string token in
           { meth = `GET; path = ["sync"; stoken] }
@@ -106,6 +140,10 @@ module Conversions (Json: JSON_CODEC) = struct
       | Exercise_index token ->
           let stoken = Learnocaml_sync.Token.to_string token in
           { meth = `GET; path = ["exercise-index"; stoken] }
+      | Students_list token ->
+          assert (Learnocaml_sync.Token.is_teacher token);
+          let stoken = Learnocaml_sync.Token.to_string token in
+          { meth = `GET; path = ["teacher"; stoken; "students"] }
       | Static_json (path, _) ->
           { meth = `GET; path = [path] }
       | Invalid_request s ->
@@ -139,7 +177,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           (match Learnocaml_sync.Token.parse token with
            | token -> Create_token (Some token) |> k
            | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path = ["teacher"; "gen"; token] } ->
+      | { meth = `GET; path = ["teacher"; token; "gen"] } ->
           (match Learnocaml_sync.Token.parse token with
            | token when Learnocaml_sync.Token.is_teacher token ->
                Create_teacher_token token |> k
@@ -160,6 +198,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | { meth = `GET; path = ["exercise-index"; token] } ->
           (match Learnocaml_sync.Token.parse token with
            | token -> Exercise_index token |> k
+           | exception (Failure s) -> Invalid_request s |> k)
+      | { meth = `GET; path = ["teacher"; token; "students"] } ->
+          (match Learnocaml_sync.Token.parse token with
+           | token when Learnocaml_sync.Token.is_teacher token ->
+               Students_list token |> k
+           | _ -> Invalid_request "Unauthorised" |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path } ->
           (* FIXME: also handles the deprecated Static_json (they are the same,

@@ -33,6 +33,19 @@ type 'a token = Learnocaml_sync.Token.t
 type student
 type teacher
 
+
+module Student : sig
+
+  type t = {
+    token: student token;
+    nickname: string option;
+    results: (float * int option) Learnocaml_sync.Map.t;
+    tags: string list;
+  }
+
+  val enc: t Json_encoding.encoding
+end
+
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
@@ -45,6 +58,7 @@ type _ request =
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   (* | Exercise: Learnocaml_exercise.id -> Learnocaml_exercise.t request
    * | Lesson_index: unit -> (string * string) list request *)
+  | Students_list: teacher token -> Student.t list request
   (** to help transition: do not use *)
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
   | Invalid_request: string -> string request
