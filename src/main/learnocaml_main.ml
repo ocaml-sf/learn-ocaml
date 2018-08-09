@@ -17,6 +17,8 @@
 
 open Lwt.Infix
 
+module StringSet = Set.Make(String)
+
 let ( / ) = Filename.concat
 
 let readlink f =
@@ -139,19 +141,30 @@ module Args = struct
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
         "directory containing the base learn-ocaml app contents"
 
+    let exercises_filtered =
+      value & opt_all (list string) [[]] & info ["exercises-filtered"; "f"] ~docv:"DIRS" ~doc:
+        "Exercises to build (comma-separated), instead of taking \
+         the entire repository. Can be repeated."
+
     type t = {
       contents_dir: string;
     }
 
     let term =
-      let apply repo_dir contents_dir =
+      let apply repo_dir contents_dir exercises_filtered =
+        let exercises_filtered =
+          List.fold_left
+            (List.fold_left (fun s e -> StringSet.add e s))
+            StringSet.empty exercises_filtered in
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
+        Learnocaml_process_exercise_repository.exercises_filtered :=
+          exercises_filtered;
         Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
         { contents_dir }
       in
-      Term.(const apply $repo_dir $contents_dir)
+      Term.(const apply $repo_dir $contents_dir $exercises_filtered)
 
   end
 
