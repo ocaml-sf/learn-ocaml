@@ -46,25 +46,48 @@ module type S = sig
       ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.report) ->
       'a -> Learnocaml_report.report
 
+
+    (** [ast_check_expr] *)
     val ast_check_expr : Parsetree.expression ast_checker
+
+    (** [ast_check_structure] *)
     val ast_check_structure : Parsetree.structure ast_checker
 
+    (** [ast_location_stripper] *)
     val ast_location_stripper : Ast_mapper.mapper
 
     (** {2 Functions for optional arguments of checkers} *)
 
+    (** [forbid k pr ls] *)
     val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
+
+    (** [restrict k pr ls] *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
+      
+    (** [require k pr ls] *)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
+
+    (** [forbid_expr name exprs] *)
     val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
+
+    (** [restrict_expr name exprs] *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
+
+    (** [require_expr name exprs] *)      
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
+
+    (** [forbid_syntax n] *)  
     val forbid_syntax : string -> (_ -> Learnocaml_report.report)
+
+    (** [require_syntax n] *)  
     val require_syntax : string -> (_ -> Learnocaml_report.report)
+
+    (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
     val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
 
     (** {2 AST sanity check } *)
 
+    (** [ast_sanity_check ~modules ast cb]*)
     val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
 
     (** {2 Finding in AST}*)
@@ -219,14 +242,14 @@ module type S = sig
 
   (** {1 Mutation observer builders} *)
 
-  (** Functions that help to build the optional arguments
+  (** Functions to help to build the optional arguments
      [~before_reference], [~before_user], [~test] used by grading
      functions for {b unary} function with a mutable input. *)
   module Mutation : sig
 
     (** Important warning: this part is useful only to grade unary
        function using grading functions such as
-       {!S.Test_functions_function.test_function_1_against_solution. *)
+       {!S.Test_functions_function.test_function_1_against_solution}. *)
     
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
@@ -352,6 +375,7 @@ module type S = sig
 
   (** {1 Grading functions for references and variables } *)
 
+  (** Grading function for variables and references. *)
   module Test_functions_ref_var : sig
     
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
@@ -385,6 +409,7 @@ module type S = sig
 
   (** {1 Grading functions for types} *)
 
+  (** Grading function for types. *)
   module Test_functions_types : sig
 
     val compatible_type : expected:string -> string -> Learnocaml_report.report
@@ -403,6 +428,7 @@ module type S = sig
 
   (** {1 Grading functions for functions }*)
 
+  (** Grading function for functions. *)
   module Test_functions_function : sig
     
     (** {2:test_functions_fun_sec Grading functions for functions}*)
