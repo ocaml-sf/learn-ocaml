@@ -53,6 +53,23 @@ end
 
 module Api_client = Learnocaml_api.Client (Json_codec)
 
+type request_error = [
+  | `Unreachable of string
+  | `Not_found of string
+  | `Http_error of int * string
+  | `Exception of exn
+  | `Invalid_response of exn
+]
+
+let string_of_error = function
+  | `Unreachable s -> "Server unreachable: " ^ s
+  | `Not_found s -> "URL not found: " ^ s
+  | `Http_error (code, s) ->
+      Printf.sprintf "HTTP error (%d): %s" code s
+  | `Exception e ->
+      "Server request failed: " ^ Printexc.to_string e
+  | `Invalid_response e ->
+      "Could not decode server response: " ^ Printexc.to_string e
 
 let request req =
   let do_req = function
@@ -66,29 +83,25 @@ let request req =
       Api_client.make_request (fun http_request ->
           Lwt.catch (fun () -> do_req http_request >|= fun body -> Ok (body))
           @@ function
+          | Lwt_request.Request_failed (0, s) ->
+              Lwt.return (Error (`Unreachable s))
+          | Lwt_request.Request_failed (404, s) ->
+              Lwt.return (Error (`Not_found s))
           | Lwt_request.Request_failed (code, s) ->
-              if code = 0 then
-                Lwt.return @@
-                Error (Printf.sprintf "Cannot access %s (server unreachable)" s)
-              else
-                Lwt.return @@
-                Error (Printf.sprintf "Cannot access %s (code %d)" s code)
+              Lwt.return (Error (`Http_error (code, s)))
           | e ->
-              Lwt.return @@
-              Error (Printf.sprintf "Server request failed: %s"
-                       (Printexc.to_string e)))
+              Lwt.return (Error (`Exception e)))
         req)
   @@ fun e ->
-  Lwt.return @@
-  Error (Printf.sprintf "Could not decode server response: %s"
-           (Printexc.to_string e))
+  Lwt.return (Error (`Invalid_response e))
 
 exception Cannot_fetch of string
 
 let request_exn req =
   request req >>= function
   | Ok x -> Lwt.return x
-  | Error msg -> Lwt.fail (Cannot_fetch msg)
+  | Error e ->
+      Lwt.fail (Cannot_fetch (string_of_error e))
 
 (* FIXME: define proper API call *)
 let fetch_lesson_index () =

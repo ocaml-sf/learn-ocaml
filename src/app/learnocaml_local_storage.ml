@@ -143,6 +143,15 @@ let sync_token =
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
 
+let nickname =
+  let key = mangle [ "nickname" ] in
+  let enc = Json_encoding.(obj1 (req "nickname" string)) in
+  let store value = store_single key enc value
+  and retrieve () = retrieve_single key enc ()
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+
 let cached_exercise name =
   let key = mangle [ "cached-exercise" ; name ] in
   let enc = Learnocaml_exercise.enc in
@@ -151,8 +160,6 @@ let cached_exercise name =
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = []  }
-
-module StringMap = Map.Make (String)
 
 let listed list_key item_prefix ?default enc =
   let list =
@@ -183,9 +190,9 @@ let listed list_key item_prefix ?default enc =
     let retrieve () =
       try
         List.fold_left
-          (fun acc name -> StringMap.add name (retrieve (item name)) acc)
-          StringMap.empty (retrieve list)
-      with Not_found -> StringMap.empty
+          (fun acc name -> Learnocaml_sync.Map.add name (retrieve (item name)) acc)
+          Learnocaml_sync.Map.empty (retrieve list)
+      with Not_found -> Learnocaml_sync.Map.empty
     and delete () =
       let all = retrieve list in
       List.iter (fun name -> delete (item name)) all ;
@@ -193,7 +200,7 @@ let listed list_key item_prefix ?default enc =
     let store index =
       delete () ;
       let all =
-        StringMap.fold
+        Learnocaml_sync.Map.fold
           (fun name state acc ->
              store (item name) state ;
              name :: acc)

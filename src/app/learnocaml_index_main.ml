@@ -20,8 +20,6 @@ open Lwt
 open Learnocaml_index
 open Learnocaml_common
 
-module StringMap = Map.Make (String)
-
 let exercises_tab token _ _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
@@ -40,7 +38,7 @@ let exercises_tab token _ _ () =
                         exercise_short_description ;
                         exercise_stars }) ->
               let pct_init =
-                match StringMap.find exercise_id all_exercise_states with
+                match Learnocaml_sync.Map.find exercise_id all_exercise_states with
                 | exception Not_found -> None
                 | { Learnocaml_exercise_state.grade } -> grade in
               let pct_signal, pct_signal_set = React.S.create pct_init in
@@ -572,7 +570,8 @@ let init_sync_token button_state =
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found ->
-           Server_caller.request_exn (Learnocaml_api.Create_token ()) >>= fun token ->
+           Server_caller.request_exn (Learnocaml_api.Create_token None)
+           >>= fun token ->
            Learnocaml_local_storage.(store sync_token) token ;
            Lwt.return token
        end >>= fun token ->
@@ -582,45 +581,35 @@ let init_sync_token button_state =
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
 
-let set_state_from_save_file
-    { Learnocaml_sync.all_exercise_states ;
-      all_toplevel_histories ;
-      all_exercise_toplevel_histories } =
-  Learnocaml_local_storage.(store all_exercise_states)
-    all_exercise_states ;
-  Learnocaml_local_storage.(store all_toplevel_histories)
-    all_toplevel_histories ;
-  Learnocaml_local_storage.(store all_exercise_toplevel_histories)
-    all_exercise_toplevel_histories
-
-let get_state_as_save_file () =
-  { Learnocaml_sync.all_exercise_states =
-      Learnocaml_local_storage.(retrieve all_exercise_states) ;
-    all_toplevel_histories =
-      Learnocaml_local_storage.(retrieve all_toplevel_histories) ;
-    all_exercise_toplevel_histories =
-      Learnocaml_local_storage.(retrieve all_exercise_toplevel_histories) }
+let get_stored_token () =
+  Learnocaml_local_storage.(retrieve sync_token)
 
 let sync () =
   let token_input = Js.to_string ((token_input_field ())##.value) in
-  let local_save_file = get_state_as_save_file () in
+  let stored_token = get_stored_token () in
+  let reset_token_input () =
+    (token_input_field ())##.value :=
+      Js.string (Learnocaml_sync.Token.to_string stored_token);
+  in
   match Learnocaml_sync.Token.parse token_input with
-  | exception (Failure _) -> Lwt.fail_with "Invalid token entered"
+  | exception (Failure _) ->
+      reset_token_input ();
+      Lwt.fail_with "Invalid token entered"
   | token ->
-      Server_caller.request_exn (Learnocaml_api.Fetch_save token) >>= function
-      | Some server_save_file ->
-          Learnocaml_local_storage.(store sync_token) token ;
-          let save_file =
-            Learnocaml_sync.sync local_save_file server_save_file
-          in
-          set_state_from_save_file save_file ;
-          Server_caller.request_exn (Learnocaml_api.Update_save (token, save_file))
-      | None ->
-          if token <> Learnocaml_local_storage.(retrieve sync_token) then
-            Lwt.fail_with "Unknown token entered"
-          else
-            Server_caller.request_exn
-              (Learnocaml_api.Update_save (token, local_save_file))
+      if token = stored_token then
+        sync token
+      else (* New token entered, replace current save by remote *)
+        Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+        | Ok save ->
+            set_state_from_save_file ~token save;
+            let nickname_field = find_component "learnocaml-nickname" in
+            (Tyxml_js.To_dom.of_input nickname_field)##.value :=
+              Js.string save.Learnocaml_sync.nickname;
+            Lwt.return save
+        | Error (`Not_found _) ->
+            reset_token_input ();
+            Lwt.fail_with "The entered token is unknown"
+        | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
 
 let set_string_translations () =
   let translations = [
@@ -673,74 +662,39 @@ let () =
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
-  let token = init_sync_token sync_button_state in
-  let sync_buttons = find_component "learnocaml-sync-buttons" in
-  Manip.removeChildren sync_buttons ;
-  begin button
-      ~container: sync_buttons
-      ~theme:"white" ~icon: "download" [%i"Save"] @@ fun () ->
-    let name = "learnocaml-main.json" in
-    let contents =
-      let json =
-        Json_repr_browser.Json_encoding.construct
-          Learnocaml_sync.save_file_enc
-          (get_state_as_save_file ()) in
-      Js._JSON##(stringify json) in
-    Learnocaml_common.fake_download ~name ~contents ;
-    Lwt.return ()
-  end ;
-  begin button
-      ~container: sync_buttons
-      ~theme:"white" ~icon: "upload" [%i"Restore"] @@ fun () ->
-    Learnocaml_common.fake_upload () >>= fun (_, contents) ->
-    let save_file =
-      Json_repr_browser.Json_encoding.destruct
-        Learnocaml_sync.save_file_enc
-        (Js._JSON##(parse contents)) in
-    set_state_from_save_file save_file ;
-    Lwt.return ()
-  end ;
-  begin button
-      ~container: sync_buttons
-      ~state: sync_button_state
-      ~theme:"white" ~icon: "sync" [%i"Sync"] @@ fun () ->
-    sync () >>= fun _ -> Lwt.return_unit (* FIXME *)
-  end ;
-  let menu_hidden = ref true in
   let menu = find_component "learnocaml-main-panel" in
-  begin button
-      ~container: (find_component "learnocaml-main-toolbar")
-      ~theme:"white" ~icon: "menu" [%i"Menu"] @@ fun () ->
-    menu_hidden := not !menu_hidden ;
-    if !menu_hidden then
-      Manip.addClass menu "hidden"
-    else
-      Manip.removeClass menu "hidden" ;
-    Lwt.return ()
-  end ;
-  let tabs =
-    token >|= fun token ->
-    (if config##.enableTryocaml
-     then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
-    (if config##.enableLessons
-     then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-    (match token, config##.enableExercises with
-     | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
-     | _ -> []) @
-    (if config##.enableToplevel
-     then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
-    (match token with
-     | Some t (*when Learnocaml_sync.Token.is_admin t*) ->
-         [ "teacher", ([%i"Teach"], teacher_tab) ]
-     | _ -> [])
-  in
-  let tabs =
-    let container = find_component "learnocaml-tab-buttons-container" in
+  let menu_hidden = ref true in
+  let content_div = find_component "learnocaml-main-content" in
+  let no_tab_selected () =
+    Manip.removeChildren content_div ;
     let content_div = find_component "learnocaml-main-content" in
+    let div =
+      Tyxml_js.Html5.(div ~a: [ a_class [ "placeholder" ] ])
+        Tyxml_js.Html5.[ div [ pcdata [%i"Choose an activity."] ]] in
+    Manip.removeChildren content_div ;
+    Manip.appendChild content_div div ;
+    delete_arg "activity"
+  in
+  let init_tabs token =
+    let tabs =
+      (if config##.enableTryocaml
+       then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
+      (if config##.enableLessons
+       then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
+      (match token, config##.enableExercises with
+       | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
+       | _ -> []) @
+      (if config##.enableToplevel
+       then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
+      (match token with
+       | Some t when Learnocaml_sync.Token.is_teacher t ->
+           [ "teacher", ([%i"Teach"], teacher_tab) ]
+       | _ -> [])
+    in
+    let container = find_component "learnocaml-tab-buttons-container" in
     let current_btn = ref None in
     let current_args = ref (ref []) in
     let mutex = Lwt_mutex.create () in
-    tabs >|= fun tabs ->
     Manip.removeChildren container ;
     List.map
       (fun (id, (name, callback)) ->
@@ -787,18 +741,92 @@ let () =
          id, (name, select))
       tabs
   in
-  tabs >>= fun tabs ->
+  let sync_buttons = find_component "learnocaml-sync-buttons" in
+  Manip.removeChildren sync_buttons ;
+  begin button
+      ~container: sync_buttons
+      ~theme:"white" ~icon: "download" [%i"Save"] @@ fun () ->
+    let name = "learnocaml-main.json" in
+    let contents =
+      let json =
+        Json_repr_browser.Json_encoding.construct
+          Learnocaml_sync.save_file_enc
+          (get_state_as_save_file ()) in
+      Js._JSON##(stringify json) in
+    Learnocaml_common.fake_download ~name ~contents ;
+    Lwt.return ()
+  end ;
+  begin button
+      ~container: sync_buttons
+      ~theme:"white" ~icon: "upload" [%i"Restore"] @@ fun () ->
+    Learnocaml_common.fake_upload () >>= fun (_, contents) ->
+    let save_file =
+      Json_repr_browser.Json_encoding.destruct
+        Learnocaml_sync.save_file_enc
+        (Js._JSON##(parse contents)) in
+    let token = try Some (get_stored_token ()) with Not_found -> None in
+    set_state_from_save_file ?token save_file ;
+    let nickname_field = find_component "learnocaml-nickname" in
+    (Tyxml_js.To_dom.of_input nickname_field)##.value :=
+      Js.string save_file.Learnocaml_sync.nickname;
+    let _tabs = init_tabs token in
+    no_tab_selected ();
+    Lwt.return ()
+  end ;
+  begin button
+      ~container: sync_buttons
+      ~state: sync_button_state
+      ~theme:"white" ~icon: "sync" [%i"Sync"] @@ fun () ->
+    catch_with_alert @@ fun () ->
+    sync () >>= fun _ -> Lwt.return_unit;
+  end ;
+  begin button
+      ~container: (find_component "learnocaml-main-toolbar")
+      ~theme:"white" ~icon: "menu" [%i"Menu"] @@ fun () ->
+    menu_hidden := not !menu_hidden ;
+    if !menu_hidden then
+      Manip.addClass menu "hidden"
+    else
+      Manip.removeClass menu "hidden" ;
+    Lwt.return ()
+  end ;
+  begin
+    let nickname_field = find_component "learnocaml-nickname" in
+    let nickname = Learnocaml_local_storage.(retrieve nickname) in
+    (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
+    let save_nickname () =
+      Learnocaml_local_storage.(store nickname) @@
+      Js.to_string (Tyxml_js.To_dom.of_input nickname_field)##.value
+    in
+    Manip.Ev.onreturn nickname_field (fun _ -> save_nickname ());
+    Manip.Ev.onblur nickname_field (fun _ -> save_nickname (); true);
+  end ;
+  begin
+    let token_field = find_component "learnocaml-save-token-field" in
+    let input = Tyxml_js.To_dom.of_input token_field in
+    Manip.Ev.onfocus token_field (fun _ ->
+        input##.value := Js.string "";
+        true
+      );
+    let update () =
+      let t = get_stored_token () in
+      if Js.to_string (input##.value) = "" then
+        Lwt.return (input##.value := Js.string (Learnocaml_sync.Token.to_string t))
+      else
+        catch_with_alert @@ fun () ->
+        sync () >|= fun _ ->
+        get_stored_token () |> fun token ->
+        init_tabs (Some token) |> fun _ -> ()
+    in
+    Manip.Ev.onblur token_field (fun _ -> Lwt.async update; true);
+    Manip.Ev.onreturn token_field (fun _ -> Lwt.async update);
+  end ;
+  init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
   try
     let activity = arg "activity" in
-    let (_, select) =
-      try List.assoc activity tabs with Not_found ->
-        failwith "Bad value for argument activity" in
+    let (_, select) = List.assoc activity tabs in
     select ()
   with Not_found ->
-    let content_div = find_component "learnocaml-main-content" in
-    let div =
-      Tyxml_js.Html5.(div ~a: [ a_class [ "placeholder" ] ])
-        Tyxml_js.Html5.[ div [ pcdata [%i"Choose an activity."] ]] in
-    Manip.appendChild content_div div ;
+    no_tab_selected ();
     Lwt.return ()
 ;;

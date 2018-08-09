@@ -50,5 +50,5 @@ let get_grade ?callback ?timeout exo solution =
   let divert name chan cb =
     let redirection = Toploop_unix.redirect_channel name chan cb in
     fun () -> Toploop_unix.stop_channel_redirection redirection in
-  Lwt.return
-    (Grading.get_grade ?callback ?timeout ~divert exo solution)
+  Lwt.wrap @@ fun () ->
+  Grading.get_grade ?callback ?timeout ~divert exo solution

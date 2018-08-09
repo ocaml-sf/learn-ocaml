@@ -43,6 +43,7 @@ module Manip : sig
   val window: 'a elt -> Dom_html.window Js.t
 
   val setInnerHtml: 'a elt -> string -> unit
+  val setInnerText: 'a elt -> string -> unit
   val clone: ?deep:bool -> 'a elt -> 'a elt
 
   val appendChild: ?before:'a elt -> 'b elt ->  'c elt -> unit

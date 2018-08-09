@@ -36,18 +36,17 @@ type teacher
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
-  | Create_token: unit -> student token request
-  | Create_teacher_token: string -> teacher token request
-  | Fetch_save: student token -> Learnocaml_sync.save_file option request
+  | Create_token: student token option -> student token request
+  | Create_teacher_token: teacher token -> teacher token request
+  | Fetch_save: 'a token -> Learnocaml_sync.save_file request
   | Update_save:
-      student token * Learnocaml_sync.save_file ->
+      'a token * Learnocaml_sync.save_file ->
       Learnocaml_sync.save_file request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   (* | Exercise: Learnocaml_exercise.id -> Learnocaml_exercise.t request
    * | Lesson_index: unit -> (string * string) list request *)
-  | Static_json: string * 'a Json_encoding.encoding -> 'a request
   (** to help transition: do not use *)
-
+  | Static_json: string * 'a Json_encoding.encoding -> 'a request
   | Invalid_request: string -> string request
 
 type http_request = {

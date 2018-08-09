@@ -92,39 +92,6 @@ let display_report exo report =
     (Format.asprintf "%a" Learnocaml_report.(output_html_of_report ~bare: true) report) ;
   grade
 
-let sync () =
-  let get_token =
-    try
-      Learnocaml_local_storage.(retrieve sync_token) |>
-      Lwt.return
-    with
-    | Not_found ->
-        Server_caller.request_exn (Learnocaml_api.Create_token ()) >|= fun token ->
-        Learnocaml_local_storage.(store sync_token) token;
-        token
-  in
-  let local_save_file = {
-    Learnocaml_sync.all_exercise_states =
-      Learnocaml_local_storage.(retrieve all_exercise_states) ;
-    all_toplevel_histories =
-      Learnocaml_local_storage.(retrieve all_toplevel_histories) ;
-    all_exercise_toplevel_histories =
-      Learnocaml_local_storage.(retrieve all_exercise_toplevel_histories) ;
-  } in
-  get_token >>= fun token ->
-  (* FIXME: once the merge is done server-side, a single call to Update_save
-     should be required *)
-  Server_caller.request_exn (Learnocaml_api.Fetch_save token) >>= function
-  | None ->
-      Learnocaml_local_storage.(store sync_token) token ;
-      Server_caller.request_exn
-        (Learnocaml_api.Update_save (token, local_save_file))
-  | Some server_save_file ->
-      Learnocaml_local_storage.(store sync_token) token ;
-      let save_file = Learnocaml_sync.sync local_save_file server_save_file in
-      Server_caller.request_exn
-        (Learnocaml_api.Update_save (token, save_file))
-
 let set_string_translations () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
@@ -150,11 +117,25 @@ let () =
   Lwt.async @@ fun () ->
   set_string_translations ();
   Learnocaml_local_storage.init () ;
+  let token =
+    try
+      Learnocaml_local_storage.(retrieve sync_token) |>
+      Lwt.return
+    with Not_found ->
+      Server_caller.request_exn (Learnocaml_api.Create_token None)
+      >|= fun token ->
+      Learnocaml_local_storage.(store sync_token) token;
+      token
+  in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
+  let nickname_div = find_component "learnocaml-nickname" in
+  (match Learnocaml_local_storage.(retrieve nickname) with
+   | nickname -> Manip.setInnerText nickname_div nickname
+   | exception Not_found -> ());
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = arg "id" in
@@ -336,7 +317,8 @@ let () =
     Lwt.return ()
   end ;
   begin editor_button
-      ~icon: "save" [%i"Save"] @@ fun () ->
+      ~icon: "sync" [%i"Sync"] @@ fun () ->
+    token >>= fun token ->
     let solution = Ace.get_contents ace in
     let report, grade =
       match Learnocaml_local_storage.(retrieve (exercise_state id)) with
@@ -345,7 +327,13 @@ let () =
     Learnocaml_local_storage.(store (exercise_state id))
       { Learnocaml_exercise_state.report ; grade ; solution ;
         mtime = gettimeofday () } ;
-    sync () >>= fun _ -> Lwt.return_unit (* FIXME: update using fetched save *)
+    sync token >|= fun save ->
+    let solution =
+      (Learnocaml_sync.Map.find
+         id save.Learnocaml_sync.all_exercise_states)
+      .Learnocaml_exercise_state.solution
+    in
+    Ace.set_contents ace solution
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -434,8 +422,8 @@ let () =
         worker := Grading_jsoo.get_grade ~callback exo ;
         Learnocaml_local_storage.(store (exercise_state id))
           { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
-            mtime = gettimeofday () } ;
-        sync () >>= fun _ -> (* FIXME: don't discard fetched save *)
+            mtime = max_float } ; (* To ensure server time will be used *)
+        token >>= sync >>= fun save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;

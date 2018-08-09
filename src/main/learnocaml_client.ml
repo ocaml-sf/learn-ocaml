@@ -31,7 +31,7 @@ module Args = struct
     submit: bool;
     color: bool;
     verbosity: int;
-    token: Learnocaml_sync.Token.t option;
+    token: Learnocaml_api.student Learnocaml_api.token option;
     local: bool;
     set_options: bool;
     print_token: bool;
@@ -476,8 +476,6 @@ let upload_save server_url token save =
         "Could not upload the results to the server: code %d"
         (Code.code_of_status status)
 
-module StringMap = Map.Make(String)
-
 let write_save_files save =
   Lwt_list.iter_s (fun (id, st) ->
       let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
@@ -488,7 +486,7 @@ let write_save_files save =
         Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
         Lwt_io.write oc st.Learnocaml_exercise_state.solution >|= fun () ->
         Printf.eprintf "Wrote file %s\n%!" f)
-    (StringMap.bindings (save.Learnocaml_sync.all_exercise_states))
+    (Learnocaml_sync.Map.bindings (save.Learnocaml_sync.all_exercise_states))
 
 let upload_report server token exercise solution report =
   let score = get_score report in
@@ -502,12 +500,14 @@ let upload_report server token exercise solution report =
     }
   in
   let new_save =
-    { Learnocaml_sync.
+    let open Learnocaml_sync in {
+      nickname = "";
       all_exercise_states =
-        StringMap.singleton (Learnocaml_exercise.(access File.id) exercise)
+        Map.singleton
+          (Learnocaml_exercise.(access File.id) exercise)
           exercise_state;
-      all_toplevel_histories = StringMap.empty;
-      all_exercise_toplevel_histories = StringMap.empty;
+      all_toplevel_histories = Map.empty;
+      all_exercise_toplevel_histories = Map.empty;
     }
   in
   Lwt.catch (fun () ->

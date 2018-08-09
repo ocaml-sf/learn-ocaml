@@ -18,11 +18,7 @@
 let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
-(*
-let allow_teacher_account_creation = ref true
 
-let auth_file () = Filename.concat !sync_dir "auth.json"
-*)
 let port = ref 8080
 
 let args = Arg.align @@
@@ -34,6 +30,18 @@ let args = Arg.align @@
     "PORT the TCP port (8080)" ]
 
 open Lwt.Infix
+
+module Json_codec = struct
+  let decode enc s =
+    Ezjsonm.from_string s |>
+    Json_encoding.destruct enc
+
+  let encode enc x =
+    match Json_encoding.construct enc x with
+    | `A _ | `O _ as json -> Ezjsonm.to_string json
+    | `Null -> "{}"
+    | _ -> assert false
+end
 
 let read_static_file path =
   let shorten path =
@@ -57,29 +65,34 @@ let retrieve token =
           Learnocaml_sync.Token.(to_path token) in
       Lwt_io.(with_file ~mode:Input path (fun chan ->
           read chan >|= fun str ->
-          let json = Ezjsonm.from_string str in
-          Json_encoding.destruct Learnocaml_sync.save_file_enc json)))
+          let str = if str = "" then "{}" else str in
+          Json_codec.decode Learnocaml_sync.save_file_enc str))
+      >>= Lwt.return_some)
   @@ function
-  | Unix.Unix_error (Unix.ENOENT, _, _) -> raise Not_found
-  | e -> raise e
+  | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_none
+  | e -> Lwt.fail e
 
 let create_token_file token =
   let path = Filename.concat !sync_dir (Learnocaml_sync.Token.to_path token) in
   Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname path) >>= fun () ->
   Lwt_io.(with_file ~mode: Output ~perm:0o700 path (fun chan -> write chan ""))
 
-let store token contents =
+let store token save =
   let path =
     Filename.concat !sync_dir
       (Learnocaml_sync.Token.to_path token) in
+  let contents = Json_codec.encode Learnocaml_sync.save_file_enc save in
   (if not (Sys.file_exists path) then create_token_file token
    else Lwt.return_unit) >>= fun _ ->
   Lwt_io.(with_file ~mode: Output path (fun chan -> write chan contents))
 
-let rec gimme () =
-  let token = Learnocaml_sync.Token.random () in
+let rec gimme ?(teacher=false) () =
+  let token =
+    if teacher then Learnocaml_sync.Token.random_teacher ()
+    else Learnocaml_sync.Token.random ()
+  in
   if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
-    gimme ()
+    gimme ~teacher ()
   else
     create_token_file token >|= fun () -> token
 
@@ -155,17 +168,6 @@ let string_of_stream ?(max_size = 64 * 1024) s =
 
 module Api = Learnocaml_api
 
-module Json_codec = struct
-  let decode enc s =
-      Ezjsonm.from_string s |>
-      Json_encoding.destruct enc
-
-  let encode enc x =
-    match Json_encoding.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string json
-    | _ -> assert false
-end
-
 open Cohttp_lwt_unix
 
 let respond_static path =
@@ -188,6 +190,8 @@ module Request_handler = struct
     | Ok (x, content_type) -> Ok (f x, content_type)
     | Error (code, msg) -> Error (code, msg)
 
+  let token_save_mutexes = Hashtbl.create 223
+
   let callback
     : type resp. resp Api.request -> resp ret
     = function
@@ -196,22 +200,48 @@ module Request_handler = struct
       | Api.Static path ->
           respond_static path
       | Api.Static_json _ -> assert false
-      | Api.Create_token () ->
+      | Api.Create_token None ->
           gimme () >>= respond_json
-      | Api.Create_teacher_token _key ->
-          gimme () >>= respond_json (* FIXME *)
+      | Api.Create_token (Some token) ->
+          if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+            Lwt.return (Error (`Bad_request, "token already exists"))
+          else
+            create_token_file token >>= fun () -> respond_json token
+      | Api.Create_teacher_token token ->
+          if Sys.file_exists (Learnocaml_sync.Token.to_path token) then
+            gimme ~teacher:true () >>= respond_json
+          else
+            Lwt.return (Error (`Forbidden, "Unknown teacher token"))
       | Api.Fetch_save token ->
           Lwt.catch
-            (fun () -> retrieve token >>= Lwt.return_some >>= respond_json)
-            (function
-              | Not_found -> respond_json None
-              | e ->
-                  Lwt.return
-                    (Error (`Internal_server_error, Printexc.to_string e)))
+            (fun () -> retrieve token >>= function
+               | Some save -> respond_json save
+               | None -> Lwt.return (Error (`Not_found, "token not found")))
+          @@ fun exn ->
+          Lwt.return
+            (Error (`Internal_server_error, Printexc.to_string exn))
       | Api.Update_save (token, save) ->
-          (* TODO: do the merge here, server-side, with a mutex *)
-          let s = Json_codec.encode Learnocaml_sync.save_file_enc save in
-          store token s >>= fun () -> respond_json save
+          let save = Learnocaml_sync.fix_mtimes save in
+          let key = (token :> Learnocaml_sync.Token.t) in
+          let mutex =
+            try Hashtbl.find token_save_mutexes key with Not_found ->
+              let mut = Lwt_mutex.create () in
+              Hashtbl.add token_save_mutexes key mut;
+              mut
+          in
+          Lwt_mutex.with_lock mutex @@ fun () ->
+          Lwt.finalize (fun () ->
+              retrieve token >>= function
+              | None ->
+                  Lwt.return
+                    (Error (`Not_found, Learnocaml_sync.Token.to_string token))
+              | Some prev_save ->
+                let save = Learnocaml_sync.sync prev_save save in
+                store token save >>= fun () -> respond_json save)
+            (fun () ->
+               if Lwt_mutex.is_empty mutex
+               then Hashtbl.remove token_save_mutexes key;
+               Lwt.return_unit)
       | Api.Exercise_index _token ->
           (* TODO: check token; retrieve dedicated exercise assignment *)
           read_static_file [Learnocaml_index.exercise_index_path] >|=
@@ -224,6 +254,31 @@ module Request_handler = struct
 end
 
 module Api_server = Api.Server (Json_codec) (Request_handler)
+
+let init_teacher_token () =
+  let path =
+    Filename.concat !sync_dir Learnocaml_sync.Token.teacher_tokens_path
+  in
+  let rec empty dir =
+    match Sys.readdir dir with
+    | files ->
+        Array.for_all
+          (fun f ->
+             let f = Filename.concat dir f in
+             match Sys.is_directory f with
+             | true -> empty f
+             | false -> false
+             | exception (Sys_error _) -> true)
+          files
+    | exception (Sys_error _) -> true
+  in
+  if empty path then
+    let token = Learnocaml_sync.Token.random_teacher () in
+    create_token_file token >|= fun () ->
+    Printf.printf "Initial teacher token created: %s\n%!"
+      (Learnocaml_sync.Token.to_string token)
+  else
+    Lwt.return_unit
 
 let launch () =
   (* Learnocaml_store.init ~exercise_index:
@@ -254,8 +309,7 @@ let launch () =
         respond (Error (`Bad_request, "Unsupported method"))
   in
   Random.self_init () ;
-  (* get_auth () >>= fun auth ->
-   * let callback = callback auth in *)
+  init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
       Server.create
         ~on_exn: (function

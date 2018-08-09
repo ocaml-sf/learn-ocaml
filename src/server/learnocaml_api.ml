@@ -23,15 +23,15 @@ type teacher
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
-  | Create_token: unit -> student token request
-  | Create_teacher_token: string -> teacher token request
-  | Fetch_save: student token -> Learnocaml_sync.save_file option request
+  | Create_token: student token option -> student token request
+  | Create_teacher_token: teacher token -> teacher token request
+  | Fetch_save: 'a token -> Learnocaml_sync.save_file request
   | Update_save:
-      student token * Learnocaml_sync.save_file ->
+      'a token * Learnocaml_sync.save_file ->
       Learnocaml_sync.save_file request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
-  (** to help transition: do not use *)
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
+  (** [Static_json] is to help transition: do not use *)
   | Invalid_request: string -> string request
 
 type http_request = {
@@ -51,15 +51,7 @@ module Conversions (Json: JSON_CODEC) = struct
       resp request -> (resp -> string) * (string -> resp)
     = fun req ->
       let str = (fun x -> x), (fun x -> x) in
-      let json enc =
-        (fun x ->
-           match Json_encoding.construct enc x with
-           | `O _ | `A _ as json -> Ezjsonm.to_string json
-           | _ -> assert false),
-        (fun s ->
-           Ezjsonm.from_string s |>
-           Json_encoding.destruct enc)
-      in
+      let json enc = (Json.encode enc), (Json.decode enc) in
       let ( +> ) (cod, decod) (cod', decod') =
         (fun x -> cod (cod' x)),
         (fun s -> decod' (decod s))
@@ -74,7 +66,7 @@ module Conversions (Json: JSON_CODEC) = struct
           json Json_encoding.(obj1 (req "token" string)) +>
           Learnocaml_sync.Token.(to_string, parse)
       | Fetch_save _ ->
-          json (Json_encoding.option Learnocaml_sync.save_file_enc)
+          json Learnocaml_sync.save_file_enc
       | Update_save _ ->
           json Learnocaml_sync.save_file_enc
       | Exercise_index _ ->
@@ -94,10 +86,16 @@ module Conversions (Json: JSON_CODEC) = struct
           { meth = `GET; path }
       | Version () ->
           { meth = `GET; path = ["version"] }
-      | Create_token () ->
-          { meth = `GET; path = ["sync"; "gimme"] }
-      | Create_teacher_token key ->
-          { meth = `GET; path = ["teacher"; "gen"; key] }
+      | Create_token tok_opt ->
+          let arg = match tok_opt with
+            | Some t -> [Learnocaml_sync.Token.to_string t]
+            | None -> []
+          in
+          { meth = `GET; path = "sync" :: "gimme" :: arg }
+      | Create_teacher_token token ->
+          assert (Learnocaml_sync.Token.is_teacher token);
+          let stoken = Learnocaml_sync.Token.to_string token in
+          { meth = `GET; path = ["teacher"; "gen"; stoken] }
       | Fetch_save token ->
           let stoken = Learnocaml_sync.Token.to_string token in
           { meth = `GET; path = ["sync"; stoken] }
@@ -136,9 +134,17 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | { meth = `GET; path = ["version"] } ->
           Version () |> k
       | { meth = `GET; path = ["sync"; "gimme"] } ->
-          Create_token () |> k
-      | { meth = `GET; path = ["teacher"; "gen"; key] } ->
-          Create_teacher_token key |> k
+          Create_token None |> k
+      | { meth = `GET; path = ["sync"; "gimme"; token] } ->
+          (match Learnocaml_sync.Token.parse token with
+           | token -> Create_token (Some token) |> k
+           | exception (Failure s) -> Invalid_request s |> k)
+      | { meth = `GET; path = ["teacher"; "gen"; token] } ->
+          (match Learnocaml_sync.Token.parse token with
+           | token when Learnocaml_sync.Token.is_teacher token ->
+               Create_teacher_token token |> k
+           | _ -> Invalid_request "Unauthorised" |> k
+           | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path = ["sync"; token] } ->
           (match Learnocaml_sync.Token.parse token with
            | token -> Fetch_save token |> k

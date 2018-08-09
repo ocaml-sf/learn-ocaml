@@ -21,6 +21,7 @@ begin program "learnocaml-client"
     "lwt_utils"
     "cohttp.lwt"
     "grading-cli"
+    "learnocaml-api"
     "learnocaml-sync"
   ]
 end

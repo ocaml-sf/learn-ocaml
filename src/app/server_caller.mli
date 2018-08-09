@@ -15,7 +15,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-val request: 'a Learnocaml_api.request -> ('a, string) result Lwt.t
+type request_error = [
+  | `Unreachable of string
+  | `Not_found of string
+  | `Http_error of int * string
+  | `Exception of exn
+  | `Invalid_response of exn
+]
+
+val string_of_error: request_error -> string
+
+val request: 'a Learnocaml_api.request -> ('a, request_error) result Lwt.t
 
 exception Cannot_fetch of string
 val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t

@@ -15,52 +15,52 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-module StringMap = Map.Make (String)
+module Map = Map.Make (String)
 
 type save_file =
-  { all_exercise_states :
-      Learnocaml_exercise_state.exercise_state Map.Make (String).t  ;
+  { nickname : string ;
+    all_exercise_states :
+      Learnocaml_exercise_state.exercise_state Map.t ;
     all_toplevel_histories :
-      Learnocaml_toplevel_history.snapshot Map.Make (String).t ;
+      Learnocaml_toplevel_history.snapshot Map.t ;
     all_exercise_toplevel_histories :
-      Learnocaml_toplevel_history.snapshot Map.Make (String).t }
+      Learnocaml_toplevel_history.snapshot Map.t }
 
 let map_enc enc =
   let open Json_encoding in
   conv
-    StringMap.bindings
+    Map.bindings
     (List.fold_left
-       (fun acc (n, v) -> StringMap.add n v acc)
-       StringMap.empty)
+       (fun acc (n, v) -> Map.add n v acc)
+       Map.empty)
     (assoc enc)
 
 let save_file_enc =
   let open Json_encoding in
   conv
-    (fun { all_exercise_states ;
+    (fun { nickname ;
+           all_exercise_states ;
            all_toplevel_histories ;
            all_exercise_toplevel_histories } ->
-      (all_exercise_states,
+      (nickname,
+       all_exercise_states,
        all_toplevel_histories,
        all_exercise_toplevel_histories))
-    (fun (all_exercise_states,
+    (fun (nickname,
+          all_exercise_states,
           all_toplevel_histories,
           all_exercise_toplevel_histories) ->
-      { all_exercise_states ;
+      { nickname ;
+        all_exercise_states ;
         all_toplevel_histories ;
         all_exercise_toplevel_histories }) @@
-  (obj3
-     (dft "exercises" (map_enc Learnocaml_exercise_state.exercise_state_enc) StringMap.empty)
-     (dft "toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) StringMap.empty)
-     (dft "exercise-toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) StringMap.empty))
+  (obj4
+     (dft "nickname" string "")
+     (dft "exercises" (map_enc Learnocaml_exercise_state.exercise_state_enc) Map.empty)
+     (dft "toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) Map.empty)
+     (dft "exercise-toplevel-histories" (map_enc Learnocaml_toplevel_history.snapshot_enc) Map.empty))
 
-let sync
-    { all_exercise_states = all_exercise_states_a ;
-      all_toplevel_histories = all_toplevel_histories_a ;
-      all_exercise_toplevel_histories = all_exercise_toplevel_histories_a }
-    { all_exercise_states = all_exercise_states_b ;
-      all_toplevel_histories = all_toplevel_histories_b ;
-      all_exercise_toplevel_histories = all_exercise_toplevel_histories_b } =
+let sync a b =
   let sync_snapshot snapshot_a snapshot_b =
     let open Learnocaml_toplevel_history in
     if snapshot_a.mtime > snapshot_b.mtime then
@@ -74,31 +74,54 @@ let sync
     else
       state_b in
   let sync_map sync_item index_a index_b =
-    StringMap.merge
+    Map.merge
       (fun _id a b -> match a, b with
          | None, None -> assert false
          | None, Some i | Some i, None -> Some i
          | Some a, Some b -> Some (sync_item a b))
       index_a index_b in
-  { all_exercise_states =
-    sync_map sync_exercise_state
-      all_exercise_states_a
-      all_exercise_states_b ;
+  { nickname = if b.nickname = "" then a.nickname else b.nickname;
+    all_exercise_states =
+      sync_map sync_exercise_state
+        a.all_exercise_states
+        b.all_exercise_states ;
     all_toplevel_histories =
-    sync_map sync_snapshot
-      all_toplevel_histories_a
-      all_toplevel_histories_b ;
+      sync_map sync_snapshot
+        a.all_toplevel_histories
+        b.all_toplevel_histories ;
     all_exercise_toplevel_histories =
-    sync_map sync_snapshot
-      all_exercise_toplevel_histories_a
-      all_exercise_toplevel_histories_b }
+      sync_map sync_snapshot
+        a.all_exercise_toplevel_histories
+        b.all_exercise_toplevel_histories }
+
+let fix_mtimes save =
+  let now = Unix.gettimeofday () in
+  let fix t = min t now in
+  let fix_snapshot s =
+    Learnocaml_toplevel_history.{ s with mtime = fix s.mtime }
+  in
+  let fix_exercise_state s =
+    Learnocaml_exercise_state.{ s with mtime = fix s.mtime }
+  in
+  {
+    save with
+    all_exercise_states =
+      Map.map fix_exercise_state save.all_exercise_states;
+    all_toplevel_histories =
+      Map.map fix_snapshot save.all_toplevel_histories;
+    all_exercise_toplevel_histories =
+      Map.map fix_snapshot save.all_exercise_toplevel_histories;
+  }
 
 module Token = struct
 
   type t = string list
 
+  let teacher_token_prefix = "X"
+
   let to_string = String.concat "-"
   let to_path = String.concat (Filename.dir_sep)
+  let teacher_tokens_path = teacher_token_prefix
 
   let alphabet =
     "ABCDEFGH1JKLMNOPORSTUVWXYZO1Z34SG1B9"
@@ -117,31 +140,41 @@ module Token = struct
           | Some c -> c)
         part in
     fun token ->
-      if String.length token <> 15 then
-        failwith "bad token length"
-      else if String.get token 3 <> '-'
-           || String.get token 7 <> '-'
-           || String.get token 11 <> '-' then
-        failwith "bad token format"
+      let translate_base_token token =
+        if String.length token = 15 then
+          if String.get token 3 <> '-'
+          || String.get token 7 <> '-'
+          || String.get token 11 <> '-' then
+            failwith "bad token format"
+          else
+            List.map translate
+              [ String.sub token 0 3 ;
+                String.sub token 4 3 ;
+                String.sub token 8 3 ;
+                String.sub token 12 3 ]
+        else
+          failwith "bad token length"
+      in
+      if String.length token >= 2 &&
+         String.sub token 0 2 = teacher_token_prefix ^ "-"
+      then
+        teacher_token_prefix ::
+        translate_base_token (String.sub token 2 (String.length token - 2))
       else
-        List.map translate
-          [ String.sub token 0 3 ;
-            String.sub token 4 3 ;
-            String.sub token 8 3 ;
-            String.sub token 12 3 ]
+        translate_base_token token
 
   let check token =
     try ignore (parse token) ; true
     with _ -> false
 
-  let random ?(admin=false) () =
+  let random () =
     let rand () = String.get alphabet (Random.int (String.length alphabet)) in
     let part () = String.init 3 (fun _ -> rand ()) in
-    (if admin then ["X"] else []) @
     [ part () ; part () ; part () ; part () ]
 
-  let is_admin = function
-    | "X"::_ -> true
-    | _ -> false
+  let random_teacher () = teacher_token_prefix :: random ()
 
+  let is_teacher = function
+    | x::_ when x = teacher_token_prefix -> true
+    | _ -> false
 end

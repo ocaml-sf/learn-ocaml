@@ -27,6 +27,10 @@ val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t
 
 val fatal : string -> unit
 
+val alert : ?title: string -> string -> unit
+
+val catch_with_alert : ?printer: (exn -> string) -> (unit -> unit Lwt.t) -> unit Lwt.t
+
 val hide_loading : ?id: string -> unit -> unit
 
 val show_loading : ?id: string -> [< Html_types.div_content_fun ] Tyxml_js.Html.elt list -> unit
@@ -80,3 +84,12 @@ val render_rich_text :
   [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list
 
 val extract_text_from_rich_text : Learnocaml_index.text -> string
+
+val set_state_from_save_file :
+  ?token:Learnocaml_sync.Token.t -> Learnocaml_sync.save_file -> unit
+
+val get_state_as_save_file : unit -> Learnocaml_sync.save_file
+
+(** Sync the local save state with the server state, and returns the merged save
+    file. The save will be created on the server if it doesn't exist. *)
+val sync: Learnocaml_sync.Token.t -> Learnocaml_sync.save_file Lwt.t

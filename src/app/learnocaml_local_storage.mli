@@ -31,14 +31,16 @@ val cached_exercise : string -> Learnocaml_exercise.t storage_key
 
 val exercise_state : string -> Learnocaml_exercise_state.exercise_state storage_key
 
-val all_exercise_states : Learnocaml_exercise_state.exercise_state Map.Make (String).t storage_key
+val all_exercise_states : Learnocaml_exercise_state.exercise_state Learnocaml_sync.Map.t storage_key
 
 val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot Map.Make (String).t storage_key
+val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot Learnocaml_sync.Map.t storage_key
 
 val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val all_toplevel_histories : Learnocaml_toplevel_history.snapshot Map.Make (String).t storage_key
+val all_toplevel_histories : Learnocaml_toplevel_history.snapshot Learnocaml_sync.Map.t storage_key
 
 val sync_token : Learnocaml_sync.Token.t storage_key
+
+val nickname : string storage_key
