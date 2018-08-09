@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-(** Some introduction *)
+(** Documentation for [test_lib] librairy. [Test_lib] module can be
+   used to write graders for learn-ocaml.  *)
 module type S = sig
 
   val set_result : Learnocaml_report.report -> unit
@@ -84,7 +85,7 @@ module type S = sig
 
   (** Predefined functions and function builders used for the optional
      argument [~test], [~test_stdout] and [~test_stderr] of the various
-     {{!Test_functions_function.test_functions_fun_sec}test functions
+     {{!Test_functions_function.test_functions_fun_sec}grading functions
      for functions}. *)
 
        
@@ -122,7 +123,7 @@ module type S = sig
     
     (** [test] is a {!S.tester} that compares its two {!S.result} inputs
        with OCaml structoral equality. This is the default value of [~test]
-       optional argument of test functions for functions.*)
+       optional argument of grading functions for functions.*)
     val test : 'a tester
 
     (** [test_ignore] is a {!S.tester} that compares only the constructor of its
@@ -168,7 +169,7 @@ module type S = sig
     (** {2:io_tester_sec Pre-defined IO testers and IO tester builders} *)
 
     (** IO testers are essentially used for the optional arguments
-        [ ~test_stdout] [~test_stderr] of test functions. *)
+        [ ~test_stdout] [~test_stderr] of grading functions. *)
 
     (** Important warning : when successful, predefined IO testers
        return [Success 5] reports. *)
@@ -217,48 +218,59 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   (** {1 Mutation observer builders} *)
-   
-  module Mutation : sig
-    (** Functions that help building optional arguments for test
-       functions for function to monitor mutations and build
-       corresponding reports. *)
 
+  (** Functions that help to build the optional arguments
+     [~before_reference], [~before_user], [~test] used by grading
+     functions for {b unary} function with a mutable input. *)
+  module Mutation : sig
+
+    (** Important warning: this part is useful only to grade unary
+       function using grading functions such as
+       {!S.Test_functions_function.test_function_1_against_solution. *)
     
-    (** Record used as an output for the following functions that
-       build simultaneously [~before_reference], [~before_user],
-       [~test] which are optional arguments for
-       {{!S.Test_functions_function}test functions for functions} . *)
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
         test : 'ret. ?test_result: 'ret tester -> 'ret tester }
 
     (** [arg_mutation_test_callbacks ~test_ref ~dup ~blit ty] returns
-       a {!Mutation.arg_mutation_test_callbacks}. With [ty] of type
-       ['a Ty.ty], the ouput is such as:
+       a {!Mutation.arg_mutation_test_callbacks} [out] such as the
+       functions [out.before_reference] and [out.before_user] can
+       create two copies of the mutable input of type [ty] with
+       [dup]. One copy [got] is made before executing the user code
+       and saved before executing the solution. The second copy is
+       also made at this time and so mutate during solution
+       execution. They can then be compared with [out.test].
 
-     - [before_reference]: makes a copy of its input of type ['a]
-       using [dup] and puts it into a ['a option ref] name [sam].
+       [out.test] is a {S.tester} which actually builds two reports,
+       one using its optional argument [~test_result] and one that
+       compares the values of the references set previously using
+       [test_ref]. By default [~test_result] is equal to
+       {!Tester.test_ignore}.
 
-     - [before_user]: makes a copy of its input of type ['a] using
-       [dup] and puts it into a [ty option ref] named [exp]. Also
-       copies the reference [sam] into a [ty option ref] name [got]
-       using [blit].
+       [dup in] returns a copy of [in].
 
-     - [test ~test_result]: is a {S.tester} which builds two reports,
-       one using [test_result] and one which compares its two inputs
-       and the reference [get] and [exp] values using [test_ref]. By
-       default [test_result] is equal to {!Tester.test_ignore}.  *)
+       [blit src dst] copies [src] into [dst].*)
     val arg_mutation_test_callbacks:
       ?test: 'a tester -> dup: ('a -> 'a) -> blit:('a -> 'a -> unit) -> 'a Ty.ty ->
       'a arg_mutation_test_callbacks
 
-    (** *)
+    (** [array_arg_mutation_test_callbacks ~test_arr ty] builds
+       [before_user], [before_reference] and [test] such as [test] can
+       compare mutation of an input array through student code and
+       solution. 
+
+        By default, [test_arr] is set to {!Tester.test}.*)
     val array_arg_mutation_test_callbacks:
       ?test: 'a array tester -> 'a array Ty.ty ->
       'a array arg_mutation_test_callbacks
 
-    (** *)
+    (** [ref_arg_mutation_test_callbacks ~test_ref ty] builds
+       [before_user], [before_reference] and [test] such as [test] can
+       compare mutation of an input reference through student code and
+       solution.
+
+        By default, [test_ref] is set to {!Tester.test}. *)
     val ref_arg_mutation_test_callbacks:
       ?test: 'a ref tester -> 'a ref Ty.ty ->
       'a ref arg_mutation_test_callbacks
@@ -269,6 +281,7 @@ module type S = sig
 
   (** {1 Samplers } *)
 
+  (** [Sampler] provides a librairy of predefined sampler for {{!Test_functions_function}grading functions}.*)
   module Sampler : sig
 
     type 'a sampler = unit -> 'a
@@ -337,7 +350,7 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Test functions for references and variables } *)
+  (** {1 Grading functions for references and variables } *)
 
   module Test_functions_ref_var : sig
     
@@ -370,7 +383,7 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Test functions for types} *)
+  (** {1 Grading functions for types} *)
 
   module Test_functions_types : sig
 
@@ -388,13 +401,13 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Test functions for functions }*)
+  (** {1 Grading functions for functions }*)
 
   module Test_functions_function : sig
     
-    (** {2:test_functions_fun_sec Test functions for functions}*)
+    (** {2:test_functions_fun_sec Grading functions for functions}*)
 
-    (** Three test functions for functions are defined for arity one
+    (** Three grading functions for functions are defined for arity one
        to four functions:
 
   - [test_function_<args_nb> ty name tests]
@@ -415,7 +428,7 @@ module type S = sig
     
     (** {3 Returned report}*)
     
-    (** The test functions for functions return a {report} which
+    (** The grading functions for functions return a {report} which
        actually concatened 4 reports generated by (in this order):
 
       - the tester [~test]
@@ -629,9 +642,9 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
 
-    (** {2:optional_arguments_sec Optional arguments for test functions} *)
+    (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
-    (** The various test functions use numerous commun optional
+    (** The various grading functions use numerous commun optional
        argument. Here is a list in alphabetic order of each of them.
 
     {3 ?⁠after} Defines a function which is called with the current
@@ -675,7 +688,7 @@ module type S = sig
      See {{!Sampler.sampler_sec}Sampler module}.
 
     {3 ?sampler} Defines the function used to automatically generated
-       inputs. If not used, the test function checks if a sampler is
+       inputs. If not used, the grading function checks if a sampler is
        defined for each input type in the current environment. Such
        sampler for a type [some-type] must be named [sample_some-type]
        and have a type [unit -> some-type] if not parametric or [(unit
@@ -707,9 +720,9 @@ module type S = sig
   end
 
   (*----------------------------------------------------------------------------*)
-  (** {1 Generic test functions} *)
+  (** {1 Generic grading functions} *)
 
-  (** Test functions for grading functions with more than 4 arguments. *)
+  (** Grading functions for grading functions with more than 4 arguments. *)
    module Test_functions_generic : sig
 
      (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
@@ -743,7 +756,8 @@ module type S = sig
 
      (** The type of function prototypes.
 
-  Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
+  Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty:
+        bool] [%ty: unit]] *)
     type ('arrow, 'uarrow, 'ret) prot
     val last_ty :
       'a Ty.ty ->
