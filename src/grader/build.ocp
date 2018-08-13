@@ -1,3 +1,14 @@
+begin library "learnocaml-report"
+  comp_requires = "ppx_ocplib_i18n:asm"
+  files = [
+    "learnocaml_report.ml" ( comp = ppx_ocplib_i18n )
+  ]
+  requires = [
+    "ocplib_i18n"
+    "learnocaml-repository"
+  ]
+end
+
 begin library "testing"
   comp_requires = "ppx_metaquot:asm"
   link += [ "-linkall" ]
@@ -7,7 +18,7 @@ begin library "testing"
     "ppx_metaquot"
     "ppx_metaquot_lib"
     "ocplib-json-typed"
-    "learnocaml-state"
+    "learnocaml-report"
     "learnocaml-repository"
   ]
   files = [
@@ -28,7 +39,7 @@ embedded_grading_cmis = [
   "%{compiler-libs_FULL_DST_DIR}%/parse.cmi"
   "%{ty_FULL_DST_DIR}%/ty.cmi"
   "%{testing_FULL_DST_DIR}%/introspection_intf.cmi"
-  "%{learnocaml-state_FULL_DST_DIR}%/learnocaml_report.cmi"
+  "%{learnocaml-report_FULL_DST_DIR}%/learnocaml_report.cmi"
   "%{testing_FULL_DST_DIR}%/test_lib.cmi"
 
 ]
@@ -60,6 +71,7 @@ begin library "grading"
     "ocplib-ocamlres.runtime"
     "embedded_cmis"
     "ocplib_i18n"
+    "learnocaml-report"
   ]
   build_rules = [
     "embedded_grading_cmis.ml" (
@@ -83,6 +95,7 @@ begin library "grading-cli"
     "ocplib-ocamlres"
     "ezjsonm"
     "lwt_utils"
+    "learnocaml-report"
   ]
   files = [
     "grading_cli.ml"
@@ -107,7 +120,7 @@ begin library "grading-jsoo"
     "ezjsonm"
     "ocplib-json-typed.browser"
     "learnocaml-repository"
-    "learnocaml-state"
+    "learnocaml-report"
     "js_of_ocaml.ppx"
   ]
   files = [
@@ -126,7 +139,7 @@ begin program "learnocaml-grader-worker"
     "js_of_ocaml"
     "js_of_ocaml.syntax"
     "learnocaml-repository"
-    "learnocaml-state"
+    "learnocaml-report"
     "jsutils"
     "js_of_ocaml.ppx"
   ]

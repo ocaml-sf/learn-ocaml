@@ -28,33 +28,15 @@
       well-typed response from the server
 *)
 
-type 'a token = Learnocaml_sync.Token.t
-
-type student
-type teacher
-
-
-module Student : sig
-
-  type t = {
-    token: student token;
-    nickname: string option;
-    results: (float * int option) Learnocaml_sync.Map.t;
-    tags: string list;
-  }
-
-  val enc: t Json_encoding.encoding
-end
+open Learnocaml_data
 
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
   | Create_token: student token option -> student token request
   | Create_teacher_token: teacher token -> teacher token request
-  | Fetch_save: 'a token -> Learnocaml_sync.save_file request
-  | Update_save:
-      'a token * Learnocaml_sync.save_file ->
-      Learnocaml_sync.save_file request
+  | Fetch_save: 'a token -> Save.t request
+  | Update_save: 'a token * Save.t -> Save.t request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   (* | Exercise: Learnocaml_exercise.id -> Learnocaml_exercise.t request
    * | Lesson_index: unit -> (string * string) list request *)

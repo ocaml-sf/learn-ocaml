@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 type 'a storage_key
 
 val init : unit -> unit
@@ -29,18 +31,18 @@ val listener : 'a storage_key -> ('a option -> unit) option ref
 
 val cached_exercise : string -> Learnocaml_exercise.t storage_key
 
-val exercise_state : string -> Learnocaml_exercise_state.exercise_state storage_key
+val exercise_state : string -> Answer.t storage_key
 
-val all_exercise_states : Learnocaml_exercise_state.exercise_state Learnocaml_sync.Map.t storage_key
+val all_exercise_states : Answer.t SMap.t storage_key
 
 val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot Learnocaml_sync.Map.t storage_key
+val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot SMap.t storage_key
 
 val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val all_toplevel_histories : Learnocaml_toplevel_history.snapshot Learnocaml_sync.Map.t storage_key
+val all_toplevel_histories : Learnocaml_toplevel_history.snapshot SMap.t storage_key
 
-val sync_token : Learnocaml_sync.Token.t storage_key
+val sync_token : Token.t storage_key
 
 val nickname : string storage_key

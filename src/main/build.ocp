@@ -7,6 +7,7 @@ begin program "learnocaml"
     "cmdliner"
     "learnocaml-process-repository-lib"
     "learnocaml-server-lib"
+    "learnocaml-report"
   ]
 end
 
@@ -21,7 +22,7 @@ begin program "learnocaml-client"
     "lwt_utils"
     "cohttp.lwt"
     "grading-cli"
+    "learnocaml-data"
     "learnocaml-api"
-    "learnocaml-sync"
   ]
 end

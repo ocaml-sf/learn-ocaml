@@ -68,12 +68,12 @@ module Student: sig
 
   type tag = string
 
-  type token = Learnocaml_sync.Token.t
+  type token = Token.t
 
   type t = {
     token: token;
     nickname: string;
-    exercises: Learnocaml_exercise_state.exercise_state Exercise.Map.t;
+    exercises: Learnocaml_exercise_state.exercise_state Exercise.SMap.t;
     tags: tag list;
   }
 
@@ -102,7 +102,7 @@ end
 
 module Teacher: sig
 
-  type token = Learnocaml_sync.Token.t
+  type token = Token.t
 
   type t = {
     token: token;

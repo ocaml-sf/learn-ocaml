@@ -17,6 +17,7 @@
 
 open Js_utils
 open Lwt
+open Learnocaml_data
 open Learnocaml_index
 open Learnocaml_common
 
@@ -38,13 +39,13 @@ let exercises_tab token _ _ () =
                         exercise_short_description ;
                         exercise_stars }) ->
               let pct_init =
-                match Learnocaml_sync.Map.find exercise_id all_exercise_states with
+                match SMap.find exercise_id all_exercise_states with
                 | exception Not_found -> None
-                | { Learnocaml_exercise_state.grade } -> grade in
+                | { Answer.grade } -> grade in
               let pct_signal, pct_signal_set = React.S.create pct_init in
               Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
                 Some (function
-                    | Some { Learnocaml_exercise_state.grade } -> pct_signal_set grade
+                    | Some { Answer.grade } -> pct_signal_set grade
                     | None -> pct_signal_set None) ;
               let pct_text_signal =
                 React.S.map
@@ -561,7 +562,7 @@ let teacher_tab token _select _params () =
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf "New teacher token created:\n%s\n\n\
                        write it down."
-         (Learnocaml_sync.Token.to_string new_token))
+         (Token.to_string new_token))
   in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
@@ -648,9 +649,9 @@ let teacher_tab token _select _params () =
     >>= fun students ->
     let table =
       List.map (fun st ->
-          let open Learnocaml_api.Student in
+          let open Student in
           H.tr [
-            H.td [H.pcdata (Learnocaml_sync.Token.to_string st.token)];
+            H.td [H.pcdata (Token.to_string st.token)];
             H.td (match st.nickname with Some n -> [H.pcdata n] | _ -> []);
           ])
         students
@@ -683,7 +684,7 @@ let init_sync_token button_state =
            Lwt.return token
        end >>= fun token ->
        (token_input_field ())##.value :=
-         Js.string (Learnocaml_sync.Token.to_string token) ;
+         Js.string (Token.to_string token) ;
        enable_button button_state ;
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
@@ -696,9 +697,9 @@ let sync () =
   let stored_token = get_stored_token () in
   let reset_token_input () =
     (token_input_field ())##.value :=
-      Js.string (Learnocaml_sync.Token.to_string stored_token);
+      Js.string (Token.to_string stored_token);
   in
-  match Learnocaml_sync.Token.parse token_input with
+  match Token.parse token_input with
   | exception (Failure _) ->
       reset_token_input ();
       Lwt.fail_with "Invalid token entered"
@@ -711,7 +712,7 @@ let sync () =
             set_state_from_save_file ~token save;
             let nickname_field = find_component "learnocaml-nickname" in
             (Tyxml_js.To_dom.of_input nickname_field)##.value :=
-              Js.string save.Learnocaml_sync.nickname;
+              Js.string save.Save.nickname;
             Lwt.return save
         | Error (`Not_found _) ->
             reset_token_input ();
@@ -794,7 +795,7 @@ let () =
       (if config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
       (match token with
-       | Some t when Learnocaml_sync.Token.is_teacher t ->
+       | Some t when Token.is_teacher t ->
            [ "teacher", ([%i"Teach"], teacher_tab t) ]
        | _ -> [])
     in
@@ -857,7 +858,7 @@ let () =
     let contents =
       let json =
         Json_repr_browser.Json_encoding.construct
-          Learnocaml_sync.save_file_enc
+          Save.enc
           (get_state_as_save_file ()) in
       Js._JSON##(stringify json) in
     Learnocaml_common.fake_download ~name ~contents ;
@@ -869,13 +870,13 @@ let () =
     Learnocaml_common.fake_upload () >>= fun (_, contents) ->
     let save_file =
       Json_repr_browser.Json_encoding.destruct
-        Learnocaml_sync.save_file_enc
+        Save.enc
         (Js._JSON##(parse contents)) in
     let token = try Some (get_stored_token ()) with Not_found -> None in
     set_state_from_save_file ?token save_file ;
     let nickname_field = find_component "learnocaml-nickname" in
     (Tyxml_js.To_dom.of_input nickname_field)##.value :=
-      Js.string save_file.Learnocaml_sync.nickname;
+      Js.string save_file.Save.nickname;
     let _tabs = init_tabs token in
     no_tab_selected ();
     Lwt.return ()
@@ -918,7 +919,7 @@ let () =
     let update () =
       let t = get_stored_token () in
       if Js.to_string (input##.value) = "" then
-        Lwt.return (input##.value := Js.string (Learnocaml_sync.Token.to_string t))
+        Lwt.return (input##.value := Js.string (Token.to_string t))
       else
         catch_with_alert @@ fun () ->
         sync () >|= fun _ ->

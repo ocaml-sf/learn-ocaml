@@ -188,7 +188,7 @@ let fetch_save_file ~token =
              (Js.to_string err ##. message) in
          Lwt.fail (Cannot_fetch msg)) >>= fun json ->
       try Lwt.return_some @@
-        Json_repr_browser.Json_encoding.destruct Learnocaml_sync.save_file_enc json
+        Json_repr_browser.Json_encoding.destruct Save.enc json
       with exn ->
         let msg =
           Format.asprintf "bad structure for server data@.%a"
@@ -198,7 +198,7 @@ let fetch_save_file ~token =
 let upload_save_file ~token save_file =
   let json =
     Json_repr_browser.Json_encoding.construct
-      Learnocaml_sync.save_file_enc
+      Save.enc
       save_file in
   let body =
     Some (Js.to_string (Js._JSON##(stringify json))) in

@@ -351,7 +351,7 @@ let extract_text_from_rich_text text =
   render [] text
 
 let set_state_from_save_file ?token save =
-  let open Learnocaml_sync in
+  let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
   match token with None -> () | Some t -> store sync_token t;
   store nickname save.nickname;
@@ -360,7 +360,7 @@ let set_state_from_save_file ?token save =
   store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
 
 let get_state_as_save_file () =
-  let open Learnocaml_sync in
+  let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
   {
     nickname = retrieve nickname;

@@ -128,17 +128,17 @@ let grade ?(print_result=false) exercise output_json =
            dump_error Format.err_formatter ;
            Lwt.return 1
        | Ok report ->
-           let (max, failure) = Learnocaml_report.result_of_report report in
+           let (max, failure) = Learnocaml_report.result report in
            if !display_reports then
-             Learnocaml_report.print_report (Format.formatter_of_out_channel stderr) report;
+             Learnocaml_report.print (Format.formatter_of_out_channel stderr) report;
            begin match !dump_reports with
              | None -> ()
              | Some prefix ->
                  let oc = open_out (prefix ^ ".report.txt") in
-                 Learnocaml_report.print_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.print (Format.formatter_of_out_channel oc) report ;
                  close_out oc ;
                  let oc = open_out (prefix ^ ".report.html") in
-                 Learnocaml_report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.output_html (Format.formatter_of_out_channel oc) report ;
                  close_out oc
            end ;
            if stderr_contents <> "" then begin

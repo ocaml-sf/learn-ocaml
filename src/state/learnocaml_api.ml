@@ -15,51 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-type 'a token = Learnocaml_sync.Token.t
-
-type student
-type teacher
-
-module Student = struct
-
-  type t = {
-    token: student token;
-    nickname: string option;
-    results: (float * int option) Learnocaml_sync.Map.t;
-    tags: string list;
-  }
-
-  let enc =
-    let open Json_encoding in
-    obj4
-      (req "token" string)
-      (opt "nickname" string)
-      (dft "results" (assoc (tup2 float (option int))) [])
-      (dft "tags" (list string) [])
-    |> conv
-      (fun t ->
-         Learnocaml_sync.Token.to_string t.token,
-         t.nickname, Learnocaml_sync.Map.bindings t.results, t.tags)
-      (fun (token, nickname, results, tags) -> {
-           token = Learnocaml_sync.Token.parse token;
-           nickname;
-           results =
-             List.fold_left (fun m (s, r) -> Learnocaml_sync.Map.add s r m)
-               Learnocaml_sync.Map.empty
-               results;
-           tags;
-         })
-end
+open Learnocaml_data
 
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
   | Create_token: student token option -> student token request
   | Create_teacher_token: teacher token -> teacher token request
-  | Fetch_save: 'a token -> Learnocaml_sync.save_file request
+  | Fetch_save: 'a token -> Save.t request
   | Update_save:
-      'a token * Learnocaml_sync.save_file ->
-      Learnocaml_sync.save_file request
+      'a token * Save.t -> Save.t request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   | Students_list: teacher token -> Student.t list request
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
@@ -93,14 +58,14 @@ module Conversions (Json: JSON_CODEC) = struct
       | Version _ -> json Json_encoding.(obj1 (req "version" string))
       | Create_token _ ->
           json Json_encoding.(obj1 (req "token" string)) +>
-          Learnocaml_sync.Token.(to_string, parse)
+          Token.(to_string, parse)
       | Create_teacher_token _ ->
           json Json_encoding.(obj1 (req "token" string)) +>
-          Learnocaml_sync.Token.(to_string, parse)
+          Token.(to_string, parse)
       | Fetch_save _ ->
-          json Learnocaml_sync.save_file_enc
+          json Save.enc
       | Update_save _ ->
-          json Learnocaml_sync.save_file_enc
+          json Save.enc
       | Exercise_index _ ->
           json Learnocaml_index.exercise_index_enc
       | Students_list _ ->
@@ -122,27 +87,27 @@ module Conversions (Json: JSON_CODEC) = struct
           { meth = `GET; path = ["version"] }
       | Create_token tok_opt ->
           let arg = match tok_opt with
-            | Some t -> [Learnocaml_sync.Token.to_string t]
+            | Some t -> [Token.to_string t]
             | None -> []
           in
           { meth = `GET; path = "sync" :: "gimme" :: arg }
       | Create_teacher_token token ->
-          assert (Learnocaml_sync.Token.is_teacher token);
-          let stoken = Learnocaml_sync.Token.to_string token in
+          assert (Token.is_teacher token);
+          let stoken = Token.to_string token in
           { meth = `GET; path = ["teacher"; stoken; "gen"] }
       | Fetch_save token ->
-          let stoken = Learnocaml_sync.Token.to_string token in
+          let stoken = Token.to_string token in
           { meth = `GET; path = ["sync"; stoken] }
       | Update_save (token, save) ->
-          let stoken = Learnocaml_sync.Token.to_string token in
-          let body = Json.encode Learnocaml_sync.save_file_enc save in
+          let stoken = Token.to_string token in
+          let body = Json.encode Save.enc save in
           { meth = `POST body; path = ["sync"; stoken] }
       | Exercise_index token ->
-          let stoken = Learnocaml_sync.Token.to_string token in
+          let stoken = Token.to_string token in
           { meth = `GET; path = ["exercise-index"; stoken] }
       | Students_list token ->
-          assert (Learnocaml_sync.Token.is_teacher token);
-          let stoken = Learnocaml_sync.Token.to_string token in
+          assert (Token.is_teacher token);
+          let stoken = Token.to_string token in
           { meth = `GET; path = ["teacher"; stoken; "students"] }
       | Static_json (path, _) ->
           { meth = `GET; path = [path] }
@@ -174,34 +139,34 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | { meth = `GET; path = ["sync"; "gimme"] } ->
           Create_token None |> k
       | { meth = `GET; path = ["sync"; "gimme"; token] } ->
-          (match Learnocaml_sync.Token.parse token with
+          (match Token.parse token with
            | token -> Create_token (Some token) |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path = ["teacher"; token; "gen"] } ->
-          (match Learnocaml_sync.Token.parse token with
-           | token when Learnocaml_sync.Token.is_teacher token ->
+          (match Token.parse token with
+           | token when Token.is_teacher token ->
                Create_teacher_token token |> k
            | _ -> Invalid_request "Unauthorised" |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path = ["sync"; token] } ->
-          (match Learnocaml_sync.Token.parse token with
+          (match Token.parse token with
            | token -> Fetch_save token |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `POST body; path = ["sync"; token] } ->
           (match
-             Learnocaml_sync.Token.parse token,
-             Json.decode Learnocaml_sync.save_file_enc body
+             Token.parse token,
+             Json.decode Save.enc body
            with
            | token, save -> Update_save (token, save) |> k
            | exception (Failure s) -> Invalid_request s |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
       | { meth = `GET; path = ["exercise-index"; token] } ->
-          (match Learnocaml_sync.Token.parse token with
+          (match Token.parse token with
            | token -> Exercise_index token |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path = ["teacher"; token; "students"] } ->
-          (match Learnocaml_sync.Token.parse token with
-           | token when Learnocaml_sync.Token.is_teacher token ->
+          (match Token.parse token with
+           | token when Token.is_teacher token ->
                Students_list token |> k
            | _ -> Invalid_request "Unauthorised" |> k
            | exception (Failure s) -> Invalid_request s |> k)

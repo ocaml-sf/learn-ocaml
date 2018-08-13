@@ -49,7 +49,7 @@ module Student: sig
 
   type tag = string
 
-  type token = Learnocaml_sync.Token.t
+  type token = Token.t
 
   type t = {
     token: token;
@@ -78,7 +78,7 @@ end
 
 module Teacher: sig
 
-  type token = Learnocaml_sync.Token.t
+  type token = Token.t
 
   type t = {
     token: token;

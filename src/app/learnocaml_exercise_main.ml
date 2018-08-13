@@ -18,6 +18,7 @@
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
+open Learnocaml_data
 
 let init_tabs, select_tab =
   let names = [ "text" ; "toplevel" ; "report" ; "editor" ] in
@@ -63,7 +64,7 @@ let init_tabs, select_tab =
   init_tabs, select_tab
 
 let display_report exo report =
-  let score, failed = Learnocaml_report.result_of_report report in
+  let score, failed = Report.result report in
   let report_button = find_component "learnocaml-exo-button-report" in
   Manip.removeClass report_button "success" ;
   Manip.removeClass report_button "failure" ;
@@ -89,7 +90,7 @@ let display_report exo report =
   end ;
   let report_container = find_component "learnocaml-exo-tab-report" in
   Manip.setInnerHtml report_container
-    (Format.asprintf "%a" Learnocaml_report.(output_html_of_report ~bare: true) report) ;
+    (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
 let set_string_translations () =
@@ -186,10 +187,10 @@ let () =
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun exo ->
   let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-    | { Learnocaml_exercise_state.report = Some report ; solution } ->
+    | { Answer.report = Some report ; solution } ->
         let _ : int = display_report exo report in
         Some solution
-    | { Learnocaml_exercise_state.report = None ; solution } ->
+    | { Answer.report = None ; solution } ->
         Some solution
     | exception Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
@@ -322,16 +323,16 @@ let () =
     let solution = Ace.get_contents ace in
     let report, grade =
       match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-      | { Learnocaml_exercise_state.report ; grade } -> report, grade
+      | { Answer.report ; grade } -> report, grade
       | exception Not_found -> None, None in
     Learnocaml_local_storage.(store (exercise_state id))
-      { Learnocaml_exercise_state.report ; grade ; solution ;
+      { Answer.report ; grade ; solution ;
         mtime = gettimeofday () } ;
     sync token >|= fun save ->
     let solution =
-      (Learnocaml_sync.Map.find
-         id save.Learnocaml_sync.all_exercise_states)
-      .Learnocaml_exercise_state.solution
+      (SMap.find
+         id save.Save.all_exercise_states)
+      .Answer.solution
     in
     Ace.set_contents ace solution
   end ;
@@ -421,7 +422,7 @@ let () =
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
         Learnocaml_local_storage.(store (exercise_state id))
-          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
+          { Answer.grade = Some grade ; solution ; report = Some report ;
             mtime = max_float } ; (* To ensure server time will be used *)
         token >>= sync >>= fun save ->
         select_tab "report" ;
@@ -435,7 +436,7 @@ let () =
         let report = Learnocaml_report.[ Message (msg, Failure) ] in
         let grade = display_report exo report in
         Learnocaml_local_storage.(store (exercise_state id))
-          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
+          { Answer.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->

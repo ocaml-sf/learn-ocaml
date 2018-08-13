@@ -20,7 +20,7 @@ type to_worker =
     solution : string }
 type from_worker =
   | Callback of string
-  | Answer of Learnocaml_report.report * string * string * string
+  | Answer of Learnocaml_report.t * string * string * string
 
 open Json_encoding
 
@@ -36,7 +36,7 @@ let from_worker_enc =
   union
     [ case
         (obj4
-           (req "report" Learnocaml_report.report_enc)
+           (req "report" Learnocaml_report.enc)
            (dft "stdout" string "")
            (dft "stderr" string "")
            (dft "outcomes" string ""))

@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
 
 val find_component : string -> 'a Tyxml_js.Html.elt
@@ -86,10 +88,10 @@ val render_rich_text :
 val extract_text_from_rich_text : Learnocaml_index.text -> string
 
 val set_state_from_save_file :
-  ?token:Learnocaml_sync.Token.t -> Learnocaml_sync.save_file -> unit
+  ?token:Token.t -> Save.t -> unit
 
-val get_state_as_save_file : unit -> Learnocaml_sync.save_file
+val get_state_as_save_file : unit -> Save.t
 
 (** Sync the local save state with the server state, and returns the merged save
     file. The save will be created on the server if it doesn't exist. *)
-val sync: Learnocaml_sync.Token.t -> Learnocaml_sync.save_file Lwt.t
+val sync: Token.t -> Save.t Lwt.t

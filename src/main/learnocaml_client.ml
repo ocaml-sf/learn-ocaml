@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
 open Lwt.Infix
 
 let version = "0.1"
@@ -31,7 +32,7 @@ module Args = struct
     submit: bool;
     color: bool;
     verbosity: int;
-    token: Learnocaml_api.student Learnocaml_api.token option;
+    token: Learnocaml_data.student Learnocaml_data.token option;
     local: bool;
     set_options: bool;
     print_token: bool;
@@ -50,10 +51,10 @@ module Args = struct
   let token_conv =
     conv ~docv:"TOKEN" (
       (fun s ->
-         try Ok (Learnocaml_sync.Token.parse s)
+         try Ok (Token.parse s)
          with Failure msg ->
            Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
-      (fun fmt t -> Format.pp_print_string fmt (Learnocaml_sync.Token.to_string t))
+      (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
     )
 
   let server_url =
@@ -162,7 +163,7 @@ module ConfigFile = struct
 
   type t = {
     server: Uri.t;
-    token: Learnocaml_sync.Token.t;
+    token: Token.t;
   }
 
   let local_path, user_path =
@@ -184,7 +185,7 @@ module ConfigFile = struct
       (fun (server, token) -> {server; token}) @@
     obj2
       (req "server" (conv Uri.to_string Uri.of_string string))
-      (req "token" Learnocaml_sync.Token.(conv to_string parse string))
+      (req "token" Token.(conv to_string parse string))
 
   let read file =
     Lwt_io.with_file ~mode:Lwt_io.Input file Lwt_io.read >|=
@@ -442,26 +443,26 @@ let fetch_exercise server_url id =
 
 let fetch_save server_url token =
   let sync_url =
-    server_path server_url ["sync"; Learnocaml_sync.Token.to_string token]
+    server_path server_url ["sync"; Token.to_string token]
   in
   Lwt.catch (fun () ->
       fetch sync_url >|= fun s ->
       let s = if s = "" then "{}" else s in
       Ezjsonm.from_string s |>
-      Json_encoding.destruct Learnocaml_sync.save_file_enc)
+      Json_encoding.destruct Save.enc)
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with
         "Token %S not found on the server."
-        (Learnocaml_sync.Token.to_string token)
+        (Token.to_string token)
   | e -> Lwt.fail e
 
 let upload_save server_url token save =
   let sync_url =
-    server_path server_url ["sync"; Learnocaml_sync.Token.to_string token]
+    server_path server_url ["sync"; Token.to_string token]
   in
   let json =
-    match Json_encoding.construct Learnocaml_sync.save_file_enc save with
+    match Json_encoding.construct Save.enc save with
     | `A _ | `O _ as d -> d
     | v -> `A [ v ]
   in
@@ -484,15 +485,15 @@ let write_save_files save =
          Lwt.return_unit)
       else
         Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
-        Lwt_io.write oc st.Learnocaml_exercise_state.solution >|= fun () ->
+        Lwt_io.write oc st.Answer.solution >|= fun () ->
         Printf.eprintf "Wrote file %s\n%!" f)
-    (Learnocaml_sync.Map.bindings (save.Learnocaml_sync.all_exercise_states))
+    (SMap.bindings (save.Save.all_exercise_states))
 
 let upload_report server token exercise solution report =
   let score = get_score report in
   let max_score = max_score exercise in
   let exercise_state =
-    { Learnocaml_exercise_state.
+    { Answer.
       solution;
       grade = if max_score = 0 then None else Some (score * 100 / max_score);
       report = Some report;
@@ -500,24 +501,24 @@ let upload_report server token exercise solution report =
     }
   in
   let new_save =
-    let open Learnocaml_sync in {
+    { Save.
       nickname = "";
       all_exercise_states =
-        Map.singleton
+        SMap.singleton
           (Learnocaml_exercise.(access File.id) exercise)
           exercise_state;
-      all_toplevel_histories = Map.empty;
-      all_exercise_toplevel_histories = Map.empty;
+      all_toplevel_histories = SMap.empty;
+      all_exercise_toplevel_histories = SMap.empty;
     }
   in
   Lwt.catch (fun () ->
       fetch_save server token >>= fun save ->
-      upload_save server token (Learnocaml_sync.sync save new_save))
+      upload_save server token (Save.sync save new_save))
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with
         "Token %S not found on the server before upload."
-        (Learnocaml_sync.Token.to_string token)
+        (Token.to_string token)
   | e -> Lwt.fail e
 
 let init ?(local=false) ?server ?token () =
@@ -548,7 +549,7 @@ let init ?(local=false) ?server ?token () =
     Ezjsonm.from_string >|=
     Json_encoding.(
       destruct @@ conv
-        Learnocaml_sync.Token.to_string Learnocaml_sync.Token.parse
+        Token.to_string Token.parse
         (obj1 (req "token" string)))
   in
   let get_token () =
@@ -560,7 +561,7 @@ let init ?(local=false) ?server ?token () =
           (Uri.to_string server);
         match
           Console.input ~default:None
-            (fun s -> Some (Learnocaml_sync.Token.parse s))
+            (fun s -> Some (Token.parse s))
         with
         | Some t -> Lwt.return t
         | None -> get_new_token ()
@@ -600,7 +601,7 @@ let main o =
   get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
   >>= fun { ConfigFile.server; token } ->
   if o.print_token then
-    (print_endline (Learnocaml_sync.Token.to_string token);
+    (print_endline (Token.to_string token);
      exit 0);
   (if o.fetch then
      (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
@@ -643,11 +644,11 @@ let main o =
       (match o.output_format with
        | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
        | `Raw ->
-           Learnocaml_report.print_report Format.std_formatter report
+           Report.print Format.std_formatter report
        | `Html ->
-           Learnocaml_report.output_html_of_report Format.std_formatter report
+           Report.output_html Format.std_formatter report
        | `Json ->
-           match Json_encoding.construct Learnocaml_report.report_enc report
+           match Json_encoding.construct Report.enc report
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);

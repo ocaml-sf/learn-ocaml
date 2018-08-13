@@ -1,13 +1,21 @@
-begin library "learnocaml-state"
-  comp_requires = "ppx_ocplib_i18n:asm"
-  has_asm = false
+begin library "learnocaml-data"
   files = [
-    "learnocaml_report.ml" ( comp = ppx_ocplib_i18n )
-    "learnocaml_exercise_state.ml"
-    (*"learnocaml_store.ml"*)
+    "learnocaml_data.ml"
   ]
   requires = [
-    "learnocaml-repository"
-    "ocplib_i18n"
+    "learnocaml-toplevel-history"
+    "learnocaml-report"
   ]
 end
+
+begin library "learnocaml-api"
+  files = [
+    "learnocaml_api.ml"
+  ]
+  requires = [
+    "ocplib-json-typed"
+    "ezjsonm"
+    "learnocaml-data"
+  ]
+end
+
