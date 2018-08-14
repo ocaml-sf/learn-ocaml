@@ -21,5 +21,6 @@
 val get_grade:
   ?callback:(string -> unit) ->
   ?timeout:int ->
+  ?dirname:string ->
   Learnocaml_exercise.t -> string ->
   ((Learnocaml_report.t, exn) result * string * string * string) Lwt.t

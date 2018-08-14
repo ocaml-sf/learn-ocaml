@@ -91,7 +91,7 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade ?(print_result=false) exercise output_json =
+let grade ?(print_result=false) ?dirname exercise output_json =
   Lwt.catch
     (fun () ->
        let code_to_grade = match !grade_student with
@@ -102,13 +102,18 @@ let grade ?(print_result=false) exercise output_json =
          if !display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
        let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
-       Grading_cli.get_grade ?callback ?timeout exercise code
+       Grading_cli.get_grade ?callback ?timeout ?dirname exercise code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        flush stderr;
        match result with
        | Error exn ->
            let dump_error ppf =
-             Format.fprintf ppf "%a@." Location.report_exception exn ;
+             begin match Grading.string_of_exn exn with
+               | Some msg ->
+                   Format.fprintf ppf "%s@." msg
+               | None ->
+                   Format.fprintf ppf "%a@." Location.report_exception exn
+             end;
              if stdout_contents <> "" then begin
                Format.fprintf ppf "grader stdout:@.%s@." stdout_contents
              end ;
@@ -217,7 +222,7 @@ let grade ?(print_result=false) exercise output_json =
 let grade_from_dir ?(print_result=false) exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
-  grade ~print_result exo output_json
+  grade ~print_result ~dirname:exercise_dir exo output_json
 
 
 let main () : unit =

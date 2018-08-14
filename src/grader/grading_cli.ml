@@ -37,7 +37,7 @@ let with_temp_dir f =
     (fun () -> f dir >>= fun res -> remove_dir dir >>= fun () -> Lwt.return res)
     (fun e -> remove_dir dir >>= fun () -> Lwt.fail e)
 
-let get_grade ?callback ?timeout exo solution =
+let get_grade ?callback ?timeout ?dirname exo solution =
   with_temp_dir @@ fun cmis_dir ->
   let module ResDump =
     OCamlResFormats.Files (OCamlResSubFormats.Raw) in
@@ -51,4 +51,4 @@ let get_grade ?callback ?timeout exo solution =
     let redirection = Toploop_unix.redirect_channel name chan cb in
     fun () -> Toploop_unix.stop_channel_redirection redirection in
   Lwt.wrap @@ fun () ->
-  Grading.get_grade ?callback ?timeout ~divert exo solution
+  Grading.get_grade ?callback ?timeout ?dirname ~divert exo solution

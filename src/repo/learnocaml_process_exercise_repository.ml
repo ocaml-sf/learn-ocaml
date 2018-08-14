@@ -246,8 +246,9 @@ let main dest_dir =
                end else begin
                  Grader_cli.dump_outputs := dump_outputs ;
                  Grader_cli.dump_reports := dump_reports ;
-                 Grader_cli.grade exercise (Some json_path) >>= fun result ->
-                 match result with
+                 Grader_cli.grade ~dirname:(!exercises_dir / id)
+                   exercise (Some json_path)
+                 >>= function
                  | 0 ->
                      Format.printf "%-12s     [OK]@." id ;
                      Lwt.return true

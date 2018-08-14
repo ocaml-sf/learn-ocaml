@@ -19,21 +19,28 @@ exception Internal_error of string * Toploop_ext.error
 exception User_code_error of Toploop_ext.error
 exception Invalid_grader
 
+let string_of_exn = function
+  | Internal_error (msg, error) ->
+      let msg =
+        Printf.sprintf [%if"Exercise definition error %s:\n%s\n%!"]
+          msg error.Toploop_ext.msg
+      in
+      Some  msg
+  | User_code_error error ->
+      let msg =
+        Printf.sprintf [%if"Error in user code:\n\n%s\n%!"]
+          error.Toploop_ext.msg
+      in
+      Some msg
+  | _ -> None
+
 let () =
-  Location.register_error_of_exn
-    (function
-      | Internal_error (msg, error) ->
-          let msg =
-            Printf.sprintf [%if"Exercise definition error %s:\n%s\n%!"]
-              msg error.Toploop_ext.msg in
+  Location.register_error_of_exn (fun exn ->
+      match string_of_exn exn with
+      | Some msg ->
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
-      | User_code_error error ->
-          let msg =
-            Printf.sprintf [%if"Error in user code:\n\n%s\n%!"] error.Toploop_ext.msg in
-          Some {Location.loc = Location.none ; sub = [] ;
-                msg ; if_highlight = msg }
-      | _ -> None)
+      | None -> None)
 
 
 let internal_error name err =
@@ -42,7 +49,11 @@ let internal_error name err =
 let user_code_error err =
   raise (User_code_error err)
 
-let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
+let get_grade
+    ?callback ?timeout ?(dirname="") ~divert
+    (exo : Learnocaml_exercise.t) code =
+
+  let file f = String.concat Filename.dir_sep [dirname; f] in
 
   let print_outcome = true in
   let outcomes_buffer = Buffer.create 503 in
@@ -100,12 +111,12 @@ let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
 
       set_progress [%i"Loading the prelude."] ;
       handle_error (internal_error [%i"while loading the prelude"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prelude.ml")
         (Learnocaml_exercise.(decipher File.prelude exo)) ;
 
       set_progress [%i"Preparing the test environment."] ;
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prepare.ml")
         (Learnocaml_exercise.(decipher File.prepare exo)) ;
 
       set_progress [%i"Loading your code."] ;
@@ -141,7 +152,7 @@ let get_grade ?callback ?timeout ~divert (exo : Learnocaml_exercise.t) code =
         "module Report = Learnocaml_report" ;
       set_progress [%i"Launching the test bench."] ;
       handle_error (internal_error [%i"while testing your solution"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
         (Learnocaml_exercise.(decipher File.test exo)) ;
 
       (* Memory cleanup... *)

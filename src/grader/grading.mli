@@ -29,5 +29,10 @@ exception Invalid_grader
 val get_grade:
   ?callback:(string -> unit) ->
   ?timeout:int ->
+  ?dirname:string ->
   divert:(string -> out_channel -> (string -> unit) -> (unit -> unit)) ->
   Learnocaml_exercise.t -> string -> (Learnocaml_report.t, exn) result * string * string * string
+
+(** Returns user-friendly messages when called on [Internal_error] or
+    [User_code_error] *)
+val string_of_exn: exn -> string option
