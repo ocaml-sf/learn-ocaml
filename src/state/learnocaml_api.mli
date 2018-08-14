@@ -41,6 +41,7 @@ type _ request =
   (* | Exercise: Learnocaml_exercise.id -> Learnocaml_exercise.t request
    * | Lesson_index: unit -> (string * string) list request *)
   | Students_list: teacher token -> Student.t list request
+  | Students_csv: teacher token -> string request
   (** to help transition: do not use *)
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
   | Invalid_request: string -> string request

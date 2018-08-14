@@ -27,6 +27,7 @@ type _ request =
       'a token * Save.t -> Save.t request
   | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   | Students_list: teacher token -> Student.t list request
+  | Students_csv: teacher token -> string request
   | Static_json: string * 'a Json_encoding.encoding -> 'a request
   (** [Static_json] is to help transition: do not use *)
   | Invalid_request: string -> string request
@@ -70,6 +71,8 @@ module Conversions (Json: JSON_CODEC) = struct
           json Learnocaml_index.exercise_index_enc
       | Students_list _ ->
           json Json_encoding.(list Student.enc)
+      | Students_csv _ ->
+          str
       | Static_json (_, enc) ->
           json enc
       | Invalid_request _ ->
@@ -109,6 +112,10 @@ module Conversions (Json: JSON_CODEC) = struct
           assert (Token.is_teacher token);
           let stoken = Token.to_string token in
           { meth = `GET; path = ["teacher"; stoken; "students"] }
+      | Students_csv token ->
+          assert (Token.is_teacher token);
+          let stoken = Token.to_string token in
+          { meth = `GET; path = ["teacher"; stoken; "students.csv"] }
       | Static_json (path, _) ->
           { meth = `GET; path = [path] }
       | Invalid_request s ->
@@ -168,6 +175,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           (match Token.parse token with
            | token when Token.is_teacher token ->
                Students_list token |> k
+           | _ -> Invalid_request "Unauthorised" |> k
+           | exception (Failure s) -> Invalid_request s |> k)
+      | { meth = `GET; path = ["teacher"; token; "students.csv"] } ->
+          (match Token.parse token with
+           | token when Token.is_teacher token ->
+               Students_csv token |> k
            | _ -> Invalid_request "Unauthorised" |> k
            | exception (Failure s) -> Invalid_request s |> k)
       | { meth = `GET; path } ->

@@ -85,6 +85,9 @@ let create_token_file token =
 let token_exists token =
   Sys.file_exists (token_file_path token)
 
+let check_teacher_token token =
+  Token.is_teacher token && token_exists token
+
 let store token save =
   let contents = Json_codec.encode Save.enc save in
   (if not (token_exists token) then create_token_file token
@@ -215,6 +218,18 @@ let respond_static path =
 let respond_json = fun x ->
   Lwt.return (Ok (x, "application/json"))
 
+let with_verified_teacher_token token cont =
+  if check_teacher_token token then cont ()
+  else Lwt.return (Error (`Forbidden, "Access restricted"))
+
+
+let string_of_date ts =
+  let open Unix in
+  let tm = gmtime ts in
+  Printf.sprintf "%04d-%02d-%02dT%02d:%02d:%02dZ"
+    (tm.tm_year + 1900) (tm.tm_mon + 1) tm.tm_mday
+    tm.tm_hour tm.tm_min tm.tm_sec
+
 module Request_handler = struct
 
   type 'a ret = ('a * string, Cohttp.Code.status_code * string) result Lwt.t
@@ -282,10 +297,17 @@ module Request_handler = struct
           Ezjsonm.from_string >|=
           Json_encoding.destruct Learnocaml_index.exercise_index_enc >>=
           respond_json
-      | Api.Students_list _token ->
+      | Api.Students_list token ->
+          with_verified_teacher_token token @@ fun () ->
           Lwt_list.map_p (fun token ->
               retrieve token >>= function
-              | None -> failwith "TODO"
+              | None ->
+                  Lwt.return Student.{
+                      token;
+                      nickname = None;
+                      results = SMap.empty;
+                      tags = [];
+                    }
               | Some save ->
                   let nickname = match save.Save.nickname with
                     | "" -> None
@@ -297,9 +319,58 @@ module Request_handler = struct
                       save.Save.all_exercise_states
                   in
                   let tags = [] in
-                  Lwt.return Learnocaml_api.Student.{token; nickname; results; tags})
+                  Lwt.return Student.{token; nickname; results; tags})
             (all_students_tokens ()) >>=
           respond_json
+      | Api.Students_csv token ->
+          with_verified_teacher_token token @@ fun () ->
+          Lwt_list.map_p
+            (fun tok -> retrieve tok >|= fun save -> tok, save)
+            (all_students_tokens ())
+          >>= fun tok_saves ->
+          let all_exercises =
+            List.fold_left (fun acc (_tok, save) ->
+                match save with
+                | None -> acc
+                | Some save ->
+                    SMap.fold (fun ex_id _ans acc -> SSet.add ex_id acc)
+                      save.Save.all_exercise_states
+                      acc)
+              SSet.empty tok_saves
+          in
+          let columns =
+            "token" :: "nickname" ::
+            (List.rev @@
+             SSet.fold (fun ex_id acc ->
+                 (ex_id ^ " date") ::
+                 (ex_id ^ " grade") ::
+                 acc)
+               all_exercises [])
+          in
+          let buf = Buffer.create 3497 in
+          let sep () = Buffer.add_char buf ',' in
+          let line () = Buffer.add_char buf '\n' in
+          Buffer.add_string buf (String.concat "," columns);
+          line ();
+          List.iter (fun (tok, save) ->
+              match save with None -> () | Some save ->
+                Buffer.add_string buf (Token.to_string tok);
+                sep ();
+                Buffer.add_string buf save.Save.nickname;
+                SSet.iter (fun ex_id ->
+                    sep ();
+                    try
+                      let st = SMap.find ex_id save.Save.all_exercise_states in
+                      (match st.Answer.grade with
+                       | Some n -> Buffer.add_string buf (string_of_int n)
+                       | None -> ());
+                      sep ();
+                      Buffer.add_string buf (string_of_date st.Answer.mtime)
+                    with Not_found -> sep ())
+                  all_exercises;
+                line ())
+            tok_saves;
+          Lwt.return (Ok (Buffer.contents buf, "text/csv"))
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))
 
