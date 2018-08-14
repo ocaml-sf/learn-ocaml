@@ -144,22 +144,27 @@ let main dest_dir =
         else if Sys.file_exists !exercises_dir then
           let rec auto_index path =
             Array.fold_left (fun acc f ->
-                let rel_f = if path = "" then f else path / f in
-                if Sys.file_exists (!exercises_dir/rel_f/"meta.json") then
+                let f = path / f in
+                let rel_f =
+                  String.sub f (String.length !exercises_dir)
+                    (String.length f - String.length !exercises_dir)
+                in
+                if Sys.file_exists (f/"meta.json") then
                   match acc with
                   | None -> Some (`Exercises [rel_f])
                   | Some (`Exercises e) -> Some (`Exercises (e @ [rel_f]))
                   | _ -> None
-                else if Sys.is_directory (!exercises_dir/rel_f) then
-                  match acc, auto_index (rel_f) with
+                else if Sys.is_directory f then
+                  match acc, auto_index f with
                   | None, None -> None
                   | None, Some g' -> Some (`Groups ([f, (f, g')]))
                   | Some (`Groups g), Some g' -> Some (`Groups (g @ [f, (f, g')]))
+                  | Some _, None -> acc
                   | _ -> None
                 else acc)
-              None (Sys.readdir (!exercises_dir/path))
+              None (Sys.readdir path)
           in
-          match auto_index "" with
+          match auto_index !exercises_dir with
           | None -> failwith "Missing index file and malformed repository"
           | Some i ->
               Format.eprintf "Missing index file, using all exercise directories.@." ;
