@@ -24,8 +24,6 @@ val dump_outputs: string option ref
 val dump_reports: string option ref
 val n_processes: int ref
 
-val args: (Arg.key * Arg.spec * Arg.doc) list
-
 (** Main *)
 
 (** [dest_dir] -> success *)

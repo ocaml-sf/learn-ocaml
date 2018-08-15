@@ -15,50 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-(* Should stdout / stderr of the grader be echoed *)
 let display_std_outputs = ref false
-
-(* Should outputs of the grader be saved and where *)
 let dump_outputs = ref None
-
-(* Should the reports be saved and where *)
 let dump_reports = ref None
-
-(* Should the message from 'test.ml' be displayed on stdout ? *)
 let display_callback = ref false
-
-(* Should compiler outcome be printed ? *)
 let display_outcomes = ref false
-
-(* Where to put the graded exercise *)
 let output_json = ref None
-
-(* Should the tool grade a student file instead of 'solution.ml' ? *)
 let grade_student = ref None
-
-(* Should each test be run with a specific timeout (in secs) ? *)
 let individual_timeout = ref None
-
-(* Display reports to stderr *)
 let display_reports = ref false
-
-let args = Arg.align @@
-  [ "-output-json", Arg.String (fun s -> output_json := Some s),
-    "PATH save the graded exercise in JSON format in the given file" ;
-    "-grade-student", Arg.String (fun s -> grade_student := Some s),
-    "PATH grade the given student file instead of 'solution.ml'";
-    "-timeout", Arg.Int (fun i -> individual_timeout := Some i),
-    "INT run each test with the specified timeout (in secs)" ;
-    "-display-outcomes", Arg.Set display_outcomes,
-    " display the toplevel's outcomes" ;
-    "-display-progression", Arg.Set display_callback,
-    " display grading progression messages" ;
-    "-display-stdouts", Arg.Set display_std_outputs,
-    " display the toplevel's standard outputs" ;
-    "-dump-outputs", Arg.String (fun s -> dump_outputs := Some s),
-    "PREFIX save the outputs in files with the given prefix" ;
-    "-dump-reports", Arg.String (fun s -> dump_reports := Some s),
-    "PREFIX save the reports in files with the given prefix" ]
 
 open Lwt.Infix
 
@@ -223,19 +188,3 @@ let grade_from_dir ?(print_result=false) exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
   grade ~print_result ~dirname:exercise_dir exo output_json
-
-
-let main () : unit =
-  let anons = ref [] in
-  Arg.parse args
-    (fun anon -> anons := anon :: !anons)
-    "Usage: ./learnocaml-grader [options] <problem directory>" ;
-  match !anons with
-  | [] ->
-      Format.eprintf "A problem directory is expected@." ;
-      exit 1
-  | _ :: _ :: _ ->
-      Format.eprintf "A single problem directory is expected@." ;
-      exit 1
-  | [ single ] ->
-      exit (Lwt_main.run (grade_from_dir single !output_json))

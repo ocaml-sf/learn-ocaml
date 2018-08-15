@@ -98,24 +98,6 @@ let dump_reports = ref None
 
 let n_processes = ref 1
 
-let args = Arg.align @@
-  [ "-exercises-dir", Arg.Set_string exercises_dir,
-    "PATH path to the exercise repository (default: [./exercises])" ;
-    "-exercises-index", Arg.String (fun fn -> exercises_index := Some fn),
-    "PATH path to the exercises index (default: [<exercises-dir>/index.json])" ;
-    "-display-outcomes", Arg.Set Grader_cli.display_outcomes,
-    " display the toplevel's outcomes" ;
-    "-display-progression", Arg.Set Grader_cli.display_callback,
-    " display grading progression messages" ;
-    "-display-stdouts", Arg.Set Grader_cli.display_std_outputs,
-    " display the toplevel's standard outputs" ;
-    "-dump-outputs", Arg.String (fun s -> dump_outputs := Some s),
-    "PATH save the outputs in the given directory" ;
-    "-dump-reports", Arg.String (fun s -> dump_reports := Some s),
-    "PATH save the reports in the given directory" ;
-    "-j", Arg.Set_int n_processes,
-    "NUMBER grader processes to launch in parallel" ]
-
 
 let spawn_grader ?print_result ?dirname exercise output_json =
   let rec sleep () =

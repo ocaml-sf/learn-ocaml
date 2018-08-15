@@ -103,15 +103,6 @@ begin library "grading-cli"
   ]
 end
 
-begin program "learnocaml-grader"
-  requires = [
-    "grading-cli"
-  ]
-  files = [
-    "grader_cli_main.ml"
-  ]
-end
-
 begin library "grading-jsoo"
   requires = [
     "js_of_ocaml"
