@@ -67,6 +67,7 @@ let from_file encoding fn =
   let json = Ezjsonm.from_string str in
   Lwt.return (Json_encoding.destruct encoding json)
 
+module StringSet = Set.Make (String)
 module StringMap = Map.Make (String)
 
 let read_exercise exercise_dir =
@@ -88,6 +89,8 @@ let read_exercise exercise_dir =
 let exercises_dir = ref "./exercises"
 
 let exercises_index = ref None
+
+let exercises_filtered = ref StringSet.empty
 
 let dump_outputs = ref None
 
@@ -158,7 +161,7 @@ let main dest_dir =
           in
           match auto_index "" with
           | None -> failwith "Missing index file and malformed repository"
-          | Some i -> 
+          | Some i ->
               Format.eprintf "Missing index file, using all exercise directories.@." ;
               Lwt.return i
         else
@@ -184,9 +187,12 @@ let main dest_dir =
                (Lwt.return []) (List.rev groups) >>= fun groups ->
              Lwt.return (Groups groups)
          | `Exercises ids ->
+             let filtered id =
+               !exercises_filtered <> StringSet.empty
+               && not (StringSet.mem id !exercises_filtered) in
              List.fold_left
                (fun acc id ->
-                  if StringMap.mem id !all_exercises then acc
+                  if StringMap.mem id !all_exercises || filtered id then acc
                   else begin
                     let exercise =
                       read_exercise (!exercises_dir / id) in
@@ -200,6 +206,10 @@ let main dest_dir =
              Lwt.return (Learnocaml_exercises exercises) in
        fill_structure structure >>= fun index ->
        to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
+       StringSet.iter (fun id ->
+           if not (StringMap.mem id !all_exercises) then
+             Format.printf "[Warning] Filtered exercise '%s' not found.@." id)
+         !exercises_filtered;
        let processes_arguments =
          StringMap.fold
            (fun id exercise acc ->
