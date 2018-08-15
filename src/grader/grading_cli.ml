@@ -28,11 +28,18 @@ and remove dir name =
     if Sys.is_directory file then remove_dir file else Lwt_unix.unlink file
 
 let with_temp_dir f =
-  let dir =
-    Filename.concat
-      (Filename.get_temp_dir_name ())
-      (Printf.sprintf "grader_%6X" (Random.int 0xFFFFFF)) in
-  Lwt_unix.mkdir dir 0o700 >>= fun () ->
+  let rec get_dir () =
+    let d =
+      Filename.concat
+        (Filename.get_temp_dir_name ())
+        (Printf.sprintf "grader_%6X" (Random.int 0xFFFFFF))
+    in
+    Lwt.catch (fun () -> Lwt_unix.mkdir d 0o700 >>= fun () -> Lwt.return d)
+    @@ function
+    | Unix.Unix_error(Unix.EEXIST, _, _) -> get_dir ()
+    | e -> raise e
+  in
+  get_dir () >>= fun dir ->
   Lwt.catch
     (fun () -> f dir >>= fun res -> remove_dir dir >>= fun () -> Lwt.return res)
     (fun e -> remove_dir dir >>= fun () -> Lwt.fail e)

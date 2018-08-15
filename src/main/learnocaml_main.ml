@@ -167,6 +167,10 @@ module Args = struct
         "Exercises to build (comma-separated), instead of taking \
          the entire repository. Can be repeated."
 
+    let jobs =
+      value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
+        "Number of building jobs to run in parallel"
+
     type t = {
       contents_dir: string;
       try_ocaml: bool option;
@@ -177,7 +181,7 @@ module Args = struct
 
     let term =
       let apply repo_dir contents_dir
-          try_ocaml lessons exercises toplevel exercises_filtered =
+          try_ocaml lessons exercises toplevel exercises_filtered jobs =
         let exercises_filtered =
           List.fold_left
             (List.fold_left (fun s e -> StringSet.add e s))
@@ -188,10 +192,11 @@ module Args = struct
           exercises_filtered;
         Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
+        Learnocaml_process_exercise_repository.n_processes := jobs;
         { contents_dir; try_ocaml; lessons; exercises; toplevel }
       in
       Term.(const apply $repo_dir $contents_dir
-            $try_ocaml $lessons $exercises $toplevel $exercises_filtered)
+            $try_ocaml $lessons $exercises $toplevel $exercises_filtered $jobs)
 
   end
 

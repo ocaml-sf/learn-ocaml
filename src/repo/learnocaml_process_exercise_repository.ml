@@ -117,16 +117,28 @@ let args = Arg.align @@
     "NUMBER grader processes to launch in parallel" ]
 
 
-let () =
-  match Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK" with
-  | _ -> Grader_cli.main () ; exit 0
-  | exception Not_found -> ()
-
-let spawn_grader args =
-  Lwt_process.exec
-    ~env: (Array.concat [ [| "LEARNOCAML_PROCESS_REPOSITORY_TASK=YES" |] ;
-                          Unix.environment () ])
-    (Sys.argv.(0), Array.concat [ [| Sys.argv.(0) |] ; args ])
+let spawn_grader ?print_result ?dirname exercise output_json =
+  let rec sleep () =
+    if !n_processes <= 0 then
+      Lwt_main.yield () >>= sleep
+    else (
+      decr n_processes; Lwt.return_unit
+    )
+  in
+  sleep () >>= fun () ->
+  Lwt_io.flush_all () >>= fun () ->
+  match Lwt_unix.fork () with
+  | 0 ->
+      Grader_cli.display_callback := false;
+      Lwt_main.run
+        (Grader_cli.grade ?print_result ?dirname exercise output_json
+         >|= exit)
+  | pid ->
+      Lwt_unix.waitpid [] pid >>= fun (_pid, ret) ->
+      incr n_processes;
+      match ret with
+      | Unix.WEXITED i -> Lwt.return i
+      | _ -> Lwt.return 1
 
 let main dest_dir =
   let (/) dir f =
@@ -143,26 +155,29 @@ let main dest_dir =
           from_file index_enc exercises_index
         else if Sys.file_exists !exercises_dir then
           let rec auto_index path =
-            Array.fold_left (fun acc f ->
-                let f = path / f in
-                let rel_f =
+            let entries = Sys.readdir path in
+            Array.sort compare entries;
+            Array.fold_left (fun acc id ->
+                let f = path / id in
+                let full_id =
                   String.sub f (String.length !exercises_dir)
                     (String.length f - String.length !exercises_dir)
                 in
                 if Sys.file_exists (f/"meta.json") then
                   match acc with
-                  | None -> Some (`Exercises [rel_f])
-                  | Some (`Exercises e) -> Some (`Exercises (e @ [rel_f]))
+                  | None -> Some (`Exercises [full_id])
+                  | Some (`Exercises e) -> Some (`Exercises (e @ [full_id]))
                   | _ -> None
                 else if Sys.is_directory f then
                   match acc, auto_index f with
                   | None, None -> None
-                  | None, Some g' -> Some (`Groups ([f, (f, g')]))
-                  | Some (`Groups g), Some g' -> Some (`Groups (g @ [f, (f, g')]))
+                  | None, Some g' -> Some (`Groups ([full_id, (id, g')]))
+                  | Some (`Groups g), Some g' -> Some (`Groups (g @ [full_id, (id, g')]))
                   | Some _, None -> acc
                   | _ -> None
                 else acc)
-              None (Sys.readdir path)
+              None
+              entries
           in
           match auto_index !exercises_dir with
           | None -> failwith "Missing index file and malformed repository"
@@ -216,7 +231,7 @@ let main dest_dir =
              Format.printf "[Warning] Filtered exercise '%s' not found.@." id)
          !exercises_filtered;
        let processes_arguments =
-         StringMap.fold
+         List.rev @@ StringMap.fold
            (fun id exercise acc ->
               let exercise_dir = !exercises_dir / id in
               let json_path = dest_dir / exercise_path id in
@@ -238,51 +253,27 @@ let main dest_dir =
               (id, exercise_dir, exercise, json_path,
                changed, dump_outputs, dump_reports) :: acc)
            !all_exercises [] in
-       begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
+       begin
+         let listmap, grade =
+           if !n_processes = 1 then
+             Lwt_list.map_s, Grader_cli.grade
+           else
+             Lwt_list.map_p, spawn_grader
+         in
+         listmap (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
-                 Format.printf "%-12s (no changes)@." id ;
+                 Format.printf "%-24s (no changes)@." id ;
                  Lwt.return true
                end else begin
                  Grader_cli.dump_outputs := dump_outputs ;
                  Grader_cli.dump_reports := dump_reports ;
-                 Grader_cli.grade ~dirname:(!exercises_dir / id)
-                   exercise (Some json_path)
+                 grade ~dirname:(!exercises_dir / id) exercise (Some json_path)
                  >>= function
                  | 0 ->
-                     Format.printf "%-12s     [OK]@." id ;
+                     Format.printf "%-24s     [OK]@." id ;
                      Lwt.return true
                  | _ ->
-                     Format.printf "%-12s   [FAILED]@." id ;
-                     Lwt.return false
-               end)
-             processes_arguments
-         else
-           let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
-           Lwt_list.map_p (fun (id, exercise_dir, _, json_path, changed, dump_outputs, dump_reports) ->
-               Lwt_pool.use pool @@ fun () ->
-               if not changed then begin
-                 Format.printf "%-12s (no changes)@." id ;
-                 Lwt.return true
-               end else begin
-                 let args = Array.concat [
-                     (match dump_outputs with
-                      | None -> [||]
-                      | Some prefix -> [| "-dump-outputs" ; prefix |]) ;
-                     (match dump_reports with
-                      | None -> [||]
-                      | Some prefix -> [| "-dump-reports" ; prefix |]) ;
-                     (if !Grader_cli.display_outcomes then [| "-display-outcomes" |] else [||]) ;
-                     (if !Grader_cli.display_callback then [| "-display-progression" |] else [||]) ;
-                     (if !Grader_cli.display_std_outputs then [| "-display-stdouts"  |] else [||]) ;
-                     [| "-output-json" ; json_path |] ;
-                     [| exercise_dir |] ]in
-                 spawn_grader args >>= function
-                 | Unix.WEXITED 0 ->
-                     Format.printf "%-12s     [OK]@." id ;
-                     Lwt.return true
-                 | _ ->
-                     Format.printf "%-12s   [FAILED]@." id ;
+                     Format.printf "%-24s   [FAILED]@." id ;
                      Lwt.return false
                end)
              processes_arguments
