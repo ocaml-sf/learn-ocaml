@@ -121,7 +121,8 @@ let get_grade
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
-      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
+      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code"
+        ~filename:(file "solution.ml") code ;
 
       set_progress [%i"Loading the solution."] ;
       handle_error (internal_error [%i"while loading the solution"]) @@

@@ -234,12 +234,15 @@ let use_string
       flush_all ();
       return_error (error_of_exn exn)
 
-let parse_mod_string modname sig_code impl_code =
+let parse_mod_string ?filename modname sig_code impl_code =
   let open Parsetree in
   let open Ast_helper in
   let str =
     let impl_lb = Lexing.from_string impl_code in
-    init_loc impl_lb (String.uncapitalize_ascii modname ^ ".ml");
+    init_loc impl_lb
+      (match filename with
+       | None -> String.uncapitalize_ascii modname ^ ".ml"
+       | Some f -> f);
     Parse.implementation impl_lb in
   let m =
     match sig_code with
@@ -252,7 +255,9 @@ let parse_mod_string modname sig_code impl_code =
   Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ]
 
 let use_mod_string
-    ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code impl_code =
+    ?filename
+    ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code
+    impl_code =
   if String.capitalize_ascii modname <> modname then
     invalid_arg
       "Learnocaml_toplevel_toploop.use_mod_string: \
@@ -261,7 +266,7 @@ let use_mod_string
   try
     let phr =
       Ppx.preprocess_phrase @@
-      parse_mod_string modname sig_code impl_code in
+      parse_mod_string ?filename modname sig_code impl_code in
     let res = Toploop.execute_phrase print_outcome ppf_answer phr in
     Format.pp_print_flush ppf_answer ();
     flush_all ();
