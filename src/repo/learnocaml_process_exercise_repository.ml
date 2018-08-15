@@ -156,8 +156,8 @@ let main dest_dir =
             Array.fold_left (fun acc id ->
                 let f = path / id in
                 let full_id =
-                  String.sub f (String.length !exercises_dir)
-                    (String.length f - String.length !exercises_dir)
+                  String.sub f (String.length !exercises_dir + 1)
+                    (String.length f - String.length !exercises_dir - 1)
                 in
                 if Sys.file_exists (f/"meta.json") then
                   match acc with
