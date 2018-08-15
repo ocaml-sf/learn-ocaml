@@ -17,6 +17,7 @@ The exercises and lessons are in another github repository:
 Howtos
 ------
 
+* [How to use Learn-OCaml in my classroom?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-use-learnocaml-in-my-classroom.md)
 * [How to setup an environment to develop exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-setup-exercise-development-environment.md)
 * [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
 * [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
