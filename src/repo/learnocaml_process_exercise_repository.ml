@@ -98,6 +98,16 @@ let dump_reports = ref None
 
 let n_processes = ref 1
 
+let print_grader_error exercise = function
+  | Ok () -> ()
+  | Error (-1) -> ()
+  | Error n ->
+      Format.eprintf "[ERROR] %s (%s): the solution has errors! (%d points%s)@."
+        Learnocaml_exercise.(access File.id exercise)
+        Learnocaml_exercise.(access File.title exercise)
+        n
+        (if !Grader_cli.display_reports then ""
+         else ". Run with '-v' to see the report")
 
 let spawn_grader ?print_result ?dirname exercise output_json =
   let rec sleep () =
@@ -114,13 +124,17 @@ let spawn_grader ?print_result ?dirname exercise output_json =
       Grader_cli.display_callback := false;
       Lwt_main.run
         (Grader_cli.grade ?print_result ?dirname exercise output_json
-         >|= exit)
+         >|= fun r ->
+         print_grader_error exercise r;
+         match r with
+         | Ok () -> exit 0
+         | Error _ -> exit 1)
   | pid ->
       Lwt_unix.waitpid [] pid >>= fun (_pid, ret) ->
       incr n_processes;
       match ret with
-      | Unix.WEXITED i -> Lwt.return i
-      | _ -> Lwt.return 1
+      | Unix.WEXITED 0 -> Lwt.return (Ok ())
+      | _ -> Lwt.return (Error (-1))
 
 let main dest_dir =
   let (/) dir f =
@@ -238,9 +252,13 @@ let main dest_dir =
        begin
          let listmap, grade =
            if !n_processes = 1 then
-             Lwt_list.map_s, Grader_cli.grade
+             Lwt_list.map_s,
+             fun ?print_result ?dirname exercise json_path ->
+               Grader_cli.grade ?print_result ?dirname exercise json_path
+               >|= fun r -> print_grader_error exercise r; r
            else
-             Lwt_list.map_p, spawn_grader
+             Lwt_list.map_p,
+             spawn_grader
          in
          listmap (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
@@ -251,10 +269,10 @@ let main dest_dir =
                  Grader_cli.dump_reports := dump_reports ;
                  grade ~dirname:(!exercises_dir / id) exercise (Some json_path)
                  >>= function
-                 | 0 ->
+                 | Ok () ->
                      Format.printf "%-24s     [OK]@." id ;
                      Lwt.return true
-                 | _ ->
+                 | Error _ ->
                      Format.printf "%-24s   [FAILED]@." id ;
                      Lwt.return false
                end)

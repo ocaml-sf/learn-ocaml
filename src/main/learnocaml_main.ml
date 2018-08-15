@@ -255,7 +255,7 @@ let main o =
            Lwt.catch
              (fun () ->
                 Grader_cli.grade_from_dir ~print_result:true ex o.grader.Grader.output_json
-                >|= max i)
+                >|= function Ok () -> i | Error _ -> 1)
              (fun e ->
                 Printf.ksprintf failwith
                   "Could not load exercise at %s: %s" ex (Printexc.to_string e)))

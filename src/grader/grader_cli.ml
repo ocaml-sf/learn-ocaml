@@ -96,7 +96,7 @@ let grade ?(print_result=false) ?dirname exercise output_json =
                  close_out oc
            end ;
            dump_error Format.err_formatter ;
-           Lwt.return 1
+           Lwt.return (Error (-1))
        | Ok report ->
            let (max, failure) = Learnocaml_report.result report in
            if !display_reports then
@@ -148,7 +148,7 @@ let grade ?(print_result=false) ?dirname exercise output_json =
              if print_result then
                Printf.eprintf "%-30s - Failure - %d points\n%!"
                  Learnocaml_exercise.(access File.id exercise) max;
-             Lwt.return 2
+             Lwt.return (Error max)
            end
            else begin
              if print_result then
@@ -156,7 +156,7 @@ let grade ?(print_result=false) ?dirname exercise output_json =
                  Learnocaml_exercise.(access File.id exercise) max;
              match output_json with
              | None ->
-                 Lwt.return 0
+                 Lwt.return (Ok ())
              | Some json_file ->
                  let exo =
                    Learnocaml_exercise.(update File.max_score max exercise) in
@@ -169,7 +169,7 @@ let grade ?(print_result=false) ?dirname exercise output_json =
                  Lwt_utils.mkdir_p (Filename.dirname json_file)  >>= fun () ->
                  Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
                  Lwt_io.write chan str >>= fun () ->
-                 Lwt.return 0
+                 Lwt.return (Ok ())
            end)
     (fun exn ->
        begin match !dump_outputs with
@@ -182,7 +182,7 @@ let grade ?(print_result=false) ?dirname exercise output_json =
              close_out oc
        end ;
        Format.eprintf "%a" Location.report_exception exn ;
-       Lwt.return 1)
+       Lwt.return (Error (-1)))
 
 let grade_from_dir ?(print_result=false) exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
