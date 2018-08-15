@@ -6,7 +6,7 @@ specific shape, illustrated by the following ascii art:
 ```
 .
 ├── exercises
-│   ├── exo1
+│   ├── exercise1
 │   │   ├── descr.html
 │   │   ├── meta.json
 │   │   ├── prelude.ml
@@ -14,7 +14,7 @@ specific shape, illustrated by the following ascii art:
 │   │   ├── solution.ml
 │   │   ├── template.ml
 │   │   └── test.ml
-│   ├── exo2
+│   ├── exercise2
 │   │   ├── ...
 │   ├── index.json
 ├── lessons
@@ -59,7 +59,7 @@ The complete format specification for exercise description is given in
   the student answer.
 
   - `prepare.ml` is an OCaml code fragment inserted after the prelude when
-  the student answer is graded.
+  the student answer is graded and hidden to the student.
 
   - `solution.ml` is your answer to the exercise.
 

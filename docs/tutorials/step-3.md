@@ -34,17 +34,16 @@ automatically generated.
 
 ```ocaml
 let exercise_1 =
-	Section ([ Text "Function: "; Code "identity" ],
-           test_function_1_against_solution
-             [%ty: int -> int] "identity"
-             ~gen:5 [0]
-          )
+	grade_function_1_against_solution
+		[%ty: int -> int] "identity"
+		~gen:5 [0]
+          
 ```
 
 However, with this method, you have no control on how the inputs are
 generated. If, for example, you want a function of type `int -> int ->
 int` to be tested for inputs between 12 and 42, you need to give the
-test function the sampler you want the same way you will to for type 
+grade function the sampler you want the same way you will to for type 
 without predefined sampler. There are actually two ways do to that: 
 
 
@@ -57,85 +56,73 @@ argument `~sampler` that has type:
 
 ```ocaml
 let exercise_2 =
-  Section ([ Text "Function: "; Code "pi1" ],
-           test_function_2_against_solution
-             [%ty: int -> int -> int] "pi1"
-             ~sampler:(fun () -> (Random.int 31 + 12, Random.int 31 + 12) )
-             ~gen:5
-             []
-          )
+	grade_function_2_against_solution
+		[%ty: int -> int -> int] "pi1"
+		~sampler:(fun () -> (Random.int 31 + 12, Random.int 31 + 12) )
+		~gen:5
+		[]
 ```
 
 ## Method 2 : redefining the corresponding sampling function.
 Another way is to define a sampling function of type `unit -> <arg1
 type> * <arg2 type> * <arg3 type> etc.` using the naming convention :
-`sample_<type>`. In this case, nothing needs to be add to the test
+`sample_<type>`. In this case, nothing needs to be add to the grade
 function call.
 
 ```ocaml
 let sample_int = Random.int 31 + 12
 
 let exercise_3 =
-	Section ([ Text "Function: "; Code "pi1" ],
-		test_function_2_against_solution
+	grade_function_2_against_solution
 		[%ty: int -> int -> int] "pi1"
 		~gen:5
 		[]
-	)
 ```
 
 ## More avanced examples
  You can find the examples below in the
-	`exercises/advanced_examples` directory (branch: step-3).
+	`exercises/advanced-examples-step-3` directory (branch: step-3).
 
 There is nothing new to learn in this part, there are only more
 examples of how to build a sampler for more complexed types. In
 particular, there are examples with:
 
-* list (more can be found <add link to list tutorial>)
+* list 
 ```ocaml
 let exercise_1 =
-  Section ([ Text "Function: "; Code "push" ],
-           test_function_2_against_solution
-             [%ty: int -> int list -> int list] "push"
-             ~gen:5
-             []
-    )
+	grade_function_2_against_solution
+		[%ty: int -> int list -> int list] "push"
+		~gen:5
+		[]
 ```
 * tupple
 ```ocaml
 let exercise_2 =
-  Section ([ Text "Function: "; Code "first" ],
-           test_function_1_against_solution
-             [%ty: (int * int) -> int] "first"
-             ~gen:5
-             ~sampler:(fun () -> (Random.int 10, Random.int 10))
-             []
-    )
+	grade_function_1_against_solution
+		[%ty: (int * int) -> int] "first"
+		~gen:5
+		~sampler:(fun () -> (Random.int 10, Random.int 10))
+		[]
 ```
+
 * type option
 ```ocaml
 let exercise_3 =
-  Section ([ Text "Function: "; Code "opt" ],
-           test_function_1_against_solution
-             [%ty: int option -> int] "opt"
-             ~gen:5
-             []
-    )
+	grade_function_1_against_solution
+		[%ty: int option -> int] "opt"
+		~gen:5
+		[]
 	
 let sampler_4 () =
   let sampler_tuple () = (sample_int (), sample_int ()) in
   (sample_option sampler_tuple) ()
 
 let exercise_4 =
-  Section ([ Text "Function: "; Code "opt_add" ],
-           test_function_1_against_solution
-             [%ty: (int * int) option -> int] "opt_add"
-             ~gen:5
-             ~sampler:sampler_4
-             []
-    )
-
+	grade_function_1_against_solution
+		[%ty: (int * int) option -> int] "opt_add"
+		~gen:5
+		~sampler:sampler_4
+		[]
 ```
 
 * functional type
@@ -150,13 +137,11 @@ let sampler_5 () =
 
 
 let exercise_5 =
-  Section ([ Text "Function: "; Code "apply" ],
-           test_function_2_against_solution
-             [%ty: (int -> int) -> int -> int] "apply"
-             ~gen:5
-             ~sampler:sampler_5
-             []
-    )
+	grade_function_2_against_solution
+		[%ty: (int -> int) -> int -> int] "apply"
+		~gen:5
+		~sampler:sampler_5
+		[]
   
 ```
 
@@ -167,14 +152,11 @@ let sampler_6 =
   sample_array ~min_size:1 ~max_size:10 sample_int
   
 let exercise_6 =
-  Section ([ Text "Function: "; Code "array_to_list" ],
-           test_function_1_against_solution
-             [%ty: int array -> int list] "array_to_list"
-             ~gen:5
-             ~sampler:sampler_6
-             []
-    )
-
+	grade_function_1_against_solution
+		[%ty: int array -> int list] "array_to_list"
+		~gen:5
+		~sampler:sampler_6
+		[]
 ```
 
 
