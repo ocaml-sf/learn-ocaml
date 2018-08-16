@@ -19,3 +19,12 @@ begin library "learnocaml-api"
   ]
 end
 
+begin library "learnocaml-store"
+  files = [
+    "learnocaml_store.ml"
+  ]
+  requires = [
+    "lwt_utils"
+    "learnocaml-api"
+  ]
+end

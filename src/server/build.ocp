@@ -12,6 +12,7 @@ begin library "learnocaml-server-lib"
     "learnocaml-report"
     "learnocaml-data"
     "learnocaml-api"
+    "learnocaml-store"
   ]
 end
 

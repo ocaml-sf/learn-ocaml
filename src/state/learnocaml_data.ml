@@ -226,6 +226,16 @@ module Token = struct
   let is_teacher = function
     | x::_ when x = teacher_token_prefix -> true
     | _ -> false
+
+  let is_student t = not (is_teacher t)
+
+  module T = struct
+    type nonrec t = t
+    let compare = Pervasives.compare
+  end
+
+  module Set = Set.Make(T)
+  module Map = Map.Make(T)
 end
 
 type 'a token = Token.t

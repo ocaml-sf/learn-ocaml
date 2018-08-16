@@ -551,18 +551,31 @@ let toplevel_tab select _ () =
 
 let teacher_tab token _select _params () =
   let module H = Tyxml_js.Html5 in
-  let buttons_div = H.(div ~a: [ a_class [ "buttons" ] ] []) in
-  let action_button_group = button_group () in
-  let button = button ~container: buttons_div ~theme: "dark" in
-  let () =
-    button ~group:action_button_group ~icon:"new"
-      [%i"Create new teacher token"] @@ fun () ->
+  let action_new_token () =
     Server_caller.request_exn (Learnocaml_api.Create_teacher_token token)
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
-      (Printf.sprintf "New teacher token created:\n%s\n\n\
-                       write it down."
+      (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
+                           write it down."]
          (Token.to_string new_token))
+  in
+  let action_csv_export () =
+    Server_caller.request_exn (Learnocaml_api.Students_csv token)
+    >|= fun csv ->
+    Learnocaml_common.fake_download
+      ~name:"learnocaml.csv"
+      ~contents:(Js.string csv)
+  in
+  let actions_div =
+    H.div ~a: [ H.a_class [ "teacher-actions" ] ] [
+      H.h4 [ H.pcdata "Actions" ];
+      H.ul [
+        H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
+          [ H.pcdata [%i"Create new teacher token"] ];
+        H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
+          [ H.pcdata [%i"Download student data as CSV"] ];
+      ]
+    ]
   in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
@@ -616,30 +629,12 @@ let teacher_tab token _select _params () =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
       students_div;
-      buttons_div;
+      actions_div;
     ]
   in
   let fill_exercises_pane =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
     >>= fun exercises ->
-    let exercises = Groups [
-        "1", {group_title = "1"; group_contents = exercises};
-        "2", {group_title = "2"; group_contents = exercises};
-        "3", {group_title = "3"; group_contents = exercises};
-        "4", {group_title = "4"; group_contents = exercises};
-        "5", {group_title = "5"; group_contents = exercises};
-        "6", {group_title = "6"; group_contents = exercises};
-        "7", {group_title = "7"; group_contents = exercises};
-        "8", {group_title = "8"; group_contents = exercises};
-        "9", {group_title = "9"; group_contents = exercises};
-        "10", {group_title = "10"; group_contents = exercises};
-        "11", {group_title = "11"; group_contents = exercises};
-        "12", {group_title = "12"; group_contents = exercises};
-        "13", {group_title = "13"; group_contents = exercises};
-        "14", {group_title = "14"; group_contents = exercises};
-        "15", {group_title = "15"; group_contents = exercises};
-      ]
-    in
     let table = List.rev (mk_table 0 [] exercises) in
     Manip.replaceChildren exercises_list_div [H.table table];
     Lwt.return_unit
@@ -694,7 +689,7 @@ let get_stored_token () =
 
 let sync () =
   let token_input = Js.to_string ((token_input_field ())##.value) in
-  let stored_token = get_stored_token () in
+  let stored_token = try get_stored_token () with Not_found -> failwith "sync/get_stored_token" in
   let reset_token_input () =
     (token_input_field ())##.value :=
       Js.string (Token.to_string stored_token);
@@ -924,7 +919,8 @@ let () =
         catch_with_alert @@ fun () ->
         sync () >|= fun _ ->
         get_stored_token () |> fun token ->
-        init_tabs (Some token) |> fun _ -> ()
+        init_tabs (Some token) |> fun _ ->
+        no_tab_selected ()
     in
     Manip.Ev.onblur token_field (fun _ -> Lwt.async update; true);
     Manip.Ev.onreturn token_field (fun _ -> Lwt.async update);

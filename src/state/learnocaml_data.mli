@@ -81,9 +81,14 @@ module Token: sig
   val random: unit -> t
   val random_teacher: unit -> t
   val is_teacher: t -> bool
+  val is_student: t -> bool
 
   (** The relative path containing teacher tokens *)
   val teacher_tokens_path: string
+
+  module Set: Set.S with type elt = t
+
+  module Map: Map.S with type key = t
 end
 
 type 'a token = Token.t
