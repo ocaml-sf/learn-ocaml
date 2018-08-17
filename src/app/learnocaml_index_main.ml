@@ -659,9 +659,6 @@ let teacher_tab token _select _params () =
   Lwt.join [fill_exercises_pane; fill_students_pane] >>= fun () ->
   Lwt.return div
 
-let token_format =
-  Json_encoding.(obj1 (req "token" string))
-
 let token_input_field () =
   let id = "learnocaml-save-token-field" in
   let input = find_component id in
@@ -895,8 +892,10 @@ let () =
   end ;
   begin
     let nickname_field = find_component "learnocaml-nickname" in
-    let nickname = Learnocaml_local_storage.(retrieve nickname) in
-    (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
+    (try
+       let nickname = Learnocaml_local_storage.(retrieve nickname) in
+       (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
+     with Not_found -> ());
     let save_nickname () =
       Learnocaml_local_storage.(store nickname) @@
       Js.to_string (Tyxml_js.To_dom.of_input nickname_field)##.value
