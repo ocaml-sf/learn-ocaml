@@ -73,10 +73,11 @@ let string_of_error = function
 
 let request req =
   let do_req = function
-    | { Learnocaml_api.meth = `GET; path } ->
-        Lwt_request.get ?headers:None ~url:(String.concat "/" path) ~args:[]
-    | { Learnocaml_api.meth = `POST body; path } ->
-        Lwt_request.post ?headers:None ?get_args:None
+    | { Learnocaml_api.meth = `GET; path; args } ->
+        Lwt_request.get ?headers:None ~url:(String.concat "/" path) ~args:args
+    | { Learnocaml_api.meth = `POST body; path; args } ->
+        let get_args = match args with [] -> None | a -> Some a in
+        Lwt_request.post ?headers:None ?get_args
           ~url:(String.concat "/" path) ~body:(Some body)
   in
   Lwt.catch (fun () ->
@@ -105,25 +106,20 @@ let request_exn req =
 
 (* FIXME: define proper API call *)
 let fetch_lesson_index () =
-  request_exn (Learnocaml_api.Static_json
-                 (Learnocaml_index.lesson_index_path, Learnocaml_index.lesson_index_enc))
+  request_exn (Learnocaml_api.Lesson_index ())
 
 (* FIXME: define proper API call *)
 let fetch_lesson id =
-  request_exn (Learnocaml_api.Static_json
-                 (Learnocaml_index.lesson_path id, Learnocaml_lesson.lesson_enc))
+  request_exn (Learnocaml_api.Lesson id)
 
-let fetch_exercise id =
-  request_exn (Learnocaml_api.Static_json
-                 (Learnocaml_index.exercise_path id, Learnocaml_exercise.enc))
+let fetch_exercise token id =
+  request_exn (Learnocaml_api.Exercise (token,id))
 
 let fetch_tutorial_index () =
-  request_exn (Learnocaml_api.Static_json
-                 (Learnocaml_index.tutorial_index_path, Learnocaml_index.tutorial_index_enc))
+  request_exn (Learnocaml_api.Tutorial_index ())
 
 let fetch_tutorial id =
-  request_exn (Learnocaml_api.Static_json
-                 (Learnocaml_index.tutorial_path id, Learnocaml_tutorial.tutorial_enc))
+  request_exn (Learnocaml_api.Tutorial id)
 
 (*
 let fetch_json filename =

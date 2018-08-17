@@ -25,16 +25,26 @@ type _ request =
   | Fetch_save: 'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
-  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
-  | Static_json: string * 'a Json_encoding.encoding -> 'a request
-  (** [Static_json] is to help transition: do not use *)
+
+  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
+  | Exercise: 'a token * string -> Learnocaml_exercise.t request
+
+  | Lesson_index: unit -> (string * string) list request
+  | Lesson: string -> Learnocaml_lesson.lesson request
+
+  | Tutorial_index: unit -> (string * Learnocaml_index.series) list request
+  | Tutorial: string -> Learnocaml_tutorial.tutorial request
+
   | Invalid_request: string -> string request
+  (** Only for server-side handling: bound to requests not matching any case
+      above *)
 
 type http_request = {
   meth: [ `GET | `POST of string];
   path: string list;
+  args: (string * string) list;
 }
 
 module type JSON_CODEC = sig
@@ -67,59 +77,84 @@ module Conversions (Json: JSON_CODEC) = struct
           json Save.enc
       | Update_save _ ->
           json Save.enc
-      | Exercise_index _ ->
-          json Learnocaml_index.exercise_index_enc
       | Students_list _ ->
           json Json_encoding.(list Student.enc)
       | Students_csv _ ->
           str
-      | Static_json (_, enc) ->
-          json enc
+      | Exercise_index _ ->
+          json Learnocaml_index.exercise_index_enc
+      | Exercise _ ->
+          json Learnocaml_exercise.enc
+      | Lesson_index _ ->
+          json Learnocaml_index.lesson_index_enc
+      | Lesson _ ->
+          json Learnocaml_lesson.lesson_enc
+      | Tutorial_index _ ->
+          json Learnocaml_index.tutorial_index_enc
+      | Tutorial _ ->
+          json Learnocaml_tutorial.tutorial_enc
+
       | Invalid_request _ ->
           str
 
   let response_encode r = fst (response_codec r)
   let response_decode r = snd (response_codec r)
 
+
   let to_http_request
     : type resp. resp request -> http_request
-    = function
-      | Static path ->
-          { meth = `GET; path }
-      | Version () ->
-          { meth = `GET; path = ["version"] }
-      | Create_token tok_opt ->
-          let arg = match tok_opt with
-            | Some t -> [Token.to_string t]
-            | None -> []
-          in
-          { meth = `GET; path = "sync" :: "gimme" :: arg }
-      | Create_teacher_token token ->
-          assert (Token.is_teacher token);
-          let stoken = Token.to_string token in
-          { meth = `GET; path = ["teacher"; stoken; "gen"] }
-      | Fetch_save token ->
-          let stoken = Token.to_string token in
-          { meth = `GET; path = ["sync"; stoken] }
-      | Update_save (token, save) ->
-          let stoken = Token.to_string token in
-          let body = Json.encode Save.enc save in
-          { meth = `POST body; path = ["sync"; stoken] }
-      | Exercise_index token ->
-          let stoken = Token.to_string token in
-          { meth = `GET; path = ["exercise-index"; stoken] }
-      | Students_list token ->
-          assert (Token.is_teacher token);
-          let stoken = Token.to_string token in
-          { meth = `GET; path = ["teacher"; stoken; "students"] }
-      | Students_csv token ->
-          assert (Token.is_teacher token);
-          let stoken = Token.to_string token in
-          { meth = `GET; path = ["teacher"; stoken; "students.csv"] }
-      | Static_json (path, _) ->
-          { meth = `GET; path = [path] }
-      | Invalid_request s ->
-          failwith ("Error request "^s)
+    =
+    let get ?token path = {
+      meth = `GET;
+      path;
+      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
+    } in
+    let post ~token path body = {
+      meth = `POST body;
+      path;
+      args = ["token", Token.to_string token];
+    } in
+    function
+    | Static path ->
+        get path
+    | Version () ->
+        get ["version"]
+
+    | Create_token token ->
+        get ?token ["sync"; "new"]
+    | Create_teacher_token token ->
+        assert (Token.is_teacher token);
+        get ~token ["teacher"; "new"]
+
+    | Fetch_save token ->
+        get ~token ["save.json"]
+    | Update_save (token, save) ->
+        post ~token ["sync"] (Json.encode Save.enc save)
+
+    | Students_list token ->
+        assert (Token.is_teacher token);
+        get ~token ["teacher"; "students.json"]
+    | Students_csv token ->
+        assert (Token.is_teacher token);
+        get ~token ["teacher"; "students.csv"]
+
+    | Exercise_index token ->
+        get ~token ["exercise-index.json"]
+    | Exercise (token, id) ->
+        get ~token ("exercises" :: String.split_on_char '/' (id ^ ".json"))
+
+    | Lesson_index () ->
+        get ["lessons.json"]
+    | Lesson id ->
+        get ["lessons"; id^".json"]
+
+    | Tutorial_index () ->
+        get ["tutorials.json"]
+    | Tutorial id ->
+        get ["tutorials"; id^".json"]
+
+    | Invalid_request s ->
+        failwith ("Error request "^s)
 
 end
 
@@ -138,58 +173,65 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       let k req =
         Rh.callback req |> Rh.map_ret (C.response_encode req)
       in
-      match request with
-      | { meth = `GET; path = [] } ->
+      let token =
+        match List.assoc_opt "token" request.args with
+        | None -> None
+        | Some stoken ->
+            try Some (Token.parse stoken)
+            with Failure _ -> None
+      in
+      match request.meth, request.path, token with
+      | `GET, [], _ ->
           Static ["index.html"] |> k
-      | { meth = `GET; path = ["version"] } ->
+      | `GET, ["version"], _ ->
           Version () |> k
-      | { meth = `GET; path = ["sync"; "gimme"] } ->
-          Create_token None |> k
-      | { meth = `GET; path = ["sync"; "gimme"; token] } ->
-          (match Token.parse token with
-           | token -> Create_token (Some token) |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path = ["teacher"; token; "gen"] } ->
-          (match Token.parse token with
-           | token when Token.is_teacher token ->
-               Create_teacher_token token |> k
-           | _ -> Invalid_request "Unauthorised" |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path = ["sync"; token] } ->
-          (match Token.parse token with
-           | token -> Fetch_save token |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `POST body; path = ["sync"; token] } ->
-          (match
-             Token.parse token,
-             Json.decode Save.enc body
-           with
-           | token, save -> Update_save (token, save) |> k
-           | exception (Failure s) -> Invalid_request s |> k
+
+      | `GET, ["sync"; "new"], token ->
+          Create_token token |> k
+      | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
+          Create_teacher_token token |> k
+
+      | `GET, ["save.json"], Some token ->
+          Fetch_save token |> k
+      | `POST body, ["sync"], Some token ->
+          (match Json.decode Save.enc body with
+           | save -> Update_save (token, save) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
-      | { meth = `GET; path = ["exercise-index"; token] } ->
-          (match Token.parse token with
-           | token -> Exercise_index token |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path = ["teacher"; token; "students"] } ->
-          (match Token.parse token with
-           | token when Token.is_teacher token ->
-               Students_list token |> k
-           | _ -> Invalid_request "Unauthorised" |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path = ["teacher"; token; "students.csv"] } ->
-          (match Token.parse token with
-           | token when Token.is_teacher token ->
-               Students_csv token |> k
-           | _ -> Invalid_request "Unauthorised" |> k
-           | exception (Failure s) -> Invalid_request s |> k)
-      | { meth = `GET; path } ->
-          (* FIXME: also handles the deprecated Static_json (they are the same,
-             server-side). This is dirty *)
+
+      | `GET, ["teacher"; "students.json"], Some token
+        when Token.is_teacher token ->
+          Students_list token |> k
+      | `GET, ["teacher"; "students.csv"], Some token
+        when Token.is_teacher token ->
+          Students_csv token |> k
+
+      | `GET, ["exercise-index.json"], Some token ->
+          Exercise_index token |> k
+      | `GET, ("exercises"::path), Some token ->
+          Exercise (token, String.concat "/" path) |> k
+
+      | `GET, ["lessons.json"], _ ->
+          Lesson_index () |> k
+      | `GET, ["lessons"; f], _ when Filename.check_suffix f ".json" ->
+          Lesson (Filename.chop_suffix f ".json") |> k
+
+      | `GET, ["tutorials.json"], _ ->
+          Tutorial_index () |> k
+      | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
+          Tutorial (Filename.chop_suffix f ".json") |> k
+
+      | `GET, path, _ ->
           Static path |> k
-      | { meth = `POST _; path } ->
-          Invalid_request (Printf.sprintf "POST %s" (String.concat "/" path))
-          |> k
+
+      | meth, path, _ ->
+        Invalid_request
+          (Printf.sprintf "%s /%s%s"
+             (match meth with `GET -> "GET" | `POST _ -> "POST")
+             (String.concat "/" path)
+             (match request.args with [] -> "" | l ->
+                 "?" ^ String.concat "&"
+                   (List.map (fun (k, v) -> k ^"="^ v) l)))
+        |> k
 
 end
 

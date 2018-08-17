@@ -140,7 +140,10 @@ let () =
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = arg "id" in
-  let exercise_fetch = Server_caller.fetch_exercise id in
+  let exercise_fetch =
+    token >>= fun token ->
+    Server_caller.fetch_exercise token id
+  in
   let after_init top =
     exercise_fetch >>= fun exo ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with

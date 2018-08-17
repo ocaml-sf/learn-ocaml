@@ -36,19 +36,28 @@ type _ request =
   | Create_token: student token option -> student token request
   | Create_teacher_token: teacher token -> teacher token request
   | Fetch_save: 'a token -> Save.t request
-  | Update_save: 'a token * Save.t -> Save.t request
-  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
-  (* | Exercise: Learnocaml_exercise.id -> Learnocaml_exercise.t request
-   * | Lesson_index: unit -> (string * string) list request *)
+  | Update_save:
+      'a token * Save.t -> Save.t request
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
-  (** to help transition: do not use *)
-  | Static_json: string * 'a Json_encoding.encoding -> 'a request
+
+  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
+  | Exercise: 'a token * string -> Learnocaml_exercise.t request
+
+  | Lesson_index: unit -> (string * string) list request
+  | Lesson: string -> Learnocaml_lesson.lesson request
+
+  | Tutorial_index: unit -> (string * Learnocaml_index.series) list request
+  | Tutorial: string -> Learnocaml_tutorial.tutorial request
+
   | Invalid_request: string -> string request
+  (** Only for server-side handling: bound to requests not matching any case
+      above *)
 
 type http_request = {
   meth: [ `GET | `POST of string];
   path: string list;
+  args: (string * string) list;
 }
 
 module type JSON_CODEC = sig

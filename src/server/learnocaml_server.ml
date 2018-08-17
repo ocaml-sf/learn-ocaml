@@ -24,6 +24,8 @@ let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
 let port = ref 8080
 
+let log_channel = ref (Some stdout)
+
 let args = Arg.align @@
   [ "-static-dir", Arg.Set_string static_dir,
     "PATH where static files should be found (./www)" ;
@@ -87,11 +89,16 @@ let respond_static path =
 let respond_json = fun x ->
   Lwt.return (Ok (x, "application/json"))
 
+let respond_static_json enc path =
+  read_static_file path >|=
+  Ezjsonm.from_string >|=
+  Json_encoding.destruct enc >>=
+  respond_json
+
 let with_verified_teacher_token token cont =
   Token.check_teacher token >>= function
   | true -> cont ()
   | false -> Lwt.return (Error (`Forbidden, "Access restricted"))
-
 
 let string_of_date ts =
   let open Unix in
@@ -99,6 +106,33 @@ let string_of_date ts =
   Printf.sprintf "%04d-%02d-%02dT%02d:%02d:%02dZ"
     (tm.tm_year + 1900) (tm.tm_mon + 1) tm.tm_mday
     tm.tm_hour tm.tm_min tm.tm_sec
+
+let log conn api_req =
+  match !log_channel with
+  | None -> ()
+  | Some oc ->
+      let src_addr = match conn with
+        | Conduit_lwt_unix.TCP tcp, _ ->
+            Ipaddr.to_string tcp.Conduit_lwt_unix.ip
+        | _ -> ""
+      in
+      output_string oc (string_of_date (Unix.gettimeofday ()));
+      output_char oc '\t';
+      output_string oc src_addr;
+      output_char oc '\t';
+      output_string oc
+        (match api_req.Api.meth with
+         | `GET -> "GET "
+         | `POST _ -> "POST");
+      output_char oc '\t';
+      output_char oc '/';
+      output_string oc (String.concat "/" api_req.Api.path);
+      (match api_req.Api.args with | [] -> () | l ->
+          output_char oc '?';
+          output_string oc
+            (String.concat "&" (List.map (fun (a, b) -> a ^"="^ b) l)));
+      output_char oc '\n';
+      flush oc
 
 module Request_handler = struct
 
@@ -115,10 +149,9 @@ module Request_handler = struct
     : type resp. resp Api.request -> resp ret
     = function
       | Api.Version () ->
-          respond_json "LEARNOCAML_VERSION_FILLME"
+          respond_json "0.2" (* TODO *)
       | Api.Static path ->
           respond_static path
-      | Api.Static_json _ -> assert false
       | Api.Create_token None ->
           Token.create_student () >>= respond_json
       | Api.Create_token (Some token) ->
@@ -132,6 +165,7 @@ module Request_handler = struct
       | Api.Create_teacher_token token ->
           with_verified_teacher_token token @@ fun () ->
           Token.create_teacher () >>= respond_json
+
       | Api.Fetch_save token ->
           Lwt.catch
             (fun () -> Save.get token >>= function
@@ -162,12 +196,7 @@ module Request_handler = struct
                if Lwt_mutex.is_empty mutex
                then Hashtbl.remove token_save_mutexes key;
                Lwt.return_unit)
-      | Api.Exercise_index _token ->
-          (* TODO: check token; retrieve dedicated exercise assignment *)
-          read_static_file [Learnocaml_index.exercise_index_path] >|=
-          Ezjsonm.from_string >|=
-          Json_encoding.destruct Learnocaml_index.exercise_index_enc >>=
-          respond_json
+
       | Api.Students_list token ->
           with_verified_teacher_token token @@ fun () ->
           Token.Index.get ()
@@ -250,6 +279,35 @@ module Request_handler = struct
                 line ())
             tok_saves;
           Lwt.return (Ok (Buffer.contents buf, "text/csv"))
+
+      | Api.Exercise_index _token ->
+          (* TODO: check token; retrieve dedicated exercise assignment *)
+          respond_static_json
+            Learnocaml_index.exercise_index_enc
+            [Learnocaml_index.exercise_index_path]
+      | Api.Exercise (_token, id) ->
+          respond_static_json
+            Learnocaml_exercise.enc
+            [Learnocaml_index.exercise_path id]
+
+      | Api.Lesson_index () ->
+          respond_static_json
+            Learnocaml_index.lesson_index_enc
+            [Learnocaml_index.lesson_index_path]
+      | Api.Lesson id ->
+          respond_static_json
+            Learnocaml_lesson.lesson_enc
+            [Learnocaml_index.lesson_path id]
+
+      | Api.Tutorial_index () ->
+          respond_static_json
+            Learnocaml_index.tutorial_index_enc
+            [Learnocaml_index.tutorial_index_path]
+      | Api.Tutorial id ->
+          respond_static_json
+            Learnocaml_tutorial.tutorial_enc
+            [Learnocaml_index.tutorial_path id]
+
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))
 
@@ -270,10 +328,13 @@ let launch () =
   (* Learnocaml_store.init ~exercise_index:
    *   (String.concat Filename.dir_sep
    *      (!static_dir :: Learnocaml_index.exercise_index_path)); *)
-  let callback _ req body =
-    let path = Uri.path (Request.uri req) in
+  let callback conn req body =
+    let uri = Request.uri req in
+    let path = Uri.path uri in
     let path = Stringext.split ~on:'/' path in
     let path = List.filter ((<>) "") path in
+    let query = Uri.query uri in
+    let args = List.map (fun (s, l) -> s, String.concat "," l) query in
     (* let cookies = Cohttp.Cookie.Cookie_hdr.extract (Cohttp.Request.headers req) in *)
     let respond = function
       | Ok (str, content_type) ->
@@ -282,17 +343,21 @@ let launch () =
       | Error (status, body) ->
           Server.respond_error ~status ~body ()
     in
-    match req.Request.meth with
-    | `GET ->
-        Api_server.handler {Api.meth = `GET; path} >>= respond
-    | `POST ->
-        (string_of_stream (Cohttp_lwt.Body.to_stream body) >>= function
-          | Some s ->
-              Api_server.handler {Api.meth = `POST s; path} >>= respond
-          | None ->
-              respond (Error (`Bad_request, "Missing POST body")))
-    | _ ->
-        respond (Error (`Bad_request, "Unsupported method"))
+    (match req.Request.meth with
+     | `GET -> Lwt.return (Ok {Api.meth = `GET; path; args})
+     | `POST ->
+         (string_of_stream (Cohttp_lwt.Body.to_stream body) >|= function
+           | Some s -> Ok {Api.meth = `POST s; path; args}
+           | None -> Error (`Bad_request, "Missing POST body"))
+     | _ -> Lwt.return (Error (`Bad_request, "Unsupported method")))
+    >>= (function
+        | Ok req ->
+            log conn req;
+            Api_server.handler req
+        | Error e -> Lwt.return (Error e))
+    >>=
+    respond
+
   in
   Random.self_init () ;
   init_teacher_token () >>= fun () ->

@@ -686,11 +686,14 @@ let get_stored_token () =
 
 let sync () =
   let token_input = Js.to_string ((token_input_field ())##.value) in
-  let stored_token = try get_stored_token () with Not_found -> failwith "sync/get_stored_token" in
+  let stored_token = get_stored_token () in
   let reset_token_input () =
     (token_input_field ())##.value :=
       Js.string (Token.to_string stored_token);
   in
+  if token_input = "" then
+    (reset_token_input (); sync stored_token)
+  else
   match Token.parse token_input with
   | exception (Failure _) ->
       reset_token_input ();
@@ -751,7 +754,13 @@ end
 let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
 
 let () =
-  Lwt.async_exception_hook := begin function
+  Lwt.async_exception_hook := begin fun e ->
+    Firebug.console##log (Js.string
+                            (Printexc.to_string e ^
+                             if Printexc.backtrace_status () then
+                               Printexc.get_backtrace ()
+                             else ""));
+    match e with
     | Failure message -> fatal message
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
@@ -912,14 +921,17 @@ let () =
       );
     let update () =
       let t = get_stored_token () in
-      if Js.to_string (input##.value) = "" then
+      let v = Js.to_string (input##.value) in
+      if v = "" then
         Lwt.return (input##.value := Js.string (Token.to_string t))
+      else if v = Token.to_string t then
+        Lwt.return_unit
       else
         catch_with_alert @@ fun () ->
         sync () >|= fun _ ->
         get_stored_token () |> fun token ->
-        init_tabs (Some token) |> fun _ ->
-        no_tab_selected ()
+        no_tab_selected () |> fun () ->
+        init_tabs (Some token) |> fun _ -> ()
     in
     Manip.Ev.onblur token_field (fun _ -> Lwt.async update; true);
     Manip.Ev.onreturn token_field (fun _ -> Lwt.async update);
