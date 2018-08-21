@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-(** Documentation for [test_lib] librairy. [Test_lib] module can be
+(** Documentation for [test_lib] library. [Test_lib] module can be
    used to write graders for learn-ocaml.  *)
 module type S = sig
 
@@ -25,15 +25,62 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 AST checker}
+  (** {1 AST checkers}
 
    Various functions to explore the student's code AST and
    enforce restrictions on the student's code.  *)
 
   module Ast_checker : sig
+    (** Since the user's code is reified, the parsed abstract syntax tree is available
+        in the testing environment, as a variable named [code_ast], with type
+        [Parsetree.structure]. As such, it can be checked using the iterators in the
+        module [Ast_mapper] from [compiler-libs]. However, [Test_lib] provides some
+        functions to check the Parsetree. *)
 
-    (** {2 Checker} *)
+    (** {2 Checkers} *)
+    
+    (** The functional type ['a ast_checker] describes the functions
+       used for AST introspection. It takes as input the introspect
+       objects (mainly [Parsetree structure] like [code_ast] or
+       [Parsetree expression]) and has several optional arguments that
+       are here to put restrictions easily on various parts of the
+       AST. For example, adding [~on_open: forbid "open"] will prevent
+       the student from using [open] syntax by returning a [Failure]
+       report the first time that one [open] is found in the input
+       [Parsetree] structure or expression.
 
+        - [~on_expression]: function called each time a
+       [Parsetree.expression] is met.
+
+        - [~on_pattern]: function called each time a
+       [Parsetree.pattern] is met.
+
+        - [~on_structure_item]: function called each time a
+       [Parsetree.structure_item] is met.
+
+        - [~on_external]: function called each time a
+       [value_description] is met.
+
+        - [~on_include]: function called each time a
+       [Parsetree.include_declaration] is met.
+
+        - [~on_open]: function called each time a
+       [Parsetree.open_description] is met.
+
+        - [~on_module_occurence]: function called each time a module
+       is used. The string input is the name of the module.
+
+        - [~on_variable_occurence]: function called each time a
+       variable is used. The string input is the name of the
+       variable. The function [rectrict] and [forbid] can be used to
+       construct this function.
+
+
+        - [~on_function_call]: function called each time a function
+       call is used. The first argument of this function is the
+       [Parsetree.expression] of the called function. The second
+       argument is the arguments represented by a tupple [(name,
+       expression)]. *)
     type 'a ast_checker =
       ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
       ?on_pattern: (Parsetree.pattern -> Learnocaml_report.report) ->
@@ -47,58 +94,116 @@ module type S = sig
       'a -> Learnocaml_report.report
 
 
-    (** [ast_check_expr] *)
+    (** [ast_check_expr] builds an {{!ast_checker}AST checker} for
+       [Parsetree] expressions. This function can be used as
+       functional argument for {!find_binding}. *)
     val ast_check_expr : Parsetree.expression ast_checker
 
-    (** [ast_check_structure] *)
+    (** [ast_check_structure] builds an {{!ast_checker}AST checker}
+       for [Parsetree] structure. The returned AST checker can
+       directly be used with [code_ast] which is available in the
+       grading environment. *)
     val ast_check_structure : Parsetree.structure ast_checker
 
-    (** [ast_location_stripper] *)
-    val ast_location_stripper : Ast_mapper.mapper
+    (** {2 Finding top level variable in AST}*)
+
+    (** [find_binding code_ast name cb] looks for the top level
+       variable [name] in [code_ast] and its associated Parsetree
+       expression [expr] ([let name = expr]). If the variable is
+       found, it returns an {!LearnOcaml_report.Informative} report
+       concatenated with the report resulting of [cb] applied to
+       [expr]. Otherwise, it teturns a {!LearnOcaml_report.Failure}
+       report. *)
+    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
 
     (** {2 Functions for optional arguments of checkers} *)
+    (** The following functions are classic functions to use as
+       optional arguments for {!ast_checker} like forbidding,
+       rectricting or requiring some [Parsetree] structures or
+       expressions etc..*)
 
-    (** [forbid k pr ls] *)
+    (** {3 Generic functions} *)
+
+    (** [forbid k pr ls t] returns a
+       {{!Learnocaml_report.Failure}Failure} the first time [t] is
+       tested if [t] is in the list [ls]. The message of the failure
+       report is {e The text1 text2 is forbidden} where [text1] is the
+       result of [pr] applies to [t] and [text2] is value
+       [k]. Otherwise, an empty report is returned. *)
     val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
-
-    (** [restrict k pr ls] *)
+             
+    (** [restrict k pr ls t] returns a
+       {{!Learnocaml_report.Failure}Failure} the first time [t] is
+       tested if [t] is {e not} in [ls]. The message of the failure
+       report is {e The text1 text2 is not allowed} where [text1] is
+       the result of [pr] applies to [t] and [text2] is value of
+       [k]. Otherwise, an empty report is returned. *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
-      
-    (** [require k pr ls] *)
+                                      
+    (** [require k pr treq t] returns a {!Learnocaml_report.Success 5}
+       report the first time the function is applied with [t] and [t]
+       is equal to [treq] (comparison with Pervasives.compare). The
+       report message is then {e Found text1 text2} where [text1] is
+       value of [k] and [text2] is the result of [pr] applies to
+       [t]. Otherwise, an empty report is returned. *)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
 
-    (** [forbid_expr name exprs] *)
+    (** {3 For expressions } *)
+                      
+    (** [forbid_expr name exprs expr] returns a
+       {{!Learnocaml_report.Failure}Failure} report the first time
+       [expr] is tested if [expr] is in the list of forbidden
+       expressions [exprs]. The message of the failure report is {e
+       The text1 text2 is forbidden} where [text1] is [expr] and
+       [text2] is value of [name]. Otherwise, an empty report is
+       returned.  *)
     val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
-
-    (** [restrict_expr name exprs] *)
+            
+    (** [restrict_expr name exprs expr] returns a
+       {{!Learnocaml_report.Failure}Failure} report the first time
+       [expr] is tested if [expr] is {e not} in the list of allowed
+       expressions [exprs]. The message of the failure report is {e
+       The text1 text2 is not allowed} where [text1] is [expr] and
+       [text2] is value of [name]. Otherwise, an empty report is
+       returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
-
-    (** [require_expr name exprs] *)      
+                                                               
+    (** [require_expr name expr t] returns a
+       {!Learnocaml_report.Success 5} report the first time the
+       function is applied with [t] and [t] is equal to [expr]
+       (comparison with Pervasives.compare). The report message is
+       then {e Found text1 text2} where [text1] is value of [name] and
+       [text2] is [expr]. Otherwise, an empty report is returned.  *)
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
+         
+    (** {3 For syntax } *)
+    (** These functions are very restricted function to either forbid
+       any use of a particular syntax or require to have at least one
+       use of it. Their first argument is used to build the message of
+       the return report and the second argument is simply ignored.
 
-    (** [forbid_syntax n] *)  
+        For example, adding [~on_include: forbid "include" ~on_open:
+       forbid "open"] prevents the student from using [open] and
+       [include] syntaxes. *)
+                                                         
+    (** [forbid_syntax n _] returns a
+       {{!Learnocaml_report.Failure}Failure} report the first time it
+       is called. The message of the failure report is {e The {b text}
+       syntax is forbidden} where [text] is the value of
+       [n]. Otherwise, an empty report is returned. *)
     val forbid_syntax : string -> (_ -> Learnocaml_report.report)
-
-    (** [require_syntax n] *)  
+         
+    (** [require_syntax n _] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time it is called. The message of
+       the failure report is {e The {b text} syntax has been found, as
+       expected} where [text] is the value of [n]. Otherwise, an empty
+       report is returned.  *)
     val require_syntax : string -> (_ -> Learnocaml_report.report)
 
-    (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
-    val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
+    (** {2 AST sanity checks } *)
 
-    (** {2 AST sanity check } *)
-
-    (** [ast_sanity_check ~modules ast cb]*)
+    (** [ast_sanity_check ~modules ast cb] *)
     val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
-
-    (** {2 Finding in AST}*)
-
-    (** [find_binding code_ast name cb] looks for variable [name] in
-        [code_ast] and returns an {!LearnOcaml_report.Informative} report
-        concated with the report resulting of [cb] applied to the
-        Parsetree expression associated to variable [name] in [code_ast]
-        if the variable is found. Returns a {!LearnOcaml_report.Failure}
-        report else.  *)
-    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
 
   end
 
@@ -111,7 +216,7 @@ module type S = sig
      {{!Test_functions_function.test_functions_fun_sec}grading functions
      for functions}. *)
 
-       
+
   (** Functions of type [tester] are used to compare student result
      with solution result. The first {!S.result} is the student
      output and the second one is the solution output.  *)
@@ -119,7 +224,7 @@ module type S = sig
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
 
   (** Functions of type [io_tester] are used to compare student
-     standart out or standart error channels with solution ones. *)
+     standard out or standard error channels with solution ones. *)
   type io_tester =
     string -> string -> Learnocaml_report.report
 
@@ -137,21 +242,21 @@ module type S = sig
        output and return usually a {!Learnocaml_report.Success 1} if
        they match and a {!Learnocaml_report.Failure} if they don't.
 
-       {!S.io_tester} functions compare the string outputs on standart
+       {!S.io_tester} functions compare the string outputs on standard
        or error channels for student and solution functions and return
        usually a {!Learnocaml_report.Success 5} if they match and a
        {!Learnocaml_report.Failure} if they don't. *)
 
     (** {2:tester_sec Pre-defined testers and tester builders} *)
-    
+
     (** [test] is a {!S.tester} that compares its two {!S.result} inputs
-       with OCaml structoral equality. This is the default value of [~test]
+       with OCaml structural equality. This is the default value of [~test]
        optional argument of grading functions for functions.*)
     val test : 'a tester
 
     (** [test_ignore] is a {!S.tester} that compares only the constructor of its
        {S.result} inputs. The content is ignored. If the constructors
-       match, a empty report is returned. *)
+       match, an empty report is returned. *)
     val test_ignore : 'a tester
 
     (** [test_eq eq] builds a {!S.tester} with function [eq] as comparison
@@ -159,7 +264,7 @@ module type S = sig
     val test_eq : ('a result -> 'a result -> bool) -> 'a tester
 
     (** [test_eq_ok eq] builds a {!S.tester} that compares [Ok] results with
-       [eq] and [Error] results with Ocaml structural equality. *)     
+       [eq] and [Error] results with Ocaml structural equality. *)
     val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
 
     (** [test_eq_exn eq] builds a {!S.tester} that compares [Error] results
@@ -174,13 +279,13 @@ module type S = sig
     (** [test_canon_ok canon] builds a {!S.tester} that compares two
        [Ok] result inputs after application to [canon] function with
        Ocaml structural equality. [Error] results are compared
-       normally with Ocaml structural equality. *) 
+       normally with Ocaml structural equality. *)
     val test_canon_ok : ('a -> 'a) -> 'a tester
 
     (** [test_canon_error canon] builds a {!S.tester} that compares two
        [Error] result inputs after application to [canon] function with
        Ocaml structural equality. [Ok] results are compared
-       normally with Ocaml structural equality. *)     
+       normally with Ocaml structural equality. *)
     val test_canon_error : (exn -> exn) -> 'a tester
 
     (** [test_translate conv test ty] builds a {!S.tester} that
@@ -196,7 +301,7 @@ module type S = sig
 
     (** Important warning : when successful, predefined IO testers
        return [Success 5] reports. *)
-      
+
     (** There are two common optional arguments for IO testers :
 
         - [~trim] : list of chars removed at beginning and end of IO
@@ -205,9 +310,9 @@ module type S = sig
         - [~drop] : list of chars removed from IO testers input
        strings *)
 
-      
+
     (** [io_test_ignore] is the default value of [~test_stdout] and
-       [~test_stderr]. Returns a empty report whatever its inputs. *)
+       [~test_stderr]. Returns an empty report whatever its inputs. *)
     val io_test_ignore : io_tester
 
     (** [io_test_equals] builds a {!S.io_tester} which compares its
@@ -237,7 +342,7 @@ module type S = sig
 
   end
 
-       
+
   (*----------------------------------------------------------------------------*)
 
   (** {1 Mutation observer builders} *)
@@ -248,16 +353,16 @@ module type S = sig
   module Mutation : sig
 
     (** Important warning: this part is useful only to grade unary
-       function using grading functions such as
+       function using grading functions such than
        {!S.Test_functions_function.test_function_1_against_solution}. *)
-    
+
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
         test : 'ret. ?test_result: 'ret tester -> 'ret tester }
 
     (** [arg_mutation_test_callbacks ~test_ref ~dup ~blit ty] returns
-       a {!Mutation.arg_mutation_test_callbacks} [out] such as the
+       a {!Mutation.arg_mutation_test_callbacks} [out] such than the
        functions [out.before_reference] and [out.before_user] can
        create two copies of the mutable input of type [ty] with
        [dup]. One copy [got] is made before executing the user code
@@ -279,9 +384,9 @@ module type S = sig
       'a arg_mutation_test_callbacks
 
     (** [array_arg_mutation_test_callbacks ~test_arr ty] builds
-       [before_user], [before_reference] and [test] such as [test] can
+       [before_user], [before_reference] and [test] such than [test] can
        compare mutation of an input array through student code and
-       solution. 
+       solution.
 
         By default, [test_arr] is set to {!Tester.test}.*)
     val array_arg_mutation_test_callbacks:
@@ -289,7 +394,7 @@ module type S = sig
       'a array arg_mutation_test_callbacks
 
     (** [ref_arg_mutation_test_callbacks ~test_ref ty] builds
-       [before_user], [before_reference] and [test] such as [test] can
+       [before_user], [before_reference] and [test] such than [test] can
        compare mutation of an input reference through student code and
        solution.
 
@@ -299,12 +404,12 @@ module type S = sig
       'a ref arg_mutation_test_callbacks
 
   end
-       
+
   (*----------------------------------------------------------------------------*)
 
   (** {1 Samplers } *)
 
-  (** [Sampler] provides a librairy of predefined sampler for {{!Test_functions_function}grading functions}.*)
+  (** [Sampler] provides a library of predefined samplers for {{!Test_functions_function}grading functions}.*)
   module Sampler : sig
 
     type 'a sampler = unit -> 'a
@@ -334,7 +439,7 @@ module type S = sig
        where each element are generated using [sample].
 
      If [~sorted:true] ([false] by default) the generated list is
-       sorted.
+       sorted (using Pervasives.compare).
 
      If [~dups:false] ([true] by default), all elements of generated
        list are unique.*)
@@ -377,28 +482,28 @@ module type S = sig
 
   (** Grading function for variables and references. *)
   module Test_functions_ref_var : sig
-    
+
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
         report if reference [got] value is equal to [exp] and
-        {!LearnOcaml_report.Failure} report else.  *)
+        {!LearnOcaml_report.Failure} report otherwise.  *)
     val test_ref :
       'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.report
 
     (** [test_variable ty name r] returns {!LearnOcaml_report.Success
         1} report if variable named [name] exists and is equal to
-        [r]. Else returns {!LearnOcaml_report.Failure} report.*)
+        [r]. Otherwise returns {!LearnOcaml_report.Failure} report.*)
     val test_variable :
       'a Ty.ty -> string -> 'a -> Learnocaml_report.report
 
     (** [test_variable_property ty name cb] returns the report
         resulting of application of cb to variable named [name] if it
-        exists.  Else returns {!LearnOcaml_report.Failure} report.  *)
+        exists.  Otherwise returns {!LearnOcaml_report.Failure} report.  *)
     val test_variable_property :
       'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
     (** [test_variable ty name r] returns {!LearnOcaml_report.Success
         1} report if variable named [name] exists and is equal to
-        variable with the same name defined in solution. Else returns
+        variable with the same name defined in solution. Otherwise returns
         {!LearnOcaml_report.Failure} report.*)
     val test_variable_against_solution :
       'a Ty.ty -> string -> Learnocaml_report.report
@@ -430,7 +535,7 @@ module type S = sig
 
   (** Grading function for functions. *)
   module Test_functions_function : sig
-    
+
     (** {2:test_functions_fun_sec Grading functions for functions}*)
 
     (** Three grading functions for functions are defined for arity one
@@ -448,12 +553,12 @@ module type S = sig
        [tests]. If a function named [name] is defined in the student
        code and has the right type (or a more generic one), tests
        [tests] are checked one by one and the function returns a
-       report concatening reports of each test. Else a
+       report concatening reports of each test. Otherwise a
        {!Learnocaml_report.Failure} report is returned.*)
 
-    
+
     (** {3 Returned report}*)
-    
+
     (** The grading functions for functions return a {report} which
        actually concatened 4 reports generated by (in this order):
 
@@ -469,7 +574,7 @@ module type S = sig
        always returns a non-empty report while the other three returns
        empty reports. *)
 
-    
+
     (** {3 Unary functions}*)
 
     (** [test_function_1 ty name tests] tests the function named
@@ -480,7 +585,7 @@ module type S = sig
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1] is equal to [r] and if standard output and
        standard error messages match [out] and [err] respectively. The
-       result of a test is a {!Learnocaml_report.Failure} report else.
+       result of a test is a {!Learnocaml_report.Failure} report otherwise.
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
@@ -498,7 +603,7 @@ module type S = sig
 
      A test [arg-1] results of a {!LearnOcaml_report.Success 1} report
        if the student function applied to [arg-1] gives the same
-       result than the solution function [rf] applied to [arg-1]. Else
+       result than the solution function [rf] applied to [arg-1]. Otherwise
        the result of a test is a {!Learnocaml_report.Failure} report.
 
      See {{!optional_arguments_sec} this section} for information about optional
@@ -517,7 +622,7 @@ module type S = sig
     (** [test_function_1_against ty name tests] tests the function
        named [name] by comparison to solution function which must be
        defined under name [name] in the corresponding [solution.ml]
-       file. Same than [test_function_1_against] for everything else.
+       file. Same than [test_function_1_against] for everything otherwise.
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
@@ -545,7 +650,7 @@ module type S = sig
        applied to [arg-1] and [arg-2] is equal to [r] and if standard
        output and standard error messages match [out] and [err]
        respectively. The result of a test is a
-       {!Learnocaml_report.Failure} report else.
+       {!Learnocaml_report.Failure} report otherwise.
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
@@ -564,7 +669,7 @@ module type S = sig
      A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
        1} report if the student function applied to [arg-1] and
        [arg-2] gives the same result than the solution function [rf]
-       applied to the same arguments. Else the result of a test is a
+       applied to the same arguments. Otherwise the result of a test is a
        {!Learnocaml_report.Failure} report.
 
      See {{!optional_arguments_sec} this section} for information about optional
@@ -584,7 +689,7 @@ module type S = sig
     (** [test_function_2_against ty name tests] tests the function
        named [name] by comparison to solution function which must be
        defined under name [name] in the corresponding [solution.ml]
-       file. Same than [test_function_2_against] for everything else.
+       file. Same than [test_function_2_against] for everything otherwise.
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
@@ -670,10 +775,10 @@ module type S = sig
 
     (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
-    (** The various grading functions use numerous commun optional
+    (** The various grading functions use numerous common optional
        argument. Here is a list in alphabetic order of each of them.
 
-    {3 ?⁠after} Defines a function which is called with the current
+    {3 ?⁠after} defines a function which is called with the current
        tested inputs, the student {!type:result} and the solution
        {!type:result} and returns a new report which is concatened to
        reports built with [~test], [~test_sdtout] and [~test_sdterr].
@@ -681,12 +786,12 @@ module type S = sig
        [~before], [~before_user] or [~before_reference] and build an
        appropriate report.
 
-    {3 ?before} Defines a function called right before the application
+    {3 ?before} defines a function called right before the application
        of student function to the current tested inputs.
 
      For [test_function_<args_nb>] only.
 
-    {3 ?before_reference} Defines a function called right before the
+    {3 ?before_reference} defines a function called right before the
        application of solution function to the current tested
        inputs. This function is called {b before} student function
        evaluation.
@@ -694,7 +799,7 @@ module type S = sig
      For [test_function_<args_nb>_against] and
        [test_function_<args_nb>_against_solution].
 
-    {3 ?before_user} Defines a function called right before the
+    {3 ?before_user} defines a function called right before the
        application of student function to the current tested
        inputs. This function is called {b after} solution function
        evaluation.
@@ -713,31 +818,31 @@ module type S = sig
 
      See {{!Sampler.sampler_sec}Sampler module}.
 
-    {3 ?sampler} Defines the function used to automatically generated
-       inputs. If not used, the grading function checks if a sampler is
+    {3 ?sampler} defines the function used to automatically generated
+       inputs. If unset, the grading function checks if a sampler is
        defined for each input type in the current environment. Such
        sampler for a type [some-type] must be named [sample_some-type]
        and have a type [unit -> some-type] if not parametric or [(unit
-       -> 'a) -> (unit -> 'b) -> ... -> unit -> some-type] else.
+       -> 'a) -> (unit -> 'b) -> ... -> unit -> some-type] otherwise.
 
      For [test_function_<args_nb>_against] and
        [test_function_<args_nb>_against_solution].
 
      See {{!Sampler.sampler_sec}Sampler module}.
 
-    {3 ?test} Redefines the function used to compare the output of
+    {3 ?test} defines the function used to compare the output of
        student function and the output of solution function.
 
      See {{!Tester.tester_sec}predefined testers and tester builders}.
 
-    {3 ?test_sdterr} Redefines the function used to compare the standard
+    {3 ?test_sdterr} defines the function used to compare the standard
        output produced by student function and the one produced by
        solution function.
 
      See {{!Tester.io_tester_sec}predefined IO testers and IO tester
        builders}.
 
-    {3 ?test_sdtout} Redefines the function used to compare the standard
+    {3 ?test_sdtout} defines the function used to compare the standard
        error produced by student function and the one produced by
        solution function.
 
@@ -843,6 +948,9 @@ module type S = sig
       Learnocaml_report.report
    end
 
+    (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
+   val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
+                                                                                       
    (**/**)
    include (module type of Ast_checker)
    include (module type of Tester)

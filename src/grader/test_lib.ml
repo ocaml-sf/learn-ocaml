@@ -39,21 +39,20 @@ module type S = sig
     val ast_check_expr : Parsetree.expression ast_checker
     val ast_check_structure : Parsetree.structure ast_checker
 
-    val ast_location_stripper : Ast_mapper.mapper
+    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
 
     val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
+
     val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
     val forbid_syntax : string -> (_ -> Learnocaml_report.report)
     val require_syntax : string -> (_ -> Learnocaml_report.report)
-    val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
-
+   
     val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
 
-    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
   end
 
   (*----------------------------------------------------------------------------*)
@@ -111,7 +110,7 @@ module type S = sig
       ?test: 'a ref tester -> 'a ref Ty.ty ->
       'a ref arg_mutation_test_callbacks
 
-  end 
+  end
 
   (*----------------------------------------------------------------------------*)
 
@@ -379,6 +378,8 @@ module type S = sig
     Learnocaml_report.report
 
   end
+
+  val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
 
   (**/**)
   include (module type of Ast_checker)
@@ -720,8 +721,6 @@ module Make
         let pr expr = Format.asprintf "%a" Pprintast.expression expr in
         require name pr (ast_location_stripper.Ast_mapper.expr ast_location_stripper expr)
 
-      let (@@@) f g = fun x -> f x @ g x
-
       let ast_sanity_check ?(modules = []) ast cb =
         let modules =
           (* Some may not even be present, we just want to display a message. *)
@@ -1002,16 +1001,16 @@ module Make
         ?(trim = []) ?(drop = [])
         ?(skip_empty = false) ?(test_line = io_test_equals ~trim:[] ~drop:[]) got expected =
     io_test_items ~split: [ '\n' ] ~trim ~drop ~skip_empty ~test_item: test_line got expected
-  end 
+  end
 
   module Mutation = struct
     open Tester
-       
+
     type 'arg arg_mutation_test_callbacks =
       { before_reference : 'arg -> unit ;
         before_user : 'arg -> unit ;
         test : 'ret. ?test_result: 'ret tester -> 'ret tester }
-      
+
     let arg_mutation_test_callbacks ?(test = test)  ~dup ~blit ty =
       let sam = ref None in
       let got = ref None in
@@ -1647,6 +1646,7 @@ module Make
       Toploop.install_printer path ty.Typedtree.ctyp_type fun_printer
   end
 
+  let (@@@) f g = fun x -> f x @ g x
   (**/**)
   include Ast_checker
   include Tester
