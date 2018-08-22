@@ -619,13 +619,19 @@ module type S = sig
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.report
 
-    (** [test_function_1_against ty name tests] tests the function
-       named [name] by comparison to solution function which must be
-       defined under name [name] in the corresponding [solution.ml]
-       file. Same than [test_function_1_against] for everything otherwise.
+    (** [test_function_1_against_solution ty name tests] tests the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
 
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
+     A test [arg-1] results of a {!LearnOcaml_report.Success 1} report
+       if the student function applied to [arg-1] gives the same
+       result than the solution function [rf] applied to
+       [arg-1]. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_1_against_solution :
       ?gen: int ->
       ?test: 'b tester ->
@@ -685,14 +691,19 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b) ->
       ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.report
 
+    (** [test_function_2_against_soltion ty name tests] tests the function
+       named [name] by comparison to solution function [rf] which must
+       be defined under name [name] in the corresponding [solution.ml]
+       file.
 
-    (** [test_function_2_against ty name tests] tests the function
-       named [name] by comparison to solution function which must be
-       defined under name [name] in the corresponding [solution.ml]
-       file. Same than [test_function_2_against] for everything otherwise.
+     A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
+       1} report if the student function applied to [arg-1] and
+       [arg-2] gives the same result than the solution function [rf]
+       applied to the same arguments. Otherwise the result of a test
+       is a {!Learnocaml_report.Failure} report.
 
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_2_against_solution :
       ?gen: int ->
       ?test: 'c tester ->
@@ -708,6 +719,19 @@ module type S = sig
 
     (** {3 Three-arguments functions }*)
 
+    (** [test_function_3 ty name tests] tests the function named
+       [name] by directly comparing obtained outputs against expected
+       outputs.
+
+     A test [(arg-1, arg-2, arg-3, r, out, err)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2] and [arg-3] is equal to [r] and if
+       standard output and standard error messages match [out] and
+       [err] respectively. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_3 :
       ?test: 'd tester ->
       ?test_stdout: io_tester ->
@@ -715,7 +739,20 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.report) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.report
+                                                                                                
+    (** [test_function_3_against ty name rf tests] tests the function
+       named [name] by comparing outputs obtained with the student
+       function against outputs of [rf].
 
+     A test [(arg-1, arg-2, arg-3)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2] and [arg-3] gives the same result
+       than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_3_against :
       ?gen: int ->
       ?test: 'd tester ->
@@ -726,7 +763,21 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.report) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.report
+                                                                                                   
+    (** [test_function_3_against_solution ty name tests] tests the function
+       named [name] by comparison to solution function [rf] which must
+       be defined under name [name] in the corresponding [solution.ml]
+       file.
 
+     A test [(arg-1, arg-2, arg-3)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2] and [arg-3] gives the same result
+       than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_3_against_solution :
       ?gen: int ->
       ?test: 'd tester ->
@@ -742,6 +793,19 @@ module type S = sig
 
     (** {3 Four-arguments functions }*)
 
+    (** [test_function_4 ty name tests] tests the function named
+       [name] by directly comparing obtained outputs against expected
+       outputs.
+
+     A test [(arg-1, arg-2, arg-3, arg-4, r, out, err)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2], [arg-3] and [arg-4] is equal to
+       [r] and if standard output and standard error messages match
+       [out] and [err] respectively. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_4 :
       ?test: 'e tester ->
       ?test_stdout: io_tester ->
@@ -750,6 +814,19 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.report) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.report
 
+    (** [test_function_4_against ty name rf tests] tests the function
+       named [name] by comparing outputs obtained with the student
+       function against outputs of [rf].
+
+     A test [(arg-1, arg-2, arg-3m arg-4)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
+       result than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_4_against :
       ?gen: int ->
       ?test: 'e tester ->
@@ -761,7 +838,21 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
     -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
+                                                                                
+    (** [test_function_4_against_solution ty name tests] tests the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
 
+     A test [(arg-1, arg-2, arg-3, arg-4)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
+       result than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_4_against_solution :
       ?gen: int ->
       ?test: 'e tester ->
@@ -784,17 +875,18 @@ module type S = sig
        reports built with [~test], [~test_sdtout] and [~test_sdterr].
        Enables for example to inspect references introduced with
        [~before], [~before_user] or [~before_reference] and build an
-       appropriate report.
+       appropriate report. Default value is [fun _ _ _ -> []].
 
     {3 ?before} defines a function called right before the application
-       of student function to the current tested inputs.
+       of student function to the current tested inputs. Default value
+       is [fun _ -> ()]
 
      For [test_function_<args_nb>] only.
 
     {3 ?before_reference} defines a function called right before the
        application of solution function to the current tested
        inputs. This function is called {b before} student function
-       evaluation.
+       evaluation. Default value is [fun _ -> ()].
 
      For [test_function_<args_nb>_against] and
        [test_function_<args_nb>_against_solution].
@@ -802,16 +894,16 @@ module type S = sig
     {3 ?before_user} defines a function called right before the
        application of student function to the current tested
        inputs. This function is called {b after} solution function
-       evaluation.
+       evaluation. Default value is [fun _ -> ()].
 
      For [test_function_<args_nb>_against] and
        [test_function_<args_nb>_against_solution].
 
-    {3 ?gen} Number of automatically generated tested inputs. By
-       default, [gen] is [max 5 (10 - List.length tests)]. Inputs are
-       generated using either sampler defined in the current
+    {3 ?gen} Number of automatically generated tested inputs. Inputs
+       are generated using either sampler defined in the current
        environment or function defined with [~sampler] optional
-       argument.
+       argument. By default, [gen] is [max 5 (10 - List.length
+       tests)].
 
      For [test_function_<args_nb>_against] and
        [test_function_<args_nb>_against_solution].
@@ -831,20 +923,21 @@ module type S = sig
      See {{!Sampler.sampler_sec}Sampler module}.
 
     {3 ?test} defines the function used to compare the output of
-       student function and the output of solution function.
+       student function and the output of solution function. Default
+       value is {!Tester.test}.
 
      See {{!Tester.tester_sec}predefined testers and tester builders}.
 
     {3 ?test_sdterr} defines the function used to compare the standard
        output produced by student function and the one produced by
-       solution function.
+       solution function. Default value is {!Tester.io_test_ignore}.
 
      See {{!Tester.io_tester_sec}predefined IO testers and IO tester
        builders}.
 
     {3 ?test_sdtout} defines the function used to compare the standard
        error produced by student function and the one produced by
-       solution function.
+       solution function. Default value is {!Tester.io_test_ignore}.
 
      See {{!Tester.io_tester_sec}predefined IO testers and IO tester
        builders}.  *)
@@ -853,42 +946,46 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
   (** {1 Generic grading functions} *)
 
-  (** Grading functions for grading functions with more than 4 arguments. *)
-   module Test_functions_generic : sig
+  (** Grading functions for functions with more than 4 arguments. Most
+     of the functions here should not be used. If you actually need
+     a grading function for a function with more than 4 arguments, you
+     should instead raise an issue to ask for the corresponding
+     grading functions.  *)
+  module Test_functions_generic : sig
 
-     (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
+    (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
         if no exception is raised and where [r] is the result of [v
         ()], [stdout] the standard output string (possibly empty) and
         [stderr] the standard error string (possibly empty) or returns
         [Error exn] is exception [exn] is raised. Mays also return a
         timeout error. *)
-     val exec : (unit -> 'a) -> ('a * string * string) result
+    val exec : (unit -> 'a) -> ('a * string * string) result
 
-     (** [result v] executes [v ()] and returns [Ok r] where [r] is
+    (** [result v] executes [v ()] and returns [Ok r] where [r] is
         the result of [v ()] or [Error exn] if exception [exn] is
         raised. Mays also return a timeout error. *)
-     val result : (unit -> 'a) -> 'a result
+    val result : (unit -> 'a) -> 'a result
 
     (*----------------------------------------------------------------------------*)
 
-     (** The type of arguments, represented as heterogeneous lists.
+    (** The type of arguments, represented as heterogeneous lists.
 
-    Usage : [arg 3 @@ arg "word" @@ last false] *)
-     type ('arrow, 'uarrow, 'ret) args
-     val last :
-       'a ->
-       ('a -> 'ret, 'a -> unit, 'ret) args
-     val arg :
-       'a ->
-       ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-       ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+        Usage : [arg 3 @@ arg "word" @@ last false] *)
+    type ('arrow, 'uarrow, 'ret) args
+    val last :
+      'a ->
+      ('a -> 'ret, 'a -> unit, 'ret) args
+    val arg :
+      'a ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
-     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
+    val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-     (** The type of function prototypes.
+    (** The type of function prototypes.  
 
-  Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty:
-        bool] [%ty: unit]] *)
+        Usage: [arg_ty [%ty: int]
+        @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
     type ('arrow, 'uarrow, 'ret) prot
     val last_ty :
       'a Ty.ty ->
@@ -899,6 +996,9 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
+
+    (** {2 Lookup functions} *)
+
     type 'a lookup = unit -> [ `Found of string * Learnocaml_report.report * 'a | `Unbound of string * Learnocaml_report.report ]
 
     val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
@@ -907,8 +1007,13 @@ module type S = sig
     val found : string -> 'a -> 'a lookup
     val name : 'a lookup -> string
 
+    (** {2 Generic grading functions}*)
+      
+    (** [test_value lookup cb] *)
     val test_value : 'a lookup -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 
+    (** [test_function ~test ~test_stdout ~test_stderr ~before ~after
+        prot uf tests]  *)
     val test_function :
       ?test: 'ret tester ->
       ?test_stdout: io_tester ->
@@ -926,6 +1031,8 @@ module type S = sig
       (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
       Learnocaml_report.report
 
+    (** [test_function_against ~gen ~test ~test_stdout ~test_stderr
+        ~before_reference ~before_user ~after ~sampler prot uf rf tests] *)
     val test_function_against :
       ?gen: int ->
       ?test: 'ret tester ->
@@ -946,7 +1053,7 @@ module type S = sig
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.report
-   end
+  end
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
    val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
