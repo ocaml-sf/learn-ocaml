@@ -20,17 +20,18 @@ TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
 build-deps:
 	sh scripts/install-opam-deps.sh
 
+.PHONY: build
 build:
 	@ocp-build init
 	@ocp-build
 
 process-repo: install
 	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-          -exercises-dir ${EXERCISES_DIR} \
-          -tutorials-dir ${TUTORIALS_DIR} \
-          -dest-dir ${DEST_DIR} \
-          -dump-outputs ${EXERCISES_DIR} \
-          -dump-reports ${EXERCISES_DIR}
+	  -exercises-dir ${EXERCISES_DIR} \
+	  -tutorials-dir ${TUTORIALS_DIR} \
+	  -dest-dir ${DEST_DIR} \
+	  -dump-outputs ${EXERCISES_DIR} \
+	  -dump-reports ${EXERCISES_DIR}
 
 .PHONY: static
 static:
@@ -90,6 +91,15 @@ docker-images: Dockerfile learn-ocaml.opam
 	@docker build -t learn-ocaml --target program docker
 	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
+# Generates documentation for testing (exclusively Test_lib and Learnocaml_report modules)
+doc: build
+	mkdir -p _obuild/doc
+	odoc css -o _obuild/doc
+	odoc compile _obuild/testing/test_lib.cmti --package learn-ocaml
+	odoc compile _obuild/learnocaml-state/learnocaml_report.cmti --package learn-ocaml
+	odoc html _obuild/testing/test_lib.odoc --output-dir _obuild/doc
+	odoc html _obuild/learnocaml-state/learnocaml_report.odoc --output-dir _obuild/doc
+
 clean:
 	@ocp-build clean
 	-rm -f translations/$*.pot
@@ -99,8 +109,8 @@ clean:
 	-rm -f src/grader/embedded_grading_cmis.ml
 	-rm -f src/ppx-metaquot/ast_lifter.ml
 	-rm -f ${patsubst ${EXERCISES_DIR}/%/meta.json, \
-                            ${EXERCISES_DIR}/%.*, \
-                            ${wildcard ${EXERCISES_DIR}/*/meta.json}}
+			    ${EXERCISES_DIR}/%.*, \
+			    ${wildcard ${EXERCISES_DIR}/*/meta.json}}
 	-find -name \*~ -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally
