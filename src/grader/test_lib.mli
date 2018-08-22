@@ -484,8 +484,14 @@ module type S = sig
   module Test_functions_ref_var : sig
 
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
-        report if reference [got] value is equal to [exp] and
-        {!LearnOcaml_report.Failure} report otherwise.  *)
+       report if reference [got] value is equal to [exp] and
+       {!LearnOcaml_report.Failure} report otherwise.
+
+        {e WARNING:} contrary to other grading functions, you can not
+       use this function to evaluate a reference defined or modified
+       in student's code. In this case, you should use
+       {{!Mutation}mutation functions}. This function should be used
+       for a reference defined locally (in [test.ml]). *)
     val test_ref :
       'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.report
 
