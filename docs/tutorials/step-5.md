@@ -1,5 +1,7 @@
 # Step 5: More about grading functions for functions
 
+**Warning** This step is ahead of the current version of [learn-ocaml].
+
 ## Different grading functions for functions
 There are 2 main grading functions:
 
