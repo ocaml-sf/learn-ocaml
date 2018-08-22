@@ -1,5 +1,7 @@
 # Step 6 : Grading functions for variables
 
+**Warning** This step is ahead of the current version of [learn-ocaml].
+
 ## Test functions for variables
 There are 3 test functions for variables.
 
