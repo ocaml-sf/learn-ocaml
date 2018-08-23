@@ -94,6 +94,39 @@ module Tutorial = struct
 
 end
 
+module Exercise = struct
+
+  type id = Exercise.id
+
+  (** Todo: load the index just once and keep in memory
+      (+provide a "refresh" function callable by teachers ?) *)
+
+  module Meta = struct
+    include Exercise.Meta
+
+    let get id =
+      read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
+      >|= fun index -> Exercise.Index.find index id
+  end
+
+  module Index = struct
+    include Exercise.Index
+
+    let get () =
+      read_static_file Learnocaml_index.exercise_index_path enc
+
+  end
+
+  include (Exercise: module type of struct include Exercise end
+           with type id := id
+            and module Meta := Meta
+            and module Index := Index)
+
+  let get id =
+    read_static_file (Learnocaml_index.exercise_path id) enc
+
+end
+
 module Token = struct
 
   include Token

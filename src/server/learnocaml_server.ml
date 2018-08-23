@@ -288,11 +288,8 @@ module Request_handler = struct
             Exercise.Index.enc
             [Learnocaml_index.exercise_index_path]
       | Api.Exercise (_token, id) ->
-          read_json Exercise.Index.enc [Learnocaml_index.exercise_index_path]
-          >>= fun index ->
-          let meta = Exercise.Index.find index id in
-          read_json Exercise.enc [Learnocaml_index.exercise_path id]
-          >>= fun ex ->
+          Exercise.Meta.get id >>= fun meta ->
+          Exercise.get id >>= fun ex ->
           respond_json (meta, ex)
 
       | Api.Lesson_index () ->

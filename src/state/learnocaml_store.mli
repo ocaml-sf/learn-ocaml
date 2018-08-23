@@ -58,6 +58,28 @@ module Tutorial: sig
 
 end
 
+module Exercise: sig
+
+  module Meta: sig
+    include module type of struct include Exercise.Meta end
+    val get: Exercise.id -> t Lwt.t
+  end
+
+  module Index: sig
+    include module type of struct include Exercise.Index end
+    val get: unit -> t Lwt.t
+  end
+
+  include module type of struct include Exercise end
+  with module Meta := Meta
+   and module Index := Index
+
+  val get: id -> t Lwt.t
+
+end
+
+
+
 (** {2 Dynamic data} *)
 
 module Token: sig
@@ -132,6 +154,14 @@ module Exercise_status: sig
   }
 
   val enc: t Json_encoding.encoding
+
+  (* module Index: sig
+   * 
+   *   type nonrec t = t list
+   * 
+   *   val enc: t Json_encoding.encoding
+   * 
+   * end *)
 
   (* (\** The base index, {i without} the mutable part *\)
    * module Index: sig
