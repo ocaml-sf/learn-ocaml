@@ -21,6 +21,8 @@ open Learnocaml_data
 open Learnocaml_index
 open Learnocaml_common
 
+module H = Tyxml_js.Html5
+
 let exercises_tab token _ _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
@@ -31,13 +33,13 @@ let exercises_tab token _ _ () =
     let rec format_contents lvl acc contents =
       let open Tyxml_js.Html5 in
       match contents with
-      | Learnocaml_exercises exercises ->
+      | Exercise.Index.Exercises exercises ->
           List.fold_left
-            (fun acc (exercise_id,
-                      { exercise_kind ;
-                        exercise_title ;
-                        exercise_short_description ;
-                        exercise_stars }) ->
+            (fun acc (exercise_id, meta_opt) ->
+              match meta_opt with None -> acc | Some meta ->
+              let {Exercise.Meta.kind; title; short_description; stars; _ } =
+                meta
+              in
               let pct_init =
                 match SMap.find exercise_id all_exercise_states with
                 | exception Not_found -> None
@@ -65,37 +67,37 @@ let exercises_tab token _ _ () =
               a ~a:[ a_href ("exercise.html#id=" ^ exercise_id ^ "&action=open") ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] [
-                  h1 [ pcdata exercise_title ] ;
-                  p [ match exercise_short_description with
+                  h1 [ pcdata title ] ;
+                  p [ match short_description with
                       | None -> pcdata [%i"No description available."]
                       | Some text -> pcdata text ] ;
                 ] ;
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   div ~a:[ a_class [ "stars" ] ] [
-                    let num = 5 * int_of_float (exercise_stars *. 2.) in
+                    let num = 5 * int_of_float (stars *. 2.) in
                     let num = max (min num 40) 0 in
                     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
                     let src = Format.asprintf "icons/stars_%02d.svg" num in
                     img ~alt ~src ()
                   ] ;
                   div ~a:[ a_class [ "length" ] ] [
-                    match exercise_kind with
-                    | Project -> pcdata [%i"project"]
-                    | Problem -> pcdata [%i"problem"]
-                    | Learnocaml_exercise -> pcdata [%i"exercise"] ] ;
+                    match kind with
+                    | Exercise.Meta.Project -> pcdata [%i"project"]
+                    | Exercise.Meta.Problem -> pcdata [%i"problem"]
+                    | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ] ;
                   div ~a:[ a_class [ "score" ] ] [
                     Tyxml_js.R.Html5.pcdata pct_text_signal
                   ]
                 ] ] ::
               acc)
             acc exercises
-      | Groups groups ->
+      | Exercise.Index.Groups groups ->
           let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
           List.fold_left
-            (fun acc (_, { group_title ; group_contents }) ->
+            (fun acc (_, Exercise.Index.{ title ; contents }) ->
                format_contents (succ lvl)
-                 (h ~a:[ a_class [ "pack" ] ] [ pcdata group_title ] :: acc)
-                 group_contents)
+                 (h ~a:[ a_class [ "pack" ] ] [ pcdata title ] :: acc)
+                 contents)
             acc groups in
     List.rev (format_contents 1 [] index) in
   let list_div =
@@ -107,7 +109,6 @@ let exercises_tab token _ _ () =
 ;;
 
 let lessons_tab select (arg, set_arg, delete_arg) () =
-  let open Learnocaml_lesson in
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading lessons"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -140,7 +141,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
   let load_lesson ~loading () =
     let selector = Tyxml_js.To_dom.of_select selector in
     let id = Js.to_string selector##.value in
-    Server_caller.fetch_lesson id >>= fun { lesson_steps } ->
+    Server_caller.fetch_lesson id >>= fun { Lesson.steps } ->
     Manip.removeChildren main_div ;
     if loading then begin
       show_loading ~id:"learnocaml-main-loading"
@@ -177,19 +178,19 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
       ~container: main_div
       () >>= fun top ->
     Lwt_list.iter_s
-      (fun { step_title ; step_phrases } ->
+      (fun { Lesson.step_title ; step_phrases } ->
          Learnocaml_toplevel.print_html top ("<h3>" ^ step_title ^ "</h3>") ;
          let do_phrase = function
-           | Text text ->
+           | Lesson.Text text ->
                Learnocaml_toplevel.print_html top text ;
                Lwt.return ()
-           | Code code ->
+           | Lesson.Code code ->
                Learnocaml_toplevel.execute_phrase top code >>= fun _ ->
                Lwt.return () in
          Lwt_list.iter_s do_phrase step_phrases >>= fun () ->
          Lwt.return ()
       )
-      lesson_steps >>= fun () ->
+      steps >>= fun () ->
     set_arg "lesson" id ;
     begin match prev_and_next id with
       | None, None ->
@@ -258,7 +259,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
 ;;
 
 let tryocaml_tab select (arg, set_arg, delete_arg) () =
-  let open Learnocaml_tutorial in
+  let open Tutorial in
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
   let step_title_container =
@@ -320,16 +321,15 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   Server_caller.fetch_tutorial_index () >>= fun index ->
   let index =
     List.flatten @@ List.fold_left
-      (fun acc (_, { series_tutorials }) ->
+      (fun acc (_, { Index.series_tutorials }) ->
          series_tutorials :: acc)
       [] index in
   let options =
     List.map
-      (fun { tutorial_name; tutorial_title } ->
-         tutorial_name,
-         Tyxml_js.Html5.
-           (option ~a: [ a_value tutorial_name ]
-              (pcdata (extract_text_from_rich_text tutorial_title))))
+      (fun { Tutorial.Index.name; title } ->
+         name,
+         H.option ~a: [ H.a_value name ]
+           (H.pcdata (extract_text_from_rich_text title)))
       index in
   let selector =
     Tyxml_js.Html5.(select (snd (List.split options))) in
@@ -339,18 +339,18 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     let rec loop = function
       | [] -> assert false
       | [ _ ] (* assumes single id *) -> None, None
-      | { tutorial_name = one } ::
-        { tutorial_name = two } :: _ when id = one -> None, Some two
-      | { tutorial_name = one } ::
-        { tutorial_name = two } :: [] when id = two -> Some one, None
-      | { tutorial_name = one } ::
-        { tutorial_name = two } ::
-        { tutorial_name = three } :: _ when id = two -> Some one, Some three
+      | { Tutorial.Index.name = one } ::
+        { Tutorial.Index.name = two } :: _ when id = one -> None, Some two
+      | { Tutorial.Index.name = one } ::
+        { Tutorial.Index.name = two } :: [] when id = two -> Some one, None
+      | { Tutorial.Index.name = one } ::
+        { Tutorial.Index.name = two } ::
+        { Tutorial.Index.name = three } :: _ when id = two -> Some one, Some three
       |  _ :: rest -> loop rest
     in loop index in
   let current_tutorial_name = ref @@
     match arg "tutorial" with
-    | exception Not_found -> (List.hd index).tutorial_name
+    | exception Not_found -> (List.hd index).Tutorial.Index.name
     | tutorial_name -> tutorial_name in
   let current_step_id = ref @@
     match int_of_string (arg "step") with
@@ -361,7 +361,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   let prev_step_button_state = button_state () in
   let next_step_button_state = button_state () in
   let rec load_tutorial tutorial_name step_id () =
-    Server_caller.fetch_tutorial tutorial_name >>= fun { tutorial_steps } ->
+    Server_caller.fetch_tutorial tutorial_name >>= fun { Tutorial.steps } ->
     set_arg "tutorial" tutorial_name ;
     set_arg "step" (string_of_int step_id) ;
     let prev, next = prev_and_next tutorial_name in
@@ -377,13 +377,13 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
       Tyxml_js.To_dom.of_option (List.assoc tutorial_name options) in
     option##.selected := Js._true ;
     let step = try
-        List.nth tutorial_steps step_id
+        List.nth steps step_id
       with _ -> failwith "unknown step" in
     if step_id = 0 then
       disable_button prev_step_button_state
     else
       enable_button prev_step_button_state ;
-    if step_id = List.length tutorial_steps - 1 then
+    if step_id = List.length steps - 1 then
       disable_button next_step_button_state
     else
       enable_button next_step_button_state ;
@@ -581,25 +581,26 @@ let teacher_tab token _select _params () =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
   in
   let rec mk_table group_level acc = function
-    | Groups groups_list ->
+    | Exercise.Index.Groups groups_list ->
         List.fold_left (fun acc (id, g) ->
             let acc =
               H.tr ~a:[H.a_id ("exercise_group_"^id)] [
                 H.th ~a:[H.a_colspan 0; indent_style group_level]
-                  [H.pcdata g.group_title];
+                  [H.pcdata g.Exercise.Index.title];
               ] :: acc
             in
-            mk_table (group_level + 1) acc g.group_contents)
+            mk_table (group_level + 1) acc g.Exercise.Index.contents)
           acc groups_list
-    | Learnocaml_exercises exlist ->
-        List.fold_left (fun acc (id, ex) ->
+    | Exercise.Index.Exercises exlist ->
+        List.fold_left (fun acc (id, meta) ->
+            match meta with None -> acc | Some meta ->
             H.tr ~a:[
               H.a_id ("learnocaml_exercise_"^id);
             ] [
               H.td ~a:[indent_style group_level]
-                [ H.pcdata ex.exercise_title ];
-              H.td (List.map H.pcdata ex.exercise_focus);
-              H.td [H.pcdata (string_of_float ex.exercise_stars)];
+                [ H.pcdata meta.Exercise.Meta.title ];
+              H.td (List.map H.pcdata meta.Exercise.Meta.focus);
+              H.td [H.pcdata (string_of_float meta.Exercise.Meta.stars)];
             ] :: acc)
           acc exlist
   in

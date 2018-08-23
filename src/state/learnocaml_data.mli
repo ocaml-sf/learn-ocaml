@@ -96,7 +96,7 @@ type 'a token = Token.t
 type student
 type teacher
 
-module Student : sig
+module Student: sig
 
   type t = {
     token: student token;
@@ -106,5 +106,145 @@ module Student : sig
   }
 
   val enc: t Json_encoding.encoding
+
+end
+
+module Exercise: sig
+
+  type id = string
+
+  module Meta: sig
+
+    type kind =
+      | Project
+      | Problem
+      | Exercise
+
+    type t = {
+      kind: kind;
+      title: string;
+      short_description: string option;
+      stars: float (* \in [0.,4.] *);
+      id: id option;
+      author: (string * string) list;
+      focus: string list;
+      requirements: string list;
+      forward: id list;
+      backward: id list;
+      max_score: int option;
+    }
+
+    val enc: t Json_encoding.encoding
+
+    val empty: t
+
+  end
+
+  type t = Learnocaml_exercise.t
+
+  val enc: t Json_encoding.encoding
+
+  module Index: sig
+
+    type t =
+      | Exercises of (id * Meta.t option) list
+      | Groups of (string * group) list
+    and group =
+      { title : string;
+        contents : t }
+
+    val enc: t Json_encoding.encoding
+
+    val find: t -> id -> Meta.t
+
+    val find_opt: t -> id -> Meta.t option
+
+  end
+
+end
+
+module Lesson: sig
+
+  type id = string
+
+  type phrase =
+    | Text of string
+    | Code of string
+
+  type step = {
+    step_title: string;
+    step_phrases: phrase list;
+  }
+
+  type t = {
+    title: string;
+    steps: step list;
+  }
+
+  val enc: t Json_encoding.encoding
+
+  module Index: sig
+
+    type t = (id * string) list
+
+    val enc: t Json_encoding.encoding
+
+  end
+
+end
+
+module Tutorial: sig
+
+  type id = string
+
+  type code = {
+    code: string;
+    runnable: bool;
+  }
+
+  type word =
+    | Text of string
+    | Code of code
+    | Emph of text
+    | Image of { alt : string ; mime : string ; contents : bytes }
+    | Math of string
+
+  and text =
+    word list
+
+  type phrase =
+    | Paragraph of text
+    | Enum of phrase list list
+    | Code_block of code
+
+  type step = {
+    step_title: text;
+    step_contents: phrase list;
+  }
+
+  type t = {
+    title: text;
+    steps: step list;
+  }
+
+  val enc: t Json_encoding.encoding
+
+  module Index: sig
+
+    type entry = {
+      name: string;
+      title: text;
+    }
+
+    type series = {
+      series_title: string;
+      series_tutorials: entry list;
+    }
+
+    type t = (id * series) list
+
+    val enc: t Json_encoding.encoding
+
+  end
 
 end

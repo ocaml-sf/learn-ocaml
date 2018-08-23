@@ -58,49 +58,39 @@ let read_static_file path enc =
 
 module Lesson = struct
 
-  type id = string
-
-  type t = Learnocaml_lesson.lesson
-
-  let enc = Learnocaml_lesson.lesson_enc
-
-  let get id =
-    read_static_file (Learnocaml_index.lesson_path id) enc
-
   module Index = struct
 
-    type t = (string * string) list
-
-    let enc = Learnocaml_index.lesson_index_enc
+    include Lesson.Index
 
     let get () =
       read_static_file Learnocaml_index.lesson_index_path enc
 
   end
 
+  include (Lesson: module type of struct include Lesson end
+           with module Index := Index)
+
+  let get id =
+    read_static_file (Learnocaml_index.lesson_path id) enc
+
 end
 
 module Tutorial = struct
 
-  type id = string
-
-  type t = Learnocaml_tutorial.tutorial
-
-  let enc = Learnocaml_tutorial.tutorial_enc
-
-  let get id =
-    read_static_file (Learnocaml_index.tutorial_path id) enc
-
   module Index = struct
 
-    type t = (string * Learnocaml_index.series) list
-
-    let enc = Learnocaml_index.tutorial_index_enc
+    include Tutorial.Index
 
     let get () =
       read_static_file Learnocaml_index.tutorial_index_path enc
 
   end
+
+  include (Tutorial: module type of struct include Tutorial end
+           with module Index := Index)
+
+  let get id =
+    read_static_file (Learnocaml_index.tutorial_path id) enc
 
 end
 
@@ -216,13 +206,13 @@ module Save = struct
 
 end
 
-module Exercise = struct
+module Exercise_status = struct
 
   type id = string
 
   type tag = string
 
-  type status = Open | Closed
+  type status = Open | Closed | Readonly
 
   type assignment = {
     start: float;
@@ -232,7 +222,7 @@ module Exercise = struct
   type t = {
     id: id;
     path: string list;
-    meta: Learnocaml_index.exercise;
+    meta: Exercise.Meta.t;
     tags: tag list;
     status: status;
     assigned: assignment Token.Map.t;
@@ -247,11 +237,12 @@ module Exercise = struct
     J.obj6
       (J.req "id" J.string)
       (J.req "path" (J.list J.string))
-      (J.req "meta" Learnocaml_index.exercise_enc)
+      (J.req "meta" Exercise.Meta.enc)
       (J.dft "tags" (J.list J.string) [])
       (J.dft "status" (J.string_enum [
            "open", Open;
            "closed", Closed;
+           "readonly", Readonly;
          ]) Open)
       (J.dft "assigned"
          (J.conv
@@ -278,41 +269,41 @@ module Exercise = struct
 
   let all: (id, t) Hashtbl.t = Hashtbl.create 223
 
-  module Index = struct
-
-    type t = Learnocaml_index.group_contents
-
-    let enc = Learnocaml_index.exercise_index_enc
-
-    let load exercise_index_file =
-      let ic = open_in exercise_index_file in
-      let json = Ezjsonm.from_channel ic in
-      close_in ic;
-      let index = J.destruct enc json in
-      Lwt.return index
-      (* let rec register path = function
-       *   | Learnocaml_index.Groups groups ->
-       *       List.iter (fun (group_name, { _group_title; group_contents }) ->
-       *           register (path @ [group_name]) group_contents)
-       *         groups
-       *   | Learnocaml_index.Learnocaml_exercises exos ->
-       *       List.iter (fun (name, exercise) ->
-       *           Hashtbl.add all id {
-       *             id;
-       *             path;
-       *             meta = exercise;
-       *             tags = [];
-       *           })
-       *         exos
-       * in
-       * register [] index *)
-
-    let reload () = ()
-
-  (* let select ?(filter=None) ?(sort=None) () =
-   *   Hashtbl.fold (fun _id ex acc -> ex::acc) all [] *)
-
-  end
+  (* module Index = struct
+   * 
+   *   type t = Learnocaml_index.group_contents
+   * 
+   *   let enc = Learnocaml_index.exercise_index_enc
+   * 
+   *   let load exercise_index_file =
+   *     let ic = open_in exercise_index_file in
+   *     let json = Ezjsonm.from_channel ic in
+   *     close_in ic;
+   *     let index = J.destruct enc json in
+   *     Lwt.return index
+   *     (\* let rec register path = function
+   *      *   | Learnocaml_index.Groups groups ->
+   *      *       List.iter (fun (group_name, { _group_title; group_contents }) ->
+   *      *           register (path @ [group_name]) group_contents)
+   *      *         groups
+   *      *   | Learnocaml_index.Learnocaml_exercises exos ->
+   *      *       List.iter (fun (name, exercise) ->
+   *      *           Hashtbl.add all id {
+   *      *             id;
+   *      *             path;
+   *      *             meta = exercise;
+   *      *             tags = [];
+   *      *           })
+   *      *         exos
+   *      * in
+   *      * register [] index *\)
+   * 
+   *   let reload () = ()
+   * 
+   * (\* let select ?(filter=None) ?(sort=None) () =
+   *  *   Hashtbl.fold (fun _id ex acc -> ex::acc) all [] *\)
+   * 
+   * end *)
 
 end
 

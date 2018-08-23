@@ -274,3 +274,398 @@ module Student = struct
          })
 end
 
+let enc_check_version_1 enc =
+  J.conv
+    (fun exercise -> ("1", exercise))
+    (fun (version, exercise) ->
+       if version <> "1" then begin
+         let msg = Format.asprintf "unknown version %s" version in
+         raise (J.Cannot_destruct ([], Failure msg))
+       end ;
+       exercise)
+    (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
+
+let enc_check_version_2 enc =
+  J.conv
+    (fun exercise -> ("2", exercise))
+    (fun (version, exercise) ->
+       begin
+         match version with
+         | "1" | "2" -> ()
+         | _ ->
+             let msg = Format.asprintf "unknown version %s" version in
+             raise (J.Cannot_destruct ([], Failure msg))
+       end ;
+       exercise)
+    (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
+
+module Exercise = struct
+
+  type id = string
+
+  type t = Learnocaml_exercise.t
+
+  let enc = Learnocaml_exercise.encoding
+
+  module Meta = struct
+
+    type kind =
+      | Project
+      | Problem
+      | Exercise
+
+    type t = {
+      kind: kind;
+      title: string;
+      short_description: string option;
+      stars: float (* \in [0.,4.] *);
+      id: id option;
+      author: (string * string) list;
+      focus: string list;
+      requirements: string list;
+      forward: id list;
+      backward: id list;
+      max_score: int option;
+    }
+
+    let enc =
+      let kind_enc =
+        J.string_enum
+          [ "problem", Problem ;
+            "project", Project ;
+            "exercise", Exercise ]
+      in
+      let exercise_enc_v1 =
+        J.(obj10
+             (req "kind" kind_enc)
+             (dft "title" string "")
+             (opt "shortDescription" string)
+             (req "stars" float)
+             (opt "identifier" string)
+             (dft "author" (list (tup2 string string)) [])
+             (dft "focus" (list string) [])
+             (dft "requirements" (list string) [])
+             (dft "forward" (list string) [])
+             (dft "backward" (list string) []))
+      in
+      let exercise_enc_v2 =
+        J.(obj1
+             (opt "max_score" int))
+      in
+      J.conv
+        (fun t ->
+           ((t.kind, t.title, t.short_description, t.stars, t.id,
+             t.author, t.focus, t.requirements, t.forward, t.backward),
+            t.max_score))
+        (fun ((kind, title, short_description, stars, id,
+               author, focus, requirements, forward, backward),
+              max_score) ->
+          { kind; title; short_description; stars; id;
+            author; focus; requirements; forward; backward; max_score;
+          })
+        (enc_check_version_2
+           (J.merge_objs
+              exercise_enc_v1
+              exercise_enc_v2))
+
+    let empty = {
+      kind = Exercise;
+      title = "";
+      short_description = None;
+      stars = 0.;
+      id = None;
+      author = [];
+      focus = [];
+      requirements = [];
+      forward = [];
+      backward = [];
+      max_score = None;
+    }
+
+  end
+
+  module Index = struct
+
+    type t =
+      | Exercises of (id * Meta.t option) list
+      | Groups of (string * group) list
+    and group =
+      { title : string;
+        contents : t }
+
+    let enc =
+      let exercise_enc =
+        J.union [
+          J.case J.string
+            (function id, None -> Some id | _ -> None)
+            (fun id -> id, None);
+          J.case J.(tup2 string Meta.enc)
+            (function id, Some meta -> Some (id, meta) | _ -> None)
+            (fun (id, meta) -> id, Some meta);
+        ]
+      in
+      let group_enc =
+        J.mu "group" @@ fun group_enc ->
+        J.conv
+          (fun (g : group) -> g.title, g.contents)
+          (fun (title, contents) -> { title; contents }) @@
+        J.union
+          [ J.case
+              J.(obj2
+                   (req "title" string)
+                   (req "exercises" (list exercise_enc)))
+              (function
+                | (title, Exercises map) -> Some (title, map)
+                | _ -> None)
+              (fun (title, map) -> (title, Exercises map)) ;
+            J.case
+              J.(obj2
+                   (req "title" string)
+                   (req "groups" (assoc group_enc)))
+              (function
+                | (title, Groups map) -> Some (title, map)
+                | _ -> None)
+              (fun (title, map) -> (title, Groups map)) ]
+      in
+      enc_check_version_2 @@
+      J.union
+        [ J.case
+            J.(obj1 (req "exercises" (list exercise_enc)))
+            (function
+              | Exercises map -> Some map
+              | _ -> None)
+            (fun map -> Exercises map) ;
+          J.case
+            J.(obj1 (req "groups" (assoc group_enc)))
+            (function
+              | Groups map -> Some map
+              | _ -> None)
+            (fun map -> Groups map) ]
+
+    let find t id =
+      let rec aux t path = match t, path with
+        | Groups l, k::path -> aux (List.assoc k l).contents path
+        | Exercises l, [] -> (match List.assoc id l with
+            | None -> raise Not_found
+            | Some e -> e)
+        | _ -> raise Not_found
+      in
+      aux t (String.split_on_char '/' id)
+
+    let find_opt t id = try Some (find t id) with Not_found -> None
+
+  end
+
+end
+
+module Lesson = struct
+
+  type id = string
+
+  type phrase =
+    | Text of string
+    | Code of string
+
+  type step = {
+    step_title: string;
+    step_phrases: phrase list;
+  }
+
+  type t = {
+    title: string;
+    steps: step list;
+  }
+
+  let enc =
+    enc_check_version_2 @@
+    J.conv
+      (fun t -> (t.title, t.steps))
+      (fun (title, steps) -> { title; steps }) @@
+    J.obj2
+      J.(req "title" string)
+      J.(req "steps"
+           (list @@
+            conv
+              (fun s -> (s.step_title, s.step_phrases))
+              (fun (step_title, step_phrases) -> {step_title; step_phrases}) @@
+            (obj2
+               (req "title" string)
+               (req "contents"
+                  (list @@ union
+                     [ case
+                         (obj1 (req "html" string))
+                         (function Text text -> Some text | Code _ -> None)
+                         (fun text -> Text text) ;
+                       case
+                         (obj1 (req "code" string))
+                         (function Code code -> Some code | Text _ -> None)
+                         (fun code -> Code code) ])))))
+
+  module Index = struct
+
+    type t = (id * string) list
+
+    let enc =
+      enc_check_version_2 @@
+      J.(obj1 (req "lessons" (list @@ tup2 string string)))
+
+  end
+
+end
+
+module Tutorial = struct
+
+  type id = string
+
+  type code = {
+    code: string;
+    runnable: bool;
+  }
+
+  type word =
+    | Text of string
+    | Code of code
+    | Emph of text
+    | Image of { alt : string ; mime : string ; contents : bytes }
+    | Math of string
+
+  and text =
+    word list
+
+  type phrase =
+    | Paragraph of text
+    | Enum of phrase list list
+    | Code_block of code
+
+  type step = {
+    step_title: text;
+    step_contents: phrase list;
+  }
+
+  type t = {
+    title: text;
+    steps: step list;
+  }
+
+  let text_enc =
+    J.mu "text" @@ fun content_enc ->
+    let word_enc =
+      J.union
+        [ J.case J.string
+            (function Text text -> Some text | _ -> None)
+            (fun text -> Text text) ;
+          J.case
+            J.(obj1 (req "text" string))
+            (function Text text -> Some text | _ -> None)
+            (fun text -> Text text) ;
+          J.case
+            J.(obj1 (req "emph" content_enc))
+            (function Emph content -> Some content | _ -> None)
+            (fun content -> Emph content) ;
+          J.case
+            J.(obj2 (req "code" string) (dft "runnable" bool false))
+            (function Code { code ; runnable } -> Some (code, runnable)
+                    | _ -> None)
+            (fun (code, runnable) -> Code { code ; runnable }) ;
+          J.case
+            J.(obj1 (req "math" string))
+            (function Math math-> Some math | _ -> None)
+            (fun math -> Math math) ;
+          J.case
+            J.(obj3 (req "image" bytes) (req "alt" string) (req "mime" string))
+            (function
+              | Image { alt ; mime ; contents = image } ->
+                  Some (image, alt, mime)
+              | _ -> None)
+            (fun (image, alt, mime) ->
+               Image { alt ; mime ; contents = image }) ] in
+    J.union
+    [ J.case
+        word_enc
+        (function [ ctns ] -> Some ctns | _ -> None) (fun ctns -> [ ctns ]) ;
+      J.case
+        (J.list @@ word_enc)
+        (fun ctns -> Some ctns) (fun ctns -> ctns) ]
+
+  let phrase_enc =
+    J.mu "phrase" @@ fun phrase_enc ->
+    J.union
+      [ J.case
+          J.(obj1 (req "paragraph" text_enc))
+          (function Paragraph phrase -> Some phrase | _ -> None)
+          (fun phrase -> Paragraph phrase) ;
+        J.case
+          J.(obj1 (req "enum" (list (list phrase_enc))))
+          (function Enum items -> Some items | _ -> None)
+          (fun items -> Enum items) ;
+        J.case
+          J.(obj2 (req "code" string) (dft "runnable" bool false))
+          (function Code_block { code ; runnable } ->
+             Some (code, runnable) | _ -> None)
+          (fun (code, runnable) ->
+             Code_block { code ; runnable }) ;
+        J.case
+          text_enc
+          (function Paragraph phrase -> Some phrase | _ -> None)
+          (fun phrase -> Paragraph phrase) ]
+
+  let enc =
+    enc_check_version_2 @@
+    J.conv
+      (fun t -> t.title, t.steps)
+      (fun (title, steps) -> {title; steps}) @@
+    J.obj2
+      (J.req "title" text_enc)
+      (J.req "steps"
+         (J.list @@
+          J.conv
+            (fun t -> t.step_title, t.step_contents)
+            (fun (step_title, step_contents) -> {step_title; step_contents}) @@
+          J.(obj2
+               (req "title" text_enc)
+               (req "contents" (list phrase_enc)))))
+
+  module Index = struct
+
+    type entry = {
+      name: string;
+      title: text;
+    }
+
+    type series = {
+      series_title: string;
+      series_tutorials: entry list;
+    }
+
+    type t = (id * series) list
+
+    let enc =
+      let entry_enc =
+        J.union [
+          J.case
+            J.(tup2 string text_enc)
+            (function ({title = []; _}: entry) -> None
+                    | {name; title} -> Some (name, title))
+            (fun (name, title) -> {name; title});
+          J.case
+            J.string
+            (function {name; title = []} -> Some name
+                    | _ -> None)
+            (fun name -> {name; title = []});
+        ]
+      in
+      let series_enc =
+        J.conv
+          (fun t ->
+             (t.series_title, t.series_tutorials))
+          (fun (series_title, series_tutorials) ->
+             {series_title; series_tutorials}) @@
+        J.obj2
+          J.(req "title" string)
+          J.(req "tutorials" (list entry_enc)) in
+      enc_check_version_1 @@
+      J.(obj1 (req "series" (assoc series_enc)))
+
+  end
+
+end

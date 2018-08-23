@@ -5,7 +5,8 @@ begin library "learnocaml-report"
   ]
   requires = [
     "ocplib_i18n"
-    "learnocaml-repository"
+    "ocplib-json-typed"
+(*    "learnocaml-repository" *)
   ]
 end
 

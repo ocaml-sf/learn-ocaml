@@ -158,10 +158,9 @@ let grade ?(print_result=false) ?dirname exercise output_json =
              | None ->
                  Lwt.return (Ok ())
              | Some json_file ->
-                 let exo =
-                   Learnocaml_exercise.(update File.max_score max exercise) in
                  let json =
-                   Json_encoding.construct Learnocaml_exercise.encoding exo in
+                   Json_encoding.construct Learnocaml_exercise.encoding exercise
+                 in
                  let json = match json with
                    | `A _ | `O _ as d -> d
                    | v -> `A [ v ] in

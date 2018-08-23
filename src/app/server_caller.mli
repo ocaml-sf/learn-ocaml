@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 type request_error = [
   | `Unreachable of string
   | `Not_found of string
@@ -35,15 +37,13 @@ val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t
  * 
  * val fetch_exercise_index : unit -> Learnocaml_index.group_contents Lwt.t *)
 
-val fetch_exercise :
-  Learnocaml_data.Token.t ->  string -> Learnocaml_exercise.t Lwt.t
-val fetch_lesson_index : unit -> (string * string) list Lwt.t
+val fetch_exercise: Token.t -> Exercise.id -> (Exercise.Meta.t * Exercise.t) Lwt.t
 
-val fetch_lesson : string -> Learnocaml_lesson.lesson Lwt.t
+val fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
+val fetch_lesson : string -> Lesson.t Lwt.t
 
-val fetch_tutorial_index : unit -> (string * Learnocaml_index.series) list Lwt.t
-
-val fetch_tutorial : string -> Learnocaml_tutorial.tutorial Lwt.t
+val fetch_tutorial_index : unit -> Tutorial.Index.t Lwt.t
+val fetch_tutorial : string -> Tutorial.t Lwt.t
 
 (*
 val gimme_sync_token : unit -> string Lwt.t

@@ -19,7 +19,7 @@
 
 val exercises_dir: string ref
 val exercises_index: string option ref
-val exercises_filtered: Set.Make(String).t ref
+val exercises_filtered: Learnocaml_data.SSet.t ref
 val dump_outputs: string option ref
 val dump_reports: string option ref
 val n_processes: int ref

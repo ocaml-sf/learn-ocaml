@@ -17,6 +17,7 @@
 
 
 open Learnocaml_index
+open Learnocaml_data
 
 open Lwt.Infix
 
@@ -29,15 +30,6 @@ let args = Arg.align @@
     "PATH path to the tutorial repository (default: [./tutorials])" ;
     "-tutorials-index", Arg.String (fun fn -> tutorials_index := Some fn),
     "PATH path to the tutorials index (default: [<tutorials-dir>/index.json])" ]
-
-let index_enc =
-  let open Json_encoding in
-  let series_enc =
-    obj2
-      (req "title" string)
-      (req "tutorials" (list string)) in
-  check_version_2 @@
-  obj1 (req "series" (assoc series_enc))
 
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
@@ -67,7 +59,10 @@ let main dest_dir =
   Lwt.catch
     (fun () ->
        (if Sys.file_exists tutorials_index then
-          from_file index_enc tutorials_index
+          from_file Tutorial.Index.enc tutorials_index >|=
+          List.map Tutorial.Index.(fun (id, s) ->
+              id, (s.series_title,
+                   List.map (fun e -> e.name) s.series_tutorials))
         else
           match
             Array.to_list (Sys.readdir !tutorials_dir) |>
@@ -81,7 +76,7 @@ let main dest_dir =
               Format.eprintf "This does not look like a LearnOCaml tutorial repository.@." ;
               Lwt.fail_with  "cannot continue"
           | files ->
-              Format.eprintf "Missing index file, using all .dm and .html files.@." ;
+              Format.eprintf "Missing index file, using all .md and .html files.@." ;
               Lwt.return [ "tutorials", ("All tutorials", files) ]) >>= fun series ->
        let retrieve_tutorial tutorial_name =
          let base_name = !tutorials_dir / tutorial_name in
@@ -102,14 +97,15 @@ let main dest_dir =
               (fun name ->
                  retrieve_tutorial name >>= fun (server_index_handle, tutorial) ->
                  let json_path = dest_dir / tutorial_path name in
-                 to_file Learnocaml_tutorial.tutorial_enc json_path tutorial >>= fun () ->
+                 to_file Tutorial.enc json_path tutorial >>= fun () ->
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
             acc >>= fun acc ->
-            Lwt.return ((name, { series_title ; series_tutorials }) :: acc))
+            Lwt.return ((name, Tutorial.Index.{series_title; series_tutorials})
+                        :: acc))
          (Lwt.return [])
          series >>= fun index ->
-       to_file tutorial_index_enc (dest_dir / tutorial_index_path) index >>= fun () ->
+       to_file Tutorial.Index.enc (dest_dir / tutorial_index_path) index >>= fun () ->
        Lwt.return true)
     (fun exn ->
        let print_unknown ppf = function

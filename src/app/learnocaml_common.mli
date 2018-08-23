@@ -82,10 +82,10 @@ val button :
 
 val render_rich_text :
   ?on_runnable_clicked: (string -> unit) ->
-  Learnocaml_index.text ->
+  Learnocaml_data.Tutorial.text ->
   [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list
 
-val extract_text_from_rich_text : Learnocaml_index.text -> string
+val extract_text_from_rich_text : Learnocaml_data.Tutorial.text -> string
 
 val set_state_from_save_file :
   ?token:Token.t -> Save.t -> unit

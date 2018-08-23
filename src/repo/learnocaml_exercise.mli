@@ -51,11 +51,11 @@ module File : sig
   (** Learnocaml_exercise id accessor *)
   val id: id file
 
-  (** Learnocaml_exercise title / name accessor *)
-  val title: string file
-
-  (** Maximum score for the exercise *)
-  val max_score: int file
+  (* (\** Learnocaml_exercise title / name accessor *\)
+   * val title: string file
+   * 
+   * (\** Maximum score for the exercise *\)
+   * val max_score: int file *)
 
   (** Returns the (private, already decyphered) [prepare.ml] *)
   val prepare: string file
@@ -93,11 +93,6 @@ val update: 'a File.file -> 'a -> t -> t
 (** Updates the value of a field of the exercise in its [t] representation, and
     ciphers it. *)
 val cipher: string File.file -> string -> t -> t
-
-val meta_from_index: Learnocaml_index.exercise -> Learnocaml_meta.meta
-
-(** Generates the exercise representation for the exercises index. *)
-val to_index: t -> Learnocaml_index.exercise
 
 (** Reader and decipherer *)
 val read:

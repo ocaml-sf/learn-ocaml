@@ -41,14 +41,14 @@ type _ request =
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
 
-  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
-  | Exercise: 'a token * string -> Learnocaml_exercise.t request
+  | Exercise_index: 'a token -> Exercise.Index.t request
+  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t) request
 
   | Lesson_index: unit -> (string * string) list request
-  | Lesson: string -> Learnocaml_lesson.lesson request
+  | Lesson: string -> Lesson.t request
 
-  | Tutorial_index: unit -> (string * Learnocaml_index.series) list request
-  | Tutorial: string -> Learnocaml_tutorial.tutorial request
+  | Tutorial_index: unit -> Tutorial.Index.t request
+  | Tutorial: string -> Tutorial.t request
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case

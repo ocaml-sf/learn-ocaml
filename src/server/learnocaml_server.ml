@@ -89,11 +89,13 @@ let respond_static path =
 let respond_json = fun x ->
   Lwt.return (Ok (x, "application/json"))
 
-let respond_static_json enc path =
+let read_json enc path =
   read_static_file path >|=
   Ezjsonm.from_string >|=
-  Json_encoding.destruct enc >>=
-  respond_json
+  Json_encoding.destruct enc
+
+let respond_static_json enc path =
+  read_json enc path >>= respond_json
 
 let with_verified_teacher_token token cont =
   Token.check_teacher token >>= function
@@ -283,30 +285,25 @@ module Request_handler = struct
       | Api.Exercise_index _token ->
           (* TODO: check token; retrieve dedicated exercise assignment *)
           respond_static_json
-            Learnocaml_index.exercise_index_enc
+            Exercise.Index.enc
             [Learnocaml_index.exercise_index_path]
       | Api.Exercise (_token, id) ->
-          respond_static_json
-            Learnocaml_exercise.enc
-            [Learnocaml_index.exercise_path id]
+          read_json Exercise.Index.enc [Learnocaml_index.exercise_index_path]
+          >>= fun index ->
+          let meta = Exercise.Index.find index id in
+          read_json Exercise.enc [Learnocaml_index.exercise_path id]
+          >>= fun ex ->
+          respond_json (meta, ex)
 
       | Api.Lesson_index () ->
-          respond_static_json
-            Learnocaml_index.lesson_index_enc
-            [Learnocaml_index.lesson_index_path]
+          Lesson.Index.get () >>= respond_json
       | Api.Lesson id ->
-          respond_static_json
-            Learnocaml_lesson.lesson_enc
-            [Learnocaml_index.lesson_path id]
+          Lesson.get id >>= respond_json
 
       | Api.Tutorial_index () ->
-          respond_static_json
-            Learnocaml_index.tutorial_index_enc
-            [Learnocaml_index.tutorial_index_path]
+          Tutorial.Index.get () >>= respond_json
       | Api.Tutorial id ->
-          respond_static_json
-            Learnocaml_tutorial.tutorial_enc
-            [Learnocaml_index.tutorial_path id]
+          Tutorial.get id >>= respond_json
 
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))

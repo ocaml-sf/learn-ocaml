@@ -73,6 +73,16 @@ update-%-translation: translations/%.pot
 opaminstall: build learn-ocaml.install
 	@opam-installer --prefix `opam var prefix` learn-ocaml.install
 
+REPO ?= demo-repository
+
+testrun:
+	@${MAKE} opaminstall
+	rm -rf www/css
+	learn-ocaml build --repo $(REPO) -j8
+	rm -rf www/css
+	ln -s ../static/css www
+	learn-ocaml serve
+
 docker-images: Dockerfile learn-ocaml.opam
 	@rm -rf docker
 	@git clone . docker
@@ -95,7 +105,7 @@ clean:
 	@ocp-build clean
 	-rm -f translations/$*.pot
 	@${MAKE} -C  static clean
-	-rm -rf ${DEST_DIR}
+	-rm -rf www
 	-rm -f src/grader/embedded_cmis.ml
 	-rm -f src/grader/embedded_grading_cmis.ml
 	-rm -f src/ppx-metaquot/ast_lifter.ml

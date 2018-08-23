@@ -17,6 +17,7 @@
 
 open Learnocaml_data
 open Lwt.Infix
+module Api = Learnocaml_api
 
 let version = "0.1"
 
@@ -335,8 +336,10 @@ let get_score =
   in
   get_score 0
 
-let max_score exercise =
-  Learnocaml_exercise.(access File.max_score exercise)
+let max_score meta =
+  match meta.Exercise.Meta.max_score with
+  | Some n -> n
+  | None -> 0
 
 let print_score ?(max=1) ?color i =
   let color = match color with
@@ -348,11 +351,11 @@ let print_score ?(max=1) ?color i =
   else
     Console.button color (Printf.sprintf " %3d pts " i)
 
-let console_report ?(verbose=false) exercise report =
+let console_report ?(verbose=false) meta report =
   let open Console in
   let open Learnocaml_report in
   let score = get_score report in
-  let max_score = max_score exercise in
+  let max_score = max_score meta in
   print_string (hline ());
   Printf.printf
     "## %-*s %s\n"
@@ -409,31 +412,54 @@ let console_report ?(verbose=false) exercise report =
   List.iter (fun i -> print_endline (format_item i)) report;
   print_newline ()
 
+(* fixme: copied from Learnocaml_store *)
+module Json_codec = struct
+  let decode enc s =
+    (match s with
+     | "" -> `Null
+     | s -> Ezjsonm.from_string s)
+    |> Json_encoding.destruct enc
 
-let fetch url =
+  let encode enc x =
+    match Json_encoding.construct enc x with
+    | `A _ | `O _ as json -> Ezjsonm.to_string json
+    | `Null -> ""
+    | _ -> assert false
+end
+
+module Api_client = Learnocaml_api.Client (Json_codec)
+
+let fetch server_url req =
+  let url path args =
+    let path = String.concat "/" (Uri.path server_url :: path) in
+    let uri = Uri.with_path server_url path in
+    Uri.with_query' uri args
+  in
   let open Cohttp in
   let open Cohttp_lwt_unix in
-  Client.get url >>= fun (resp, body) ->
-  match Response.status resp with
-  | `OK -> Cohttp_lwt.Body.to_string body
-  | `Not_found -> raise Not_found
-  | status ->
-      Printf.ksprintf Lwt.fail_with
-        "Error contacting learn-ocaml server: code %d"
-        (Code.code_of_status status)
-
-let server_path server_url path =
-  Uri.with_path server_url @@
-  String.concat "/" (Uri.path server_url :: path)
-
-let fetch_exercise server_url id =
-  let exercise_json_url =
-    server_path server_url ["exercises"; id ^ ".json"]
+  let do_req = function
+    | { Learnocaml_api.meth = `GET; path; args } ->
+        Client.get (url path args)
+    | { Learnocaml_api.meth = `POST body; path; args } ->
+        Client.post ~body:(Cohttp_lwt.Body.of_string body) (url path args)
   in
-  Lwt.catch (fun () ->
-      fetch exercise_json_url >|=
-      Ezjsonm.from_string >|=
-      Json_encoding.destruct Learnocaml_exercise.enc)
+  Api_client.make_request
+    (fun http_request ->
+       do_req http_request >>= function
+       | {Response.status = `OK; _}, body ->
+           Cohttp_lwt.Body.to_string body >|= fun s -> Ok s
+       | {Response.status = `Not_found; _}, _ ->
+           Lwt.return (Error `Not_found)
+       | {Response.status; _}, _ ->
+           Lwt.return (Error (`Failure (Code.string_of_status status))))
+    req
+  >>= function
+  | Ok x -> Lwt.return x
+  | Error `Not_found -> raise Not_found
+  | Error (`Failure s) -> Lwt.fail_with ("Server request failed: "^ s)
+
+let fetch_exercise server_url token id =
+  Lwt.catch (fun () -> fetch server_url (Api.Exercise (token, id)))
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with
@@ -442,14 +468,7 @@ let fetch_exercise server_url id =
   | e -> Lwt.fail e
 
 let fetch_save server_url token =
-  let sync_url =
-    server_path server_url ["sync"; Token.to_string token]
-  in
-  Lwt.catch (fun () ->
-      fetch sync_url >|= fun s ->
-      let s = if s = "" then "{}" else s in
-      Ezjsonm.from_string s |>
-      Json_encoding.destruct Save.enc)
+  Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with
@@ -458,24 +477,12 @@ let fetch_save server_url token =
   | e -> Lwt.fail e
 
 let upload_save server_url token save =
-  let sync_url =
-    server_path server_url ["sync"; Token.to_string token]
-  in
-  let json =
-    match Json_encoding.construct Save.enc save with
-    | `A _ | `O _ as d -> d
-    | v -> `A [ v ]
-  in
-  let body = `String (Ezjsonm.to_string json) in
-  let open Cohttp in
-  let open Cohttp_lwt_unix in
-  Client.post ~body sync_url >>= fun (resp, _body) ->
-  match Response.status resp with
-  | `OK -> Lwt.return_unit
-  | status ->
+  Lwt.catch (fun () -> fetch server_url (Api.Update_save (token, save)))
+  @@ function
+  | e ->
       Printf.ksprintf Lwt.fail_with
-        "Could not upload the results to the server: code %d"
-        (Code.code_of_status status)
+        "Could not upload the results to the server: %s"
+        (match e with Failure s -> s | e -> Printexc.to_string e)
 
 let write_save_files save =
   Lwt_list.iter_s (fun (id, st) ->
@@ -489,9 +496,13 @@ let write_save_files save =
         Printf.eprintf "Wrote file %s\n%!" f)
     (SMap.bindings (save.Save.all_exercise_states))
 
-let upload_report server token exercise solution report =
+let upload_report server token meta solution report =
   let score = get_score report in
-  let max_score = max_score exercise in
+  let max_score = max_score meta in
+  let id = match meta.Exercise.Meta.id with
+    | None -> invalid_arg "missing exercise id"
+    | Some id -> id
+  in
   let exercise_state =
     { Answer.
       solution;
@@ -503,17 +514,12 @@ let upload_report server token exercise solution report =
   let new_save =
     { Save.
       nickname = "";
-      all_exercise_states =
-        SMap.singleton
-          (Learnocaml_exercise.(access File.id) exercise)
-          exercise_state;
+      all_exercise_states = SMap.singleton id exercise_state;
       all_toplevel_histories = SMap.empty;
       all_exercise_toplevel_histories = SMap.empty;
     }
   in
-  Lwt.catch (fun () ->
-      fetch_save server token >>= fun save ->
-      upload_save server token (Save.sync save new_save))
+  Lwt.catch (fun () -> upload_save server token new_save)
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with
@@ -544,13 +550,7 @@ let init ?(local=false) ?server ?token () =
         Console.input ~default:default_server uri
   in
   let get_new_token () =
-    let url = server_path server ["sync"; "gimme"] in
-    fetch url >|=
-    Ezjsonm.from_string >|=
-    Json_encoding.(
-      destruct @@ conv
-        Token.to_string Token.parse
-        (obj1 (req "token" string)))
+    fetch server (Api.Create_token None)
   in
   let get_token () =
     match token with
@@ -619,8 +619,8 @@ let main o =
   Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
   >>= fun solution ->
   status_line "Fetching exercise data from server.";
-  fetch_exercise server exercise_id
-  >>= fun exercise ->
+  fetch_exercise server token exercise_id
+  >>= fun (meta, exercise) ->
   Grading_cli.get_grade ~callback:status_line ?timeout:None
     exercise solution
   >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
@@ -642,7 +642,7 @@ let main o =
       Lwt.return 10
   | Ok report ->
       (match o.output_format with
-       | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
+       | `Console -> console_report ~verbose:(o.verbosity > 0) meta report
        | `Raw ->
            Report.print Format.std_formatter report
        | `Html ->
@@ -652,7 +652,7 @@ let main o =
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
-      upload_report server token exercise solution report >>= fun () ->
+      upload_report server token meta solution report >>= fun _ ->
       Printf.eprintf "Results saved to server\n";
       Lwt.return 0
 

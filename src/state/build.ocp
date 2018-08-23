@@ -5,6 +5,7 @@ begin library "learnocaml-data"
   requires = [
     "learnocaml-toplevel-history"
     "learnocaml-report"
+    "learnocaml-repository"
   ]
 end
 

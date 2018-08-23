@@ -70,7 +70,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score) exo in
+    let max = match exo.Exercise.Meta.max_score with Some m -> m | None -> 0 in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -145,7 +145,7 @@ let () =
     Server_caller.fetch_exercise token id
   in
   let after_init top =
-    exercise_fetch >>= fun exo ->
+    exercise_fetch >>= fun (meta, exo) ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
@@ -188,10 +188,10 @@ let () =
       ~history () in
   init_tabs () ;
   toplevel_launch >>= fun top ->
-  exercise_fetch >>= fun exo ->
+  exercise_fetch >>= fun (ex_meta, exo) ->
   let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.report = Some report ; solution } ->
-        let _ : int = display_report exo report in
+        let _ : int = display_report ex_meta report in
         Some solution
     | { Answer.report = None ; solution } ->
         Some solution
@@ -218,7 +218,7 @@ let () =
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata (Learnocaml_exercise.(access File.title exo)) ] ;
+    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
   if prelude <> "" then begin
@@ -299,7 +299,7 @@ let () =
             %s\
             </body>\
             </html>"
-           (Learnocaml_exercise.(access File.title exo))
+           ex_meta.Exercise.Meta.title
            mathjax_config
            mathjax_url
            descr in
@@ -422,7 +422,7 @@ let () =
           aborted >>= fun () ->
           Lwt.return Learnocaml_report.[ Message ([ Text [%i"Grading aborted by user."] ], Failure) ] in
         Lwt.pick [ grading ; abortion ] >>= fun report ->
-        let grade = display_report exo report in
+        let grade = display_report ex_meta report in
         worker := Grading_jsoo.get_grade ~callback exo ;
         Learnocaml_local_storage.(store (exercise_state id))
           { Answer.grade = Some grade ; solution ; report = Some report ;
@@ -437,7 +437,7 @@ let () =
           Learnocaml_report.[ Text [%i"Error in your code."] ; Break ;
                    Text [%i"Cannot start the grader if your code does not typecheck."] ] in
         let report = Learnocaml_report.[ Message (msg, Failure) ] in
-        let grade = display_report exo report in
+        let grade = display_report ex_meta report in
         Learnocaml_local_storage.(store (exercise_state id))
           { Answer.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;

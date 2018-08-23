@@ -34,45 +34,27 @@ module Json_codec: Learnocaml_api.JSON_CODEC
 
 module Lesson: sig
 
-  type id = string
+  module Index: sig
+    include module type of struct include Lesson.Index end
+    val get: unit -> t Lwt.t
+  end
 
-  type t = Learnocaml_lesson.lesson
-
-  val enc: t Json_encoding.encoding
+  include module type of struct include Lesson end with module Index := Index
 
   val get: id -> t Lwt.t
-
-  module Index: sig
-
-    type t = (string * string) list
-
-    val enc: t Json_encoding.encoding
-
-    val get: unit -> t Lwt.t
-
-  end
 
 end
 
 module Tutorial: sig
 
-  type id = string
+  module Index: sig
+    include module type of struct include Tutorial.Index end
+    val get: unit -> t Lwt.t
+  end
 
-  type t = Learnocaml_tutorial.tutorial
-
-  val enc: t Json_encoding.encoding
+  include module type of struct include Tutorial end with module Index := Index
 
   val get: id -> t Lwt.t
-
-  module Index: sig
-
-    type t = (string * Learnocaml_index.series) list
-
-    val enc: t Json_encoding.encoding
-
-    val get: unit -> t Lwt.t
-
-  end
 
 end
 
@@ -80,7 +62,7 @@ end
 
 module Token: sig
 
-  include module type of Token with type t = Token.t
+  include module type of struct include Token end
 
   (** Initialise and register a new student token *)
   val create_student: unit -> t Lwt.t
@@ -114,7 +96,7 @@ end
 
 module Save: sig
 
-  include module type of Save with type t = Save.t
+  include module type of struct include Save end
 
   val get: Token.t -> t option Lwt.t
 
@@ -125,13 +107,15 @@ module Save: sig
 
 end
 
-module Exercise: sig
+(** This module contains the data about an exercise that is meaningful to
+    teachers. See [Learnocaml_exercise] for the actual exercise contents *)
+module Exercise_status: sig
 
   type id = string
 
   type tag = string
 
-  type status = Open | Closed
+  type status = Open | Closed | Readonly
 
   type assignment = {
     start: float;
@@ -141,7 +125,7 @@ module Exercise: sig
   type t = {
     id: id;
     path: string list;
-    meta: Learnocaml_index.exercise;
+    meta: Exercise.Meta.t;
     tags: tag list;
     status: status;
     assigned: assignment Token.Map.t;
@@ -149,16 +133,16 @@ module Exercise: sig
 
   val enc: t Json_encoding.encoding
 
-  (** The base index, {i without} the mutable part *)
-  module Index: sig
-
-    type t = Learnocaml_index.group_contents
-
-    val enc: t Json_encoding.encoding
-
-    val reload: unit -> unit
-
-  end
+  (* (\** The base index, {i without} the mutable part *\)
+   * module Index: sig
+   * 
+   *   type t = Learnocaml_index.group_contents
+   * 
+   *   val enc: t Json_encoding.encoding
+   * 
+   *   val reload: unit -> unit
+   * 
+   * end *)
 
 
   (* (\** [load exercise_index_path] loads the exercise index into memory *\)
@@ -171,7 +155,7 @@ end
 
 module Student: sig
 
-  include module type of Student with type t = Student.t
+  include module type of struct include Student end
 
 end
 

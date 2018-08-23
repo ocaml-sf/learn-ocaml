@@ -2,9 +2,6 @@ begin library "learnocaml-repository"
   has_asm = false
   files = [
     "learnocaml_index.ml"
-    "learnocaml_lesson.ml"
-    "learnocaml_tutorial.ml"
-    "learnocaml_meta.ml"
     "learnocaml_exercise.ml"
   ]
   requires = [
@@ -12,7 +9,7 @@ begin library "learnocaml-repository"
     "xor"
     "lwt"
     "ezjsonm"
-]
+  ]
 end
 
 begin program "learnocaml-tutorial-reader"
@@ -29,6 +26,7 @@ begin program "learnocaml-tutorial-reader"
     "markup"
     "grading-cli"
     "learnocaml-repository"
+    "learnocaml-data"
   ]
 end
 
@@ -48,5 +46,6 @@ begin library "learnocaml-process-repository-lib"
     "markup"
     "grading-cli"
     "learnocaml-repository"
+    "learnocaml-data"
   ]
 end

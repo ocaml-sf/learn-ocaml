@@ -28,14 +28,17 @@ type _ request =
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
 
-  | Exercise_index: 'a token -> Learnocaml_index.group_contents request
-  | Exercise: 'a token * string -> Learnocaml_exercise.t request
+  | Exercise_index: 'a token -> Exercise.Index.t request
+  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t) request
 
   | Lesson_index: unit -> (string * string) list request
-  | Lesson: string -> Learnocaml_lesson.lesson request
+  | Lesson: string -> Lesson.t request
 
-  | Tutorial_index: unit -> (string * Learnocaml_index.series) list request
-  | Tutorial: string -> Learnocaml_tutorial.tutorial request
+  | Tutorial_index: unit -> Tutorial.Index.t request
+  | Tutorial: string -> Tutorial.t request
+
+  (* | Exercise_status_index: teacher token -> 
+   * | Set_exercise_status *)
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case
@@ -47,9 +50,11 @@ type http_request = {
   args: (string * string) list;
 }
 
+module J = Json_encoding
+
 module type JSON_CODEC = sig
-  val decode: 'a Json_encoding.encoding -> string -> 'a
-  val encode: 'a Json_encoding.encoding -> 'a -> string
+  val decode: 'a J.encoding -> string -> 'a
+  val encode: 'a J.encoding -> 'a -> string
 end
 
 module Conversions (Json: JSON_CODEC) = struct
@@ -66,33 +71,33 @@ module Conversions (Json: JSON_CODEC) = struct
       in
       match req with
       | Static _ -> str
-      | Version _ -> json Json_encoding.(obj1 (req "version" string))
+      | Version _ -> json J.(obj1 (req "version" string))
       | Create_token _ ->
-          json Json_encoding.(obj1 (req "token" string)) +>
+          json J.(obj1 (req "token" string)) +>
           Token.(to_string, parse)
       | Create_teacher_token _ ->
-          json Json_encoding.(obj1 (req "token" string)) +>
+          json J.(obj1 (req "token" string)) +>
           Token.(to_string, parse)
       | Fetch_save _ ->
           json Save.enc
       | Update_save _ ->
           json Save.enc
       | Students_list _ ->
-          json Json_encoding.(list Student.enc)
+          json (J.list Student.enc)
       | Students_csv _ ->
           str
       | Exercise_index _ ->
-          json Learnocaml_index.exercise_index_enc
+          json Exercise.Index.enc
       | Exercise _ ->
-          json Learnocaml_exercise.enc
+          json (J.tup2 Exercise.Meta.enc Exercise.enc)
       | Lesson_index _ ->
-          json Learnocaml_index.lesson_index_enc
+          json Lesson.Index.enc
       | Lesson _ ->
-          json Learnocaml_lesson.lesson_enc
+          json Lesson.enc
       | Tutorial_index _ ->
-          json Learnocaml_index.tutorial_index_enc
+          json Tutorial.Index.enc
       | Tutorial _ ->
-          json Learnocaml_tutorial.tutorial_enc
+          json Tutorial.enc
 
       | Invalid_request _ ->
           str
@@ -141,7 +146,7 @@ module Conversions (Json: JSON_CODEC) = struct
     | Exercise_index token ->
         get ~token ["exercise-index.json"]
     | Exercise (token, id) ->
-        get ~token ("exercises" :: String.split_on_char '/' (id ^ ".json"))
+        get ~token ("exercises" :: String.split_on_char '/' id)
 
     | Lesson_index () ->
         get ["lessons.json"]

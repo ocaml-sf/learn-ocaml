@@ -16,14 +16,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_meta
-open Learnocaml_index
-
 type id = string
 
 type t =
   { id : id ;
-    meta : meta ;
     prelude : string ;
     template : string ;
     descr : (string * string) list ;
@@ -35,13 +31,12 @@ type t =
 let encoding =
   let open Json_encoding in
   conv
-    (fun { id; meta; prelude; template; descr; prepare; test; solution } ->
-       id, meta, prelude, template, descr, prepare, test, solution)
-    (fun (id, meta, prelude, template, descr, prepare, test, solution) ->
-       { id ; meta ; prelude ; template ; descr ; prepare ; test ; solution })
-    (obj8
+    (fun { id; prelude; template; descr; prepare; test; solution } ->
+       id, prelude, template, descr, prepare, test, solution)
+    (fun (id, prelude, template, descr, prepare, test, solution) ->
+       { id ; prelude ; template ; descr ; prepare ; test ; solution })
+    (obj7
        (req "id" string)
-       (req "meta" Learnocaml_meta.encoding)
        (req "prelude" string)
        (req "template" string)
        (req "descr" (list (tup2 string string)))
@@ -49,16 +44,16 @@ let encoding =
        (req "test" string)
        (req "solution" string))
 
-let meta_from_string m =
-  Ezjsonm.from_string m
-  |> Json_encoding.destruct Learnocaml_meta.encoding
-
-let meta_to_string m =
-  Json_encoding.construct Learnocaml_meta.encoding m
-  |> (function
-    | `A _ | `O _ as d -> d
-    | v -> `A [ v ])
-  |> Ezjsonm.to_string ~minify:true
+(* let meta_from_string m =
+ *   Ezjsonm.from_string m
+ *   |> Json_encoding.destruct Learnocaml_meta.encoding
+ * 
+ * let meta_to_string m =
+ *   Json_encoding.construct Learnocaml_meta.encoding m
+ *   |> (function
+ *     | `A _ | `O _ as d -> d
+ *     | v -> `A [ v ])
+ *   |> Ezjsonm.to_string ~minify:true *)
 
 let descrs_from_string descrs =
   Ezjsonm.from_string descrs
@@ -131,34 +126,34 @@ module File = struct
       field = (fun ex -> ex.id) ;
       update = (fun id ex -> { ex with id })
     }
-  let meta =
-    { key = "meta.json" ; ciphered = false ;
-      decode = meta_from_string ; encode = meta_to_string ;
-      field = (fun ex -> ex.meta) ;
-      update = (fun meta ex -> { ex with meta })
-    }
-  let title =
-    let key = "title.txt" in
-    { key ; ciphered = false ;
-      decode = (fun v -> String.trim v) ; encode = (fun v -> v) ;
-      field = (fun ex ->
-          match ex.meta.meta_title with
-            None -> raise (Missing_file ("field " ^ key))
-          | Some t -> t) ;
-      update = (fun title ex ->
-          { ex with meta = { ex.meta with meta_title = Some title }})
-     }
-  let max_score =
-    let key = "max_score.txt" in
-    { key ; ciphered = false ;
-      decode = (fun v -> int_of_string v) ; encode = (fun v -> string_of_int v) ;
-      field = (fun ex ->
-          match ex.meta.meta_max_score with
-            None -> raise (Missing_file key)
-          | Some v -> v);
-      update = (fun score ex ->
-          { ex with meta = { ex.meta with meta_max_score = Some score }})
-     }
+  (* let meta =
+   *   { key = "meta.json" ; ciphered = false ;
+   *     decode = meta_from_string ; encode = meta_to_string ;
+   *     field = (fun ex -> ex.meta) ;
+   *     update = (fun meta ex -> { ex with meta })
+   *   } *)
+  (* let title =
+   *   let key = "title.txt" in
+   *   { key ; ciphered = false ;
+   *     decode = (fun v -> String.trim v) ; encode = (fun v -> v) ;
+   *     field = (fun ex ->
+   *         match ex.meta.meta_title with
+   *           None -> raise (Missing_file ("field " ^ key))
+   *         | Some t -> t) ;
+   *     update = (fun title ex ->
+   *         { ex with meta = { ex.meta with meta_title = Some title }})
+   *    } *)
+  (* let max_score =
+   *   let key = "max_score.txt" in
+   *   { key ; ciphered = false ;
+   *     decode = (fun v -> int_of_string v) ; encode = (fun v -> string_of_int v) ;
+   *     field = (fun ex ->
+   *         match ex.meta.meta_max_score with
+   *           None -> raise (Missing_file key)
+   *         | Some v -> v);
+   *     update = (fun score ex ->
+   *         { ex with meta = { ex.meta with meta_max_score = Some score }})
+   *    } *)
   let prelude =
     { key = "prelude.ml" ; ciphered = false ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
@@ -209,13 +204,13 @@ module File = struct
               fail (Failure "Exercise.read: conficting ids")
       end >>= fun ex_id ->
       ex := set id ex_id !ex ;
-      read_field meta.key >>=
-      begin function
-          None -> fail (Missing_file meta.key)
-        | Some meta_json ->
-            return (meta_from_string meta_json)
-      end >>= fun meta_json ->
-      ex := set meta meta_json !ex;
+      (* read_field meta.key >>=
+       * begin function
+       *     None -> fail (Missing_file meta.key)
+       *   | Some meta_json ->
+       *       return (meta_from_string meta_json)
+       * end >>= fun meta_json ->
+       * ex := set meta meta_json !ex; *)
       let read_file ({ key ; ciphered ; decode ; _ } as field) =
         read_field key >>= function
         | Some raw ->
@@ -230,33 +225,33 @@ module File = struct
             ex := set field (decode deciphered) !ex ;
             return ()
         | None -> return () in
-      let read_title () =
-        match meta_json.meta_title with
-          Some t ->
-            ex := set title t !ex;
-            return ()
-        | None ->
-            read_file title >>= fun () ->
-            try
-              let t = get title !ex in
-              ex := set meta { meta_json with meta_title = Some t } !ex;
-              return ()
-            with _ -> return ()
-      in
-      let read_max_score () =
-        match meta_json.meta_max_score with
-          Some score ->
-            ex := set max_score (score) !ex;
-            return ()
-        | None ->
-            read_file max_score >>= fun () ->
-            try
-              let score = get max_score !ex in
-              ex := set meta
-                  { meta_json with meta_max_score = Some score } !ex;
-              return ()
-            with _ -> return ()
-      in
+      (* let read_title () =
+       *   match meta_json.meta_title with
+       *     Some t ->
+       *       ex := set title t !ex;
+       *       return ()
+       *   | None ->
+       *       read_file title >>= fun () ->
+       *       try
+       *         let t = get title !ex in
+       *         ex := set meta { meta_json with meta_title = Some t } !ex;
+       *         return ()
+       *       with _ -> return ()
+       * in
+       * let read_max_score () =
+       *   match meta_json.meta_max_score with
+       *     Some score ->
+       *       ex := set max_score (score) !ex;
+       *       return ()
+       *   | None ->
+       *       read_file max_score >>= fun () ->
+       *       try
+       *         let score = get max_score !ex in
+       *         ex := set meta
+       *             { meta_json with meta_max_score = Some score } !ex;
+       *         return ()
+       *       with _ -> return ()
+       * in *)
       let descrs = ref [] in
       let read_descr lang =
         begin
@@ -285,14 +280,14 @@ module File = struct
             return ()
       in
       join
-        [ read_title () ;
+        [ (* read_title () ; *)
           read_file prelude ;
           read_file template ;
           read_descrs () ;
           read_file prepare ;
           read_file solution ;
           read_file test ;
-          read_max_score () ] >>= fun () ->
+          (* read_max_score () *) ] >>= fun () ->
       return !ex
   end
 
@@ -325,34 +320,6 @@ let cipher f v ex =
     f.update (f.encode v) ex
 
 
-let meta_from_index ex =
-  { meta_kind = ex.exercise_kind ;
-    meta_title = Some ex.exercise_title ;
-    meta_short_description = ex.exercise_short_description ;
-    meta_stars = ex.exercise_stars ;
-    meta_identifier = ex.exercise_identifier ;
-    meta_author = ex.exercise_author ;
-    meta_focus = ex.exercise_focus ;
-    meta_requirements = ex.exercise_requirements ;
-    meta_forward = ex.exercise_forward ;
-    meta_backward = ex.exercise_backward ;
-    meta_max_score = ex.exercise_max_score ;
-  }
-
-let to_index exercise =
-  { exercise_kind = exercise.meta.meta_kind ;
-    exercise_stars = exercise.meta.meta_stars ;
-    exercise_title = access File.title exercise ;
-    exercise_short_description = exercise.meta.meta_short_description;
-    exercise_identifier = exercise.meta.meta_identifier ;
-    exercise_author = exercise.meta.meta_author ;
-    exercise_focus = exercise.meta.meta_focus ;
-    exercise_requirements =  exercise.meta.meta_requirements ;
-    exercise_forward = exercise.meta.meta_forward ;
-    exercise_backward = exercise.meta.meta_backward ;
-    exercise_max_score = exercise.meta.meta_max_score ;
-  }
-
 let field_from_file file files =
   try File.(StringMap.find file.key files |> file.decode)
   with Not_found -> raise File.(Missing_file file.key)
@@ -365,7 +332,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
     try
       return
         { id = field_from_file File.id ex;
-          meta = field_from_file File.meta ex;
+          (* meta = field_from_file File.meta ex; *)
           prelude = field_from_file File.prelude ex ;
           template = field_from_file File.template ex ;
           descr = field_from_file File.descr ex ;
@@ -395,15 +362,15 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
       with Not_found -> Concur.return () in
     join
       [ write_field id ;
-        write_field meta ;
-        write_field title ;
+        (* write_field meta ;
+         * write_field title ; *)
         write_field prelude ;
         write_field template ;
         write_field descr ;
         write_field prepare ;
         write_field solution ;
         write_field test ;
-        write_field max_score ] >>= fun () ->
+        (* write_field max_score *) ] >>= fun () ->
     return !acc
 end
 

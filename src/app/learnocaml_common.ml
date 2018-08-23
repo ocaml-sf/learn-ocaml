@@ -305,7 +305,7 @@ let gettimeofday () =
   floor ((now ## getTime) *. 1000.) +. float (now ## getTimezoneOffset)
 
 let render_rich_text ?on_runnable_clicked text =
-  let open Learnocaml_index in
+  let open Learnocaml_data.Tutorial in
   let rec render acc text =
     match text with
     | [] -> List.rev acc
@@ -334,7 +334,7 @@ let render_rich_text ?on_runnable_clicked text =
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list)
 
 let extract_text_from_rich_text text =
-  let open Learnocaml_index in
+  let open Learnocaml_data.Tutorial in
   let rec render acc text =
     match text with
     | [] -> String.concat " " (List.rev acc)
