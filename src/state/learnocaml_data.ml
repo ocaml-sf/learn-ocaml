@@ -50,19 +50,20 @@ module Answer = struct
   let enc =
     let grade_enc =
       J.conv
-        (fun s -> s)
-        (fun s ->
-           if s < 0 || s > 100 then
-             raise (J.Cannot_destruct ([], Failure "grade overflow"))
-           else s)
-        J.int in
+        (function
+          | Some n when n < 0 || n > 100 -> None
+          | g -> g)
+        (function
+          | Some s when s < 0 || s > 100 -> failwith "grade overflow"
+          | g -> g)
+        J.(option int) in
     J.conv
       (fun { grade ; solution ; report ; mtime } ->
          (grade, solution, report, mtime))
       (fun (grade, solution, report, mtime) ->
          { grade ; solution ; report ; mtime })
       (J.obj4
-         (J.opt "grade" grade_enc)
+         (J.dft "grade" grade_enc None)
          (J.req "solution" J.string)
          (J.opt "report" Learnocaml_report.enc)
          (J.dft "mtime" J.float 0.))
@@ -443,14 +444,15 @@ module Exercise = struct
             (fun map -> Groups map) ]
 
     let find t id =
-      let rec aux t path = match t, path with
-        | Groups l, k::path -> aux (List.assoc k l).contents path
-        | Exercises l, [] -> (match List.assoc id l with
+      let rec aux t = match t with
+        | Groups ((_, g)::r) ->
+            (try aux g.contents with Not_found -> aux (Groups r))
+        | Groups [] -> raise Not_found
+        | Exercises l -> (match List.assoc id l with
             | None -> raise Not_found
             | Some e -> e)
-        | _ -> raise Not_found
       in
-      aux t (String.split_on_char '/' id)
+      aux t
 
     let find_opt t id = try Some (find t id) with Not_found -> None
 
