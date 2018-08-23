@@ -68,13 +68,25 @@ module Exercise: sig
   module Index: sig
     include module type of struct include Exercise.Index end
     val get: unit -> t Lwt.t
+    val reload: unit -> unit Lwt.t
+  end
+
+  module Status: sig
+    include module type of struct include Exercise.Status end
+
+    val is_open: Exercise.id -> Token.t -> status Lwt.t
+    val get: Exercise.id -> t Lwt.t
+    val set: t -> unit Lwt.t
+    val all: unit -> t list Lwt.t
   end
 
   include module type of struct include Exercise end
   with module Meta := Meta
+   and module Status := Status
    and module Index := Index
 
   val get: id -> t Lwt.t
+
 
 end
 
@@ -129,60 +141,6 @@ module Save: sig
 
 end
 
-(** This module contains the data about an exercise that is meaningful to
-    teachers. See [Learnocaml_exercise] for the actual exercise contents *)
-module Exercise_status: sig
-
-  type id = string
-
-  type tag = string
-
-  type status = Open | Closed | Readonly
-
-  type assignment = {
-    start: float;
-    stop: float;
-  }
-
-  type t = {
-    id: id;
-    path: string list;
-    meta: Exercise.Meta.t;
-    tags: tag list;
-    status: status;
-    assigned: assignment Token.Map.t;
-  }
-
-  val enc: t Json_encoding.encoding
-
-  (* module Index: sig
-   * 
-   *   type nonrec t = t list
-   * 
-   *   val enc: t Json_encoding.encoding
-   * 
-   * end *)
-
-  (* (\** The base index, {i without} the mutable part *\)
-   * module Index: sig
-   * 
-   *   type t = Learnocaml_index.group_contents
-   * 
-   *   val enc: t Json_encoding.encoding
-   * 
-   *   val reload: unit -> unit
-   * 
-   * end *)
-
-
-  (* (\** [load exercise_index_path] loads the exercise index into memory *\)
-   * val load: string -> unit
-   * 
-   * (\** Lists the registered exercises *\)
-   * val select: ?filter: unit -> ?sort: unit -> Learnocaml_index.exercise list *)
-
-end
-
 module Student: sig
 
   include module type of struct include Student end
@@ -191,14 +149,14 @@ end
 
 
 (* module Teacher: sig
- * 
+ *
  *   type token = Token.t
- * 
+ *
  *   type t = {
  *     token: token;
  *     nickname: string;
  *     students: Student.set;
  *     assignments: Assignment.t
  *   }
- * 
+ *
  * end *)

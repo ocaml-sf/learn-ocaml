@@ -89,14 +89,6 @@ let respond_static path =
 let respond_json = fun x ->
   Lwt.return (Ok (x, "application/json"))
 
-let read_json enc path =
-  read_static_file path >|=
-  Ezjsonm.from_string >|=
-  Json_encoding.destruct enc
-
-let respond_static_json enc path =
-  read_json enc path >>= respond_json
-
 let with_verified_teacher_token token cont =
   Token.check_teacher token >>= function
   | true -> cont ()
@@ -282,11 +274,15 @@ module Request_handler = struct
             tok_saves;
           Lwt.return (Ok (Buffer.contents buf, "text/csv"))
 
-      | Api.Exercise_index _token ->
-          (* TODO: check token; retrieve dedicated exercise assignment *)
-          respond_static_json
-            Exercise.Index.enc
-            [Learnocaml_index.exercise_index_path]
+      | Api.Exercise_index token ->
+          Exercise.Index.get () >>= fun index ->
+          Token.check_teacher token >|= (function
+              | true -> index
+              | false ->
+                  Exercise.Index.filter (fun id _ ->
+                      Exercise.Status.is_open id token = Exercise.Status.Open)
+                    index)
+          >>= respond_json
       | Api.Exercise (_token, id) ->
           Exercise.Meta.get id >>= fun meta ->
           Exercise.get id >>= fun ex ->
@@ -301,6 +297,16 @@ module Request_handler = struct
           Tutorial.Index.get () >>= respond_json
       | Api.Tutorial id ->
           Tutorial.get id >>= respond_json
+
+      | Api.Exercise_status_index token ->
+          with_verified_teacher_token token @@ fun () ->
+          Exercise.Status.all () >>= respond_json
+      | Api.Exercise_status (token, id) ->
+          with_verified_teacher_token token @@ fun () ->
+          Exercise.Status.get id >>= respond_json
+      | Api.Set_exercise_status (token, status) ->
+          with_verified_teacher_token token @@ fun () ->
+          Exercise.Status.set status >>= respond_json
 
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))
@@ -317,7 +323,7 @@ let init_teacher_token () =
         Printf.printf "Initial teacher token created: %s\n%!"
           (Token.to_string token)
     | teachers ->
-        Printf.printf "Found the following teacher tokens:\n  - %s\n"
+        Printf.printf "Found the following teacher tokens:\n  - %s\n%!"
           (String.concat "\n  - " (List.map Token.to_string teachers));
         Lwt.return_unit
 
@@ -354,7 +360,6 @@ let launch () =
         | Error e -> Lwt.return (Error e))
     >>=
     respond
-
   in
   Random.self_init () ;
   init_teacher_token () >>= fun () ->

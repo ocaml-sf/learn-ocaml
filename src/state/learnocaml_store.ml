@@ -98,28 +98,92 @@ module Exercise = struct
 
   type id = Exercise.id
 
-  (** Todo: load the index just once and keep in memory
-      (+provide a "refresh" function callable by teachers ?) *)
+  let index =
+    ref (lazy (
+        read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
+      ))
 
   module Meta = struct
     include Exercise.Meta
 
     let get id =
-      read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
-      >|= fun index -> Exercise.Index.find index id
+      Lazy.force !index >|= fun index -> Exercise.Index.find index id
   end
 
   module Index = struct
     include Exercise.Index
 
-    let get () =
-      read_static_file Learnocaml_index.exercise_index_path enc
+
+    let get () = Lazy.force !index
+
+    let reload () =
+      read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
+      >|= fun i -> index := lazy (Lwt.return i)
+
+  end
+
+  module Status = struct
+
+    include Exercise.Status
+
+    let store_file () = Filename.concat !sync_dir "exercises.json"
+
+    let tbl = lazy (
+      let tbl = Hashtbl.create 223 in
+      Lwt.catch (fun () ->
+          Lwt_io.(with_file ~mode:Input (store_file ()) read) >|=
+          Json_codec.decode (J.list enc) >|= fun l ->
+          List.iter (fun st -> Hashtbl.add tbl st.id st) l;
+          tbl)
+      @@ function
+      | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return tbl
+      | e -> raise e
+    )
+
+    let save =
+      let mutex = Lwt_mutex.create () in
+      fun () ->
+        Lwt_mutex.with_lock mutex @@ fun () ->
+        Lazy.force tbl >|= fun tbl ->
+        Hashtbl.fold (fun _ s acc -> s::acc) tbl [] |>
+        Json_codec.encode (J.list enc) |> fun s ->
+        Lwt_io.(with_file ~mode:Output (store_file ())
+                  (fun oc -> write oc s))
+
+    let empty id = { id; tags = []; status = Open; assigned = Token.Map.empty }
+
+    let get id =
+      Lazy.force tbl >>= fun tbl ->
+      try Lwt.return (Hashtbl.find tbl id)
+      with Not_found -> Meta.get id >|= fun _ -> empty id
+
+    let set x =
+      Lazy.force tbl >|= fun tbl ->
+      Hashtbl.replace tbl x.id x
+
+    let all () =
+      Lazy.force tbl >|= fun tbl ->
+      Hashtbl.fold (fun _ t acc -> t::acc) tbl []
+
+    let is_open id token =
+      Lazy.force tbl >|= fun tbl ->
+      match Hashtbl.find_opt tbl id with
+      | None -> (empty id).status
+      | Some ex ->
+          match Token.Map.find_opt token ex.assigned with
+          | Some a ->
+              let t = Unix.gettimeofday () in
+              if t < a.start then Closed
+              else if t < a.stop then Open
+              else Readonly
+          | None -> ex.status
 
   end
 
   include (Exercise: module type of struct include Exercise end
            with type id := id
             and module Meta := Meta
+            and module Status := Status
             and module Index := Index)
 
   let get id =
@@ -236,107 +300,6 @@ module Save = struct
     | Unix.Unix_error (Unix.ENOENT, _, _) ->
         Lwt.fail_with "Unregistered teacher token"
     | e -> Lwt.fail e
-
-end
-
-module Exercise_status = struct
-
-  type id = string
-
-  type tag = string
-
-  type status = Open | Closed | Readonly
-
-  type assignment = {
-    start: float;
-    stop: float;
-  }
-
-  type t = {
-    id: id;
-    path: string list;
-    meta: Exercise.Meta.t;
-    tags: tag list;
-    status: status;
-    assigned: assignment Token.Map.t;
-  }
-
-  let enc =
-    J.conv
-      (fun t -> t.id, t.path, t.meta, t.tags, t.status, t.assigned)
-      (fun (id, path, meta, tags, status, assigned) ->
-         {id; path; meta; tags; status; assigned})
-    @@
-    J.obj6
-      (J.req "id" J.string)
-      (J.req "path" (J.list J.string))
-      (J.req "meta" Exercise.Meta.enc)
-      (J.dft "tags" (J.list J.string) [])
-      (J.dft "status" (J.string_enum [
-           "open", Open;
-           "closed", Closed;
-           "readonly", Readonly;
-         ]) Open)
-      (J.dft "assigned"
-         (J.conv
-            (fun m ->
-               Token.Map.bindings m |> List.map (fun (tok, a) ->
-                   Token.to_string tok,
-                   (a.start, a.stop)))
-            (List.fold_left (fun acc (tok, (start, stop)) ->
-                 Token.Map.add (Token.parse tok) {start; stop} acc)
-               Token.Map.empty)
-            (J.assoc
-               (J.obj2
-                  (J.req "start" J.float)
-                  (J.req "stop" J.float))))
-         Token.Map.empty)
-
-
-  module T = struct
-    type nonrec t = t
-    let compare a b = compare a.id b.id
-  end
-
-  module Map = Map.Make(T)
-
-  let all: (id, t) Hashtbl.t = Hashtbl.create 223
-
-  (* module Index = struct
-   * 
-   *   type t = Learnocaml_index.group_contents
-   * 
-   *   let enc = Learnocaml_index.exercise_index_enc
-   * 
-   *   let load exercise_index_file =
-   *     let ic = open_in exercise_index_file in
-   *     let json = Ezjsonm.from_channel ic in
-   *     close_in ic;
-   *     let index = J.destruct enc json in
-   *     Lwt.return index
-   *     (\* let rec register path = function
-   *      *   | Learnocaml_index.Groups groups ->
-   *      *       List.iter (fun (group_name, { _group_title; group_contents }) ->
-   *      *           register (path @ [group_name]) group_contents)
-   *      *         groups
-   *      *   | Learnocaml_index.Learnocaml_exercises exos ->
-   *      *       List.iter (fun (name, exercise) ->
-   *      *           Hashtbl.add all id {
-   *      *             id;
-   *      *             path;
-   *      *             meta = exercise;
-   *      *             tags = [];
-   *      *           })
-   *      *         exos
-   *      * in
-   *      * register [] index *\)
-   * 
-   *   let reload () = ()
-   * 
-   * (\* let select ?(filter=None) ?(sort=None) () =
-   *  *   Hashtbl.fold (fun _id ex acc -> ex::acc) all [] *\)
-   * 
-   * end *)
 
 end
 

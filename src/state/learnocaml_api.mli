@@ -50,6 +50,13 @@ type _ request =
   | Tutorial_index: unit -> Tutorial.Index.t request
   | Tutorial: string -> Tutorial.t request
 
+  | Exercise_status_index:
+      teacher token -> Exercise.Status.t list request
+  | Exercise_status:
+      teacher token * Exercise.id -> Exercise.Status.t request
+  | Set_exercise_status:
+      teacher token * Exercise.Status.t -> unit request
+
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case
       above *)

@@ -369,19 +369,54 @@ module Exercise = struct
               exercise_enc_v1
               exercise_enc_v2))
 
-    let empty = {
-      kind = Exercise;
-      title = "";
-      short_description = None;
-      stars = 0.;
-      id = None;
-      author = [];
-      focus = [];
-      requirements = [];
-      forward = [];
-      backward = [];
-      max_score = None;
+  end
+
+  module Status = struct
+
+    type tag = string
+
+    type status = Open | Closed | Readonly
+
+    type assignment = {
+      start: float;
+      stop: float;
     }
+
+    type t = {
+      id: id;
+      tags: tag list;
+      status: status;
+      assigned: assignment Token.Map.t;
+    }
+
+    let enc =
+      J.conv
+        (fun t -> t.id, t.tags, t.status, t.assigned)
+        (fun (id, tags, status, assigned) ->
+           {id; tags; status; assigned})
+      @@
+      J.obj4
+        (J.req "id" J.string)
+        (J.dft "tags" (J.list J.string) [])
+        (J.dft "status" (J.string_enum [
+             "open", Open;
+             "closed", Closed;
+             "readonly", Readonly;
+           ]) Open)
+        (J.dft "assigned"
+           (J.conv
+              (fun m ->
+                 Token.Map.bindings m |> List.map (fun (tok, a) ->
+                     Token.to_string tok,
+                     (a.start, a.stop)))
+              (List.fold_left (fun acc (tok, (start, stop)) ->
+                   Token.Map.add (Token.parse tok) {start; stop} acc)
+                  Token.Map.empty)
+              (J.assoc
+                 (J.obj2
+                    (J.req "start" J.float)
+                    (J.req "stop" J.float))))
+           Token.Map.empty)
 
   end
 
@@ -455,6 +490,22 @@ module Exercise = struct
       aux t
 
     let find_opt t id = try Some (find t id) with Not_found -> None
+
+    let rec filter f = function
+      | Groups (gs) ->
+          List.fold_left (fun acc (id, (g: group)) ->
+              match filter f g.contents with
+              | Exercises [] -> acc
+              | contents -> (id, { g with contents}) :: acc)
+            [] (List.rev gs)
+          |> (function [] -> Exercises [] | l -> Groups l)
+      | Exercises l ->
+          List.fold_left (fun acc (id, ex) ->
+              match ex with
+              | Some ex when f id ex -> (id, Some ex) :: acc
+              | _ -> acc)
+            [] (List.rev l)
+          |> (function l -> Exercises l)
 
   end
 

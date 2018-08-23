@@ -113,6 +113,10 @@ module Exercise: sig
 
   type id = string
 
+  type t = Learnocaml_exercise.t
+
+  val enc: t Json_encoding.encoding
+
   module Meta: sig
 
     type kind =
@@ -136,13 +140,29 @@ module Exercise: sig
 
     val enc: t Json_encoding.encoding
 
-    val empty: t
-
   end
 
-  type t = Learnocaml_exercise.t
+  module Status: sig
 
-  val enc: t Json_encoding.encoding
+    type tag = string
+
+    type status = Open | Closed | Readonly
+
+    type assignment = {
+      start: float;
+      stop: float;
+    }
+
+    type t = {
+      id: id;
+      tags: tag list;
+      status: status;
+      assigned: assignment Token.Map.t;
+    }
+
+    val enc: t Json_encoding.encoding
+
+  end
 
   module Index: sig
 
@@ -158,6 +178,8 @@ module Exercise: sig
     val find: t -> id -> Meta.t
 
     val find_opt: t -> id -> Meta.t option
+
+    val filter: (id -> Meta.t -> bool) -> t -> t
 
   end
 
