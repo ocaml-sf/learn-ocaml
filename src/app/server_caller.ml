@@ -71,6 +71,14 @@ let string_of_error = function
   | `Invalid_response e ->
       "Could not decode server response: " ^ Printexc.to_string e
 
+let () =
+  Printexc.register_printer @@ function
+  | Json_encoding.Cannot_destruct (path, e) ->
+      Some (Printf.sprintf "JSON error at %s: %s"
+              (Json_query.json_pointer_of_path path)
+              (Printexc.to_string e))
+  | _ -> None
+
 let request req =
   let do_req = function
     | { Learnocaml_api.meth = `GET; path; args } ->
