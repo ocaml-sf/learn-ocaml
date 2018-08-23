@@ -62,7 +62,7 @@ get the files for the second step, and so on and so forth.
 
 [Step 5 : More test functions](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
 	
-[Step 6 : Grading exercises with lists (with pre-defined sampler)](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
+[Step 6 : Grading functions for variables](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
 	
 [Step 7 : Introspection of students code](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-7.md)
-	
+    

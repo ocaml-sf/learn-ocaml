@@ -1,21 +1,23 @@
-# Step 5: More about test functions for functions
+# Step 5: More about grading functions for functions
 
-## Different test functions for functions
-There are 2 main tests functions:
+**Warning** This step is ahead of the current version of [learn-ocaml].
 
-* `test_function_<nb_args>_againt_solution`: the usual. Test the
+## Different grading functions for functions
+There are 2 main grading functions:
+
+* `grade_function_<nb_args>_againt_solution`: the usual. Test the
   student code againt a given solution written in the `solution.ml`
   file.
 
-* `test_function_<nb_args>`: compare the student code to a serie of
+* `grade_function_<nb_args>`: compare the student code to a serie of
   tests where both inputs and expected outputs are given. Note that
   you still need to write a solution in `solution.ml` to build your
-  exercise session since `learn-ocaml build` test your grader with
+  exercise session since `learn-ocaml build` tests your grader with
   `solution.ml` as the student copy.
 
-## A few words about test function for functions
+## A few words about grading function for functions
 
-Test functions for functions return a global report concatening 4 specific
+Grading functions for functions return a global report concatening 4 specific
 ones:
 
 - report resulting of comparison between student and solution
@@ -35,10 +37,10 @@ ones:
 - report resulting of the result of function `~after` and returns an
   empty report by default. 
   
-## `test_function_<nb_args>_against_solution`
+## `grade_function_<nb_args>_against_solution`
 ### Signature for unary function
 ```ocaml
-  val test_function_1_against_solution :
+  val grade_function_1_against_solution :
 	?gen: int ->
 	?test: 'b tester ->
 	?test_stdout: io_tester ->
@@ -47,11 +49,11 @@ ones:
 	?before_user : ('a -> unit) ->
 	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
 	?sampler : (unit -> 'a) ->
-	('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.report
+	('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
 ```
 
 ### Mandatory arguments
-[`test_function_1_againt_solution_1 ty name tests`]:
+[`grade_function_1_againt_solution_1 ty name tests`]:
 
 * `ty`: type of the tested function specified for the given tests. It
   must not contain type variables (i.e. `'a`, `'b` etc..), match the
@@ -62,22 +64,22 @@ ones:
 
 * `tests`: list of tested inputs.
 
-## `test_function_<nb_args>`
+## `grade_function_<nb_args>`
 
-### Signature of test function for unary function
+### Signature of grading function for unary function
 
 ```ocaml
-  val test_function_1 :
+  val grade_function_1 :
 	?test: 'b tester ->
 	?test_stdout: io_tester ->
 	?test_stderr: io_tester ->
 	?before : ('a -> unit) ->
 	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-	('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.report
+	('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.item
 ```
 
 ### Mandatory arguments 
-[`test_function_1 ty name tests`]:
+[`grade_function_1 ty name tests`]:
 
 * `ty`: type of the tested function specified for the given tests. It
   must not contain type variables (i.e. `'a`, `'b` etc..), match the
@@ -93,7 +95,7 @@ ones:
   expected output. `stderr` and `stdout` are the expected strings in
   standart output and error output respectively.
 
-## Optional arguments of test functions
+## Optional arguments of grading functions
 
 * `gen`: number of automatically generated tests. See
   [step-3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
@@ -138,7 +140,7 @@ ones:
   evaluation. See WIP for more information.
 
 * `before`: same as `before_reference` for
-  `test_function_<nb_args>`. Since no solution is evaluated, there is
+  `grade_function_<nb_args>`. Since no solution is evaluated, there is
   no need to distinguish between before or after solution evaluation.
 
 ## Examples
@@ -152,25 +154,21 @@ This is a classical example of an unary function, with a user-defined sampler.
 
 ```ocaml
 let exercise_1 =
-  Section ([ Text "Function: "; Code "identity" ],
-		   test_function_1_against_solution
-			 [%ty: int -> int]
-			 "identity"
-			 ~gen:10
-			 ~sampler:(fun () -> Random.int 42)
-			 [0 ; 42]
-	)
+	grade_function_1_against_solution
+	[%ty: int -> int]
+	"identity"
+	~gen:10
+	~sampler:(fun () -> Random.int 42)
+	[0 ; 42]
 ```
-With `test_function_1`: 
+With `grade_function_1`: 
 ```ocaml
 let exercise_2 = 
-  Section ([ Text "Function: "; Code "identity" ], 
-           test_function_1 
-             [%ty: int -> int] 
-             "identity"
-             [0, 0, "", "" ;
-              42, 42, "", ""]  (* List of tests *)
-    )
+	grade_function_1 
+		[%ty: int -> int] 
+		"identity"
+		[0, 0, "", "" ;
+		42, 42, "", ""]  (* List of tests *)
 ```
 
 Note that since the default comparison function for standart output
@@ -188,27 +186,23 @@ different from the solution ones without causing a failure).
 
 ```ocaml
 let exercise_2 =
-  Section ([ Text "Function: "; Code "hello" ],
-		   test_function_1_against_solution
-			 [%ty: unit -> unit]
-			 ~test:test_ignore
-			 ~test_stdout:io_test_equals
-			 "hello"
-			 ~gen:0
-			 [()]
-		  )
+	grade_function_1_against_solution
+		[%ty: unit -> unit]
+		~test:test_ignore
+		~test_stdout:io_test_equals
+		"hello"
+		~gen:0
+		[()]
 ```
 
 ```ocaml
 let exercise_4 = 
-  Section ([ Text "Function: "; Code "hello" ], 
-           test_function_1 
-             [%ty: unit -> unit]
-             ~test:test_ignore
-             ~test_stdout:io_test_equals
-             "hello"
-             [(), (), "Hello world!", ""]
-          )
+	grade_function_1 
+	[%ty: unit -> unit]
+	~test:test_ignore
+	~test_stdout:io_test_equals
+	"hello"
+	[(), (), "Hello world!", ""]
 ```
 
 The function `test_ignore` for optional argument `test` enables to
