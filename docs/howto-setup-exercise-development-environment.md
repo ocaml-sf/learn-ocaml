@@ -49,6 +49,7 @@ Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
 ready:
 ```
 opam switch create . --deps-only --locked
+opam install opam-installer
 eval $(opam env)
 ```
 (Alternatively, use `opam install . --deps-only` to install the dependencies in
@@ -65,6 +66,7 @@ Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
 ready:
 ```
 opam switch create . --deps-only --locked
+opam install opam-installer
 eval $(opam env)
 ```
 (Alternatively, use `opam install . --deps-only` to install the dependencies in

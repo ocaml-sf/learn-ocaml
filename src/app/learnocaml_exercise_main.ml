@@ -128,7 +128,7 @@ let () =
   let exercise_fetch = Server_caller.fetch_exercise id in
   let after_init top =
     exercise_fetch >>= fun exo ->
-    begin match Learnocaml_exercise.(access File.prelude exo) with
+    begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
           Learnocaml_toplevel.load ~print_outcome:true top
@@ -136,7 +136,7 @@ let () =
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(access File.prepare exo)) >>= fun r2 ->
+      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -202,7 +202,7 @@ let () =
   Manip.replaceChildren text_container
     Tyxml_js.Html5.[ h1 [ pcdata (Learnocaml_exercise.(access File.title exo)) ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
-  let prelude = Learnocaml_exercise.(access File.prelude exo) in
+  let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
   if prelude <> "" then begin
     let open Tyxml_js.Html5 in
     let state = ref (match arg "prelude" with
