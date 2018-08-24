@@ -314,12 +314,15 @@ module Api_server = Api.Server (Json_codec) (Request_handler)
 
 let init_teacher_token () =
   Token.Index.get () >>= function tokens ->
-    if not (List.exists (fun t -> Token.is_teacher t) tokens) then
-      Token.create_teacher () >|= fun token ->
-      Printf.printf "Initial teacher token created: %s\n%!"
-        (Token.to_string token)
-    else
-      Lwt.return_unit
+    match List.filter Token.is_teacher tokens with
+    | [] ->
+        Token.create_teacher () >|= fun token ->
+        Printf.printf "Initial teacher token created: %s\n%!"
+          (Token.to_string token)
+    | teachers ->
+        Printf.printf "Found the following teacher tokens:\n  - %s\n"
+          (String.concat "\n  - " (List.map Token.to_string teachers));
+        Lwt.return_unit
 
 let launch () =
   (* Learnocaml_store.init ~exercise_index:

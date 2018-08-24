@@ -416,7 +416,7 @@ let console_report ?(verbose=false) meta report =
 module Json_codec = struct
   let decode enc s =
     (match s with
-     | "" -> `Null
+     | "" -> `O []
      | s -> Ezjsonm.from_string s)
     |> Json_encoding.destruct enc
 

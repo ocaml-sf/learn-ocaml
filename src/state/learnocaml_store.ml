@@ -27,7 +27,7 @@ let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 module Json_codec = struct
   let decode enc s =
     (match s with
-     | "" -> `Null
+     | "" -> `O []
      | s -> Ezjsonm.from_string s)
     |> J.destruct enc
 
