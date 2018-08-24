@@ -140,15 +140,12 @@ module Exercise = struct
       | e -> raise e
     )
 
-    let save =
-      let mutex = Lwt_mutex.create () in
-      fun () ->
-        Lwt_mutex.with_lock mutex @@ fun () ->
-        Lazy.force tbl >|= fun tbl ->
-        Hashtbl.fold (fun _ s acc -> s::acc) tbl [] |>
-        Json_codec.encode (J.list enc) |> fun s ->
-        Lwt_io.(with_file ~mode:Output (store_file ())
-                  (fun oc -> write oc s))
+    let save () =
+      Lazy.force tbl >>= fun tbl ->
+      let l = Hashtbl.fold (fun _ s acc -> s::acc) tbl [] in
+      let s = Json_codec.encode (J.list enc) l in
+      Lwt_io.(with_file ~mode:Output (store_file ())
+                (fun oc -> write oc s))
 
     let empty id = { id; tags = []; status = Open; assigned = Token.Map.empty }
 
@@ -157,9 +154,13 @@ module Exercise = struct
       try Lwt.return (Hashtbl.find tbl id)
       with Not_found -> Meta.get id >|= fun _ -> empty id
 
-    let set x =
-      Lazy.force tbl >|= fun tbl ->
-      Hashtbl.replace tbl x.id x
+    let set =
+      let mutex = Lwt_mutex.create () in
+      fun x ->
+      Lwt_mutex.with_lock mutex @@ fun () ->
+      Lazy.force tbl >>= fun tbl ->
+      Hashtbl.replace tbl x.id x;
+      save ()
 
     let all () =
       Lazy.force tbl >|= fun tbl ->

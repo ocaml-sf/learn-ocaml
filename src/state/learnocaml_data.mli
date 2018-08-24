@@ -181,6 +181,9 @@ module Exercise: sig
 
     val filter: (id -> Meta.t -> bool) -> t -> t
 
+    (** CPS version of [filter] *)
+    val filterk: (id -> Meta.t -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a
+
   end
 
 end

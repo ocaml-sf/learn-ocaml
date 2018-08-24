@@ -170,6 +170,22 @@ module Request_handler = struct
             (Error (`Internal_server_error, Printexc.to_string exn))
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
+          let exercise_states = SMap.bindings save.Save.all_exercise_states in
+          (Token.check_teacher token >>= function
+            | true -> Lwt.return exercise_states
+            | false ->
+                Lwt_list.filter_s (fun (id, _) ->
+                    Exercise.Status.is_open id token >|= function
+                    | Exercise.Status.Open -> true
+                    | _ -> false)
+                  exercise_states)
+          >>= fun valid_exercise_states ->
+          let save =
+            { save with
+              Save.all_exercise_states =
+                List.fold_left (fun m (id,save) -> SMap.add id save m)
+                  SMap.empty valid_exercise_states }
+          in
           let key = (token :> Token.t) in
           let mutex =
             try Hashtbl.find token_save_mutexes key with Not_found ->
@@ -276,17 +292,23 @@ module Request_handler = struct
 
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->
-          Token.check_teacher token >|= (function
-              | true -> index
+          Token.check_teacher token >>= (function
+              | true -> Lwt.return index
               | false ->
-                  Exercise.Index.filter (fun id _ ->
-                      Exercise.Status.is_open id token = Exercise.Status.Open)
-                    index)
+                  Exercise.Index.filterk
+                    (fun id _ k ->
+                       Exercise.Status.is_open id token >>=
+                       fun st -> k (st = Exercise.Status.Open))
+                    index Lwt.return)
           >>= respond_json
-      | Api.Exercise (_token, id) ->
-          Exercise.Meta.get id >>= fun meta ->
-          Exercise.get id >>= fun ex ->
-          respond_json (meta, ex)
+      | Api.Exercise (token, id) ->
+          (Exercise.Status.is_open id token >>= function
+          | Exercise.Status.Open ->
+              Exercise.Meta.get id >>= fun meta ->
+              Exercise.get id >>= fun ex ->
+              respond_json (meta, ex)
+          | Exercise.Status.Closed | Exercise.Status.Readonly ->
+              Lwt.return (Error (`Forbidden, "Exercise closed")))
 
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json

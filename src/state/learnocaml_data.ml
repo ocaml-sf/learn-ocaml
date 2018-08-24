@@ -491,21 +491,47 @@ module Exercise = struct
 
     let find_opt t id = try Some (find t id) with Not_found -> None
 
-    let rec filter f = function
-      | Groups (gs) ->
-          List.fold_left (fun acc (id, (g: group)) ->
-              match filter f g.contents with
-              | Exercises [] -> acc
-              | contents -> (id, { g with contents}) :: acc)
-            [] (List.rev gs)
-          |> (function [] -> Exercises [] | l -> Groups l)
+    let rec filterk f g k =
+      match g with
+      | Groups gs ->
+          let rec aux acc = function
+            | (id, (g: group)) :: r ->
+                (filterk f g.contents @@ function
+                  | Exercises [] -> aux acc r
+                  | contents -> aux ((id, { g with contents }) :: acc) r)
+            | [] -> match acc with
+              | [] -> k (Exercises [])
+              | l -> k (Groups (List.rev l))
+          in
+          aux [] gs
       | Exercises l ->
-          List.fold_left (fun acc (id, ex) ->
-              match ex with
-              | Some ex when f id ex -> (id, Some ex) :: acc
-              | _ -> acc)
-            [] (List.rev l)
-          |> (function l -> Exercises l)
+          let rec aux acc = function
+            | (id, Some ex) :: r ->
+                (f id ex @@ function
+                  | true -> aux ((id, Some ex) :: acc) r
+                  | false -> aux acc r)
+            | (_, None) :: r -> aux acc r
+            | [] -> k (Exercises (List.rev acc))
+          in
+          aux [] l
+
+    let filter f g = filterk (fun x y k -> f x y |> k) g (fun x -> x)
+
+    (* let rec filter f = function
+     *   | Groups (gs) ->
+     *       List.fold_left (fun acc (id, (g: group)) ->
+     *           match filter f g.contents with
+     *           | Exercises [] -> acc
+     *           | contents -> (id, { g with contents}) :: acc)
+     *         [] (List.rev gs)
+     *       |> (function [] -> Exercises [] | l -> Groups l)
+     *   | Exercises l ->
+     *       List.fold_left (fun acc (id, ex) ->
+     *           match ex with
+     *           | Some ex when f id ex -> (id, Some ex) :: acc
+     *           | _ -> acc)
+     *         [] (List.rev l)
+     *       |> (function l -> Exercises l) *)
 
   end
 
