@@ -149,7 +149,8 @@ let nickname =
   let key = mangle [ "nickname" ] in
   let enc = Json_encoding.(obj1 (req "nickname" string)) in
   let store value = store_single key enc value
-  and retrieve () = retrieve_single key enc ()
+  and retrieve () =
+    try retrieve_single key enc () with Not_found -> ""
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
