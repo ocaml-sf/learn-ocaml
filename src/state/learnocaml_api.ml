@@ -225,7 +225,11 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
           Tutorial (Filename.chop_suffix f ".json") |> k
 
-      | `GET, path, _ ->
+      | `GET,
+        ( ["index.html"]
+        | ["exercises.html"]
+        | ("js"|"fonts"|"icons"|"css") :: _ as path),
+        _ ->
           Static path |> k
 
       | meth, path, _ ->
