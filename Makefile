@@ -89,7 +89,7 @@ docker-images: Dockerfile learn-ocaml.opam
 	@cp Dockerfile docker
 	@docker build -t learn-ocaml-compilation --target compilation docker
 	@docker build -t learn-ocaml --target program docker
-	@docker build -t learn-ocaml --target client docker
+	@docker build -t learn-ocaml-client --target client docker
 	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
 # Generates documentation for testing (exclusively Test_lib and Learnocaml_report modules)
