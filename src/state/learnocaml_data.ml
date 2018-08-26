@@ -375,48 +375,58 @@ module Exercise = struct
 
     type tag = string
 
-    type status = Open | Closed | Readonly
-
     type assignment = {
       start: float;
       stop: float;
     }
 
+    type status =
+      | Open
+      | Closed
+      | Assigned of assignment Token.Map.t
+
     type t = {
       id: id;
       tags: tag list;
       status: status;
-      assigned: assignment Token.Map.t;
     }
 
     let enc =
+      let assignments_enc =
+        J.conv
+          (fun m ->
+             Token.Map.bindings m |> List.map (fun (tok, a) ->
+                 Token.to_string tok,
+                 (a.start, a.stop)))
+          (List.fold_left (fun acc (tok, (start, stop)) ->
+               Token.Map.add (Token.parse tok) {start; stop} acc)
+              Token.Map.empty)
+          (J.assoc
+             (J.obj2
+                (J.req "start" J.float)
+                (J.req "stop" J.float)))
+      in
+      let status_enc =
+        J.union [
+          J.case (J.constant "open")
+            (function Open -> Some () | _ -> None) (fun () -> Open);
+          J.case (J.constant "closed")
+            (function Closed -> Some () | _ -> None) (fun () -> Closed);
+          J.case (J.obj1 (J.req "assigned" assignments_enc))
+            (function Assigned a -> Some a | _ -> None) (fun a -> Assigned a);
+        ]
+      in
       J.conv
-        (fun t -> t.id, t.tags, t.status, t.assigned)
-        (fun (id, tags, status, assigned) ->
-           {id; tags; status; assigned})
+        (fun t -> t.id, t.tags, t.status)
+        (fun (id, tags, status) ->
+           {id; tags; status})
       @@
-      J.obj4
+      J.obj3
         (J.req "id" J.string)
         (J.dft "tags" (J.list J.string) [])
-        (J.dft "status" (J.string_enum [
-             "open", Open;
-             "closed", Closed;
-             "readonly", Readonly;
-           ]) Open)
-        (J.dft "assigned"
-           (J.conv
-              (fun m ->
-                 Token.Map.bindings m |> List.map (fun (tok, a) ->
-                     Token.to_string tok,
-                     (a.start, a.stop)))
-              (List.fold_left (fun acc (tok, (start, stop)) ->
-                   Token.Map.add (Token.parse tok) {start; stop} acc)
-                  Token.Map.empty)
-              (J.assoc
-                 (J.obj2
-                    (J.req "start" J.float)
-                    (J.req "stop" J.float))))
-           Token.Map.empty)
+        (J.dft "status" status_enc Open)
+
+    let default id = { id; tags = []; status = Open }
 
   end
 
@@ -490,6 +500,17 @@ module Exercise = struct
       aux t
 
     let find_opt t id = try Some (find t id) with Not_found -> None
+
+    let rec fold_exercises f acc = function
+      | Groups gs ->
+          List.fold_left
+            (fun acc (_, (g: group)) -> fold_exercises f acc g.contents)
+            acc gs
+      | Exercises l ->
+          List.fold_left (fun acc ->function
+              | (id, Some ex) -> f acc id ex
+              | _ -> acc)
+            acc l
 
     let rec filterk f g k =
       match g with

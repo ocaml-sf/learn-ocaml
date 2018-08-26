@@ -176,7 +176,7 @@ module Request_handler = struct
             | false ->
                 Lwt_list.filter_s (fun (id, _) ->
                     Exercise.Status.is_open id token >|= function
-                    | Exercise.Status.Open -> true
+                    | `Open -> true
                     | _ -> false)
                   exercise_states)
           >>= fun valid_exercise_states ->
@@ -298,16 +298,16 @@ module Request_handler = struct
                   Exercise.Index.filterk
                     (fun id _ k ->
                        Exercise.Status.is_open id token >>=
-                       fun st -> k (st = Exercise.Status.Open))
+                       fun st -> k (st = `Open))
                     index Lwt.return)
           >>= respond_json
       | Api.Exercise (token, id) ->
           (Exercise.Status.is_open id token >>= function
-          | Exercise.Status.Open ->
+          | `Open ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
               respond_json (meta, ex)
-          | Exercise.Status.Closed | Exercise.Status.Readonly ->
+          | `Closed | `Readonly ->
               Lwt.return (Error (`Forbidden, "Exercise closed")))
 
       | Api.Lesson_index () ->
@@ -328,7 +328,7 @@ module Request_handler = struct
           Exercise.Status.get id >>= respond_json
       | Api.Set_exercise_status (token, status) ->
           with_verified_teacher_token token @@ fun () ->
-          Exercise.Status.set status >>= respond_json
+          Lwt_list.iter_s Exercise.Status.set status >>= respond_json
 
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))

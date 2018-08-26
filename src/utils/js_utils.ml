@@ -121,12 +121,21 @@ module Manip = struct
     let elt = get_elt "setInnerText" elt in
     elt##.textContent := Js.some (Js.string s)
 
+  let hasClass elt s =
+    let elt = get_elt "addClass" elt in
+    Js.to_bool
+      elt##.classList##(contains (Js.string s))
   let addClass elt s =
     let elt = get_elt "addClass" elt in
     elt##.classList##(add (Js.string s))
   let removeClass elt s =
     let elt = get_elt "removeClass" elt in
     elt##.classList##(remove (Js.string s))
+  let toggleClass elt s =
+    let elt = get_elt "toggleClass" elt in
+    Js.to_bool
+      elt##.classList##(toggle (Js.string s))
+
 
   let raw_appendChild ?before node elt2 =
     match before with
@@ -194,6 +203,21 @@ module Manip = struct
           )
       ) in
     Js.Opt.to_option res
+
+  let by_classname n =
+    let nodelist = Dom_html.window##.document##(getElementsByClassName (Js.string n)) in
+    let rec tolist acc n =
+      if n < 0 then acc
+      else
+      let acc =
+        Js.Opt.case (nodelist##item n)
+          (fun () -> acc)
+          (fun node -> Of_dom.of_element (Dom_html.element node) :: acc)
+      in
+      tolist acc (n-1)
+    in
+    Firebug.console##(log (Js.string (Printf.sprintf "Nodes with class %s: %d" n nodelist##.length)));
+    tolist [] nodelist##.length
 
   let childLength elt =
     let node = get_node elt in

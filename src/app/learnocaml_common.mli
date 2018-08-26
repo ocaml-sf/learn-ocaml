@@ -80,6 +80,12 @@ val button :
   string -> (unit -> unit Lwt.t) ->
   unit
 
+val dropdown :
+  id: string ->
+  title: [< Html_types.button_content_fun > `PCDATA] Tyxml_js.Html.elt list ->
+  [< Html_types.div_content_fun ] Tyxml_js.Html.elt list ->
+  [> Html_types.div ] Tyxml_js.Html.elt
+
 val render_rich_text :
   ?on_runnable_clicked: (string -> unit) ->
   Learnocaml_data.Tutorial.text ->

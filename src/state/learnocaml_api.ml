@@ -42,7 +42,7 @@ type _ request =
   | Exercise_status:
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * Exercise.Status.t -> unit request
+      teacher token * Exercise.Status.t list -> unit request
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case
@@ -177,9 +177,8 @@ module Conversions (Json: JSON_CODEC) = struct
           ("teacher" :: "exercise-status" :: String.split_on_char '/' id)
     | Set_exercise_status (token, status) ->
         post ~token
-          ("teacher" :: "exercise-status" ::
-           String.split_on_char '/' status.Exercise.Status.id)
-          (Json.encode Exercise.Status.enc status)
+          ["teacher"; "exercise-status"]
+          (Json.encode (J.list Exercise.Status.enc) status)
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -254,13 +253,11 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ("teacher" :: "exercise-status" :: id), Some token
         when Token.is_teacher token ->
           Exercise_status (token, String.concat "/" id) |> k
-      | `POST body, ("teacher" :: "exercise-status" :: id), Some token
+      | `POST body, ["teacher"; "exercise-status"], Some token
         when Token.is_teacher token ->
-          let id = String.concat "/" id in
-          (match Json.decode Exercise.Status.enc body with
-           | status when status.Exercise.Status.id = id ->
+          (match Json.decode (J.list Exercise.Status.enc) body with
+           | status ->
                Set_exercise_status (token, status) |> k
-           | _ -> Invalid_request "Inconsistent exercise id" |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
       | `GET,

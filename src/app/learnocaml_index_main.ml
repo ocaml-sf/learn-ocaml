@@ -23,6 +23,15 @@ open Learnocaml_common
 
 module H = Tyxml_js.Html5
 
+let stars_div stars =
+  H.div ~a:[ H.a_class [ "stars" ] ] [
+    let num = 5 * int_of_float (stars *. 2.) in
+    let num = max (min num 40) 0 in
+    let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
+    let src = Format.asprintf "icons/stars_%02d.svg" num in
+    H.img ~alt ~src ()
+  ]
+
 let exercises_tab token _ _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
@@ -73,13 +82,7 @@ let exercises_tab token _ _ () =
                       | Some text -> pcdata text ] ;
                 ] ;
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
-                  div ~a:[ a_class [ "stars" ] ] [
-                    let num = 5 * int_of_float (stars *. 2.) in
-                    let num = max (min num 40) 0 in
-                    let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-                    let src = Format.asprintf "icons/stars_%02d.svg" num in
-                    img ~alt ~src ()
-                  ] ;
+                  stars_div stars;
                   div ~a:[ a_class [ "length" ] ] [
                     match kind with
                     | Exercise.Meta.Project -> pcdata [%i"project"]
@@ -566,41 +569,107 @@ let teacher_tab token _select _params () =
       ~name:"learnocaml.csv"
       ~contents:(Js.string csv)
   in
-  let actions_div =
-    H.div ~a: [ H.a_class [ "teacher-actions" ] ] [
-      H.h4 [ H.pcdata "Actions" ];
-      H.ul [
-        H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
-          [ H.pcdata [%i"Create new teacher token"] ];
-        H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
-          [ H.pcdata [%i"Download student data as CSV"] ];
-      ]
-    ]
-  in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
   in
-  let rec mk_table group_level acc = function
+  let tag_div tag =
+    H.span ~a:[H.a_class ["exercise-tag"]] [H.pcdata tag]
+  in
+  let selected_exercises = Hashtbl.create 117 in
+  let selected_students = Hashtbl.create 117 in
+  let exercises_index = ref (Exercise.Index.Exercises []) in
+  let students_tbl = Hashtbl.create 117 in
+  let status_map = ref SMap.empty in
+  let status_changes = ref SMap.empty in
+  let status_current () =
+    SMap.merge (fun id old newer -> match newer with None -> old | s -> s)
+      !status_map !status_changes;
+  in
+  let get_status id =
+    try SMap.find id !status_changes with Not_found ->
+    try SMap.find id !status_map with Not_found ->
+      Exercise.Status.default id
+  in
+  let exercise_changed_status id =
+    match SMap.find_opt id !status_changes with
+    | None -> false
+    | Some ch -> match SMap.find_opt id !status_map with
+      | None -> ch <> Exercise.Status.default id
+      | Some st -> ch <> st
+  in
+  let exercise_line_id id = "learnocaml_exercise_"^id in
+  let toggle_selected_exercise id =
+    Lwt.async @@ fun () ->
+    match Manip.by_id (exercise_line_id id) with
+    | None -> Lwt.return_unit
+    | Some elt ->
+        if Manip.toggleClass elt "selected" then
+          Hashtbl.replace selected_exercises id ()
+        else
+          Hashtbl.remove selected_exercises id;
+        Lwt.return_unit
+  in
+  let toggle_selected_exercises ids =
+    Lwt.async @@ fun () ->
+    Lwt_list.filter_map_s
+      (fun id -> Lwt.return (Manip.by_id (exercise_line_id id))) ids
+    >|= fun elts ->
+    if List.exists (fun e -> Manip.hasClass e "selected") elts then
+      (List.iter (fun e -> Manip.removeClass e "selected") elts;
+       List.iter (fun id -> Hashtbl.remove selected_exercises id) ids)
+    else
+      (List.iter (fun e -> Manip.addClass e "selected") elts;
+       List.iter (fun id -> Hashtbl.replace selected_exercises id ()) ids)
+  in
+  let rec mk_table group_level acc status group =
+    match group with
     | Exercise.Index.Groups groups_list ->
         List.fold_left (fun acc (id, g) ->
+            let all_children =
+              Exercise.Index.fold_exercises
+                (fun acc id _ -> id :: acc)
+                [] g.Exercise.Index.contents
+            in
             let acc =
-              H.tr ~a:[H.a_id ("exercise_group_"^id)] [
+              H.tr ~a:[
+                H.a_id ("exercise_group_"^id);
+                H.a_class ["exercise_group"];
+                H.a_onclick (fun _ ->
+                    toggle_selected_exercises all_children; false);
+              ] [
                 H.th ~a:[H.a_colspan 0; indent_style group_level]
                   [H.pcdata g.Exercise.Index.title];
               ] :: acc
             in
-            mk_table (group_level + 1) acc g.Exercise.Index.contents)
+            mk_table (group_level + 1) acc status g.Exercise.Index.contents)
           acc groups_list
     | Exercise.Index.Exercises exlist ->
         List.fold_left (fun acc (id, meta) ->
             match meta with None -> acc | Some meta ->
+            let st = status id in
+            let hid = exercise_line_id id in
+            let classes =
+              (if exercise_changed_status id then ["changed"] else []) @
+              (if Hashtbl.mem selected_exercises id then ["selected"] else [])
+            in
             H.tr ~a:[
-              H.a_id ("learnocaml_exercise_"^id);
+              H.a_id hid;
+              H.a_class ("exercise_line" :: classes);
+              H.a_onclick (fun _ -> toggle_selected_exercise id; false);
             ] [
               H.td ~a:[indent_style group_level]
                 [ H.pcdata meta.Exercise.Meta.title ];
               H.td (List.map H.pcdata meta.Exercise.Meta.focus);
-              H.td [H.pcdata (string_of_float meta.Exercise.Meta.stars)];
+              H.td [stars_div meta.Exercise.Meta.stars];
+              H.td (List.map tag_div st.Exercise.Status.tags);
+              H.td [
+                let cls, text = match st.Exercise.Status.status with
+                  | Exercise.Status.Open -> "exo_open", [%i"Open"]
+                  | Exercise.Status.Closed -> "exo_closed", [%i"Closed"]
+                  | Exercise.Status.Assigned a -> "exo_assigned", [%i"Assigned"]
+                in
+                H.span ~a:[H.a_class [cls]] [H.pcdata text]
+              ];
             ] :: acc)
           acc exlist
   in
@@ -610,7 +679,7 @@ let teacher_tab token _select _params () =
   let exercises_div =
     H.div ~a:[H.a_id "exercises_pane"] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
-        H.pcdata "filtering tools here"
+        H.pcdata "[filtering tools]"
       ];
       exercises_list_div;
     ]
@@ -621,28 +690,16 @@ let teacher_tab token _select _params () =
   let students_div =
     H.div ~a:[H.a_id "students_pane"] [
       H.div ~a:[H.a_id "students_filter_box"] [
-        H.pcdata "filtering tools here"
+        H.pcdata "[filtering tools]"
       ];
       students_list_div;
     ]
   in
-  let div =
-    H.div ~a: [H.a_id "learnocaml-main-teacher"] [
-      exercises_div;
-      students_div;
-      actions_div;
-    ]
-  in
-  let fill_exercises_pane =
-    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
-    >>= fun exercises ->
-    let table = List.rev (mk_table 0 [] exercises) in
+  let fill_exercises_pane () =
+    let table = List.rev (mk_table 0 [] get_status !exercises_index) in
     Manip.replaceChildren exercises_list_div [H.table table];
-    Lwt.return_unit
   in
-  let fill_students_pane =
-    Server_caller.request_exn (Learnocaml_api.Students_list token)
-    >>= fun students ->
+  let fill_students_pane () =
     let table =
       List.map (fun st ->
           let open Student in
@@ -650,14 +707,187 @@ let teacher_tab token _select _params () =
             H.td [H.pcdata (Token.to_string st.token)];
             H.td (match st.nickname with Some n -> [H.pcdata n] | _ -> []);
           ])
-        students
+        (Hashtbl.fold (fun _ st acc -> st :: acc) students_tbl []
+         |> List.sort compare)
     in
-    Manip.replaceChildren students_list_div [H.table table];
-    Lwt.return_unit
+    Manip.replaceChildren students_list_div [H.table table]
+  in
+  let apply_changes () =
+    Lwt.async @@ fun () ->
+    let changes =
+      SMap.fold (fun id st acc ->
+          if Some st <> SMap.find_opt id !status_map then st :: acc
+          else acc)
+        !status_changes []
+    in
+    Server_caller.request_exn
+      (Learnocaml_api.Set_exercise_status (token, changes)) >|= fun () ->
+    status_map := status_current ();
+    status_changes := SMap.empty;
+    Hashtbl.clear selected_exercises;
+    Hashtbl.clear selected_students;
+    fill_exercises_pane ()
+  in
+  let actions_div =
+    H.div ~a:[H.a_id "teacher_menubar"] [
+      H.button ~a:[
+        H.a_id "button_apply";
+        (* H.a_disabled (); *)
+        H.a_onclick (fun _ -> apply_changes (); true);
+      ] [H.pcdata [%i"Apply"]];
+      dropdown "teacher-actions" [H.pcdata [%i"Actions"]] [
+        H.ul [
+          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
+            [ H.pcdata [%i"Create new teacher token"] ];
+          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
+            [ H.pcdata [%i"Download student data as CSV"] ];
+        ]
+      ];
+    ]
+  in
+(*     <input type="date" id="bday" name="bday" required pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
+       <input type="time" id="" name="" required pattern="[0-9]{2}:[0-9]{2}"> *)
+  let open_exercises () =
+    status_changes :=
+      Hashtbl.fold (fun id _ status ->
+          Firebug.console##log (Js.string ("opening "^id));
+          let st = get_status id in
+          SMap.add id Exercise.Status.{ st with status = Open } status)
+        selected_exercises
+        !status_changes;
+    fill_exercises_pane ()
+  in
+  let close_exercises () =
+    status_changes :=
+      Hashtbl.fold (fun id _ status ->
+          let st = get_status id in
+          SMap.add id Exercise.Status.{ st with status = Closed } status)
+        selected_exercises
+        !status_changes;
+    fill_exercises_pane ()
+  in
+  let assignments_table () =
+    let module AM = Map.Make(struct
+        type t = Exercise.Status.assignment
+        let compare = compare
+      end)
+    in
+    let module ATM = Map.Make(struct
+        type t = Exercise.Status.assignment * Token.Set.t
+        let compare (a1, ts1) (a2, ts2) =
+          match compare a1 a2 with
+          | 0 -> Token.Set.compare ts1 ts2
+          | n -> n
+      end)
+    in
+    let atm =
+      SMap.fold (fun id st atm ->
+          match st.Exercise.Status.status with
+          | Exercise.Status.Open | Exercise.Status.Closed -> atm
+          | Exercise.Status.Assigned tm ->
+              let am =
+                Token.Map.fold (fun tok assg am ->
+                    match AM.find_opt assg am with
+                    | None -> AM.add assg (Token.Set.singleton tok) am
+                    | Some ts -> AM.add assg (Token.Set.add tok ts) am)
+                  tm AM.empty
+              in
+              AM.fold (fun assg toks atm ->
+                  match ATM.find_opt (assg, toks) atm with
+                  | None -> ATM.add (assg, toks) (SSet.singleton id) atm
+                  | Some ids -> ATM.add (assg, toks) (SSet.add id ids) atm)
+                am atm)
+        (status_current ())
+        ATM.empty
+    in
+    let date t =
+      (* let ts = Unix.gmtime t in
+       * let jsdate =
+       *   Js.date_constr##_UTC_min
+       *     (ts.Unix.tm_year) (ts.Unix.tm_mon + 1) (ts.Unix.tm_mday)
+       *     (ts.Unix.tm_hour) (ts.Unix.tm_min)
+       * in *)
+
+(*     <input type="date" id="bday" name="bday" required pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
+       <input type="time" id="" name="" required pattern="[0-9]{2}:[0-9]{2}"> *)
+
+
+      H.pcdata
+        (Js.to_string
+           (new%js Js.date_fromTimeValue t)##toLocaleString)
+    in
+    let make_line assg tokens exo_ids =
+      H.tr [
+        H.td [date assg.Exercise.Status.start];
+        H.td [date assg.Exercise.Status.stop];
+        H.td [H.pcdata (Printf.sprintf "%d students" (Token.Set.cardinal tokens))];
+        (* todo: add common tags; set selected students on click *)
+        H.td [H.pcdata (Printf.sprintf "%d exercises" (SSet.cardinal exo_ids))];
+        (* todo: select exercises on click *)
+      ]
+    in
+    H.table (
+      List.rev @@
+      ATM.fold (fun (assg, tokens) exos acc ->
+          make_line assg tokens exos :: acc)
+        atm [] @
+      [ new_assignment
+    )
+  in
+  let exercise_control_div =
+    H.div ~a:[H.a_id "exercise_controls"] [
+      H.button ~a:[H.a_onclick (fun _ -> open_exercises (); true)]
+        [H.pcdata [%i"Open"]];
+      H.button ~a:[ H.a_onclick (fun _ -> close_exercises (); true) ]
+        [H.pcdata [%i"Close"]];
+      H.button ~a:[ H.a_disabled () ]
+        [H.pcdata [%i"Add assignment"]];
+      H.button ~a:[ H.a_disabled () ]
+        [H.pcdata [%i"Add tag"]];
+      H.button ~a:[ H.a_disabled () ]
+        [H.pcdata [%i"Remove tag"]];
+    ]
+  in
+  Manip.appendChild exercises_div exercise_control_div;
+  let control_div =
+    H.div ~a:[H.a_id "control_pane"] [
+      H.fieldset ~legend:(H.legend [H.pcdata [%i"Assignments"]]) [
+        assignments_table ();
+      ];
+    ]
+  in
+  let div =
+    H.div ~a: [H.a_id "learnocaml-main-teacher"] [
+      actions_div;
+      exercises_div;
+      students_div;
+      control_div;
+    ]
+  in
+  let fetch_exercises =
+    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+    >|= fun index -> exercises_index := index
+  in
+  let fetch_stats =
+    Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
+    >|= fun statuses ->
+    let map =
+      List.fold_left (fun m ex -> SMap.add ex.Exercise.Status.id ex m)
+        SMap.empty statuses
+    in
+    status_map := map
+  in
+  let fetch_students =
+    Server_caller.request_exn (Learnocaml_api.Students_list token)
+    >|= fun students ->
+    Hashtbl.clear students_tbl;
+    List.iter (fun st -> Hashtbl.add students_tbl st.Student.token st) students
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
-  Lwt.join [fill_exercises_pane; fill_students_pane] >>= fun () ->
+  Lwt.join [fetch_exercises; fetch_stats; fetch_students] >>= fun () ->
+  fill_exercises_pane ();
+  fill_students_pane ();
   Lwt.return div
 
 let token_input_field () =

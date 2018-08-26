@@ -62,14 +62,19 @@ module Manip : sig
 
   val children: 'a elt -> 'b elt list
   val by_id: string -> 'b elt option
+  val by_classname: string -> 'b elt list
 
   val disable: 'a elt -> unit
   val enable: 'a elt -> unit
 
   val value: 'a elt -> string
 
+  val hasClass: 'a elt -> string -> bool
   val addClass: 'a elt -> string -> unit
   val removeClass: 'a elt -> string -> unit
+
+  (* Returns [true] if the class has been set, [false] if it was unset *)
+  val toggleClass: 'a elt -> string -> bool
 
   val focus: 'a elt -> unit
   val blur: 'a elt -> unit

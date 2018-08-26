@@ -903,62 +903,132 @@ body {
 @media (min-width: 1400px) {
     #learnocaml-main-teacher {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: fit-content(100%) max-content;
+        height: 100vh;
+    }
+    #learnocaml-main-teacher > #exercises_pane {
+        /* max-height: calc(100vh - 40px); */
+    }
+    #learnocaml-main-teacher > #students_pane {
+        /* max-height: calc(100vh - 40px); */
+    }
+    #learnocaml-main-teacher > #control_pane {
+        grid-column: 1 / 3;
+    }
+    #learnocaml-main-teacher > #teacher_menubar {
+        grid-column: 1 / 3;
+        /* height: 24px; */
+        overflow: visible;
     }
 }
-  /* #learnocaml-main-teacher {
-   *   display: flex ;
-   *   flex-direction: column;
-   * }
-   * 
-   * #learnocaml-main-teacher > #exercises_pane {
-   *   position: absolute;
-   *   right: 500px; top: 61px; bottom: 40px; left: 0px;
-   *   z-index: 1;
-   * }
-   * #learnocaml-main-teacher > .buttons {
-   *   position: absolute;
-   *   right: 500px; bottom: 0; left: 0px;
-   * } */
-  #learnocaml-main-teacher > #exercises_pane {
 
-  }
-  #learnocaml-main-teacher > #students_pane {
-    /* position: absolute;
-     * right: 0; top: 61px; bottom: 0; width: 500px;
-     * z-index: 2; */
+#learnocaml-main-teacher > #exercises_pane {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+#learnocaml-main-teacher > #exercises_pane > #exercise_controls {
+    position: relative;
+    bottom: 0;
+}
+
+#learnocaml-main-teacher > #exercises_pane > * {
+    flex: none;
+    margin: 4px;
+}
+
+#learnocaml-main-teacher > #exercises_pane > #exercises_list {
+    flex: auto;
+    min-height: 7ex;
+    overflow-y: auto;
+    border: 1px solid #aaa;
+    /* margin: 4px; */
+}
+
+#learnocaml-main-teacher > #students_pane {
     background: #fe9;
-    /* padding: 0px;
-     * display: flex;
-     * flex-direction: column; */
-  }
-  #learnocaml-main-teacher > #buttons {
-    grid-column: 1 / 3;
-  }
-  /* #learnocaml-main-teacher > #students_pane::after {
-   *   position: absolute;
-   *   top:0; bottom:0; left: -8px; width: 8px;
-   *   background: linear-gradient(to left, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
-   *   content:"";
-   * }
-   * 
-   * 
-   * #learnocaml-main-teacher > .navigation {
-   *   position: relative;
-   *   z-index: 3;
-   *   display: flex;
-   *   flex-direction: row ;
-   *   border-bottom: 1px white solid;
-   *   background: #ddd;
-   *   padding: 0px;
-   *   flex: 0 0 auto;
-   * } */
+}
+
+#learnocaml-main-teacher > #teacher_menubar > * {
+    float: right;
+}
 
 #learnocaml-main-teacher #exercises_list {
 }
 
 #learnocaml-main-teacher table {
-    width: calc(100% - 8px);
-    margin: 4px;
-    border: 1px solid #aaa;
+    width: 100%;
+    /* width: calc(100% - 8px);
+     * margin: 4px;
+     * border: 1px solid #aaa; */
+}
+
+#learnocaml-main-teacher
+
+#teacher_actions {
+    float: right;
+}
+
+
+.dropdown_btn {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown_content {
+    display: none;
+    position: absolute;
+    right: 0;
+    z-index: 100;
+    background-color: #eee;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    width: -webkit-max-content;
+    width: -moz-max-content;
+}
+
+.dropdown_content ul {
+    list-style-type: none;
+    padding: 0
+}
+.dropdown_content li {
+    padding: 5px 10px;
+}
+.dropdown_content li:hover {
+    background-color: #bbc;
+    cursor: pointer;
+}
+
+.exo_open {
+    background-color: #8b8;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+.exo_closed {
+    background-color: #b77;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+tr.exercise_line:hover {
+    background-color: #fff;
+    cursor: cell;
+}
+
+tr.exercise_group:hover {
+    cursor: cell;
+}
+
+.selected {
+    background-color: #bbc;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 3px dotted #f66;
+    /* outline-offset: 2px; */
 }

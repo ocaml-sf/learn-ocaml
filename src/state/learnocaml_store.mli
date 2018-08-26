@@ -74,7 +74,7 @@ module Exercise: sig
   module Status: sig
     include module type of struct include Exercise.Status end
 
-    val is_open: Exercise.id -> Token.t -> status Lwt.t
+    val is_open: Exercise.id -> Token.t -> [`Open | `Closed | `Readonly] Lwt.t
     val get: Exercise.id -> t Lwt.t
     val set: t -> unit Lwt.t
     val all: unit -> t list Lwt.t

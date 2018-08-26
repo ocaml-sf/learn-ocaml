@@ -300,6 +300,29 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     dom_button##.disabled := Js.bool true ;
   Manip.appendChild container button
 
+let dropdown ~id ~title items =
+    let toggle _ =
+      let menu = find_component id in
+      let disp =
+        match Manip.Css.display menu with
+        | "block" -> "none"
+        | _ ->
+            Lwt_js_events.async (fun () ->
+                Lwt_js_events.click window >|= fun _ ->
+                Manip.SetCss.display menu "none"
+              );
+            "block"
+      in
+      Manip.SetCss.display menu disp;
+      false
+    in
+    let module H = Tyxml_js.Html in
+    H.div ~a: [H.a_class ["dropdown_btn"]] [
+      H.button ~a: [H.a_onclick toggle]
+        (title @ [H.pcdata " \xe2\x96\xbe" (* U+25BE *)]);
+      H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
+    ]
+
 let gettimeofday () =
   let now = new%js Js.date_now in
   floor ((now ## getTime) *. 1000.) +. float (now ## getTimezoneOffset)

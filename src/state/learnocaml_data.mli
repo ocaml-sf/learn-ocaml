@@ -146,21 +146,25 @@ module Exercise: sig
 
     type tag = string
 
-    type status = Open | Closed | Readonly
-
     type assignment = {
       start: float;
       stop: float;
     }
 
+    type status =
+      | Open
+      | Closed
+      | Assigned of assignment Token.Map.t
+
     type t = {
       id: id;
       tags: tag list;
       status: status;
-      assigned: assignment Token.Map.t;
     }
 
     val enc: t Json_encoding.encoding
+
+    val default: id -> t
 
   end
 
@@ -178,6 +182,8 @@ module Exercise: sig
     val find: t -> id -> Meta.t
 
     val find_opt: t -> id -> Meta.t option
+
+    val fold_exercises: ('a -> id -> Meta.t -> 'a) -> 'a -> t -> 'a
 
     val filter: (id -> Meta.t -> bool) -> t -> t
 

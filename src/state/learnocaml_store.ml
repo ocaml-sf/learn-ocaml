@@ -147,12 +147,10 @@ module Exercise = struct
       Lwt_io.(with_file ~mode:Output (store_file ())
                 (fun oc -> write oc s))
 
-    let empty id = { id; tags = []; status = Open; assigned = Token.Map.empty }
-
     let get id =
       Lazy.force tbl >>= fun tbl ->
       try Lwt.return (Hashtbl.find tbl id)
-      with Not_found -> Meta.get id >|= fun _ -> empty id
+      with Not_found -> Meta.get id >|= fun _ -> default id
 
     let set =
       let mutex = Lwt_mutex.create () in
@@ -168,16 +166,22 @@ module Exercise = struct
 
     let is_open id token =
       Lazy.force tbl >|= fun tbl ->
-      match Hashtbl.find_opt tbl id with
-      | None -> (empty id).status
-      | Some ex ->
-          match Token.Map.find_opt token ex.assigned with
+      let status =
+        match Hashtbl.find_opt tbl id with
+        | None -> (default id).status
+        | Some ex -> ex.status
+      in
+      match status with
+      | Open -> `Open
+      | Closed -> `Closed
+      | Assigned a ->
+          match Token.Map.find_opt token a with
           | Some a ->
               let t = Unix.gettimeofday () in
-              if t < a.start then Closed
-              else if t < a.stop then Open
-              else Readonly
-          | None -> ex.status
+              if t < a.start then `Closed
+              else if t < a.stop then `Open
+              else `Readonly
+          | None -> `Closed
 
   end
 
