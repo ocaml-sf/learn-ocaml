@@ -987,30 +987,43 @@ body {
 }
 
 .exo_open {
+    color: black;
     background-color: #8b8;
     padding: 1px;
     border-radius: 4px;
 }
 
 .exo_closed {
+    color: black;
     background-color: #b77;
     padding: 1px;
     border-radius: 4px;
 }
 
 .exo_assigned {
+    color: black;
     background-color: #77b;
     padding: 1px;
     border-radius: 4px;
 }
 
-tr.exercise_line:hover, tr.student_line:hover {
+tr.exercise_line.disabled, tr.student_line.disabled {
+    color: #a52;
+}
+
+tr.exercise_line:hover:not(.disabled),
+tr.student_line:hover:not(.disabled) {
     background-color: #fff;
     cursor: cell;
 }
 
 tr.exercise_group:hover {
     cursor: cell;
+}
+
+.remove-cross {
+    text-align: right;
+    cursor: pointer;
 }
 
 .selected {
@@ -1026,6 +1039,7 @@ tr.exercise_group:hover {
     outline-offset: 0px;
 }
 
+/*
 .assg_finished {
     background-color: #b88;
 }
@@ -1034,3 +1048,4 @@ tr.exercise_group:hover {
 }
 .assg_notstarted {
 }
+*/

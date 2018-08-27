@@ -635,6 +635,7 @@ let teacher_tab token _select _params () =
   let exercise_status_change = ref (fun _ -> assert false) in
   let student_change = ref (fun _ -> assert false) in
   let assignment_change = ref (fun _ -> assert false) in
+  let assignment_remove = ref (fun _ -> assert false) in
 
   (* Exercises table *)
   let rec mk_table group_level acc status group =
@@ -839,10 +840,33 @@ let teacher_tab token _select _params () =
     ] [
       H.td [date ("start_"^hid) id assg.Exercise.Status.start];
       H.td [date ("stop_"^hid) id assg.Exercise.Status.stop];
-      H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
-      (* todo: add common tags *)
       H.td [H.pcdata (Printf.sprintf [%if"%d exercises"] (SSet.cardinal exo_ids))];
+      H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
+      H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
+               H.a_class ["remove-cross"]]
+        [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
+      (* todo: add common tags *)
     ]
+  in
+  let already_assigned_exercises students =
+    SSet.filter (fun ex ->
+        let Exercise.Status.{status; _} = get_status ex in
+        match status with
+        | Exercise.Status.Assigned tmap ->
+            Token.Map.exists (fun tk _ -> Token.Set.mem tk students) tmap
+        | _ -> false)
+      (SSet.of_list (all_exercises !exercises_index))
+  in
+  let already_assigned_students exercises =
+    SSet.fold (fun ex acc ->
+        let Exercise.Status.{status; _} = get_status ex in
+        match status with
+        | Exercise.Status.Assigned tmap ->
+            Token.Map.fold (fun tk _ acc -> Token.Set.add tk acc)
+              tmap acc
+        | _ -> acc)
+      exercises
+      Token.Set.empty
   in
   let assignments_table () =
     let module AM = Map.Make(struct
@@ -895,15 +919,6 @@ let teacher_tab token _select _params () =
           [ H.button [H.pcdata [%i"New assignment"]] ]
       ]
     in
-    let already_assigned_exercises students =
-      SSet.filter (fun ex ->
-          let Exercise.Status.{status; _} = get_status ex in
-          match status with
-          | Exercise.Status.Assigned tmap ->
-              Token.Map.exists (fun tk _ -> Token.Set.mem tk students) tmap
-          | _ -> false)
-        (SSet.of_list (all_exercises !exercises_index))
-    in
     let new_assignment () =
       let start, stop =
         let tm = Unix.(gmtime (time ())) in
@@ -925,11 +940,12 @@ let teacher_tab token _select _params () =
         make_line
           Exercise.Status.{start; stop} tokens exercises
       in
+      let id = !line_n in
       Dom.insertBefore (H.toelt table)
         (H.toelt line)
         (Js.some (H.toelt new_assg_line));
-      !toggle_select_assignment !line_n;
-      fill_exercises_pane ();
+      !assignment_change id;
+      !toggle_select_assignment id
     in
     Manip.Ev.onclick new_assg_line (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
@@ -942,22 +958,22 @@ let teacher_tab token _select _params () =
   in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
-      H.button ~a:[H.a_onclick (fun _ ->
-          !exercise_status_change
-            (htbl_keys selected_exercises)
-            Exercise.Status.(function
-                | {status = Closed} as st -> {st with status = Open}
-                | st -> st);
-          true)]
-        [H.pcdata [%i"Open"]];
-      H.button ~a:[ H.a_onclick (fun _ ->
-          !exercise_status_change
-            (htbl_keys selected_exercises)
-            Exercise.Status.(function
+      H.button ~a:[
+        H.a_onclick (fun _ ->
+            let open Exercise.Status in
+            let ids = htbl_keys selected_exercises in
+            let fstat =
+              if List.exists (fun id -> (get_status id).status = Open) ids
+              then function
                 | {status = Open} as st -> {st with status = Closed}
-                | st -> st);
-          true)]
-        [H.pcdata [%i"Close"]];
+                | st -> st
+              else function
+                | {status = Closed} as st -> {st with status = Open}
+                | st -> st
+            in
+            !exercise_status_change (htbl_keys selected_exercises) fstat;
+            true)
+      ] [H.pcdata [%i"Open/Close"]];
       (* H.button ~a:[ H.a_disabled () ]
        *   [H.pcdata [%i"Add assignment"]];
        * H.button ~a:[ H.a_disabled () ]
@@ -1021,8 +1037,12 @@ let teacher_tab token _select _params () =
             | Assigned tmap -> tmap
           in
           let tmap =
+            Token.Set.fold (fun tk -> Token.Map.remove tk)
+              (Token.Set.diff students0 students) tmap0
+          in
+          let tmap =
             Token.Set.fold (fun tk -> Token.Map.add tk assg)
-              students tmap0
+              students tmap
           in
           SMap.add ex_id {st with status = Assigned tmap} acc)
         exos
@@ -1038,7 +1058,7 @@ let teacher_tab token _select _params () =
             | Assigned tmap -> tmap
           in
           let tmap =
-            Token.Set.fold (fun tk -> Token.Map.remove tk) students tmap0
+            Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0
           in
           let st =
             if Token.Map.is_empty tmap
@@ -1052,39 +1072,99 @@ let teacher_tab token _select _params () =
     status_changes := ch;
     fill_exercises_pane ()
   in
+  let update_disabled_exercises () =
+    let disabled ex_ids =
+      SSet.iter (Hashtbl.remove selected_exercises) ex_ids;
+      List.iter (fun ex ->
+          match Manip.by_id (exercise_line_id ex) with
+          | None -> ()
+          | Some el ->
+              if SSet.mem ex ex_ids then
+                (Manip.addClass el "disabled";
+                 Manip.removeClass el "selected")
+              else Manip.removeClass el "disabled")
+        (all_exercises !exercises_index)
+    in
+    let current_assignment = match !selected_assignment with
+      | Some id -> let _, _, exos = Hashtbl.find assignments_tbl id in exos
+      | None -> SSet.empty
+    in
+    disabled
+      (SSet.diff
+         (already_assigned_exercises
+            (Token.Set.of_list (htbl_keys selected_students)))
+         current_assignment)
+  in
+  let update_disabled_students () =
+    let disabled tokens =
+      Token.Set.iter (Hashtbl.remove selected_students) tokens;
+      Token.Map.iter (fun tk _ ->
+          match Manip.by_id (student_line_id tk) with
+          | None -> ()
+          | Some el ->
+              if Token.Set.mem tk tokens then
+                (Manip.addClass el "disabled";
+                 Manip.removeClass el "selected")
+              else Manip.removeClass el "disabled")
+        !students_map
+    in
+    let current_assignment = match !selected_assignment with
+      | Some id -> let _, std, _ = Hashtbl.find assignments_tbl id in std
+      | None -> Token.Set.empty
+    in
+    disabled
+      (Token.Set.diff
+         (already_assigned_students
+            (SSet.of_list (htbl_keys selected_exercises)))
+         current_assignment)
+  in
+  let update_disabled_both () =
+    update_disabled_exercises ();
+    update_disabled_students ();
+  in
   toggle_selected_exercises := begin fun ?force ids ->
     Lwt.async @@ fun () ->
-    let onoff = match force with
-      | Some set -> set
-      | None -> not @@ List.exists (Hashtbl.mem selected_exercises) ids
+    let ids, onoff = match force with
+      | Some set -> ids, set
+      | None ->
+          let ids =
+            List.filter (fun id ->
+                match Manip.by_id (exercise_line_id id) with
+                | Some elt -> not (Manip.hasClass elt "disabled")
+                | None -> false)
+              ids
+          in
+          ids, not @@ List.exists (Hashtbl.mem selected_exercises) ids
     in
     List.iter (select_exercise onoff) ids;
     (match !selected_assignment with
      | None -> ()
      | Some aid ->
-         set_assignment aid ~exos:(SSet.of_list (htbl_keys selected_exercises))
-    );
+         set_assignment aid ~exos:(SSet.of_list (htbl_keys selected_exercises)));
+    if force = None then update_disabled_both ();
     Lwt.return_unit
   end;
   toggle_selected_students := begin fun ?force tokens ->
     Lwt.async @@ fun () ->
-    let onoff = match force with
-      | Some set -> set
-      | None -> not @@ List.exists (Hashtbl.mem selected_students) tokens
+    let tokens, onoff = match force with
+      | Some set -> tokens, set
+      | None ->
+          let tokens =
+            List.filter (fun tk ->
+                match Manip.by_id (student_line_id tk) with
+                | Some elt -> not (Manip.hasClass elt "disabled")
+                | None -> false)
+              tokens
+          in
+          tokens, not @@ List.exists (Hashtbl.mem selected_students) tokens
     in
     List.iter (select_student onoff) tokens;
-    (* todo: highlight already_assigned_exercises; disable them if an assignment
-       is selected and they are not selected already *)
     (match !selected_assignment with
      | None -> ()
      | Some aid ->
-         let (assg, students, exos) = Hashtbl.find assignments_tbl aid in
-         Hashtbl.replace assignments_tbl aid
-           (assg, Token.Set.of_list (htbl_keys selected_students) , exos);
-         match Manip.by_id (assg_line_id aid) with
-         | Some l -> Manip.replaceSelf l (assignment_line aid)
-         | None -> failwith "Assignment line not found"
-    );
+         set_assignment aid
+           ~students:(Token.Set.of_list (htbl_keys selected_students)));
+    if force = None then update_disabled_exercises ();
     Lwt.return_unit
   end;
   toggle_select_assignment := begin fun assg_id ->
@@ -1107,13 +1187,12 @@ let teacher_tab token _select _params () =
     in
     let select id =
       match Manip.by_id (assg_line_id id) with
-      | None -> failwith "bad assignment"
+      | None -> ()
       | Some line ->
           let (assg, students, exos) = Hashtbl.find assignments_tbl id in
           !toggle_selected_exercises ~force:false
             (all_exercises !exercises_index);
           !toggle_selected_exercises ~force:true (SSet.elements exos);
-          (* todo: otherwise disable already assigned exercises *)
 
           !toggle_selected_students ~force:false
             (Token.Map.fold (fun tk _ acc -> tk::acc) !students_map []);
@@ -1123,21 +1202,22 @@ let teacher_tab token _select _params () =
           Manip.addClass line "selected";
           set_readonly line false
     in
-    match !selected_assignment with
-    | Some aid ->
-        unselect aid;
-        if aid <> assg_id then select assg_id;
-        Lwt.return_unit
-    | None ->
-        select assg_id;
-        Lwt.return_unit
+    (match !selected_assignment with
+     | Some aid ->
+         unselect aid;
+         if aid <> assg_id then select assg_id
+     | None ->
+         select assg_id);
+    update_disabled_both ();
+    Lwt.return_unit
   end;
   exercise_status_change := begin fun ids f ->
     status_changes :=
       List.fold_left (fun acc id ->
           SMap.add id (f (get_status id)) acc)
         !status_changes ids;
-    fill_exercises_pane ()
+    fill_exercises_pane ();
+    update_disabled_exercises ()
   end;
   student_change := begin fun tk () ->
     ()
@@ -1173,6 +1253,18 @@ let teacher_tab token _select _params () =
     in
     let assg = Exercise.Status.{start; stop} in
     set_assignment assg_id ~assg
+  end;
+  assignment_remove := begin fun assg_id ->
+    Lwt.async @@ fun () ->
+    set_assignment assg_id ~students:Token.Set.empty ~exos:SSet.empty;
+    Hashtbl.remove assignments_tbl assg_id;
+    selected_assignment := None;
+    fill_exercises_pane ();
+    update_disabled_both ();
+    (match Manip.by_id (assg_line_id assg_id) with
+     | None -> ()
+     | Some el -> Manip.removeSelf el);
+    Lwt.return_unit
   end;
 
   let div =
