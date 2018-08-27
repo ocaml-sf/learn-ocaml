@@ -905,71 +905,58 @@ body {
         grid-template-columns: 1fr 1fr;
         height: 100vh;
     }
-    #learnocaml-main-teacher > #exercises_pane {
-        /* max-height: calc(100vh - 40px); */
-    }
-    #learnocaml-main-teacher > #students_pane {
-        /* max-height: calc(100vh - 40px); */
-    }
     #learnocaml-main-teacher > #control_pane {
         grid-column: 1 / 3;
     }
     #learnocaml-main-teacher > #teacher_menubar {
         grid-column: 1 / 3;
-        /* height: 24px; */
         overflow: visible;
     }
 }
 
-#learnocaml-main-teacher > #exercises_pane {
+.learnocaml_pane {
     display: flex;
     flex-direction: column;
     margin: 0;
     padding: 0;
 }
 
-#learnocaml-main-teacher > #exercises_pane > #exercise_controls {
-    position: relative;
-    bottom: 0;
-}
-
-#learnocaml-main-teacher > #exercises_pane > * {
-    flex: none;
+.learnocaml_pane > * {
     margin: 4px;
 }
 
-#learnocaml-main-teacher > #exercises_pane > #exercises_list {
-    flex: auto;
-    min-height: 7ex;
+.learnocaml_pane > fieldset {
     overflow-y: auto;
-    border: 1px solid #aaa;
-    /* margin: 4px; */
+    flex: auto;
 }
 
-#learnocaml-main-teacher > #students_pane {
-    background: #fe9;
+.learnocaml_pane legend {
+    cursor: cell;
 }
 
 #learnocaml-main-teacher > #teacher_menubar > * {
     float: right;
 }
 
-#learnocaml-main-teacher #exercises_list {
-}
-
 #learnocaml-main-teacher table {
     width: 100%;
+    border-spacing: 0;
     /* width: calc(100% - 8px);
      * margin: 4px;
      * border: 1px solid #aaa; */
 }
 
-#learnocaml-main-teacher
+#learnocaml-main-teacher table td {
+    padding: 2px;
+}
 
 #teacher_actions {
     float: right;
 }
 
+.learnocaml_token {
+  font-family: 'Inconsolata';
+}
 
 .dropdown_btn {
     position: relative;
@@ -1011,7 +998,13 @@ body {
     border-radius: 4px;
 }
 
-tr.exercise_line:hover {
+.exo_assigned {
+    background-color: #77b;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+tr.exercise_line:hover, tr.student_line:hover {
     background-color: #fff;
     cursor: cell;
 }
@@ -1021,7 +1014,7 @@ tr.exercise_group:hover {
 }
 
 .selected {
-    background-color: #bbc;
+    background-color: #9bd /*#58f*/;
 }
 
 .selected:hover {
@@ -1029,6 +1022,15 @@ tr.exercise_group:hover {
 }
 
 .changed {
-    outline: 3px dotted #f66;
-    /* outline-offset: 2px; */
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+.assg_finished {
+    background-color: #b88;
+}
+.assg_active {
+    background-color: #dd9;
+}
+.assg_notstarted {
 }

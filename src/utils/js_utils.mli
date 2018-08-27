@@ -59,6 +59,7 @@ module Manip : sig
   val replaceChildren: 'a elt -> 'b elt list -> unit
   val removeChildren: 'a elt -> unit
   val removeSelf: 'a elt -> unit
+  val replaceSelf: 'a elt -> 'a elt -> unit
 
   val children: 'a elt -> 'b elt list
   val by_id: string -> 'b elt option

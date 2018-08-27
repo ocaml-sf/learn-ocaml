@@ -575,10 +575,31 @@ let teacher_tab token _select _params () =
   let tag_div tag =
     H.span ~a:[H.a_class ["exercise-tag"]] [H.pcdata tag]
   in
+  let htbl_keys t = Hashtbl.fold (fun k _ acc -> k::acc) t [] in
+  let elt e =
+    Js.Opt.case
+      (Dom_html.CoerceTo.element (H.toelt e))
+      (fun () -> failwith "Bad coercion to element")
+      (fun x -> x)
+  in
+  let descendants_by_tag parent tag =
+    List.fold_left (fun acc node ->
+        Js.Opt.case (Dom_html.CoerceTo.element node)
+          (fun () -> acc)
+          (fun elt -> elt :: acc))
+      []
+      (Dom.list_of_nodeList
+         ((elt parent)##getElementsByTagName (Js.string tag)))
+  in
+
+  (* State storage *)
   let selected_exercises = Hashtbl.create 117 in
   let selected_students = Hashtbl.create 117 in
+  let selected_assignment = ref None in
   let exercises_index = ref (Exercise.Index.Exercises []) in
-  let students_tbl = Hashtbl.create 117 in
+  let students_map = ref Token.Map.empty in
+  let assignments_tbl = Hashtbl.create 59 in
+  let students_changes = ref Token.Map.empty in
   let status_map = ref SMap.empty in
   let status_changes = ref SMap.empty in
   let status_current () =
@@ -598,44 +619,35 @@ let teacher_tab token _select _params () =
       | Some st -> ch <> st
   in
   let exercise_line_id id = "learnocaml_exercise_"^id in
-  let toggle_selected_exercise id =
-    Lwt.async @@ fun () ->
-    match Manip.by_id (exercise_line_id id) with
-    | None -> Lwt.return_unit
-    | Some elt ->
-        if Manip.toggleClass elt "selected" then
-          Hashtbl.replace selected_exercises id ()
-        else
-          Hashtbl.remove selected_exercises id;
-        Lwt.return_unit
+  let student_line_id token = "learnocaml_student_"^Token.to_string token in
+  let assg_line_id id = "assg_line_"^string_of_int id in
+
+  let all_exercises g =
+    Exercise.Index.fold_exercises (fun acc id _ -> id :: acc)
+      [] g
+    |> List.rev
   in
-  let toggle_selected_exercises ids =
-    Lwt.async @@ fun () ->
-    Lwt_list.filter_map_s
-      (fun id -> Lwt.return (Manip.by_id (exercise_line_id id))) ids
-    >|= fun elts ->
-    if List.exists (fun e -> Manip.hasClass e "selected") elts then
-      (List.iter (fun e -> Manip.removeClass e "selected") elts;
-       List.iter (fun id -> Hashtbl.remove selected_exercises id) ids)
-    else
-      (List.iter (fun e -> Manip.addClass e "selected") elts;
-       List.iter (fun id -> Hashtbl.replace selected_exercises id ()) ids)
-  in
+
+  (* Action function callbacks *)
+  let toggle_selected_exercises = ref (fun ?force _ -> assert false) in
+  let toggle_selected_students = ref (fun ?force _ -> assert false) in
+  let toggle_select_assignment = ref (fun _ -> assert false) in
+  let exercise_status_change = ref (fun _ -> assert false) in
+  let student_change = ref (fun _ -> assert false) in
+  let assignment_change = ref (fun _ -> assert false) in
+
+  (* Exercises table *)
   let rec mk_table group_level acc status group =
     match group with
     | Exercise.Index.Groups groups_list ->
         List.fold_left (fun acc (id, g) ->
-            let all_children =
-              Exercise.Index.fold_exercises
-                (fun acc id _ -> id :: acc)
-                [] g.Exercise.Index.contents
-            in
+            let all_children = all_exercises g.Exercise.Index.contents in
             let acc =
               H.tr ~a:[
                 H.a_id ("exercise_group_"^id);
                 H.a_class ["exercise_group"];
                 H.a_onclick (fun _ ->
-                    toggle_selected_exercises all_children; false);
+                    !toggle_selected_exercises all_children; false);
               ] [
                 H.th ~a:[H.a_colspan 0; indent_style group_level]
                   [H.pcdata g.Exercise.Index.title];
@@ -655,7 +667,7 @@ let teacher_tab token _select _params () =
             H.tr ~a:[
               H.a_id hid;
               H.a_class ("exercise_line" :: classes);
-              H.a_onclick (fun _ -> toggle_selected_exercise id; false);
+              H.a_onclick (fun _ -> !toggle_selected_exercises [id]; false);
             ] [
               H.td ~a:[indent_style group_level]
                 [ H.pcdata meta.Exercise.Meta.title ];
@@ -677,41 +689,67 @@ let teacher_tab token _select _params () =
     H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
   in
   let exercises_div =
-    H.div ~a:[H.a_id "exercises_pane"] [
+    let legend =
+      H.legend ~a:[
+        H.a_onclick (fun _ ->
+            !toggle_selected_exercises (all_exercises !exercises_index);
+            true);
+      ] [H.pcdata [%i"Exercises"]]
+    in
+    H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
-        H.pcdata "[filtering tools]"
+        (* TODO: filtering tools *)
       ];
-      exercises_list_div;
+      H.fieldset ~legend [ exercises_list_div ]
     ]
   in
   let students_list_div =
     H.div ~a:[H.a_id "students_list"] [H.pcdata [%i"Loading..."]];
   in
   let students_div =
-    H.div ~a:[H.a_id "students_pane"] [
+    let legend =
+      H.legend ~a:[
+        H.a_onclick (fun _ ->
+            !toggle_selected_students
+              (Token.Map.fold (fun k _ acc -> k::acc) !students_map []);
+            true
+          );
+      ] [H.pcdata [%i"Students"]]
+    in
+    H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
-        H.pcdata "[filtering tools]"
+        (* TODO: filtering tools *)
       ];
-      students_list_div;
+      H.fieldset ~legend [ students_list_div ];
     ]
   in
   let fill_exercises_pane () =
     let table = List.rev (mk_table 0 [] get_status !exercises_index) in
     Manip.replaceChildren exercises_list_div [H.table table];
   in
+  let html_token tk =
+    H.span ~a:[H.a_class ["learnocaml_token"]]
+      [H.pcdata (Token.to_string tk)]
+  in
   let fill_students_pane () =
     let table =
-      List.map (fun st ->
+      List.rev_map (fun st ->
           let open Student in
-          H.tr [
-            H.td [H.pcdata (Token.to_string st.token)];
+          H.tr ~a:[
+            H.a_id (student_line_id st.Student.token);
+            H.a_class ["student_line"];
+            H.a_onclick (fun _ ->
+                !toggle_selected_students [st.Student.token];
+                true);
+          ] [
+            H.td [html_token st.token];
             H.td (match st.nickname with Some n -> [H.pcdata n] | _ -> []);
           ])
-        (Hashtbl.fold (fun _ st acc -> st :: acc) students_tbl []
-         |> List.sort compare)
+        (Token.Map.fold (fun _ st acc -> st :: acc) !students_map [])
     in
     Manip.replaceChildren students_list_div [H.table table]
   in
+
   let apply_changes () =
     Lwt.async @@ fun () ->
     let changes =
@@ -745,26 +783,66 @@ let teacher_tab token _select _params () =
       ];
     ]
   in
-(*     <input type="date" id="bday" name="bday" required pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
-       <input type="time" id="" name="" required pattern="[0-9]{2}:[0-9]{2}"> *)
-  let open_exercises () =
-    status_changes :=
-      Hashtbl.fold (fun id _ status ->
-          Firebug.console##log (Js.string ("opening "^id));
-          let st = get_status id in
-          SMap.add id Exercise.Status.{ st with status = Open } status)
-        selected_exercises
-        !status_changes;
-    fill_exercises_pane ()
-  in
-  let close_exercises () =
-    status_changes :=
-      Hashtbl.fold (fun id _ status ->
-          let st = get_status id in
-          SMap.add id Exercise.Status.{ st with status = Closed } status)
-        selected_exercises
-        !status_changes;
-    fill_exercises_pane ()
+  let assignment_line id =
+    let selected = !selected_assignment = Some id in
+    let date id assg_id t =
+      let date = new%js Js.date_fromTimeValue (t *. 1000.) in
+      H.div [
+        H.input ~a:([
+            H.a_id ("date_"^id);
+            H.a_class ["assignment_date"];
+            H.a_input_type `Date;
+            H.a_value
+              (Printf.sprintf "%04d-%02d-%02d"
+                 date##getFullYear (date##getMonth + 1) date##getDate);
+            H.a_onblur (fun _ -> !assignment_change assg_id; true);
+            H.a_onkeydown (fun ev ->
+                if ev##.keyCode = 13 then !assignment_change assg_id; true);
+            H.a_pattern "[0-9]{4}-[0-9]{2}-[0-9]{2}";
+          ] @ if selected then [] else [H.a_readonly ()])
+          ();
+        H.input ~a:([
+            H.a_id ("time_"^id);
+            H.a_class ["assignment_date"];
+            H.a_input_type `Time;
+            H.a_value
+              (Printf.sprintf "%02d:%02d"
+                 date##getHours date##getMinutes);
+            H.a_onblur (fun _ -> !assignment_change assg_id; true);
+            H.a_onkeydown (fun ev ->
+                if ev##.keyCode = 13 then !assignment_change assg_id; true);
+            H.a_pattern "[0-9]{2}:[0-9]{2}";
+          ] @ if selected then [] else [H.a_readonly ()])
+          ();
+      ]
+    in
+    let now () = (new%js Js.date_now)##getTime /. 1000. in
+    let hid = assg_line_id id in
+    let (assg, tokens, exo_ids) = Hashtbl.find assignments_tbl id in
+    let cls =
+      let n = now () in
+      if assg.Exercise.Status.stop < n then ["assg_finished"]
+      else if assg.Exercise.Status.start > n then ["assg_notstarted"]
+      else ["assg_active"]
+    in
+    let cls = if selected then "selected"::cls else cls in
+    H.tr ~a:[
+      H.a_id hid;
+      H.a_class cls;
+      H.a_onclick (fun ev ->
+          if
+            Js.Opt.case ev##.target (fun () -> true) (fun e ->
+                String.lowercase_ascii (Js.to_string e##.tagName) <> "input"
+                || Js.to_bool (e##hasAttribute (Js.string "readonly")))
+          then !toggle_select_assignment id;
+          true)
+    ] [
+      H.td [date ("start_"^hid) id assg.Exercise.Status.start];
+      H.td [date ("stop_"^hid) id assg.Exercise.Status.stop];
+      H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
+      (* todo: add common tags *)
+      H.td [H.pcdata (Printf.sprintf [%if"%d exercises"] (SSet.cardinal exo_ids))];
+    ]
   in
   let assignments_table () =
     let module AM = Map.Make(struct
@@ -800,62 +878,303 @@ let teacher_tab token _select _params () =
         (status_current ())
         ATM.empty
     in
-    let date t =
-      (* let ts = Unix.gmtime t in
-       * let jsdate =
-       *   Js.date_constr##_UTC_min
-       *     (ts.Unix.tm_year) (ts.Unix.tm_mon + 1) (ts.Unix.tm_mday)
-       *     (ts.Unix.tm_hour) (ts.Unix.tm_min)
-       * in *)
-
-(*     <input type="date" id="bday" name="bday" required pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
-       <input type="time" id="" name="" required pattern="[0-9]{2}:[0-9]{2}"> *)
-
-
-      H.pcdata
-        (Js.to_string
-           (new%js Js.date_fromTimeValue t)##toLocaleString)
+    let line_n = ref 0 in
+    let make_line ?selected assg tokens exo_ids =
+      incr line_n;
+      let id = !line_n in
+      Hashtbl.add assignments_tbl id (assg, tokens, exo_ids);
+      assignment_line id
     in
-    let make_line assg tokens exo_ids =
-      H.tr [
-        H.td [date assg.Exercise.Status.start];
-        H.td [date assg.Exercise.Status.stop];
-        H.td [H.pcdata (Printf.sprintf "%d students" (Token.Set.cardinal tokens))];
-        (* todo: add common tags; set selected students on click *)
-        H.td [H.pcdata (Printf.sprintf "%d exercises" (SSet.cardinal exo_ids))];
-        (* todo: select exercises on click *)
+    let new_assg_id = "new_assignment" in
+    let table = H.table [] in
+    let new_assg_line =
+      H.tr ~a:[
+        H.a_id new_assg_id;
+      ] [
+        H.td ~a:[H.a_colspan 0]
+          [ H.button [H.pcdata [%i"New assignment"]] ]
       ]
     in
-    H.table (
-      List.rev @@
-      ATM.fold (fun (assg, tokens) exos acc ->
-          make_line assg tokens exos :: acc)
-        atm [] @
-      [ new_assignment
-    )
+    let already_assigned_exercises students =
+      SSet.filter (fun ex ->
+          let Exercise.Status.{status; _} = get_status ex in
+          match status with
+          | Exercise.Status.Assigned tmap ->
+              Token.Map.exists (fun tk _ -> Token.Set.mem tk students) tmap
+          | _ -> false)
+        (SSet.of_list (all_exercises !exercises_index))
+    in
+    let new_assignment () =
+      let start, stop =
+        let tm = Unix.(gmtime (time ())) in
+        let tm = Unix.{tm with tm_hour = 0; tm_min = 0; tm_sec = 0} in
+        fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 1}),
+        fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 8})
+      in
+      let tokens =
+        Hashtbl.fold (fun tk () -> Token.Set.add tk)
+          selected_students Token.Set.empty
+      in
+      let exercises =
+        Hashtbl.fold (fun id () -> SSet.add id) selected_exercises SSet.empty
+      in
+      let exercises =
+        SSet.diff exercises (already_assigned_exercises tokens)
+      in
+      let line =
+        make_line
+          Exercise.Status.{start; stop} tokens exercises
+      in
+      Dom.insertBefore (H.toelt table)
+        (H.toelt line)
+        (Js.some (H.toelt new_assg_line));
+      !toggle_select_assignment !line_n;
+      fill_exercises_pane ();
+    in
+    Manip.Ev.onclick new_assg_line (fun _ -> new_assignment (); false);
+    Manip.replaceChildren table @@
+    (List.rev
+       (ATM.fold (fun (assg, tokens) exos acc ->
+            make_line assg tokens exos :: acc)
+           atm [])) @
+    [new_assg_line];
+    table
   in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
-      H.button ~a:[H.a_onclick (fun _ -> open_exercises (); true)]
+      H.button ~a:[H.a_onclick (fun _ ->
+          !exercise_status_change
+            (htbl_keys selected_exercises)
+            Exercise.Status.(function
+                | {status = Closed} as st -> {st with status = Open}
+                | st -> st);
+          true)]
         [H.pcdata [%i"Open"]];
-      H.button ~a:[ H.a_onclick (fun _ -> close_exercises (); true) ]
+      H.button ~a:[ H.a_onclick (fun _ ->
+          !exercise_status_change
+            (htbl_keys selected_exercises)
+            Exercise.Status.(function
+                | {status = Open} as st -> {st with status = Closed}
+                | st -> st);
+          true)]
         [H.pcdata [%i"Close"]];
-      H.button ~a:[ H.a_disabled () ]
-        [H.pcdata [%i"Add assignment"]];
-      H.button ~a:[ H.a_disabled () ]
-        [H.pcdata [%i"Add tag"]];
-      H.button ~a:[ H.a_disabled () ]
-        [H.pcdata [%i"Remove tag"]];
+      (* H.button ~a:[ H.a_disabled () ]
+       *   [H.pcdata [%i"Add assignment"]];
+       * H.button ~a:[ H.a_disabled () ]
+       *   [H.pcdata [%i"Add tag"]];
+       * H.button ~a:[ H.a_disabled () ]
+       *   [H.pcdata [%i"Remove tag"]]; *)
     ]
   in
   Manip.appendChild exercises_div exercise_control_div;
+  let assignments_div = H.div [] in
   let control_div =
     H.div ~a:[H.a_id "control_pane"] [
-      H.fieldset ~legend:(H.legend [H.pcdata [%i"Assignments"]]) [
-        assignments_table ();
-      ];
+      H.fieldset
+        ~legend:(H.legend [H.pcdata [%i"Assignments"]])
+        [assignments_div];
     ]
   in
+  let fill_control_div () =
+    Manip.replaceSelf assignments_div
+      (assignments_table ())
+  in
+
+  (* Implementation of the callbacks *)
+  let select_exercise onoff id =
+    let class_f, tbl_f = match onoff with
+      | true -> Manip.addClass, (fun t k -> Hashtbl.replace t k ())
+      | false -> Manip.removeClass, Hashtbl.remove
+    in
+    tbl_f selected_exercises id;
+    match Manip.by_id (exercise_line_id id) with
+    | Some elt -> class_f elt "selected"
+    | None -> ()
+  in
+  let select_student onoff tk =
+    let class_f, tbl_f = match onoff with
+      | true -> Manip.addClass, (fun t k -> Hashtbl.replace t k ())
+      | false -> Manip.removeClass, Hashtbl.remove
+    in
+    tbl_f selected_students tk;
+    match Manip.by_id (student_line_id tk) with
+    | Some elt -> class_f elt "selected"
+    | None -> ()
+  in
+  let set_assignment ?assg ?students ?exos id =
+    let (assg0, students0, exos0) = Hashtbl.find assignments_tbl id in
+    let dft x0 = function Some x -> x | None -> x0 in
+    let assg = dft assg0 assg in
+    let students = dft students0 students in
+    let exos = dft exos0 exos in
+    Hashtbl.replace assignments_tbl id (assg, students, exos);
+    (match Manip.by_id (assg_line_id id) with
+     | Some l -> Manip.replaceSelf l (assignment_line id)
+     | None -> failwith "Assignment line not found");
+    let ch =
+      SSet.fold (fun ex_id acc ->
+          let st = get_status ex_id in
+          let open Exercise.Status in
+          let tmap0 =
+            match st.status with
+            | Open | Closed -> Token.Map.empty
+            | Assigned tmap -> tmap
+          in
+          let tmap =
+            Token.Set.fold (fun tk -> Token.Map.add tk assg)
+              students tmap0
+          in
+          SMap.add ex_id {st with status = Assigned tmap} acc)
+        exos
+        !status_changes
+    in
+    let ch =
+      SSet.fold (fun ex_id acc ->
+          let st = get_status ex_id in
+          let open Exercise.Status in
+          let tmap0 =
+            match st.status with
+            | Open | Closed -> Token.Map.empty
+            | Assigned tmap -> tmap
+          in
+          let tmap =
+            Token.Set.fold (fun tk -> Token.Map.remove tk) students tmap0
+          in
+          let st =
+            if Token.Map.is_empty tmap
+            then {st with status = Closed}
+            else {st with status = Assigned tmap}
+          in
+          SMap.add ex_id st acc)
+        (SSet.diff exos0 exos)
+        ch
+    in
+    status_changes := ch;
+    fill_exercises_pane ()
+  in
+  toggle_selected_exercises := begin fun ?force ids ->
+    Lwt.async @@ fun () ->
+    let onoff = match force with
+      | Some set -> set
+      | None -> not @@ List.exists (Hashtbl.mem selected_exercises) ids
+    in
+    List.iter (select_exercise onoff) ids;
+    (match !selected_assignment with
+     | None -> ()
+     | Some aid ->
+         set_assignment aid ~exos:(SSet.of_list (htbl_keys selected_exercises))
+    );
+    Lwt.return_unit
+  end;
+  toggle_selected_students := begin fun ?force tokens ->
+    Lwt.async @@ fun () ->
+    let onoff = match force with
+      | Some set -> set
+      | None -> not @@ List.exists (Hashtbl.mem selected_students) tokens
+    in
+    List.iter (select_student onoff) tokens;
+    (* todo: highlight already_assigned_exercises; disable them if an assignment
+       is selected and they are not selected already *)
+    (match !selected_assignment with
+     | None -> ()
+     | Some aid ->
+         let (assg, students, exos) = Hashtbl.find assignments_tbl aid in
+         Hashtbl.replace assignments_tbl aid
+           (assg, Token.Set.of_list (htbl_keys selected_students) , exos);
+         match Manip.by_id (assg_line_id aid) with
+         | Some l -> Manip.replaceSelf l (assignment_line aid)
+         | None -> failwith "Assignment line not found"
+    );
+    Lwt.return_unit
+  end;
+  toggle_select_assignment := begin fun assg_id ->
+    Lwt.async @@ fun () ->
+    let set_readonly line onoff =
+      let attr = Js.string "readonly" in
+      List.iter
+        (fun e ->
+           if onoff then e##setAttribute attr (Js.string "")
+           else e##removeAttribute attr)
+        (descendants_by_tag line "input")
+    in
+    let unselect id =
+      selected_assignment := None;
+      match Manip.by_id (assg_line_id id) with
+      | None -> ()
+      | Some line ->
+          Manip.removeClass line "selected";
+          set_readonly line true
+    in
+    let select id =
+      match Manip.by_id (assg_line_id id) with
+      | None -> failwith "bad assignment"
+      | Some line ->
+          let (assg, students, exos) = Hashtbl.find assignments_tbl id in
+          !toggle_selected_exercises ~force:false
+            (all_exercises !exercises_index);
+          !toggle_selected_exercises ~force:true (SSet.elements exos);
+          (* todo: otherwise disable already assigned exercises *)
+
+          !toggle_selected_students ~force:false
+            (Token.Map.fold (fun tk _ acc -> tk::acc) !students_map []);
+          !toggle_selected_students ~force:true (Token.Set.elements students);
+
+          selected_assignment := Some id;
+          Manip.addClass line "selected";
+          set_readonly line false
+    in
+    match !selected_assignment with
+    | Some aid ->
+        unselect aid;
+        if aid <> assg_id then select assg_id;
+        Lwt.return_unit
+    | None ->
+        select assg_id;
+        Lwt.return_unit
+  end;
+  exercise_status_change := begin fun ids f ->
+    status_changes :=
+      List.fold_left (fun acc id ->
+          SMap.add id (f (get_status id)) acc)
+        !status_changes ids;
+    fill_exercises_pane ()
+  end;
+  student_change := begin fun tk () ->
+    ()
+  end;
+  assignment_change := begin fun assg_id ->
+    let (assg0, _, _) = Hashtbl.find assignments_tbl assg_id in
+    let get_date id =
+      let retr =
+        match Manip.by_id ("date_"^id), Manip.by_id ("time_"^id) with
+        | Some d, Some t ->
+            (try
+               Some
+                 (Scanf.sscanf (Manip.value d) "%d-%d-%d"
+                    (fun yr mon d -> yr, mon, d),
+                  try Scanf.sscanf (Manip.value t) "%d:%d" (fun hr mn -> hr, mn)
+                  with Scanf.Scan_failure _ | End_of_file -> 0, 0)
+             with Scanf.Scan_failure _ | End_of_file -> None)
+        | _ -> None
+      in
+      match retr with
+      | Some ((yr, mon, d), (hr, min)) ->
+          let t = new%js Js.date_min yr (mon - 1) d hr min in
+          Some (t##getTime /. 1000.)
+      | None -> None
+    in
+    let start = match get_date ("start_"^assg_line_id assg_id) with
+      | Some t -> t
+      | None -> assg0.Exercise.Status.start
+    in
+    let stop = match get_date ("stop_"^assg_line_id assg_id) with
+      | Some t -> if t < start then start else t
+      | None -> assg0.Exercise.Status.stop
+    in
+    let assg = Exercise.Status.{start; stop} in
+    set_assignment assg_id ~assg
+  end;
+
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       actions_div;
@@ -880,14 +1199,16 @@ let teacher_tab token _select _params () =
   let fetch_students =
     Server_caller.request_exn (Learnocaml_api.Students_list token)
     >|= fun students ->
-    Hashtbl.clear students_tbl;
-    List.iter (fun st -> Hashtbl.add students_tbl st.Student.token st) students
+    students_map :=
+      List.fold_left (fun m st -> Token.Map.add st.Student.token st m)
+        Token.Map.empty students
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
   Lwt.join [fetch_exercises; fetch_stats; fetch_students] >>= fun () ->
   fill_exercises_pane ();
   fill_students_pane ();
+  fill_control_div ();
   Lwt.return div
 
 let token_input_field () =
