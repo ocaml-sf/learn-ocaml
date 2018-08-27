@@ -976,15 +976,28 @@ module type S = sig
 
     (** The type of arguments, represented as heterogeneous lists.
 
-        Usage : [arg 3 @@ arg "word" @@ last false] *)
+        Usage: [arg 3 @@ arg "word" @@ last false]
+        
+        Alternatively: [3 @: "word" @:!! false]
+     *)
     type ('arrow, 'uarrow, 'ret) args
     val last :
+      'a ->
+      ('a -> 'ret, 'a -> unit, 'ret) args
+    val (!!) :
       'a ->
       ('a -> 'ret, 'a -> unit, 'ret) args
     val arg :
       'a ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
       ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:) :
+      'a ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:!!) :
+      'a -> 'b ->
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 

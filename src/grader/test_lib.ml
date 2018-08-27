@@ -307,14 +307,25 @@ module type S = sig
     (*----------------------------------------------------------------------------*)
 
     (* Usage: arg 3 @@ arg "word" @@ last false *)
+    (* Alternatively: 3 @: "word" @:!! false *)
     type ('arrow, 'uarrow, 'ret) args
     val last :
+      'a ->
+      ('a -> 'ret, 'a -> unit, 'ret) args
+    val (!!) :
       'a ->
       ('a -> 'ret, 'a -> unit, 'ret) args
     val arg :
       'a ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
       ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:) :
+      'a ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:!!) :
+      'a -> 'b ->
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
@@ -1117,6 +1128,9 @@ module Make
 
     let last x = Last x
     let arg x r = Arg (x, r)
+    let (!!) = last
+    let (@:) = arg
+    let (@:!!) a b = a @: !! b
 
     type (_, _, _) prot =
       | Last_ty : 'a Ty.ty * 'r Ty.ty -> (('a -> 'r) Ty.ty, 'a -> unit, 'r) prot
