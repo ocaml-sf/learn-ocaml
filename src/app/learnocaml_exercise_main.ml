@@ -21,7 +21,7 @@ open Learnocaml_common
 open Learnocaml_data
 
 let init_tabs, select_tab =
-  let names = [ "text" ; "toplevel" ; "report" ; "editor" ] in
+  let names = [ "text" ; "toplevel" ; "report" ; "editor"; "more" ] in
   let current = ref "text" in
   let select_tab name =
     set_arg "tab" name ;
@@ -92,6 +92,84 @@ let display_report exo report =
   Manip.setInnerHtml report_container
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
+
+(* Inefficient version: Reload the exercise description each time. *)
+let display_exercise_more content_id token id =
+  let open Tyxml_js.Html5 in
+  let open Learnocaml_data.Exercise in
+  let content = find_component content_id in
+  token >>= fun token ->
+  Server_caller.fetch_exercise token id >>= fun (meta, _) ->
+  let descr =
+    a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
+           a_class [ "exercise" ] ] [
+      div ~a:[ a_class [ "descr" ] ] [
+        h1 [ pcdata meta.Meta.title ] ;
+        p [ match meta.Meta.short_description with
+            | None -> pcdata [%i"No description available."]
+            | Some text -> pcdata text ] ;
+      ] ;
+      div ~a:[  ] [
+        div ~a:[ a_class [ "stars" ] ] [
+          let num = 5 * int_of_float (meta.Meta.stars *. 2.) in
+          let num = max (min num 40) 0 in
+          let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
+          let src = Format.asprintf "icons/stars_%02d.svg" num in
+          img ~alt ~src ()
+        ] ;
+        div ~a:[ a_class [ "length" ] ] [
+          match meta.Meta.kind with
+          | Exercise.Meta.Project -> pcdata [%i"project"]
+          | Exercise.Meta.Problem -> pcdata [%i"problem"]
+          | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ] ;
+        (* div ~a:[ a_class [ "score" ] ] [
+         *   Tyxml_js.R.Html5.pcdata pct_text_signal
+         * ] *)
+      ] ]
+  in
+  Manip.replaceChildren content [ descr ];
+  Lwt.return ()
+
+
+let display_more token ex_meta id =
+  let open Learnocaml_data.Exercise in
+  let open Tyxml_js.Html5 in
+  let display_value content_id = function
+      `Skill s -> pcdata s
+    | `Ex e ->
+        span ~a:[ a_onclick
+                    (fun _ -> ignore @@ display_exercise_more content_id token e; true) ]
+          [ pcdata e ]
+  in
+  let ident =
+    Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
+  let focus =
+    [%i "This exercise is focused on:"],
+    List.map (fun s -> `Skill s) (ex_meta.Meta.focus),
+    "learnocaml-exo-focus-more" in
+  let requirements =
+    [%i "This exercise requires the following skill(s):"],
+    List.map (fun s -> `Skill s) ex_meta.Meta.requirements,
+    "learnocaml-exo-requirements-more" in
+  let backward =
+    [%i "If needed, these exercises might be useful for a better understanding\
+         of the current one:"],
+    List.map (fun s -> `Ex s) ex_meta.Meta.backward,
+    "learnocaml-exo-backward-more" in
+  let forward =
+      [%i "If you're interested, these exercises are marked as follow-up on the\
+           current one:"],
+      List.map (fun s -> `Ex s) ex_meta.Meta.forward,
+    "learnocaml-exo-forward-more"  in
+  let content = find_component "learnocaml-exo-content-more" in
+  Manip.replaceChildren content @@
+  Tyxml_js.Html5.(
+    p [ pcdata ident ] ::
+    List.map (fun (s, v, cid) ->
+        div [ p (pcdata s :: (List.map (display_value cid) v)) ;
+              div ~a:[a_id cid] [] ])
+      [ focus ; requirements ; backward ; forward ]
+  )
 
 let set_string_translations () =
   let translations = [
@@ -266,6 +344,7 @@ let () =
     Manip.appendChildren text_container
       [ prelude_title ; prelude_container ]
   end ;
+  display_more token ex_meta id;
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
