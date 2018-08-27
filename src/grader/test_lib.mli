@@ -1015,6 +1015,10 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
+    val get_ret_ty :
+      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
 
     (** {2 Lookup functions} *)
 
@@ -1072,6 +1076,15 @@ module type S = sig
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.t
+
+    (** Helper notation to test pure functions.
+
+        [p ==> r] is the pair [(p, fun () -> r)].
+
+        Example: [test_function prot
+                  (lookup_student (ty_of_prot prot) name)
+                  [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
+    val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)

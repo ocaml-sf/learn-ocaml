@@ -340,6 +340,11 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
+    val get_ret_ty :
+      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
+
     type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
 
     val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
@@ -387,6 +392,8 @@ module type S = sig
     ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
     ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
     Learnocaml_report.t
+
+  val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
 
   end
 
@@ -1320,6 +1327,8 @@ module Make
       test_function_against_generic ?gen
         ?test ?test_stdout ?test_stderr
         ?before_reference ?before_user ?after ?sampler prot uf rf tests
+
+  let (==>) params ret = (params, fun () -> ret)
 
   end
 
