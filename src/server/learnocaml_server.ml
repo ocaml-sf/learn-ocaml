@@ -177,7 +177,8 @@ module Request_handler = struct
                 Lwt_list.filter_s (fun (id, _) ->
                     Exercise.Status.is_open id token >|= function
                     | `Open -> true
-                    | _ -> false)
+                    | `Closed -> false
+                    | `Deadline t -> t >= -300. (* Grace period! *))
                   exercise_states)
           >>= fun valid_exercise_states ->
           let save =
@@ -293,21 +294,28 @@ module Request_handler = struct
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->
           Token.check_teacher token >>= (function
-              | true -> Lwt.return index
+              | true -> Lwt.return (index, [])
               | false ->
+                  let deadlines = ref [] in
                   Exercise.Index.filterk
                     (fun id _ k ->
-                       Exercise.Status.is_open id token >>=
-                       fun st -> k (st = `Open))
-                    index Lwt.return)
+                       Exercise.Status.is_open id token >>= function
+                       | `Open -> k true
+                       | `Closed -> k false
+                       | `Deadline t ->
+                           deadlines := (id, max t 0.) :: !deadlines;
+                           k true)
+                    index (fun index -> Lwt.return (index, !deadlines)))
           >>= respond_json
       | Api.Exercise (token, id) ->
           (Exercise.Status.is_open id token >>= function
-          | `Open ->
+          | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
-              respond_json (meta, ex)
-          | `Closed | `Readonly ->
+              respond_json
+                (meta, ex,
+                 match o with `Deadline t -> Some (max t 0.) | `Open -> None)
+          | `Closed ->
               Lwt.return (Error (`Forbidden, "Exercise closed")))
 
       | Api.Lesson_index () ->

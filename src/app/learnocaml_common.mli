@@ -101,3 +101,8 @@ val get_state_as_save_file : unit -> Save.t
 (** Sync the local save state with the server state, and returns the merged save
     file. The save will be created on the server if it doesn't exist. *)
 val sync: Token.t -> Save.t Lwt.t
+
+val countdown:
+  ?ontimeout: (unit -> unit) -> 'a Tyxml_js.Html5.elt -> float -> unit
+
+val string_of_seconds: int -> string

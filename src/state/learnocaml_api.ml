@@ -28,8 +28,8 @@ type _ request =
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
 
-  | Exercise_index: 'a token -> Exercise.Index.t request
-  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t) request
+  | Exercise_index: 'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
+  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index: unit -> (string * string) list request
   | Lesson: string -> Lesson.t request
@@ -91,9 +91,9 @@ module Conversions (Json: JSON_CODEC) = struct
       | Students_csv _ ->
           str
       | Exercise_index _ ->
-          json Exercise.Index.enc
+          json (J.tup2 Exercise.Index.enc (J.assoc J.float))
       | Exercise _ ->
-          json (J.tup2 Exercise.Meta.enc Exercise.enc)
+          json (J.tup3 Exercise.Meta.enc Exercise.enc (J.option J.float))
       | Lesson_index _ ->
           json Lesson.Index.enc
       | Lesson _ ->

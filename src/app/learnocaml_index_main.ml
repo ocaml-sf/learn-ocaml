@@ -36,7 +36,8 @@ let exercises_tab token _ _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
-  Server_caller.request_exn (Learnocaml_api.Exercise_index token) >>= fun index ->
+  Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+  >>= fun (index, deadlines) ->
   let content_div = find_component "learnocaml-main-content" in
   let format_exercise_list all_exercise_states =
     let rec format_contents lvl acc contents =
@@ -65,6 +66,12 @@ let exercises_tab token _ _ () =
                     | Some 0 -> "0%"
                     | Some pct -> string_of_int pct ^ "%")
                   pct_signal in
+              let time_left = match List.assoc_opt exercise_id deadlines with
+                | None -> ""
+                | Some 0. -> [%i"Exercise closed"]
+                | Some f -> Printf.sprintf [%if"Time left: %s"]
+                              (string_of_seconds (int_of_float f))
+              in
               let status_classes_signal =
                 React.S.map
                   (function
@@ -81,6 +88,7 @@ let exercises_tab token _ _ () =
                       | None -> pcdata [%i"No description available."]
                       | Some text -> pcdata text ] ;
                 ] ;
+                div ~a:[ a_class [ "time-left" ] ] [H.pcdata time_left];
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   stars_div stars;
                   div ~a:[ a_class [ "length" ] ] [
@@ -104,9 +112,13 @@ let exercises_tab token _ _ () =
             acc groups in
     List.rev (format_contents 1 [] index) in
   let list_div =
-    Tyxml_js.Html5.(div ~a: [ Tyxml_js.Html5.a_id "learnocaml-main-exercise-list" ])
-      (format_exercise_list Learnocaml_local_storage.(retrieve all_exercise_states)) in
-  Manip.appendChild content_div list_div ;
+    match format_exercise_list
+            Learnocaml_local_storage.(retrieve all_exercise_states)
+    with
+    | [] -> H.div [H.pcdata [%i"No open exercises at the moment"]]
+    | l -> H.div ~a:[H.a_id "learnocaml-main-exercise-list"] l
+  in
+    Manip.appendChild content_div list_div;
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return list_div
 ;;
@@ -751,39 +763,6 @@ let teacher_tab token _select _params () =
     Manip.replaceChildren students_list_div [H.table table]
   in
 
-  let apply_changes () =
-    Lwt.async @@ fun () ->
-    let changes =
-      SMap.fold (fun id st acc ->
-          if Some st <> SMap.find_opt id !status_map then st :: acc
-          else acc)
-        !status_changes []
-    in
-    Server_caller.request_exn
-      (Learnocaml_api.Set_exercise_status (token, changes)) >|= fun () ->
-    status_map := status_current ();
-    status_changes := SMap.empty;
-    Hashtbl.clear selected_exercises;
-    Hashtbl.clear selected_students;
-    fill_exercises_pane ()
-  in
-  let actions_div =
-    H.div ~a:[H.a_id "teacher_menubar"] [
-      H.button ~a:[
-        H.a_id "button_apply";
-        (* H.a_disabled (); *)
-        H.a_onclick (fun _ -> apply_changes (); true);
-      ] [H.pcdata [%i"Apply"]];
-      dropdown "teacher-actions" [H.pcdata [%i"Actions"]] [
-        H.ul [
-          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
-            [ H.pcdata [%i"Create new teacher token"] ];
-          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
-            [ H.pcdata [%i"Download student data as CSV"] ];
-        ]
-      ];
-    ]
-  in
   let assignment_line id =
     let selected = !selected_assignment = Some id in
     let date id assg_id t =
@@ -817,11 +796,10 @@ let teacher_tab token _select _params () =
           ();
       ]
     in
-    let now () = (new%js Js.date_now)##getTime /. 1000. in
     let hid = assg_line_id id in
     let (assg, tokens, exo_ids) = Hashtbl.find assignments_tbl id in
     let cls =
-      let n = now () in
+      let n = gettimeofday () in
       if assg.Exercise.Status.stop < n then ["assg_finished"]
       else if assg.Exercise.Status.start > n then ["assg_notstarted"]
       else ["assg_active"]
@@ -998,6 +976,61 @@ let teacher_tab token _select _params () =
     Manip.replaceSelf assignments_div
       (assignments_table ())
   in
+  let set_readonly line onoff =
+    let attr = Js.string "readonly" in
+    List.iter
+      (fun e ->
+         if onoff then e##setAttribute attr (Js.string "")
+         else e##removeAttribute attr)
+      (descendants_by_tag line "input")
+  in
+  let unselect_assignment id =
+    selected_assignment := None;
+    match Manip.by_id (assg_line_id id) with
+    | None -> ()
+    | Some line ->
+        Manip.removeClass line "selected";
+        set_readonly line true
+  in
+  let apply_changes () =
+    Lwt.async @@ fun () ->
+    let changes =
+      SMap.fold (fun id st acc ->
+          if Some st <> SMap.find_opt id !status_map then st :: acc
+          else acc)
+        !status_changes []
+    in
+    Server_caller.request_exn
+      (Learnocaml_api.Set_exercise_status (token, changes)) >|= fun () ->
+    status_map := status_current ();
+    status_changes := SMap.empty;
+    Hashtbl.clear selected_exercises;
+    Hashtbl.clear selected_students;
+    Hashtbl.clear assignments_tbl;
+    (match !selected_assignment with None -> () | Some id ->
+        unselect_assignment id);
+    fill_exercises_pane ();
+    fill_control_div ();
+    Manip.by_classname "selected"
+    |> List.iter (fun elt -> Manip.removeClass elt "selected")
+  in
+  let actions_div =
+    H.div ~a:[H.a_id "teacher_menubar"] [
+      H.button ~a:[
+        H.a_id "button_apply";
+        (* H.a_disabled (); *)
+        H.a_onclick (fun _ -> apply_changes (); true);
+      ] [H.pcdata [%i"Apply"]];
+      dropdown "teacher-actions" [H.pcdata [%i"Actions"]] [
+        H.ul [
+          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
+            [ H.pcdata [%i"Create new teacher token"] ];
+          H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
+            [ H.pcdata [%i"Download student data as CSV"] ];
+        ]
+      ];
+    ]
+  in
 
   (* Implementation of the callbacks *)
   let select_exercise onoff id =
@@ -1172,22 +1205,6 @@ let teacher_tab token _select _params () =
   end;
   toggle_select_assignment := begin fun assg_id ->
     Lwt.async @@ fun () ->
-    let set_readonly line onoff =
-      let attr = Js.string "readonly" in
-      List.iter
-        (fun e ->
-           if onoff then e##setAttribute attr (Js.string "")
-           else e##removeAttribute attr)
-        (descendants_by_tag line "input")
-    in
-    let unselect id =
-      selected_assignment := None;
-      match Manip.by_id (assg_line_id id) with
-      | None -> ()
-      | Some line ->
-          Manip.removeClass line "selected";
-          set_readonly line true
-    in
     let select id =
       match Manip.by_id (assg_line_id id) with
       | None -> ()
@@ -1207,7 +1224,7 @@ let teacher_tab token _select _params () =
     in
     (match !selected_assignment with
      | Some aid ->
-         unselect aid;
+         unselect_assignment aid;
          if aid <> assg_id then select assg_id
      | None ->
          select assg_id);
@@ -1283,7 +1300,7 @@ let teacher_tab token _select _params () =
   in
   let fetch_exercises =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
-    >|= fun index -> exercises_index := index
+    >|= fun (index, _) -> exercises_index := index
   in
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)

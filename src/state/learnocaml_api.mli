@@ -41,8 +41,10 @@ type _ request =
   | Students_list: teacher token -> Student.t list request
   | Students_csv: teacher token -> string request
 
-  | Exercise_index: 'a token -> Exercise.Index.t request
-  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t) request
+  | Exercise_index:
+      'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
+  | Exercise:
+      'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index: unit -> (string * string) list request
   | Lesson: string -> Lesson.t request
