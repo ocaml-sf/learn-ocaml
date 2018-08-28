@@ -165,6 +165,7 @@ module Exercise = struct
       Hashtbl.fold (fun _ t acc -> t::acc) tbl []
 
     let is_open id token =
+      if Token.is_teacher token then Lwt.return `Open else
       Lazy.force tbl >|= fun tbl ->
       let status =
         match Hashtbl.find_opt tbl id with
