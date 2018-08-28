@@ -1027,6 +1027,11 @@ let teacher_tab token _select _params () =
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
+    let set_assg st tmap =
+      if Token.Map.is_empty tmap
+      then Exercise.Status.{st with status = Closed}
+      else Exercise.Status.{st with status = Assigned tmap}
+    in
     let ch =
       SSet.fold (fun ex_id acc ->
           let st = get_status ex_id in
@@ -1044,7 +1049,7 @@ let teacher_tab token _select _params () =
             Token.Set.fold (fun tk -> Token.Map.add tk assg)
               students tmap
           in
-          SMap.add ex_id {st with status = Assigned tmap} acc)
+          SMap.add ex_id (set_assg st tmap) acc)
         exos
         !status_changes
     in
@@ -1060,12 +1065,7 @@ let teacher_tab token _select _params () =
           let tmap =
             Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0
           in
-          let st =
-            if Token.Map.is_empty tmap
-            then {st with status = Closed}
-            else {st with status = Assigned tmap}
-          in
-          SMap.add ex_id st acc)
+          SMap.add ex_id (set_assg st tmap) acc)
         (SSet.diff exos0 exos)
         ch
     in
@@ -1560,7 +1560,7 @@ let () =
       Lwt.return_unit
     in
     Manip.Ev.onclick (find_component "learnocaml-logout")
-      (function _ -> logout (); false)
+      (function _ -> Lwt.async logout; false)
   end;
   begin
     let nickname_field = find_component "learnocaml-nickname" in

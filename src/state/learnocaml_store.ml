@@ -155,10 +155,15 @@ module Exercise = struct
     let set =
       let mutex = Lwt_mutex.create () in
       fun x ->
-      Lwt_mutex.with_lock mutex @@ fun () ->
-      Lazy.force tbl >>= fun tbl ->
-      Hashtbl.replace tbl x.id x;
-      save ()
+        let x =
+          { x with status = match x.status with
+                | Assigned tm when Token.Map.is_empty tm -> Closed
+                | s -> s }
+        in
+        Lwt_mutex.with_lock mutex @@ fun () ->
+        Lazy.force tbl >>= fun tbl ->
+        Hashtbl.replace tbl x.id x;
+        save ()
 
     let all () =
       Lazy.force tbl >|= fun tbl ->
