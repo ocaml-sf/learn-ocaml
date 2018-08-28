@@ -326,7 +326,6 @@ module Exercise = struct
       requirements: string list;
       forward: id list;
       backward: id list;
-      max_score: int option;
     }
 
     let enc =
@@ -352,17 +351,18 @@ module Exercise = struct
       let exercise_enc_v2 =
         J.(obj1
              (opt "max_score" int))
+        (* deprecated & ignored *)
       in
       J.conv
         (fun t ->
            ((t.kind, t.title, t.short_description, t.stars, t.id,
              t.author, t.focus, t.requirements, t.forward, t.backward),
-            t.max_score))
+            None))
         (fun ((kind, title, short_description, stars, id,
                author, focus, requirements, forward, backward),
-              max_score) ->
+              _max_score) ->
           { kind; title; short_description; stars; id;
-            author; focus; requirements; forward; backward; max_score;
+            author; focus; requirements; forward; backward;
           })
         (enc_check_version_2
            (J.merge_objs

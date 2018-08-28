@@ -70,7 +70,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = match exo.Exercise.Meta.max_score with Some m -> m | None -> 0 in
+    let max = Learnocaml_exercise.(access File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -191,7 +191,7 @@ let () =
   exercise_fetch >>= fun (ex_meta, exo) ->
   let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.report = Some report ; solution } ->
-        let _ : int = display_report ex_meta report in
+        let _ : int = display_report exo report in
         Some solution
     | { Answer.report = None ; solution } ->
         Some solution
@@ -422,7 +422,7 @@ let () =
           aborted >>= fun () ->
           Lwt.return Learnocaml_report.[ Message ([ Text [%i"Grading aborted by user."] ], Failure) ] in
         Lwt.pick [ grading ; abortion ] >>= fun report ->
-        let grade = display_report ex_meta report in
+        let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
         Learnocaml_local_storage.(store (exercise_state id))
           { Answer.grade = Some grade ; solution ; report = Some report ;
@@ -437,7 +437,7 @@ let () =
           Learnocaml_report.[ Text [%i"Error in your code."] ; Break ;
                    Text [%i"Cannot start the grader if your code does not typecheck."] ] in
         let report = Learnocaml_report.[ Message (msg, Failure) ] in
-        let grade = display_report ex_meta report in
+        let grade = display_report exo report in
         Learnocaml_local_storage.(store (exercise_state id))
           { Answer.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;

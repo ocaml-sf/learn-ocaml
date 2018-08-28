@@ -135,7 +135,6 @@ module Exercise: sig
       requirements: string list;
       forward: id list;
       backward: id list;
-      max_score: int option;
     }
 
     val enc: t Json_encoding.encoding

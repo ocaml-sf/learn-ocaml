@@ -191,44 +191,6 @@ let main dest_dir =
              >>= fun (all_exercises, exercises) ->
              Lwt.return (all_exercises, Index.Exercises exercises)
        in
-
-
-
-       (* (\* Exercises must be unique, since their id refer to the directory. *\)
-        * let all_exercises = ref SMap.empty in
-        * let rec fill_structure = function
-        *   | Index.Groups groups ->
-        *       Lwt_list.fold_left_s
-        *         (fun (subgroups, acc) (id, (title, group)) ->
-        *            if SMap.mem id subgroups then Lwt.return (subgroups, acc)
-        *            (\* Ensures groups of a same parent are unique *\)
-        *            else begin
-        *              let subgroups = SMap.add id title subgroups in
-        *              fill_structure group >>= fun contents ->
-        *              acc >>= fun acc ->
-        *              Lwt.return ((id, Index.{title; contents}) :: acc)
-        *            end)
-        *         (SMap.empty, [])
-        *         (List.rev groups)
-        *       >>= fun groups ->
-        *       Lwt.return (Index.Groups groups)
-        *   | Index.Exercises ids ->
-        *       let filtered id =
-        *         !exercises_filtered <> SSet.empty
-        *         && not (SSet.mem id !exercises_filtered) in
-        *       List.fold_left
-        *         (fun acc id ->
-        *            if SMap.mem id !all_exercises || filtered id then acc
-        *            else begin
-        *              let exercise =
-        *                read_exercise (!exercises_dir / id) in
-        *              all_exercises := SMap.add id exercise !all_exercises ;
-        *              acc >>= fun acc ->
-        *              Lwt.return
-        *                ((id, exercise) :: acc)
-        *            end)
-        *         (Lwt.return []) (List.rev ids) >>= fun exercises ->
-        *       Lwt.return (Index.Exercises exercises) in *)
        fill_structure SMap.empty structure >>= fun (all_exercises, index) ->
        to_file Index.enc (dest_dir / Learnocaml_index.exercise_index_path) index >>= fun () ->
        SSet.iter (fun id ->

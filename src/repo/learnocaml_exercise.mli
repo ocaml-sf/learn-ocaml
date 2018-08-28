@@ -52,10 +52,10 @@ module File : sig
   val id: id file
 
   (* (\** Learnocaml_exercise title / name accessor *\)
-   * val title: string file
-   * 
-   * (\** Maximum score for the exercise *\)
-   * val max_score: int file *)
+   * val title: string file *)
+
+  (** Maximum score for the exercise *)
+  val max_score: int file
 
   (** Returns the (private, already decyphered) [prepare.ml] *)
   val prepare: string file

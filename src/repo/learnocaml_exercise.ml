@@ -26,23 +26,25 @@ type t =
     prepare : string ;
     test : string ;
     solution : string ;
+    max_score : int ;
   }
 
 let encoding =
   let open Json_encoding in
   conv
-    (fun { id; prelude; template; descr; prepare; test; solution } ->
-       id, prelude, template, descr, prepare, test, solution)
-    (fun (id, prelude, template, descr, prepare, test, solution) ->
-       { id ; prelude ; template ; descr ; prepare ; test ; solution })
-    (obj7
+    (fun { id; prelude; template; descr; prepare; test; solution; max_score } ->
+       id, prelude, template, descr, prepare, test, solution, max_score)
+    (fun (id, prelude, template, descr, prepare, test, solution, max_score) ->
+       { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score })
+    (obj8
        (req "id" string)
        (req "prelude" string)
        (req "template" string)
        (req "descr" (list (tup2 string string)))
        (req "prepare" string)
        (req "test" string)
-       (req "solution" string))
+       (req "solution" string)
+       (req "max-score" int))
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
@@ -143,17 +145,13 @@ module File = struct
    *     update = (fun title ex ->
    *         { ex with meta = { ex.meta with meta_title = Some title }})
    *    } *)
-  (* let max_score =
-   *   let key = "max_score.txt" in
-   *   { key ; ciphered = false ;
-   *     decode = (fun v -> int_of_string v) ; encode = (fun v -> string_of_int v) ;
-   *     field = (fun ex ->
-   *         match ex.meta.meta_max_score with
-   *           None -> raise (Missing_file key)
-   *         | Some v -> v);
-   *     update = (fun score ex ->
-   *         { ex with meta = { ex.meta with meta_max_score = Some score }})
-   *    } *)
+  let max_score =
+    let key = "max_score.txt" in
+    { key ; ciphered = false ;
+      decode = (fun v -> int_of_string v) ; encode = (fun v -> string_of_int v) ;
+      field = (fun ex -> ex.max_score);
+      update = (fun max_score ex -> { ex with max_score });
+     }
   let prelude =
     { key = "prelude.ml" ; ciphered = false ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
@@ -339,6 +337,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           prepare = field_from_file File.prepare ex ;
           test = field_from_file File.test ex ;
           solution = field_from_file File.solution ex ;
+          max_score = 0 ;
         }
     with File.Missing_file _ as e -> fail e
 

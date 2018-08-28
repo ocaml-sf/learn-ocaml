@@ -336,10 +336,7 @@ let get_score =
   in
   get_score 0
 
-let max_score meta =
-  match meta.Exercise.Meta.max_score with
-  | Some n -> n
-  | None -> 0
+let max_score exo = Learnocaml_exercise.(access File.max_score exo)
 
 let print_score ?(max=1) ?color i =
   let color = match color with
@@ -351,11 +348,11 @@ let print_score ?(max=1) ?color i =
   else
     Console.button color (Printf.sprintf " %3d pts " i)
 
-let console_report ?(verbose=false) meta report =
+let console_report ?(verbose=false) ex report =
   let open Console in
   let open Learnocaml_report in
   let score = get_score report in
-  let max_score = max_score meta in
+  let max_score = max_score ex in
   print_string (hline ());
   Printf.printf
     "## %-*s %s\n"
@@ -496,13 +493,10 @@ let write_save_files save =
         Printf.eprintf "Wrote file %s\n%!" f)
     (SMap.bindings (save.Save.all_exercise_states))
 
-let upload_report server token meta solution report =
+let upload_report server token ex solution report =
   let score = get_score report in
-  let max_score = max_score meta in
-  let id = match meta.Exercise.Meta.id with
-    | None -> invalid_arg "missing exercise id"
-    | Some id -> id
-  in
+  let max_score = max_score ex in
+  let id = Learnocaml_exercise.(access File.id ex) in
   let exercise_state =
     { Answer.
       solution;
@@ -620,7 +614,7 @@ let main o =
   >>= fun solution ->
   status_line "Fetching exercise data from server.";
   fetch_exercise server token exercise_id
-  >>= fun (meta, exercise) ->
+  >>= fun (_meta, exercise) ->
   Grading_cli.get_grade ~callback:status_line ?timeout:None
     exercise solution
   >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
@@ -642,7 +636,7 @@ let main o =
       Lwt.return 10
   | Ok report ->
       (match o.output_format with
-       | `Console -> console_report ~verbose:(o.verbosity > 0) meta report
+       | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
        | `Raw ->
            Report.print Format.std_formatter report
        | `Html ->
@@ -652,7 +646,7 @@ let main o =
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
-      upload_report server token meta solution report >>= fun _ ->
+      upload_report server token exercise solution report >>= fun _ ->
       Printf.eprintf "Results saved to server\n";
       Lwt.return 0
 
