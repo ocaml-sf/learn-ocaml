@@ -956,24 +956,27 @@ let teacher_tab token _select _params () =
     [new_assg_line];
     table
   in
+  let open_close_button =
+    H.button ~a:[
+      H.a_onclick (fun _ ->
+          let open Exercise.Status in
+          let ids = htbl_keys selected_exercises in
+          let fstat =
+            if List.exists (fun id -> (get_status id).status = Open) ids
+            then function
+              | {status = Open} as st -> {st with status = Closed}
+              | st -> st
+            else function
+              | {status = Closed} as st -> {st with status = Open}
+              | st -> st
+          in
+          !exercise_status_change (htbl_keys selected_exercises) fstat;
+          true)
+    ] [H.pcdata [%i"Open/Close"]];
+  in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
-      H.button ~a:[
-        H.a_onclick (fun _ ->
-            let open Exercise.Status in
-            let ids = htbl_keys selected_exercises in
-            let fstat =
-              if List.exists (fun id -> (get_status id).status = Open) ids
-              then function
-                | {status = Open} as st -> {st with status = Closed}
-                | st -> st
-              else function
-                | {status = Closed} as st -> {st with status = Open}
-                | st -> st
-            in
-            !exercise_status_change (htbl_keys selected_exercises) fstat;
-            true)
-      ] [H.pcdata [%i"Open/Close"]];
+      open_close_button
       (* H.button ~a:[ H.a_disabled () ]
        *   [H.pcdata [%i"Add assignment"]];
        * H.button ~a:[ H.a_disabled () ]
@@ -1208,6 +1211,9 @@ let teacher_tab token _select _params () =
          if aid <> assg_id then select assg_id
      | None ->
          select assg_id);
+    (match !selected_assignment with
+     | Some _ -> Manip.disable open_close_button
+     | None -> Manip.enable open_close_button);
     update_disabled_both ();
     Lwt.return_unit
   end;
