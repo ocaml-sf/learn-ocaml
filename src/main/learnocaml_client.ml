@@ -614,7 +614,10 @@ let main o =
   >>= fun solution ->
   status_line "Fetching exercise data from server.";
   fetch_exercise server token exercise_id
-  >>= fun (_meta, exercise) ->
+  >>= fun (_meta, exercise, deadline) ->
+  if deadline = Some 0. then
+    Printf.eprintf
+      "[ERROR] The deadline is expired, you won't be able to submit.\n";
   Grading_cli.get_grade ~callback:status_line ?timeout:None
     exercise solution
   >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
@@ -646,9 +649,13 @@ let main o =
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
-      upload_report server token exercise solution report >>= fun _ ->
-      Printf.eprintf "Results saved to server\n";
-      Lwt.return 0
+      if deadline = Some 0. then
+        (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
+         Lwt.return 1)
+      else
+        upload_report server token exercise solution report >>= fun _ ->
+        Printf.eprintf "Results saved to server\n";
+        Lwt.return 0
 
 let man = [
   `S "DESCRIPTION";

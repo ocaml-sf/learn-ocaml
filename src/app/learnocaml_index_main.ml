@@ -36,7 +36,8 @@ let exercises_tab token _ _ () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading exercises"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
-  Server_caller.request_exn (Learnocaml_api.Exercise_index token) >>= fun index ->
+  Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+  >>= fun (index, deadlines) ->
   let content_div = find_component "learnocaml-main-content" in
   let format_exercise_list all_exercise_states =
     let rec format_contents lvl acc contents =
@@ -65,6 +66,12 @@ let exercises_tab token _ _ () =
                     | Some 0 -> "0%"
                     | Some pct -> string_of_int pct ^ "%")
                   pct_signal in
+              let time_left = match List.assoc_opt exercise_id deadlines with
+                | None -> ""
+                | Some 0. -> [%i"Exercise closed"]
+                | Some f -> Printf.sprintf [%if"Time left: %s"]
+                              (string_of_seconds (int_of_float f))
+              in
               let status_classes_signal =
                 React.S.map
                   (function
@@ -81,6 +88,7 @@ let exercises_tab token _ _ () =
                       | None -> pcdata [%i"No description available."]
                       | Some text -> pcdata text ] ;
                 ] ;
+                div ~a:[ a_class [ "time-left" ] ] [H.pcdata time_left];
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   stars_div stars;
                   div ~a:[ a_class [ "length" ] ] [
@@ -817,11 +825,10 @@ let teacher_tab token _select _params () =
           ();
       ]
     in
-    let now () = (new%js Js.date_now)##getTime /. 1000. in
     let hid = assg_line_id id in
     let (assg, tokens, exo_ids) = Hashtbl.find assignments_tbl id in
     let cls =
-      let n = now () in
+      let n = gettimeofday () in
       if assg.Exercise.Status.stop < n then ["assg_finished"]
       else if assg.Exercise.Status.start > n then ["assg_notstarted"]
       else ["assg_active"]
@@ -1283,7 +1290,7 @@ let teacher_tab token _select _params () =
   in
   let fetch_exercises =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
-    >|= fun index -> exercises_index := index
+    >|= fun (index, _) -> exercises_index := index
   in
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)

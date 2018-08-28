@@ -185,8 +185,7 @@ module Exercise = struct
           | Some a ->
               let t = Unix.gettimeofday () in
               if t < a.start then `Closed
-              else if t < a.stop then `Open
-              else `Readonly
+              else `Deadline (a.stop -. t)
           | None -> `Closed
 
   end

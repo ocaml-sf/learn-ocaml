@@ -37,7 +37,8 @@ val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t
  * 
  * val fetch_exercise_index : unit -> Learnocaml_index.group_contents Lwt.t *)
 
-val fetch_exercise: Token.t -> Exercise.id -> (Exercise.Meta.t * Exercise.t) Lwt.t
+val fetch_exercise:
+  Token.t -> Exercise.id -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
 
 val fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
 val fetch_lesson : string -> Lesson.t Lwt.t

@@ -325,8 +325,7 @@ let dropdown ~id ~title items =
     ]
 
 let gettimeofday () =
-  let now = new%js Js.date_now in
-  floor ((now ## getTime) *. 1000.) +. float (now ## getTimezoneOffset)
+  (new%js Js.date_now)##getTime /. 1000.
 
 let render_rich_text ?on_runnable_clicked text =
   let open Learnocaml_data.Tutorial in
@@ -407,3 +406,36 @@ let sync token =
       set_state_from_save_file ~token save;
       Lwt.return save
   | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+
+let string_of_seconds seconds =
+  let days = seconds / 24 / 60 / 60 in
+  let hours = seconds / 60 / 60 mod 24 in
+  let minutes = seconds / 60 mod 60 in
+  let seconds = seconds mod 60 in
+  if days >= 1 then Printf.sprintf [%if"%dd %02dh"] days hours else
+  if hours >= 1 then Printf.sprintf [%if"%02d:%02d"] hours minutes else
+    Printf.sprintf [%if"0:%02d:%02d"] minutes seconds
+
+let countdown ?(ontimeout = fun () -> ()) container t =
+  let deadline = gettimeofday () +. t in
+  let update_interval seconds =
+    if seconds >= 24 * 60 * 60 then 1000. *. 60. *. 60.
+    else if seconds >= 60 * 60 then 1000. *. 60.
+    else 1000.
+  in
+  let update remaining =
+    Manip.setInnerText container (string_of_seconds remaining)
+  in
+  let rec callback () =
+    let remaining = int_of_float (deadline -. gettimeofday ()) in
+    Firebug.console##log(Js.string (Printf.sprintf "Remaining: %f - %f = %ds" deadline (gettimeofday ()) remaining));
+    if remaining <= 0 then
+      (update 0;
+       ontimeout ())
+    else
+      (update remaining;
+       ignore (window##setTimeout
+                 (Js.wrap_callback callback)
+                 (update_interval remaining)))
+  in
+  callback ()

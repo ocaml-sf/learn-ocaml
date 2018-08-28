@@ -108,6 +108,12 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations
 
+let make_readonly () =
+  match Manip.by_id "learnocaml-exo-editor-pane" with None -> () | Some ed ->
+    alert ~title:[%i"TIME OUT"]
+      [%i"The deadline for this exercise has expired. Any changes you make will \
+          remain local only."]
+
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
@@ -145,7 +151,7 @@ let () =
     Server_caller.fetch_exercise token id
   in
   let after_init top =
-    exercise_fetch >>= fun (meta, exo) ->
+    exercise_fetch >>= fun (meta, exo, deadline) ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
@@ -188,7 +194,14 @@ let () =
       ~history () in
   init_tabs () ;
   toplevel_launch >>= fun top ->
-  exercise_fetch >>= fun (ex_meta, exo) ->
+  exercise_fetch >>= fun (ex_meta, exo, deadline) ->
+  (match deadline with
+   | None -> ()
+   | Some 0. -> make_readonly ()
+   | Some t ->
+       match Manip.by_id "learnocaml-countdown" with
+       | Some elt -> countdown elt t ~ontimeout:make_readonly
+       | None -> ());
   let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.report = Some report ; solution } ->
         let _ : int = display_report exo report in
