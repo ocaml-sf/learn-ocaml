@@ -141,30 +141,58 @@ module Args = struct
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
         "directory containing the base learn-ocaml app contents"
 
+    let enable opt doc =
+      value & vflag None [
+        Some true, info ["enable-"^opt] ~doc:("Enable "^doc);
+        Some false, info ["disable-"^opt] ~doc:("Disable "^doc);
+      ]
+
+    let try_ocaml = enable "tryocaml"
+        "the 'TryOCaml' tab (enabled by default if the repository contains a \
+         $(i,tutorials) directory)"
+
+    let lessons = enable "lessons"
+        "the 'Lessons' tab (enabled by default if the repository contains a \
+         $(i,lessons) directory)"
+
+    let exercises = enable "exercises"
+        "the 'Exercises' tab (enabled by default if the repository contains an \
+         $(i,exercises) directory)"
+
+    let toplevel = enable "toplevel"
+        "the 'Toplevel' tab (enabled by default)"
+
     let exercises_filtered =
       value & opt_all (list string) [[]] & info ["exercises-filtered"; "f"] ~docv:"DIRS" ~doc:
         "Exercises to build (comma-separated), instead of taking \
          the entire repository. Can be repeated."
 
+    let jobs =
+      value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
+        "Number of building jobs to run in parallel"
+
     type t = {
       contents_dir: string;
+      try_ocaml: bool option;
+      lessons: bool option;
+      exercises: bool option;
+      toplevel: bool option;
     }
 
     let term =
-      let apply repo_dir contents_dir exercises_filtered =
-        let exercises_filtered =
-          List.fold_left
-            (List.fold_left (fun s e -> StringSet.add e s))
-            StringSet.empty exercises_filtered in
+      let apply repo_dir contents_dir
+          try_ocaml lessons exercises toplevel exercises_filtered jobs =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_exercise_repository.exercises_filtered :=
-          exercises_filtered;
+          Learnocaml_data.SSet.of_list (List.flatten exercises_filtered);
         Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
-        { contents_dir }
+        Learnocaml_process_exercise_repository.n_processes := jobs;
+        { contents_dir; try_ocaml; lessons; exercises; toplevel }
       in
-      Term.(const apply $repo_dir $contents_dir $exercises_filtered)
+      Term.(const apply $repo_dir $contents_dir
+            $try_ocaml $lessons $exercises $toplevel $exercises_filtered $jobs)
 
   end
 
@@ -186,9 +214,9 @@ module Args = struct
 
     let term =
       let apply app_dir sync_dir port =
-        Learnocaml_simple_server.static_dir := app_dir;
-        Learnocaml_simple_server.sync_dir := sync_dir;
-        Learnocaml_simple_server.port := port;
+        Learnocaml_server.static_dir := app_dir;
+        Learnocaml_server.sync_dir := sync_dir;
+        Learnocaml_server.port := port;
         { sync_dir; port }
       in
       Term.(const apply $app_dir $sync_dir $port)
@@ -223,7 +251,7 @@ let main o =
            Lwt.catch
              (fun () ->
                 Grader_cli.grade_from_dir ~print_result:true ex o.grader.Grader.output_json
-                >|= max i)
+                >|= function Ok () -> i | Error _ -> 1)
              (fun e ->
                 Printf.ksprintf failwith
                   "Could not load exercise at %s: %s" ex (Printexc.to_string e)))
@@ -243,24 +271,50 @@ let main o =
                  (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
        >>= fun () ->
-       Lwt.catch
-         (fun () ->
-            Lwt_utils.copy_tree (o.repo_dir/"lessons") (o.app_dir/"lessons") >>= fun () ->
-            Lwt_unix.rename (o.app_dir/"lessons"/"lessons.json") (o.app_dir/"lessons.json"))
-         (function Failure _ -> Lwt.return_unit
-                 | e -> Lwt.fail e)
-       >>= fun () ->
-       Learnocaml_process_tutorial_repository.main o.app_dir >>= fun e_ret ->
-       Learnocaml_process_exercise_repository.main o.app_dir >>= fun t_ret ->
-       Lwt.return (e_ret && t_ret))
+       let if_enabled opt dir f = (match opt with
+           | None ->
+               Lwt.catch (fun () ->
+                   Lwt_unix.stat dir >|= fun st -> st.Unix.st_kind = Unix.S_DIR)
+                 (function Unix.Unix_error _ -> Lwt.return_false
+                         | e -> Lwt.fail e)
+           | Some opt -> Lwt.return opt)
+         >>= fun enabled ->
+         if enabled then f dir >>= Lwt.return_some else Lwt.return_none
+       in
+       if_enabled o.builder.Builder.lessons (o.repo_dir/"lessons")
+         (fun dir ->
+            Lwt_utils.copy_tree dir (o.app_dir/"lessons") >>= fun () ->
+            Lwt_unix.rename (o.app_dir/"lessons"/"lessons.json") (o.app_dir/"lessons.json")
+            >|= fun () -> true)
+       >>= fun lessons_ret ->
+       if_enabled o.builder.Builder.try_ocaml (o.repo_dir/"tutorials")
+         (fun _ -> Learnocaml_process_tutorial_repository.main (o.app_dir))
+       >>= fun tutorials_ret ->
+       if_enabled o.builder.Builder.exercises (o.repo_dir/"exercises")
+         (fun _ -> Learnocaml_process_exercise_repository.main (o.app_dir))
+       >>= fun exercises_ret ->
+       Lwt_io.with_file ~mode:Lwt_io.Output (o.app_dir/"js"/"learnocaml-config.js")
+         (fun oc ->
+            Lwt_io.fprintf oc
+              "var learnocaml_config = {\n\
+              \  enableTryocaml: %b,\n\
+              \  enableLessons: %b,\n\
+              \  enableExercises: %b,\n\
+              \  enableToplevel: %b\n\
+               }\n"
+              (tutorials_ret <> None)
+              (lessons_ret <> None)
+              (exercises_ret <> None)
+              (o.builder.Builder.toplevel <> Some false) >>= fun () ->
+       Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true
   in
   let run_server () =
     if List.mem Serve o.commands then
       (Printf.printf "Starting server on port %d\n%!"
-         !Learnocaml_simple_server.port;
-       Learnocaml_simple_server.launch ())
+         !Learnocaml_server.port;
+       Learnocaml_server.launch ())
     else
       Lwt.return true
   in

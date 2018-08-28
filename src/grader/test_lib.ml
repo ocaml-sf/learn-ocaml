@@ -17,7 +17,7 @@
 
 module type S = sig
 
-  val set_result : Learnocaml_report.report -> unit
+  val set_result : Learnocaml_report.t -> unit
 
   type nonrec 'a result = ('a, exn) result
 
@@ -25,43 +25,43 @@ module type S = sig
 
   module Ast_checker : sig
     type 'a ast_checker =
-      ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
-      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.report) ->
-      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.report) ->
-      ?on_external: (Parsetree.value_description -> Learnocaml_report.report) ->
-      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.report) ->
-      ?on_open: (Parsetree.open_description -> Learnocaml_report.report) ->
-      ?on_module_occurence: (string -> Learnocaml_report.report) ->
-      ?on_variable_occurence: (string -> Learnocaml_report.report) ->
-      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.report) ->
-      'a -> Learnocaml_report.report
+      ?on_expression: (Parsetree.expression -> Learnocaml_report.t) ->
+      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.t) ->
+      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
+      ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
+      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
+      ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
+      ?on_module_occurence: (string -> Learnocaml_report.t) ->
+      ?on_variable_occurence: (string -> Learnocaml_report.t) ->
+      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
+      'a -> Learnocaml_report.t
 
     val ast_check_expr : Parsetree.expression ast_checker
     val ast_check_structure : Parsetree.structure ast_checker
 
-    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.report) -> Learnocaml_report.report
+    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.t) -> Learnocaml_report.t
 
-    val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
-    val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
-    val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
+    val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
+    val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
+    val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
-    val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
-    val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
-    val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
-    val forbid_syntax : string -> (_ -> Learnocaml_report.report)
-    val require_syntax : string -> (_ -> Learnocaml_report.report)
+    val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
+    val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
+    val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
+    val forbid_syntax : string -> (_ -> Learnocaml_report.t)
+    val require_syntax : string -> (_ -> Learnocaml_report.t)
    
-    val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.report) -> Learnocaml_report.report
+    val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
 
   end
 
   (*----------------------------------------------------------------------------*)
 
   type 'a tester =
-    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
+    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
   type io_tester =
-    string -> string -> Learnocaml_report.report
+    string -> string -> Learnocaml_report.t
 
   (*----------------------------------------------------------------------------*)
 
@@ -135,32 +135,32 @@ module type S = sig
   module Test_functions_ref_var : sig
 
     val test_ref :
-      'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.report
+      'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.t
 
     val test_variable :
-      'a Ty.ty -> string -> 'a -> Learnocaml_report.report
+      'a Ty.ty -> string -> 'a -> Learnocaml_report.t
 
     val test_variable_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     val test_variable_against_solution :
-      'a Ty.ty -> string -> Learnocaml_report.report
+      'a Ty.ty -> string -> Learnocaml_report.t
 
   end
 
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_types : sig
-    val compatible_type : expected:string -> string -> Learnocaml_report.report
+    val compatible_type : expected:string -> string -> Learnocaml_report.t
 
-    val existing_type : ?score:int -> string -> bool * Learnocaml_report.report
+    val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
 
-    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.report
+    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
 
-    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     val test_module_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
   end
 
   (*----------------------------------------------------------------------------*)
@@ -172,8 +172,8 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-      ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.report
+      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.t
 
     val test_function_1_against :
       ?gen: int ->
@@ -182,9 +182,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> unit) ->
       ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.report
+      ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.t
 
     val test_function_1_against_solution :
       ?gen: int ->
@@ -193,9 +193,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> unit) ->
       ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.report
+      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
     (*----------------------------------------------------------------------------*)
 
@@ -204,8 +204,8 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.report) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.report
+      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
 
     val test_function_2_against :
       ?gen: int ->
@@ -214,9 +214,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> unit) ->
       ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.report
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.t
 
     val test_function_2_against_solution :
       ?gen: int ->
@@ -225,9 +225,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> unit) ->
       ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.report
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (*----------------------------------------------------------------------------*)
 
@@ -236,8 +236,8 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.report) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.report
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
 
     val test_function_3_against :
       ?gen: int ->
@@ -246,9 +246,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.report
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
 
     val test_function_3_against_solution :
       ?gen: int ->
@@ -257,9 +257,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.report
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
 
     (*----------------------------------------------------------------------------*)
 
@@ -268,8 +268,8 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.report) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.report
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
 
     val test_function_4_against :
       ?gen: int ->
@@ -278,10 +278,10 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
-      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
+      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     val test_function_4_against_solution :
       ?gen: int ->
@@ -290,9 +290,9 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.report) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.report
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
   end
 
@@ -329,7 +329,7 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
-    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.report * 'a | `Unbound of string * Learnocaml_report.report ]
+    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
 
     val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
     val lookup_student : 'a Ty.ty -> string -> 'a lookup
@@ -337,7 +337,7 @@ module type S = sig
     val found : string -> 'a -> 'a lookup
     val name : 'a lookup -> string
 
-    val test_value : 'a lookup -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+    val test_value : 'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     val test_function :
       ?test: 'ret tester ->
@@ -350,11 +350,11 @@ module type S = sig
       (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
        ('ret * string * string) ->
        ('ret * string * string) ->
-       Learnocaml_report.report) ->
+       Learnocaml_report.t) ->
     (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup ->
     (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
-    Learnocaml_report.report
+    Learnocaml_report.t
 
   val test_function_against :
     ?gen: int ->
@@ -369,17 +369,17 @@ module type S = sig
       (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
        ('ret * string * string) ->
        ('ret * string * string) ->
-       Learnocaml_report.report) ->
+       Learnocaml_report.t) ->
     ?sampler:
       (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
     (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
     ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
     ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
-    Learnocaml_report.report
+    Learnocaml_report.t
 
   end
 
-  val (@@@) : ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report) -> ('a -> Learnocaml_report.report)
+  val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
 
   (**/**)
   include (module type of Ast_checker)
@@ -395,7 +395,7 @@ end
 
 module Make
     (Params : sig
-       val results : Learnocaml_report.report option ref
+       val results : Learnocaml_report.t option ref
        (* val set_progress : string -> unit *)
        val timeout : int option
        module Introspection : Introspection_intf.INTROSPECTION
@@ -410,16 +410,16 @@ module Make
 
   module Ast_checker = struct
     type 'a ast_checker =
-      ?on_expression: (Parsetree.expression -> Learnocaml_report.report) ->
-      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.report) ->
-      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.report) ->
-      ?on_external: (Parsetree.value_description -> Learnocaml_report.report) ->
-      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.report) ->
-      ?on_open: (Parsetree.open_description -> Learnocaml_report.report) ->
-      ?on_module_occurence: (string -> Learnocaml_report.report) ->
-      ?on_variable_occurence: (string -> Learnocaml_report.report) ->
-      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.report) ->
-      'a -> Learnocaml_report.report
+      ?on_expression: (Parsetree.expression -> Learnocaml_report.t) ->
+      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.t) ->
+      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
+      ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
+      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
+      ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
+      ?on_module_occurence: (string -> Learnocaml_report.t) ->
+      ?on_variable_occurence: (string -> Learnocaml_report.t) ->
+      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
+      'a -> Learnocaml_report.t
 
     let ast_check f
           ?(on_expression = fun _ -> [])
@@ -434,7 +434,7 @@ module Make
           arg =
       let open Parsetree in
       let open Ast_mapper in
-      let res : Learnocaml_report.report list ref  = ref [] in
+      let res : Learnocaml_report.t list ref  = ref [] in
       let add l = res := l :: !res in
       let name { Location.txt; _ } = String.concat "." (Longident.flatten txt) in
       let variables = ref [] in
@@ -732,7 +732,7 @@ module Make
             ~on_external:(forbid_syntax "external")
             ~on_module_occurence:(forbid "module" (fun name -> name) modules)
             ast |> List.sort_uniq compare in
-        if snd (Learnocaml_report.result_of_report sanity_report) then
+        if snd (Learnocaml_report.result sanity_report) then
           sanity_report
         else
           cb ()
@@ -818,10 +818,10 @@ module Make
   (*----------------------------------------------------------------------------*)
 
   type 'a tester =
-    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.report
+    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
   type io_tester =
-    string -> string -> Learnocaml_report.report
+    string -> string -> Learnocaml_report.t
 
   let typed_printer ty ppf v =
     Introspection.print_value ppf v ty
@@ -989,7 +989,7 @@ module Make
         | [], [] ->
             [ Message ([ Text "Expected output" ; Output sgot ], Success 5) ]
         | got :: gots, expected :: expecteds ->
-            if snd (result_of_report (test_item got expected)) then
+            if snd (result (test_item got expected)) then
               [ Message ([ Text "Unexpected output" ; Output sgot ], Failure) ]
             else
               test_items (gots, expecteds)
@@ -1185,7 +1185,7 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.report * 'a | `Unbound of string * Learnocaml_report.report ]
+    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
 
     let lookup ty ?display_name name =
       let display_name = match display_name with None -> name | Some name -> name in
@@ -1256,13 +1256,12 @@ module Make
           prot uf tests =
       test_value uf @@ fun ruf ->
       let before args () = before args in
-      let open Learnocaml_report in
       let ty = ty_of_prot prot in
       List.flatten @@ List.map (fun case ->
           let args, ret = case () in
           let code = Format.asprintf "@[<hv 2>%s%a@]" (name uf) (print prot) args in
           let ret_ty = get_ret_ty ty args in
-          Message ([ Text "Computing" ; Code code ], Informative) ::
+          Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
           expect
             ?test ?test_stdout ?test_stderr
             ~pre: (before args) ~post: (after args) ret_ty (fun () -> apply ruf args) ret)

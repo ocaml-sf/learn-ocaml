@@ -15,42 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_index
+open Learnocaml_data
+open Exercise
 
 open Lwt.Infix
-
-let index_enc =
-  let contents_enc =
-    let open Json_encoding in
-    mu "group" @@ fun group_enc ->
-    union
-      [ case
-          (obj2
-             (req "title" string)
-             (req "exercises" (list string)))
-          (function
-            | (title, `Exercises map) -> Some (title, map)
-            | _ -> None)
-          (fun (title, map) -> (title, `Exercises map)) ;
-        case
-          (obj2
-             (req "title" string)
-             (req "groups" (assoc group_enc)))
-          (function
-            | (title, `Groups map) -> Some (title, map)
-            | _ -> None)
-          (fun (title, map) -> (title, `Groups map)) ] in
-  let open Json_encoding in
-  check_version_2 @@
-  union
-    [ case
-        (obj1 (req "exercises" (list string)))
-        (function | `Exercises map -> Some map | _ -> None)
-        (fun map -> `Exercises map) ;
-      case
-        (obj1 (req "groups" (assoc contents_enc)))
-        (function | `Groups map -> Some map | _ -> None)
-        (fun map -> `Groups map) ]
 
 let to_file encoding fn value =
   Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
@@ -67,9 +35,6 @@ let from_file encoding fn =
   let json = Ezjsonm.from_string str in
   Lwt.return (Json_encoding.destruct encoding json)
 
-module StringSet = Set.Make (String)
-module StringMap = Map.Make (String)
-
 let read_exercise exercise_dir =
   let open Lwt.Infix in
   let read_field field =
@@ -81,16 +46,15 @@ let read_exercise exercise_dir =
       Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read >>= fun content ->
       Lwt.return (Some content)
   in
-  Lwt_main.run
-    (Learnocaml_exercise.read_lwt ~read_field
-       ~id:(Filename.basename exercise_dir)
-       ~decipher:false ())
+  Learnocaml_exercise.read_lwt ~read_field
+    ~id:(Filename.basename exercise_dir)
+    ~decipher:false ()
 
 let exercises_dir = ref "./exercises"
 
 let exercises_index = ref None
 
-let exercises_filtered = ref StringSet.empty
+let exercises_filtered = ref SSet.empty
 
 let dump_outputs = ref None
 
@@ -98,35 +62,42 @@ let dump_reports = ref None
 
 let n_processes = ref 1
 
-let args = Arg.align @@
-  [ "-exercises-dir", Arg.Set_string exercises_dir,
-    "PATH path to the exercise repository (default: [./exercises])" ;
-    "-exercises-index", Arg.String (fun fn -> exercises_index := Some fn),
-    "PATH path to the exercises index (default: [<exercises-dir>/index.json])" ;
-    "-display-outcomes", Arg.Set Grader_cli.display_outcomes,
-    " display the toplevel's outcomes" ;
-    "-display-progression", Arg.Set Grader_cli.display_callback,
-    " display grading progression messages" ;
-    "-display-stdouts", Arg.Set Grader_cli.display_std_outputs,
-    " display the toplevel's standard outputs" ;
-    "-dump-outputs", Arg.String (fun s -> dump_outputs := Some s),
-    "PATH save the outputs in the given directory" ;
-    "-dump-reports", Arg.String (fun s -> dump_reports := Some s),
-    "PATH save the reports in the given directory" ;
-    "-j", Arg.Set_int n_processes,
-    "NUMBER grader processes to launch in parallel" ]
+let print_grader_error exercise = function
+  | Ok () -> ()
+  | Error (-1) -> ()
+  | Error n ->
+      Format.eprintf "[ERROR] %s: the solution has errors! (%d points%s)@."
+        Learnocaml_exercise.(access File.id exercise)
+        n
+        (if !Grader_cli.display_reports then ""
+         else ". Run with '-v' to see the report")
 
-
-let () =
-  match Unix.getenv "LEARNOCAML_PROCESS_REPOSITORY_TASK" with
-  | _ -> Grader_cli.main () ; exit 0
-  | exception Not_found -> ()
-
-let spawn_grader args =
-  Lwt_process.exec
-    ~env: (Array.concat [ [| "LEARNOCAML_PROCESS_REPOSITORY_TASK=YES" |] ;
-                          Unix.environment () ])
-    (Sys.argv.(0), Array.concat [ [| Sys.argv.(0) |] ; args ])
+let spawn_grader ?print_result ?dirname exercise output_json =
+  let rec sleep () =
+    if !n_processes <= 0 then
+      Lwt_main.yield () >>= sleep
+    else (
+      decr n_processes; Lwt.return_unit
+    )
+  in
+  sleep () >>= fun () ->
+  Lwt_io.flush_all () >>= fun () ->
+  match Lwt_unix.fork () with
+  | 0 ->
+      Grader_cli.display_callback := false;
+      Lwt_main.run
+        (Grader_cli.grade ?print_result ?dirname exercise output_json
+         >|= fun r ->
+         print_grader_error exercise r;
+         match r with
+         | Ok () -> exit 0
+         | Error _ -> exit 1)
+  | pid ->
+      Lwt_unix.waitpid [] pid >>= fun (_pid, ret) ->
+      incr n_processes;
+      match ret with
+      | Unix.WEXITED 0 -> Lwt.return (Ok ())
+      | _ -> Lwt.return (Error (-1))
 
 let main dest_dir =
   let (/) dir f =
@@ -140,27 +111,40 @@ let main dest_dir =
   Lwt.catch
     (fun () ->
        (if Sys.file_exists exercises_index then
-          from_file index_enc exercises_index
+          from_file Exercise.Index.enc exercises_index
         else if Sys.file_exists !exercises_dir then
           let rec auto_index path =
-            Array.fold_left (fun acc f ->
-                let rel_f = if path = "" then f else path / f in
-                if Sys.file_exists (!exercises_dir/rel_f/"meta.json") then
+            let entries = Sys.readdir path in
+            Array.sort compare entries;
+            Array.fold_left (fun acc id ->
+                let f = path / id in
+                let full_id =
+                  String.sub f (String.length !exercises_dir + 1)
+                    (String.length f - String.length !exercises_dir - 1)
+                in
+                if Sys.file_exists (f / "meta.json") then
                   match acc with
-                  | None -> Some (`Exercises [rel_f])
-                  | Some (`Exercises e) -> Some (`Exercises (e @ [rel_f]))
+                  | None -> Some (Index.Exercises [full_id, None])
+                  | Some (Index.Exercises e) ->
+                      Some (Index.Exercises (e @ [full_id, None]))
                   | _ -> None
-                else if Sys.is_directory (!exercises_dir/rel_f) then
-                  match acc, auto_index (rel_f) with
+                else if Sys.is_directory f then
+                  match acc, auto_index f with
                   | None, None -> None
-                  | None, Some g' -> Some (`Groups ([f, (f, g')]))
-                  | Some (`Groups g), Some g' -> Some (`Groups (g @ [f, (f, g')]))
+                  | None, Some contents ->
+                      Some (Index.Groups
+                              ([full_id, Index.{title = id; contents}]))
+                  | Some (Index.Groups g), Some contents ->
+                      Some (Index.Groups
+                              (g @ [full_id, Index.{title = id; contents}]))
+                  | Some _, None -> acc
                   | _ -> None
                 else acc)
-              None (Sys.readdir (!exercises_dir/path))
+              None
+              entries
           in
-          match auto_index "" with
-          | None -> failwith "Missing index file and malformed repository"
+          match auto_index !exercises_dir with
+          | None -> Lwt.fail_with "Missing index file and malformed repository"
           | Some i ->
               Format.eprintf "Missing index file, using all exercise directories.@." ;
               Lwt.return i
@@ -169,52 +153,55 @@ let main dest_dir =
            Format.eprintf "This does not look like a LearnOCaml exercise repository.@." ;
            Lwt.fail (Failure "cannot continue")))
        >>= fun structure ->
+
        (* Exercises must be unique, since their id refer to the directory. *)
-       let all_exercises = ref StringMap.empty in
-       let rec fill_structure = function
-         | `Groups groups ->
+       let rec fill_structure all_exercises = function
+         | Index.Groups groups ->
              (* Ensures groups of a same parent are unique *)
-             let subgroups : string StringMap.t ref = ref StringMap.empty in
-             List.fold_left
-               (fun acc (id, (group_title, str)) ->
-                  if StringMap.mem id !subgroups then acc
-                  else begin
-                    subgroups := StringMap.add id group_title !subgroups ;
-                    fill_structure str >>= fun group_contents ->
-                    acc >>= fun acc ->
-                    Lwt.return ((id, { group_title ; group_contents }) :: acc)
-                  end)
-               (Lwt.return []) (List.rev groups) >>= fun groups ->
-             Lwt.return (Groups groups)
-         | `Exercises ids ->
+             Lwt_list.fold_left_s
+               (fun (all_exercises, subgroups, acc) (id, gr) ->
+                  if SMap.mem id subgroups then
+                    Lwt.return (all_exercises, subgroups, acc)
+                  else
+                    fill_structure all_exercises gr.Index.contents
+                    >|= fun (all_exercises, contents) ->
+                    all_exercises,
+                    SMap.add id gr.Index.title subgroups,
+                    ((id, Index.{ title = gr.title; contents }) :: acc))
+               (all_exercises, SMap.empty, []) (List.rev groups)
+             >|= fun (all_exercises, _subgroups, groups) ->
+             all_exercises, Index.Groups groups
+         | Index.Exercises ids ->
              let filtered id =
-               !exercises_filtered <> StringSet.empty
-               && not (StringSet.mem id !exercises_filtered) in
-             List.fold_left
-               (fun acc id ->
-                  if StringMap.mem id !all_exercises || filtered id then acc
-                  else begin
-                    let exercise =
-                      read_exercise (!exercises_dir / id) in
-                    all_exercises := StringMap.add id exercise !all_exercises ;
-                    let exercise_indexed = Learnocaml_exercise.to_index exercise in
-                    acc >>= fun acc ->
-                    Lwt.return
-                      ((id, exercise_indexed) :: acc)
-                  end)
-               (Lwt.return []) (List.rev ids) >>= fun exercises ->
-             Lwt.return (Learnocaml_exercises exercises) in
-       fill_structure structure >>= fun index ->
-       to_file exercise_index_enc (dest_dir / exercise_index_path) index >>= fun () ->
-       StringSet.iter (fun id ->
-           if not (StringMap.mem id !all_exercises) then
+               !exercises_filtered <> SSet.empty
+               && not (SSet.mem id !exercises_filtered) in
+             Lwt_list.fold_left_s
+               (fun (all_exercises, acc) (id, _) ->
+                  if SMap.mem id all_exercises || filtered id then
+                    Lwt.return (all_exercises, acc)
+                  else
+                    from_file Meta.enc
+                      (!exercises_dir / id / "meta.json")
+                    >>= fun meta ->
+                    read_exercise (!exercises_dir / id)
+                    >|= fun exercise ->
+                    SMap.add id exercise all_exercises,
+                    (id, Some meta) :: acc)
+               (all_exercises, []) (List.rev ids)
+             >>= fun (all_exercises, exercises) ->
+             Lwt.return (all_exercises, Index.Exercises exercises)
+       in
+       fill_structure SMap.empty structure >>= fun (all_exercises, index) ->
+       to_file Index.enc (dest_dir / Learnocaml_index.exercise_index_path) index >>= fun () ->
+       SSet.iter (fun id ->
+           if not (SMap.mem id all_exercises) then
              Format.printf "[Warning] Filtered exercise '%s' not found.@." id)
          !exercises_filtered;
        let processes_arguments =
-         StringMap.fold
+         List.rev @@ SMap.fold
            (fun id exercise acc ->
               let exercise_dir = !exercises_dir / id in
-              let json_path = dest_dir / exercise_path id in
+              let json_path = dest_dir / Learnocaml_index.exercise_path id in
               let changed = try
                   let { Unix.st_mtime = json_time ; _ } = Unix.stat json_path in
                   Sys.readdir exercise_dir |>
@@ -232,51 +219,32 @@ let main dest_dir =
                 | Some dir -> Some (dir / id) in
               (id, exercise_dir, exercise, json_path,
                changed, dump_outputs, dump_reports) :: acc)
-           !all_exercises [] in
-       begin if !n_processes = 1 then
-           Lwt_list.map_s (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
+           all_exercises [] in
+       begin
+         let listmap, grade =
+           if !n_processes = 1 then
+             Lwt_list.map_s,
+             fun ?print_result ?dirname exercise json_path ->
+               Grader_cli.grade ?print_result ?dirname exercise json_path
+               >|= fun r -> print_grader_error exercise r; r
+           else
+             Lwt_list.map_p,
+             spawn_grader
+         in
+         listmap (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
                if not changed then begin
-                 Format.printf "%-12s (no changes)@." id ;
+                 Format.printf "%-24s (no changes)@." id ;
                  Lwt.return true
                end else begin
                  Grader_cli.dump_outputs := dump_outputs ;
                  Grader_cli.dump_reports := dump_reports ;
-                 Grader_cli.grade exercise (Some json_path) >>= fun result ->
-                 match result with
-                 | 0 ->
-                     Format.printf "%-12s     [OK]@." id ;
+                 grade ~dirname:(!exercises_dir / id) exercise (Some json_path)
+                 >>= function
+                 | Ok () ->
+                     Format.printf "%-24s     [OK]@." id ;
                      Lwt.return true
-                 | _ ->
-                     Format.printf "%-12s   [FAILED]@." id ;
-                     Lwt.return false
-               end)
-             processes_arguments
-         else
-           let pool = Lwt_pool.create !n_processes (fun () -> Lwt.return ()) in
-           Lwt_list.map_p (fun (id, exercise_dir, _, json_path, changed, dump_outputs, dump_reports) ->
-               Lwt_pool.use pool @@ fun () ->
-               if not changed then begin
-                 Format.printf "%-12s (no changes)@." id ;
-                 Lwt.return true
-               end else begin
-                 let args = Array.concat [
-                     (match dump_outputs with
-                      | None -> [||]
-                      | Some prefix -> [| "-dump-outputs" ; prefix |]) ;
-                     (match dump_reports with
-                      | None -> [||]
-                      | Some prefix -> [| "-dump-reports" ; prefix |]) ;
-                     (if !Grader_cli.display_outcomes then [| "-display-outcomes" |] else [||]) ;
-                     (if !Grader_cli.display_callback then [| "-display-progression" |] else [||]) ;
-                     (if !Grader_cli.display_std_outputs then [| "-display-stdouts"  |] else [||]) ;
-                     [| "-output-json" ; json_path |] ;
-                     [| exercise_dir |] ]in
-                 spawn_grader args >>= function
-                 | Unix.WEXITED 0 ->
-                     Format.printf "%-12s     [OK]@." id ;
-                     Lwt.return true
-                 | _ ->
-                     Format.printf "%-12s   [FAILED]@." id ;
+                 | Error _ ->
+                     Format.printf "%-24s   [FAILED]@." id ;
                      Lwt.return false
                end)
              processes_arguments

@@ -47,7 +47,6 @@ index.
 
 An exercise is described by a directory containing at most the following files:
 - meta.json
-- title.txt
 - descr.html
 - prelude.ml
 - prepare.ml
@@ -72,7 +71,6 @@ Json description in version "2" contains more metadata:
   "learnocaml_version" : "2",
   "kind"               : "exercise" | "problem" | "project",
   "stars"              : [1 .. 5],
-  /* Exercise title, falls back to 'title.txt' if the field is not present. */
   "title"              : "Title of the exercise",
   /* In an exercise repository, each exercise must have a unique identifier. */
   "identifier"         : "some_unique_identifier",
@@ -90,11 +88,6 @@ Json description in version "2" contains more metadata:
   "max_score" : [ 0 .. n ],
 }
 ```
-
-### title.txt
-
-Text file containing the title of the exercise. Overridden by the field `title`
-in `meta.json` if present.
 
 ### descr.html
 

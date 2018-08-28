@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_index
+open Learnocaml_data
 
 type meta = {
-  meta_kind : exercise_kind ;
+  meta_kind : Exercise.kind ;
   meta_stars : float ;
   meta_title : string option ;
   meta_short_description : string option ;

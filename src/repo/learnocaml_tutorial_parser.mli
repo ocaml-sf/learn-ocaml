@@ -15,23 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 val parse_md_tutorial :
   tutorial_name: string ->
   file_name: string ->
-  (Learnocaml_index.tutorial
-   * Learnocaml_tutorial.tutorial) Lwt.t
+  (Tutorial.Index.entry * Tutorial.t) Lwt.t
 
 val parse_html_tutorial :
   tutorial_name: string ->
   file_name: string ->
-  (Learnocaml_index.tutorial
-   * Learnocaml_tutorial.tutorial) Lwt.t
+  (Tutorial.Index.entry * Tutorial.t) Lwt.t
 
 val print_html_tutorial :
   tutorial_name: string ->
-  Learnocaml_tutorial.tutorial ->
+  Tutorial.t ->
   string
 
 val print_md_tutorial :
-  Learnocaml_tutorial.tutorial ->
+  Tutorial.t ->
   string
