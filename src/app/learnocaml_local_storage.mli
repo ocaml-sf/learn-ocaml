@@ -21,6 +21,8 @@ type 'a storage_key
 
 val init : unit -> unit
 
+val clear : unit -> unit
+
 val store : 'a storage_key -> 'a -> unit
 
 val retrieve : 'a storage_key -> 'a

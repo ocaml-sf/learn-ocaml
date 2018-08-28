@@ -145,6 +145,18 @@ body {
 #learnocaml-main-panel > div.tabs > button::after {
   border-radius: 5px;
 }
+#learnocaml-main-panel > #learnocaml-logout {
+  color: #d82;
+  text-align: right;
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+}
+#learnocaml-main-panel > #learnocaml-logout:hover {
+  cursor: pointer;
+  color: white;
+}
+
 /* Large screen: two columns w/ menu in the left column */
 @media (min-width: 1000px) {
   #learnocaml-main-toolbar {

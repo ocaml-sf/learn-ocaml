@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-08-27 22:57+0200\n"
+"PO-Revision-Date: 2018-08-28 11:12+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -145,11 +145,11 @@ msgstr ""
 msgid "Unexpected error:\n"
 msgstr "Erreur inattendue:\n"
 
-#: src/app/learnocaml_common.ml:100,26--42
+#: src/app/learnocaml_common.ml:73,21--37
 msgid "INTERNAL ERROR"
 msgstr "ERREUR INTERNE"
 
-#: src/app/learnocaml_common.ml:107,21--28
+#: src/app/learnocaml_common.ml:108,21--28
 msgid "ERROR"
 msgstr "ERREUR"
 
@@ -170,7 +170,7 @@ msgid "Editor"
 msgstr "Éditeur"
 
 #: src/app/learnocaml_exercise_main.ml:100,41--51
-#: src/app/learnocaml_index_main.ml:1436,30--40
+#: src/app/learnocaml_index_main.ml:1443,30--40
 msgid "Toplevel"
 msgstr "Toplevel"
 
@@ -226,7 +226,7 @@ msgid "No description available for this exercise."
 msgstr "Aucune description pour cet exercice."
 
 #: src/app/learnocaml_exercise_main.ml:324,23--29
-#: src/app/learnocaml_index_main.ml:1527,38--44
+#: src/app/learnocaml_index_main.ml:1534,38--44
 msgid "Sync"
 msgstr "Sync"
 
@@ -244,7 +244,7 @@ msgstr "Évaluer le code"
 
 #: src/app/learnocaml_exercise_main.ml:386,23--34
 #: src/app/learnocaml_index_main.ml:698,21--32
-#: src/app/learnocaml_index_main.ml:1433,48--59
+#: src/app/learnocaml_index_main.ml:1440,48--59
 msgid "Exercises"
 msgstr "Exercices"
 
@@ -391,39 +391,39 @@ msgstr "%d étudiants"
 msgid "New assignment"
 msgstr "Nouveau devoir"
 
-#: src/app/learnocaml_index_main.ml:975,21--33
+#: src/app/learnocaml_index_main.ml:976,21--33
 msgid "Open/Close"
 msgstr "Ouvrir/Fermer"
 
-#: src/app/learnocaml_index_main.ml:989,39--52
+#: src/app/learnocaml_index_main.ml:990,39--52
 msgid "Assignments"
 msgstr "Devoirs"
 
-#: src/app/learnocaml_index_main.ml:1359,7--56
+#: src/app/learnocaml_index_main.ml:1364,7--56
 msgid "Welcome to <emph>LearnOCaml</emph> by OCamlPro."
 msgstr "Bienvenue sur <emph>LearnOCaml</emph> par OCamlPro."
 
-#: src/app/learnocaml_index_main.ml:1361,7--46
+#: src/app/learnocaml_index_main.ml:1366,7--46
 msgid "This App is still under construction."
 msgstr "Cette application est encore en construction."
 
-#: src/app/learnocaml_index_main.ml:1363,7--36
+#: src/app/learnocaml_index_main.ml:1368,7--36
 msgid "Choose your activity below."
 msgstr "Sélectionnez une activité:"
 
-#: src/app/learnocaml_index_main.ml:1365,7--50
+#: src/app/learnocaml_index_main.ml:1370,7--50
 msgid "Your storage token on OCamlPro's servers:"
 msgstr "Votre identifiant de stockage sur le serveur:"
 
-#: src/app/learnocaml_index_main.ml:1367,7--42
+#: src/app/learnocaml_index_main.ml:1372,7--42
 msgid "You can share it between devices."
 msgstr "Il peut être partagé entre appareils."
 
-#: src/app/learnocaml_index_main.ml:1369,7--53
+#: src/app/learnocaml_index_main.ml:1374,7--53
 msgid "Progression is saved locally in the browser."
 msgstr "Vos progrès sont sauvegardés dans le navigateur."
 
-#: src/app/learnocaml_index_main.ml:1371,7--132
+#: src/app/learnocaml_index_main.ml:1376,7--132
 msgid ""
 "Save it to a file using the <img src=\"icons/icon_download_white.svg\" class="
 "\"icon\" alt=\"save\"> button above."
@@ -431,7 +431,7 @@ msgstr ""
 "Sauvez dans un fichier local avec le bouton <img src=\"icons/"
 "icon_download_white.svg\" class=\"icon\" alt=\"Sauver\">."
 
-#: src/app/learnocaml_index_main.ml:1374,7--148
+#: src/app/learnocaml_index_main.ml:1379,7--148
 msgid ""
 "Restore it from a file using the <img src=\"icons/icon_upload_white.svg\" "
 "class=\"icon\" alt=\"restore\"> button above."
@@ -439,7 +439,7 @@ msgstr ""
 "Restaurez depuis un fichier avec le bouton <img src=\"icons/"
 "icon_upload_white.svg\" class=\"icon\" alt=\"Restaurer\">."
 
-#: src/app/learnocaml_index_main.ml:1378,7--122
+#: src/app/learnocaml_index_main.ml:1383,7--122
 msgid ""
 "Save online using the <img src=\"icons/icon_sync_white.svg\" class=\"icon\" "
 "alt=\"sync\"> button above."
@@ -447,30 +447,42 @@ msgstr ""
 "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white.svg\" "
 "class=\"icon\" alt=\"Sync\">."
 
-#: src/app/learnocaml_index_main.ml:1421,41--62
+#: src/app/learnocaml_index_main.ml:1386,7--15
+msgid "Logout"
+msgstr "Déconnexion"
+
+#: src/app/learnocaml_index_main.ml:1428,41--62
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."
 
-#: src/app/learnocaml_index_main.ml:1429,30--41
+#: src/app/learnocaml_index_main.ml:1436,30--41
 msgid "Try OCaml"
 msgstr "Try OCaml"
 
-#: src/app/learnocaml_index_main.ml:1431,29--38
+#: src/app/learnocaml_index_main.ml:1438,29--38
 msgid "Lessons"
 msgstr "Cours"
 
-#: src/app/learnocaml_index_main.ml:1439,28--35
+#: src/app/learnocaml_index_main.ml:1446,28--35
 msgid "Teach"
 msgstr "Enseignement"
 
-#: src/app/learnocaml_index_main.ml:1496,42--48
+#: src/app/learnocaml_index_main.ml:1503,42--48
 msgid "Save"
 msgstr "Sauver"
 
-#: src/app/learnocaml_index_main.ml:1509,40--49
+#: src/app/learnocaml_index_main.ml:1516,40--49
 msgid "Restore"
 msgstr "Restaurer"
 
-#: src/app/learnocaml_index_main.ml:1533,38--44
+#: src/app/learnocaml_index_main.ml:1540,38--44
 msgid "Menu"
 msgstr "Menu"
+
+#: src/app/learnocaml_index_main.ml:1558,22--38
+msgid "SESSION CLOSED"
+msgstr "SESSION TERMINÉE"
+
+#: src/app/learnocaml_index_main.ml:1559,11--66
+msgid "This session has been closed. You can close this tab."
+msgstr "La session a été fermée. Vous pouvez fermer cet onglet."

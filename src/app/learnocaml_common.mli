@@ -27,7 +27,7 @@ val fake_download : name: string -> contents: Js.js_string Js.t -> unit
 
 val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t
 
-val fatal : string -> unit
+val fatal : ?title: string -> string -> unit
 
 val alert : ?title: string -> string -> unit
 

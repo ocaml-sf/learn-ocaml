@@ -136,6 +136,11 @@ let delete_single name enc () =
     (fun localStorage ->
        localStorage##(removeItem (Js.string name)))
 
+let clear () =
+  Js.Optdef.iter
+    (Dom_html.window##.localStorage)
+    (fun localStorage -> localStorage##clear)
+
 let sync_token =
   let key = mangle [ "sync-token" ] in
   let enc = Json_encoding.(obj1 (req "token" string)) in

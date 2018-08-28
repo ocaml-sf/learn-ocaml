@@ -1382,6 +1382,8 @@ let set_string_translations () =
     "txt_sync_doc",
     [%i"Save online using the <img src=\"icons/icon_sync_white.svg\" \
         class=\"icon\" alt=\"sync\"> button above."];
+    "learnocaml-logout",
+    [%i"Logout"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -1543,6 +1545,23 @@ let () =
       Manip.removeClass menu "hidden" ;
     Lwt.return ()
   end ;
+  begin
+    let logout () =
+      Lwt.catch
+        (fun () -> sync () >>= fun _ -> Lwt.return_unit)
+        (fun _ -> Lwt.return_unit) >>= fun () ->
+      Learnocaml_local_storage.clear ();
+      no_tab_selected ();
+      (token_input_field ())##.value := Js.string "";
+      let nickname_field = find_component "learnocaml-nickname" in
+      (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string "";
+      fatal ~title:[%i"SESSION CLOSED"]
+        [%i"This session has been closed. You can close this tab."];
+      Lwt.return_unit
+    in
+    Manip.Ev.onclick (find_component "learnocaml-logout")
+      (function _ -> logout (); false)
+  end;
   begin
     let nickname_field = find_component "learnocaml-nickname" in
     (try

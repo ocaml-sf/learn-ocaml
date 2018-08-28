@@ -70,7 +70,8 @@ let fake_upload () =
   ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
   result_t
 
-let fatal message =
+let fatal ?(title=[%i"INTERNAL ERROR"]) message =
+  let titletext = title in
   let id = "ocp-fatal-layer" in
   let div = match Manip.by_id id with
     | Some div -> div
@@ -97,7 +98,7 @@ let fatal message =
           [ h3 ~a: [ a_style "margin: 0;\
                               padding: 10px;\
                               text-align: center;" ]
-              [ pcdata [%i"INTERNAL ERROR"] ] ;
+              [ pcdata titletext ] ;
             pre ~a: [ a_style "margin: 0;\
                                border-top: 1px white solid;\
                                padding: 20px;" ]
