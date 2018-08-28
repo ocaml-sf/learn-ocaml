@@ -380,6 +380,215 @@ body {
   background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
 }
 
+/* -------------------- metadata tab ------------------------------ */
+
+#learnocaml-exo-content-more {
+  padding: 10px;
+}
+
+#learnocaml-exo-tab-more > h1 {
+  flex: 0 0 auto;
+  background: #222;
+  color: #eee;
+  font-size: 20px;
+  line-height: 22px;
+  margin: 0;
+  padding: 10px;
+  display: block;
+  font-weight: normal;
+  position: relative;
+}
+
+#learnocaml-exo-tab-more > h1::after {
+  position: absolute;
+  left: 0px; bottom: -5px; width: 100%;
+  content:"";
+  height:5px; background: pink;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
+}
+
+.learnocaml-exo-meta-category-title {
+  font-size: 20px;
+  line-height: 26px;
+  margin: 10px -10px;
+  padding: 10px;
+  background: #ddd;
+  font-weight: normal;
+}
+
+#learnocaml-exo-meta-category ~ .exercise + .exercise {
+  border-top: 1px #333 solid;
+}
+#learnocaml-exo-meta-category > .exercise {
+  position: relative;
+  background: linear-gradient(to top, #aaa 0px, #eee 10px, #ddd 100%);
+  color: black;
+  text-decoration: none;
+}
+#learnocaml-exo-meta-category ~ .exercise:hover::after {
+  position: absolute;
+  background: #acf;
+  opacity: 0.3;
+  z-index: 1010;
+  left:0; right:0; bottom:0; top:0;
+  content:"";
+}
+#learnocaml-exo-meta-category ~ .exercise > .descr {
+  padding: 10px;
+  flex: 1 1 auto;
+}
+#learnocaml-exo-meta-category ~ .exercise > .descr > h1 {
+  margin: 0 0 10px 0; padding: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+#learnocaml-exo-meta-category ~ .exercise > .descr > p {
+  margin: 10px 0 0 0; padding: 0;
+  text-align: justify;
+}
+#learnocaml-exo-meta-category > .pack {
+  padding: 10px;
+  margin: 0;
+  background: #222;
+  color: #eee;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 26px;
+}
+@media (min-width: 1000px) {
+  #learnocaml-exo-tab-more {
+    position: relative;
+  }
+  #learnocaml-exo-tab-more::after {
+    position: absolute;
+    left:0; top:0; bottom: 0px; width: 8px;
+    background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
+    content:"";
+    z-index: 1000;
+  }
+}
+@media (min-width: 550px) {
+  #learnocaml-exo-meta-category ~ .exercise {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    z-index: 999;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats {
+    flex: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 10px 15px 10px;
+    margin: 0 10px 0 0;
+    text-align: center;
+    min-width: 120px;
+    background:
+    linear-gradient(to bottom, #bbb 0px, #ccc 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #999 0px, #ccc 10px);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .stars {
+    min-height: 20px;
+    flex: 0 1 auto;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .length {
+    flex: 1 1 auto;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .score {
+    font-size: 20px;
+    color: #666;
+    flex: 0 1 auto;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.success {
+    background:
+    linear-gradient(to bottom, #7b6 0px, #8c7 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #483 0px, #8c7 10px);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.success > .score {
+    color: #080;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.failure {
+    background:
+    linear-gradient(to bottom, #f44 0px, #f55 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #844 0px, #f55 10px);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.failure > .score {
+    color: #800;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.partial {
+    background:
+    linear-gradient(to bottom, #fc4 0px, #fd5 36px, rgba(0,0,0,0) 36px),
+    linear-gradient(to top, #874 0px, #fd5 10px);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.partial > .score {
+    color: #C80;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-exo-meta-category ~ .exercise {
+    display: block;
+    position: relative;
+    z-index: 999;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > *,
+  #learnocaml-exo-meta-category ~ .exercise > .descr > * {
+    position: relative;
+    z-index: 1000;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .descr > p {
+    margin: 0 0 30px 0;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .stars {
+    position: absolute;
+    line-height: 20px;
+    height: 30px;
+    bottom: 0; left: 10px;
+    vertical-align: bottom;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .length {
+    position: absolute;
+    display: inline-block;
+    line-height: 20px;
+    height: 30px;
+    bottom: 0; left: 90px;
+    vertical-align: bottom;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats > .score {
+    width: 70px;
+    text-align: center;
+    font-size: 20px;
+    position: absolute;
+    bottom: 15px; right: 10px;
+    color: #666;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats::after {
+    background: linear-gradient(to top, #999 0px, #ccc 10px, rgba(0,0,0,0) 100%);
+    bottom: 0; right: 0; top: 0; left: 0;
+    content:"";
+    position: absolute;
+    z-index: 999;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.success::after {
+    background: linear-gradient(to top, #483 0px, #8c7 10px, #8c7 100%);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.success > .score {
+    color: #080;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.failure::after {
+    background: linear-gradient(to top, #844 0px, #f55 10px);
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.failure > .score {
+    color: #800;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.partial::after {
+    background: linear-gradient(to top, #874 0px, #fd5 10px);
+    color: #C80;
+  }
+  #learnocaml-exo-meta-category ~ .exercise > .stats.partial > .score {
+    color: #C80;
+  }
+}
+
+
 /* -------------------- loading splash screen --------------------- */
 #learnocaml-exo-loading {
   position: absolute;

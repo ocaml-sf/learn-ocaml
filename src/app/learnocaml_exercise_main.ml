@@ -137,39 +137,54 @@ let display_more token ex_meta id =
   let display_value content_id = function
       `Skill s -> pcdata s
     | `Ex e ->
-        span ~a:[ a_onclick
-                    (fun _ -> ignore @@ display_exercise_more content_id token e; true) ]
-          [ pcdata e ]
+        let cid = Format.asprintf "%s-%s" content_id e in
+        let displayed = ref false in
+        div [
+          p ~a:[ a_onclick
+                   (fun _ ->
+                      if not (!displayed) then
+                        (ignore @@ display_exercise_more cid token e;
+                         displayed := true)
+                      else
+                        (Manip.removeChildren (find_component cid);
+                         displayed := false) ;
+                      true) ]
+            [ pcdata e ] ;
+          div ~a:[a_id cid;
+                  a_class [ "learnocaml-exo-meta-category" ] ] [] ]
   in
   let ident =
     Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
   let focus =
-    [%i "This exercise is focused on:"],
+    [%i "Skills trained:"],
     List.map (fun s -> `Skill s) (ex_meta.Meta.focus),
     "learnocaml-exo-focus-more" in
   let requirements =
-    [%i "This exercise requires the following skill(s):"],
+    [%i "Skills required:"],
     List.map (fun s -> `Skill s) ex_meta.Meta.requirements,
     "learnocaml-exo-requirements-more" in
   let backward =
-    [%i "If needed, these exercises might be useful for a better understanding\
-         of the current one:"],
+    [%i "Previous exercises:"],
     List.map (fun s -> `Ex s) ex_meta.Meta.backward,
     "learnocaml-exo-backward-more" in
   let forward =
-      [%i "If you're interested, these exercises are marked as follow-up on the\
-           current one:"],
+      [%i "Exercises following:"],
       List.map (fun s -> `Ex s) ex_meta.Meta.forward,
     "learnocaml-exo-forward-more"  in
-  let content = find_component "learnocaml-exo-content-more" in
-  Manip.replaceChildren content @@
-  Tyxml_js.Html5.(
-    p [ pcdata ident ] ::
-    List.map (fun (s, v, cid) ->
-        div [ p (pcdata s :: (List.map (display_value cid) v)) ;
-              div ~a:[a_id cid] [] ])
-      [ focus ; requirements ; backward ; forward ]
-  )
+  let tab = find_component "learnocaml-exo-tab-more" in
+  Manip.replaceChildren tab @@
+  Tyxml_js.Html5.([
+    h1 ~a:[ a_class [ "learnocaml-exo-meta-title" ] ]
+      [ pcdata [%i "Metadata" ] ] ;
+
+    div ~a:[ a_id "learnocaml-exo-content-more" ]
+      (p [ pcdata ident ] ::
+      List.map (fun (s, v, cid) ->
+          div
+            (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ] [ pcdata s ] ::
+             (List.map (display_value cid) v)))
+        [ focus ; requirements ; backward ; forward ])
+  ])
 
 let set_string_translations () =
   let translations = [
