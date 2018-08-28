@@ -112,9 +112,13 @@ let exercises_tab token _ _ () =
             acc groups in
     List.rev (format_contents 1 [] index) in
   let list_div =
-    Tyxml_js.Html5.(div ~a: [ Tyxml_js.Html5.a_id "learnocaml-main-exercise-list" ])
-      (format_exercise_list Learnocaml_local_storage.(retrieve all_exercise_states)) in
-  Manip.appendChild content_div list_div ;
+    match format_exercise_list
+            Learnocaml_local_storage.(retrieve all_exercise_states)
+    with
+    | [] -> H.div [H.pcdata [%i"No open exercises at the moment"]]
+    | l -> H.div ~a:[H.a_id "learnocaml-main-exercise-list"] l
+  in
+    Manip.appendChild content_div list_div;
   hide_loading ~id:"learnocaml-main-loading" () ;
   Lwt.return list_div
 ;;
