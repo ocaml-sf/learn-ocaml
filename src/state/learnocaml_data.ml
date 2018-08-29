@@ -387,13 +387,16 @@ module Exercise = struct
       stop: float;
     }
 
-    type assignments =
-      assignment Token.Map.t
+    type assignments = {
+        token_map          : assignment Token.Map.t;
+        default_assignment : assignment
+      }
 
-    let no_assignment = Token.Map.is_empty
+    let no_assignment a =
+      Token.Map.is_empty a.token_map
 
     let is_open_assignment token a =
-      match Token.Map.find_opt token a with
+      match Token.Map.find_opt token a.token_map with
       | Some a ->
          let t = Unix.gettimeofday () in
          if t < a.start then `Closed
@@ -401,16 +404,29 @@ module Exercise = struct
       | None -> `Closed
 
     let exists_assignment a pred =
-      Token.Map.exists pred a
+      Token.Map.exists pred a.token_map
 
     let fold_over_assignments a f init =
-      Token.Map.fold f a init
+      Token.Map.fold f a.token_map init
 
     let token_map_of_assignments a =
-      a
+      a.token_map
 
-    let assignments_of_token_map a =
-      a
+    let make_assignments token_map default_assignment =
+      { token_map; default_assignment }
+
+    let is_token_eligible _ _ =
+      true
+
+    let assignment_for_token a _ =
+      a.default_assignment
+
+    let consider_token_for_assignment a t =
+      if is_token_eligible a t then
+        let assignment = assignment_for_token a t in
+        Some { a with token_map = Token.Map.add t assignment a.token_map }
+      else
+        None
 
     type status =
       | Open
@@ -425,18 +441,34 @@ module Exercise = struct
 
     let enc =
       let assignments_enc =
+        let token_map_enc =
+          J.conv
+            (fun m ->
+              Token.Map.bindings m |> List.map (fun (tok, a) ->
+                                          Token.to_string tok,
+                                          (a.start, a.stop)))
+            (List.fold_left (fun acc (tok, (start, stop)) ->
+                 Token.Map.add (Token.parse tok) {start; stop} acc)
+               Token.Map.empty)
+            (J.assoc
+               (J.obj2
+                  (J.req "start" J.float)
+                  (J.req "stop" J.float)))
+        in
+        let assignment_enc =
+          J.conv
+            (fun a -> (a.start, a.stop))
+            (fun (start, stop) -> { start; stop })
+            (J.obj2
+               (J.req "start" J.float)
+               (J.req "stop" J.float))
+        in
         J.conv
-          (fun m ->
-             Token.Map.bindings m |> List.map (fun (tok, a) ->
-                 Token.to_string tok,
-                 (a.start, a.stop)))
-          (List.fold_left (fun acc (tok, (start, stop)) ->
-               Token.Map.add (Token.parse tok) {start; stop} acc)
-              Token.Map.empty)
-          (J.assoc
-             (J.obj2
-                (J.req "start" J.float)
-                (J.req "stop" J.float)))
+          (fun a -> (a.token_map, a.default_assignment))
+          (fun (t, d) -> { token_map = t; default_assignment = d})
+          (J.obj2
+             (J.req "token_map" token_map_enc)
+             (J.req "default_assignment" assignment_enc))
       in
       let status_enc =
         J.union [

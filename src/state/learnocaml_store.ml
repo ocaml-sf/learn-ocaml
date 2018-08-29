@@ -237,7 +237,26 @@ module Token = struct
           Lwt.fail_with "token already exists"
       | e -> raise e
 
-  let create_student () = create_gen random
+  let check_for_student_assignments token = Exercise.Status.(
+    let check_exercise_status s =
+      match s.status with
+      | Open | Closed ->
+         Lwt.return ()
+      | Assigned a ->
+         match consider_token_for_assignment a token with
+         | None ->
+            Lwt.return ()
+         | Some a' ->
+            set { s with status = Assigned a' }
+    in
+    all () >>= Lwt_list.iter_s check_exercise_status
+  )
+
+  let create_student () =
+    create_gen random >>= fun token ->
+    check_for_student_assignments token >>= fun () ->
+    Lwt.return token
+
   let create_teacher () = create_gen random_teacher
 
   let delete token = Lwt_unix.unlink (path token)

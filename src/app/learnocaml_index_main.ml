@@ -1070,11 +1070,11 @@ let teacher_tab token _select _params () =
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
-    let set_assg st tmap =
+    let set_assg st tmap default_assignment =
       if Token.Map.is_empty tmap then
         Exercise.Status.{st with status = Closed}
       else
-        let a = Exercise.Status.assignments_of_token_map tmap in
+        let a = Exercise.Status.make_assignments tmap default_assignment in
         Exercise.Status.{st with status = Assigned a}
     in
     let ch =
@@ -1094,7 +1094,12 @@ let teacher_tab token _select _params () =
             Token.Set.fold (fun tk -> Token.Map.add tk assg)
               students tmap
           in
-          SMap.add ex_id (set_assg st tmap) acc)
+          (* The most recent assignment is used for students that will
+             register *after* the creation of these assignments. *)
+          let default_assignment =
+            assg
+          in
+          SMap.add ex_id (set_assg st tmap default_assignment) acc)
         exos
         !status_changes
     in
@@ -1110,7 +1115,10 @@ let teacher_tab token _select _params () =
           let tmap =
             Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0
           in
-          SMap.add ex_id (set_assg st tmap) acc)
+          let default_assignment =
+            assg
+          in
+          SMap.add ex_id (set_assg st tmap default_assignment) acc)
         (SSet.diff exos0 exos)
         ch
     in
