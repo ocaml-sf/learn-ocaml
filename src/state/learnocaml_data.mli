@@ -167,11 +167,20 @@ module Exercise: sig
     val token_map_of_assignments:
       assignments -> assignment Token.Map.t
 
-    val make_assignments:
-      assignment Token.Map.t -> assignment -> assignments
+    type assignment_precondition =
+      | True
+      | False
+      | Or of assignment_precondition list
+      | And of assignment_precondition list
+      | Not of assignment_precondition
+      | HasTag of tag
 
-    val consider_token_for_assignment:
-      assignments -> Token.t -> assignments option
+    val make_assignments:
+      assignment Token.Map.t -> assignment -> assignment_precondition
+      -> assignments
+
+    val consider_student_for_assignment:
+      assignments -> Student.t -> assignments option
 
     type status =
       | Open

@@ -233,12 +233,18 @@ module Token = struct
       | e -> raise e
 
   let check_for_student_assignments token = Exercise.Status.(
+    let student =
+      (* FIXME:@yurug: I do not know how to load the student descriptor
+         from a token. Hence, I put a dummy student descriptor here for
+         now. *)
+      Student.{ token; nickname = None; results = SMap.empty; tags = [] }
+    in
     let check_exercise_status s =
       match s.status with
       | Open | Closed ->
          Lwt.return ()
       | Assigned a ->
-         match consider_token_for_assignment a token with
+         match consider_student_for_assignment a student with
          | None ->
             Lwt.return ()
          | Some a' ->

@@ -1068,11 +1068,13 @@ let teacher_tab token _select _params () =
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
-    let set_assg st tmap default_assignment =
+    let set_assg st tmap default_assignment0 =
       if reopen then
         Exercise.Status.{st with status = Open}
       else
-        let a = Exercise.Status.make_assignments tmap default_assignment in
+        let a =
+          Exercise.Status.(make_assignments tmap default_assignment0 True)
+        in
         Exercise.Status.{st with status = Assigned a}
     in
     let ch =

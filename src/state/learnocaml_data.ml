@@ -253,6 +253,12 @@ module Student = struct
     tags: string list;
   }
 
+  let has_tag token tag =
+    List.mem tag token.tags
+
+  let token s =
+    s.token
+
   let enc =
     let open Json_encoding in
     obj4
@@ -380,9 +386,18 @@ module Exercise = struct
       stop: float;
     }
 
+    type assignment_precondition =
+      | True
+      | False
+      | Or of assignment_precondition list
+      | And of assignment_precondition list
+      | Not of assignment_precondition
+      | HasTag of tag
+
     type assignments = {
         token_map          : assignment Token.Map.t;
-        default_assignment : assignment
+        default_assignment : assignment;
+        precondition       : assignment_precondition;
       }
 
     let is_open_assignment token a =
@@ -402,11 +417,19 @@ module Exercise = struct
     let token_map_of_assignments a =
       a.token_map
 
-    let make_assignments token_map default_assignment =
-      { token_map; default_assignment }
+    let make_assignments token_map default_assignment precondition =
+      { token_map; default_assignment; precondition }
 
-    let is_token_eligible _ _ =
-      true
+    let is_student_eligible a s =
+      let rec sat = function
+        | True -> true
+        | False -> false
+        | Or ps -> List.exists sat ps
+        | And ps -> List.for_all sat ps
+        | Not p -> not (sat p)
+        | HasTag tag -> Student.has_tag s tag
+      in
+      sat a.precondition
 
     let default_assignment a =
       a.default_assignment
@@ -414,10 +437,11 @@ module Exercise = struct
     let assignment_for_token a _ =
       a.default_assignment
 
-    let consider_token_for_assignment a t =
-      if is_token_eligible a t then
-        let assignment = assignment_for_token a t in
-        Some { a with token_map = Token.Map.add t assignment a.token_map }
+    let consider_student_for_assignment a s =
+      if is_student_eligible a s then
+        let token = Student.token s in
+        let assignment = assignment_for_token a token in
+        Some { a with token_map = Token.Map.add token assignment a.token_map }
       else
         None
 
@@ -456,12 +480,33 @@ module Exercise = struct
                (J.req "start" J.float)
                (J.req "stop" J.float))
         in
+        let precondition_enc =
+          J.mu "precondition" @@ fun self ->
+          J.union [
+              J.case (J.constant "True")
+                (function True -> Some () | _ -> None) (fun () -> True);
+              J.case (J.constant "False")
+                (function False -> Some () | _ -> None) (fun () -> False);
+              J.case (J.list self)
+                (function And ps -> Some ps | _ -> None) (fun ps -> And ps);
+              J.case (J.list self)
+                (function Or ps -> Some ps | _ -> None) (fun ps -> Or ps);
+              J.case self
+                (function Not p -> Some p | _ -> None) (fun p -> Not p);
+              J.case J.string
+                (function HasTag s -> Some s | _ -> None) (fun s -> HasTag s)
+            ]
+        in
         J.conv
-          (fun a -> (a.token_map, a.default_assignment))
-          (fun (t, d) -> { token_map = t; default_assignment = d})
-          (J.obj2
+          (fun a -> (a.token_map, a.default_assignment, a.precondition))
+          (fun (t, d, p) ->
+            { token_map = t; default_assignment = d; precondition = p}
+          )
+          (J.obj3
              (J.req "token_map" token_map_enc)
-             (J.req "default_assignment" assignment_enc))
+             (J.req "default_assignment" assignment_enc)
+             (J.req "precondition" precondition_enc)
+          )
       in
       let status_enc =
         J.union [
