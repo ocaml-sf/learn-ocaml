@@ -152,10 +152,30 @@ module Exercise: sig
       stop: float;
     }
 
+    type assignments
+
+    val no_assignment:
+      assignments -> bool
+
+    val is_open_assignment:
+      Token.t -> assignments -> [> `Closed | `Deadline of float]
+
+    val exists_assignment:
+      assignments -> (Token.t -> assignment -> bool) -> bool
+
+    val fold_over_assignments:
+      assignments -> (Token.t -> assignment -> 'a -> 'a) -> 'a -> 'a
+
+    val token_map_of_assignments:
+      assignments -> assignment Token.Map.t
+
+    val assignments_of_token_map:
+      assignment Token.Map.t -> assignments
+
     type status =
       | Open
       | Closed
-      | Assigned of assignment Token.Map.t
+      | Assigned of assignments
 
     type t = {
       id: id;
@@ -163,9 +183,11 @@ module Exercise: sig
       status: status;
     }
 
-    val enc: t Json_encoding.encoding
+    val enc:
+      t Json_encoding.encoding
 
-    val default: id -> t
+    val default:
+      id -> t
 
   end
 

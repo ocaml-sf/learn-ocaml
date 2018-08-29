@@ -157,7 +157,7 @@ module Exercise = struct
       fun x ->
         let x =
           { x with status = match x.status with
-                | Assigned tm when Token.Map.is_empty tm -> Closed
+                | Assigned tm when no_assignment tm -> Closed
                 | s -> s }
         in
         Lwt_mutex.with_lock mutex @@ fun () ->
@@ -180,13 +180,7 @@ module Exercise = struct
       match status with
       | Open -> `Open
       | Closed -> `Closed
-      | Assigned a ->
-          match Token.Map.find_opt token a with
-          | Some a ->
-              let t = Unix.gettimeofday () in
-              if t < a.start then `Closed
-              else `Deadline (a.stop -. t)
-          | None -> `Closed
+      | Assigned a -> is_open_assignment token a
 
   end
 
