@@ -385,9 +385,6 @@ module Exercise = struct
         default_assignment : assignment
       }
 
-    let no_assignment a =
-      Token.Map.is_empty a.token_map
-
     let is_open_assignment token a =
       match Token.Map.find_opt token a.token_map with
       | Some a ->
@@ -410,6 +407,9 @@ module Exercise = struct
 
     let is_token_eligible _ _ =
       true
+
+    let default_assignment a =
+      a.default_assignment
 
     let assignment_for_token a _ =
       a.default_assignment

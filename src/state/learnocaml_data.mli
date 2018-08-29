@@ -152,11 +152,11 @@ module Exercise: sig
 
     type assignments
 
-    val no_assignment:
-      assignments -> bool
-
     val is_open_assignment:
       Token.t -> assignments -> [> `Closed | `Deadline of float]
+
+    val default_assignment:
+      assignments -> assignment
 
     val exists_assignment:
       assignments -> (Token.t -> assignment -> bool) -> bool

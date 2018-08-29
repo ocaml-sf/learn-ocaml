@@ -873,7 +873,9 @@ let teacher_tab token _select _params () =
                     match AM.find_opt assg am with
                     | None -> AM.add assg (Token.Set.singleton tok) am
                     | Some ts -> AM.add assg (Token.Set.add tok ts) am)
-                  AM.empty
+                  (AM.singleton
+                     (Exercise.Status.default_assignment a)
+                     Token.Set.empty)
               in
               AM.fold (fun assg toks atm ->
                   match ATM.find_opt (assg, toks) atm with
@@ -1067,11 +1069,8 @@ let teacher_tab token _select _params () =
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
     let set_assg st tmap default_assignment =
-      if Token.Map.is_empty tmap then
-        Exercise.Status.{st with status = Closed}
-      else
-        let a = Exercise.Status.make_assignments tmap default_assignment in
-        Exercise.Status.{st with status = Assigned a}
+      let a = Exercise.Status.make_assignments tmap default_assignment in
+      Exercise.Status.{st with status = Assigned a}
     in
     let ch =
       SSet.fold (fun ex_id acc ->
@@ -1091,7 +1090,7 @@ let teacher_tab token _select _params () =
               students tmap
           in
           (* The most recent assignment is used for students that will
-             register *after* the creation of these assignments. *)
+             register *after* the creation of this homework. *)
           let default_assignment =
             assg
           in
