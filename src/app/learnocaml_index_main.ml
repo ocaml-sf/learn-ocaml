@@ -830,8 +830,10 @@ let teacher_tab token _select _params () =
     SSet.filter (fun ex ->
         let Exercise.Status.{status; _} = get_status ex in
         match status with
-        | Exercise.Status.Assigned tmap ->
-            Token.Map.exists (fun tk _ -> Token.Set.mem tk students) tmap
+        | Exercise.Status.Assigned a ->
+            Exercise.Status.exists_assignment a (fun tk _ ->
+              Token.Set.mem tk students
+            )
         | _ -> false)
       (SSet.of_list (all_exercises !exercises_index))
   in
@@ -839,9 +841,10 @@ let teacher_tab token _select _params () =
     SSet.fold (fun ex acc ->
         let Exercise.Status.{status; _} = get_status ex in
         match status with
-        | Exercise.Status.Assigned tmap ->
-            Token.Map.fold (fun tk _ acc -> Token.Set.add tk acc)
-              tmap acc
+        | Exercise.Status.Assigned a ->
+            Exercise.Status.fold_over_assignments a (fun tk _ acc ->
+              Token.Set.add tk acc
+            ) acc
         | _ -> acc)
       exercises
       Token.Set.empty
@@ -864,13 +867,13 @@ let teacher_tab token _select _params () =
       SMap.fold (fun id st atm ->
           match st.Exercise.Status.status with
           | Exercise.Status.Open | Exercise.Status.Closed -> atm
-          | Exercise.Status.Assigned tm ->
+          | Exercise.Status.Assigned a ->
               let am =
-                Token.Map.fold (fun tok assg am ->
+                Exercise.Status.fold_over_assignments a (fun tok assg am ->
                     match AM.find_opt assg am with
                     | None -> AM.add assg (Token.Set.singleton tok) am
                     | Some ts -> AM.add assg (Token.Set.add tok ts) am)
-                  tm AM.empty
+                  AM.empty
               in
               AM.fold (fun assg toks atm ->
                   match ATM.find_opt (assg, toks) atm with
@@ -1064,9 +1067,11 @@ let teacher_tab token _select _params () =
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
     let set_assg st tmap =
-      if Token.Map.is_empty tmap
-      then Exercise.Status.{st with status = Closed}
-      else Exercise.Status.{st with status = Assigned tmap}
+      if Token.Map.is_empty tmap then
+        Exercise.Status.{st with status = Closed}
+      else
+        let a = Exercise.Status.assignments_of_token_map tmap in
+        Exercise.Status.{st with status = Assigned a}
     in
     let ch =
       SSet.fold (fun ex_id acc ->
@@ -1075,7 +1080,7 @@ let teacher_tab token _select _params () =
           let tmap0 =
             match st.status with
             | Open | Closed -> Token.Map.empty
-            | Assigned tmap -> tmap
+            | Assigned a -> token_map_of_assignments a
           in
           let tmap =
             Token.Set.fold (fun tk -> Token.Map.remove tk)
@@ -1096,7 +1101,7 @@ let teacher_tab token _select _params () =
           let tmap0 =
             match st.status with
             | Open | Closed -> Token.Map.empty
-            | Assigned tmap -> tmap
+            | Assigned a -> token_map_of_assignments a
           in
           let tmap =
             Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0

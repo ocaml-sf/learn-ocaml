@@ -380,10 +380,35 @@ module Exercise = struct
       stop: float;
     }
 
+    type assignments =
+      assignment Token.Map.t
+
+    let no_assignment = Token.Map.is_empty
+
+    let is_open_assignment token a =
+      match Token.Map.find_opt token a with
+      | Some a ->
+         let t = Unix.gettimeofday () in
+         if t < a.start then `Closed
+         else `Deadline (a.stop -. t)
+      | None -> `Closed
+
+    let exists_assignment a pred =
+      Token.Map.exists pred a
+
+    let fold_over_assignments a f init =
+      Token.Map.fold f a init
+
+    let token_map_of_assignments a =
+      a
+
+    let assignments_of_token_map a =
+      a
+
     type status =
       | Open
       | Closed
-      | Assigned of assignment Token.Map.t
+      | Assigned of assignments
 
     type t = {
       id: id;
