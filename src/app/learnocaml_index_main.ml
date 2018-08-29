@@ -1058,7 +1058,7 @@ let teacher_tab token _select _params () =
     | Some elt -> class_f elt "selected"
     | None -> ()
   in
-  let set_assignment ?assg ?students ?exos id =
+  let set_assignment ?(reopen=false) ?assg ?students ?exos id =
     let (assg0, students0, exos0) = Hashtbl.find assignments_tbl id in
     let dft x0 = function Some x -> x | None -> x0 in
     let assg = dft assg0 assg in
@@ -1069,8 +1069,11 @@ let teacher_tab token _select _params () =
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
     let set_assg st tmap default_assignment =
-      let a = Exercise.Status.make_assignments tmap default_assignment in
-      Exercise.Status.{st with status = Assigned a}
+      if reopen then
+        Exercise.Status.{st with status = Open}
+      else
+        let a = Exercise.Status.make_assignments tmap default_assignment in
+        Exercise.Status.{st with status = Assigned a}
     in
     let ch =
       SSet.fold (fun ex_id acc ->
@@ -1291,7 +1294,10 @@ let teacher_tab token _select _params () =
   end;
   assignment_remove := begin fun assg_id ->
     Lwt.async @@ fun () ->
-    set_assignment assg_id ~students:Token.Set.empty ~exos:SSet.empty;
+    set_assignment
+      ~reopen:true assg_id
+      ~students:Token.Set.empty
+      ~exos:SSet.empty;
     Hashtbl.remove assignments_tbl assg_id;
     selected_assignment := None;
     fill_exercises_pane ();
