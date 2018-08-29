@@ -93,50 +93,82 @@ let display_report exo report =
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
+let display_descr ex_meta =
+  let open Tyxml_js.Html5 in
+  let open Learnocaml_data.Exercise in
+  div ~a:[ a_class [ "descr" ] ] [
+    h2 ~a:[ a_class [ "learnocaml-exo-meta-category" ] ] [ pcdata ex_meta.Meta.title ] ;
+    p [ match ex_meta.Meta.short_description with
+        | None -> pcdata [%i"No description available."]
+        | Some text -> pcdata text ] ;
+  ]
+
+let display_stars ex_meta =
+  let open Tyxml_js.Html5 in
+  let open Learnocaml_data.Exercise in
+  div ~a:[ a_class [ "stars" ] ] [
+    let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
+    let num = max (min num 40) 0 in
+    let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
+    let src = Format.asprintf "icons/stars_%02d.svg" num in
+    img ~alt ~src ()
+  ]
+
+let display_kind ex_meta =
+  let open Tyxml_js.Html5 in
+  let open Learnocaml_data.Exercise in
+  div ~a:[ a_class [ "length" ] ] [
+    match ex_meta.Meta.kind with
+    | Exercise.Meta.Project -> pcdata [%i"project"]
+    | Exercise.Meta.Problem -> pcdata [%i"problem"]
+    | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ]
+
 (* Inefficient version: Reload the exercise description each time. *)
 let display_exercise_more content_id token id =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
   let content = find_component content_id in
   token >>= fun token ->
-  Server_caller.fetch_exercise token id >>= fun (meta, _) ->
+  Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
   let descr =
     a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
            a_class [ "exercise" ] ] [
-      div ~a:[ a_class [ "descr" ] ] [
-        h1 [ pcdata meta.Meta.title ] ;
-        p [ match meta.Meta.short_description with
-            | None -> pcdata [%i"No description available."]
-            | Some text -> pcdata text ] ;
-      ] ;
+      display_descr meta ;
       div ~a:[  ] [
-        div ~a:[ a_class [ "stars" ] ] [
-          let num = 5 * int_of_float (meta.Meta.stars *. 2.) in
-          let num = max (min num 40) 0 in
-          let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-          let src = Format.asprintf "icons/stars_%02d.svg" num in
-          img ~alt ~src ()
-        ] ;
-        div ~a:[ a_class [ "length" ] ] [
-          match meta.Meta.kind with
-          | Exercise.Meta.Project -> pcdata [%i"project"]
-          | Exercise.Meta.Problem -> pcdata [%i"problem"]
-          | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ] ;
-        (* div ~a:[ a_class [ "score" ] ] [
-         *   Tyxml_js.R.Html5.pcdata pct_text_signal
-         * ] *)
+        display_stars meta ;
+        display_kind meta ;
       ] ]
   in
   Manip.replaceChildren content [ descr ];
   Lwt.return ()
 
+let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
+  let open Tyxml_js.Html5 in
+  let rec gen acc = function
+    | [] -> [ pcdata "" ]
+    | a :: [] -> a :: acc
+    | a :: ((_ :: _) as rem) ->
+        gen (sep :: (a  :: acc)) rem
+  in
+  gen [] l |> List.rev
+
+
+let display_authors authors =
+  let open Tyxml_js.Html5 in
+  let author (name, mail) =
+    span [ pcdata name;
+           pcdata " <";
+           a ~a:[ a_href ("mailto:" ^ mail) ]
+             [ pcdata mail ];
+           pcdata ">"
+         ] in
+  display_list @@ List.map author authors
 
 let display_more token ex_meta id =
   let open Learnocaml_data.Exercise in
   let open Tyxml_js.Html5 in
-  let display_value content_id = function
-      `Skill s -> pcdata s
-    | `Ex e ->
+  let display_skill_link content_id s = pcdata s in
+  let display_exercise_link content_id e =
         let cid = Format.asprintf "%s-%s" content_id e in
         let displayed = ref false in
         div [
@@ -155,22 +187,28 @@ let display_more token ex_meta id =
   in
   let ident =
     Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
+  let authors =
+    span [ pcdata [%i "Author(s):" ] ] :: display_authors ex_meta.Meta.author in
   let focus =
     [%i "Skills trained:"],
-    List.map (fun s -> `Skill s) (ex_meta.Meta.focus),
-    "learnocaml-exo-focus-more" in
+    display_list @@
+    List.map (display_skill_link "learnocaml-exo-focus-more")
+      (ex_meta.Meta.focus) in
   let requirements =
     [%i "Skills required:"],
-    List.map (fun s -> `Skill s) ex_meta.Meta.requirements,
-    "learnocaml-exo-requirements-more" in
+    display_list @@
+    List.map (display_skill_link "learnocaml-exo-requirements-more")
+      ex_meta.Meta.requirements  in
   let backward =
     [%i "Previous exercises:"],
-    List.map (fun s -> `Ex s) ex_meta.Meta.backward,
-    "learnocaml-exo-backward-more" in
+    display_list ~sep:(pcdata "") @@
+    List.map (display_exercise_link "learnocaml-exo-backward-more")
+      ex_meta.Meta.backward in
   let forward =
       [%i "Exercises following:"],
-      List.map (fun s -> `Ex s) ex_meta.Meta.forward,
-    "learnocaml-exo-forward-more"  in
+      display_list ~sep:(pcdata "") @@
+      List.map (display_exercise_link "learnocaml-exo-forward-more")
+        ex_meta.Meta.forward in
   let tab = find_component "learnocaml-exo-tab-more" in
   Manip.replaceChildren tab @@
   Tyxml_js.Html5.([
@@ -178,12 +216,16 @@ let display_more token ex_meta id =
       [ pcdata [%i "Metadata" ] ] ;
 
     div ~a:[ a_id "learnocaml-exo-content-more" ]
-      (p [ pcdata ident ] ::
-      List.map (fun (s, v, cid) ->
-          div
-            (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ] [ pcdata s ] ::
-             (List.map (display_value cid) v)))
-        [ focus ; requirements ; backward ; forward ])
+      (display_descr ex_meta ::
+       display_kind ex_meta ::
+       display_stars ex_meta ::
+       p [ pcdata ident ] ::
+       p authors ::
+       List.map (fun (title, values) ->
+           div
+             (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ] [ pcdata title ] ::
+              values))
+         [ focus ; requirements ; backward ; forward ])
   ])
 
 let set_string_translations () =

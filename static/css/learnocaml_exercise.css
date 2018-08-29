@@ -399,6 +399,11 @@ body {
   position: relative;
 }
 
+#learnocaml-exo-tab-more > h1:first-child {
+    margin-top: 5px;
+    background:#eee;
+}
+
 #learnocaml-exo-tab-more > h1::after {
   position: absolute;
   left: 0px; bottom: -5px; width: 100%;
