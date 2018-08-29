@@ -167,8 +167,11 @@ module Exercise: sig
     val token_map_of_assignments:
       assignments -> assignment Token.Map.t
 
-    val assignments_of_token_map:
-      assignment Token.Map.t -> assignments
+    val make_assignments:
+      assignment Token.Map.t -> assignment -> assignments
+
+    val consider_token_for_assignment:
+      assignments -> Token.t -> assignments option
 
     type status =
       | Open
