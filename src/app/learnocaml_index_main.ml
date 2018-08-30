@@ -649,6 +649,7 @@ let teacher_tab token _select _params () =
   let student_change = ref (fun _ -> assert false) in
   let assignment_change = ref (fun _ -> assert false) in
   let assignment_remove = ref (fun _ -> assert false) in
+  let assignment_set_mode = ref (fun _ _ -> assert false) in
 
   (* Exercises table *)
   let rec mk_table group_level acc status group =
@@ -797,8 +798,29 @@ let teacher_tab token _select _params () =
           ();
       ]
     in
+    let switch_autobox ~current_mode mode1 mode2 =
+      let switch = ref current_mode in
+      let next () = switch := not !switch in
+      let get () = if !switch then mode1 else mode2 in
+      let id = Random.(Printf.sprintf "switch_%x%x" (bits ()) (bits ())) in
+      fun cb ->
+      let cb _ =
+        next ();
+        cb !switch;
+        begin match Manip.by_id id with
+        | None ->
+           ()
+        | Some id ->
+           Manip.(replaceChildren id [get ()]);
+        end;
+        true
+      in
+      H.span ~a:[H.a_id id; H.a_onclick cb] [get ()]
+    in
     let hid = assg_line_id id in
-    let (assg, tokens, exo_ids) = Hashtbl.find assignments_tbl id in
+    let (assg, tokens, exo_ids, current_mode) =
+      Hashtbl.find assignments_tbl id
+    in
     let cls =
       let n = gettimeofday () in
       if assg.Exercise.Status.stop < n then ["assg_finished"]
@@ -821,6 +843,10 @@ let teacher_tab token _select _params () =
       H.td [date ("stop_"^hid) id assg.Exercise.Status.stop];
       H.td [H.pcdata (Printf.sprintf [%if"%d exercises"] (SSet.cardinal exo_ids))];
       H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
+      H.td [switch_autobox ~current_mode
+                (H.pcdata [%i"auto"])
+                (H.pcdata [%i"manual"])
+                (!assignment_set_mode id)];
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
         [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
@@ -869,6 +895,7 @@ let teacher_tab token _select _params () =
           match st.Exercise.Status.status with
           | Exercise.Status.Open | Exercise.Status.Closed -> atm
           | Exercise.Status.Assigned a ->
+             let mode = Exercise.Status.is_automatic a in
               let am =
                 Exercise.Status.fold_over_assignments a (fun tok assg am ->
                     match AM.find_opt assg am with
@@ -880,17 +907,19 @@ let teacher_tab token _select _params () =
               in
               AM.fold (fun assg toks atm ->
                   match ATM.find_opt (assg, toks) atm with
-                  | None -> ATM.add (assg, toks) (SSet.singleton id) atm
-                  | Some ids -> ATM.add (assg, toks) (SSet.add id ids) atm)
+                  | None ->
+                     ATM.add (assg, toks) (SSet.singleton id, mode) atm
+                  | Some (ids, mode) ->
+                     ATM.add (assg, toks) (SSet.add id ids, mode) atm)
                 am atm)
         (status_current ())
         ATM.empty
     in
     let line_n = ref 0 in
-    let make_line ?selected assg tokens exo_ids =
+    let make_line ?selected assg tokens exo_ids mode =
       incr line_n;
       let id = !line_n in
-      Hashtbl.add assignments_tbl id (assg, tokens, exo_ids);
+      Hashtbl.add assignments_tbl id (assg, tokens, exo_ids, mode);
       assignment_line id
     in
     let new_assg_id = "new_assignment" in
@@ -922,7 +951,7 @@ let teacher_tab token _select _params () =
       in
       let line =
         make_line
-          Exercise.Status.{start; stop} tokens exercises
+          Exercise.Status.{start; stop} tokens exercises true
       in
       let id = !line_n in
       Dom.insertBefore (H.toelt table)
@@ -934,8 +963,8 @@ let teacher_tab token _select _params () =
     Manip.Ev.onclick new_assg_line (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
     (List.rev
-       (ATM.fold (fun (assg, tokens) exos acc ->
-            make_line assg tokens exos :: acc)
+       (ATM.fold (fun (assg, tokens) (exos, mode) acc ->
+            make_line assg tokens exos mode :: acc)
            atm [])) @
     [new_assg_line];
     table
@@ -1062,13 +1091,14 @@ let teacher_tab token _select _params () =
     | Some elt -> class_f elt "selected"
     | None -> ()
   in
-  let set_assignment ?(reopen=false) ?assg ?students ?exos id =
-    let (assg0, students0, exos0) = Hashtbl.find assignments_tbl id in
+  let set_assignment ?(reopen=false) ?assg ?students ?exos ?mode id =
+    let (assg0, students0, exos0, mode0) = Hashtbl.find assignments_tbl id in
     let dft x0 = function Some x -> x | None -> x0 in
     let assg = dft assg0 assg in
     let students = dft students0 students in
     let exos = dft exos0 exos in
-    Hashtbl.replace assignments_tbl id (assg, students, exos);
+    let mode = dft mode0 mode in
+    Hashtbl.replace assignments_tbl id (assg, students, exos, mode);
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
@@ -1077,6 +1107,16 @@ let teacher_tab token _select _params () =
         Exercise.Status.{st with status = Open}
       else
         let a = Exercise.Status.make_assignments tmap default_assignment in
+(* =======
+ *         let mode =
+ *           (\* For the moment, we only offer two modes, manual
+ *              or automatic. *\)
+ *           Exercise.Status.(if mode then True else False)
+ *         in
+ *         let a =
+ *           Exercise.Status.(make_assignments tmap default_assignment0 mode)
+ *         in
+ * >>>>>>> f55556f4... Allow the selection of two modes for assignments *)
         Exercise.Status.{st with status = Assigned a}
     in
     let ch =
@@ -1142,7 +1182,7 @@ let teacher_tab token _select _params () =
         (all_exercises !exercises_index)
     in
     let current_assignment = match !selected_assignment with
-      | Some id -> let _, _, exos = Hashtbl.find assignments_tbl id in exos
+      | Some id -> let _, _, exos, _ = Hashtbl.find assignments_tbl id in exos
       | None -> SSet.empty
     in
     disabled
@@ -1165,7 +1205,7 @@ let teacher_tab token _select _params () =
         !students_map
     in
     let current_assignment = match !selected_assignment with
-      | Some id -> let _, std, _ = Hashtbl.find assignments_tbl id in std
+      | Some id -> let _, std, _, _ = Hashtbl.find assignments_tbl id in std
       | None -> Token.Set.empty
     in
     disabled
@@ -1237,7 +1277,7 @@ let teacher_tab token _select _params () =
       match Manip.by_id (assg_line_id id) with
       | None -> ()
       | Some line ->
-          let (assg, students, exos) = Hashtbl.find assignments_tbl id in
+          let (assg, students, exos, _) = Hashtbl.find assignments_tbl id in
           !toggle_selected_exercises ~force:false
             (all_exercises !exercises_index);
           !toggle_selected_exercises ~force:true (SSet.elements exos);
@@ -1275,7 +1315,7 @@ let teacher_tab token _select _params () =
     ()
   end;
   assignment_change := begin fun assg_id ->
-    let (assg0, _, _) = Hashtbl.find assignments_tbl assg_id in
+    let (assg0, _, _, _) = Hashtbl.find assignments_tbl assg_id in
     let get_date id =
       let retr =
         match Manip.by_id ("date_"^id), Manip.by_id ("time_"^id) with
@@ -1306,6 +1346,13 @@ let teacher_tab token _select _params () =
     let assg = Exercise.Status.{start; stop} in
     set_assignment assg_id ~assg
   end;
+
+  assignment_set_mode := begin fun assg_id mode ->
+    Lwt.async @@ fun () ->
+    set_assignment assg_id ~mode;
+    Lwt.return_unit;
+  end;
+
   assignment_remove := begin fun assg_id ->
     Lwt.async @@ fun () ->
     set_assignment
