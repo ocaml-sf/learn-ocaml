@@ -53,22 +53,21 @@ let read_static_file path =
 
 exception Too_long_body
 
-let string_of_stream ?(max_size = 64 * 1024) s =
-  let b = Bytes.create max_size in
+let string_of_stream ?(max_size = 1024 * 1024) s =
+  let b = Buffer.create (64 * 1024) in
   let pos = ref 0 in
   let add_string s =
-    let len = String.length s in
-    pos := !pos + len ;
+    pos := !pos + String.length s;
     if !pos > max_size then
       Lwt.fail Too_long_body
     else begin
-      String.blit s 0 b (!pos - len) len ;
+      Buffer.add_string b s;
       Lwt.return_unit
     end
   in
   Lwt.catch begin function () ->
     Lwt_stream.iter_s add_string s >>= fun () ->
-    Lwt.return (Some (Bytes.sub_string b 0 !pos))
+    Lwt.return (Some (Buffer.contents b))
   end begin function
     | Too_long_body -> Lwt.return None
     | e -> Lwt.fail e
@@ -143,7 +142,7 @@ module Request_handler = struct
     : type resp. resp Api.request -> resp ret
     = function
       | Api.Version () ->
-          respond_json "0.2" (* TODO *)
+          respond_json Api.version
       | Api.Static path ->
           respond_static path
       | Api.Create_token (None, nick) ->

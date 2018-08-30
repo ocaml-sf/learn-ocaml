@@ -19,7 +19,7 @@ open Learnocaml_data
 open Lwt.Infix
 module Api = Learnocaml_api
 
-let version = "0.1"
+let version = Api.version
 
 module Args = struct
   open Cmdliner
@@ -368,7 +368,7 @@ let console_report ?(verbose=false) ex report =
     String.concat " " @@ List.map (function
         | Text w -> w
         | Break -> "\n"
-        | Code s when String.contains s '\n' -> block ~border_color:[`Cyan] s
+        | Code s when String.contains s '\n' -> "\n"^block ~border_color:[`Cyan] s
         | Code s -> color [`Cyan] s
         | Output s -> block ~border_color:[`Yellow] s)
       t
@@ -521,6 +521,21 @@ let upload_report server token ex solution report =
         (Token.to_string token)
   | e -> Lwt.fail e
 
+let check_server_version server =
+  Lwt.catch (fun () ->
+      fetch server (Api.Version ()) >|= fun server_version ->
+      if server_version <> Api.version then
+        (Printf.eprintf "API version mismatch: client v.%s and server v.%s\n"
+           Api.version server_version;
+         exit 1))
+  @@ fun e ->
+  Printf.eprintf "[ERROR] Could not reach server: %s\n"
+    (match e with
+     | Unix.Unix_error (err, _, _) -> Unix.error_message err
+     | Failure m -> m
+     | e -> Printexc.to_string e);
+  exit 1
+
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
   let default_server = Uri.of_string "http://learn-ocaml.org" in
@@ -563,7 +578,8 @@ let init ?(local=false) ?server ?token () =
             get_new_token (Console.input ~default:None
                              (function "" -> None | s -> Some s))
   in
-  get_token () >>= fun token ->
+  check_server_version server >>=
+  get_token >>= fun token ->
   let config = { ConfigFile. server; token } in
   ConfigFile.write path config >|= fun () ->
   Printf.eprintf "Configuration written to %s\n%!" path;
@@ -581,6 +597,7 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
         | None -> c
         | Some token -> { c with ConfigFile.token}
       in
+      check_server_version c.ConfigFile.server >>= fun () ->
       (if save_back then
          ConfigFile.write f c >|= fun () ->
          Printf.eprintf "Configuration written to %s\n%!" f;

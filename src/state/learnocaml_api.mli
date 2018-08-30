@@ -30,6 +30,8 @@
 
 open Learnocaml_data
 
+val version: string
+
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
