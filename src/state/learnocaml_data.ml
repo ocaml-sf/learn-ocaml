@@ -159,6 +159,13 @@ module Save = struct
         SMap.map fix_snapshot save.all_exercise_toplevel_histories;
     }
 
+  let empty = {
+    all_exercise_states = SMap.empty;
+    all_toplevel_histories = SMap.empty;
+    all_exercise_toplevel_histories = SMap.empty;
+    nickname = "";
+  }
+
 end
 
 module Token = struct

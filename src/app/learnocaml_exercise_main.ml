@@ -110,9 +110,9 @@ let set_string_translations () =
 
 let make_readonly () =
   match Manip.by_id "learnocaml-exo-editor-pane" with None -> () | Some ed ->
-    alert ~title:[%i"TIME OUT"]
-      [%i"The deadline for this exercise has expired. Any changes you make will \
-          remain local only."]
+    alert ~title:[%i"TIME'S UP"]
+      [%i"The deadline for this exercise has expired. Any changes you make \
+          from now on will remain local only."]
 
 let () =
   Lwt.async_exception_hook := begin function
@@ -129,7 +129,7 @@ let () =
       Learnocaml_local_storage.(retrieve sync_token) |>
       Lwt.return
     with Not_found ->
-      Server_caller.request_exn (Learnocaml_api.Create_token None)
+      Server_caller.request_exn (Learnocaml_api.Create_token (None, None))
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       token

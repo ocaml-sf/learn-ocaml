@@ -20,7 +20,7 @@ open Learnocaml_data
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
-  | Create_token: student token option -> student token request
+  | Create_token: student token option * string option -> student token request
   | Create_teacher_token: teacher token -> teacher token request
   | Fetch_save: 'a token -> Save.t request
   | Update_save:
@@ -136,8 +136,9 @@ module Conversions (Json: JSON_CODEC) = struct
     | Version () ->
         get ["version"]
 
-    | Create_token token ->
-        get ?token ["sync"; "new"]
+    | Create_token (token, nick) ->
+        get ?token (["sync"; "new"] @
+                    (match nick with None -> [] | Some n -> [n]))
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "new"]
@@ -214,7 +215,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Version () |> k
 
       | `GET, ["sync"; "new"], token ->
-          Create_token token |> k
+          Create_token (token, None) |> k
+      | `GET, ["sync"; "new"; nick], token ->
+          Create_token (token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
 

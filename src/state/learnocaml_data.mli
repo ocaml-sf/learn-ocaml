@@ -67,6 +67,8 @@ module Save: sig
       clocks. *)
   val fix_mtimes: t -> t
 
+  val empty: t
+
 end
 
 module Token: sig

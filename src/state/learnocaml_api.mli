@@ -33,7 +33,7 @@ open Learnocaml_data
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
-  | Create_token: student token option -> student token request
+  | Create_token: student token option * string option -> student token request
   | Create_teacher_token: teacher token -> teacher token request
   | Fetch_save: 'a token -> Save.t request
   | Update_save:

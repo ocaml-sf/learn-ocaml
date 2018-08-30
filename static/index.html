@@ -28,7 +28,6 @@
     <div id="learnocaml-main-panel" class="hidden">
       <hr class="glue">
       <div id="txt_welcome">Welcome to <emph>LearnOCaml</emph> by OCamlPro.</div>
-      <div id="txt_construction"><!--This App is still under construction.--></div>
       <hr class="line">
       <div id="txt_choose_activity"><!--Choose your activity below.--></div>
       <div id="learnocaml-tab-buttons-container" class="tabs">
@@ -41,7 +40,7 @@
       </div>
       <hr class="line">
       <div id="txt_token_doc"><!--Your storage token on OCamlPro's servers:--></div>
-      <input type="text" value="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+      <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
              pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
              id="learnocaml-save-token-field">
       <div id="txt_token_share"><!--You can share it between devices.--></div>
@@ -87,6 +86,29 @@
       <!--     <div class="score">42%</div> -->
       <!--   </div> -->
       <!-- </div> -->
+    </div>
+    <div id="login-overlay">
+      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h3>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <input id="login-nickname-input" type="text" placeholder="Nickname"
+                 autocomplete="off"></input>
+        </div>
+        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+      </div>
+      <div id="login-returning">
+        <h4 id="txt_returning"><!-- Returning user --></h4>
+        <div>
+          <div id="txt_returning_dialog"><!-- Enter your token --></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 autocomplete="off">
+        </div>
+        <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+      </div>
     </div>
   </body>
 </html>
