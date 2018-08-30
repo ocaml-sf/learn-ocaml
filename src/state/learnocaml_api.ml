@@ -17,6 +17,8 @@
 
 open Learnocaml_data
 
+let version = "0.3"
+
 type _ request =
   | Static: string list -> string request
   | Version: unit -> string request
