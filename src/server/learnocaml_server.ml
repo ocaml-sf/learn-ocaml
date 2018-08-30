@@ -146,9 +146,12 @@ module Request_handler = struct
           respond_json "0.2" (* TODO *)
       | Api.Static path ->
           respond_static path
-      | Api.Create_token None ->
-          Token.create_student () >>= respond_json
-      | Api.Create_token (Some token) ->
+      | Api.Create_token (None, nick) ->
+          Token.create_student () >>= fun tok ->
+          (match nick with None -> Lwt.return_unit | Some nickname ->
+              Save.set tok Save.{empty with nickname}) >>= fun () ->
+          respond_json tok
+      | Api.Create_token (Some token, _nick) ->
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json token)
             (function

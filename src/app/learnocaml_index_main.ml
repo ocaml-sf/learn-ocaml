@@ -1331,23 +1331,6 @@ let token_input_field () =
   let input = find_component id in
   Tyxml_js.To_dom.of_input input
 
-let init_sync_token button_state =
-  catch
-    (fun () ->
-       begin try
-           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
-         with Not_found ->
-           Server_caller.request_exn (Learnocaml_api.Create_token None)
-           >>= fun token ->
-           Learnocaml_local_storage.(store sync_token) token ;
-           Lwt.return token
-       end >>= fun token ->
-       (token_input_field ())##.value :=
-         Js.string (Token.to_string token) ;
-       enable_button button_state ;
-       Lwt.return (Some token))
-    (fun _ -> Lwt.return None)
-
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
@@ -1381,12 +1364,78 @@ let sync () =
             Lwt.fail_with "The entered token is unknown"
         | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
 
+let init_token_dialog () =
+  let login_overlay = find_component "login-overlay" in
+  Manip.SetCss.display login_overlay "block";
+  let input_nick = find_component "login-nickname-input" in
+  let button_new = find_component "login-new-button" in
+  let input_tok = find_component "login-token-input" in
+  let button_connect = find_component "login-connect-button" in
+  let get_token, got_token = Lwt.task () in
+  let create_token () =
+    let nickname = match Manip.value input_nick with
+      | "" -> None
+      | n ->
+          Learnocaml_local_storage.(store nickname) n;
+          let nickname_field = find_component "learnocaml-nickname" in
+          (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string n;
+          Some n
+    in
+    Server_caller.request_exn (Learnocaml_api.Create_token (None, nickname))
+    >>= fun token ->
+    Learnocaml_local_storage.(store sync_token) token;
+    Lwt.return_some token
+  in
+  let login_token () =
+    let input = input_tok in
+    match Token.parse (Manip.value input) with
+    | exception (Failure _) ->
+        Manip.SetCss.borderColor input "#f44";
+        Lwt.return_none
+    | token ->
+        Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+        | Ok save ->
+            set_state_from_save_file ~token save;
+            Lwt.return_some token
+        | Error (`Not_found _) ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognised."];
+            Lwt.return_none
+        | Error e ->
+            Lwt.fail_with (Server_caller.string_of_error e)
+  in
+  let handler f t = fun _ ->
+    Lwt.async (fun () ->
+        f () >|= function
+        | Some token -> Lwt.wakeup got_token token
+        | None -> ());
+    t
+  in
+  Manip.Ev.onclick button_new (handler create_token false);
+  Manip.Ev.onreturn input_nick (handler create_token ());
+  Manip.Ev.onclick button_connect (handler login_token false);
+  Manip.Ev.onreturn input_tok (handler login_token ());
+  get_token >|= fun token ->
+  Manip.SetCss.display login_overlay "none";
+  token
+
+let init_sync_token button_state =
+  catch
+    (fun () ->
+       begin try
+           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
+         with Not_found -> init_token_dialog ()
+       end >>= fun token ->
+       (token_input_field ())##.value :=
+         Js.string (Token.to_string token) ;
+       enable_button button_state ;
+       Lwt.return (Some token))
+    (fun _ -> Lwt.return None)
+
 let set_string_translations () =
   let translations = [
     "txt_welcome",
     [%i"Welcome to <emph>LearnOCaml</emph> by OCamlPro."];
-    "txt_construction",
-    [%i"This App is still under construction."];
     "txt_choose_activity",
     [%i"Choose your activity below."];
     "txt_token_doc",
@@ -1407,11 +1456,28 @@ let set_string_translations () =
         class=\"icon\" alt=\"sync\"> button above."];
     "learnocaml-logout",
     [%i"Logout"];
+    "txt_login_welcome", [%i"Welcome to Learn OCaml"];
+    "txt_first_connection", [%i"First connection"];
+    "txt_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_login_new", [%i"Create new token"];
+    "txt_returning", [%i"Returning user"];
+    "txt_returning_dialog", [%i"Enter your token"];
+    "txt_login_returning",  [%i"Connect"];
   ] in
   List.iter
     (fun (id, text) ->
        Manip.setInnerHtml (find_component id) text)
-    translations
+    translations;
+  let placeholder_translations = [
+    "learnocaml-nickname", [%i"Nickname"];
+    "login-nickname-input", [%i"Nickname"];
+  ] in
+  List.iter
+    (fun (id, text) ->
+       (Tyxml_js.To_dom.of_input (find_component id))##.placeholder :=
+         Js.string text)
+    placeholder_translations
+
 
 class type learnocaml_config = object
   method enableTryocaml: bool Js.prop
@@ -1578,8 +1644,7 @@ let () =
       (token_input_field ())##.value := Js.string "";
       let nickname_field = find_component "learnocaml-nickname" in
       (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string "";
-      fatal ~title:[%i"SESSION CLOSED"]
-        [%i"This session has been closed. You can close this tab."];
+      reload ();
       Lwt.return_unit
     in
     Manip.Ev.onclick (find_component "learnocaml-logout")

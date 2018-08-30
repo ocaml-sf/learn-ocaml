@@ -543,22 +543,25 @@ let init ?(local=false) ?server ?token () =
         in
         Console.input ~default:default_server uri
   in
-  let get_new_token () =
-    fetch server (Api.Create_token None)
+  let get_new_token nickname =
+    fetch server (Api.Create_token (None, nickname))
   in
   let get_token () =
     match token with
     | Some t -> Lwt.return t
     | None ->
         Printf.eprintf
-          "Please provide your user token on %s (leave empty to generate one): "
+          "Please provide your user token on %s (leave empty to generate one): %!"
           (Uri.to_string server);
         match
           Console.input ~default:None
             (fun s -> Some (Token.parse s))
         with
         | Some t -> Lwt.return t
-        | None -> get_new_token ()
+        | None ->
+            Printf.eprintf "Please enter a nickname: %!";
+            get_new_token (Console.input ~default:None
+                             (function "" -> None | s -> Some s))
   in
   get_token () >>= fun token ->
   let config = { ConfigFile. server; token } in
