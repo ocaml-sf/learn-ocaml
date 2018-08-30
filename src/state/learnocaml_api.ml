@@ -54,6 +54,12 @@ type _ request =
   | Tutorial:
       string -> Tutorial.t request
 
+  | Focused_skills_index: unit -> Exercise.Skill.t request
+  | Focusing_skill: string -> (Exercise.id list) request
+
+  | Required_skills_index: unit -> Exercise.Skill.t request
+  | Requiring_skill: string -> (Exercise.id list) request
+
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
   | Exercise_status:
@@ -121,6 +127,15 @@ module Conversions (Json: JSON_CODEC) = struct
           json Tutorial.Index.enc
       | Tutorial _ ->
           json Tutorial.enc
+
+      | Focused_skills_index _ ->
+          json Exercise.Skill.enc
+      | Focusing_skill _ ->
+          json (J.list J.string)
+      | Required_skills_index _ ->
+          json Exercise.Skill.enc
+      | Requiring_skill _ ->
+          json (J.list J.string)
 
       | Exercise_status_index _ ->
           json (J.list Exercise.Status.enc)
@@ -198,6 +213,15 @@ module Conversions (Json: JSON_CODEC) = struct
         get ["tutorials.json"]
     | Tutorial id ->
         get ["tutorials"; id^".json"]
+
+    | Focused_skills_index () ->
+        get [ "focus.json" ]
+    | Focusing_skill id ->
+        get [ "focus" ; id ]
+    | Required_skills_index () ->
+        get [ "requirements.json" ]
+    | Requiring_skill id ->
+        get [ "requirements" ; id ]
 
     | Exercise_status_index token ->
         assert (Token.is_teacher token);
@@ -297,6 +321,15 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
           Tutorial (Filename.chop_suffix f ".json") |> k
 
+      | `GET, ["focus.json"], _ ->
+          Focused_skills_index () |> k
+      | `GET, ["focus"; id], _ ->
+          Focusing_skill id |> k
+      | `GET, ["requirements.json"], _ ->
+          Required_skills_index () |> k
+      | `GET, ["requirements"; id], _ ->
+          Requiring_skill id |> k
+
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
           Exercise_status_index token |> k
@@ -356,7 +389,7 @@ end
 (*
 let client: type resp. resp request -> resp result = fun req ->
 
-  let query_enc = 
+  let query_enc =
  function
   | Static str as req -> Server_caller.fetch (path req) |> query
 *)
@@ -365,4 +398,4 @@ let client: type resp. resp request -> resp result = fun req ->
  *   | `GET, [] -> Static "index.json"
  *   | `GET, ["sync"; "gimme"] -> Create_token ()
  *   | `GET, ["sync"; token] -> Fetch_save token
- *   | `POST, ["sync"; token] -> *) 
+ *   | `POST, ["sync"; token] -> *)

@@ -65,6 +65,16 @@ module Exercise: sig
     val get: Exercise.id -> t Lwt.t
   end
 
+  module Skill: sig
+    include module type of struct include Exercise.Skill end
+    val get_focus_index: unit -> t Lwt.t
+    val reload_focus_index: unit -> unit Lwt.t
+    val get_requirements_index: unit -> t Lwt.t
+    val reload_requirements_index: unit -> unit Lwt.t
+    val get_focused: string -> (Exercise.id list) Lwt.t
+    val get_required: string -> (Exercise.id list) Lwt.t
+  end
+
   module Index: sig
     include module type of struct include Exercise.Index end
     val get: unit -> t Lwt.t
@@ -84,11 +94,11 @@ module Exercise: sig
 
   include module type of struct include Exercise end
   with module Meta := Meta
+   and module Skill := Skill
    and module Status := Status
    and module Index := Index
 
   val get: id -> t Lwt.t
-
 
 end
 

@@ -453,6 +453,14 @@ module Exercise = struct
 
   end
 
+  module Skill = struct
+
+    type t = (string list) SMap.t
+
+    let enc = SMap.enc (Json_encoding.(list string))
+
+  end
+
   module Status = struct
 
     type tag = string
