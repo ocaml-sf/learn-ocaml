@@ -481,3 +481,17 @@ body {
   99%  { opacity: 0; transform: scale(2); z-index: 9999; }
   100% { opacity: 0; z-index: -9999; }
 }
+
+#command-line-client-instructions {
+  margin: 12px;
+  padding: 4px;
+  background-color: #ccc;
+  box-shadow: 8px 8px 5px #444;
+  border-radius: 5px;
+}
+#command-line-client-instructions code {
+  margin: 6x;
+  background-color: #eee;
+  display: block;
+  overflow-x: scroll;
+}

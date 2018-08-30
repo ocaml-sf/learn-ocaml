@@ -114,6 +114,42 @@ let make_readonly () =
       [%i"The deadline for this exercise has expired. Any changes you make \
           from now on will remain local only."]
 
+let command_line_client_instructions token ex_id =
+  let module H = Tyxml_js.Html5 in
+  let alias_string =
+    Printf.sprintf
+      "alias learn-ocaml-client=\"docker run --rm -t \
+       -v \\$PWD:/learn-ocaml \
+       --net=host \
+       --name learn-ocaml-client \
+       ocamlsf/learn-ocaml-client:%s \
+       --\" # (or 'opam install learn-ocaml-client.%s')"
+      Learnocaml_api.version
+      Learnocaml_api.version
+  in
+  let set_command_string =
+    Printf.sprintf
+      "learn-ocaml-client \
+       --server='%s//%s' \
+       --token='%s' \
+       --set-options"
+      (Js.to_string window##.location##.protocol)
+      (Js.to_string window##.location##.host)
+      (Token.to_string token)
+  in
+  let command_string =
+    Printf.sprintf
+      "learn-ocaml-client --id='%s' solution.ml"
+      ex_id
+  in
+  H.div ~a:[H.a_id "command-line-client-instructions"] [
+    H.pcdata "You can also test your solution from the terminal using the \
+              following commands:";
+    H.code [H.pcdata alias_string];
+    H.code [H.pcdata set_command_string];
+    H.code [H.pcdata command_string];
+  ]
+
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
@@ -230,9 +266,13 @@ let () =
   (* ---- text pane ----------------------------------------------------- *)
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
-  Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
-                     Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
+  Lwt.async
+    (fun () ->
+       token >|= fun token ->
+       Manip.replaceChildren text_container
+         Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
+                          command_line_client_instructions token id;
+                          Tyxml_js.Of_dom.of_iFrame text_iframe ]);
   let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
   if prelude <> "" then begin
     let open Tyxml_js.Html5 in
