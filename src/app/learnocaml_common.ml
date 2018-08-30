@@ -320,7 +320,7 @@ let dropdown ~id ~title items =
     let module H = Tyxml_js.Html in
     H.div ~a: [H.a_class ["dropdown_btn"]] [
       H.button ~a: [H.a_onclick toggle]
-        (title @ [H.pcdata " \xe2\x96\xbe" (* U+25BE *)]);
+        (title @ [H.pcdata " \xe2\x96\xb4" (* U+25B4 *)]);
       H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
     ]
 
