@@ -399,9 +399,10 @@ body {
   position: relative;
 }
 
-#learnocaml-exo-tab-more > h1:first-child {
+#learnocaml-exo-tab-more > h1::before {
     margin-top: 5px;
     background:#eee;
+    content:"";
 }
 
 #learnocaml-exo-tab-more > h1::after {

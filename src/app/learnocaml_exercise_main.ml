@@ -164,26 +164,55 @@ let display_authors authors =
          ] in
   display_list @@ List.map author authors
 
+let display_skill_more skill content_id =
+  let open Tyxml_js.Html5 in
+  let open Learnocaml_data.Exercise in
+  let content = find_component content_id in
+  let req = match skill with
+      `Focus s -> Learnocaml_api.Focusing_skill s
+    | `Requirements s -> Learnocaml_api.Requiring_skill s
+  in
+  Server_caller.request_exn req >>= fun exs ->
+  Manip.replaceChildren content @@ display_list @@ List.map pcdata exs;
+  Lwt.return ()
+
 let display_more token ex_meta id =
   let open Learnocaml_data.Exercise in
   let open Tyxml_js.Html5 in
-  let display_skill_link content_id s = pcdata s in
+  let display_skill_link content_id s =
+    let skill = match s with `Focus s | `Requirements s -> s in
+    let cid = Format.asprintf "%s-%s" content_id skill in
+    let displayed = ref false in
+    div [
+      p ~a:[ a_onclick
+               (fun _ ->
+                  if not (!displayed) then
+                    (ignore @@ display_skill_more s cid;
+                     displayed := true)
+                  else
+                    (Manip.removeChildren (find_component cid);
+                     displayed := false) ;
+                  true) ]
+        [ pcdata skill ] ;
+      div ~a:[a_id cid;
+              a_class [ "learnocaml-exo-meta-category" ] ] [] ]
+  in
   let display_exercise_link content_id e =
-        let cid = Format.asprintf "%s-%s" content_id e in
-        let displayed = ref false in
-        div [
-          p ~a:[ a_onclick
-                   (fun _ ->
-                      if not (!displayed) then
-                        (ignore @@ display_exercise_more cid token e;
-                         displayed := true)
-                      else
-                        (Manip.removeChildren (find_component cid);
-                         displayed := false) ;
-                      true) ]
-            [ pcdata e ] ;
-          div ~a:[a_id cid;
-                  a_class [ "learnocaml-exo-meta-category" ] ] [] ]
+    let cid = Format.asprintf "%s-%s" content_id e in
+    let displayed = ref false in
+    div [
+      p ~a:[ a_onclick
+               (fun _ ->
+                  if not (!displayed) then
+                    (ignore @@ display_exercise_more cid token e;
+                     displayed := true)
+                  else
+                    (Manip.removeChildren (find_component cid);
+                     displayed := false) ;
+                  true) ]
+        [ pcdata e ] ;
+      div ~a:[a_id cid;
+              a_class [ "learnocaml-exo-meta-category" ] ] [] ]
   in
   let ident =
     Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
@@ -192,12 +221,14 @@ let display_more token ex_meta id =
   let focus =
     [%i "Skills trained:"],
     display_list @@
-    List.map (display_skill_link "learnocaml-exo-focus-more")
+    List.map (fun s ->
+        display_skill_link "learnocaml-exo-focus-more" (`Focus s))
       (ex_meta.Meta.focus) in
   let requirements =
     [%i "Skills required:"],
     display_list @@
-    List.map (display_skill_link "learnocaml-exo-requirements-more")
+    List.map (fun s ->
+        display_skill_link "learnocaml-exo-requirements-more" (`Requirements s))
       ex_meta.Meta.requirements  in
   let backward =
     [%i "Previous exercises:"],
