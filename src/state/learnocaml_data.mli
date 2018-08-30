@@ -152,6 +152,9 @@ module Exercise: sig
 
     type assignments
 
+    val is_automatic:
+      assignments -> bool
+
     val is_open_assignment:
       Token.t -> assignments -> [> `Closed | `Deadline of float]
 

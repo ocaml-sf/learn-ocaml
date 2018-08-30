@@ -400,6 +400,10 @@ module Exercise = struct
         precondition       : assignment_precondition;
       }
 
+    let is_automatic a =
+      (* We encode manual assignment by False. *)
+      a.precondition <> False
+
     let is_open_assignment token a =
       match Token.Map.find_opt token a.token_map with
       | Some a ->
