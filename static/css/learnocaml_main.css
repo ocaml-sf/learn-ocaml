@@ -913,7 +913,7 @@ body {
 @media (min-width: 1400px) {
     #learnocaml-main-teacher {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto 1fr fit-content(40%);
+        grid-template-rows: 1fr fit-content(40%) auto auto;
         height: 100vh;
     }
     #learnocaml-main-teacher > #control_pane {
@@ -949,6 +949,16 @@ body {
     float: right;
 }
 
+#learnocaml-main-teacher > #teacher_menubar > #status-text-div {
+    float: left;
+    margin-left: 16px;
+}
+
+#learnocaml-main-teacher > #teacher_menubar .warning {
+    font-weight: bold;
+    color: red;
+}
+
 #learnocaml-main-teacher table {
     width: 100%;
     border-spacing: 0;
@@ -978,6 +988,7 @@ body {
     display: none;
     position: absolute;
     right: 0;
+    bottom: 32px;
     z-index: 100;
     background-color: #eee;
     box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);

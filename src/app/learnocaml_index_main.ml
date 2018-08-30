@@ -641,6 +641,7 @@ let teacher_tab token _select _params () =
   in
 
   (* Action function callbacks *)
+  let update_changed_status = ref (fun () -> assert false) in
   let toggle_selected_exercises = ref (fun ?force _ -> assert false) in
   let toggle_selected_students = ref (fun ?force _ -> assert false) in
   let toggle_select_assignment = ref (fun _ -> assert false) in
@@ -1002,20 +1003,23 @@ let teacher_tab token _select _params () =
     in
     Server_caller.request_exn
       (Learnocaml_api.Set_exercise_status (token, changes)) >|= fun () ->
-    status_map := status_current ();
-    status_changes := SMap.empty;
-    Hashtbl.clear selected_exercises;
-    Hashtbl.clear selected_students;
-    Hashtbl.clear assignments_tbl;
-    (match !selected_assignment with None -> () | Some id ->
-        unselect_assignment id);
-    fill_exercises_pane ();
-    fill_control_div ();
-    Manip.by_classname "selected"
-    |> List.iter (fun elt -> Manip.removeClass elt "selected")
+    reload ();
+    (* status_map := status_current ();
+     * status_changes := SMap.empty;
+     * Hashtbl.clear selected_exercises;
+     * Hashtbl.clear selected_students;
+     * Hashtbl.clear assignments_tbl;
+     * (match !selected_assignment with None -> () | Some id ->
+     *     unselect_assignment id);
+     * fill_exercises_pane ();
+     * fill_control_div ();
+     * Manip.by_classname "selected"
+     * |> List.iter (fun elt -> Manip.removeClass elt "selected") *)
   in
+  let status_text_div = H.div ~a:[H.a_id "status-text-div"] [] in
   let actions_div =
     H.div ~a:[H.a_id "teacher_menubar"] [
+      status_text_div;
       H.button ~a:[
         H.a_id "button_apply";
         (* H.a_disabled (); *)
@@ -1106,7 +1110,8 @@ let teacher_tab token _select _params () =
         ch
     in
     status_changes := ch;
-    fill_exercises_pane ()
+    fill_exercises_pane ();
+    !update_changed_status ();
   in
   let update_disabled_exercises () =
     let disabled ex_ids =
@@ -1158,6 +1163,14 @@ let teacher_tab token _select _params () =
     update_disabled_exercises ();
     update_disabled_students ();
   in
+  update_changed_status := begin fun () ->
+    if SMap.is_empty !status_changes then
+      (Manip.replaceChildren status_text_div [];
+       Manip.removeClass status_text_div "warning")
+    else
+      (Manip.replaceChildren status_text_div [H.pcdata [%i"Unsaved changes"]];
+       Manip.addClass status_text_div "warning")
+  end;
   toggle_selected_exercises := begin fun ?force ids ->
     Lwt.async @@ fun () ->
     let ids, onoff = match force with
@@ -1240,7 +1253,8 @@ let teacher_tab token _select _params () =
           SMap.add id (f (get_status id)) acc)
         !status_changes ids;
     fill_exercises_pane ();
-    update_disabled_exercises ()
+    update_disabled_exercises ();
+    !update_changed_status ();
   end;
   student_change := begin fun tk () ->
     ()
@@ -1292,10 +1306,10 @@ let teacher_tab token _select _params () =
 
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
-      actions_div;
       exercises_div;
       students_div;
       control_div;
+      actions_div;
     ]
   in
   let fetch_exercises =
