@@ -1517,6 +1517,8 @@ let () =
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
   set_string_translations ();
+  Manip.setInnerText (find_component "learnocaml-version")
+    ("v."^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in
   disable_button sync_button_state ;
