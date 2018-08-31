@@ -155,11 +155,6 @@ module Exercise = struct
     let set =
       let mutex = Lwt_mutex.create () in
       fun x ->
-        let x =
-          { x with status = match x.status with
-                | Assigned tm when Token.Map.is_empty tm -> Closed
-                | s -> s }
-        in
         Lwt_mutex.with_lock mutex @@ fun () ->
         Lazy.force tbl >>= fun tbl ->
         Hashtbl.replace tbl x.id x;
@@ -180,13 +175,7 @@ module Exercise = struct
       match status with
       | Open -> `Open
       | Closed -> `Closed
-      | Assigned a ->
-          match Token.Map.find_opt token a with
-          | Some a ->
-              let t = Unix.gettimeofday () in
-              if t < a.start then `Closed
-              else `Deadline (a.stop -. t)
-          | None -> `Closed
+      | Assigned a -> is_open_assignment token a
 
   end
 
@@ -243,7 +232,32 @@ module Token = struct
           Lwt.fail_with "token already exists"
       | e -> raise e
 
-  let create_student () = create_gen random
+  let check_for_student_assignments token = Exercise.Status.(
+    let student =
+      (* FIXME:@yurug: I do not know how to load the student descriptor
+         from a token. Hence, I put a dummy student descriptor here for
+         now. *)
+      Student.{ token; nickname = None; results = SMap.empty; tags = [] }
+    in
+    let check_exercise_status s =
+      match s.status with
+      | Open | Closed ->
+         Lwt.return ()
+      | Assigned a ->
+         match consider_student_for_assignment a student with
+         | None ->
+            Lwt.return ()
+         | Some a' ->
+            set { s with status = Assigned a' }
+    in
+    all () >>= Lwt_list.iter_s check_exercise_status
+  )
+
+  let create_student () =
+    create_gen random >>= fun token ->
+    check_for_student_assignments token >>= fun () ->
+    Lwt.return token
+
   let create_teacher () = create_gen random_teacher
 
   let delete token = Lwt_unix.unlink (path token)
