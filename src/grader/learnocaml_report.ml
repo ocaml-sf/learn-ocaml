@@ -78,10 +78,10 @@ and output_attrs ppf attrs =
 
 (* -- report format --------------------------------------------------------- *)
 
-type report = item list
+type t = item list
 
 and item =
-  | Section of text * report
+  | Section of text * t
   | Message of text * status
 
 and status =
@@ -96,7 +96,7 @@ and inline =
   | Code of string
   | Output of string
 
-let result_of_report items =
+let result items =
   let rec do_report items =
     List.fold_left (fun (successes, failures) item ->
         let (isuccesses, ifailures) = do_item item in
@@ -112,7 +112,7 @@ let result_of_report items =
         do_report contents in
   do_report items
 
-let report_enc =
+let enc =
   let open Json_encoding in
   let text_enc =
     list @@ union
@@ -187,7 +187,7 @@ let folder, unfolder =
   E ("span", [ "onclick", js ; "class", "folder-icon clickable" ], [ T "v" ]),
   E ("span", [ "onclick", js ; "class", "folder-icon clickable" ], [ T ">" ])
 
-let format_report items =
+let format items =
   let rec format_report items =
     List.fold_left (fun ((successes, failures), items) item ->
         let (isuccesses, ifailures), item = format_item item in
@@ -508,20 +508,20 @@ let css = {|
 |}
 
 
-let output_html_of_report ?(bare = false) ppf report =
+let output_html ?(bare = false) ppf report =
   let html_report =
     if bare then
-      format_report report
+      format report
     else
       E ("div", ["id", "ocaml_fun_report" ],
          [ E ("style", [], [ C css ]) ;
-           format_report report ]) in
+           format report ]) in
   output_html ppf [html_report]
 
-let html_of_report ?bare report =
-  Format.asprintf "%a" (output_html_of_report ?bare) report
+let to_html ?bare report =
+  Format.asprintf "%a" (output_html ?bare) report
 
-let print_report ppf items =
+let print ppf items =
   let rec print_report ppf items =
     Format.pp_print_list format_item ppf items
   and format_item ppf = function

@@ -45,3 +45,23 @@ CMD ["build","serve"]
 ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository","--port=8080"]
 
 COPY --from=compilation /home/opam/install-prefix /usr
+
+
+
+
+FROM alpine:3.7 as client
+LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.2"
+
+RUN apk update
+RUN apk add ncurses-libs
+RUN addgroup learn-ocaml
+RUN adduser learn-ocaml -DG learn-ocaml
+
+VOLUME ["/learnocaml"]
+
+USER learn-ocaml
+WORKDIR /learnocaml
+
+ENTRYPOINT ["learn-ocaml-client"]
+
+COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bin

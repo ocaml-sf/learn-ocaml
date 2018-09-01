@@ -20,7 +20,7 @@ type to_worker =
     solution : string }
 type from_worker =
   | Callback of string
-  | Answer of Learnocaml_report.report * string * string * string
+  | Answer of Learnocaml_report.t * string * string * string
 
 val to_worker_enc : to_worker Json_encoding.encoding
 val from_worker_enc : from_worker Json_encoding.encoding

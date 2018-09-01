@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_index
+open Learnocaml_data
+open Tutorial
 
 open Lwt.Infix
 
@@ -180,7 +181,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
   let rec parse_contents ?(require_p = true) acc = function
     | `Elt ("p", _, children) :: rest ->
         parse_text [] children >>= fun contents ->
-        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p (Paragraph contents :: acc) rest
     | `Elt ("ul" | "ol" as tag, _, children) :: rest ->
         let rec parse_items tag acc = function
           | [] -> Lwt.return (List.rev acc)
@@ -189,22 +190,22 @@ let parse_html_tutorial ~tutorial_name ~file_name =
               parse_items tag (contents :: acc) rest
           | _ -> fail "unexpected non <li> element in <%s>" tag in
         parse_items tag [] children >>= fun items ->
-        parse_contents ~require_p (Learnocaml_tutorial.Enum items :: acc) rest
+        parse_contents ~require_p (Enum items :: acc) rest
     | `Elt ("pre", [], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = false } in
+        let code_block = Code_block  { code ; runnable = false } in
         parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-run", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = true } in
+        let code_block = Code_block  { code ; runnable = true } in
         parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-math", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
         let contents = [ Math code ] in
-        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p (Paragraph contents :: acc) rest
     | `Elt ("pre", _ , _) :: _ ->
         fail "the <pre> markup expects either \
               one data-math, one data-run or zero attribute"
@@ -214,21 +215,21 @@ let parse_html_tutorial ~tutorial_name ~file_name =
                 <h2>, <p>, <ul> and <pre>, <%s> is not allowed" tag
         else
           parse_text [] l >>= fun text ->
-          Lwt.return [ Learnocaml_tutorial.Paragraph text ]
+          Lwt.return [ Paragraph text ]
     | `Text _ :: _ as l ->
         if require_p || acc <> [] then
           fail "text is not allowed at the toplevel, \
                 wrap it in a <p> markup"
         else
           parse_text [] l >>= fun text ->
-          Lwt.return [ Learnocaml_tutorial.Paragraph text ]
+          Lwt.return [ Paragraph text ]
     | [] -> Lwt.return (List.rev acc) in
   let rec parse_steps = function
     | acc, None, []  ->
         Lwt.return (List.rev acc)
     | acc, Some (step_title, sacc), [] ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
-        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        let acc = { step_title ; step_contents } :: acc in
         Lwt.return (List.rev acc)
     | acc, None, `Elt ("h2", _, title) :: rest ->
         parse_text [] title >>= fun step_title ->
@@ -238,7 +239,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
               after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (`Elt ("h2", _, _) :: _ as rest) ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
-        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        let acc = { step_title ; step_contents } :: acc in
         parse_steps (acc, None, rest)
     | acc, Some (step_title, sacc), elt :: rest ->
         parse_steps (acc, Some (step_title, elt :: sacc), rest) in
@@ -249,11 +250,11 @@ let parse_html_tutorial ~tutorial_name ~file_name =
     | `Elt ("html", _, [ `Elt ("body", _, contents) ]) ->
         begin match contents with
           | `Elt ("h1", _, title) :: rest ->
-              parse_text [] title >>= fun tutorial_title ->
-              parse_steps ([], None, rest) >>= fun tutorial_steps ->
+              parse_text [] title >>= fun title ->
+              parse_steps ([], None, rest) >>= fun steps ->
               Lwt.return
-                (Learnocaml_index.{ tutorial_title ; tutorial_name },
-                 Learnocaml_tutorial.{ tutorial_title ; tutorial_steps })
+                (Index.{ title ; name = tutorial_name },
+                 { title ; steps })
           | _ ->
               fail "tutorial title (<h1> markup) expected \
                     at the beginning of the <body>"
@@ -295,15 +296,15 @@ let parse_md_tutorial ~tutorial_name ~file_name =
   let rec parse_contents acc = function
     | (Omd.Ul l | Omd.Ol l | Omd.Ulp l | Omd.Olp l) :: rest ->
         Lwt_list.map_p (parse_contents []) l >>= fun items ->
-        parse_contents (Learnocaml_tutorial.Enum items :: acc) rest
+        parse_contents (Enum items :: acc) rest
     | Omd.Paragraph children :: rest ->
         parse_text [] children >>= fun contents ->
-        parse_contents (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents (Paragraph contents :: acc) rest
     | Omd.Code_block (_, code) :: rest ->
         let blocks = List.map (fun code ->
             match parse_md_code_notation (code ^ "\n") with
-            | Code code -> Learnocaml_tutorial.Code_block code
-            | contents -> Learnocaml_tutorial.Paragraph [ contents ])
+            | Code code -> Code_block code
+            | contents -> Paragraph [ contents ])
             (Re.split (Re.compile (Re.str "\n\n")) code) in
         parse_contents (List.rev blocks @ acc) rest
     | elt :: _ ->
@@ -315,7 +316,7 @@ let parse_md_tutorial ~tutorial_name ~file_name =
         Lwt.return (List.rev acc)
     | acc, Some (step_title, sacc), [] ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
-        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        let acc = { step_title ; step_contents } :: acc in
         Lwt.return (List.rev acc)
     | acc, None, Omd.H2 title :: rest ->
         parse_text [] title >>= fun step_title ->
@@ -325,25 +326,23 @@ let parse_md_tutorial ~tutorial_name ~file_name =
               after the tutorial title (<h1> markup)"
     | acc, Some (step_title, sacc), (Omd.H2 _ :: _ as rest) ->
         parse_contents [] (List.rev sacc) >>= fun step_contents ->
-        let acc = Learnocaml_tutorial.{ step_title ; step_contents } :: acc in
+        let acc = { step_title ; step_contents } :: acc in
         parse_steps (acc, None, rest)
     | acc, Some (step_title, sacc), elt :: rest ->
         parse_steps (acc, Some (step_title, elt :: sacc), rest) in
   match Omd.of_string str |> strip with
   | Omd.H1 title :: rest ->
-      parse_text [] title >>= fun tutorial_title ->
-      parse_steps ([], None, rest) >>= fun tutorial_steps ->
+      parse_text [] title >>= fun title ->
+      parse_steps ([], None, rest) >>= fun steps ->
       Lwt.return
-        (Learnocaml_index.{ tutorial_title ; tutorial_name },
-         Learnocaml_tutorial.{ tutorial_title ; tutorial_steps })
+        (Index.{ title ; name = tutorial_name },
+         { title ; steps })
   | _ ->
       fail "expecting a level 1 title at file beginning"
 
 let print_html_tutorial ~tutorial_name tutorial =
-  let open Learnocaml_tutorial in
   let buffer = Buffer.create 10000 in
   let ppf = Format.formatter_of_buffer buffer in
-  let { tutorial_title ; tutorial_steps } = tutorial in
   let utf8_of_cp =
     let tmp = Buffer.create 513 in
     fun cp ->
@@ -425,15 +424,13 @@ let print_html_tutorial ~tutorial_name tutorial =
                       </body>@]@,\
                       </html>@."
                  tutorial_name
-                 pp_text tutorial_title
-                 (Format.pp_print_list pp_step) tutorial_steps ;
+                 pp_text tutorial.title
+                 (Format.pp_print_list pp_step) tutorial.steps ;
   Buffer.contents buffer
 
 let print_md_tutorial tutorial =
-  let open Learnocaml_tutorial in
   let buffer = Buffer.create 10000 in
   let ppf = Format.formatter_of_buffer buffer in
-  let { tutorial_title ; tutorial_steps } = tutorial in
   let pp_sep ppf () = Format.fprintf ppf "@,@," in
   let drop_newlines code =
     Stringext.split ~on:'\n' code
@@ -488,10 +485,10 @@ let print_md_tutorial tutorial =
     Format.fprintf ppf "%s@,%s@,@,%a"
       title (String.make (String.length title) '-')
       (Format.pp_print_list ~pp_sep pp_content) step_contents in
-  let title = Format.asprintf "@[<h 0>%a@]" pp_text tutorial_title in
+  let title = Format.asprintf "@[<h 0>%a@]" pp_text tutorial.title in
   Format.fprintf ppf "@[<v 0>\
                       %s@,%s@,@,\
                       %a@."
     title (String.make (String.length title) '=')
-    (Format.pp_print_list ~pp_sep pp_step) tutorial_steps ;
+    (Format.pp_print_list ~pp_sep pp_step) tutorial.steps ;
   Buffer.contents buffer

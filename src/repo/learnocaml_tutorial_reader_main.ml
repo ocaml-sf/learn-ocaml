@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 (* If and where to export the tutorial as JSON. *)
 let output_json = ref None
 
@@ -64,11 +66,10 @@ let main () =
                      let json =
                        Ezjsonm.from_string text in
                      let tutorial =
-                       Json_encoding.destruct Learnocaml_tutorial.tutorial_enc json in
-                     let tutorial_title =
-                       tutorial.Learnocaml_tutorial.tutorial_title in
+                       Json_encoding.destruct Tutorial.enc json in
+                     let title = tutorial.Tutorial.title in
                      Lwt.return
-                       (Learnocaml_index.{ tutorial_name ; tutorial_title }, tutorial)
+                       (Tutorial.Index.{ name = tutorial_name ; title }, tutorial)
                    else
                      Lwt.fail_with "unrecognized file extension, expecting .md, .html or .json"
                  end >>= fun (_, tutorial) ->
@@ -93,7 +94,7 @@ let main () =
                        | None -> Lwt.return ()
                        | Some file_name ->
                            let json =
-                             Json_encoding.construct Learnocaml_tutorial.tutorial_enc tutorial in
+                             Json_encoding.construct Tutorial.enc tutorial in
                            match json with
                            | `O _ | `A _ as json ->
                                Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->

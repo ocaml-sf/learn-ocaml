@@ -15,4 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-let () = Grader_cli.main ()
+open Learnocaml_server
+
+let () =
+  Arg.parse args
+    (fun _ -> raise (Arg.Bad "unexpected argument"))
+    "Usage: learnocaml-server [options]" ;
+  ignore (Lwt_main.run (launch ()))
