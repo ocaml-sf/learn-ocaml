@@ -478,9 +478,86 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Grading functions for references and variables } *)
+  (** {1 Grading functions } *)
 
-  (** Grading function for variables and references. *)
+  (** There are two sets of grading functions:
+
+      - the functions called [grade_function_...]
+
+      - the funtions called [test_function_...]
+
+      There are doing almost the same job except the [grade] functions
+     enable shorter graders whereas [test] functions enable to choose
+     the text of report header. To grade a function [my_function] these
+     two codes are equivalent:
+
+
+   - example with a [grade] function: 
+ 
+   [let exercise = 
+      grade_function_1_against_solution 
+         [%ty: int -> int] "my_function" [0; 1]]
+
+   [let () = set_result @@ ast_sanity_check code_ast @@ fun () -> [
+     exercise ]]
+
+      
+  - same example with a [test] function:
+ 
+   [let exercise = 
+      set_progress ("Grading function my_function.") ;
+      Section ([Text "Function: " ; Code "my_function"],
+      test_function_1_against_solution [%ty: int -> int] "my_function"
+      [0; 1])]
+
+   [let () = set_result @@ ast_sanity_check code_ast @@ fun () -> [
+     exercise ]]  
+  *)
+  
+  (** {2 Grading functions for references and variables } *)
+
+  module Grade_functions_ref_var : sig
+
+    (** [grade_ref ty name got exp] returns a [Section] with a
+       {!LearnOcaml_report.Success 1} report if reference [got] value
+       is equal to [exp] and a {!LearnOcaml_report.Failure} report
+       otherwise. The [Section] text is {e Reference: [name].}.
+
+        {e WARNING:} contrary to other grading functions, you can not
+       use this function to evaluate a reference defined or modified
+       in student's code. In this case, you should use
+       {{!Mutation}mutation functions}. This function should be used
+       for a reference defined locally (in [test.ml]). *)
+    val grade_ref :
+      'a Ty.ty -> string -> 'a ref -> 'a -> Learnocaml_report.item
+                                              
+    (** [grade_variable ty name r] returns a [Section] with a
+       {!LearnOcaml_report.Success 1} report if variable named [name]
+       exists and is equal to [r]. Otherwise this is a
+       {!LearnOcaml_report.Failure} report. The [Section] text is {e
+       Variable: [name].}.  *)
+    val grade_variable :
+      'a Ty.ty -> string -> 'a -> Learnocaml_report.item
+                                    
+    (** [grade_variable_property ty name r] returns a [Section] with a
+       report resulting of application of cb to variable named [name]
+       if it exists. Otherwise this is a {!LearnOcaml_report.Failure}
+       report. The [Section] text is {e Variable: [name].}.  *)
+    val grade_variable_property :
+      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.item
+                                                             
+    (** [grade_variable_against_solution ty name r] returns a
+       [Section] with a {!LearnOcaml_report.Success 1} report if
+       variable named [name] exists and is equal to variable with the
+       same name defined in solution. Otherwise this is a
+       {!LearnOcaml_report.Failure} report. The [Section] text is {e
+       Variable: [name].}.  *)
+    val grade_variable_against_solution :
+      'a Ty.ty -> string -> Learnocaml_report.item
+  end
+
+  (*----------------------------------------------------------------------------*)
+
   module Test_functions_ref_var : sig
 
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
@@ -508,9 +585,9 @@ module type S = sig
       'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     (** [test_variable ty name r] returns {!LearnOcaml_report.Success
-        1} report if variable named [name] exists and is equal to
-        variable with the same name defined in solution. Otherwise returns
-        {!LearnOcaml_report.Failure} report.*)
+       1} report if variable named [name] exists and is equal to
+       variable with the same name defined in solution. Otherwise
+       returns {!LearnOcaml_report.Failure} report.*)
     val test_variable_against_solution :
       'a Ty.ty -> string -> Learnocaml_report.t
 
@@ -518,38 +595,332 @@ module type S = sig
 
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Grading functions for types} *)
+  (** {2 Grading functions for functions }*)
+  
+  module Grade_functions_function : sig 
 
-  (** Grading function for types. *)
-  module Test_functions_types : sig
+    (** {2:test_functions_fun_sec Grading functions for functions}*)
 
-    val compatible_type : expected:string -> string -> Learnocaml_report.t
+    (** Two grading functions for functions are defined for arity one
+        to four functions:
 
-    val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
+        - [grade_function_<args_nb> ty name tests]
 
-    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
+        - [grade_function_<args_nb>_against_solution ty name tests]
 
-    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+        It grades [args_nb]-arity function named [name] with
+        non-polymorphic type [ty] (a polymorphic function must be
+        tested on a completly determined type) through tests
+        [tests]. If a function named [name] is defined in the student
+        code and has the right type (or a more generic one), tests
+        [tests] are checked one by one and the function returns a
+        [Section] with a report concatening reports of each
+        test. Otherwise a [Section] with a {!Learnocaml_report.Failure}
+        report is returned.*)
 
-    val test_module_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+    (** {3 Returned [Section]}*)
+
+    (** The grading functions for functions return a
+        {!Learnocaml_report.Section} with a report which actually
+        concatened 4 reports generated by (in this order):
+
+        - the tester [~test]
+
+        - the IO tester [~test_stdout]
+
+        - The IO tester [~test_stderr]
+
+        - the post-processing result function [after].
+
+        Each of this report can be empty. However by default, [~test]
+        always returns a non-empty report while the other three returns
+        empty reports. *)
+
+
+    (** {3 Unary functions}*)
+    
+    (** [grade_function_1 ty name tests] grades the function named
+       [name] by directly comparing obtained outputs against expected
+       outputs. It returns a [Section] with a text {e Function: name}
+       and a report such as a test [(arg-1, r, out, err)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1] is equal to [r]. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
+
+       This is the default behavior. See {{!optional_arguments_sec}
+       this section} for information about optional arguments. In
+       particular the last two components [out] and [err] of a test
+       tuple are used if [~test_stdout] and [~test_stderr]
+       respectively are set and are ignored if unset. *)
+    val grade_function_1 :
+      ?test: 'b tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before : ('a -> unit) ->
+      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.item
+
+    (** [grade_function_1_against_solution ty name tests] grades the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
+
+        It returns a [Section] with a text {e Function: name} and a
+       report such as a test [arg-1] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1] gives the same result than the solution
+       function [rf] applied to [arg-1]. Otherwise the result of a
+       test is a {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+     val grade_function_1_against_solution :
+      ?gen: int ->
+      ?test: 'b tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> unit) ->
+      ?before_user : ('a -> unit) ->
+      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a) ->
+      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
+
+     (** {3 Binary functions }*)
+                                                 
+     (** [grade_function_2 ty name tests] grades the function named
+        [name] by directly comparing obtained outputs against expected
+        outputs. It returns a [Section] with a text {e Function: name}
+        and a report such as a test [(arg-1, arg-2, r, out, err)]
+        results of a {!LearnOcaml_report.Success 1} report if the
+        student function applied to [arg-1] and [arg-2] is equal to
+        [r]. The result of a test is a {!Learnocaml_report.Failure}
+        report otherwise.
+
+       This is the default behavior. See {{!optional_arguments_sec}
+        this section} for information about optional arguments. In
+        particular the last two components [out] and [err] of a test
+        tuple are used if [~test_stdout] and [~test_stderr]
+        respectively are set and are ignored if unset. *)
+    val grade_function_2 :
+      ?test: 'c tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before : ('a -> 'b -> unit) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.item
+
+    (** [grade_function_2_against_solution ty name tests] grades the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
+
+     It returns a [Section] with a text {e Function: name} and a
+       report such as a test [(arg-1,arg-2)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1] and [arg-2] gives the same result than the
+       solution function [rf] applied to same arguments. Otherwise the
+       result of a test is a {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val grade_function_2_against_solution :
+      ?gen: int ->
+      ?test: 'c tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> 'b -> unit) ->
+      ?before_user : ('a -> 'b -> unit) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b) ->
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.item
+                       
+    (** [grade_function_3 ty name tests] grades the function named
+       [name] by directly comparing obtained outputs against expected
+       outputs. It returns a [Section] with a text {e Function: name}
+       and a report such as a test [(arg-1, arg-2, arg-3, r, out,
+       err)] results of a {!LearnOcaml_report.Success 1} report if the
+       student function applied to [arg-1], [arg-2] and [arg-3] is
+       equal to [r]. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
+
+       This is the default behavior. See {{!optional_arguments_sec}
+       this section} for information about optional arguments. In
+       particular the last two components [out] and [err] of a test
+       tuple are used if [~test_stdout] and [~test_stderr]
+       respectively are set and are ignored if unset. *)
+    val grade_function_3 :
+      ?test: 'd tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.item
+
+    (** [grade_function_3_against_solution ty name tests] grades the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
+
+     It returns a [Section] with a text {e Function: name} and a
+       report such as a test [(arg-1, arg-2, arg-3)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2] and [arg-3] gives the same result
+       than the solution function [rf] applied to same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val grade_function_3_against_solution :
+      ?gen: int ->
+      ?test: 'd tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> 'b -> 'c -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.item
+
+    (** [grade_function_4 ty name tests] grades the function named
+       [name] by directly comparing obtained outputs against expected
+       outputs. It returns a [Section] with a text {e Function: name}
+       and a report such as a test [(arg-1, arg-2, arg-3, arg-4, r,
+       out, err)] results of a {!LearnOcaml_report.Success 1} report
+       if the student function applied to [arg-1], [arg-2], [arg-3]
+       and [arg-4] is equal to [r]. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
+
+       This is the default behavior. See {{!optional_arguments_sec}
+       this section} for information about optional arguments. In
+       particular the last two components [out] and [err] of a test
+       tuple are used if [~test_stdout] and [~test_stderr]
+       respectively are set and are ignored if unset. *)
+    val grade_function_4 :
+      ?test: 'e tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.item
+
+    
+    (** [grade_function_4_against_solution ty name tests] grades the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
+
+     It returns a [Section] with a text {e Function: name} and a
+       report such as a test [(arg-1, arg-2, arg-3, arg-4)] results of
+       a {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
+       result than the solution function [rf] applied to same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val grade_function_4_against_solution :
+      ?gen: int ->
+      ?test: 'e tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.item
+
+    (** {2:optional_arguments_sec Optional arguments for grading functions} *)
+
+    (** The various grading functions use numerous common optional
+       argument. Here is a list in alphabetic order of each of them.
+
+    {3 ?⁠after} defines a function which is called with the current
+       tested inputs, the student {!type:result} and the solution
+       {!type:result} and returns a new report which is concatened to
+       reports built with [~test], [~test_sdtout] and [~test_sdterr].
+       Enables for example to inspect references introduced with
+       [~before], [~before_user] or [~before_reference] and build an
+       appropriate report. Default value is [fun _ _ _ -> []].
+
+    {3 ?before} defines a function called right before the application
+       of student function to the current tested inputs. Default value
+       is [fun _ -> ()]
+
+     For [test_function_<args_nb>] only.
+
+    {3 ?before_reference} defines a function called right before the
+       application of solution function to the current tested
+       inputs. This function is called {b before} student function
+       evaluation. Default value is [fun _ -> ()].
+
+     For [test_function_<args_nb>_against] and
+       [test_function_<args_nb>_against_solution].
+
+    {3 ?before_user} defines a function called right before the
+       application of student function to the current tested
+       inputs. This function is called {b after} solution function
+       evaluation. Default value is [fun _ -> ()].
+
+     For [test_function_<args_nb>_against] and
+       [test_function_<args_nb>_against_solution].
+
+    {3 ?gen} Number of automatically generated tested inputs. Inputs
+       are generated using either sampler defined in the current
+       environment or function defined with [~sampler] optional
+       argument. By default, [gen] is [max 5 (10 - List.length
+       tests)].
+
+     For [test_function_<args_nb>_against] and
+       [test_function_<args_nb>_against_solution].
+
+     See {{!Sampler.sampler_sec}Sampler module}.
+
+    {3 ?sampler} defines the function used to automatically generated
+       inputs. If unset, the grading function checks if a sampler is
+       defined for each input type in the current environment. Such
+       sampler for a type [some-type] must be named [sample_some-type]
+       and have a type [unit -> some-type] if not parametric or [(unit
+       -> 'a) -> (unit -> 'b) -> ... -> unit -> some-type] otherwise.
+
+     For [test_function_<args_nb>_against] and
+       [test_function_<args_nb>_against_solution].
+
+     See {{!Sampler.sampler_sec}Sampler module}.
+
+    {3 ?test} defines the function used to compare the output of
+       student function and the output of solution function. Default
+       value is {!Tester.test}.
+
+     See {{!Tester.tester_sec}predefined testers and tester builders}.
+
+    {3 ?test_sdterr} defines the function used to compare the standard
+       output produced by student function and the one produced by
+       solution function. Default value is {!Tester.io_test_ignore}.
+
+     See {{!Tester.io_tester_sec}predefined IO testers and IO tester
+       builders}.
+
+    {3 ?test_sdtout} defines the function used to compare the standard
+       error produced by student function and the one produced by
+       solution function. Default value is {!Tester.io_test_ignore}.
+
+     See {{!Tester.io_tester_sec}predefined IO testers and IO tester
+       builders}.  *)
+
   end
-
+  
   (*----------------------------------------------------------------------------*)
 
-  (** {1 Grading functions for functions }*)
-
-  (** Grading function for functions. *)
   module Test_functions_function : sig
 
     (** {2:test_functions_fun_sec Grading functions for functions}*)
 
-    (** Three grading functions for functions are defined for arity one
+    (** Two grading functions for functions are defined for arity one
        to four functions:
 
   - [test_function_<args_nb> ty name tests]
-
-  - [test_function_<args_nb>_against ty name rf tests]
 
   - [test_function_<args_nb>_against_solution ty name tests]
 
@@ -580,7 +951,6 @@ module type S = sig
        always returns a non-empty report while the other three returns
        empty reports. *)
 
-
     (** {3 Unary functions}*)
 
     (** [test_function_1 ty name tests] tests the function named
@@ -589,12 +959,14 @@ module type S = sig
 
      A test [(arg-1, r, out, err)] results of a
        {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1] is equal to [r] and if standard output and
-       standard error messages match [out] and [err] respectively. The
-       result of a test is a {!Learnocaml_report.Failure} report otherwise.
+       applied to [arg-1] is equal to [r]. The result of a test is a
+       {!Learnocaml_report.Failure} report otherwise.
 
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
+      This is the default behavior. See {{!optional_arguments_sec}
+       this section} for information about optional arguments. In
+       particular the last two components [out] and [err] of a test
+       tuple are used if [~test_stdout] and [~test_stderr]
+       respectively are set and are ignored if unset. *)
     val test_function_1 :
       ?test: 'b tester ->
       ?test_stdout: io_tester ->
@@ -602,28 +974,6 @@ module type S = sig
       ?before : ('a -> unit) ->
       ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.t
-
-    (** [test_function_1_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
-
-     A test [arg-1] results of a {!LearnOcaml_report.Success 1} report
-       if the student function applied to [arg-1] gives the same
-       result than the solution function [rf] applied to [arg-1]. Otherwise
-       the result of a test is a {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
-    val test_function_1_against :
-      ?gen: int ->
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.t
 
     (** [test_function_1_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
@@ -659,48 +1009,25 @@ module type S = sig
 
      A test [(arg-1, arg-2, r, out, err)] results of a
        {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1] and [arg-2] is equal to [r] and if standard
-       output and standard error messages match [out] and [err]
-       respectively. The result of a test is a
-       {!Learnocaml_report.Failure} report otherwise.
+       applied to [arg-1] and [arg-2] is equal to [r]. The result of a
+       test is a {!Learnocaml_report.Failure} report otherwise.
 
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
-    val test_function_2 :
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
+      This is the default behavior. See {{!optional_arguments_sec}
+       this section} for information about optional arguments. In
+       particular the last two components [out] and [err] of a test
+       tuple are used if [~test_stdout] and [~test_stderr]
+       respectively are set and are ignored if unset. *)    val test_function_2 :
+    ?test: 'c tester ->
+    ?test_stdout: io_tester ->
+    ?test_stderr: io_tester ->
+    ?before : ('a -> 'b -> unit) ->
+    ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+    ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
 
-    (** [test_function_2_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
-
-     A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
-       1} report if the student function applied to [arg-1] and
-       [arg-2] gives the same result than the solution function [rf]
-       applied to the same arguments. Otherwise the result of a test is a
-       {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information about optional
-       arguments. *)
-    val test_function_2_against :
-      ?gen: int ->
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.t
-
-    (** [test_function_2_against_soltion ty name tests] tests the function
-       named [name] by comparison to solution function [rf] which must
-       be defined under name [name] in the corresponding [solution.ml]
-       file.
+    (** [test_function_2_against_soltion ty name tests] tests the
+       function named [name] by comparison to solution function [rf]
+       which must be defined under name [name] in the corresponding
+       [solution.ml] file.
 
      A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
        1} report if the student function applied to [arg-1] and
@@ -745,31 +1072,7 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
-                                                                                                
-    (** [test_function_3_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
 
-     A test [(arg-1, arg-2, arg-3)] results of a
-       {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1], [arg-2] and [arg-3] gives the same result
-       than the solution function [rf] applied to the same
-       arguments. Otherwise the result of a test is a
-       {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information
-       about optional arguments. *)
-    val test_function_3_against :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
-                                                                                                   
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -820,31 +1123,6 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
 
-    (** [test_function_4_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
-
-     A test [(arg-1, arg-2, arg-3m arg-4)] results of a
-       {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
-       result than the solution function [rf] applied to the same
-       arguments. Otherwise the result of a test is a
-       {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information
-       about optional arguments. *)
-    val test_function_4_against :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
-    -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-                                                                                
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -950,6 +1228,26 @@ module type S = sig
   end
 
   (*----------------------------------------------------------------------------*)
+
+  (** {1 Grading functions for types} *)
+
+  (** Grading function for types. *)
+  module Test_functions_types : sig
+
+    val compatible_type : expected:string -> string -> Learnocaml_report.t
+
+    val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
+
+    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
+
+    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+
+    val test_module_property :
+      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+  end
+
+  (*----------------------------------------------------------------------------*)
+  
   (** {1 Generic grading functions} *)
 
   (** Grading functions for functions with more than 4 arguments. Most
