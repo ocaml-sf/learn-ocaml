@@ -126,7 +126,7 @@ module type S = sig
 
     (** [forbid k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is in the list [ls]. The message of the failure
+       tested if [t] is in the list [ls]. The message of the
        report is {e The text1 text2 is forbidden} where [text1] is the
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
@@ -134,18 +134,17 @@ module type S = sig
              
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is {e not} in [ls]. The message of the failure
+       tested if [t] is {e not} in [ls]. The message of the
        report is {e The text1 text2 is not allowed} where [text1] is
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.report)
-                                      
-    (** [require k pr treq t] returns a {!Learnocaml_report.Success 5}
-       report the first time the function is applied with [t] and [t]
-       is equal to [treq] (comparison with Pervasives.compare). The
-       report message is then {e Found text1 text2} where [text1] is
-       value of [k] and [text2] is the result of [pr] applies to
-       [t]. Otherwise, an empty report is returned. *)
+                                       
+    (** [require k pr _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the report is {e Found text1 text2} where
+       [text1] is value of [k] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.report)
 
     (** {3 For expressions } *)
@@ -153,7 +152,7 @@ module type S = sig
     (** [forbid_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is in the list of forbidden
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is forbidden} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
@@ -162,18 +161,17 @@ module type S = sig
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is {e not} in the list of allowed
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is not allowed} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.report)
                                                                
-    (** [require_expr name expr t] returns a
-       {!Learnocaml_report.Success 5} report the first time the
-       function is applied with [t] and [t] is equal to [expr]
-       (comparison with Pervasives.compare). The report message is
-       then {e Found text1 text2} where [text1] is value of [name] and
-       [text2] is [expr]. Otherwise, an empty report is returned.  *)
+    (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the success report is {e Found text1 text2} where
+       [text1] is value of [name] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.report)
          
     (** {3 For syntax } *)
@@ -188,14 +186,14 @@ module type S = sig
                                                          
     (** [forbid_syntax n _] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time it
-       is called. The message of the failure report is {e The {b text}
+       is called. The message of the report is {e The {b text}
        syntax is forbidden} where [text] is the value of
        [n]. Otherwise, an empty report is returned. *)
     val forbid_syntax : string -> (_ -> Learnocaml_report.report)
          
     (** [require_syntax n _] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time it is called. The message of
-       the failure report is {e The {b text} syntax has been found, as
+       the report is {e The {b text} syntax has been found, as
        expected} where [text] is the value of [n]. Otherwise, an empty
        report is returned.  *)
     val require_syntax : string -> (_ -> Learnocaml_report.report)
