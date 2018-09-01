@@ -1,13 +1,3 @@
-begin library "learnocaml-sync"
-  files = [
-    "learnocaml_sync.ml"
-  ]
-  requires = [
-    "learnocaml-toplevel-history"
-    "learnocaml-state"
-  ]
-end
-
 begin library "learnocaml-app-common"
   comp_requires = "ppx_ocplib_i18n:asm"
   files = [
@@ -23,8 +13,8 @@ begin library "learnocaml-app-common"
     "jsutils"
     "learnocaml-toplevel"
     "learnocaml-repository"
-    "learnocaml-state"
-    "learnocaml-sync"
+    "learnocaml-data"
+    "learnocaml-api"
     "ocplib_i18n"
   ]
 end

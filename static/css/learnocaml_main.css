@@ -99,6 +99,20 @@ body {
   text-align: center;
   font-family: 'Inconsolata';
 }
+#learnocaml-nickname {
+  display: block;
+  margin: 10px auto 10px auto;
+  flex: 0 0 auto;
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 18px;
+  line-height: 24px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  text-align: center;
+}
 #learnocaml-main-panel > div.tabs {
   margin: 10px 0 5px 0;
   display: flex;
@@ -129,6 +143,24 @@ body {
 #learnocaml-main-panel > div.tabs > button::before,
 #learnocaml-main-panel > div.tabs > button::after {
   border-radius: 5px;
+}
+#learnocaml-main-panel > .footer {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+#learnocaml-logout {
+  float: right;
+  color: #d82;
+}
+#learnocaml-logout:hover {
+  cursor: pointer;
+  color: white;
+}
+
+#learnocaml-version {
+  float: left;
+  color: black;
+  font-size: small;
 }
 /* Large screen: two columns w/ menu in the left column */
 @media (min-width: 1000px) {
@@ -864,4 +896,259 @@ body {
   #learnocaml-main-tryocaml > .navigation > button {
     min-width: 40px;
   }
+}
+
+/* -- Teacher activity --------------------------------------------------- */
+
+#learnocaml-main-teacher {
+  position: absolute;
+  top:0 ; left:0; right:0; bottom:0;
+  display: grid;
+}
+
+#learnocaml-main-teacher > * {
+  padding: 4px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1399px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+    }
+}
+@media (min-width: 1400px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr fit-content(40%) auto auto;
+        height: 100vh;
+    }
+    #learnocaml-main-teacher > #control_pane {
+        grid-column: 1 / 3;
+    }
+    #learnocaml-main-teacher > #teacher_menubar {
+        grid-column: 1 / 3;
+        overflow: visible;
+    }
+}
+
+.learnocaml_pane {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.learnocaml_pane > * {
+    margin: 4px;
+}
+
+.learnocaml_pane > fieldset {
+    overflow-y: auto;
+    flex: auto;
+}
+
+.learnocaml_pane legend {
+    cursor: cell;
+}
+
+#learnocaml-main-teacher > #teacher_menubar > * {
+    float: right;
+}
+
+#learnocaml-main-teacher > #teacher_menubar > #status-text-div {
+    float: left;
+    margin-left: 16px;
+}
+
+#learnocaml-main-teacher > #teacher_menubar .warning {
+    font-weight: bold;
+    color: red;
+}
+
+#learnocaml-main-teacher table {
+    width: 100%;
+    border-spacing: 0;
+    /* width: calc(100% - 8px);
+     * margin: 4px;
+     * border: 1px solid #aaa; */
+}
+
+#learnocaml-main-teacher table td {
+    padding: 2px;
+}
+
+#teacher_actions {
+    float: right;
+}
+
+.learnocaml_token {
+  font-family: 'Inconsolata';
+}
+
+.dropdown_btn {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown_content {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 32px;
+    z-index: 100;
+    background-color: #eee;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    width: -webkit-max-content;
+    width: -moz-max-content;
+}
+
+.dropdown_content ul {
+    list-style-type: none;
+    padding: 0
+}
+.dropdown_content li {
+    padding: 5px 10px;
+}
+.dropdown_content li:hover {
+    background-color: #bbc;
+    cursor: pointer;
+}
+
+.exo_open {
+    color: black;
+    background-color: #8b8;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+.exo_closed {
+    color: black;
+    background-color: #b77;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+.exo_assigned {
+    color: black;
+    background-color: #77b;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+tr.exercise_line.disabled, tr.student_line.disabled {
+    color: #a52;
+}
+
+tr.exercise_line:hover:not(.disabled),
+tr.student_line:hover:not(.disabled) {
+    background-color: #fff;
+    cursor: cell;
+}
+
+tr.exercise_group:hover {
+    cursor: cell;
+}
+
+.remove-cross {
+    text-align: right;
+    cursor: pointer;
+}
+
+.selected {
+    background-color: #9bd /*#58f*/;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+/*
+.assg_finished {
+    background-color: #b88;
+}
+.assg_active {
+    background-color: #dd9;
+}
+.assg_notstarted {
+}
+*/
+
+
+#login-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    z-index: 22220;
+    overflow: auto;
+}
+div#login-overlay > h1 {
+    text-align: center;
+    margin-bottom: 50px;
+}
+#login-new, #login-returning {
+    margin: 30px auto;
+    background-color: #666;
+    border-radius: 3px;
+    box-shadow: 10px 10px 4px 2px rgba(0,0,0,0.2);
+    padding-bottom: 10px;
+}
+@media (min-width: 1000px) {
+    #login-new, #login-returning {
+        width: 30vw;
+    }
+}
+#login-overlay h4 {
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+    background-color: #bbb;
+    color: black;
+    border-radius: 3px 3px 0 0;
+}
+#login-new > div, #login-returning > div {
+    padding: 20px;
+}
+#login-new > div > div, #login-returning > div > div {
+    padding: 20px;
+    display: block;
+    float: left;
+    vertical-align: middle;
+}
+div#login-overlay input {
+  display: block;
+  float: right;
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  font-size: 16px;
+  line-height: 30px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  font-family: 'Inconsolata';
+  text-align: center;
+  vertical-align: middle;
+}
+div#login-overlay button {
+  display: block;
+  clear: both;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 15px auto;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
+  min-width: 10em;
 }

@@ -1,6 +1,6 @@
-## Step 7: Introspection of students code
+## Step 7: Examples of use of optional arguments [~test], [~test_stdout], [~test_stderr] 
 
-To be continued.
+
 
 ---
 [Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)

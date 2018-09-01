@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/learnocaml_tryocaml.css">
     <link rel="stylesheet" href="css/learnocaml_main.css">
     <script src="js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="js/learnocaml-config.js"></script>
     <script language="JavaScript" src="js/learnocaml-main.js" defer></script>
   </head>
   <body>
@@ -27,34 +28,36 @@
     <div id="learnocaml-main-panel" class="hidden">
       <hr class="glue">
       <div id="txt_welcome">Welcome to <emph>LearnOCaml</emph> by OCamlPro.</div>
-      <div id="txt_construction"><!--This App is still under construction.--></div>
       <hr class="line">
       <div id="txt_choose_activity"><!--Choose your activity below.--></div>
       <div id="learnocaml-tab-buttons-container" class="tabs">
         <!-- Keep in sync with learnocaml_main.ml -->
+<!--
         <button>Exercises</button>
         <button>Lessons</button>
         <button>Toplevel</button>
+-->
       </div>
       <hr class="line">
       <div id="txt_token_doc"><!--Your storage token on OCamlPro's servers:--></div>
-      <input type="text" value="XXX-XXX-XXX-XXX" size="17"
-             pattern="[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+      <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+             pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
              id="learnocaml-save-token-field">
       <div id="txt_token_share"><!--You can share it between devices.--></div>
+      <input type="text" value="" placeholder="Nickname" size="16" id="learnocaml-nickname">
       <hr class="line">
       <div id="txt_progression_local"><!--Progression is saved locally in the browser.--></div>
       <div id="learnocaml-sync-buttons">
         <button disabled>
-          <img src="icons/icon_download_white.svg" alt="download icon">
+          <img src="icons/icon_download_white.svg" alt="">
           <span class="label">Save</span>
         </button>
         <button disabled>
-          <img src="icons/icon_upload_white.svg" alt="upload icon">
+          <img src="icons/icon_upload_white.svg" alt="">
           <span class="label">Restore</span>
         </button>
         <button disabled>
-          <img src="icons/icon_sync_white.svg" alt="sync icon">
+          <img src="icons/icon_sync_white.svg" alt="">
           <span class="label">Sync</span>
         </button>
       </div>
@@ -68,6 +71,10 @@
         <img src="icons/icon_sync_white.svg" class="icon"  alt="sync">
         button above.--></div>
       <hr class="glue">
+      <div class="footer">
+        <div id="learnocaml-version"></div>
+        <div id="learnocaml-logout">Logout</div>
+      </div>
     </div>
     <div id="learnocaml-main-content">
       <!-- <h1 class="pack">A separator</h1> -->
@@ -82,6 +89,29 @@
       <!--     <div class="score">42%</div> -->
       <!--   </div> -->
       <!-- </div> -->
+    </div>
+    <div id="login-overlay">
+      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h3>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <input id="login-nickname-input" type="text" placeholder="Nickname"
+                 autocomplete="off"></input>
+        </div>
+        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+      </div>
+      <div id="login-returning">
+        <h4 id="txt_returning"><!-- Returning user --></h4>
+        <div>
+          <div id="txt_returning_dialog"><!-- Enter your token --></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 autocomplete="off">
+        </div>
+        <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+      </div>
     </div>
   </body>
 </html>

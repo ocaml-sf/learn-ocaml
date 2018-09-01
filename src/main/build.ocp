@@ -6,7 +6,8 @@ begin program "learnocaml"
   requires = [
     "cmdliner"
     "learnocaml-process-repository-lib"
-    "learnocaml-simple-server-lib"
+    "learnocaml-server-lib"
+    "learnocaml-report"
   ]
 end
 
@@ -21,6 +22,7 @@ begin program "learnocaml-client"
     "lwt_utils"
     "cohttp.lwt"
     "grading-cli"
-    "learnocaml-sync"
+    "learnocaml-data"
+    "learnocaml-api"
   ]
 end

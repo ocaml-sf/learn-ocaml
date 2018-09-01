@@ -17,5 +17,5 @@ PKG magic-mime
 PKG omd
 PKG markup
 PKG uutf
-EXT syntax
-EXT js
+PKG js_of_ocaml.ppx
+FLG -ppx ../_obuild/ppx_ocplib_i18n/ppx_ocplib_i18n.asm

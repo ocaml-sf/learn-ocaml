@@ -20,6 +20,8 @@
 
 type t
 
+type id = string
+
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)
 val encoding: t Json_encoding.encoding
@@ -47,10 +49,10 @@ module File : sig
   val set: 'a file -> 'a -> files -> files
 
   (** Learnocaml_exercise id accessor *)
-  val id: string file
+  val id: id file
 
-  (** Learnocaml_exercise title / name accessor *)
-  val title: string file
+  (* (\** Learnocaml_exercise title / name accessor *\)
+   * val title: string file *)
 
   (** Maximum score for the exercise *)
   val max_score: int file
@@ -91,11 +93,6 @@ val update: 'a File.file -> 'a -> t -> t
 (** Updates the value of a field of the exercise in its [t] representation, and
     ciphers it. *)
 val cipher: string File.file -> string -> t -> t
-
-val meta_from_index: Learnocaml_index.exercise -> Learnocaml_meta.meta
-
-(** Generates the exercise representation for the exercises index. *)
-val to_index: t -> Learnocaml_index.exercise
 
 (** Reader and decipherer *)
 val read:

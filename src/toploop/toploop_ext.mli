@@ -93,6 +93,8 @@ val use_string:
 (** Wrap a given source code into a module and bind it with a given
     name.
 
+    @param filename used for locations in error messages
+
     @param print_outcome see {!val:execute}.
 
     @param ppf_answer see {!val:execute}.
@@ -106,6 +108,7 @@ val use_string:
 
 *)
 val use_mod_string:
+  ?filename:string ->
   ?print_outcome:bool ->
   ppf_answer:Format.formatter ->
   modname:string ->

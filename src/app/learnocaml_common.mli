@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
 
 val find_component : string -> 'a Tyxml_js.Html.elt
@@ -25,7 +27,11 @@ val fake_download : name: string -> contents: Js.js_string Js.t -> unit
 
 val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t
 
-val fatal : string -> unit
+val fatal : ?title: string -> string -> unit
+
+val alert : ?title: string -> string -> unit
+
+val catch_with_alert : ?printer: (exn -> string) -> (unit -> unit Lwt.t) -> unit Lwt.t
 
 val hide_loading : ?id: string -> unit -> unit
 
@@ -74,9 +80,29 @@ val button :
   string -> (unit -> unit Lwt.t) ->
   unit
 
+val dropdown :
+  id: string ->
+  title: [< Html_types.button_content_fun > `PCDATA] Tyxml_js.Html.elt list ->
+  [< Html_types.div_content_fun ] Tyxml_js.Html.elt list ->
+  [> Html_types.div ] Tyxml_js.Html.elt
+
 val render_rich_text :
   ?on_runnable_clicked: (string -> unit) ->
-  Learnocaml_index.text ->
+  Learnocaml_data.Tutorial.text ->
   [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list
 
-val extract_text_from_rich_text : Learnocaml_index.text -> string
+val extract_text_from_rich_text : Learnocaml_data.Tutorial.text -> string
+
+val set_state_from_save_file :
+  ?token:Token.t -> Save.t -> unit
+
+val get_state_as_save_file : unit -> Save.t
+
+(** Sync the local save state with the server state, and returns the merged save
+    file. The save will be created on the server if it doesn't exist. *)
+val sync: Token.t -> Save.t Lwt.t
+
+val countdown:
+  ?ontimeout: (unit -> unit) -> 'a Tyxml_js.Html5.elt -> float -> unit
+
+val string_of_seconds: int -> string
