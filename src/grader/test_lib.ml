@@ -50,7 +50,7 @@ module type S = sig
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
     val forbid_syntax : string -> (_ -> Learnocaml_report.t)
     val require_syntax : string -> (_ -> Learnocaml_report.t)
-   
+
     val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
 
   end
@@ -129,7 +129,7 @@ module type S = sig
 
     val printable_fun : string -> (_ -> _ as 'f) -> 'f
   end
-  
+
 (*----------------------------------------------------------------------------*)
 
   module Grade_functions_ref_var : sig
@@ -146,7 +146,7 @@ module type S = sig
     val grade_variable_against_solution :
       'a Ty.ty -> string -> Learnocaml_report.item
   end
-    
+
   module Test_functions_ref_var : sig
 
     val test_ref :
@@ -162,10 +162,10 @@ module type S = sig
       'a Ty.ty -> string -> Learnocaml_report.t
 
   end
-  
+
   (*----------------------------------------------------------------------------*)
 
-  module Grade_functions_function : sig 
+  module Grade_functions_function : sig
 
     val grade_function_1 :
       ?test: 'b tester ->
@@ -185,7 +185,7 @@ module type S = sig
       ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
-      
+
     val grade_function_2 :
       ?test: 'c tester ->
       ?test_stdout: io_tester ->
@@ -212,7 +212,7 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.item
-      
+
     val grade_function_3_against_solution :
       ?gen: int ->
       ?test: 'd tester ->
@@ -231,7 +231,7 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.item
-      
+
     val grade_function_4_against_solution :
       ?gen: int ->
       ?test: 'e tester ->
@@ -1573,43 +1573,43 @@ module Make
   module Grade_functions_ref_var = struct
     open Test_functions_ref_var
     open Params
-        
+
     let grade_ref ty name got exp =
       set_progress ("Grading reference"^name^".") ;
       Learnocaml_report.(
         Section (
             [Text "Reference: "; Code name],
-            test_ref ty got exp ))                 
+            test_ref ty got exp ))
 
     let grade_variable ty name r =
       set_progress ("Grading variable "^name^".") ;
       Learnocaml_report.(
         Section (
             [Text "Variable: "; Code name],
-            test_variable ty name r ))             
-     
+            test_variable ty name r ))
+
     let grade_variable_property ty name cb =
       set_progress ("Grading variable "^name^".") ;
       Learnocaml_report.(
         Section (
             [Text "Variable: "; Code name],
-            test_variable_property ty name cb ))     
+            test_variable_property ty name cb ))
 
     let grade_variable_against_solution ty name =
       set_progress ("Grading variable "^name^".") ;
       Learnocaml_report.(
         Section (
             [Text "Variable: "; Code name],
-            test_variable_against_solution ty name ))   
+            test_variable_against_solution ty name ))
 
   end
-  
+
   (*----------------------------------------------------------------------------*)
 
   module Grade_functions_function = struct
     open Test_functions_function
     open Params
-    
+
     let grade_function_1_against_solution ?gen
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
@@ -1627,8 +1627,8 @@ module Make
       Learnocaml_report.(Section (
           [Text "Function: " ; Code name],
           test_function_1 ?test ?test_stdout ?test_stderr
-            ?before ?after ty name tests ))               
-                             
+            ?before ?after ty name tests ))
+
     let grade_function_2_against_solution ?gen
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
@@ -1647,7 +1647,7 @@ module Make
            [Text "Function: " ; Code name],
            test_function_2 ?test ?test_stdout ?test_stderr
             ?before ?after ty name tests ))
-      
+
     let grade_function_3_against_solution ?gen
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
@@ -1666,7 +1666,7 @@ module Make
            [Text "Function: " ; Code name],
            test_function_3 ?test ?test_stdout ?test_stderr
             ?before ?after ty name tests ))
-          
+
     let grade_function_4_against_solution ?gen
         ?test ?test_stdout ?test_stderr
         ?before_reference ?before_user ?after ?sampler ty name tests =
@@ -1685,8 +1685,8 @@ module Make
            [Text "Function: " ; Code name],
            test_function_4 ?test ?test_stdout ?test_stderr
             ?before ?after ty name tests ))
-    end 
-  
+    end
+
   (*----------------------------------------------------------------------------*)
 
   module Sampler = struct

@@ -38,7 +38,7 @@ module type S = sig
         functions to check the Parsetree. *)
 
     (** {2 Checkers} *)
-    
+
     (** The functional type ['a ast_checker] describes the functions
        used for AST introspection. It takes as input the introspect
        objects (mainly [Parsetree structure] like [code_ast] or
@@ -131,7 +131,7 @@ module type S = sig
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
     val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-             
+
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
        tested if [t] is {e not} in [ls]. The message of the failure
@@ -139,7 +139,7 @@ module type S = sig
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-                                      
+
     (** [require k pr treq t] returns a {!Learnocaml_report.Success 5}
        report the first time the function is applied with [t] and [t]
        is equal to [treq] (comparison with Pervasives.compare). The
@@ -149,7 +149,7 @@ module type S = sig
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
     (** {3 For expressions } *)
-                      
+
     (** [forbid_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is in the list of forbidden
@@ -158,7 +158,7 @@ module type S = sig
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-            
+
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is {e not} in the list of allowed
@@ -167,7 +167,7 @@ module type S = sig
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-                                                               
+
     (** [require_expr name expr t] returns a
        {!Learnocaml_report.Success 5} report the first time the
        function is applied with [t] and [t] is equal to [expr]
@@ -175,7 +175,7 @@ module type S = sig
        then {e Found text1 text2} where [text1] is value of [name] and
        [text2] is [expr]. Otherwise, an empty report is returned.  *)
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
-         
+
     (** {3 For syntax } *)
     (** These functions are very restricted function to either forbid
        any use of a particular syntax or require to have at least one
@@ -185,14 +185,14 @@ module type S = sig
         For example, adding [~on_include: forbid "include" ~on_open:
        forbid "open"] prevents the student from using [open] and
        [include] syntaxes. *)
-                                                         
+
     (** [forbid_syntax n _] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time it
        is called. The message of the failure report is {e The {b text}
        syntax is forbidden} where [text] is the value of
        [n]. Otherwise, an empty report is returned. *)
     val forbid_syntax : string -> (_ -> Learnocaml_report.t)
-         
+
     (** [require_syntax n _] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time it is called. The message of
        the failure report is {e The {b text} syntax has been found, as
@@ -492,28 +492,28 @@ module type S = sig
      two codes are equivalent:
 
 
-   - example with a [grade] function: 
- 
-   [let exercise = 
-      grade_function_1_against_solution 
+   - example with a [grade] function:
+
+   [let exercise =
+      grade_function_1_against_solution
          [%ty: int -> int] "my_function" [0; 1]]
 
    [let () = set_result @@ ast_sanity_check code_ast @@ fun () -> [
      exercise ]]
 
-      
+
   - same example with a [test] function:
- 
-   [let exercise = 
+
+   [let exercise =
       set_progress ("Grading function my_function.") ;
       Section ([Text "Function: " ; Code "my_function"],
       test_function_1_against_solution [%ty: int -> int] "my_function"
       [0; 1])]
 
    [let () = set_result @@ ast_sanity_check code_ast @@ fun () -> [
-     exercise ]]  
+     exercise ]]
   *)
-  
+
   (** {2 Grading functions for references and variables } *)
 
   module Grade_functions_ref_var : sig
@@ -530,7 +530,7 @@ module type S = sig
        for a reference defined locally (in [test.ml]). *)
     val grade_ref :
       'a Ty.ty -> string -> 'a ref -> 'a -> Learnocaml_report.item
-                                              
+
     (** [grade_variable ty name r] returns a [Section] with a
        {!LearnOcaml_report.Success 1} report if variable named [name]
        exists and is equal to [r]. Otherwise this is a
@@ -538,14 +538,14 @@ module type S = sig
        Variable: [name].}.  *)
     val grade_variable :
       'a Ty.ty -> string -> 'a -> Learnocaml_report.item
-                                    
+
     (** [grade_variable_property ty name r] returns a [Section] with a
        report resulting of application of cb to variable named [name]
        if it exists. Otherwise this is a {!LearnOcaml_report.Failure}
        report. The [Section] text is {e Variable: [name].}.  *)
     val grade_variable_property :
       'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.item
-                                                             
+
     (** [grade_variable_against_solution ty name r] returns a
        [Section] with a {!LearnOcaml_report.Success 1} report if
        variable named [name] exists and is equal to variable with the
@@ -596,8 +596,8 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   (** {2 Grading functions for functions }*)
-  
-  module Grade_functions_function : sig 
+
+  module Grade_functions_function : sig
 
     (** {2:test_functions_fun_sec Grading functions for functions}*)
 
@@ -607,6 +607,8 @@ module type S = sig
         - [grade_function_<args_nb> ty name tests]
 
         - [grade_function_<args_nb>_against_solution ty name tests]
+
+        - [grade_function_<args_nb>_against_with_predicate ty name tests]
 
         It grades [args_nb]-arity function named [name] with
         non-polymorphic type [ty] (a polymorphic function must be
@@ -638,7 +640,7 @@ module type S = sig
 
 
     (** {3 Unary functions}*)
-    
+
     (** [grade_function_1 ty name tests] grades the function named
        [name] by directly comparing obtained outputs against expected
        outputs. It returns a [Section] with a text {e Function: name}
@@ -686,7 +688,7 @@ module type S = sig
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
 
      (** {3 Binary functions }*)
-                                                 
+
      (** [grade_function_2 ty name tests] grades the function named
         [name] by directly comparing obtained outputs against expected
         outputs. It returns a [Section] with a text {e Function: name}
@@ -733,7 +735,7 @@ module type S = sig
       ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
       ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.item
-                       
+
     (** [grade_function_3 ty name tests] grades the function named
        [name] by directly comparing obtained outputs against expected
        outputs. It returns a [Section] with a text {e Function: name}
@@ -804,7 +806,7 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.item
 
-    
+
     (** [grade_function_4_against_solution ty name tests] grades the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -910,7 +912,7 @@ module type S = sig
        builders}.  *)
 
   end
-  
+
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_function : sig
@@ -1247,7 +1249,7 @@ module type S = sig
   end
 
   (*----------------------------------------------------------------------------*)
-  
+
   (** {1 Generic grading functions} *)
 
   (** Grading functions for functions with more than 4 arguments. Most
@@ -1286,7 +1288,7 @@ module type S = sig
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-    (** The type of function prototypes.  
+    (** The type of function prototypes.
 
         Usage: [arg_ty [%ty: int]
         @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
@@ -1312,7 +1314,7 @@ module type S = sig
     val name : 'a lookup -> string
 
     (** {2 Generic grading functions}*)
-      
+
     (** [test_value lookup cb] *)
     val test_value : 'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
@@ -1361,7 +1363,7 @@ module type S = sig
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
    val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
-                                                                                       
+
    (**/**)
    include (module type of Ast_checker)
    include (module type of Tester)
