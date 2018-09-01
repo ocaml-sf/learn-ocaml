@@ -1373,6 +1373,8 @@ module type S = sig
    include (module type of Test_functions_ref_var)
    include (module type of Test_functions_function)
    include (module type of Test_functions_generic)
+   include (module type of Grade_functions_ref_var)
+   include (module type of Grade_functions_function)
 end
 
 module Make : functor
