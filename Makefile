@@ -101,9 +101,9 @@ doc: build
 	mkdir -p _obuild/doc
 	odoc css -o _obuild/doc
 	odoc compile _obuild/testing/test_lib.cmti --package learn-ocaml
-	odoc compile _obuild/learnocaml-state/learnocaml_report.cmti --package learn-ocaml
+	odoc compile _obuild/learnocaml-report/learnocaml_report.cmti --package learn-ocaml
 	odoc html _obuild/testing/test_lib.odoc --output-dir _obuild/doc
-	odoc html _obuild/learnocaml-state/learnocaml_report.odoc --output-dir _obuild/doc
+	odoc html _obuild/learnocaml-report/learnocaml_report.odoc --output-dir  _obuild/doc
 
 clean:
 	@ocp-build clean
