@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Learnocaml_data
+
 type 'a storage_key =
   { key : string option ;
     dependent_keys : string -> bool ;
@@ -134,11 +136,26 @@ let delete_single name enc () =
     (fun localStorage ->
        localStorage##(removeItem (Js.string name)))
 
+let clear () =
+  Js.Optdef.iter
+    (Dom_html.window##.localStorage)
+    (fun localStorage -> localStorage##clear)
+
 let sync_token =
   let key = mangle [ "sync-token" ] in
   let enc = Json_encoding.(obj1 (req "token" string)) in
+  let store value = store_single key enc (Token.to_string value)
+  and retrieve () = retrieve_single key enc () |> Token.parse
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+
+let nickname =
+  let key = mangle [ "nickname" ] in
+  let enc = Json_encoding.(obj1 (req "nickname" string)) in
   let store value = store_single key enc value
-  and retrieve () = retrieve_single key enc ()
+  and retrieve () =
+    try retrieve_single key enc () with Not_found -> ""
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
@@ -151,8 +168,6 @@ let cached_exercise name =
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = []  }
-
-module StringMap = Map.Make (String)
 
 let listed list_key item_prefix ?default enc =
   let list =
@@ -183,9 +198,9 @@ let listed list_key item_prefix ?default enc =
     let retrieve () =
       try
         List.fold_left
-          (fun acc name -> StringMap.add name (retrieve (item name)) acc)
-          StringMap.empty (retrieve list)
-      with Not_found -> StringMap.empty
+          (fun acc name -> SMap.add name (retrieve (item name)) acc)
+          SMap.empty (retrieve list)
+      with Not_found -> SMap.empty
     and delete () =
       let all = retrieve list in
       List.iter (fun name -> delete (item name)) all ;
@@ -193,7 +208,7 @@ let listed list_key item_prefix ?default enc =
     let store index =
       delete () ;
       let all =
-        StringMap.fold
+        SMap.fold
           (fun name state acc ->
              store (item name) state ;
              name :: acc)
@@ -218,7 +233,7 @@ let exercise_list,
   listed
     [ "exercise-state-list" ]
     [ "exercise-state" ]
-    Learnocaml_exercise_state.exercise_state_enc
+    Answer.enc
 
 let toplevel_history_list,
     toplevel_history,

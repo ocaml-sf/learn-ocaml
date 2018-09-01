@@ -39,6 +39,17 @@ body {
   background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
   content:"";
 }
+#learnocaml-exo-toolbar > #learnocaml-nickname {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+#learnocaml-exo-toolbar > #learnocaml-countdown {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    font-family: 'Inconsolata', monospace;
+}
 @media (max-width: 549px) {
   #learnocaml-exo-toolbar {
     height: 40px;

@@ -70,7 +70,8 @@ let fake_upload () =
   ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
   result_t
 
-let fatal message =
+let fatal ?(title=[%i"INTERNAL ERROR"]) message =
+  let titletext = title in
   let id = "ocp-fatal-layer" in
   let div = match Manip.by_id id with
     | Some div -> div
@@ -97,12 +98,66 @@ let fatal message =
           [ h3 ~a: [ a_style "margin: 0;\
                               padding: 10px;\
                               text-align: center;" ]
-              [ pcdata [%i"INTERNAL ERROR"] ] ;
+              [ pcdata titletext ] ;
             pre ~a: [ a_style "margin: 0;\
                                border-top: 1px white solid;\
                                padding: 20px;" ]
               [ pcdata (String.trim message) ] ] ;
         div ~a: [ a_style "flex: 1" ] [] ]
+
+let alert ?(title=[%i"ERROR"]) message =
+  let id = "ocp-alert-layer" in
+  let div = match Manip.by_id id with
+    | Some div -> div
+    | None ->
+        let sty =
+          "display: flex;\
+           flex-direction: column;\
+           position: absolute;\
+           top: 0; left: 0; bottom: 0; right: 0;\
+           background: rgba(0,0,0,0.8);\
+           color: white;\
+           z-index: 22221;" in
+        let div = Tyxml_js.Html.(div ~a:[ a_id id ; a_style sty ]) [] in
+        Manip.(appendChild Elt.body) div;
+        div in
+  let module H = Tyxml_js.Html in
+  Manip.replaceChildren div [
+    H.div ~a: [ H.a_style "flex: 1" ] [] ;
+    H.div ~a: [ H.a_style "border: 3px white double;\
+                           font-family: 'Inconsolata', monospace;\
+                           flex: 0 0 auto;\
+                           background: black;\
+                           margin: auto;"]
+      [ H.h3 ~a: [ H.a_style "margin: 0;\
+                              padding: 10px;\
+                              text-align: center;" ]
+          [ H.pcdata title ] ;
+        H.pre ~a: [ H.a_style "margin: 0;\
+                               border-top: 1px white solid;\
+                               padding: 20px;" ]
+          [ H.pcdata (String.trim message) ];
+        H.button ~a: [H.a_style "display: block;\
+                                 margin: 10px auto;\
+                                 padding: 5px 10px;\
+                                 border: none;\
+                                 background-color: white;\
+                                 color: black;\
+                                 text-align: center;";
+                      H.a_onclick (fun _ ->
+                          Manip.removeChild Manip.Elt.body div;
+                          false)]
+          [ H.pcdata "OK" ]
+      ] ;
+    H.div ~a: [ H.a_style "flex: 1" ] [];
+  ]
+
+let default_exn_printer = function
+  | Failure msg -> msg
+  | e -> Printexc.to_string e
+
+let catch_with_alert ?(printer=default_exn_printer) f =
+  Lwt.catch f @@ fun exn -> alert (printer exn); Lwt.return_unit
 
 let hide_loading ?(id = "ocp-loading-layer") () =
   let elt = find_div_or_append_to_body id in
@@ -246,12 +301,34 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     dom_button##.disabled := Js.bool true ;
   Manip.appendChild container button
 
+let dropdown ~id ~title items =
+    let toggle _ =
+      let menu = find_component id in
+      let disp =
+        match Manip.Css.display menu with
+        | "block" -> "none"
+        | _ ->
+            Lwt_js_events.async (fun () ->
+                Lwt_js_events.click window >|= fun _ ->
+                Manip.SetCss.display menu "none"
+              );
+            "block"
+      in
+      Manip.SetCss.display menu disp;
+      false
+    in
+    let module H = Tyxml_js.Html in
+    H.div ~a: [H.a_class ["dropdown_btn"]] [
+      H.button ~a: [H.a_onclick toggle]
+        (title @ [H.pcdata " \xe2\x96\xb4" (* U+25B4 *)]);
+      H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
+    ]
+
 let gettimeofday () =
-  let now = new%js Js.date_now in
-  floor ((now ## getTime) *. 1000.) +. float (now ## getTimezoneOffset)
+  (new%js Js.date_now)##getTime /. 1000.
 
 let render_rich_text ?on_runnable_clicked text =
-  let open Learnocaml_index in
+  let open Learnocaml_data.Tutorial in
   let rec render acc text =
     match text with
     | [] -> List.rev acc
@@ -280,7 +357,7 @@ let render_rich_text ?on_runnable_clicked text =
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list)
 
 let extract_text_from_rich_text text =
-  let open Learnocaml_index in
+  let open Learnocaml_data.Tutorial in
   let rec render acc text =
     match text with
     | [] -> String.concat " " (List.rev acc)
@@ -295,3 +372,70 @@ let extract_text_from_rich_text text =
     | Math code :: rest ->
         render (("$" ^ code ^ "$") :: acc) rest in
   render [] text
+
+let set_state_from_save_file ?token save =
+  let open Learnocaml_data.Save in
+  let open Learnocaml_local_storage in
+  match token with None -> () | Some t -> store sync_token t;
+  store nickname save.nickname;
+  store all_exercise_states save.all_exercise_states;
+  store all_toplevel_histories save.all_toplevel_histories;
+  store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
+
+let get_state_as_save_file () =
+  let open Learnocaml_data.Save in
+  let open Learnocaml_local_storage in
+  {
+    nickname = retrieve nickname;
+    all_exercise_states = retrieve all_exercise_states;
+    all_toplevel_histories = retrieve all_toplevel_histories;
+    all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
+  }
+
+let sync token =
+  let save_file = get_state_as_save_file () in
+  Server_caller.request (Learnocaml_api.Update_save (token, save_file))
+  >>= function
+  | Ok save -> set_state_from_save_file ~token save; Lwt.return save
+  | Error (`Not_found _) ->
+      Server_caller.request_exn
+        (Learnocaml_api.Create_token (Some token, None)) >>= fun _token ->
+      assert (_token = token);
+      Server_caller.request_exn
+        (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
+      set_state_from_save_file ~token save;
+      Lwt.return save
+  | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+
+let string_of_seconds seconds =
+  let days = seconds / 24 / 60 / 60 in
+  let hours = seconds / 60 / 60 mod 24 in
+  let minutes = seconds / 60 mod 60 in
+  let seconds = seconds mod 60 in
+  if days >= 1 then Printf.sprintf [%if"%dd %02dh"] days hours else
+  if hours >= 1 then Printf.sprintf [%if"%02d:%02d"] hours minutes else
+    Printf.sprintf [%if"0:%02d:%02d"] minutes seconds
+
+let countdown ?(ontimeout = fun () -> ()) container t =
+  let deadline = gettimeofday () +. t in
+  let update_interval seconds =
+    if seconds >= 24 * 60 * 60 then 1000. *. 60. *. 60.
+    else if seconds >= 60 * 60 then 1000. *. 60.
+    else 1000.
+  in
+  let update remaining =
+    Manip.setInnerText container (string_of_seconds remaining)
+  in
+  let rec callback () =
+    let remaining = int_of_float (deadline -. gettimeofday ()) in
+    Firebug.console##log(Js.string (Printf.sprintf "Remaining: %f - %f = %ds" deadline (gettimeofday ()) remaining));
+    if remaining <= 0 then
+      (update 0;
+       ontimeout ())
+    else
+      (update remaining;
+       ignore (window##setTimeout
+                 (Js.wrap_callback callback)
+                 (update_interval remaining)))
+  in
+  callback ()

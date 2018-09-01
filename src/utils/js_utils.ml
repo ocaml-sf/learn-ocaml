@@ -117,12 +117,25 @@ module Manip = struct
     let elt = get_elt "setInnerHtml" elt in
     elt##.innerHTML := Js.string s
 
+  let setInnerText elt s =
+    let elt = get_elt "setInnerText" elt in
+    elt##.textContent := Js.some (Js.string s)
+
+  let hasClass elt s =
+    let elt = get_elt "addClass" elt in
+    Js.to_bool
+      elt##.classList##(contains (Js.string s))
   let addClass elt s =
     let elt = get_elt "addClass" elt in
     elt##.classList##(add (Js.string s))
   let removeClass elt s =
     let elt = get_elt "removeClass" elt in
     elt##.classList##(remove (Js.string s))
+  let toggleClass elt s =
+    let elt = get_elt "toggleClass" elt in
+    Js.to_bool
+      elt##.classList##(toggle (Js.string s))
+
 
   let raw_appendChild ?before node elt2 =
     match before with
@@ -164,7 +177,7 @@ module Manip = struct
 
   let raw_replaceChild node1 elt2 elt3 =
     let node2 = get_node elt2 in
-    ignore(node1##(replaceChild node2 (get_node elt3)))
+    ignore(node1##replaceChild node2 (get_node elt3))
 
   let raw_removeChildren node =
     let childrens = Dom.list_of_nodeList (node##.childNodes) in
@@ -190,6 +203,22 @@ module Manip = struct
           )
       ) in
     Js.Opt.to_option res
+
+  let by_classname n =
+    Dom.list_of_nodeList
+      (Dom_html.window##.document##(getElementsByClassName (Js.string n)))
+    |> List.map (fun n -> Of_dom.of_element (Dom_html.element n))
+    (* let rec tolist acc n =
+     *   if n < 0 then acc
+     *   else
+     *   let acc =
+     *     Js.Opt.case (nodelist##item n)
+     *       (fun () -> acc)
+     *       (fun node -> Of_dom.of_element (Dom_html.element node) :: acc)
+     *   in
+     *   tolist acc (n-1)
+     * in
+     * tolist [] nodelist##.length *)
 
   let childLength elt =
     let node = get_node elt in
@@ -233,6 +262,10 @@ module Manip = struct
   let replaceChild elt1 elt2 elt3 =
     let node1 = get_node elt1 in
     raw_replaceChild node1 elt2 elt3
+
+  let replaceSelf elt1 elt2 =
+    Js.Opt.iter (get_node elt1)##.parentNode @@ fun parent ->
+    raw_replaceChild parent elt2 elt1
 
   let removeChildren elt =
     let node = get_node elt in

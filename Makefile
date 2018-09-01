@@ -2,53 +2,43 @@ all: build
 
 # config variables ------------------------------------------------------------
 
-# parallelism when processing the repository
-PROCESSING_JOBS ?= 4
-
-# where the result Web site will be put
-DEST_DIR ?= ${CURDIR}/www
-
-# the exercise repository to use
-REPO_DIR ?= ${CURDIR}/demo-repository
+# where the static data should be put
+PREFIX ?= /usr/local
+WWW ?= $(PREFIX)/share/learn-ocaml/www
 
 # end of config variables -----------------------------------------------------
 
-EXERCISES_DIR ?= ${REPO_DIR}/exercises
-LESSONS_DIR ?= ${REPO_DIR}/lessons
-TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
-
 build-deps:
-	sh scripts/install-opam-deps.sh
+	opam install . --deps-only --locked
 
 .PHONY: build
 build:
 	@ocp-build init
 	@ocp-build
 
-process-repo: install
-	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-	  -exercises-dir ${EXERCISES_DIR} \
-	  -tutorials-dir ${TUTORIALS_DIR} \
-	  -dest-dir ${DEST_DIR} \
-	  -dump-outputs ${EXERCISES_DIR} \
-	  -dump-reports ${EXERCISES_DIR}
-
 .PHONY: static
 static:
 	@${MAKE} -C static
 
+.PHONY: install
 install: static
-	@mkdir -p ${DEST_DIR}
-	cp -r static/* ${DEST_DIR}
-	cp ${LESSONS_DIR}/* ${DEST_DIR}
-	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-simple-server.byte .
-	@cp _obuild/*/learnocaml-client.byte .
+	@cp _obuild/learnocaml/learnocaml.byte ${PREFIX}/bin/learn-ocaml
+	@cp _obuild/learnocaml-client/learnocaml-client.byte ${PREFIX}/bin/learn-ocaml-client
+	@mkdir -p ${WWW}
+	@cp -r static/* ${WWW}
+	@cp _obuild/*/learnocaml-main.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-exercise.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-toplevel-worker.js ${WWW}/js/
+	@cp _obuild/*/learnocaml-grader-worker.js ${WWW}/js/
+	@cp -r demo-repository/* ${PREFIX}/share/learn-ocaml/repository/
+	@cp scripts/complete.sh ${PREFIX}/share/bash-completion/completions/learn-ocaml
 
-.PHONY: learn-ocaml.install travis
+uninstall:
+	@rm -f ${PREFIX}/bin/learn-ocaml
+	@rm -rf ${PREFIX}/share/learn-ocaml
+	@rm -f ${PREFIX}/share/bash-completion/completions/learn-ocaml
+
+.PHONY: learn-ocaml.install travis docker-images publish-docker-images
 learn-ocaml.install: static
 	@echo 'bin: [' >$@
 	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
@@ -58,7 +48,7 @@ learn-ocaml.install: static
 	@echo '  "scripts/complete.sh"' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
 	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
-	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
+	@$(foreach f,$(wildcard static/js/*.js static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
 	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
 	@(cd static && find js/mathjax -name '*.js' -exec echo '  "static/{}" {"www/{}"}' ';'; ) >>$@
 	@echo ']' >>$@
@@ -83,13 +73,28 @@ update-%-translation: translations/%.pot
 opaminstall: build learn-ocaml.install
 	@opam-installer --prefix `opam var prefix` learn-ocaml.install
 
+REPO ?= demo-repository
+
+testrun:
+	@${MAKE} opaminstall
+	rm -rf www/css
+	learn-ocaml build --repo $(REPO) -j8
+	rm -rf www/css
+	ln -s ../static/css www
+	learn-ocaml serve
+
 docker-images: Dockerfile learn-ocaml.opam
 	@rm -rf docker
 	@git clone . docker
 	@cp Dockerfile docker
 	@docker build -t learn-ocaml-compilation --target compilation docker
 	@docker build -t learn-ocaml --target program docker
+	@docker build -t learn-ocaml-client --target client docker
 	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
+
+publish-docker-images: docker-images
+	docker tag learn-ocaml ocamlsf/learn-ocaml:dev
+	docker image push ocamlsf/learn-ocaml:dev
 
 # Generates documentation for testing (exclusively Test_lib and Learnocaml_report modules)
 doc: build
@@ -104,7 +109,7 @@ clean:
 	@ocp-build clean
 	-rm -f translations/$*.pot
 	@${MAKE} -C  static clean
-	-rm -rf ${DEST_DIR}
+	-rm -rf www
 	-rm -f src/grader/embedded_cmis.ml
 	-rm -f src/grader/embedded_grading_cmis.ml
 	-rm -f src/ppx-metaquot/ast_lifter.ml

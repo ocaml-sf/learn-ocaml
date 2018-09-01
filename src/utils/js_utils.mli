@@ -43,6 +43,7 @@ module Manip : sig
   val window: 'a elt -> Dom_html.window Js.t
 
   val setInnerHtml: 'a elt -> string -> unit
+  val setInnerText: 'a elt -> string -> unit
   val clone: ?deep:bool -> 'a elt -> 'a elt
 
   val appendChild: ?before:'a elt -> 'b elt ->  'c elt -> unit
@@ -58,17 +59,23 @@ module Manip : sig
   val replaceChildren: 'a elt -> 'b elt list -> unit
   val removeChildren: 'a elt -> unit
   val removeSelf: 'a elt -> unit
+  val replaceSelf: 'a elt -> 'a elt -> unit
 
   val children: 'a elt -> 'b elt list
   val by_id: string -> 'b elt option
+  val by_classname: string -> 'b elt list
 
   val disable: 'a elt -> unit
   val enable: 'a elt -> unit
 
   val value: 'a elt -> string
 
+  val hasClass: 'a elt -> string -> bool
   val addClass: 'a elt -> string -> unit
   val removeClass: 'a elt -> string -> unit
+
+  (* Returns [true] if the class has been set, [false] if it was unset *)
+  val toggleClass: 'a elt -> string -> bool
 
   val focus: 'a elt -> unit
   val blur: 'a elt -> unit

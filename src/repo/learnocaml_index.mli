@@ -15,68 +15,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-type exercise_kind =
-  | Project
-  | Problem
-  | Learnocaml_exercise
-
-type identifier = string
-
-type exercise =
-  { exercise_kind : exercise_kind ;
-    exercise_title : string ;
-    exercise_short_description : string option ;
-    exercise_stars : float (* \in [0.,4.] *) ;
-    exercise_identifier : identifier option ;
-    exercise_author : (string * string) list ;
-    exercise_focus : string list ;
-    exercise_requirements : string list ;
-    exercise_forward : identifier list ;
-    exercise_backward : identifier list ;
-    exercise_max_score : int option ;
-  }
-
-and group =
-  { group_title : string ;
-    group_contents : group_contents }
-
-and group_contents =
-  | Learnocaml_exercises of (string * exercise) list
-  | Groups of (string * group) list
-
-val exercise_index_enc : group_contents Json_encoding.encoding
-
-val lesson_index_enc : (string * string) list Json_encoding.encoding
-
-val exercise_enc : exercise Json_encoding.encoding
-
-type word =
-  | Text of string
-  | Code of code
-  | Emph of text
-  | Image of { alt : string ; mime : string ; contents : bytes }
-  | Math of string
-and text =
-  word list
-and code =
-  { code : string ; runnable : bool }
-
-val text_enc : text Json_encoding.encoding
-
-type tutorial =
-  { tutorial_name : string ;
-    tutorial_title : text }
-
-and series =
-  { series_title : string ;
-    series_tutorials : tutorial list }
-
-val tutorial_index_enc : (string * series) list Json_encoding.encoding
-
-val check_version_1 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
-
-val check_version_2 : 'a Json_encoding.encoding -> 'a Json_encoding.encoding
-
 (** the following are relative paths to the www root, using [/] as path
     separator *)
 val exercise_index_path : string

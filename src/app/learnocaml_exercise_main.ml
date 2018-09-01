@@ -18,6 +18,7 @@
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
+open Learnocaml_data
 
 let init_tabs, select_tab =
   let names = [ "text" ; "toplevel" ; "report" ; "editor" ] in
@@ -63,13 +64,13 @@ let init_tabs, select_tab =
   init_tabs, select_tab
 
 let display_report exo report =
-  let score, failed = Learnocaml_report.result_of_report report in
+  let score, failed = Report.result report in
   let report_button = find_component "learnocaml-exo-button-report" in
   Manip.removeClass report_button "success" ;
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score) exo in
+    let max = Learnocaml_exercise.(access File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -89,7 +90,7 @@ let display_report exo report =
   end ;
   let report_container = find_component "learnocaml-exo-tab-report" in
   Manip.setInnerHtml report_container
-    (Format.asprintf "%a" Learnocaml_report.(output_html_of_report ~bare: true) report) ;
+    (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
 let set_string_translations () =
@@ -107,6 +108,12 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations
 
+let make_readonly () =
+  match Manip.by_id "learnocaml-exo-editor-pane" with None -> () | Some ed ->
+    alert ~title:[%i"TIME'S UP"]
+      [%i"The deadline for this exercise has expired. Any changes you make \
+          from now on will remain local only."]
+
 let () =
   Lwt.async_exception_hook := begin function
     | Failure message -> fatal message
@@ -117,17 +124,34 @@ let () =
   Lwt.async @@ fun () ->
   set_string_translations ();
   Learnocaml_local_storage.init () ;
+  let token =
+    try
+      Learnocaml_local_storage.(retrieve sync_token) |>
+      Lwt.return
+    with Not_found ->
+      Server_caller.request_exn (Learnocaml_api.Create_token (None, None))
+      >|= fun token ->
+      Learnocaml_local_storage.(store sync_token) token;
+      token
+  in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
+  let nickname_div = find_component "learnocaml-nickname" in
+  (match Learnocaml_local_storage.(retrieve nickname) with
+   | nickname -> Manip.setInnerText nickname_div nickname
+   | exception Not_found -> ());
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = arg "id" in
-  let exercise_fetch = Server_caller.fetch_exercise id in
+  let exercise_fetch =
+    token >>= fun token ->
+    Server_caller.fetch_exercise token id
+  in
   let after_init top =
-    exercise_fetch >>= fun exo ->
+    exercise_fetch >>= fun (meta, exo, deadline) ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
@@ -170,12 +194,19 @@ let () =
       ~history () in
   init_tabs () ;
   toplevel_launch >>= fun top ->
-  exercise_fetch >>= fun exo ->
+  exercise_fetch >>= fun (ex_meta, exo, deadline) ->
+  (match deadline with
+   | None -> ()
+   | Some 0. -> make_readonly ()
+   | Some t ->
+       match Manip.by_id "learnocaml-countdown" with
+       | Some elt -> countdown elt t ~ontimeout:make_readonly
+       | None -> ());
   let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-    | { Learnocaml_exercise_state.report = Some report ; solution } ->
+    | { Answer.report = Some report ; solution } ->
         let _ : int = display_report exo report in
         Some solution
-    | { Learnocaml_exercise_state.report = None ; solution } ->
+    | { Answer.report = None ; solution } ->
         Some solution
     | exception Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
@@ -200,7 +231,7 @@ let () =
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata (Learnocaml_exercise.(access File.title exo)) ] ;
+    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
   if prelude <> "" then begin
@@ -281,7 +312,7 @@ let () =
             %s\
             </body>\
             </html>"
-           (Learnocaml_exercise.(access File.title exo))
+           ex_meta.Exercise.Meta.title
            mathjax_config
            mathjax_url
            descr in
@@ -303,16 +334,23 @@ let () =
     Lwt.return ()
   end ;
   begin editor_button
-      ~icon: "save" [%i"Save"] @@ fun () ->
+      ~icon: "sync" [%i"Sync"] @@ fun () ->
+    token >>= fun token ->
     let solution = Ace.get_contents ace in
     let report, grade =
       match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-      | { Learnocaml_exercise_state.report ; grade } -> report, grade
+      | { Answer.report ; grade } -> report, grade
       | exception Not_found -> None, None in
     Learnocaml_local_storage.(store (exercise_state id))
-      { Learnocaml_exercise_state.report ; grade ; solution ;
+      { Answer.report ; grade ; solution ;
         mtime = gettimeofday () } ;
-    Lwt.return ()
+    sync token >|= fun save ->
+    let solution =
+      (SMap.find
+         id save.Save.all_exercise_states)
+      .Answer.solution
+    in
+    Ace.set_contents ace solution
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -400,8 +438,9 @@ let () =
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
         Learnocaml_local_storage.(store (exercise_state id))
-          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
-            mtime = gettimeofday () } ;
+          { Answer.grade = Some grade ; solution ; report = Some report ;
+            mtime = max_float } ; (* To ensure server time will be used *)
+        token >>= sync >>= fun save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
@@ -413,7 +452,7 @@ let () =
         let report = Learnocaml_report.[ Message (msg, Failure) ] in
         let grade = display_report exo report in
         Learnocaml_local_storage.(store (exercise_state id))
-          { Learnocaml_exercise_state.grade = Some grade ; solution ; report = Some report ;
+          { Answer.grade = Some grade ; solution ; report = Some report ;
             mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
