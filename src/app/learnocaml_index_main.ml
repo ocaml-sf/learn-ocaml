@@ -565,7 +565,7 @@ let toplevel_tab select _ () =
   Lwt.return div
 
 let teacher_tab token _select _params () =
-  let module H = Tyxml_js.Html5 in
+  let module ES = Exercise.Status in
   let action_new_token () =
     Server_caller.request_exn (Learnocaml_api.Create_teacher_token token)
     >|= fun new_token ->
@@ -611,9 +611,9 @@ let teacher_tab token _select _params () =
   let exercises_index = ref (Exercise.Index.Exercises []) in
   let students_map = ref Token.Map.empty in
   let assignments_tbl = Hashtbl.create 59 in
-  let students_changes = ref Token.Map.empty in
+  (* let students_changes = ref Token.Map.empty in -- TODO *)
   let status_map = ref SMap.empty in
-  let status_changes = ref SMap.empty in
+  let (status_changes: ES.t SMap.t ref) = ref SMap.empty in
   let status_current () =
     SMap.merge (fun id old newer -> match newer with None -> old | s -> s)
       !status_map !status_changes;
@@ -621,13 +621,13 @@ let teacher_tab token _select _params () =
   let get_status id =
     try SMap.find id !status_changes with Not_found ->
     try SMap.find id !status_map with Not_found ->
-      Exercise.Status.default id
+      ES.default id
   in
   let exercise_changed_status id =
     match SMap.find_opt id !status_changes with
     | None -> false
     | Some ch -> match SMap.find_opt id !status_map with
-      | None -> ch <> Exercise.Status.default id
+      | None -> ch <> ES.default id
       | Some st -> ch <> st
   in
   let exercise_line_id id = "learnocaml_exercise_"^id in
@@ -649,7 +649,6 @@ let teacher_tab token _select _params () =
   let student_change = ref (fun _ -> assert false) in
   let assignment_change = ref (fun _ -> assert false) in
   let assignment_remove = ref (fun _ -> assert false) in
-  let assignment_set_mode = ref (fun _ _ -> assert false) in
 
   (* Exercises table *)
   let rec mk_table group_level acc status group =
@@ -688,12 +687,15 @@ let teacher_tab token _select _params () =
                 [ H.pcdata meta.Exercise.Meta.title ];
               H.td (List.map H.pcdata meta.Exercise.Meta.focus);
               H.td [stars_div meta.Exercise.Meta.stars];
-              H.td (List.map tag_div st.Exercise.Status.tags);
+              H.td (List.map tag_div st.ES.tags);
               H.td [
-                let cls, text = match st.Exercise.Status.status with
-                  | Exercise.Status.Open -> "exo_open", [%i"Open"]
-                  | Exercise.Status.Closed -> "exo_closed", [%i"Closed"]
-                  | Exercise.Status.Assigned a -> "exo_assigned", [%i"Assigned"]
+                let cls, text =
+                  if Token.Map.is_empty ES.(st.assignments.token_map) then
+                    match ES.(st.assignments.default) with
+                    | ES.Open -> "exo_open", [%i"Open"]
+                    | ES.Closed -> "exo_closed", [%i"Closed"]
+                    | ES.Assigned a -> "exo_assigned", [%i"Assigned"]
+                  else "exo_assigned", [%i"Assigned"]
                 in
                 H.span ~a:[H.a_class [cls]] [H.pcdata text]
               ];
@@ -798,33 +800,33 @@ let teacher_tab token _select _params () =
           ();
       ]
     in
-    let switch_autobox ~current_mode mode1 mode2 =
-      let switch = ref current_mode in
-      let next () = switch := not !switch in
-      let get () = if !switch then mode1 else mode2 in
-      let id = Random.(Printf.sprintf "switch_%x%x" (bits ()) (bits ())) in
-      fun cb ->
-      let cb _ =
-        next ();
-        cb !switch;
-        begin match Manip.by_id id with
-        | None ->
-           ()
-        | Some id ->
-           Manip.(replaceChildren id [get ()]);
-        end;
-        true
-      in
-      H.span ~a:[H.a_id id; H.a_onclick cb] [get ()]
-    in
+    (* let switch_autobox ~current_mode mode1 mode2 =
+     *   let switch = ref current_mode in
+     *   let next () = switch := not !switch in
+     *   let get () = if !switch then mode1 else mode2 in
+     *   let id = Random.(Printf.sprintf "switch_%x%x" (bits ()) (bits ())) in
+     *   fun cb ->
+     *   let cb _ =
+     *     next ();
+     *     cb !switch;
+     *     begin match Manip.by_id id with
+     *     | None ->
+     *        ()
+     *     | Some id ->
+     *        Manip.(replaceChildren id [get ()]);
+     *     end;
+     *     true
+     *   in
+     *   H.span ~a:[H.a_id id; H.a_onclick cb] [get ()]
+     * in *)
     let hid = assg_line_id id in
-    let (assg, tokens, exo_ids, current_mode) =
+    let ((start, stop), tokens, exo_ids, current_mode) =
       Hashtbl.find assignments_tbl id
     in
     let cls =
       let n = gettimeofday () in
-      if assg.Exercise.Status.stop < n then ["assg_finished"]
-      else if assg.Exercise.Status.start > n then ["assg_notstarted"]
+      if stop < n then ["assg_finished"]
+      else if start > n then ["assg_notstarted"]
       else ["assg_active"]
     in
     let cls = if selected then "selected"::cls else cls in
@@ -839,79 +841,78 @@ let teacher_tab token _select _params () =
           then !toggle_select_assignment id;
           true)
     ] [
-      H.td [date ("start_"^hid) id assg.Exercise.Status.start];
-      H.td [date ("stop_"^hid) id assg.Exercise.Status.stop];
+      H.td [date ("start_"^hid) id start];
+      H.td [date ("stop_"^hid) id stop];
       H.td [H.pcdata (Printf.sprintf [%if"%d exercises"] (SSet.cardinal exo_ids))];
       H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
-      H.td [switch_autobox ~current_mode
-                (H.pcdata [%i"auto"])
-                (H.pcdata [%i"manual"])
-                (!assignment_set_mode id)];
+      (* H.td [switch_autobox ~current_mode
+       *           (H.pcdata [%i"auto"])
+       *           (H.pcdata [%i"manual"])
+       *           (!assignment_set_mode id)]; *)
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
         [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
       (* todo: add common tags *)
     ]
   in
+  let is_assigned status token =
+    let open ES in
+    match get_status token status.assignments with
+    | Assigned _ -> true
+    | Open | Closed -> false
+  in
   let already_assigned_exercises students =
-    SSet.filter (fun ex ->
-        let Exercise.Status.{status; _} = get_status ex in
-        match status with
-        | Exercise.Status.Assigned a ->
-            Exercise.Status.exists_assignment a (fun tk _ ->
-              Token.Set.mem tk students
-            )
-        | _ -> false)
-      (SSet.of_list (all_exercises !exercises_index))
+    List.fold_left (fun acc ex ->
+        (* fixme: inefficient *)
+        if Token.Set.exists (is_assigned (get_status ex)) students
+        then SSet.add ex acc else acc)
+      SSet.empty
+      (all_exercises !exercises_index)
+  in
+  let unassigned_students exercises tokens =
+    List.fold_left (fun acc ex ->
+        let st = get_status ex in
+        Token.Set.filter (fun t -> not (is_assigned st t)) acc)
+      tokens
+      exercises
   in
   let already_assigned_students exercises =
-    SSet.fold (fun ex acc ->
-        let Exercise.Status.{status; _} = get_status ex in
-        match status with
-        | Exercise.Status.Assigned a ->
-            Exercise.Status.fold_over_assignments a (fun tk _ acc ->
-              Token.Set.add tk acc
-            ) acc
-        | _ -> acc)
-      exercises
-      Token.Set.empty
+    let all_tokens =
+      Token.Map.fold (fun t _ -> Token.Set.add t) !students_map Token.Set.empty
+    in
+    Token.Set.diff all_tokens (unassigned_students exercises all_tokens)
   in
   let assignments_table () =
-    let module AM = Map.Make(struct
-        type t = Exercise.Status.assignment
-        let compare = compare
-      end)
-    in
     let module ATM = Map.Make(struct
-        type t = Exercise.Status.assignment * Token.Set.t
-        let compare (a1, ts1) (a2, ts2) =
-          match compare a1 a2 with
-          | 0 -> Token.Set.compare ts1 ts2
+        type t = (float * float) * Token.Set.t * bool
+        let compare (d1, ts1, dft1) (d2, ts2, dft2) =
+          match compare d1 d2 with
+          | 0 -> (match Token.Set.compare ts1 ts2 with
+              | 0 -> compare dft1 dft2
+              | n -> n)
           | n -> n
       end)
     in
+    let all_tokens =
+      Token.Map.fold (fun t _ -> Token.Set.add t) !students_map Token.Set.empty
+    in
     let atm =
       SMap.fold (fun id st atm ->
-          match st.Exercise.Status.status with
-          | Exercise.Status.Open | Exercise.Status.Closed -> atm
-          | Exercise.Status.Assigned a ->
-             let mode = Exercise.Status.is_automatic a in
-              let am =
-                Exercise.Status.fold_over_assignments a (fun tok assg am ->
-                    match AM.find_opt assg am with
-                    | None -> AM.add assg (Token.Set.singleton tok) am
-                    | Some ts -> AM.add assg (Token.Set.add tok ts) am)
-                  (AM.singleton
-                     (Exercise.Status.default_assignment a)
-                     Token.Set.empty)
-              in
-              AM.fold (fun assg toks atm ->
-                  match ATM.find_opt (assg, toks) atm with
+          let assg = st.ES.assignments in
+          let stl = ES.by_status all_tokens assg in
+          let default = ES.default_assignment assg in
+          List.fold_left (fun atm (status, tokens) ->
+              match status with
+              | ES.Open | ES.Closed -> atm
+              | ES.Assigned {start; stop} ->
+                  let key = (start, stop), tokens, (status = default) in
+                  match ATM.find_opt key atm with
                   | None ->
-                     ATM.add (assg, toks) (SSet.singleton id, mode) atm
-                  | Some (ids, mode) ->
-                     ATM.add (assg, toks) (SSet.add id ids, mode) atm)
-                am atm)
+                      ATM.add key (SSet.singleton id) atm
+                  | Some ids ->
+                     ATM.add key (SSet.add id ids) atm)
+            atm
+            stl)
         (status_current ())
         ATM.empty
     in
@@ -943,6 +944,9 @@ let teacher_tab token _select _params () =
         Hashtbl.fold (fun tk () -> Token.Set.add tk)
           selected_students Token.Set.empty
       in
+      (* let default_token =
+       *   Manip.hasClass (find_component "default-token") "selected"
+       * in *)
       let exercises =
         Hashtbl.fold (fun id () -> SSet.add id) selected_exercises SSet.empty
       in
@@ -950,8 +954,7 @@ let teacher_tab token _select _params () =
         SSet.diff exercises (already_assigned_exercises tokens)
       in
       let line =
-        make_line
-          Exercise.Status.{start; stop} tokens exercises true
+        make_line (start, stop) tokens exercises false (*default_token*)
       in
       let id = !line_n in
       Dom.insertBefore (H.toelt table)
@@ -963,8 +966,8 @@ let teacher_tab token _select _params () =
     Manip.Ev.onclick new_assg_line (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
     (List.rev
-       (ATM.fold (fun (assg, tokens) (exos, mode) acc ->
-            make_line assg tokens exos mode :: acc)
+       (ATM.fold (fun (assg, tokens, dft) exos acc ->
+            make_line assg tokens exos dft :: acc)
            atm [])) @
     [new_assg_line];
     table
@@ -972,16 +975,22 @@ let teacher_tab token _select _params () =
   let open_close_button =
     H.button ~a:[
       H.a_onclick (fun _ ->
-          let open Exercise.Status in
           let ids = htbl_keys selected_exercises in
           let fstat =
-            if List.exists (fun id -> (get_status id).status = Open) ids
-            then function
-              | {status = Open} as st -> {st with status = Closed}
-              | st -> st
-            else function
-              | {status = Closed} as st -> {st with status = Open}
-              | st -> st
+            if List.exists (fun id ->
+                let st = get_status id in
+                ES.(default_assignment st.assignments = Open))
+                ids
+            then ES.(fun assg ->
+                (* fixme: invisible change if the exercise is assigned! *)
+                match default_assignment assg with
+                | Open -> set_default_assignment assg Closed
+                | _ -> assg)
+            else ES.(fun assg ->
+                (* fixme: invisible change if the exercise is assigned! *)
+                match default_assignment assg with
+                | Closed -> set_default_assignment assg Open
+                | _ -> assg)
           in
           !exercise_status_change (htbl_keys selected_exercises) fstat;
           true)
@@ -1091,83 +1100,144 @@ let teacher_tab token _select _params () =
     | Some elt -> class_f elt "selected"
     | None -> ()
   in
-  let set_assignment ?(reopen=false) ?assg ?students ?exos ?mode id =
-    let (assg0, students0, exos0, mode0) = Hashtbl.find assignments_tbl id in
+  let set_assignment ?assg ?students ?exos ?default id =
+    let (assg0, students0, exos0, default0) = Hashtbl.find assignments_tbl id in
     let dft x0 = function Some x -> x | None -> x0 in
-    let assg = dft assg0 assg in
+    let start, stop = dft assg0 assg in
     let students = dft students0 students in
     let exos = dft exos0 exos in
-    let mode = dft mode0 mode in
-    Hashtbl.replace assignments_tbl id (assg, students, exos, mode);
+    let default = dft default0 default in
+    Hashtbl.replace assignments_tbl id
+      ((start, stop), students, exos, default);
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
-    let set_assg st tmap default_assignment =
-      if reopen then
-        Exercise.Status.{st with status = Open}
-      else
-        let a = Exercise.Status.make_assignments tmap default_assignment in
-(* =======
- *         let mode =
- *           (\* For the moment, we only offer two modes, manual
- *              or automatic. *\)
- *           Exercise.Status.(if mode then True else False)
- *         in
- *         let a =
- *           Exercise.Status.(make_assignments tmap default_assignment0 mode)
- *         in
- * >>>>>>> f55556f4... Allow the selection of two modes for assignments *)
-        Exercise.Status.{st with status = Assigned a}
+    let status = ES.(Assigned {start; stop}) in
+    let base_tmap =
+      Token.Set.fold (fun tok -> Token.Map.add tok status)
+        students Token.Map.empty
     in
-    let ch =
+    let exercise_status_changes =
       SSet.fold (fun ex_id acc ->
           let st = get_status ex_id in
-          let open Exercise.Status in
-          let tmap0 =
-            match st.status with
-            | Open | Closed -> Token.Map.empty
-            | Assigned a -> token_map_of_assignments a
+          let assg = st.ES.assignments in
+          let dft_status = match default, ES.default_assignment assg with
+            | true, ES.Assigned _ -> assert false
+            | true, _ -> assg.ES.default
+            | false, a -> a
           in
-          let tmap =
-            Token.Set.fold (fun tk -> Token.Map.remove tk)
-              (Token.Set.diff students0 students) tmap0
+          let token_map =
+            Token.Map.merge
+              (fun _ a b -> match a, b with
+                 | _, (Some _ as s) -> s
+                 | Some a, _ when a = status -> None
+                 | s, _ -> s)
+              ES.(st.assignments.token_map)
+              base_tmap
           in
-          let tmap =
-            Token.Set.fold (fun tk -> Token.Map.add tk assg)
-              students tmap
+          let token_map =
+            Token.Map.filter (fun tok a -> a <> dft_status) token_map
           in
-          (* The most recent assignment is used for students that will
-             register *after* the creation of this homework. *)
-          let default_assignment =
-            assg
-          in
-          SMap.add ex_id (set_assg st tmap default_assignment) acc)
+          SMap.add ex_id
+            ES.{st with assignments = {
+                token_map;
+                default = dft_status
+              }}
+            acc)
         exos
         !status_changes
     in
-    let ch =
+    let exercise_status_changes =
       SSet.fold (fun ex_id acc ->
           let st = get_status ex_id in
-          let open Exercise.Status in
-          let tmap0 =
-            match st.status with
-            | Open | Closed -> Token.Map.empty
-            | Assigned a -> token_map_of_assignments a
+          let assg = st.ES.assignments in
+          let dft_status =
+            if default0 then ES.Closed else ES.default_assignment assg
           in
-          let tmap =
-            Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0
+          let token_map =
+            Token.Set.fold Token.Map.remove students0 assg.ES.token_map
           in
-          let default_assignment =
-            assg
+          let token_map =
+            Token.Map.filter (fun tok a -> a <> dft_status) token_map
           in
-          SMap.add ex_id (set_assg st tmap default_assignment) acc)
+          SMap.add ex_id
+            ES.{st with assignments = {
+                token_map;
+                default = dft_status
+              }}
+            acc)
         (SSet.diff exos0 exos)
-        ch
+        exercise_status_changes
     in
-    status_changes := ch;
+    status_changes := exercise_status_changes;
     fill_exercises_pane ();
     !update_changed_status ();
   in
+
+
+    (* let set_assg st tmap default_assignment =
+ *       let a = Exercise.Status.make_assignments tmap default_assignment in
+ * (\* =======
+ *  *         let mode =
+ *  *           (\\* For the moment, we only offer two modes, manual
+ *  *              or automatic. *\\)
+ *  *           Exercise.Status.(if mode then True else False)
+ *  *         in
+ *  *         let a =
+ *  *           Exercise.Status.(make_assignments tmap default_assignment0 mode)
+ *  *         in
+ *  * >>>>>>> f55556f4... Allow the selection of two modes for assignments *\)
+ *       Exercise.Status.(set_status st.assignments a)
+ *     in
+ *     let ch =
+ *       SSet.fold (fun ex_id acc ->
+ *           let st = get_status ex_id in
+ *           let open Exercise.Status in
+ *           let tmap0 =
+ *             match st.status with
+ *             | Open | Closed -> Token.Map.empty
+ *             | Assigned a -> token_map_of_assignments a
+ *           in
+ *           let tmap =
+ *             Token.Set.fold (fun tk -> Token.Map.remove tk)
+ *               (Token.Set.diff students0 students) tmap0
+ *           in
+ *           let tmap =
+ *             Token.Set.fold (fun tk -> Token.Map.add tk assg)
+ *               students tmap
+ *           in
+ *           (\* The most recent assignment is used for students that will
+ *              register *after* the creation of this homework. *\)
+ *           let default_assignment =
+ *             assg
+ *           in
+ *           SMap.add ex_id (set_assg st tmap default_assignment) acc)
+ *         exos
+ *         !status_changes
+ *     in
+ *     let ch =
+ *       SSet.fold (fun ex_id acc ->
+ *           let st = get_status ex_id in
+ *           let open Exercise.Status in
+ *           let tmap0 =
+ *             match st.status with
+ *             | Open | Closed -> Token.Map.empty
+ *             | Assigned a -> token_map_of_assignments a
+ *           in
+ *           let tmap =
+ *             Token.Set.fold (fun tk -> Token.Map.remove tk) students0 tmap0
+ *           in
+ *           let default_assignment =
+ *             assg
+ *           in
+ *           SMap.add ex_id (set_assg st tmap default_assignment) acc)
+ *         (SSet.diff exos0 exos)
+ *         ch
+ *     in
+ *     status_changes := ch;
+ *     fill_exercises_pane ();
+ *     !update_changed_status ();
+ *   in *)
   let update_disabled_exercises () =
     let disabled ex_ids =
       SSet.iter (Hashtbl.remove selected_exercises) ex_ids;
@@ -1210,8 +1280,7 @@ let teacher_tab token _select _params () =
     in
     disabled
       (Token.Set.diff
-         (already_assigned_students
-            (SSet.of_list (htbl_keys selected_exercises)))
+         (already_assigned_students (htbl_keys selected_exercises))
          current_assignment)
   in
   let update_disabled_both () =
@@ -1305,7 +1374,8 @@ let teacher_tab token _select _params () =
   exercise_status_change := begin fun ids f ->
     status_changes :=
       List.fold_left (fun acc id ->
-          SMap.add id (f (get_status id)) acc)
+          let st = get_status id in
+          SMap.add id ES.{st with assignments = f st.assignments} acc)
         !status_changes ids;
     fill_exercises_pane ();
     update_disabled_exercises ();
@@ -1315,7 +1385,7 @@ let teacher_tab token _select _params () =
     ()
   end;
   assignment_change := begin fun assg_id ->
-    let (assg0, _, _, _) = Hashtbl.find assignments_tbl assg_id in
+    let ((start0, stop0), _, _, _) = Hashtbl.find assignments_tbl assg_id in
     let get_date id =
       let retr =
         match Manip.by_id ("date_"^id), Manip.by_id ("time_"^id) with
@@ -1337,26 +1407,18 @@ let teacher_tab token _select _params () =
     in
     let start = match get_date ("start_"^assg_line_id assg_id) with
       | Some t -> t
-      | None -> assg0.Exercise.Status.start
+      | None -> start0
     in
     let stop = match get_date ("stop_"^assg_line_id assg_id) with
       | Some t -> if t < start then start else t
-      | None -> assg0.Exercise.Status.stop
+      | None -> stop0
     in
-    let assg = Exercise.Status.{start; stop} in
-    set_assignment assg_id ~assg
-  end;
-
-  assignment_set_mode := begin fun assg_id mode ->
-    Lwt.async @@ fun () ->
-    set_assignment assg_id ~mode;
-    Lwt.return_unit;
+    set_assignment assg_id ~assg:(start, stop)
   end;
 
   assignment_remove := begin fun assg_id ->
     Lwt.async @@ fun () ->
-    set_assignment
-      ~reopen:true assg_id
+    set_assignment assg_id
       ~students:Token.Set.empty
       ~exos:SSet.empty;
     Hashtbl.remove assignments_tbl assg_id;
@@ -1385,7 +1447,7 @@ let teacher_tab token _select _params () =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
     let map =
-      List.fold_left (fun m ex -> SMap.add ex.Exercise.Status.id ex m)
+      List.fold_left (fun m ex -> SMap.add ex.ES.id ex m)
         SMap.empty statuses
     in
     status_map := map

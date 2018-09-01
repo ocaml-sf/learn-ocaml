@@ -167,15 +167,12 @@ module Exercise = struct
     let is_open id token =
       if Token.is_teacher token then Lwt.return `Open else
       Lazy.force tbl >|= fun tbl ->
-      let status =
+      let assignments =
         match Hashtbl.find_opt tbl id with
-        | None -> (default id).status
-        | Some ex -> ex.status
+        | None -> (default id).assignments
+        | Some ex -> ex.assignments
       in
-      match status with
-      | Open -> `Open
-      | Closed -> `Closed
-      | Assigned a -> is_open_assignment token a
+      is_open_assignment token assignments
 
   end
 
@@ -232,25 +229,8 @@ module Token = struct
           Lwt.fail_with "token already exists"
       | e -> raise e
 
-  let check_for_student_assignments token = Exercise.Status.(
-    let check_exercise_status s =
-      match s.status with
-      | Open | Closed ->
-         Lwt.return ()
-      | Assigned a ->
-         match consider_token_for_assignment a token with
-         | None ->
-            Lwt.return ()
-         | Some a' ->
-            set { s with status = Assigned a' }
-    in
-    all () >>= Lwt_list.iter_s check_exercise_status
-  )
-
   let create_student () =
-    create_gen random >>= fun token ->
-    check_for_student_assignments token >>= fun () ->
-    Lwt.return token
+    create_gen random
 
   let create_teacher () = create_gen random_teacher
 

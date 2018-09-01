@@ -147,53 +147,70 @@ module Exercise: sig
 
     type tag = string
 
-    type assignment = {
-      start: float;
-      stop: float;
-    }
-
-    type assignments
-
-    val is_automatic:
-      assignments -> bool
-
-    val is_open_assignment:
-      Token.t -> assignments -> [> `Closed | `Deadline of float]
-
-    val default_assignment:
-      assignments -> assignment
-
-    val exists_assignment:
-      assignments -> (Token.t -> assignment -> bool) -> bool
-
-    val fold_over_assignments:
-      assignments -> (Token.t -> assignment -> 'a -> 'a) -> 'a -> 'a
-
-    val token_map_of_assignments:
-      assignments -> assignment Token.Map.t
-
-    val make_assignments:
-      assignment Token.Map.t -> assignment -> assignments
-
-    val consider_token_for_assignment:
-      assignments -> Token.t -> assignments option
-
     type status =
       | Open
       | Closed
-      | Assigned of assignments
+      | Assigned of {start: float; stop: float}
+
+    type assignments = {
+      token_map: status Token.Map.t;
+      default: status;
+    }
 
     type t = {
       id: id;
       tags: tag list;
-      status: status;
+      assignments: assignments;
     }
+
+    val default: id -> t
+
+    val default_assignment: assignments -> status
+
+    val set_default_assignment: assignments -> status -> assignments
+
+    val get_status:
+      Token.t -> assignments -> status
+
+    val is_open_assignment:
+      Token.t -> assignments -> [> `Open | `Closed | `Deadline of float]
+
+    val by_status:
+      Token.Set.t -> assignments -> (status * Token.Set.t) list
+
+    (* val 
+     *   ((float * float) * Token.Set.t) list -> assignments *)
+
+    (* val is_automatic:
+     *   assignments -> bool
+     * 
+     * val is_open_assignment:
+     *   Token.t -> assignments -> [> `Closed | `Deadline of float]
+     * 
+     * val default_assignment:
+     *   assignments -> assignment
+     * 
+     * val exists_assignment:
+     *   assignments -> (Token.t -> assignment -> bool) -> bool
+     * 
+     * val fold_over_assignments:
+     *   assignments -> (Token.t -> assignment -> 'a -> 'a) -> 'a -> 'a
+     * 
+     * val token_map_of_assignments:
+     *   assignments -> assignment Token.Map.t *)
+
+    val make_assignments:
+      status Token.Map.t -> status -> assignments
+
+    (* val consider_token_for_assignment:
+     *   assignments -> Token.t -> assignments option *)
+
 
     val enc:
       t Json_encoding.encoding
 
-    val default:
-      id -> t
+    (* val default:
+     *   id -> t *)
 
   end
 
