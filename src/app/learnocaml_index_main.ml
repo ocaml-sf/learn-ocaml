@@ -631,13 +631,24 @@ let teacher_tab token _select _params () =
       | Some st -> ch <> st
   in
   let exercise_line_id id = "learnocaml_exercise_"^id in
-  let student_line_id token = "learnocaml_student_"^Token.to_string token in
+  let student_line_id student =
+    "learnocaml_student_" ^ match student with
+    | `Any -> "any"
+    | `Token tok -> Token.to_string tok
+  in
   let assg_line_id id = "assg_line_"^string_of_int id in
 
   let all_exercises g =
     Exercise.Index.fold_exercises (fun acc id _ -> id :: acc)
       [] g
     |> List.rev
+  in
+
+  let get_student_selection () =
+    Hashtbl.fold (fun st () (toks, dft) -> match st with
+        | `Token tk -> Token.Set.add tk toks, dft
+        | `Any -> toks, true)
+      selected_students (Token.Set.empty, false)
   in
 
   (* Action function callbacks *)
@@ -728,7 +739,8 @@ let teacher_tab token _select _params () =
       H.legend ~a:[
         H.a_onclick (fun _ ->
             !toggle_selected_students
-              (Token.Map.fold (fun k _ acc -> k::acc) !students_map []);
+              (Token.Map.fold (fun k _ acc -> (`Token k)::acc)
+                 !students_map [`Any]);
             true
           );
       ] [H.pcdata [%i"Students"]]
@@ -748,19 +760,32 @@ let teacher_tab token _select _params () =
     H.span ~a:[H.a_class ["learnocaml_token"]]
       [H.pcdata (Token.to_string tk)]
   in
+  let make_student_line st contents =
+    H.tr ~a:[
+      H.a_id (student_line_id st);
+      H.a_class ["student_line"];
+      H.a_onclick (fun _ ->
+          !toggle_selected_students [st];
+          true);
+    ] contents
+  in
+  let anystudents_line =
+    make_student_line `Any [
+      H.td ~a:[H.a_colspan 0; H.a_class ["future_students"]] [
+        H.pcdata [%i"any future students"]
+          (* U+3008, U+3009 *)
+      ];
+    ]
+  in
   let fill_students_pane () =
     let table =
+      anystudents_line ::
       List.rev_map (fun st ->
-          let open Student in
-          H.tr ~a:[
-            H.a_id (student_line_id st.Student.token);
-            H.a_class ["student_line"];
-            H.a_onclick (fun _ ->
-                !toggle_selected_students [st.Student.token];
-                true);
-          ] [
-            H.td [html_token st.token];
-            H.td (match st.nickname with Some n -> [H.pcdata n] | _ -> []);
+          make_student_line (`Token  st.Student.token) [
+            H.td [html_token st.Student.token];
+            H.td (match st.Student.nickname with
+                | Some n -> [H.pcdata n]
+                | _ -> []);
           ])
         (Token.Map.fold (fun _ st acc -> st :: acc) !students_map [])
     in
@@ -769,12 +794,14 @@ let teacher_tab token _select _params () =
 
   let assignment_line id =
     let selected = !selected_assignment = Some id in
+    let now = gettimeofday () in
     let date id assg_id t =
       let date = new%js Js.date_fromTimeValue (t *. 1000.) in
+      let cls = if t <= now then ["date_past"] else ["date_future"] in
       H.div [
         H.input ~a:([
             H.a_id ("date_"^id);
-            H.a_class ["assignment_date"];
+            H.a_class ("assignment_date" :: cls);
             H.a_input_type `Date;
             H.a_value
               (Printf.sprintf "%04d-%02d-%02d"
@@ -783,11 +810,12 @@ let teacher_tab token _select _params () =
             H.a_onkeydown (fun ev ->
                 if ev##.keyCode = 13 then !assignment_change assg_id; true);
             H.a_pattern "[0-9]{4}-[0-9]{2}-[0-9]{2}";
+            H.a_required ();
           ] @ if selected then [] else [H.a_readonly ()])
           ();
         H.input ~a:([
             H.a_id ("time_"^id);
-            H.a_class ["assignment_date"];
+            H.a_class ("assignment_date" :: cls);
             H.a_input_type `Time;
             H.a_value
               (Printf.sprintf "%02d:%02d"
@@ -796,6 +824,7 @@ let teacher_tab token _select _params () =
             H.a_onkeydown (fun ev ->
                 if ev##.keyCode = 13 then !assignment_change assg_id; true);
             H.a_pattern "[0-9]{2}:[0-9]{2}";
+            H.a_required ();
           ] @ if selected then [] else [H.a_readonly ()])
           ();
       ]
@@ -820,16 +849,26 @@ let teacher_tab token _select _params () =
      *   H.span ~a:[H.a_id id; H.a_onclick cb] [get ()]
      * in *)
     let hid = assg_line_id id in
-    let ((start, stop), tokens, exo_ids, current_mode) =
+    let ((start, stop), tokens, exo_ids, default) =
       Hashtbl.find assignments_tbl id
     in
-    let cls =
-      let n = gettimeofday () in
-      if stop < n then ["assg_finished"]
-      else if start > n then ["assg_notstarted"]
-      else ["assg_active"]
-    in
+    let cls = [] in
+      (* let n = gettimeofday () in
+     *   if stop < n then ["assg_finished"]
+     *   else if start > n then ["assg_notstarted"]
+     *   else ["assg_active"]
+     * in *)
     let cls = if selected then "selected"::cls else cls in
+    let cls = "assg_line"::cls in
+    let n_exos = match SSet.cardinal exo_ids with
+      | 1 -> [%i"1 exercise"]
+      | n -> Printf.sprintf [%if"%d exercises"] n
+    in
+    let n_students = match Token.Set.cardinal tokens, default with
+      | 1, false -> [%i"1 student"]
+      | n, false -> Printf.sprintf [%if"%d students"] n
+      | n, true -> Printf.sprintf [%if"%d+ students"] n
+    in
     H.tr ~a:[
       H.a_id hid;
       H.a_class cls;
@@ -843,12 +882,8 @@ let teacher_tab token _select _params () =
     ] [
       H.td [date ("start_"^hid) id start];
       H.td [date ("stop_"^hid) id stop];
-      H.td [H.pcdata (Printf.sprintf [%if"%d exercises"] (SSet.cardinal exo_ids))];
-      H.td [H.pcdata (Printf.sprintf [%if"%d students"] (Token.Set.cardinal tokens))];
-      (* H.td [switch_autobox ~current_mode
-       *           (H.pcdata [%i"auto"])
-       *           (H.pcdata [%i"manual"])
-       *           (!assignment_set_mode id)]; *)
+      H.td [H.pcdata n_exos];
+      H.td [H.pcdata n_students];
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
         [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
@@ -861,10 +896,14 @@ let teacher_tab token _select _params () =
     | Assigned _ -> true
     | Open | Closed -> false
   in
-  let already_assigned_exercises students =
+  let already_assigned_exercises students default =
     List.fold_left (fun acc ex ->
         (* fixme: inefficient *)
-        if Token.Set.exists (is_assigned (get_status ex)) students
+        let stat = get_status ex in
+        if default &&
+           ES.(match stat.assignments.default
+               with Assigned _ -> true | _ -> false)
+           || Token.Set.exists (is_assigned stat) students
         then SSet.add ex acc else acc)
       SSet.empty
       (all_exercises !exercises_index)
@@ -940,21 +979,15 @@ let teacher_tab token _select _params () =
         fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 1}),
         fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 8})
       in
-      let tokens =
-        Hashtbl.fold (fun tk () -> Token.Set.add tk)
-          selected_students Token.Set.empty
-      in
-      (* let default_token =
-       *   Manip.hasClass (find_component "default-token") "selected"
-       * in *)
+      let tokens, default = get_student_selection () in
       let exercises =
         Hashtbl.fold (fun id () -> SSet.add id) selected_exercises SSet.empty
       in
       let exercises =
-        SSet.diff exercises (already_assigned_exercises tokens)
+        SSet.diff exercises (already_assigned_exercises tokens default)
       in
       let line =
-        make_line (start, stop) tokens exercises false (*default_token*)
+        make_line (start, stop) tokens exercises default
       in
       let id = !line_n in
       Dom.insertBefore (H.toelt table)
@@ -1090,13 +1123,13 @@ let teacher_tab token _select _params () =
     | Some elt -> class_f elt "selected"
     | None -> ()
   in
-  let select_student onoff tk =
+  let select_student onoff std =
     let class_f, tbl_f = match onoff with
-      | true -> Manip.addClass, (fun t k -> Hashtbl.replace t k ())
+      | true -> Manip.addClass, (fun std k -> Hashtbl.replace std k ())
       | false -> Manip.removeClass, Hashtbl.remove
     in
-    tbl_f selected_students tk;
-    match Manip.by_id (student_line_id tk) with
+    tbl_f selected_students std;
+    match Manip.by_id (student_line_id std) with
     | Some elt -> class_f elt "selected"
     | None -> ()
   in
@@ -1113,35 +1146,33 @@ let teacher_tab token _select _params () =
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
     let status = ES.(Assigned {start; stop}) in
-    let base_tmap =
-      Token.Set.fold (fun tok -> Token.Map.add tok status)
-        students Token.Map.empty
-    in
     let exercise_status_changes =
       SSet.fold (fun ex_id acc ->
           let st = get_status ex_id in
           let assg = st.ES.assignments in
-          let dft_status = match default, ES.default_assignment assg with
-            | true, ES.Assigned _ -> assert false
-            | true, _ -> assg.ES.default
-            | false, a -> a
+          let old_default = assg.ES.default in
+          let new_default =
+            if default then status
+            else if default0 then ES.Closed
+            else old_default
+          in
+          let add tk st tmap =
+            if st = new_default then tmap
+            else Token.Map.add tk st tmap
           in
           let token_map =
-            Token.Map.merge
-              (fun _ a b -> match a, b with
-                 | _, (Some _ as s) -> s
-                 | Some a, _ when a = status -> None
-                 | s, _ -> s)
-              ES.(st.assignments.token_map)
-              base_tmap
-          in
-          let token_map =
-            Token.Map.filter (fun tok a -> a <> dft_status) token_map
+            Token.Map.fold (fun tk _ acc ->
+                if Token.Set.mem tk students then
+                  if default then acc
+                  else Token.Map.add tk status acc
+                else
+                  add tk (ES.get_status tk assg) acc)
+              !students_map Token.Map.empty
           in
           SMap.add ex_id
             ES.{st with assignments = {
                 token_map;
-                default = dft_status
+                default = new_default;
               }}
             acc)
         exos
@@ -1255,33 +1286,50 @@ let teacher_tab token _select _params () =
       | Some id -> let _, _, exos, _ = Hashtbl.find assignments_tbl id in exos
       | None -> SSet.empty
     in
+    let tokens, default = get_student_selection () in
     disabled
       (SSet.diff
-         (already_assigned_exercises
-            (Token.Set.of_list (htbl_keys selected_students)))
+         (already_assigned_exercises tokens default)
          current_assignment)
   in
   let update_disabled_students () =
+    let set_enabled onoff student =
+      let el = find_component (student_line_id student) in
+      if onoff then
+        Manip.removeClass el "disabled"
+      else
+        (Manip.addClass el "disabled";
+         Manip.removeClass el "selected")
+    in
     let disabled tokens =
-      Token.Set.iter (Hashtbl.remove selected_students) tokens;
-      Token.Map.iter (fun tk _ ->
-          match Manip.by_id (student_line_id tk) with
-          | None -> ()
-          | Some el ->
-              if Token.Set.mem tk tokens then
-                (Manip.addClass el "disabled";
-                 Manip.removeClass el "selected")
-              else Manip.removeClass el "disabled")
+      Token.Set.iter
+        (fun tk -> Hashtbl.remove selected_students (`Token tk))
+        tokens;
+      Token.Map.iter
+        (fun tk _ -> set_enabled (not (Token.Set.mem tk tokens)) (`Token tk))
         !students_map
     in
-    let current_assignment = match !selected_assignment with
-      | Some id -> let _, std, _, _ = Hashtbl.find assignments_tbl id in std
-      | None -> Token.Set.empty
+    let current_assignment, cur_default = match !selected_assignment with
+      | Some id ->
+          let _, std, _, dft = Hashtbl.find assignments_tbl id in std, dft
+      | None -> Token.Set.empty, false
     in
     disabled
       (Token.Set.diff
          (already_assigned_students (htbl_keys selected_exercises))
-         current_assignment)
+         current_assignment);
+    let has_default =
+      not cur_default &&
+      try
+        Hashtbl.iter (fun ex _ ->
+            match (get_status ex).ES.assignments.ES.default with
+            | ES.Assigned _ -> raise Exit
+            | _ -> ())
+          selected_exercises;
+        false
+      with Exit -> true
+    in
+    set_enabled (not has_default) `Any
   in
   let update_disabled_both () =
     update_disabled_exercises ();
@@ -1317,28 +1365,31 @@ let teacher_tab token _select _params () =
     if force = None then update_disabled_both ();
     Lwt.return_unit
   end;
-  toggle_selected_students := begin fun ?force tokens ->
+  toggle_selected_students := begin fun ?force students ->
     Lwt.async @@ fun () ->
-    let tokens, onoff = match force with
-      | Some set -> tokens, set
+    let students, onoff = match force with
+      | Some set -> students, set
       | None ->
-          let tokens =
+          let students =
             List.filter (fun tk ->
                 match Manip.by_id (student_line_id tk) with
                 | Some elt -> not (Manip.hasClass elt "disabled")
                 | None -> false)
-              tokens
+              students
           in
-          tokens, not @@ List.exists (Hashtbl.mem selected_students) tokens
+          students, not @@ List.exists (Hashtbl.mem selected_students) students
     in
-    List.iter (select_student onoff) tokens;
-    (match !selected_assignment with
-     | None -> ()
-     | Some aid ->
-         set_assignment aid
-           ~students:(Token.Set.of_list (htbl_keys selected_students)));
-    if force = None then update_disabled_exercises ();
-    Lwt.return_unit
+    List.iter (select_student onoff) students;
+    match force with
+    | Some _ -> Lwt.return_unit
+    | None ->
+        (match !selected_assignment with
+         | None -> ()
+         | Some aid ->
+             let students, default = get_student_selection () in
+             set_assignment aid ~students ~default);
+        update_disabled_exercises ();
+        Lwt.return_unit
   end;
   toggle_select_assignment := begin fun assg_id ->
     Lwt.async @@ fun () ->
@@ -1346,14 +1397,19 @@ let teacher_tab token _select _params () =
       match Manip.by_id (assg_line_id id) with
       | None -> ()
       | Some line ->
-          let (assg, students, exos, _) = Hashtbl.find assignments_tbl id in
+          let (assg, students, exos, default) = Hashtbl.find assignments_tbl id in
           !toggle_selected_exercises ~force:false
             (all_exercises !exercises_index);
           !toggle_selected_exercises ~force:true (SSet.elements exos);
 
           !toggle_selected_students ~force:false
-            (Token.Map.fold (fun tk _ acc -> tk::acc) !students_map []);
-          !toggle_selected_students ~force:true (Token.Set.elements students);
+            (Token.Map.fold (fun tk _ acc -> (`Token tk)::acc)
+               !students_map
+               [`Any]);
+          !toggle_selected_students ~force:true
+            (Token.Set.fold (fun tk acc -> (`Token tk)::acc)
+               students
+               (if default then [`Any] else []));
 
           selected_assignment := Some id;
           Manip.addClass line "selected";

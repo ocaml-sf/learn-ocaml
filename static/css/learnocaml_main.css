@@ -1046,12 +1046,17 @@ tr.exercise_line.disabled, tr.student_line.disabled {
 }
 
 tr.exercise_line:hover:not(.disabled):not(.selected),
-tr.student_line:hover:not(.disabled):not(.selected) {
+tr.student_line:hover:not(.disabled):not(.selected),
+tr.assg_line:hover:not(.disabled):not(.selected) {
     background-color: #fff;
 }
 tr.exercise_line:hover:not(.disabled),
 tr.student_line:hover:not(.disabled) {
     cursor: cell;
+}
+
+tr.assg_line:hover {
+    cursor: pointer;
 }
 
 tr.exercise_group:hover {
@@ -1087,6 +1092,27 @@ tr.exercise_group:hover {
 }
 */
 
+input.date_past {
+    border: 1px solid #b88;
+    border-radius: 3px;
+}
+input.date_future {
+    border: 1px solid #8b8;
+    border-radius: 3px;
+}
+
+.future_students {
+    text-align: center;
+    font-style: italic;
+}
+.future_students::before {
+    font-style: normal;
+    content: "〈";
+}
+.future_students::after {
+    font-style: normal;
+    content: "〉";
+}
 
 #login-overlay {
     display: none;
