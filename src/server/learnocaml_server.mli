@@ -20,6 +20,7 @@
 val static_dir: string ref
 val sync_dir: string ref
 val port: int ref
+val cert_key_files: (string * string) option ref
 
 val args: (Arg.key * Arg.spec * Arg.doc) list
 

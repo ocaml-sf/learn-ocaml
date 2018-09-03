@@ -24,6 +24,8 @@ let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
 let port = ref 8080
 
+let cert_key_files = ref None
+
 let log_channel = ref (Some stdout)
 
 let args = Arg.align @@
@@ -393,6 +395,12 @@ let launch () =
     >>=
     respond
   in
+  let mode =
+    match !cert_key_files with
+    | None -> (`TCP (`Port !port))
+    | Some (crt, key) ->
+        `TLS (`Crt_file_path crt, `Key_file_path key, `No_password, `Port !port)
+  in
   Random.self_init () ;
   init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
@@ -400,7 +408,7 @@ let launch () =
         ~on_exn: (function
             | Unix.Unix_error(Unix.EPIPE, "write", "") -> ()
             | exn -> raise exn)
-        ~mode:(`TCP (`Port !port)) (Server.make ~callback ()) >>= fun () ->
+        ~mode (Server.make ~callback ()) >>= fun () ->
       Lwt.return true)
   @@ function
   | Sys.Break ->

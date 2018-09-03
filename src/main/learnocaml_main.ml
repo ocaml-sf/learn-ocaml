@@ -203,23 +203,48 @@ module Args = struct
       value & opt string "./sync" & info ["sync-dir"] ~docv:"DIR" ~doc:
         "Directory where to store user sync tokens"
 
+    let default_http_port = 8080
+    let default_https_port = 8443
+
+    let cert =
+      value & opt (some string) None &
+      info ["cert"] ~docv:"BASENAME" ~env:(Arg.env_var "LEARNOCAML_CERT") ~doc:
+        "HTTPS certificate: this option turns on HTTPS, and requires files \
+         $(i,BASENAME.pem) and $(i,BASENAME.key) to be present. They will be \
+         used as the server certificate and key, respectively. A passphrase \
+         may be asked on the terminal if the key file is encrypted."
+
     let port =
-      value & opt int 8080 & info ["port";"p"] ~docv:"PORT" ~doc:
-        "The TCP port on which to run the server"
+      value & opt (some int) None &
+      info ["port";"p"] ~docv:"PORT" ~env:(Arg.env_var "LEARNOCAML_PORT") ~doc:
+        (Printf.sprintf
+           "The TCP port on which to run the server. Defaults to %d, or %d if \
+            HTTPS is enabled."
+           default_http_port default_https_port)
 
     type t = {
       sync_dir: string;
+      cert: string option;
       port: int;
     }
 
     let term =
-      let apply app_dir sync_dir port =
+      let apply app_dir sync_dir port cert =
         Learnocaml_server.static_dir := app_dir;
         Learnocaml_server.sync_dir := sync_dir;
+        let port = match port, cert with
+          | Some p, _ -> p
+          | None, Some _ -> default_https_port
+          | None, None -> default_http_port
+        in
+        Learnocaml_server.cert_key_files :=
+          (match cert with
+           | Some base -> Some (base ^ ".pem", base ^ ".key");
+           | None -> None);
         Learnocaml_server.port := port;
-        { sync_dir; port }
+        { sync_dir; port; cert }
       in
-      Term.(const apply $app_dir $sync_dir $port)
+      Term.(const apply $app_dir $sync_dir $port $cert)
   end
 
   type t = {

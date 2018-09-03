@@ -37,12 +37,13 @@ VOLUME ["/repository"]
 RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
 VOLUME ["/sync"]
 EXPOSE 8080
+EXPOSE 8443
 
 USER learn-ocaml
 WORKDIR /home/learn-ocaml
 
 CMD ["build","serve"]
-ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository","--port=8080"]
+ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 
 COPY --from=compilation /home/opam/install-prefix /usr
 
