@@ -50,11 +50,11 @@ let exercise_meta_enc_v2 =
      (opt "title" string)
      (opt "short_description" string)
      (opt "identifier" string)
-     (opt "author" (list (tup2 string string)))
+     (opt "authors" (list (tup2 string string)))
      (opt "focus" (list string))
      (opt "requirements" (list string))
-     (opt "forward" (list string))
-     (opt "backward" (list string))
+     (opt "forward_exercises" (list string))
+     (opt "backward_exercises" (list string))
      (opt "max_score" int)
 
 let exercise_meta_enc =

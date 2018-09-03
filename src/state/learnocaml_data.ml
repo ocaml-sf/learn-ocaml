@@ -346,14 +346,14 @@ module Exercise = struct
         J.(obj10
              (req "kind" kind_enc)
              (dft "title" string "")
-             (opt "shortDescription" string)
+             (opt "short_description" string)
              (req "stars" float)
              (opt "identifier" string)
-             (dft "author" (list (tup2 string string)) [])
+             (dft "authors" (list (tup2 string string)) [])
              (dft "focus" (list string) [])
              (dft "requirements" (list string) [])
-             (dft "forward" (list string) [])
-             (dft "backward" (list string) []))
+             (dft "forward_exercises" (list string) [])
+             (dft "backward_exercises" (list string) []))
       in
       let exercise_enc_v2 =
         J.(obj1
