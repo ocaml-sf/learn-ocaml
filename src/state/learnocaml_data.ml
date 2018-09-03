@@ -382,36 +382,181 @@ module Exercise = struct
 
     type tag = string
 
-    type assignment = {
-      start: float;
-      stop: float;
-    }
-
     type status =
       | Open
       | Closed
-      | Assigned of assignment Token.Map.t
+      | Assigned of {start: float; stop: float}
+
+    type assignments = {
+      token_map: status Token.Map.t;
+      default: status;
+    }
 
     type t = {
       id: id;
       tags: tag list;
-      status: status;
+      assignments: assignments;
     }
 
+    let empty_assignments = {
+      token_map = Token.Map.empty;
+      default = Open;
+    }
+
+    let default_assignment a = a.default
+
+    let set_default_assignment a default = {a with default}
+
+    let get_status token a =
+      match Token.Map.find_opt token a.token_map with
+      | Some a -> a
+      | None -> a.default
+
+    let is_open_assignment token a =
+      match get_status token a with
+      | Assigned a ->
+         let t = Unix.gettimeofday () in
+         if t < a.start then `Closed
+         else `Deadline (a.stop -. t)
+      | Open -> `Open
+      | Closed -> `Closed
+
+    module STM = Map.Make(struct
+        type t = status
+        let compare = compare
+      end)
+
+    let by_status_explicit base a =
+      Token.Map.fold (fun tok st sm ->
+          match STM.find_opt st sm with
+          | None -> STM.add st (Token.Set.singleton tok) sm
+          | Some toks -> STM.add st (Token.Set.add tok toks) sm)
+        a.token_map
+        base
+
+    let by_status tokens a =
+      let rem_tokens =
+        Token.Set.filter (fun tok -> not (Token.Map.mem tok a.token_map)) tokens
+      in
+      let base =
+        if Token.Set.is_empty rem_tokens then STM.empty
+        else STM.singleton a.default rem_tokens
+      in
+      by_status_explicit base a |> STM.bindings
+
+    (* let make_status tokens default *) 
+
+    (* let exists_assignment a pred =
+     *   Token.Map.exists pred a.token_map ||
+     *   match a.default with
+     *   | None -> false
+     *   | Some df -> *) 
+
+    (* let fold_over_assignments a f init =
+     *   Token.Map.fold f a.token_map init *)
+
+    (* let token_map_of_assignments a =
+     *   a.token_map *)
+
+    let make_assignments token_map default =
+      { token_map; default }
+
+    (* let is_token_eligible _ _ =
+     *   true
+     * 
+     * let default_assignment a =
+     *   a.default_assignment
+     * 
+     * let assignment_for_token a _ =
+     *   a.default_assignment *)
+
+    (* let consider_token_for_assignment a t =
+     *   if is_token_eligible a t then
+     *     let assignment = assignment_for_token a t in
+     *     Some { a with token_map = Token.Map.add t assignment a.token_map }
+     *   else
+     *     None
+     * 
+     * type status =
+     *   | Open
+     *   | Closed
+     *   | Assigned of assignments *)
+
     let enc =
+      let status_enc =
+        J.union [
+          J.case (J.constant "Open")
+            (function Open -> Some () | _ -> None) (fun () -> Open);
+          J.case (J.constant "Closed")
+            (function Closed -> Some () | _ -> None) (fun () -> Closed);
+          J.case
+            (J.obj2 (J.req "start" J.float) (J.req "stop" J.float))
+            (function Assigned a -> Some (a.start, a.stop) | _ -> None)
+            (fun (start, stop) -> Assigned {start; stop})
+        ]
+      in
       let assignments_enc =
         J.conv
-          (fun m ->
-             Token.Map.bindings m |> List.map (fun (tok, a) ->
-                 Token.to_string tok,
-                 (a.start, a.stop)))
-          (List.fold_left (fun acc (tok, (start, stop)) ->
-               Token.Map.add (Token.parse tok) {start; stop} acc)
-              Token.Map.empty)
-          (J.assoc
-             (J.obj2
-                (J.req "start" J.float)
-                (J.req "stop" J.float)))
+          (fun t ->
+             t.default,
+             List.map (fun (tk, st) -> Token.to_string tk, st)
+               (Token.Map.bindings t.token_map))
+          (fun (default, token_assoc) -> {
+               default;
+               token_map =
+                 (List.fold_left (fun acc (tok, st) ->
+                      Token.Map.add (Token.parse tok) st acc)
+                     Token.Map.empty token_assoc)
+             })
+        @@
+        J.obj2
+          (J.dft "default" status_enc empty_assignments.default)
+          (J.dft "token_map" (J.assoc status_enc) [])
+      in
+      enc_check_version_2 @@
+      J.conv
+        (fun t -> t.id, t.tags, t.assignments)
+        (fun (id, tags, assignments) ->
+           {id; tags; assignments})
+      @@
+      J.obj3
+        (J.req "id" J.string)
+        (J.dft "tags" (J.list J.string) [])
+        (J.dft "assignments" assignments_enc empty_assignments)
+
+
+
+(*
+    let enc =
+      let assignments_enc =
+        let token_map_enc =
+          J.conv
+            (fun m ->
+              Token.Map.bindings m |> List.map (fun (tok, a) ->
+                                          Token.to_string tok,
+                                          (a.start, a.stop)))
+            (List.fold_left (fun acc (tok, (start, stop)) ->
+                 Token.Map.add (Token.parse tok) {start; stop} acc)
+               Token.Map.empty)
+            (J.assoc
+               (J.obj2
+                  (J.req "start" J.float)
+                  (J.req "stop" J.float)))
+        in
+        let assignment_enc =
+          J.conv
+            (fun a -> (a.start, a.stop))
+            (fun (start, stop) -> { start; stop })
+            (J.obj2
+               (J.req "start" J.float)
+               (J.req "stop" J.float))
+        in
+        J.conv
+          (fun a -> (a.token_map, a.default_assignment))
+          (fun (t, d) -> { token_map = t; default_assignment = d})
+          (J.obj2
+             (J.req "token_map" token_map_enc)
+             (J.req "default_assignment" assignment_enc))
       in
       let status_enc =
         J.union [
@@ -432,8 +577,15 @@ module Exercise = struct
         (J.req "id" J.string)
         (J.dft "tags" (J.list J.string) [])
         (J.dft "status" status_enc Open)
-
-    let default id = { id; tags = []; status = Open }
+*)
+    let default id = {
+      id;
+      tags = [];
+      assignments = {
+        token_map = Token.Map.empty;
+        default = Open;
+      }
+    }
 
   end
 

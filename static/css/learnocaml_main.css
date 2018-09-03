@@ -90,7 +90,8 @@ body {
   flex: 0 0 auto;
   border: 1px #fff solid;
   background: #ccc;
-  color: #444;
+  color: transparent;
+  text-shadow: 0 0 .8ex black;
   border-radius: 5px;
   padding: 5px;
   font-size: 24px;
@@ -98,6 +99,10 @@ body {
   box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
   text-align: center;
   font-family: 'Inconsolata';
+}
+#learnocaml-save-token-field:hover {
+  color: #444;
+  text-shadow: none;
 }
 #learnocaml-nickname {
   display: block;
@@ -1040,10 +1045,18 @@ tr.exercise_line.disabled, tr.student_line.disabled {
     color: #a52;
 }
 
+tr.exercise_line:hover:not(.disabled):not(.selected),
+tr.student_line:hover:not(.disabled):not(.selected),
+tr.assg_line:hover:not(.disabled):not(.selected) {
+    background-color: #fff;
+}
 tr.exercise_line:hover:not(.disabled),
 tr.student_line:hover:not(.disabled) {
-    background-color: #fff;
     cursor: cell;
+}
+
+tr.assg_line:hover {
+    cursor: pointer;
 }
 
 tr.exercise_group:hover {
@@ -1079,6 +1092,27 @@ tr.exercise_group:hover {
 }
 */
 
+input.date_past {
+    border: 1px solid #b88;
+    border-radius: 3px;
+}
+input.date_future {
+    border: 1px solid #8b8;
+    border-radius: 3px;
+}
+
+.future_students {
+    text-align: center;
+    font-style: italic;
+}
+.future_students::before {
+    font-style: normal;
+    content: "〈";
+}
+.future_students::after {
+    font-style: normal;
+    content: "〉";
+}
 
 #login-overlay {
     display: none;
