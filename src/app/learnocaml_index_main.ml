@@ -771,7 +771,7 @@ let teacher_tab token _select _params () =
   in
   let anystudents_line =
     make_student_line `Any [
-      H.td ~a:[H.a_colspan 0; H.a_class ["future_students"]] [
+      H.td ~a:[H.a_colspan 10; H.a_class ["future_students"]] [
         H.pcdata [%i"any future students"]
           (* U+3008, U+3009 *)
       ];
@@ -968,7 +968,7 @@ let teacher_tab token _select _params () =
       H.tr ~a:[
         H.a_id new_assg_id;
       ] [
-        H.td ~a:[H.a_colspan 0]
+        H.td ~a:[H.a_colspan 10]
           [ H.button [H.pcdata [%i"New assignment"]] ]
       ]
     in
