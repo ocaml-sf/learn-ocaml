@@ -132,7 +132,12 @@ let display_exercise_more content_id token id =
   Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
   let descr =
     a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
-           a_class [ "exercise" ] ] [
+           a_class [ "exercise" ] ;
+           (* dirty trick to reload the page *)
+           a_onclick (fun _ ->
+               Js_utils.set_fragment [("id", id); ("action", "open")];
+               window##.location##reload; true)
+         ] [
       display_descr meta ;
       div ~a:[  ] [
         display_stars meta ;
