@@ -38,7 +38,7 @@ module type S = sig
         functions to check the Parsetree. *)
 
     (** {2 Checkers} *)
-    
+
     (** The functional type ['a ast_checker] describes the functions
        used for AST introspection. It takes as input the introspect
        objects (mainly [Parsetree structure] like [code_ast] or
@@ -126,56 +126,54 @@ module type S = sig
 
     (** [forbid k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is in the list [ls]. The message of the failure
+       tested if [t] is in the list [ls]. The message of the
        report is {e The text1 text2 is forbidden} where [text1] is the
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
     val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-             
+
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is {e not} in [ls]. The message of the failure
+       tested if [t] is {e not} in [ls]. The message of the
        report is {e The text1 text2 is not allowed} where [text1] is
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-                                      
-    (** [require k pr treq t] returns a {!Learnocaml_report.Success 5}
-       report the first time the function is applied with [t] and [t]
-       is equal to [treq] (comparison with Pervasives.compare). The
-       report message is then {e Found text1 text2} where [text1] is
-       value of [k] and [text2] is the result of [pr] applies to
-       [t]. Otherwise, an empty report is returned. *)
+
+    (** [require k pr _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the report is {e Found text1 text2} where
+       [text1] is value of [k] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
     (** {3 For expressions } *)
-                      
+
     (** [forbid_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is in the list of forbidden
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is forbidden} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-            
+
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is {e not} in the list of allowed
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is not allowed} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-                                                               
-    (** [require_expr name expr t] returns a
-       {!Learnocaml_report.Success 5} report the first time the
-       function is applied with [t] and [t] is equal to [expr]
-       (comparison with Pervasives.compare). The report message is
-       then {e Found text1 text2} where [text1] is value of [name] and
-       [text2] is [expr]. Otherwise, an empty report is returned.  *)
+
+    (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the success report is {e Found text1 text2} where
+       [text1] is value of [name] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
-         
+
     (** {3 For syntax } *)
     (** These functions are very restricted function to either forbid
        any use of a particular syntax or require to have at least one
@@ -185,17 +183,17 @@ module type S = sig
         For example, adding [~on_include: forbid "include" ~on_open:
        forbid "open"] prevents the student from using [open] and
        [include] syntaxes. *)
-                                                         
+
     (** [forbid_syntax n _] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time it
-       is called. The message of the failure report is {e The {b text}
+       is called. The message of the report is {e The {b text}
        syntax is forbidden} where [text] is the value of
        [n]. Otherwise, an empty report is returned. *)
     val forbid_syntax : string -> (_ -> Learnocaml_report.t)
-         
+
     (** [require_syntax n _] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time it is called. The message of
-       the failure report is {e The {b text} syntax has been found, as
+       the report is {e The {b text} syntax has been found, as
        expected} where [text] is the value of [n]. Otherwise, an empty
        report is returned.  *)
     val require_syntax : string -> (_ -> Learnocaml_report.t)
@@ -745,7 +743,7 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
-                                                                                                
+
     (** [test_function_3_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
@@ -769,7 +767,7 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
-                                                                                                   
+
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -844,7 +842,7 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
     -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-                                                                                
+
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -988,7 +986,7 @@ module type S = sig
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
-    (** The type of function prototypes.  
+    (** The type of function prototypes.
 
         Usage: [arg_ty [%ty: int]
         @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
@@ -1014,7 +1012,7 @@ module type S = sig
     val name : 'a lookup -> string
 
     (** {2 Generic grading functions}*)
-      
+
     (** [test_value lookup cb] *)
     val test_value : 'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
@@ -1063,7 +1061,7 @@ module type S = sig
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
    val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
-                                                                                       
+
    (**/**)
    include (module type of Ast_checker)
    include (module type of Tester)
