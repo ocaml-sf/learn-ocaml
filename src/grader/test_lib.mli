@@ -974,15 +974,28 @@ module type S = sig
 
     (** The type of arguments, represented as heterogeneous lists.
 
-        Usage : [arg 3 @@ arg "word" @@ last false] *)
+        Usage: [arg 3 @@ arg "word" @@ last false]
+        
+        Alternatively: [3 @: "word" @:!! false]
+     *)
     type ('arrow, 'uarrow, 'ret) args
     val last :
+      'a ->
+      ('a -> 'ret, 'a -> unit, 'ret) args
+    val (!!) :
       'a ->
       ('a -> 'ret, 'a -> unit, 'ret) args
     val arg :
       'a ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
       ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:) :
+      'a ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:!!) :
+      'a -> 'b ->
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
@@ -1000,6 +1013,10 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
+    val get_ret_ty :
+      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
 
     (** {2 Lookup functions} *)
 
@@ -1057,6 +1074,38 @@ module type S = sig
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.t
+
+    (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
+        ~before_reference ~before_user ~after ~sampler prot name tests] *)
+    val test_function_against_solution :
+      ?gen:int ->
+      ?test: 'ret tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+      ?before_user:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+      ?after:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+         'ret * string * string ->
+         'ret * string * string ->
+         Learnocaml_report.item list) ->
+      ?sampler:
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      string ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
+      Learnocaml_report.item list
+
+    (** Helper notation to test pure functions.
+
+        [p ==> r] is the pair [(p, fun () -> r)].
+
+        Example: [test_function prot
+                  (lookup_student (ty_of_prot prot) name)
+                  [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
+    val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
