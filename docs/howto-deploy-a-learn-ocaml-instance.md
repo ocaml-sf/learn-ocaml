@@ -11,7 +11,7 @@ Assuming your exercise repository is in directory REPOSITORY, you can either:
 - build and serve it directly on port 80 (REPOSITORY needs to be an absolute
   path) using
 
-      docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/home/learn-ocaml/sync -p 80:8080 --name learn-ocaml-server ocamlsf/learn-ocaml
+      docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server altgr/learn-ocaml
 
 - or generate a new docker image that includes your repository:
 
@@ -21,7 +21,7 @@ Assuming your exercise repository is in directory REPOSITORY, you can either:
 
   and then deploy that image:
 
-      docker run --rm -p 80:8080 -v learn-ocaml-sync:/home/learn-ocaml/sync --name learn-ocaml-server learn-ocaml-app
+      docker run --rm -p 80:8080 -v learn-ocaml-sync:/sync --name learn-ocaml-server learn-ocaml-app
 
   The user data will persist between runs within the Docker "Volume" called
   `learn-ocaml-sync`. You can find out where it stores its data using:
