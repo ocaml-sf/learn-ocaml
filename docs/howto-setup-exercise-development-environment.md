@@ -11,7 +11,7 @@ GNU/Linux and MacOS X are supported.
 > `REPOSITORY` (absolute path), and a recent enough version of Docker installed,
 > use:
 >
->     docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/home/learn-ocaml/sync -p 80:8080 --name learn-ocaml-server ocamlsf/learn-ocaml
+>     docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server altgr/learn-ocaml
 >
 > This will start an instance of the learn-ocaml server on port 80 (ignore the
 > message about 8080, this is the port used internally).
