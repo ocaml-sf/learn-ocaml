@@ -1165,8 +1165,10 @@ let teacher_tab token _select _params () =
                 if Token.Set.mem tk students then
                   if default then acc
                   else Token.Map.add tk status acc
-                else
-                  add tk (ES.get_status tk assg) acc)
+                else if Token.Set.mem tk students0 then
+                  if default then Token.Map.add tk ES.Closed acc
+                  else Token.Map.remove tk acc
+                else add tk (ES.get_status tk assg) acc)
               !students_map Token.Map.empty
           in
           SMap.add ex_id
