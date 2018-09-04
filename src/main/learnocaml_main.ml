@@ -230,8 +230,8 @@ module Args = struct
 
     let term =
       let apply app_dir sync_dir port cert =
-        Learnocaml_server.static_dir := app_dir;
-        Learnocaml_server.sync_dir := sync_dir;
+        Learnocaml_store.static_dir := app_dir;
+        Learnocaml_store.sync_dir := sync_dir;
         let port = match port, cert with
           | Some p, _ -> p
           | None, Some _ -> default_https_port
