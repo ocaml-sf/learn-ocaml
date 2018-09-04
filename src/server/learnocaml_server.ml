@@ -18,10 +18,6 @@
 open Learnocaml_data
 open Learnocaml_store
 
-let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
-
-let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
-
 let port = ref 8080
 
 let cert_key_files = ref None
