@@ -59,7 +59,8 @@ type _ request =
   | Exercise_status:
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * Exercise.Status.t list -> unit request
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
+  (* return the before & after stats *)
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case

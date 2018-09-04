@@ -349,7 +349,12 @@ module Request_handler = struct
           Exercise.Status.get id >>= respond_json
       | Api.Set_exercise_status (token, status) ->
           with_verified_teacher_token token @@ fun () ->
-          Lwt_list.iter_s Exercise.Status.set status >>= respond_json
+          Lwt_list.iter_s
+            Exercise.Status.(fun (ancestor, ours) ->
+                get ancestor.id >>= fun theirs ->
+                set (three_way_merge ~ancestor ~theirs ~ours))
+            status
+          >>= respond_json
 
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))

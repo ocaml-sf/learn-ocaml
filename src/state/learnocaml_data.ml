@@ -444,6 +444,52 @@ module Exercise = struct
       in
       by_status_explicit base a |> STM.bindings
 
+    let three_way_merge ~ancestor ~theirs ~ours =
+      let id = ancestor.id in
+      if id <> theirs.id || id <> ours.id then
+        invalid_arg "three_way_merge";
+      let tags =
+        let (++), (--), (%%) = SSet.(union, diff, inter) in
+        let a = SSet.of_list ancestor.tags
+        and t = SSet.of_list theirs.tags
+        and o = SSet.of_list ours.tags
+        in
+        SSet.elements ((a %% t %% o) ++ (t -- a) ++ (o -- a))
+      in
+      let default =
+        if ours.assignments.default <> ancestor.assignments.default
+        then ours.assignments.default
+        else theirs.assignments.default
+      in
+      let token_map =
+        Token.Map.merge (fun tok a o ->
+            let a = match a with
+              | None -> ancestor.assignments.default
+              | Some st -> st
+            in
+            let t =
+              match Token.Map.find_opt tok theirs.assignments.token_map with
+              | None -> theirs.assignments.default
+              | Some st -> st
+            in
+            let o = match o with
+              | None -> ours.assignments.default
+              | Some st -> st
+            in
+            if o <> a then Some o else Some t)
+          ancestor.assignments.token_map
+          ours.assignments.token_map
+      in
+      let token_map =
+        Token.Map.merge (fun _ t o -> match t, o with
+            | _, (Some st as s) | (Some st as s), _ ->
+                if st = default then None else s
+            | None, None -> assert false)
+          theirs.assignments.token_map
+          token_map
+      in
+      { id; tags; assignments = { default; token_map } }
+
     (* let make_status tokens default *) 
 
     (* let exists_assignment a pred =
