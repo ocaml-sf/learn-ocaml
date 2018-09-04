@@ -44,7 +44,7 @@ type _ request =
   | Exercise_status:
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * Exercise.Status.t list -> unit request
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case
@@ -181,7 +181,9 @@ module Conversions (Json: JSON_CODEC) = struct
     | Set_exercise_status (token, status) ->
         post ~token
           ["teacher"; "exercise-status"]
-          (Json.encode (J.list Exercise.Status.enc) status)
+          (Json.encode
+             (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
+             status)
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -260,7 +262,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Exercise_status (token, String.concat "/" id) |> k
       | `POST body, ["teacher"; "exercise-status"], Some token
         when Token.is_teacher token ->
-          (match Json.decode (J.list Exercise.Status.enc) body with
+          (match Json.decode
+                   (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
+                   body
+           with
            | status ->
                Set_exercise_status (token, status) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)

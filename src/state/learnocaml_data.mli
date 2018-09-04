@@ -178,6 +178,12 @@ module Exercise: sig
     val by_status:
       Token.Set.t -> assignments -> (status * Token.Set.t) list
 
+    (* Merges all changes from [theirs] and [ours], based on [ancestor]. [ours]
+       is privileged in case of any conflict (e.g. different affectation of the
+       same student) *)
+    val three_way_merge:
+      ancestor:t -> theirs:t -> ours:t -> t
+
     (* val 
      *   ((float * float) * Token.Set.t) list -> assignments *)
 

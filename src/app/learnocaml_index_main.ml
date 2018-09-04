@@ -1071,12 +1071,18 @@ let teacher_tab token _select _params () =
   in
   let apply_changes () =
     Lwt.async @@ fun () ->
-    let changes =
-      SMap.fold (fun id st acc ->
-          if Some st <> SMap.find_opt id !status_map then st :: acc
-          else acc)
-        !status_changes []
+    let changes_map =
+      SMap.merge (fun id st0 -> function
+          | None -> None
+          | Some st ->
+              let st0 = match st0 with
+                | Some s -> s
+                | None -> Exercise.Status.(default st.id)
+              in
+              if st <> st0 then Some (st0, st) else None)
+        !status_map !status_changes
     in
+    let changes = SMap.fold (fun _ x acc -> x::acc) changes_map [] in
     Server_caller.request_exn
       (Learnocaml_api.Set_exercise_status (token, changes)) >|= fun () ->
     reload ();
