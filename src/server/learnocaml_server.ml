@@ -75,24 +75,22 @@ module Api = Learnocaml_api
 
 open Cohttp_lwt_unix
 
-type caching = Nocache | Shortcache | Longcache
+type caching =
+  | Nocache (* dynamic resources *)
+  | Shortcache (* valid for the server lifetime *)
+  | Longcache (* static resources *)
 
 let respond_static path =
-  let caching = match path with
-    | "fonts"::_ | "icons"::_ -> Longcache
-    | "css"::_ | "js"::_ | [_] | _ -> Shortcache
-  in
   Lwt.catch
     (fun () ->
        read_static_file path >|= fun body ->
        Ok (body,
-           Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path),
-           caching))
+           Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)))
     (fun e ->
        Lwt.return (Error (`Not_found, Printexc.to_string e)))
 
-let respond_json ?(caching=Nocache) = fun x ->
-  Lwt.return (Ok (x, "application/json", Nocache))
+let respond_json = fun x ->
+  Lwt.return (Ok (x, "application/json"))
 
 let with_verified_teacher_token token cont =
   Token.check_teacher token >>= function
@@ -145,8 +143,10 @@ module Request_handler = struct
 
   let token_save_mutexes = Hashtbl.create 223
 
-  let callback
-    : type resp. resp Api.request -> resp ret
+  let callback_raw
+    : type resp.
+      resp Api.request ->
+      (resp * string, Cohttp.Code.status_code * string) result Lwt.t
     = function
       | Api.Version () ->
           respond_json Api.version
@@ -298,7 +298,7 @@ module Request_handler = struct
                   all_exercises;
                 line ())
             tok_saves;
-          Lwt.return (Ok (Buffer.contents buf, "text/csv", Nocache))
+          Lwt.return (Ok (Buffer.contents buf, "text/csv"))
 
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->
@@ -321,21 +321,21 @@ module Request_handler = struct
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
-              respond_json ~caching:Shortcache
+              respond_json
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
               Lwt.return (Error (`Forbidden, "Exercise closed")))
 
       | Api.Lesson_index () ->
-          Lesson.Index.get () >>= respond_json ~caching:Shortcache
+          Lesson.Index.get () >>= respond_json
       | Api.Lesson id ->
-          Lesson.get id >>= respond_json ~caching:Shortcache
+          Lesson.get id >>= respond_json
 
       | Api.Tutorial_index () ->
-          Tutorial.Index.get () >>= respond_json ~caching:Shortcache
+          Tutorial.Index.get () >>= respond_json
       | Api.Tutorial id ->
-          Tutorial.get id >>= respond_json ~caching:Shortcache
+          Tutorial.get id >>= respond_json
 
       | Api.Exercise_status_index token ->
           with_verified_teacher_token token @@ fun () ->
@@ -355,6 +355,26 @@ module Request_handler = struct
       | Api.Invalid_request s ->
           Lwt.return (Error (`Bad_request, s))
 
+  let caching: type resp. resp Api.request -> caching = function
+    | Api.Version () -> Shortcache
+    | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_) -> Longcache
+    | Api.Static ("css"::_ | "js"::_ | _) -> Shortcache
+
+    | Api.Exercise _ -> Shortcache
+
+    | Api.Lesson_index _ -> Shortcache
+    | Api.Lesson _ -> Shortcache
+    | Api.Tutorial_index _ -> Shortcache
+    | Api.Tutorial _ -> Shortcache
+
+    | _ -> Nocache
+
+  let callback: type resp. resp Api.request -> resp ret = fun req ->
+    let cache = caching req in
+    callback_raw req >|= function
+    | Ok (resp, content_type) -> Ok (resp, content_type, cache)
+    | Error e -> Error e
+
 end
 
 module Api_server = Api.Server (Json_codec) (Request_handler)
@@ -370,6 +390,22 @@ let init_teacher_token () =
         Printf.printf "Found the following teacher tokens:\n  - %s\n%!"
           (String.concat "\n  - " (List.map Token.to_string teachers));
         Lwt.return_unit
+
+let last_modified = (* server startup time *)
+  let open Unix in
+  let tm = gmtime (gettimeofday ()) in
+  Printf.sprintf "%s, %02d %s %04d %02d:%02d:%02d GMT"
+    (match tm.tm_wday with
+     | 0 -> "Sun" | 1 -> "Mon" | 2 -> "Tue" | 3 -> "Wed"
+     | 4 -> "Thu" | 5 -> "Fri" | 6 -> "Sat"
+     | _ -> assert false)
+    tm.tm_mday
+    (match tm.tm_mon with
+     | 0 -> "Jan" | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
+     | 5 -> "Jun" | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
+     | 10 -> "Nov" | 11 -> "Dec" | _ -> assert false)
+    (tm.tm_year + 1900)
+    tm.tm_hour tm.tm_min tm.tm_sec
 
 let launch () =
   (* Learnocaml_store.init ~exercise_index:
@@ -388,18 +424,25 @@ let launch () =
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
             | Longcache ->
-                Cohttp.Header.add_multi headers "Cache-Control"
-                  ["public"; "max-age=2592000"] (* 1 month *)
+                Cohttp.Header.add headers
+                  "Cache-Control" "public, immutable, max-age=2592000"
+                  (* 1 month *)
             | Shortcache ->
-                Cohttp.Header.add_multi headers "Cache-Control"
-                  ["public"; "max-age=86400"] (* 1 day *)
+                Cohttp.Header.add_list headers [
+                  "Last-Modified", last_modified;
+                  "Cache-Control", "private, must-revalidate";
+                ]
             | Nocache ->
-                Cohttp.Header.add_multi headers "Cache-Control" ["no-cache"]
+                Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
           Server.respond_string ~headers ~status:`OK ~body:str ()
       | Error (status, body) ->
           Server.respond_error ~status ~body ()
     in
+    if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
+       Some last_modified
+    then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
+    else
     (match req.Request.meth with
      | `GET -> Lwt.return (Ok {Api.meth = `GET; path; args})
      | `POST ->
