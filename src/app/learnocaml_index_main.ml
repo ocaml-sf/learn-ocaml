@@ -651,6 +651,13 @@ let teacher_tab token _select _params () =
       selected_students (Token.Set.empty, false)
   in
 
+  let auto_checkbox () =
+    H.div ~a:[H.a_class ["auto_checkbox"]] []
+  in
+  let auto_checkbox_td () =
+    H.td ~a:[H.a_class ["auto_checkbox"]] [auto_checkbox ()]
+  in
+
   (* Action function callbacks *)
   let update_changed_status = ref (fun () -> assert false) in
   let toggle_selected_exercises = ref (fun ?force _ -> assert false) in
@@ -674,7 +681,8 @@ let teacher_tab token _select _params () =
                 H.a_onclick (fun _ ->
                     !toggle_selected_exercises all_children; false);
               ] [
-                H.th ~a:[H.a_colspan 0; indent_style group_level]
+                H.td [];
+                H.th ~a:[H.a_colspan 10; indent_style group_level]
                   [H.pcdata g.Exercise.Index.title];
               ] :: acc
             in
@@ -694,6 +702,7 @@ let teacher_tab token _select _params () =
               H.a_class ("exercise_line" :: classes);
               H.a_onclick (fun _ -> !toggle_selected_exercises [id]; false);
             ] [
+              auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
                 [ H.pcdata meta.Exercise.Meta.title ];
               H.td (List.map H.pcdata meta.Exercise.Meta.focus);
@@ -722,7 +731,7 @@ let teacher_tab token _select _params () =
         H.a_onclick (fun _ ->
             !toggle_selected_exercises (all_exercises !exercises_index);
             true);
-      ] [H.pcdata [%i"Exercises"]]
+      ] [H.pcdata [%i"Exercises"]; H.pcdata " \xe2\x98\x90" (* U+2610 *)]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
@@ -743,7 +752,7 @@ let teacher_tab token _select _params () =
                  !students_map [`Any]);
             true
           );
-      ] [H.pcdata [%i"Students"]]
+      ] [H.pcdata [%i"Students"];  H.pcdata " \xe2\x98\x90" (* U+2610 *)]
     in
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
@@ -767,7 +776,7 @@ let teacher_tab token _select _params () =
       H.a_onclick (fun _ ->
           !toggle_selected_students [st];
           true);
-    ] contents
+    ] (auto_checkbox_td () :: contents)
   in
   let anystudents_line =
     make_student_line `Any [
