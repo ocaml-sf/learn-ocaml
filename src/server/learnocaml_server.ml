@@ -131,6 +131,11 @@ let log conn api_req =
       output_char oc '\n';
       flush oc
 
+let check_report exo report grade =
+  let max_grade = Learnocaml_exercise.(access File.max_score) exo in
+  let score, _ = Learnocaml_report.result report in
+  score * 100 / max_grade = grade
+
 module Request_handler = struct
 
   type 'a ret =
@@ -249,56 +254,69 @@ module Request_handler = struct
                   let tags = [] in
                   Lwt.return Student.{token; nickname; results; tags})
           >>= respond_json
-      | Api.Students_csv token ->
+      | Api.Students_csv (token, exercises, students) ->
           with_verified_teacher_token token @@ fun () ->
-          Token.Index.get ()
-          >|= List.filter Token.is_student
+          (match students with
+           | [] -> Token.Index.get () >|= List.filter Token.is_student
+           | l -> Lwt.return l)
           >>= Lwt_list.map_p (fun token ->
               Save.get token >|= fun save -> token, save)
           >>= fun tok_saves ->
           let all_exercises =
-            List.fold_left (fun acc (_tok, save) ->
-                match save with
-                | None -> acc
-                | Some save ->
-                    SMap.fold (fun ex_id _ans acc -> SSet.add ex_id acc)
-                      save.Save.all_exercise_states
-                      acc)
-              SSet.empty tok_saves
+            match exercises with
+            | [] ->
+                List.fold_left (fun acc (_tok, save) ->
+                    match save with
+                    | None -> acc
+                    | Some save ->
+                        SMap.fold (fun ex_id _ans acc -> SSet.add ex_id acc)
+                          save.Save.all_exercise_states
+                          acc)
+                  SSet.empty tok_saves
+                |> SSet.elements
+            | exercises -> exercises
           in
           let columns =
             "token" :: "nickname" ::
-            (List.rev @@
-             SSet.fold (fun ex_id acc ->
+            (List.fold_left (fun acc ex_id ->
                  (ex_id ^ " date") ::
                  (ex_id ^ " grade") ::
                  acc)
-               all_exercises [])
+                [] (List.rev all_exercises))
           in
           let buf = Buffer.create 3497 in
           let sep () = Buffer.add_char buf ',' in
           let line () = Buffer.add_char buf '\n' in
           Buffer.add_string buf (String.concat "," columns);
           line ();
-          List.iter (fun (tok, save) ->
-              match save with None -> () | Some save ->
+          Lwt_list.iter_s (fun (tok, save) ->
+              match save with None -> Lwt.return_unit | Some save ->
                 Buffer.add_string buf (Token.to_string tok);
                 sep ();
                 Buffer.add_string buf save.Save.nickname;
-                SSet.iter (fun ex_id ->
-                    sep ();
-                    try
-                      let st = SMap.find ex_id save.Save.all_exercise_states in
-                      (match st.Answer.grade with
-                       | Some n -> Buffer.add_string buf (string_of_int n)
-                       | None -> ());
-                      sep ();
-                      Buffer.add_string buf (string_of_date st.Answer.mtime)
-                    with Not_found -> sep ())
-                  all_exercises;
-                line ())
-            tok_saves;
-          Lwt.return (Ok (Buffer.contents buf, "text/csv"))
+                Lwt_list.iter_s (fun ex_id ->
+                    Lwt.catch (fun () ->
+                        sep ();
+                        Exercise.get ex_id >>= fun exo ->
+                        Lwt.wrap2 SMap.find ex_id save.Save.all_exercise_states
+                        >|= fun st ->
+                        (match st.Answer.grade with
+                         | None -> ()
+                         | Some grade ->
+                             if match st.Answer.report with
+                               | None -> false
+                               | Some rep -> check_report exo rep grade
+                             then Buffer.add_string buf (string_of_int grade)
+                             else Printf.bprintf buf "CHEAT(%d)" grade);
+                        sep ();
+                        Buffer.add_string buf (string_of_date st.Answer.mtime))
+                      (function
+                        | Not_found -> sep (); Lwt.return_unit
+                        | e -> raise e))
+                  all_exercises
+                >|= line)
+            tok_saves
+          >|= fun () -> Ok (Buffer.contents buf, "text/csv")
 
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->

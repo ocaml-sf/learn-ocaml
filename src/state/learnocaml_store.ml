@@ -183,7 +183,11 @@ module Exercise = struct
             and module Index := Index)
 
   let get id =
-    read_static_file (Learnocaml_index.exercise_path id) enc
+    Lwt.catch
+      (fun () -> read_static_file (Learnocaml_index.exercise_path id) enc)
+      (function
+        | Unix.Unix_error _ -> raise Not_found
+        | e -> raise e)
 
 end
 

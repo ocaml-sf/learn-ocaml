@@ -28,7 +28,8 @@ type _ request =
   | Update_save:
       'a token * Save.t -> Save.t request
   | Students_list: teacher token -> Student.t list request
-  | Students_csv: teacher token -> string request
+  | Students_csv:
+      teacher token * Exercise.id list * Token.t list -> string request
 
   | Exercise_index: 'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
@@ -153,9 +154,14 @@ module Conversions (Json: JSON_CODEC) = struct
     | Students_list token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "students.json"]
-    | Students_csv token ->
+    | Students_csv (token, exercises, students) ->
         assert (Token.is_teacher token);
-        get ~token ["teacher"; "students.csv"]
+        post ~token ["teacher"; "students.csv"]
+          (Json.encode
+             (J.obj2
+                (J.dft "exercises" (J.list J.string) [])
+                (J.dft "students" (J.list Token.enc) []))
+             (exercises, students))
 
     | Exercise_index token ->
         get ~token ["exercise-index.json"]
@@ -237,7 +243,18 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Students_list token |> k
       | `GET, ["teacher"; "students.csv"], Some token
         when Token.is_teacher token ->
-          Students_csv token |> k
+          Students_csv (token, [], []) |> k
+      | `POST body, ["teacher"; "students.csv"], Some token
+        when Token.is_teacher token ->
+          (match Json.decode
+                   (J.obj2
+                      (J.dft "exercises" (J.list J.string) [])
+                      (J.dft "students" (J.list Token.enc) []))
+                   body
+           with
+           | exercises, students ->
+               Students_csv (token, exercises, students) |> k
+           | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
       | `GET, ["exercise-index.json"], Some token ->
           Exercise_index token |> k
