@@ -389,7 +389,11 @@ module Request_handler = struct
 
   let callback: type resp. resp Api.request -> resp ret = fun req ->
     let cache = caching req in
-    callback_raw req >|= function
+    Lwt.catch (fun () -> callback_raw req)
+      (function
+        | Not_found -> Lwt.return (Error (`Not_found,"Exercise not found"))
+        | e -> raise e)
+    >|= function
     | Ok (resp, content_type) -> Ok (resp, content_type, cache)
     | Error e -> Error e
 
