@@ -407,6 +407,39 @@ let last_modified = (* server startup time *)
     (tm.tm_year + 1900)
     tm.tm_hour tm.tm_min tm.tm_sec
 
+(* Taken from the source of "decompress", from bin/easy.ml *)
+let compress =
+  let input_buffer = Bytes.create 0xFFFF in
+  let output_buffer = Bytes.create 0xFFFF in
+
+  fun ?(level = 4) data ->
+  let pos = ref 0 in
+  let res = Buffer.create (String.length data) in
+
+  Decompress.Zlib_deflate.bytes
+    input_buffer output_buffer
+    (fun input_buffer -> function
+     | Some max ->
+       let n = min max (min 0xFFFF (String.length data - !pos)) in
+       Bytes.blit_string data !pos input_buffer 0 n;
+       pos := !pos + n;
+       n
+     | None ->
+       let n = min 0xFFFF (String.length data - !pos) in
+       Bytes.blit_string data !pos input_buffer 0 n;
+       pos := !pos + n;
+       n)
+    (fun output_buffer len ->
+      Buffer.add_subbytes res output_buffer 0 len;
+      0xFFFF)
+    (Decompress.Zlib_deflate.default ~proof:Decompress.B.proof_bytes level)
+  (* We can specify the level of the compression, see the documentation to know
+     what we use for each level. The default is 4.
+  *)
+  |> function
+  | Ok _ -> Buffer.contents res
+  | Error _ -> failwith "Could not compress"
+
 let launch () =
   (* Learnocaml_store.init ~exercise_index:
    *   (String.concat Filename.dir_sep
@@ -418,8 +451,14 @@ let launch () =
     let path = List.filter ((<>) "") path in
     let query = Uri.query uri in
     let args = List.map (fun (s, l) -> s, String.concat "," l) query in
+    let use_compression =
+      List.exists (function _, Cohttp.Accept.Deflate -> true | _ -> false)
+        (Cohttp.Header.get_acceptable_encodings req.Request.headers)
+    in
     (* let cookies = Cohttp.Cookie.Cookie_hdr.extract (Cohttp.Request.headers req) in *)
     let respond = function
+      | Error (status, body) ->
+          Server.respond_error ~status ~body ()
       | Ok (str, content_type, caching) ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
@@ -435,9 +474,23 @@ let launch () =
             | Nocache ->
                 Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
-          Server.respond_string ~headers ~status:`OK ~body:str ()
-      | Error (status, body) ->
-          Server.respond_error ~status ~body ()
+          match
+            if use_compression && String.length str >= 1024 &&
+               match String.split_on_char '/' content_type with
+               | "text"::_
+               | "application" :: ("javascript" | "json") :: _
+               | "image" :: ("gif" | "svg+xml") :: _ -> true
+               | _ -> false
+            then
+              Cohttp.Header.add headers "Content-Encoding" "deflate",
+              compress str
+            else headers, str
+          with
+          | headers, str ->
+              Server.respond_string ~headers ~status:`OK ~body:str ()
+          | exception e ->
+              Server.respond_error ~status:`Internal_server_error
+                ~body:(Printexc.to_string e) ()
     in
     if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
        Some last_modified
