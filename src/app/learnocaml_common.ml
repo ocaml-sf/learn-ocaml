@@ -428,7 +428,6 @@ let countdown ?(ontimeout = fun () -> ()) container t =
   in
   let rec callback () =
     let remaining = int_of_float (deadline -. gettimeofday ()) in
-    Firebug.console##log(Js.string (Printf.sprintf "Remaining: %f - %f = %ds" deadline (gettimeofday ()) remaining));
     if remaining <= 0 then
       (update 0;
        ontimeout ())
