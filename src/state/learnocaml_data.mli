@@ -50,6 +50,7 @@ module Save: sig
 
   type t = {
     nickname: string ;
+    all_exercise_editors: (float * string) SMap.t;
     all_exercise_states: Answer.t SMap.t;
     all_toplevel_histories: Learnocaml_toplevel_history.snapshot SMap.t;
     all_exercise_toplevel_histories: Learnocaml_toplevel_history.snapshot SMap.t;

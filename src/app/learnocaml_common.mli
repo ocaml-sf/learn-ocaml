@@ -93,19 +93,25 @@ val render_rich_text :
 
 val extract_text_from_rich_text : Learnocaml_data.Tutorial.text -> string
 
+(** Sets the local storage from the data in a save file *)
 val set_state_from_save_file :
   ?token:Token.t -> Save.t -> unit
 
-val get_state_as_save_file : unit -> Save.t
+(** Gets a save file containing the locally stored data *)
+val get_state_as_save_file : ?include_reports:bool -> unit -> Save.t
 
 (** Sync the local save state with the server state, and returns the merged save
-    file. The save will be created on the server if it doesn't exist. *)
+    file. The save will be created on the server if it doesn't exist.
+
+    This syncs student {b,content}, but never the reports which are only synched
+    on "Grade" *)
 val sync: Token.t -> Save.t Lwt.t
 
 (** The same, but limiting the submission to the given exercise, using the given
-   answer if any. *)
+    answer if any, and the given editor text, if any. *)
 val sync_exercise:
-  Token.t -> ?answer:Learnocaml_data.Answer.t -> Learnocaml_data.Exercise.id ->
+  Token.t -> ?answer:Learnocaml_data.Answer.t -> ?editor:string ->
+  Learnocaml_data.Exercise.id ->
   Save.t Lwt.t
 
 val countdown:
