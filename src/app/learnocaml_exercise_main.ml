@@ -108,11 +108,13 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations
 
+let is_readonly = ref false
+
 let make_readonly () =
-  match Manip.by_id "learnocaml-exo-editor-pane" with None -> () | Some ed ->
-    alert ~title:[%i"TIME'S UP"]
-      [%i"The deadline for this exercise has expired. Any changes you make \
-          from now on will remain local only."]
+  is_readonly := true;
+  alert ~title:[%i"TIME'S UP"]
+    [%i"The deadline for this exercise has expired. Any changes you make \
+        from now on will remain local only."]
 
 let () =
   Lwt.async_exception_hook := begin function
@@ -345,12 +347,11 @@ let () =
       { Answer.report ; grade ; solution ;
         mtime = gettimeofday () } ;
     sync token >|= fun save ->
-    let solution =
-      (SMap.find
-         id save.Save.all_exercise_states)
-      .Answer.solution
-    in
-    Ace.set_contents ace solution
+    if not !is_readonly then
+      match SMap.find_opt id save.Save.all_exercise_states with
+      | Some s -> Ace.set_contents ace s.Answer.solution
+      | None -> ()
+      (* exercise expired server-side, so the submission was ignored *)
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
