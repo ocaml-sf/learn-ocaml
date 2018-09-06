@@ -17,6 +17,7 @@
 
 open Js_utils
 open Lwt.Infix
+open Learnocaml_data
 
 let find_div_or_append_to_body id =
   match Manip.by_id id with
@@ -392,8 +393,7 @@ let get_state_as_save_file () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let sync token =
-  let save_file = get_state_as_save_file () in
+let sync_save token save_file =
   Server_caller.request (Learnocaml_api.Update_save (token, save_file))
   >>= function
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
@@ -406,6 +406,34 @@ let sync token =
       set_state_from_save_file ~token save;
       Lwt.return save
   | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+
+let sync token = sync_save token (get_state_as_save_file ())
+
+let sync_exercise token ?answer id =
+  let nickname = Learnocaml_local_storage.(retrieve nickname) in
+  let toplevel_history =
+    SMap.find_opt id Learnocaml_local_storage.(retrieve all_toplevel_histories)
+  in
+  let opt_to_map = function
+    | Some i -> SMap.singleton id i
+    | None -> SMap.empty
+  in
+  let save_file = Save.{
+    nickname;
+    all_exercise_states = opt_to_map answer;
+    all_toplevel_histories = SMap.empty;
+    all_exercise_toplevel_histories = opt_to_map toplevel_history;
+  } in
+  Lwt.catch (fun () -> sync_save token save_file)
+    (fun e ->
+       (* save the answer at least locally *)
+       (match answer with
+        | Some a ->
+            Learnocaml_local_storage.(store (exercise_state id))
+              {a with Answer.mtime = gettimeofday ()}
+        | None -> ());
+       raise e)
+
 
 let string_of_seconds seconds =
   let days = seconds / 24 / 60 / 60 in

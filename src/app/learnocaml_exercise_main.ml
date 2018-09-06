@@ -343,10 +343,11 @@ let () =
       match Learnocaml_local_storage.(retrieve (exercise_state id)) with
       | { Answer.report ; grade } -> report, grade
       | exception Not_found -> None, None in
-    Learnocaml_local_storage.(store (exercise_state id))
+    let answer =
       { Answer.report ; grade ; solution ;
-        mtime = gettimeofday () } ;
-    sync token >|= fun save ->
+        mtime = max_float }
+    in
+    sync_exercise token id ~answer >|= fun save ->
     if not !is_readonly then
       match SMap.find_opt id save.Save.all_exercise_states with
       | Some s -> Ace.set_contents ace s.Answer.solution
@@ -438,10 +439,12 @@ let () =
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
-        Learnocaml_local_storage.(store (exercise_state id))
+        let answer =
           { Answer.grade = Some grade ; solution ; report = Some report ;
-            mtime = max_float } ; (* To ensure server time will be used *)
-        token >>= sync >>= fun save ->
+            mtime = max_float } (* To ensure server time will be used *)
+        in
+        token >>= fun token ->
+        sync_exercise token id ~answer >>= fun save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
