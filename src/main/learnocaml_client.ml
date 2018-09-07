@@ -575,8 +575,9 @@ let init ?(local=false) ?server ?token () =
         | Some t -> Lwt.return t
         | None ->
             Printf.eprintf "Please enter a nickname: %!";
-            get_new_token (Console.input ~default:None
-                             (function "" -> None | s -> Some s))
+            get_new_token
+              (Console.input
+                 (fun s -> if String.length s < 2 then None else Some s))
   in
   check_server_version server >>=
   get_token >>= fun token ->

@@ -1578,15 +1578,17 @@ let init_token_dialog () =
   let button_connect = find_component "login-connect-button" in
   let get_token, got_token = Lwt.task () in
   let create_token () =
-    let nickname = match Manip.value input_nick with
-      | "" -> None
-      | n ->
-          Learnocaml_local_storage.(store nickname) n;
-          let nickname_field = find_component "learnocaml-nickname" in
-          (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string n;
-          Some n
-    in
-    Server_caller.request_exn (Learnocaml_api.Create_token (None, nickname))
+    let nickname = Manip.value input_nick in
+    if String.length nickname < 2 then
+      (alert ~title:[%i"INVALID NICKNAME"]
+         [%i"You must provide a nickname"];
+       Lwt.return_none)
+    else
+    let nickname_field = find_component "learnocaml-nickname" in
+    Learnocaml_local_storage.(store nickname) nickname;
+    (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
+    Server_caller.request_exn
+      (Learnocaml_api.Create_token (None, Some nickname))
     >>= fun token ->
     Learnocaml_local_storage.(store sync_token) token;
     Lwt.return_some token
