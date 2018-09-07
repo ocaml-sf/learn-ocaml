@@ -1,0 +1,24 @@
+(library
+ (name learnocaml_data)
+ (wrapped false)
+ (modules Learnocaml_data)
+ (libraries learnocaml_toplevel_history
+            learnocaml_report
+            learnocaml_repository)
+)
+
+(library
+ (name learnocaml_api)
+ (wrapped false)
+ (modules Learnocaml_api)
+ (libraries ocplib-json-typed
+            ezjsonm
+            learnocaml_data)
+)
+
+(library
+ (name learnocaml_store)
+ (wrapped false)
+ (modules Learnocaml_store)
+ (libraries lwt_utils learnocaml_api)
+)

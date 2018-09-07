@@ -1,0 +1,26 @@
+(executable
+ (public_name learn-ocaml)
+ (name learnocaml_main)
+ (modes byte)
+ (flags :standard -linkall)
+ (modules Learnocaml_main)
+ (libraries cmdliner
+            learnocaml_process_repository_lib
+            learnocaml_server_lib
+            learnocaml_report)
+)
+
+(executable
+ (public_name learn-ocaml-client)
+ (name learnocaml_client)
+ (modes byte)
+ (flags :standard -linkall)
+ (modules Learnocaml_client)
+ (libraries cmdliner
+            lwt.unix
+            lwt_utils
+            cohttp.lwt
+            grading_cli
+            learnocaml_data
+            learnocaml_api)
+)

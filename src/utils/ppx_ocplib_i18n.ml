@@ -10,6 +10,9 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software. *)
 
+open Migrate_parsetree
+open OCaml_405.Ast
+
 open Ast_mapper
 open Ast_helper
 open Asttypes
@@ -57,7 +60,7 @@ let read_translations f =
     close_in ic;
     t
 
-let translations_dir = "./translations"
+let translations_dir = "../../translations"
 let transl_file_suffix = ".po"
 let dump_pot_file = Sys.getenv_opt "DUMP_POT" <> None
 
@@ -127,7 +130,7 @@ let get_lang_expr ~loc transl_expr =
     (Exp.ident { txt = Ldot (Lident "Ocplib_i18n", "s_"); loc })
     [Nolabel, transl_expr]
 
-let transl_mapper _argv =
+let transl_mapper _config _cookies =
   { default_mapper with
     expr = fun mapper expr ->
       match expr with
@@ -173,6 +176,6 @@ let transl_mapper _argv =
       | x -> default_mapper.expr mapper x;
   }
 
-let () = register "i18n" transl_mapper
+let () = Driver.register ~name:"i18n" (module OCaml_405) transl_mapper
 let () =
   if Sys.getenv_opt "DUMP_POT" <> None then at_exit dump_pot
