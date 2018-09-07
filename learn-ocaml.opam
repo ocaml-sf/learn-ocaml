@@ -1,10 +1,12 @@
 opam-version: "2.0"
 name: "learn-ocaml"
-version: "0.5"
+version: "0.6"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
   "Grégoire Henry (OCamlPro)"
+  "Louis Gesbert (OCamlPro)"
+  "Pierrick Couderc (OCamlPro)"
 ]
 maintainer: "Louis Gesbert"
 license: "AGPLv3"
@@ -13,16 +15,16 @@ bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 depends: [
   "ocaml" {>= "4.05.0"}
   "ocamlfind" {build}
-  "ocp-build" {build & >= "1.99.19-beta"}
+  "dune" {build & = "1.1.1"}
   "base64"
   "ezjsonm"
-  "js_of_ocaml" {= "3.1.0" }
+  "js_of_ocaml" {>= "3.1.0" & < "3.3"}
   "js_of_ocaml-ppx"
   "js_of_ocaml-toplevel"
   "js_of_ocaml-compiler"
   "js_of_ocaml-lwt"
   "js_of_ocaml-tyxml"
-  "lwt" {= "3.1.0"}
+  "lwt" {>= "3.1.0" & < "4.0.0"}
   "lwt_ssl"
   "ocp-indent-nlfork"
   "ocp-ocamlres" {= "0.4"}
@@ -46,9 +48,8 @@ depends: [
   "decompress" {= "0.8"}
 ]
 build: [
-  [make "build"]
-  [make "-C" "static"]
-  [make "learn-ocaml.install"]
+  [make "static"]
+  ["dune" "build" "-p" name]
 ]
 install: [
   ["mkdir" "-p" "%{_:share}%"]
