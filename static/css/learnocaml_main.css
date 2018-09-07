@@ -1045,6 +1045,27 @@ tr.exercise_line.disabled, tr.student_line.disabled {
     color: #a52;
 }
 
+div.auto_checkbox {
+    width: 6px;
+    height: 6px;
+    margin: 1px;
+    padding: 3px;
+    border: 1px solid black;
+}
+
+.selected div.auto_checkbox {
+    background-clip: content-box;
+    background-color: black;
+}
+
+.disabled div.auto_checkbox {
+    background-color: #aaa;
+}
+
+td.auto_checkbox {
+    width: 12px;
+}
+
 tr.exercise_line:hover:not(.disabled):not(.selected),
 tr.student_line:hover:not(.disabled):not(.selected),
 tr.assg_line:hover:not(.disabled):not(.selected) {
