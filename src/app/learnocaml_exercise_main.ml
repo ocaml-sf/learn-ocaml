@@ -270,13 +270,12 @@ let () =
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        let mathjax_url =
-         "js/mathjax/MathJax.js"
+         "js/mathjax/MathJax.js?delayStartupUntil=configured"
        in
        let mathjax_config =
          "MathJax.Hub.Config({\n\
          \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
          \  extensions: [],\n\
-         \  elements: [\"learnocaml-exo-tab-text\"],\n\
          \  showMathMenu: false,\n\
          \  showMathMenuMSIE: false,\n\
          \  \"HTML-CSS\": {\n\
@@ -313,6 +312,7 @@ let () =
             <body>\
             %s\
             </body>\
+            <script type='text/javascript'>MathJax.Hub.Configured()</script>\
             </html>"
            ex_meta.Exercise.Meta.title
            mathjax_config
