@@ -575,7 +575,7 @@ let teacher_tab token _select _params () =
          (Token.to_string new_token))
   in
   let action_csv_export () =
-    Server_caller.request_exn (Learnocaml_api.Students_csv token)
+    Server_caller.request_exn (Learnocaml_api.Students_csv (token, [], []))
     >|= fun csv ->
     Learnocaml_common.fake_download
       ~name:"learnocaml.csv"

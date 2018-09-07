@@ -41,7 +41,8 @@ type _ request =
   | Update_save:
       'a token * Save.t -> Save.t request
   | Students_list: teacher token -> Student.t list request
-  | Students_csv: teacher token -> string request
+  | Students_csv:
+      teacher token * Exercise.id list * Token.t list -> string request
 
   | Exercise_index:
       'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
