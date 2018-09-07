@@ -276,7 +276,6 @@ let () =
          "MathJax.Hub.Config({\n\
          \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
          \  extensions: [],\n\
-         \  elements: [\"learnocaml-exo-tab-text\"],\n\
          \  showMathMenu: false,\n\
          \  showMathMenuMSIE: false,\n\
          \  \"HTML-CSS\": {\n\
