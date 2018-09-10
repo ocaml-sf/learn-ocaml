@@ -126,7 +126,7 @@ module type S = sig
 
     (** [forbid k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is in the list [ls]. The message of the failure
+       tested if [t] is in the list [ls]. The message of the
        report is {e The text1 text2 is forbidden} where [text1] is the
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
@@ -134,18 +134,18 @@ module type S = sig
 
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
-       tested if [t] is {e not} in [ls]. The message of the failure
+       tested if [t] is {e not} in [ls]. The message of the
        report is {e The text1 text2 is not allowed} where [text1] is
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
     val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
 
-    (** [require k pr treq t] returns a {!Learnocaml_report.Success 5}
-       report the first time the function is applied with [t] and [t]
-       is equal to [treq] (comparison with Pervasives.compare). The
-       report message is then {e Found text1 text2} where [text1] is
-       value of [k] and [text2] is the result of [pr] applies to
-       [t]. Otherwise, an empty report is returned. *)
+
+    (** [require k pr _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the report is {e Found text1 text2} where
+       [text1] is value of [k] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
     val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
     (** {3 For expressions } *)
@@ -153,7 +153,7 @@ module type S = sig
     (** [forbid_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is in the list of forbidden
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is forbidden} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
@@ -162,18 +162,26 @@ module type S = sig
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is {e not} in the list of allowed
-       expressions [exprs]. The message of the failure report is {e
+       expressions [exprs]. The message of the report is {e
        The text1 text2 is not allowed} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
 
+<<<<<<< HEAD
     (** [require_expr name expr t] returns a
        {!Learnocaml_report.Success 5} report the first time the
        function is applied with [t] and [t] is equal to [expr]
        (comparison with Pervasives.compare). The report message is
        then {e Found text1 text2} where [text1] is value of [name] and
        [text2] is [expr]. Otherwise, an empty report is returned.  *)
+=======
+    (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
+       5}Success 5} report the first time this functon is called. The
+       message of the success report is {e Found text1 text2} where
+       [text1] is value of [name] and [text2] is the result of [pr]
+       applies to [t]. Otherwise, an empty report is returned. *)
+>>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** {3 For syntax } *)
@@ -188,14 +196,14 @@ module type S = sig
 
     (** [forbid_syntax n _] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time it
-       is called. The message of the failure report is {e The {b text}
+       is called. The message of the report is {e The {b text}
        syntax is forbidden} where [text] is the value of
        [n]. Otherwise, an empty report is returned. *)
     val forbid_syntax : string -> (_ -> Learnocaml_report.t)
 
     (** [require_syntax n _] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time it is called. The message of
-       the failure report is {e The {b text} syntax has been found, as
+       the report is {e The {b text} syntax has been found, as
        expected} where [text] is the value of [n]. Otherwise, an empty
        report is returned.  *)
     val require_syntax : string -> (_ -> Learnocaml_report.t)
@@ -1074,7 +1082,35 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
+<<<<<<< HEAD
 
+=======
+
+    (** [test_function_3_against ty name rf tests] tests the function
+       named [name] by comparing outputs obtained with the student
+       function against outputs of [rf].
+
+     A test [(arg-1, arg-2, arg-3)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2] and [arg-3] gives the same result
+       than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_3_against :
+      ?gen: int ->
+      ?test: 'd tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> 'b -> 'c -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
+
+>>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -1125,6 +1161,34 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
 
+<<<<<<< HEAD
+=======
+    (** [test_function_4_against ty name rf tests] tests the function
+       named [name] by comparing outputs obtained with the student
+       function against outputs of [rf].
+
+     A test [(arg-1, arg-2, arg-3m arg-4)] results of a
+       {!LearnOcaml_report.Success 1} report if the student function
+       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
+       result than the solution function [rf] applied to the same
+       arguments. Otherwise the result of a test is a
+       {!Learnocaml_report.Failure} report.
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_4_against :
+      ?gen: int ->
+      ?test: 'e tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
+    -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+
+>>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -1276,15 +1340,28 @@ module type S = sig
 
     (** The type of arguments, represented as heterogeneous lists.
 
-        Usage : [arg 3 @@ arg "word" @@ last false] *)
+        Usage: [arg 3 @@ arg "word" @@ last false]
+        
+        Alternatively: [3 @: "word" @:!! false]
+     *)
     type ('arrow, 'uarrow, 'ret) args
     val last :
+      'a ->
+      ('a -> 'ret, 'a -> unit, 'ret) args
+    val (!!) :
       'a ->
       ('a -> 'ret, 'a -> unit, 'ret) args
     val arg :
       'a ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
       ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:) :
+      'a ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+    val (@:!!) :
+      'a -> 'b ->
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
     val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 
@@ -1302,6 +1379,10 @@ module type S = sig
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
       (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
 
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
+    val get_ret_ty :
+      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
 
     (** {2 Lookup functions} *)
 
@@ -1359,6 +1440,38 @@ module type S = sig
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.t
+
+    (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
+        ~before_reference ~before_user ~after ~sampler prot name tests] *)
+    val test_function_against_solution :
+      ?gen:int ->
+      ?test: 'ret tester ->
+      ?test_stdout: io_tester ->
+      ?test_stderr: io_tester ->
+      ?before_reference:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+      ?before_user:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+      ?after:
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+         'ret * string * string ->
+         'ret * string * string ->
+         Learnocaml_report.item list) ->
+      ?sampler:
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      string ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
+      Learnocaml_report.item list
+
+    (** Helper notation to test pure functions.
+
+        [p ==> r] is the pair [(p, fun () -> r)].
+
+        Example: [test_function prot
+                  (lookup_student (ty_of_prot prot) name)
+                  [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
+    val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)

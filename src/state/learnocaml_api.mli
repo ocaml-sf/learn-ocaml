@@ -41,7 +41,8 @@ type _ request =
   | Update_save:
       'a token * Save.t -> Save.t request
   | Students_list: teacher token -> Student.t list request
-  | Students_csv: teacher token -> string request
+  | Students_csv:
+      teacher token * Exercise.id list * Token.t list -> string request
 
   | Exercise_index:
       'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
@@ -59,7 +60,8 @@ type _ request =
   | Exercise_status:
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * Exercise.Status.t list -> unit request
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
+  (* return the before & after stats *)
 
   | Invalid_request: string -> string request
   (** Only for server-side handling: bound to requests not matching any case

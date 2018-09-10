@@ -11,7 +11,7 @@ Assuming your exercise repository is in directory REPOSITORY, you can either:
 - build and serve it directly on port 80 (REPOSITORY needs to be an absolute
   path) using
 
-      docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server altgr/learn-ocaml
+      docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server ocamlsf/learn-ocaml:dev
 
 - or generate a new docker image that includes your repository:
 

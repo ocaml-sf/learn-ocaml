@@ -1,5 +1,5 @@
 FROM ocaml/opam2:alpine-3.7-ocaml-4.05 as compilation
-LABEL Description="learn-ocaml building" Vendor="OCamlPro" Version="0.2"
+LABEL Description="learn-ocaml building" Vendor="OCamlPro" Version="0.5"
 
 WORKDIR learn-ocaml
 
@@ -26,7 +26,7 @@ RUN opam install . --destdir /home/opam/install-prefix
 
 
 FROM alpine:3.7 as program
-LABEL Description="learn-ocaml app manager" Vendor="OCamlPro" Version="0.2"
+LABEL Description="learn-ocaml app manager" Vendor="OCamlPro" Version="0.5"
 
 RUN apk update
 RUN apk add ncurses-libs dumb-init
@@ -37,12 +37,13 @@ VOLUME ["/repository"]
 RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
 VOLUME ["/sync"]
 EXPOSE 8080
+EXPOSE 8443
 
 USER learn-ocaml
 WORKDIR /home/learn-ocaml
 
 CMD ["build","serve"]
-ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository","--port=8080"]
+ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 
 COPY --from=compilation /home/opam/install-prefix /usr
 
@@ -50,7 +51,7 @@ COPY --from=compilation /home/opam/install-prefix /usr
 
 
 FROM alpine:3.7 as client
-LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.2"
+LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.5"
 
 RUN apk update
 RUN apk add ncurses-libs

@@ -155,11 +155,6 @@ module Exercise = struct
     let set =
       let mutex = Lwt_mutex.create () in
       fun x ->
-        let x =
-          { x with status = match x.status with
-                | Assigned tm when Token.Map.is_empty tm -> Closed
-                | s -> s }
-        in
         Lwt_mutex.with_lock mutex @@ fun () ->
         Lazy.force tbl >>= fun tbl ->
         Hashtbl.replace tbl x.id x;
@@ -172,21 +167,12 @@ module Exercise = struct
     let is_open id token =
       if Token.is_teacher token then Lwt.return `Open else
       Lazy.force tbl >|= fun tbl ->
-      let status =
+      let assignments =
         match Hashtbl.find_opt tbl id with
-        | None -> (default id).status
-        | Some ex -> ex.status
+        | None -> (default id).assignments
+        | Some ex -> ex.assignments
       in
-      match status with
-      | Open -> `Open
-      | Closed -> `Closed
-      | Assigned a ->
-          match Token.Map.find_opt token a with
-          | Some a ->
-              let t = Unix.gettimeofday () in
-              if t < a.start then `Closed
-              else `Deadline (a.stop -. t)
-          | None -> `Closed
+      is_open_assignment token assignments
 
   end
 
@@ -197,7 +183,11 @@ module Exercise = struct
             and module Index := Index)
 
   let get id =
-    read_static_file (Learnocaml_index.exercise_path id) enc
+    Lwt.catch
+      (fun () -> read_static_file (Learnocaml_index.exercise_path id) enc)
+      (function
+        | Unix.Unix_error _ -> raise Not_found
+        | e -> raise e)
 
 end
 
@@ -243,7 +233,9 @@ module Token = struct
           Lwt.fail_with "token already exists"
       | e -> raise e
 
-  let create_student () = create_gen random
+  let create_student () =
+    create_gen random
+
   let create_teacher () = create_gen random_teacher
 
   let delete token = Lwt_unix.unlink (path token)
