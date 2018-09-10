@@ -168,20 +168,11 @@ module type S = sig
        returned.  *)
     val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
 
-<<<<<<< HEAD
-    (** [require_expr name expr t] returns a
-       {!Learnocaml_report.Success 5} report the first time the
-       function is applied with [t] and [t] is equal to [expr]
-       (comparison with Pervasives.compare). The report message is
-       then {e Found text1 text2} where [text1] is value of [name] and
-       [text2] is [expr]. Otherwise, an empty report is returned.  *)
-=======
     (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time this functon is called. The
        message of the success report is {e Found text1 text2} where
        [text1] is value of [name] and [text2] is the result of [pr]
        applies to [t]. Otherwise, an empty report is returned. *)
->>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** {3 For syntax } *)
@@ -1034,7 +1025,7 @@ module type S = sig
     ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
     ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
 
-    (** [test_function_2_against_soltion ty name tests] tests the
+    (** [test_function_2_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
        [solution.ml] file.
@@ -1082,35 +1073,7 @@ module type S = sig
       ?before : ('a -> 'b -> 'c -> unit) ->
       ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
-<<<<<<< HEAD
 
-=======
-
-    (** [test_function_3_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
-
-     A test [(arg-1, arg-2, arg-3)] results of a
-       {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1], [arg-2] and [arg-3] gives the same result
-       than the solution function [rf] applied to the same
-       arguments. Otherwise the result of a test is a
-       {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information
-       about optional arguments. *)
-    val test_function_3_against :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
-
->>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -1161,34 +1124,6 @@ module type S = sig
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
 
-<<<<<<< HEAD
-=======
-    (** [test_function_4_against ty name rf tests] tests the function
-       named [name] by comparing outputs obtained with the student
-       function against outputs of [rf].
-
-     A test [(arg-1, arg-2, arg-3m arg-4)] results of a
-       {!LearnOcaml_report.Success 1} report if the student function
-       applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
-       result than the solution function [rf] applied to the same
-       arguments. Otherwise the result of a test is a
-       {!Learnocaml_report.Failure} report.
-
-     See {{!optional_arguments_sec} this section} for information
-       about optional arguments. *)
-    val test_function_4_against :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
-    -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-
->>>>>>> 23698853df08ed2ff7b9073da6807716b4f8c71e
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -1341,7 +1276,7 @@ module type S = sig
     (** The type of arguments, represented as heterogeneous lists.
 
         Usage: [arg 3 @@ arg "word" @@ last false]
-        
+
         Alternatively: [3 @: "word" @:!! false]
      *)
     type ('arrow, 'uarrow, 'ret) args
