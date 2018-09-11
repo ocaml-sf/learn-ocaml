@@ -138,10 +138,10 @@ let get_exercise_meta token id =
   Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
   Lwt.return meta
 
-let exercise_link id content =
+let exercise_link ?(cl = []) id content =
   let open Tyxml_js.Html5 in
   a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
-         a_class [ "exercise" ] ;
+         a_class cl ;
          (* dirty trick to reload the page *)
          a_onclick (fun _ ->
              Js_utils.set_fragment [("id", id); ("action", "open")];
@@ -155,7 +155,7 @@ let display_exercise_meta id meta_value content_id =
   let content = find_component content_id in
   Lazy.force meta_value >>= fun meta ->
   let descr =
-    exercise_link id [
+    exercise_link ~cl:[ "exercise" ] id [
       display_descr meta ;
       div ~a:[  ] [
         display_stars meta ;
@@ -196,30 +196,34 @@ let display_skill_meta skill exs content_id =
 let display_link onclick content_id value =
   let open Tyxml_js.Html5 in
   let cid = Format.asprintf "%s-%s" content_id value in
-  let link_id = Format.asprintf "%s-link" cid in
+  let expand_id = Format.asprintf "%s-expand" cid in
   let displayed = ref false in
   let onclick _ =
-    let elt = find_component link_id in
+    let exp = find_component expand_id in
     if not (!displayed) then
       begin
         ignore @@ onclick cid;
         displayed := true;
-        Manip.addClass elt "active"
+        Manip.removeChildren exp;
+        Manip.appendChild exp (pcdata "[-]")
       end
     else
       begin
         Manip.removeChildren (find_component cid);
         displayed := false;
-        Manip.removeClass elt "active"
+        Manip.removeChildren exp;
+        Manip.appendChild exp (pcdata "[+]")
       end;
     true
   in
   div [
-    span ~a:[
-      a_id link_id;
-      a_class [ "" ];
-      a_onclick onclick ]
-      [ pcdata value ] ;
+    p ~a:[ a_class [ "learnocaml-exo-expandable-link" ];
+           a_onclick onclick;
+         ]
+      [
+        span ~a:[ a_id expand_id; a_class ["expand-sign"] ] [ pcdata "[+]" ];
+        pcdata value
+      ] ;
     div ~a:[a_id cid;
             a_class [ "learnocaml-exo-meta-category" ] ] [] ]
 
@@ -252,13 +256,13 @@ let display_meta token ex_meta id =
     span [ pcdata [%i "Author(s):" ] ] :: display_authors ex_meta.Meta.author in
   let focus =
     [%i "Skills trained:"],
-    display_list @@
+    display_list ~sep:(pcdata "") @@
     List.map (fun s ->
         display_skill_link "learnocaml-exo-focus-meta" (`Focus s))
       (ex_meta.Meta.focus) in
   let requirements =
     [%i "Skills required:"],
-    display_list @@
+    display_list ~sep:(pcdata "") @@
     List.map (fun s ->
         display_skill_link "learnocaml-exo-requirements-meta" (`Requirements s))
       ex_meta.Meta.requirements  in
