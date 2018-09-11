@@ -1215,6 +1215,18 @@ input.date_future {
     content: "〉";
 }
 
+.skill_title {
+    text-align: left;
+    colspan: 0;
+}
+
+.skill_line {
+}
+
+.skill_name_td {
+    padding-left:1em !important;
+}
+
 #login-overlay {
     display: none;
     position: fixed;

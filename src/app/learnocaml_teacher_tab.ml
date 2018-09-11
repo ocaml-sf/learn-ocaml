@@ -457,7 +457,7 @@ let teacher_tab token _select _params () =
   in
 
   let skills_list_div =
-    H.div ~a:[H.a_id "skill_list"] [H.pcdata [%i"Loading..."]]
+    H.div ~a:[H.a_id "focus_list"] [H.pcdata [%i"Loading..."]]
   in
   let skills_div =
     let legend =
@@ -468,11 +468,13 @@ let teacher_tab token _select _params () =
           );
       ] [H.pcdata [%i"Skills"]]
     in
-    H.div ~a:[H.a_id "skills_pane"; H.a_class ["skills_pane"]] [
+    H.div ~a:[H.a_id "skills_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "skills_filter_box"] [
         (* TODO: filtering tools (if necessary for skills?) *)
       ];
-      H.fieldset ~legend [ skills_list_div ];
+      H.fieldset ~legend [
+        skills_list_div;
+      ];
     ]
   in
   let skill_line_id id = "skill_line_"^id in
@@ -480,15 +482,22 @@ let teacher_tab token _select _params () =
     H.tr ~a:[
       H.a_id (skill_line_id id);
       H.a_class ["skill_line"];
-    ] [ H.td [ H.pcdata id ] ;
+    ] [ H.td ~a:[ H.a_class [ "skill_name_td" ] ] [ H.pcdata id ] ;
         H.td (List.map H.pcdata exs)
       ]
   in
   let fill_skills_pane () =
-    let table =
+    (* Having one table for requirements and focus allows a better handling
+       of the indentation *)
+    let requirements =
+      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Requirements"]]] ::
       SMap.fold (fun id exs acc ->
-          skill_line id exs :: acc) (fst !skills_index) [] in
-    Manip.replaceChildren skills_list_div [H.table table];
+          skill_line id exs :: acc) (snd !skills_index) [] in
+    let skills =
+      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Focus"]]] ::
+      SMap.fold (fun id exs acc ->
+          skill_line id exs :: acc) (fst !skills_index) requirements in
+    Manip.replaceChildren skills_list_div [H.table skills]
   in
 
   let assignment_line id =
