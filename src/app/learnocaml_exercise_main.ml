@@ -21,7 +21,7 @@ open Learnocaml_common
 open Learnocaml_data
 
 let init_tabs, select_tab =
-  let names = [ "text" ; "toplevel" ; "report" ; "editor"; "more" ] in
+  let names = [ "text" ; "toplevel" ; "report" ; "editor"; "meta" ] in
   let current = ref "text" in
   let select_tab name =
     set_arg "tab" name ;
@@ -106,43 +106,62 @@ let display_descr ex_meta =
 let display_stars ex_meta =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
-  div ~a:[ a_class [ "stars" ] ] [
+  let stars =
     let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
     let src = Format.asprintf "icons/stars_%02d.svg" num in
     img ~alt ~src ()
+  in
+  div ~a:[ a_class [ "stars" ] ] [
+    p [
+      pcdata [%i "Difficulty:"];
+      stars
+    ]
   ]
 
 let display_kind ex_meta =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
-  div ~a:[ a_class [ "length" ] ] [
+  let kind_repr =
     match ex_meta.Meta.kind with
-    | Exercise.Meta.Project -> pcdata [%i"project"]
-    | Exercise.Meta.Problem -> pcdata [%i"problem"]
-    | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ]
+    | Exercise.Meta.Project -> [%i"Project"]
+    | Exercise.Meta.Problem -> [%i"Problem"]
+    | Exercise.Meta.Exercise -> [%i"Exercise"]
+  in
+  div ~a:[ a_class [ "length" ] ] [
+    p [ pcdata (Format.sprintf [%if "Kind: %s"] kind_repr) ]
+  ]
 
-(* Inefficient version: Reload the exercise description each time. *)
-let display_exercise_more content_id token id =
+let get_exercise_meta token id =
+  token >>= fun token ->
+  Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
+  Lwt.return meta
+
+let exercise_link id content =
+  let open Tyxml_js.Html5 in
+  a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
+         a_class [ "exercise" ] ;
+         (* dirty trick to reload the page *)
+         a_onclick (fun _ ->
+             Js_utils.set_fragment [("id", id); ("action", "open")];
+             window##.location##reload; true)
+       ]
+    content
+
+let display_exercise_meta id meta_value content_id =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
   let content = find_component content_id in
-  token >>= fun token ->
-  Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
+  Lazy.force meta_value >>= fun meta ->
   let descr =
-    a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
-           a_class [ "exercise" ] ;
-           (* dirty trick to reload the page *)
-           a_onclick (fun _ ->
-               Js_utils.set_fragment [("id", id); ("action", "open")];
-               window##.location##reload; true)
-         ] [
+    exercise_link id [
       display_descr meta ;
       div ~a:[  ] [
         display_stars meta ;
         display_kind meta ;
-      ] ]
+      ]
+    ]
   in
   Manip.replaceChildren content [ descr ];
   Lwt.return ()
@@ -157,6 +176,61 @@ let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
   in
   gen [] l |> List.rev
 
+let get_skill_index skill =
+  let req = match skill with
+      `Focus s -> Learnocaml_api.Focusing_skill s
+    | `Requirements s -> Learnocaml_api.Requiring_skill s
+  in
+  Server_caller.request_exn req
+
+
+let display_skill_meta skill exs content_id =
+  let content = find_component content_id in
+  Lazy.force exs >>= fun exs ->
+  Manip.replaceChildren content
+    (display_list @@
+     List.map (fun ex_id ->
+         exercise_link ex_id [Tyxml_js.Html5.pcdata ex_id]) exs);
+  Lwt.return ()
+
+let display_link onclick content_id value =
+  let open Tyxml_js.Html5 in
+  let cid = Format.asprintf "%s-%s" content_id value in
+  let link_id = Format.asprintf "%s-link" cid in
+  let displayed = ref false in
+  let onclick _ =
+    let elt = find_component link_id in
+    if not (!displayed) then
+      begin
+        ignore @@ onclick cid;
+        displayed := true;
+        Manip.addClass elt "active"
+      end
+    else
+      begin
+        Manip.removeChildren (find_component cid);
+        displayed := false;
+        Manip.removeClass elt "active"
+      end;
+    true
+  in
+  div [
+    span ~a:[
+      a_id link_id;
+      a_class [ "" ];
+      a_onclick onclick ]
+      [ pcdata value ] ;
+    div ~a:[a_id cid;
+            a_class [ "learnocaml-exo-meta-category" ] ] [] ]
+
+let display_skill_link content_id s =
+  let index = lazy (get_skill_index s) in
+  let skill = match s with `Focus s | `Requirements s -> s in
+  display_link (display_skill_meta s index) content_id skill
+
+let display_exercise_link content_id token e =
+  let meta = lazy (get_exercise_meta token e) in
+  display_link (display_exercise_meta e meta) content_id e
 
 let display_authors authors =
   let open Tyxml_js.Html5 in
@@ -169,56 +243,9 @@ let display_authors authors =
          ] in
   display_list @@ List.map author authors
 
-let display_skill_more skill content_id =
-  let open Tyxml_js.Html5 in
-  let open Learnocaml_data.Exercise in
-  let content = find_component content_id in
-  let req = match skill with
-      `Focus s -> Learnocaml_api.Focusing_skill s
-    | `Requirements s -> Learnocaml_api.Requiring_skill s
-  in
-  Server_caller.request_exn req >>= fun exs ->
-  Manip.replaceChildren content @@ display_list @@ List.map pcdata exs;
-  Lwt.return ()
-
-let display_more token ex_meta id =
+let display_meta token ex_meta id =
   let open Learnocaml_data.Exercise in
   let open Tyxml_js.Html5 in
-  let display_skill_link content_id s =
-    let skill = match s with `Focus s | `Requirements s -> s in
-    let cid = Format.asprintf "%s-%s" content_id skill in
-    let displayed = ref false in
-    div [
-      p ~a:[ a_onclick
-               (fun _ ->
-                  if not (!displayed) then
-                    (ignore @@ display_skill_more s cid;
-                     displayed := true)
-                  else
-                    (Manip.removeChildren (find_component cid);
-                     displayed := false) ;
-                  true) ]
-        [ pcdata skill ] ;
-      div ~a:[a_id cid;
-              a_class [ "learnocaml-exo-meta-category" ] ] [] ]
-  in
-  let display_exercise_link content_id e =
-    let cid = Format.asprintf "%s-%s" content_id e in
-    let displayed = ref false in
-    div [
-      p ~a:[ a_onclick
-               (fun _ ->
-                  if not (!displayed) then
-                    (ignore @@ display_exercise_more cid token e;
-                     displayed := true)
-                  else
-                    (Manip.removeChildren (find_component cid);
-                     displayed := false) ;
-                  true) ]
-        [ pcdata e ] ;
-      div ~a:[a_id cid;
-              a_class [ "learnocaml-exo-meta-category" ] ] [] ]
-  in
   let ident =
     Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
   let authors =
@@ -227,34 +254,34 @@ let display_more token ex_meta id =
     [%i "Skills trained:"],
     display_list @@
     List.map (fun s ->
-        display_skill_link "learnocaml-exo-focus-more" (`Focus s))
+        display_skill_link "learnocaml-exo-focus-meta" (`Focus s))
       (ex_meta.Meta.focus) in
   let requirements =
     [%i "Skills required:"],
     display_list @@
     List.map (fun s ->
-        display_skill_link "learnocaml-exo-requirements-more" (`Requirements s))
+        display_skill_link "learnocaml-exo-requirements-meta" (`Requirements s))
       ex_meta.Meta.requirements  in
   let backward =
     [%i "Previous exercises:"],
     display_list ~sep:(pcdata "") @@
-    List.map (display_exercise_link "learnocaml-exo-backward-more")
+    List.map (display_exercise_link "learnocaml-exo-backward-meta" token)
       ex_meta.Meta.backward in
   let forward =
       [%i "Exercises following:"],
       display_list ~sep:(pcdata "") @@
-      List.map (display_exercise_link "learnocaml-exo-forward-more")
+      List.map (display_exercise_link "learnocaml-exo-forward-meta" token)
         ex_meta.Meta.forward in
-  let tab = find_component "learnocaml-exo-tab-more" in
+  let tab = find_component "learnocaml-exo-tab-meta" in
   Manip.replaceChildren tab @@
   Tyxml_js.Html5.([
     h1 ~a:[ a_class [ "learnocaml-exo-meta-title" ] ]
       [ pcdata [%i "Metadata" ] ] ;
 
-    div ~a:[ a_id "learnocaml-exo-content-more" ]
+    div ~a:[ a_id "learnocaml-exo-content-meta" ]
       (display_descr ex_meta ::
-       display_kind ex_meta ::
        display_stars ex_meta ::
+       display_kind ex_meta ::
        p [ pcdata ident ] ::
        p authors ::
        List.map (fun (title, values) ->
@@ -437,7 +464,7 @@ let () =
     Manip.appendChildren text_container
       [ prelude_title ; prelude_container ]
   end ;
-  display_more token ex_meta id;
+  display_meta token ex_meta id;
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")

@@ -382,11 +382,11 @@ body {
 
 /* -------------------- metadata tab ------------------------------ */
 
-#learnocaml-exo-content-more {
+#learnocaml-exo-content-meta {
   padding: 10px;
 }
 
-#learnocaml-exo-tab-more > h1 {
+#learnocaml-exo-tab-meta > h1 {
   flex: 0 0 auto;
   background: #222;
   color: #eee;
@@ -399,13 +399,13 @@ body {
   position: relative;
 }
 
-#learnocaml-exo-tab-more > h1::before {
+#learnocaml-exo-tab-meta > h1::before {
     margin-top: 5px;
     background:#eee;
     content:"";
 }
 
-#learnocaml-exo-tab-more > h1::after {
+#learnocaml-exo-tab-meta > h1::after {
   position: absolute;
   left: 0px; bottom: -5px; width: 100%;
   content:"";
@@ -462,10 +462,10 @@ body {
   line-height: 26px;
 }
 @media (min-width: 1000px) {
-  #learnocaml-exo-tab-more {
+  #learnocaml-exo-tab-meta {
     position: relative;
   }
-  #learnocaml-exo-tab-more::after {
+  #learnocaml-exo-tab-meta::after {
     position: absolute;
     left:0; top:0; bottom: 0px; width: 8px;
     background: linear-gradient(to right, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 8px);
