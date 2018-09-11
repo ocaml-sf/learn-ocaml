@@ -163,9 +163,22 @@ module Exercise: sig
 
   module Skill : sig
 
-    type t = (string list) SMap.t
+    type skill = string
+
+    type t = (id list) SMap.t
 
     val enc : t Json_encoding.encoding
+
+    module Skill_tree : sig
+
+      type kind = Skill of skill | Backward of id | Forward of id
+
+      type node = Node of id * (node * kind) list
+
+      val compute_skill_tree :
+        ?depth:int -> skill -> (id * Meta.t) list -> (t * t) -> (node * kind) list
+
+    end
 
   end
 
