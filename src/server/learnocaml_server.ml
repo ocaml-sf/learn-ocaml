@@ -75,27 +75,66 @@ module Api = Learnocaml_api
 
 open Cohttp_lwt_unix
 
+type cache_request_hash = string list
+
+(** nocache, shortcache, longcache indicates the client-side caching. The
+    associated key is used for server-side caching *)
 type caching =
   | Nocache (* dynamic resources *)
-  | Shortcache (* valid for the server lifetime *)
-  | Longcache (* static resources *)
+  | Shortcache of cache_request_hash option (* valid for the server lifetime *)
+  | Longcache of cache_request_hash (* static resources *)
 
-let respond_static path =
+type cached_response = {
+  body: string;
+  deflated_body: string option;
+  content_type: string;
+  caching: caching;
+}
+
+type 'a response =
+  | Response of { contents: 'a;
+                  content_type: string;
+                  caching: caching }
+  | Cached of cached_response
+  | Status of { body: string;
+                code: Cohttp.Code.status_code }
+
+let caching: type resp. resp Api.request -> caching = function
+  | Api.Version () -> Shortcache (Some ["version"])
+  | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
+  | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
+
+  | Api.Exercise (_, id) -> Shortcache None
+
+  | Api.Lesson_index () -> Shortcache (Some ["lessons"])
+  | Api.Lesson id -> Shortcache (Some ["lesson";id])
+  | Api.Tutorial_index () -> Shortcache (Some ["tutorials"])
+  | Api.Tutorial id -> Shortcache (Some ["tutorial";id])
+
+  | _ -> Nocache
+
+
+let respond_static caching path =
   Lwt.catch
     (fun () ->
-       read_static_file path >|= fun body ->
-       Ok (body,
-           Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)))
+       read_static_file path >|= fun contents ->
+       let content_type =
+         Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)
+       in
+       Response { contents; content_type; caching })
     (fun e ->
-       Lwt.return (Error (`Not_found, Printexc.to_string e)))
+       Lwt.return (Status { code = `Not_found; body = Printexc.to_string e }))
 
-let respond_json = fun x ->
-  Lwt.return (Ok (x, "application/json"))
+let respond_json caching contents =
+  Lwt.return @@
+  Response { contents;
+             content_type = "application/json";
+             caching }
 
 let with_verified_teacher_token token cont =
   Token.check_teacher token >>= function
   | true -> cont ()
-  | false -> Lwt.return (Error (`Forbidden, "Access restricted"))
+  | false -> Lwt.return (Status {code = `Forbidden; body = "Access restricted"})
 
 let string_of_date ts =
   let open Unix in
@@ -136,52 +175,65 @@ let check_report exo report grade =
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade
 
+module Memory_cache = struct
+
+  let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
+    Hashtbl.create 533
+
+  let get key =
+    try Some (Hashtbl.find tbl key) with Not_found -> None
+
+  let add key entry =
+    Hashtbl.replace tbl key entry
+
+end
+
+
 module Request_handler = struct
 
-  type 'a ret =
-    ('a * string * caching, Cohttp.Code.status_code * string) result Lwt.t
+  type 'a ret = 'a response Lwt.t
 
   let map_ret f r =
     r >|= function
-    | Ok (x, content_type, caching) -> Ok (f x, content_type, caching)
-    | Error (code, msg) -> Error (code, msg)
+    | Response ({contents; _} as r) -> Response {r with contents = f contents}
+    | (Cached _ | Status _) as r -> r
 
   let token_save_mutexes = Hashtbl.create 223
 
-  let callback_raw
-    : type resp.
-      resp Api.request ->
-      (resp * string, Cohttp.Code.status_code * string) result Lwt.t
-    = function
+  let callback_raw: type resp. caching -> resp Api.request -> resp ret
+    = fun cache -> function
       | Api.Version () ->
-          respond_json Api.version
+          respond_json cache Api.version
       | Api.Static path ->
-          respond_static path
+          respond_static cache path
       | Api.Create_token (None, nick) ->
           Token.create_student () >>= fun tok ->
           (match nick with None -> Lwt.return_unit | Some nickname ->
               Save.set tok Save.{empty with nickname}) >>= fun () ->
-          respond_json tok
+          respond_json cache tok
       | Api.Create_token (Some token, _nick) ->
           Lwt.catch
-            (fun () -> Token.register token >>= fun () -> respond_json token)
+            (fun () -> Token.register token >>= fun () -> respond_json cache token)
             (function
-              | Failure m -> Lwt.return (Error (`Bad_request, m))
+              | Failure body -> Lwt.return (Status {code = `Bad_request; body})
               | exn ->
                   Lwt.return
-                    (Error (`Internal_server_error, Printexc.to_string exn)))
+                    (Status {code = `Internal_server_error;
+                             body = Printexc.to_string exn}))
       | Api.Create_teacher_token token ->
           with_verified_teacher_token token @@ fun () ->
-          Token.create_teacher () >>= respond_json
+          Token.create_teacher () >>= respond_json cache
 
       | Api.Fetch_save token ->
           Lwt.catch
             (fun () -> Save.get token >>= function
-               | Some save -> respond_json save
-               | None -> Lwt.return (Error (`Not_found, "token not found")))
+               | Some save -> respond_json cache save
+               | None -> Lwt.return (Status {code = `Not_found;
+                                             body = "token not found"}))
           @@ fun exn ->
           Lwt.return
-            (Error (`Internal_server_error, Printexc.to_string exn))
+            (Status {code = `Internal_server_error;
+                     body = Printexc.to_string exn})
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -213,10 +265,11 @@ module Request_handler = struct
               Save.get token >>= function
               | None ->
                   Lwt.return
-                    (Error (`Not_found, Token.to_string token))
+                    (Status {code = `Not_found;
+                             body = Token.to_string token})
               | Some prev_save ->
                 let save = Save.sync prev_save save in
-                Save.set token save >>= fun () -> respond_json save)
+                Save.set token save >>= fun () -> respond_json cache save)
             (fun () ->
                if Lwt_mutex.is_empty mutex
                then Hashtbl.remove token_save_mutexes key;
@@ -253,7 +306,7 @@ module Request_handler = struct
                   in
                   let tags = [] in
                   Lwt.return Student.{token; nickname; results; tags})
-          >>= respond_json
+          >>= respond_json cache
       | Api.Students_csv (token, exercises, students) ->
           with_verified_teacher_token token @@ fun () ->
           (match students with
@@ -316,7 +369,9 @@ module Request_handler = struct
                   all_exercises
                 >|= line)
             tok_saves
-          >|= fun () -> Ok (Buffer.contents buf, "text/csv")
+          >|= fun () -> Response {contents = Buffer.contents buf;
+                                  content_type = "text/csv";
+                                  caching = Nocache}
 
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->
@@ -333,34 +388,35 @@ module Request_handler = struct
                            deadlines := (id, max t 0.) :: !deadlines;
                            k true)
                     index (fun index -> Lwt.return (index, !deadlines)))
-          >>= respond_json
+          >>= respond_json cache
       | Api.Exercise (token, id) ->
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
-              respond_json
+              respond_json cache
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
-              Lwt.return (Error (`Forbidden, "Exercise closed")))
+              Lwt.return (Status {code = `Forbidden;
+                                  body = "Exercise closed"}))
 
       | Api.Lesson_index () ->
-          Lesson.Index.get () >>= respond_json
+          Lesson.Index.get () >>= respond_json cache
       | Api.Lesson id ->
-          Lesson.get id >>= respond_json
+          Lesson.get id >>= respond_json cache
 
       | Api.Tutorial_index () ->
-          Tutorial.Index.get () >>= respond_json
+          Tutorial.Index.get () >>= respond_json cache
       | Api.Tutorial id ->
-          Tutorial.get id >>= respond_json
+          Tutorial.get id >>= respond_json cache
 
       | Api.Exercise_status_index token ->
           with_verified_teacher_token token @@ fun () ->
-          Exercise.Status.all () >>= respond_json
+          Exercise.Status.all () >>= respond_json cache
       | Api.Exercise_status (token, id) ->
           with_verified_teacher_token token @@ fun () ->
-          Exercise.Status.get id >>= respond_json
+          Exercise.Status.get id >>= respond_json cache
       | Api.Set_exercise_status (token, status) ->
           with_verified_teacher_token token @@ fun () ->
           Lwt_list.iter_s
@@ -368,34 +424,27 @@ module Request_handler = struct
                 get ancestor.id >>= fun theirs ->
                 set (three_way_merge ~ancestor ~theirs ~ours))
             status
-          >>= respond_json
+          >>= respond_json cache
 
-      | Api.Invalid_request s ->
-          Lwt.return (Error (`Bad_request, s))
-
-  let caching: type resp. resp Api.request -> caching = function
-    | Api.Version () -> Shortcache
-    | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_) -> Longcache
-    | Api.Static ("css"::_ | "js"::_ | _) -> Shortcache
-
-    | Api.Exercise _ -> Shortcache
-
-    | Api.Lesson_index _ -> Shortcache
-    | Api.Lesson _ -> Shortcache
-    | Api.Tutorial_index _ -> Shortcache
-    | Api.Tutorial _ -> Shortcache
-
-    | _ -> Nocache
+      | Api.Invalid_request body ->
+          Lwt.return (Status {code = `Bad_request; body})
 
   let callback: type resp. resp Api.request -> resp ret = fun req ->
     let cache = caching req in
-    Lwt.catch (fun () -> callback_raw req)
-      (function
-        | Not_found -> Lwt.return (Error (`Not_found,"Exercise not found"))
-        | e -> raise e)
-    >|= function
-    | Ok (resp, content_type) -> Ok (resp, content_type, cache)
-    | Error e -> Error e
+    let respond () =
+      Lwt.catch (fun () -> callback_raw cache req)
+        (function
+          | Not_found ->
+              Lwt.return (Status {code = `Not_found;
+                                  body = "Component not found"})
+          | e -> raise e)
+    in
+    match cache with
+    | Nocache | Shortcache None -> respond ()
+    | Longcache key | Shortcache (Some key) ->
+        match Memory_cache.get key with
+        | Some c -> Lwt.return (Cached c)
+        | None -> respond ()
 
 end
 
@@ -430,42 +479,37 @@ let last_modified = (* server startup time *)
     tm.tm_hour tm.tm_min tm.tm_sec
 
 (* Taken from the source of "decompress", from bin/easy.ml *)
-let compress =
+let compress ?(level = 4) data =
   let input_buffer = Bytes.create 0xFFFF in
   let output_buffer = Bytes.create 0xFFFF in
 
-  fun ?(level = 4) data ->
   let pos = ref 0 in
   let res = Buffer.create (String.length data) in
 
-  Decompress.Zlib_deflate.bytes
-    input_buffer output_buffer
-    (fun input_buffer -> function
-     | Some max ->
-       let n = min max (min 0xFFFF (String.length data - !pos)) in
-       Bytes.blit_string data !pos input_buffer 0 n;
-       pos := !pos + n;
-       n
-     | None ->
-       let n = min 0xFFFF (String.length data - !pos) in
-       Bytes.blit_string data !pos input_buffer 0 n;
-       pos := !pos + n;
-       n)
-    (fun output_buffer len ->
-      Buffer.add_subbytes res output_buffer 0 len;
-      0xFFFF)
+  Lwt_preemptive.detach
+    (Decompress.Zlib_deflate.bytes
+       input_buffer
+       output_buffer
+       (fun input_buffer -> function
+          | Some max ->
+              let n = min max (min 0xFFFF (String.length data - !pos)) in
+              Bytes.blit_string data !pos input_buffer 0 n;
+              pos := !pos + n;
+              n
+          | None ->
+              let n = min 0xFFFF (String.length data - !pos) in
+              Bytes.blit_string data !pos input_buffer 0 n;
+              pos := !pos + n;
+              n)
+       (fun output_buffer len ->
+          Buffer.add_subbytes res output_buffer 0 len;
+          0xFFFF))
     (Decompress.Zlib_deflate.default ~proof:Decompress.B.proof_bytes level)
-  (* We can specify the level of the compression, see the documentation to know
-     what we use for each level. The default is 4.
-  *)
-  |> function
-  | Ok _ -> Buffer.contents res
-  | Error _ -> failwith "Could not compress"
+  >>= function
+  | Ok _ -> Lwt.return (Buffer.contents res)
+  | Error _ -> Lwt.fail_with "Could not compress"
 
 let launch () =
-  (* Learnocaml_store.init ~exercise_index:
-   *   (String.concat Filename.dir_sep
-   *      (!static_dir :: Learnocaml_index.exercise_index_path)); *)
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
@@ -477,18 +521,18 @@ let launch () =
       List.exists (function _, Cohttp.Accept.Deflate -> true | _ -> false)
         (Cohttp.Header.get_acceptable_encodings req.Request.headers)
     in
-    (* let cookies = Cohttp.Cookie.Cookie_hdr.extract (Cohttp.Request.headers req) in *)
     let respond = function
-      | Error (status, body) ->
-          Server.respond_error ~status ~body ()
-      | Ok (str, content_type, caching) ->
+      | Status {code; body} ->
+          Server.respond_error ~status:code ~body ()
+      | Response {contents=body; content_type; caching; _}
+      | Cached {body; content_type; caching; _} as resp ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
-            | Longcache ->
+            | Longcache _ ->
                 Cohttp.Header.add headers
                   "Cache-Control" "public, immutable, max-age=2592000"
                   (* 1 month *)
-            | Shortcache ->
+            | Shortcache _ ->
                 Cohttp.Header.add_list headers [
                   "Last-Modified", last_modified;
                   "Cache-Control", "private, must-revalidate";
@@ -496,23 +540,40 @@ let launch () =
             | Nocache ->
                 Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
-          match
-            if use_compression && String.length str >= 1024 &&
-               match String.split_on_char '/' content_type with
-               | "text"::_
-               | "application" :: ("javascript" | "json") :: _
-               | "image" :: ("gif" | "svg+xml") :: _ -> true
-               | _ -> false
-            then
-              Cohttp.Header.add headers "Content-Encoding" "deflate",
-              compress str
-            else headers, str
-          with
-          | headers, str ->
-              Server.respond_string ~headers ~status:`OK ~body:str ()
-          | exception e ->
+          let resp = match resp, caching with
+            | Response _, (Longcache key | Shortcache (Some key)) ->
+                let cached =
+                  {body; deflated_body = None; content_type; caching}
+                in
+                Memory_cache.add key cached;
+                Cached cached
+            | _ -> resp
+          in
+          Lwt.try_bind (fun () ->
+              if use_compression && String.length body >= 1024 &&
+                 match String.split_on_char '/' content_type with
+                 | "text"::_
+                 | "application" :: ("javascript" | "json") :: _
+                 | "image" :: ("gif" | "svg+xml") :: _ -> true
+                 | _ -> false
+              then
+                (match resp with
+                 | Cached {deflated_body = Some s; _} -> Lwt.return s
+                 | Cached
+                     ({deflated_body = None;
+                       caching = Longcache key | Shortcache Some key} as c) ->
+                     compress body >|= fun s ->
+                     Memory_cache.add key {c with deflated_body = Some s};
+                     s
+                 | _ -> compress body) >|= fun s ->
+                Cohttp.Header.add headers "Content-Encoding" "deflate", s
+              else
+                Lwt.return (headers, body))
+            (fun (headers, str) ->
+               Server.respond_string ~headers ~status:`OK ~body:str ())
+            (fun e ->
               Server.respond_error ~status:`Internal_server_error
-                ~body:(Printexc.to_string e) ()
+                ~body:(Printexc.to_string e) ())
     in
     if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
        Some last_modified
@@ -529,7 +590,7 @@ let launch () =
         | Ok req ->
             log conn req;
             Api_server.handler req
-        | Error e -> Lwt.return (Error e))
+        | Error (code, body) -> Lwt.return (Status {code; body}))
     >>=
     respond
   in
