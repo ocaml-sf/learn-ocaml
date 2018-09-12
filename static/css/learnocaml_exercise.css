@@ -369,7 +369,7 @@ body {
   max-height: 45%;
   background: #666;
   margin: 0;
-  padding: 5px 10px 5px 5px;
+  padding: 5px 10px 5px 10px;
   overflow: auto;
 }
 #learnocaml-exo-tab-text > h1::after {
