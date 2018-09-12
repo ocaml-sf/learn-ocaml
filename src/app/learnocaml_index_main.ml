@@ -1881,30 +1881,6 @@ let () =
     Manip.Ev.onreturn nickname_field (fun _ -> save_nickname ());
     Manip.Ev.onblur nickname_field (fun _ -> save_nickname (); true);
   end ;
-  begin
-    let token_field = find_component "learnocaml-save-token-field" in
-    let input = Tyxml_js.To_dom.of_input token_field in
-    Manip.Ev.onfocus token_field (fun _ ->
-        input##.value := Js.string "";
-        true
-      );
-    let update () =
-      let t = get_stored_token () in
-      let v = Js.to_string (input##.value) in
-      if v = "" then
-        Lwt.return (input##.value := Js.string (Token.to_string t))
-      else if v = Token.to_string t then
-        Lwt.return_unit
-      else
-        catch_with_alert @@ fun () ->
-        sync () >|= fun _ ->
-        get_stored_token () |> fun token ->
-        no_tab_selected () |> fun () ->
-        init_tabs (Some token) |> fun _ -> ()
-    in
-    Manip.Ev.onblur token_field (fun _ -> Lwt.async update; true);
-    Manip.Ev.onreturn token_field (fun _ -> Lwt.async update);
-  end ;
   init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
   try
     let activity = arg "activity" in
