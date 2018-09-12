@@ -278,9 +278,15 @@ module File = struct
               descrs := (lang, f raw) :: !descrs;
               return ()
       in
+      let markdown_to_html md =
+        Omd.(md |> of_string |> to_html)
+      in
       let read_descrs () =
         let langs = [] in
-        let exts = (Filename.extension descr.key, fun h -> h) :: [] in
+        let exts = [
+            (Filename.extension descr.key, fun h -> h) ;
+            (".md", markdown_to_html)
+          ] in
         join (read_descr None exts :: List.map (fun l -> read_descr (Some l) exts) langs)
         >>= fun () ->
         ex := set descr
