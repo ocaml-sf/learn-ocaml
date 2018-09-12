@@ -185,8 +185,8 @@ module Token = struct
 
   let parse =
     let table = Array.make 256 None in
-    String.iter
-      (fun c -> Array.set table (Char.code c) (Some c))
+    String.iteri
+      (fun i c -> Array.set table (Char.code c) (Some alphabet.[i]))
       visually_equivalent_alphabet ;
     let translate part =
       String.map (fun c ->
@@ -195,6 +195,7 @@ module Token = struct
           | Some c -> c)
         part in
     fun token ->
+      let token = String.trim token in
       let translate_base_token token =
         if String.length token = 15 then
           if String.get token 3 <> '-'
