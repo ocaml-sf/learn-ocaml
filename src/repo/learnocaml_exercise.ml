@@ -251,31 +251,42 @@ module File = struct
        *       with _ -> return ()
        * in *)
       let descrs = ref [] in
-      let read_descr lang =
-        begin
-          match lang with
-            None -> read_field descr.key
-          | Some lang ->
-              let key =
-                Filename.remove_extension descr.key
-                ^ "." ^ lang ^ "." ^
-                Filename.extension descr.key in
-              read_field key
-        end >>= function
-          None -> return ()
-        | Some raw ->
-
-            descrs := (lang, raw) :: !descrs;
-            return ()
+      let rec read_descr lang = function
+        | [] ->
+           (* If there are no extensions to try, we just give up. *)
+           return ()
+        | (ext, f) :: other_exts ->
+           (* If there are, we create the [filename] containing the
+              given [lang] and the first [ext] of the list (as well as
+              the function to apply to its result [f]. *)
+           let filename =
+             (Filename.remove_extension descr.key)
+             ^ (match lang with
+                | None -> ""
+                | Some lang -> "." ^ lang)
+             ^ ext
+           in
+           (* And we try to read that file. *)
+           read_field filename
+           >>= function
+           | None ->
+              (* If it does not work, we go on and try other extensions. *)
+              read_descr lang other_exts
+           | Some raw ->
+              (* If it does, we apply the function, add the
+                 description to [!descrs] and return. *)
+              descrs := (lang, f raw) :: !descrs;
+              return ()
       in
       let read_descrs () =
         let langs = [] in
-       join (read_descr None :: List.map (fun l -> read_descr (Some l)) langs)
-       >>= fun () ->
-       ex := set descr
-           (List.map (function (None, v) -> "", v | (Some l, v) -> l, v) !descrs)
+        let exts = (Filename.extension descr.key, fun h -> h) :: [] in
+        join (read_descr None exts :: List.map (fun l -> read_descr (Some l) exts) langs)
+        >>= fun () ->
+        ex := set descr
+                (List.map (function (None, v) -> "", v | (Some l, v) -> l, v) !descrs)
                 !ex;
-            return ()
+        return ()
       in
       join
         [ (* read_title () ; *)
