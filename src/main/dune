@@ -2,6 +2,7 @@
  (public_name learn-ocaml)
  (name learnocaml_main)
  (modes byte)
+ (ocamlc_flags :standard -custom)
  (flags :standard -linkall)
  (modules Learnocaml_main)
  (libraries cmdliner
@@ -14,6 +15,7 @@
  (public_name learn-ocaml-client)
  (name learnocaml_client)
  (modes byte)
+ (ocamlc_flags :standard -custom)
  (flags :standard -linkall)
  (modules Learnocaml_client)
  (libraries cmdliner
