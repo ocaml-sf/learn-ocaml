@@ -8,50 +8,37 @@ WWW ?= $(PREFIX)/share/learn-ocaml/www
 
 # end of config variables -----------------------------------------------------
 
+DUNE = dune
+DUNE_ARGS = --profile=release
+
 build-deps:
 	opam install . --deps-only --locked
 
 .PHONY: build
 build:
-	@ocp-build init
-	@ocp-build
+	@${DUNE} build ${DUNE_ARGS}
 
 .PHONY: static
 static:
 	@${MAKE} -C static
 
+.PHONY: doc
+doc:
+	@${DUNE} build ${DUNE_ARGS} @doc
+
 .PHONY: install
-install: static
-	@cp _obuild/learnocaml/learnocaml.byte ${PREFIX}/bin/learn-ocaml
-	@cp _obuild/learnocaml-client/learnocaml-client.byte ${PREFIX}/bin/learn-ocaml-client
-	@mkdir -p ${WWW}
-	@cp -r static/* ${WWW}
-	@cp _obuild/*/learnocaml-main.js ${WWW}/js/
-	@cp _obuild/*/learnocaml-exercise.js ${WWW}/js/
-	@cp _obuild/*/learnocaml-toplevel-worker.js ${WWW}/js/
-	@cp _obuild/*/learnocaml-grader-worker.js ${WWW}/js/
-	@cp -r demo-repository/* ${PREFIX}/share/learn-ocaml/repository/
-	@cp scripts/complete.sh ${PREFIX}/share/bash-completion/completions/learn-ocaml
+install: static doc
+	@${DUNE} install ${DUNE_ARGS}
 
 uninstall:
 	@rm -f ${PREFIX}/bin/learn-ocaml
 	@rm -rf ${PREFIX}/share/learn-ocaml
 	@rm -f ${PREFIX}/share/bash-completion/completions/learn-ocaml
 
-.PHONY: learn-ocaml.install travis docker-images publish-docker-images
-learn-ocaml.install: static
-	@echo 'bin: [' >$@
-	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
-	@echo '  "_obuild/learnocaml-client/learnocaml-client.byte" {"learn-ocaml-client"}' >>$@
-	@echo ']' >>$@
-	@echo 'share: [' >>$@
-	@echo '  "scripts/complete.sh"' >>$@
-	@$(foreach mod,main exercise toplevel-worker grader-worker,\
-	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
-	@$(foreach f,$(wildcard static/js/*.js static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
-	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
-	@(cd static && find js/mathjax -name '*.js' -exec echo '  "static/{}" {"www/{}"}' ';'; ) >>$@
-	@echo ']' >>$@
+static/dune:
+	@${MAKE} -C static dune
+
+.PHONY: travis docker-images publish-docker-images
 
 # Generates up-to-date translation template for lang % from the sources
 LANGS = $(patsubst translations/%.po,%,$(wildcard translations/*.po))
@@ -70,13 +57,12 @@ update-%-translation: translations/%.pot
 	@msgmerge -U translations/$*.po translations/$*.pot
 	@rm -f translations/$*.pot
 
-opaminstall: build learn-ocaml.install
-	@opam-installer --prefix `opam var prefix` learn-ocaml.install
+opaminstall: install
 
 REPO ?= demo-repository
 
 testrun:
-	@${MAKE} opaminstall
+	@${MAKE} install
 	rm -rf www/css
 	learn-ocaml build --repo $(REPO) -j8
 	rm -rf www/css
@@ -96,26 +82,11 @@ publish-docker-images: docker-images
 	docker tag learn-ocaml ocamlsf/learn-ocaml:dev
 	docker image push ocamlsf/learn-ocaml:dev
 
-# Generates documentation for testing (exclusively Test_lib and Learnocaml_report modules)
-doc: build
-	mkdir -p _obuild/doc
-	odoc css -o _obuild/doc
-	odoc compile _obuild/testing/test_lib.cmti --package learn-ocaml
-	odoc compile _obuild/learnocaml-state/learnocaml_report.cmti --package learn-ocaml
-	odoc html _obuild/testing/test_lib.odoc --output-dir _obuild/doc
-	odoc html _obuild/learnocaml-state/learnocaml_report.odoc --output-dir _obuild/doc
-
 clean:
-	@ocp-build clean
+	@${DUNE} clean
 	-rm -f translations/$*.pot
-	@${MAKE} -C  static clean
+	@${MAKE} -C static clean
 	-rm -rf www
-	-rm -f src/grader/embedded_cmis.ml
-	-rm -f src/grader/embedded_grading_cmis.ml
-	-rm -f src/ppx-metaquot/ast_lifter.ml
-	-rm -f ${patsubst ${EXERCISES_DIR}/%/meta.json, \
-			    ${EXERCISES_DIR}/%.*, \
-			    ${wildcard ${EXERCISES_DIR}/*/meta.json}}
 	-find -name \*~ -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally

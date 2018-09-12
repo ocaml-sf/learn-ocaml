@@ -27,5 +27,8 @@ static/icons/*_dark.svg
 static/icons/*_light.svg
 static/icons/*_white.svg
 static/fonts/Fontin*
+static/file-list
+static/dune
 
 translations/*.pot
+**/.merlin

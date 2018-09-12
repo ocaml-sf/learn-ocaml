@@ -1,0 +1,37 @@
+(executable
+ (name genlifter)
+ (libraries ppx_tools compiler-libs)
+ (modules Genlifter)
+)
+
+(rule
+ (targets ast_lifter.ml)
+ (deps genlifter.exe)
+ (action (with-stdout-to %{targets}
+          (run %{deps} -I %{ocaml-config:standard_library}/compiler-libs Parsetree.expression)))
+)
+
+(library
+ (name learnocaml_ppx_metaquot_lib)
+ (wrapped false)
+ (flags :standard -w -17)
+ (library_flags :standard -linkall)
+ (modules Ast_lifter Ppx_metaquot)
+ (libraries ppx_tools compiler-libs)
+)
+
+(library
+ (name learnocaml_ppx_metaquot)
+ (wrapped false)
+ (libraries learnocaml_ppx_metaquot_lib ty ocaml-migrate-parsetree)
+ (modules Ppx_metaquot_main)
+ (kind ppx_rewriter)
+)
+
+(library
+ (name ty)
+ (wrapped false)
+ (library_flags :standard -linkall)
+ (modules Ty)
+ (libraries compiler-libs)
+)

@@ -1,0 +1,42 @@
+(library
+ (name jsutils)
+ (wrapped false)
+ (flags :standard -warn-error -4-42-44-45-48-33-27-32-34)
+ (libraries lwt js_of_ocaml.ppx js_of_ocaml.tyxml)
+ (modules Js_utils Lwt_request)
+ (preprocess (pps js_of_ocaml.ppx))
+)
+
+(library
+ (name ocplib_i18n)
+ (wrapped false)
+ (flags :standard -warn-error -4-42-44-45-48)
+ (preprocess (pps ppx_ocplib_i18n))
+ (modules Ocplib_i18n)
+)
+
+(library
+ (name ppx_ocplib_i18n)
+ (wrapped false)
+ (flags :standard -warn-error -4-42-44-45-48)
+ (kind ppx_rewriter)
+ (libraries ocaml-migrate-parsetree)
+ (modules Ppx_ocplib_i18n)
+ (preprocessor_deps ../../translations/*.po)
+)
+
+(library
+ (name lwt_utils)
+ (wrapped false)
+ (flags :standard -warn-error -4-42-44-45-48)
+ (libraries lwt.unix)
+ (modules Lwt_utils)
+)
+
+(library
+ (name xor)
+ (wrapped false)
+ (flags :standard -warn-error A-4-42-44-45-48)
+ (libraries base64)
+ (modules Xor)
+)

@@ -1,0 +1,15 @@
+(library
+ (name ace)
+ (wrapped false)
+ (flags :standard -w -9 -warn-error -27)
+ (modules_without_implementation Ace_types)
+ (modules Ace_types
+          Ace
+          Ocaml_mode)
+ (libraries jsutils
+            js_of_ocaml
+            js_of_ocaml-lwt
+            lwt
+            ocp-indent-nlfork.lib)
+ (preprocess (pps js_of_ocaml.ppx))
+)
