@@ -1586,21 +1586,19 @@ let init_token_dialog () =
   let input_tok = find_component "login-token-input" in
   let button_connect = find_component "login-connect-button" in
   let get_token, got_token = Lwt.task () in
+  let nickname_field = find_component "learnocaml-nickname" in
   let create_token () =
-    let nickname = Manip.value input_nick in
-    if String.length nickname < 2 then
-      (alert ~title:[%i"INVALID NICKNAME"]
-         [%i"You must provide a nickname"];
+    let nickname = String.trim (Manip.value input_nick) in
+    if Token.check nickname || String.length nickname < 2 then
+      (Manip.SetCss.borderColor input_nick "#f44";
        Lwt.return_none)
     else
-    let nickname_field = find_component "learnocaml-nickname" in
-    Learnocaml_local_storage.(store nickname) nickname;
-    (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
-    Server_caller.request_exn
-      (Learnocaml_api.Create_token (None, Some nickname))
-    >>= fun token ->
-    Learnocaml_local_storage.(store sync_token) token;
-    Lwt.return_some token
+      (Learnocaml_local_storage.(store nickname) nickname;
+       Server_caller.request_exn
+         (Learnocaml_api.Create_token (None, Some nickname))
+       >>= fun token ->
+       Learnocaml_local_storage.(store sync_token) token;
+       Lwt.return_some (token, nickname))
   in
   let login_token () =
     let input = input_tok in
@@ -1612,7 +1610,7 @@ let init_token_dialog () =
         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
         | Ok save ->
             set_state_from_save_file ~token save;
-            Lwt.return_some token
+            Lwt.return_some (token, save.Save.nickname)
         | Error (`Not_found _) ->
             alert ~title:[%i"TOKEN NOT FOUND"]
               [%i"The entered token couldn't be recognised."];
@@ -1631,7 +1629,8 @@ let init_token_dialog () =
   Manip.Ev.onreturn input_nick (handler create_token ());
   Manip.Ev.onclick button_connect (handler login_token false);
   Manip.Ev.onreturn input_tok (handler login_token ());
-  get_token >|= fun token ->
+  get_token >|= fun (token, nickname) ->
+  (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
   Manip.SetCss.display login_overlay "none";
   token
 
