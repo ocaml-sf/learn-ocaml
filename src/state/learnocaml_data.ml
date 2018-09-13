@@ -76,6 +76,7 @@ module Save = struct
 
   type t =
     { nickname : string ;
+      all_exercise_editors : (float * string) SMap.t ;
       all_exercise_states : Answer.t SMap.t ;
       all_toplevel_histories :
         Learnocaml_toplevel_history.snapshot SMap.t ;
@@ -86,19 +87,24 @@ module Save = struct
     J.conv
       (fun t ->
         t.nickname,
+        t.all_exercise_editors,
         t.all_exercise_states,
         t.all_toplevel_histories,
         t.all_exercise_toplevel_histories)
       (fun (nickname,
+            all_exercise_editors,
             all_exercise_states,
             all_toplevel_histories,
             all_exercise_toplevel_histories) ->
         { nickname ;
+          all_exercise_editors ;
           all_exercise_states ;
           all_toplevel_histories ;
           all_exercise_toplevel_histories }) @@
-    J.obj4
+    J.obj5
       (J.dft "nickname" J.string "")
+      (J.dft "exercises-editors"
+         (SMap.enc (J.tup2 J.float J.string)) SMap.empty)
       (J.dft "exercises"
          (SMap.enc Answer.enc) SMap.empty)
       (J.dft "toplevel-histories"
@@ -113,6 +119,9 @@ module Save = struct
         snapshot_a
       else
         snapshot_b in
+    let sync_exercise_edits (ts_a, _ as a) (ts_b, _ as b) =
+      if ts_a > ts_b then a else b
+    in
     let sync_exercise_state state_a state_b =
       let open Answer in
       if state_a.mtime > state_b.mtime then
@@ -127,6 +136,10 @@ module Save = struct
            | Some a, Some b -> Some (sync_item a b))
         index_a index_b in
     { nickname = if b.nickname = "" then a.nickname else b.nickname;
+      all_exercise_editors =
+        sync_map sync_exercise_edits
+          a.all_exercise_editors
+          b.all_exercise_editors;
       all_exercise_states =
         sync_map sync_exercise_state
           a.all_exercise_states
@@ -146,11 +159,14 @@ module Save = struct
     let fix_snapshot s =
       Learnocaml_toplevel_history.{ s with mtime = fix s.mtime }
     in
+    let fix_exercise_edits (ts, e) = fix ts, e in
     let fix_exercise_state s =
       Answer.{ s with mtime = fix s.mtime }
     in
     {
       save with
+      all_exercise_editors =
+        SMap.map fix_exercise_edits save.all_exercise_editors;
       all_exercise_states =
         SMap.map fix_exercise_state save.all_exercise_states;
       all_toplevel_histories =
@@ -160,6 +176,7 @@ module Save = struct
     }
 
   let empty = {
+    all_exercise_editors = SMap.empty;
     all_exercise_states = SMap.empty;
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = SMap.empty;

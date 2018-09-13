@@ -17,6 +17,7 @@
 
 open Js_utils
 open Lwt.Infix
+open Learnocaml_data
 
 let find_div_or_append_to_body id =
   match Manip.by_id id with
@@ -378,22 +379,33 @@ let set_state_from_save_file ?token save =
   let open Learnocaml_local_storage in
   match token with None -> () | Some t -> store sync_token t;
   store nickname save.nickname;
-  store all_exercise_states save.all_exercise_states;
+  store all_exercise_states
+    (SMap.mapi (fun id ans ->
+         match SMap.find_opt id save.all_exercise_editors with
+         | Some (mtime, solution) ->
+             {ans with Answer.solution; mtime}
+         | None -> ans)
+        save.all_exercise_states);
   store all_toplevel_histories save.all_toplevel_histories;
   store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
 
-let get_state_as_save_file () =
+let get_state_as_save_file ?(include_reports = false) () =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
+  let answers = retrieve all_exercise_states in
   {
     nickname = retrieve nickname;
-    all_exercise_states = retrieve all_exercise_states;
+    all_exercise_editors =
+      if include_reports then SMap.empty
+      else SMap.map (fun a -> a.Answer.mtime, a.Answer.solution) answers;
+    all_exercise_states =
+      if include_reports then answers
+      else SMap.empty;
     all_toplevel_histories = retrieve all_toplevel_histories;
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let sync token =
-  let save_file = get_state_as_save_file () in
+let sync_save token save_file =
   Server_caller.request (Learnocaml_api.Update_save (token, save_file))
   >>= function
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
@@ -406,6 +418,46 @@ let sync token =
       set_state_from_save_file ~token save;
       Lwt.return save
   | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+
+let sync token = sync_save token (get_state_as_save_file ())
+
+let sync_exercise token ?answer ?editor id =
+  let nickname = Learnocaml_local_storage.(retrieve nickname) in
+  let toplevel_history =
+    SMap.find_opt id Learnocaml_local_storage.(retrieve all_toplevel_histories)
+  in
+  let txt = match editor with None -> None | Some e -> Some (max_float, e) in
+  let opt_to_map = function
+    | Some i -> SMap.singleton id i
+    | None -> SMap.empty
+  in
+  let save_file = Save.{
+    nickname;
+    all_exercise_editors = opt_to_map txt;
+    all_exercise_states = opt_to_map answer;
+    all_toplevel_histories = SMap.empty;
+    all_exercise_toplevel_histories = opt_to_map toplevel_history;
+  } in
+  Lwt.catch (fun () -> sync_save token save_file)
+    (fun e ->
+       (* save the text at least locally (but not the report & grade, that could
+          be misleading) *)
+       let txt = match editor, answer with
+         | Some t, _ -> Some t
+         | _, Some a -> Some a.Answer.solution
+         | _ -> None
+       in
+       (match txt with
+        | Some txt ->
+            let key = Learnocaml_local_storage.exercise_state id in
+            let a0 = Learnocaml_local_storage.retrieve key in
+            Learnocaml_local_storage.store key
+              {a0 with Answer.
+                    solution = txt;
+                    mtime = gettimeofday () }
+        | None -> ());
+       raise e)
+
 
 let string_of_seconds seconds =
   let days = seconds / 24 / 60 / 60 in

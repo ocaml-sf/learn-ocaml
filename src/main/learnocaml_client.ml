@@ -497,17 +497,19 @@ let upload_report server token ex solution report =
   let score = get_score report in
   let max_score = max_score ex in
   let id = Learnocaml_exercise.(access File.id ex) in
+  let mtime = Unix.gettimeofday () in
   let exercise_state =
     { Answer.
       solution;
       grade = if max_score = 0 then None else Some (score * 100 / max_score);
       report = Some report;
-      mtime = Unix.gettimeofday ();
+      mtime;
     }
   in
   let new_save =
     { Save.
       nickname = "";
+      all_exercise_editors = SMap.empty;
       all_exercise_states = SMap.singleton id exercise_state;
       all_toplevel_histories = SMap.empty;
       all_exercise_toplevel_histories = SMap.empty;

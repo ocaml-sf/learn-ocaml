@@ -1812,7 +1812,7 @@ let () =
       let json =
         Json_repr_browser.Json_encoding.construct
           Save.enc
-          (get_state_as_save_file ()) in
+          (get_state_as_save_file ~include_reports:true ()) in
       Js._JSON##(stringify json) in
     Learnocaml_common.fake_download ~name ~contents ;
     Lwt.return ()

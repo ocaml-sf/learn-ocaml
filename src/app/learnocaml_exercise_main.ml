@@ -204,7 +204,8 @@ let () =
        match Manip.by_id "learnocaml-countdown" with
        | Some elt -> countdown elt t ~ontimeout:make_readonly
        | None -> ());
-  let solution = match Learnocaml_local_storage.(retrieve (exercise_state id)) with
+  let solution =
+    match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.report = Some report ; solution } ->
         let _ : int = display_report exo report in
         Some solution
@@ -338,20 +339,7 @@ let () =
   begin editor_button
       ~icon: "sync" [%i"Sync"] @@ fun () ->
     token >>= fun token ->
-    let solution = Ace.get_contents ace in
-    let report, grade =
-      match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-      | { Answer.report ; grade } -> report, grade
-      | exception Not_found -> None, None in
-    Learnocaml_local_storage.(store (exercise_state id))
-      { Answer.report ; grade ; solution ;
-        mtime = gettimeofday () } ;
-    sync token >|= fun save ->
-    if not !is_readonly then
-      match SMap.find_opt id save.Save.all_exercise_states with
-      | Some s -> Ace.set_contents ace s.Answer.solution
-      | None -> ()
-      (* exercise expired server-side, so the submission was ignored *)
+    sync_exercise token id ~editor:(Ace.get_contents ace) >|= fun _save -> ()
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -438,10 +426,19 @@ let () =
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
-        Learnocaml_local_storage.(store (exercise_state id))
-          { Answer.grade = Some grade ; solution ; report = Some report ;
-            mtime = max_float } ; (* To ensure server time will be used *)
-        token >>= sync >>= fun save ->
+        let submit_report = not !is_readonly in
+        let editor, answer =
+          if submit_report then
+            None,
+            Some { Answer.grade = Some grade ;
+                   solution ;
+                   report = Some report ;
+                   mtime = max_float } (* To ensure server time will be used *)
+          else
+            Some solution, None
+        in
+        token >>= fun token ->
+        sync_exercise token id ?answer ?editor >>= fun _save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
