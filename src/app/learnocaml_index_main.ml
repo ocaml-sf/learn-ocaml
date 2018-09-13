@@ -1647,7 +1647,19 @@ let init_sync_token button_state =
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
 
+class type learnocaml_config = object
+  method enableTryocaml: bool Js.optdef_prop
+  method enableLessons: bool Js.optdef_prop
+  method enableExercises: bool Js.optdef_prop
+  method enableToplevel: bool Js.optdef_prop
+  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
+  method txtNickname: Js.js_string Js.t Js.optdef_prop
+end
+
+let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
+
 let set_string_translations () =
+  let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in
   let translations = [
     "txt_welcome",
     [%i"Welcome to <emph>LearnOCaml</emph> by OCamlPro."];
@@ -1671,7 +1683,8 @@ let set_string_translations () =
         class=\"icon\" alt=\"sync\"> button above."];
     "learnocaml-logout",
     [%i"Logout"];
-    "txt_login_welcome", [%i"Welcome to Learn OCaml"];
+    "txt_login_welcome", configured config##.txtLoginWelcome
+      [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
     "txt_first_connection_dialog", [%i"Choose a nickname"];
     "txt_login_new", [%i"Create new token"];
@@ -1684,8 +1697,10 @@ let set_string_translations () =
        Manip.setInnerHtml (find_component id) text)
     translations;
   let placeholder_translations = [
-    "learnocaml-nickname", [%i"Nickname"];
-    "login-nickname-input", [%i"Nickname"];
+    "learnocaml-nickname", configured config##.txtNickname
+      [%i"Nickname"];
+    "login-nickname-input", configured config##.txtNickname
+      [%i"Nickname"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -1693,15 +1708,6 @@ let set_string_translations () =
          Js.string text)
     placeholder_translations
 
-
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.prop
-  method enableLessons: bool Js.prop
-  method enableExercises: bool Js.prop
-  method enableToplevel: bool Js.prop
-end
-
-let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
 
 let () =
   Lwt.async_exception_hook := begin fun e ->
@@ -1737,15 +1743,16 @@ let () =
     delete_arg "activity"
   in
   let init_tabs token =
+    let get_opt o = Js.Optdef.get o (fun () -> false) in
     let tabs =
-      (if config##.enableTryocaml
+      (if get_opt config##.enableTryocaml
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
-      (if config##.enableLessons
+      (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-      (match token, config##.enableExercises with
+      (match token, get_opt config##.enableExercises with
        | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
        | _ -> []) @
-      (if config##.enableToplevel
+      (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
