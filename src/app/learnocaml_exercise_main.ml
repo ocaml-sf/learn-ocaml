@@ -409,6 +409,7 @@ let () =
       t, div in
     Manip.replaceChildren messages
       Tyxml_js.Html5.[ li [ pcdata [%i"Launching the grader"] ] ] ;
+    let submit_report = not !is_readonly in (* Don't count the grading time *)
     show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ] ;
     Lwt_js.sleep 1. >>= fun () ->
     let solution = Ace.get_contents ace in
@@ -426,7 +427,6 @@ let () =
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
-        let submit_report = not !is_readonly in
         let editor, answer =
           if submit_report then
             None,
