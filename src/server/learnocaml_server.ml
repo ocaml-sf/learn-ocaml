@@ -277,35 +277,21 @@ module Request_handler = struct
 
       | Api.Students_list token ->
           with_verified_teacher_token token @@ fun () ->
-          Token.Index.get ()
-          >|= List.filter Token.is_student
-          >>= Lwt_list.map_p (fun token ->
-              Lwt.catch (fun () -> Save.get token)
-                (fun e ->
-                   Format.eprintf "[ERROR] Corrupt save, cannot load %s: %s@."
-                     (Token.to_string token)
-                     (Printexc.to_string e);
-                   Lwt.return_none)
-              >>= function
-              | None ->
-                  Lwt.return Student.{
-                      token;
-                      nickname = None;
-                      results = SMap.empty;
-                      tags = [];
-                    }
-              | Some save ->
-                  let nickname = match save.Save.nickname with
-                    | "" -> None
-                    | n -> Some n
-                  in
-                  let results =
-                    SMap.map
-                      (fun st -> Answer.(st.mtime, st.grade))
-                      save.Save.all_exercise_states
-                  in
-                  let tags = [] in
-                  Lwt.return Student.{token; nickname; results; tags})
+          Student.Index.get ()
+          >>= respond_json cache
+      | Api.Set_students_list (token, students) ->
+          with_verified_teacher_token token @@ fun () ->
+          Lwt_list.map_s
+            (fun (ancestor, ours) ->
+               let token = ancestor.Student.token in
+               Student.get token >|= fun theirs ->
+               let theirs = match theirs with
+                 | None -> Student.default token
+                 | Some std -> std
+               in
+               Student.three_way_merge ~ancestor ~theirs ~ours)
+            students >>=
+          Student.Index.set
           >>= respond_json cache
       | Api.Students_csv (token, exercises, students) ->
           with_verified_teacher_token token @@ fun () ->

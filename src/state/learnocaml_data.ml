@@ -37,6 +37,10 @@ module SSet = struct
 
   let enc = J.conv elements of_list (J.list J.string)
 
+  let merge3 ~ancestor ~theirs ~ours =
+    let (++), (--), (%%) = union, diff, inter in
+    (ancestor %% theirs %% ours) ++ (theirs -- ancestor) ++ (ours -- ancestor)
+
 end
 
 module Answer = struct
@@ -275,7 +279,7 @@ module Student = struct
     token: student token;
     nickname: string option;
     results: (float * int option) SMap.t;
-    tags: string list;
+    tags: SSet.t;
   }
 
   let enc =
@@ -288,7 +292,7 @@ module Student = struct
     |> conv
       (fun t ->
          Token.to_string t.token,
-         t.nickname, SMap.bindings t.results, t.tags)
+         t.nickname, SMap.bindings t.results, SSet.elements t.tags)
       (fun (token, nickname, results, tags) -> {
            token = Token.parse token;
            nickname;
@@ -296,8 +300,45 @@ module Student = struct
              List.fold_left (fun m (s, r) -> SMap.add s r m)
                SMap.empty
                results;
-           tags;
+           tags = SSet.of_list tags;
          })
+
+  let default token = {
+    token;
+    nickname = None;
+    results = SMap.empty;
+    tags = SSet.empty;
+  }
+
+  let three_way_merge ~ancestor ~theirs ~ours =
+    let token = ancestor.token in
+    if token <> theirs.token || token <> ours.token then
+      invalid_arg "three_way_merge";
+    let tags = SSet.merge3
+        ~ancestor:ancestor.tags
+        ~theirs:theirs.tags
+        ~ours:ours.tags
+    in
+    let nickname =
+      if ours.nickname <> ancestor.nickname
+      then ours.nickname
+      else theirs.nickname
+    in
+    let results =
+      SMap.merge (fun id a o ->
+          if a <> o then o else
+          SMap.find_opt id theirs.results)
+        ancestor.results ours.results
+    in
+    { token; tags; nickname; results }
+
+  module Index = struct
+
+    type nonrec t = t list
+
+    let enc = J.(list enc)
+
+  end
 end
 
 let enc_check_version_1 enc =
@@ -467,12 +508,11 @@ module Exercise = struct
       if id <> theirs.id || id <> ours.id then
         invalid_arg "three_way_merge";
       let tags =
-        let (++), (--), (%%) = SSet.(union, diff, inter) in
-        let a = SSet.of_list ancestor.tags
-        and t = SSet.of_list theirs.tags
-        and o = SSet.of_list ours.tags
-        in
-        SSet.elements ((a %% t %% o) ++ (t -- a) ++ (o -- a))
+        SSet.merge3
+          ~ancestor:(SSet.of_list ancestor.tags)
+          ~theirs:(SSet.of_list theirs.tags)
+          ~ours:(SSet.of_list ours.tags)
+        |> SSet.elements
       in
       let default =
         if ours.assignments.default <> ancestor.assignments.default

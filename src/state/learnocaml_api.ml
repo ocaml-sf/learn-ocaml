@@ -20,25 +20,39 @@ open Learnocaml_data
 let version = "0.5"
 
 type _ request =
-  | Static: string list -> string request
-  | Version: unit -> string request
-  | Create_token: student token option * string option -> student token request
-  | Create_teacher_token: teacher token -> teacher token request
-  | Fetch_save: 'a token -> Save.t request
+  | Static:
+      string list -> string request
+  | Version:
+      unit -> string request
+  | Create_token:
+      student token option * string option -> student token request
+  | Create_teacher_token:
+      teacher token -> teacher token request
+  | Fetch_save:
+      'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
-  | Students_list: teacher token -> Student.t list request
+  | Students_list:
+      teacher token -> Student.t list request
+  | Set_students_list:
+      teacher token * (Student.t * Student.t) list -> unit request
   | Students_csv:
       teacher token * Exercise.id list * Token.t list -> string request
 
-  | Exercise_index: 'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
-  | Exercise: 'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
+  | Exercise_index:
+      'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
+  | Exercise:
+      'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
 
-  | Lesson_index: unit -> (string * string) list request
-  | Lesson: string -> Lesson.t request
+  | Lesson_index:
+      unit -> (string * string) list request
+  | Lesson:
+      string -> Lesson.t request
 
-  | Tutorial_index: unit -> Tutorial.Index.t request
-  | Tutorial: string -> Tutorial.t request
+  | Tutorial_index:
+      unit -> Tutorial.Index.t request
+  | Tutorial:
+      string -> Tutorial.t request
 
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
@@ -47,9 +61,9 @@ type _ request =
   | Set_exercise_status:
       teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
-  | Invalid_request: string -> string request
-  (** Only for server-side handling: bound to requests not matching any case
-      above *)
+  | Invalid_request:
+      string -> string request
+
 
 type http_request = {
   meth: [ `GET | `POST of string];
@@ -91,6 +105,8 @@ module Conversions (Json: JSON_CODEC) = struct
           json Save.enc
       | Students_list _ ->
           json (J.list Student.enc)
+      | Set_students_list _ ->
+          json J.unit
       | Students_csv _ ->
           str
       | Exercise_index _ ->
@@ -154,6 +170,11 @@ module Conversions (Json: JSON_CODEC) = struct
     | Students_list token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "students.json"]
+    | Set_students_list (token, students) ->
+        assert (Token.is_teacher token);
+        post ~token
+          ["teacher"; "students.json"]
+          (Json.encode (J.list (J.tup2 Student.enc Student.enc)) students)
     | Students_csv (token, exercises, students) ->
         assert (Token.is_teacher token);
         post ~token ["teacher"; "students.csv"]

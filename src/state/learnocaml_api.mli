@@ -33,14 +33,24 @@ open Learnocaml_data
 val version: string
 
 type _ request =
-  | Static: string list -> string request
-  | Version: unit -> string request
-  | Create_token: student token option * string option -> student token request
-  | Create_teacher_token: teacher token -> teacher token request
-  | Fetch_save: 'a token -> Save.t request
+  | Static:
+      string list -> string request
+  | Version:
+      unit -> string request
+  | Create_token:
+      student token option * string option -> student token request
+  | Create_teacher_token:
+      teacher token -> teacher token request
+  | Fetch_save:
+      'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
-  | Students_list: teacher token -> Student.t list request
+  | Students_list:
+      teacher token -> Student.t list request
+  | Set_students_list:
+      teacher token * (Student.t * Student.t) list -> unit request
+    (** Does not affect the students absent from the list. the pairs are the
+        before/after states, used for merging *)
   | Students_csv:
       teacher token * Exercise.id list * Token.t list -> string request
 
@@ -49,23 +59,30 @@ type _ request =
   | Exercise:
       'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
 
-  | Lesson_index: unit -> (string * string) list request
-  | Lesson: string -> Lesson.t request
+  | Lesson_index:
+      unit -> (string * string) list request
+  | Lesson:
+      string -> Lesson.t request
 
-  | Tutorial_index: unit -> Tutorial.Index.t request
-  | Tutorial: string -> Tutorial.t request
+  | Tutorial_index:
+      unit -> Tutorial.Index.t request
+  | Tutorial:
+      string -> Tutorial.t request
 
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
   | Exercise_status:
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
-  (* return the before & after stats *)
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list ->
+      unit request
+    (** The two Status.t correspond to the states before and after changes, used
+        for three-way merge *)
 
-  | Invalid_request: string -> string request
-  (** Only for server-side handling: bound to requests not matching any case
-      above *)
+  | Invalid_request:
+      string -> string request
+    (** Only for server-side handling: bound to requests not matching any case
+        above *)
 
 type http_request = {
   meth: [ `GET | `POST of string];

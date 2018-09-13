@@ -1,6 +1,7 @@
 (library
  (name learnocaml_server_lib)
  (wrapped false)
+ (flags :standard -warn-error +8)
  (modules Learnocaml_server)
  (libraries ocplib-json-typed
             ezjsonm
