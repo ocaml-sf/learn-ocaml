@@ -426,15 +426,7 @@ let () =
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
         worker := Grading_jsoo.get_grade ~callback exo ;
-        let submit_report =
-          if !is_readonly then false else
-          match (* only if the grade improved *)
-            Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.grade
-          with
-          | Some g -> g <= grade
-          | None -> true
-          | exception Not_found -> true
-        in
+        let submit_report = not !is_readonly in
         let editor, answer =
           if submit_report then
             None,
