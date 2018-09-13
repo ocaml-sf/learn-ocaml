@@ -45,7 +45,8 @@ LANGS = $(patsubst translations/%.po,%,$(wildcard translations/*.po))
 translations/$(LANGS:=.pot):
 	@for f in $(LANGS); do echo >> translations/$$f.po; done
 	@rm -f translations/*.pot
-	@DUMP_POT=1 ocp-build -j 1
+	@${DUNE} clean ${DUNE_ARGS}
+	@DUMP_POT=1 ${DUNE} build ${DUNE_ARGS} -j 1
 	@for f in $(LANGS); do \
 	  mv translations/$$f.pot translations/$$f.pot.bak; \
 	  msguniq translations/$$f.pot.bak > translations/$$f.pot; \
@@ -61,8 +62,7 @@ opaminstall: install
 
 REPO ?= demo-repository
 
-testrun:
-	@${MAKE} install
+testrun: build install
 	rm -rf www/css
 	learn-ocaml build --repo $(REPO) -j8
 	rm -rf www/css

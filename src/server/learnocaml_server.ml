@@ -515,6 +515,7 @@ let launch () =
     let path = Uri.path uri in
     let path = Stringext.split ~on:'/' path in
     let path = List.filter ((<>) "") path in
+    let path = List.map Uri.pct_decode path in
     let query = Uri.query uri in
     let args = List.map (fun (s, l) -> s, String.concat "," l) query in
     let use_compression =
