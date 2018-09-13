@@ -118,3 +118,7 @@ val countdown:
   ?ontimeout: (unit -> unit) -> 'a Tyxml_js.Html5.elt -> float -> unit
 
 val string_of_seconds: int -> string
+
+val flog: ('a, unit, string, unit) format4 -> 'a
+
+val stars_div: float -> [> Html_types.div ]  Tyxml_js.Html5.elt

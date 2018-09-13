@@ -490,3 +490,15 @@ let countdown ?(ontimeout = fun () -> ()) container t =
                  (update_interval remaining)))
   in
   callback ()
+
+let flog fmt = Printf.ksprintf (fun s -> Firebug.console##log(Js.string s)) fmt
+
+let stars_div stars =
+  let module H = Tyxml_js.Html5 in
+  H.div ~a:[ H.a_class [ "stars" ] ] [
+    let num = 5 * int_of_float (stars *. 2.) in
+    let num = max (min num 40) 0 in
+    let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
+    let src = Format.asprintf "icons/stars_%02d.svg" num in
+    H.img ~alt ~src ()
+  ]
