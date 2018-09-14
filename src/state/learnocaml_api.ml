@@ -17,7 +17,7 @@
 
 open Learnocaml_data
 
-let version = "0.5"
+let version = "0.6"
 
 type _ request =
   | Static:
