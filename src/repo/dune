@@ -5,6 +5,7 @@
           Learnocaml_exercise)
  (libraries ocplib-json-typed
             xor
+	    omd
             lwt
             ezjsonm)
 )
