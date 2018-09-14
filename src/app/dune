@@ -35,7 +35,8 @@
             learnocaml_toplevel
             js_of_ocaml.ppx
             ocplib_i18n)
- (modules Learnocaml_index_main)
+ (modules Learnocaml_teacher_tab
+          Learnocaml_index_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml
   (flags :standard +cstruct/cstruct.js)

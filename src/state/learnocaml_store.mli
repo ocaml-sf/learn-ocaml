@@ -145,20 +145,22 @@ end
 
 module Student: sig
 
-  include module type of struct include Student end
+  module Index: sig
+    include module type of struct include Student.Index end
+    val get: unit -> t Lwt.t
+
+    (** Does not affect the registered students absent from the list. Only the
+        tags can be updated this way, the rest needs to be set through
+        [Save.set] *)
+    val set: Student.t list -> unit Lwt.t
+  end
+
+  include module type of struct include Student end with module Index := Index
+
+  val get: student token -> t option Lwt.t
+
+  (** Only updates the tags at the moment, the rest is stored with [Save.set].
+      Use [Index.set] to set multiple students at once. *)
+  val set: t -> unit Lwt.t
 
 end
-
-
-(* module Teacher: sig
- *
- *   type token = Token.t
- *
- *   type t = {
- *     token: token;
- *     nickname: string;
- *     students: Student.set;
- *     assignments: Assignment.t
- *   }
- *
- * end *)

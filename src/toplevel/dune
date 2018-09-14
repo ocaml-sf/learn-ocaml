@@ -38,7 +38,7 @@
  (name learnocaml_toplevel)
  (wrapped false)
  (modes byte)
- (flags :standard -warn-error -9-27)
+ (flags :standard -w -9 -warn-error -27)
  (libraries toploop_results
             jsutils
             js_of_ocaml

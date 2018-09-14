@@ -305,45 +305,103 @@ module Save = struct
 
 end
 
-module Student = Learnocaml_data.Student
+module Student = struct
 
+  open Student
 
+  let get_saved token =
+    Save.get token >>= function
+    | None ->
+        Lwt.return (default token)
+    | Some save ->
+        let nickname = match save.Save.nickname with
+          | "" -> None
+          | n -> Some n
+        in
+        let results =
+          SMap.map
+            (fun st -> Answer.(st.mtime, st.grade))
+            save.Save.all_exercise_states
+        in
+        let tags = SSet.empty in
+        let creation_date =
+          Unix.((stat (Token.path token)).st_ctime)
+        in
+        Lwt.return {token; nickname; results; creation_date; tags}
 
-(* struct
- * 
- *   type tag = string
- * 
- *   type token = Token.t
- * 
- *   type t = {
- *     token: token;
- *     nickname: string;
- *     exercises: Learnocaml_exercise_state.exercise_state SMap.t;
- *     tags: tag list;
- *   }
- * 
- *   module T = struct
- *     type nonrec t = t
- *     let compare a b = compare a.token b.token
- *   end
- * 
- *   module Set = Set.Make(T)
- * 
- *   let all: (token, t) Hashtbl.t = Hashtbl.create 223
- * end *)
+  module Index = struct
 
-(* module Teacher: sig
- * 
- *   type token = Token.t
- * 
- *   type t = {
- *     token: token;
- *     nickname: string;
- *     students: Student.set;
- *   }
- * 
- *   let all: (token, t) Hashtbl.t = Hashtbl.create 71
- * end
- * 
- * let init ~exercise_index =
- *   Exercise.load exercise_index *)
+    include Index
+
+    (* Results and nickname are stored as part of the student's save, only the
+       tags appear here at the moment *)
+    let store_enc =
+      J.(assoc (obj1 (dft "tags" (list string) [])))
+      |> J.conv
+        (fun ttmap ->
+           Token.Map.fold (fun tok tags l ->
+               (Token.to_string tok, SSet.elements tags) :: l)
+             ttmap [])
+        (fun ttl ->
+           List.fold_left (fun map (tok, tags) ->
+               Token.Map.add (Token.parse tok) (SSet.of_list tags) map)
+             Token.Map.empty ttl)
+
+    let store_file () = Filename.concat !sync_dir "students.json"
+
+    let load () =
+      Lwt.catch (fun () ->
+          Lwt_io.(with_file ~mode:Input (store_file ()) read) >|=
+          Json_codec.decode store_enc)
+        (function
+          | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return Token.Map.empty
+          | e -> raise e)
+
+    let map = lazy (load () >|= fun m -> ref m)
+
+    let save () =
+      Lazy.force map >>= fun map ->
+      let s = Json_codec.encode store_enc !map in
+      Lwt_io.(with_file ~mode:Output (store_file ())
+                (fun oc -> write oc s))
+
+    let get_student map token =
+      Lwt.try_bind (fun () -> get_saved token)
+        (fun std ->
+           match Token.Map.find_opt token map with
+           | Some tags -> Lwt.return_some {std with tags}
+           | None -> Lwt.return_some std)
+        (fun e ->
+           Format.eprintf "[ERROR] Corrupt save, cannot load %s: %s@."
+             (Token.to_string token)
+             (Printexc.to_string e);
+           Lwt.return_none)
+
+    let get () =
+      Lazy.force map >>= fun map ->
+      Token.Index.get ()
+      >|= List.filter Token.is_student
+      >>= Lwt_list.filter_map_p (get_student !map)
+
+    let set =
+      let map_mutex = Lwt_mutex.create () in
+      fun l ->
+        Lwt_mutex.with_lock map_mutex @@ fun () ->
+        Lazy.force map >>= fun map ->
+        map := List.fold_left
+            (fun map std -> Token.Map.add std.token std.tags map)
+            !map l;
+        save ()
+
+  end
+
+  let get token =
+    Lazy.force Index.map >>= fun map ->
+    Index.get_student !map token
+
+  let set std = Index.set [std]
+
+  include (Student: module type of struct include Student end
+           with module Index := Index)
+
+end

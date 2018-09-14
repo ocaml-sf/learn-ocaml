@@ -29,6 +29,9 @@ module SSet: sig
 
   val enc: t Json_encoding.encoding
 
+  (** Three-way merge. [ours] always wins if it was modified from [ancestor] *)
+  val merge3: ancestor:t -> theirs:t -> ours:t -> t
+
 end
 
 module Report = Learnocaml_report
@@ -53,7 +56,8 @@ module Save: sig
     all_exercise_editors: (float * string) SMap.t;
     all_exercise_states: Answer.t SMap.t;
     all_toplevel_histories: Learnocaml_toplevel_history.snapshot SMap.t;
-    all_exercise_toplevel_histories: Learnocaml_toplevel_history.snapshot SMap.t;
+    all_exercise_toplevel_histories:
+      Learnocaml_toplevel_history.snapshot SMap.t;
   }
 
   val enc: t Json_encoding.encoding
@@ -105,10 +109,23 @@ module Student: sig
     token: student token;
     nickname: string option;
     results: (float * int option) SMap.t;
-    tags: string list;
+    creation_date: float;
+    tags: SSet.t;
   }
 
   val enc: t Json_encoding.encoding
+
+  val default: student token -> t
+
+  val three_way_merge: ancestor:t -> theirs:t -> ours:t -> t
+
+  module Index: sig
+
+    type nonrec t = t list
+
+    val enc: t Json_encoding.encoding
+
+  end
 
 end
 
@@ -131,7 +148,7 @@ module Exercise: sig
       kind: kind;
       title: string;
       short_description: string option;
-      stars: float (* \in [0.,4.] *);
+      stars: float (** \in [0.,4.] *);
       id: id option;
       author: (string * string) list;
       focus: string list;
@@ -179,45 +196,16 @@ module Exercise: sig
     val by_status:
       Token.Set.t -> assignments -> (status * Token.Set.t) list
 
-    (* Merges all changes from [theirs] and [ours], based on [ancestor]. [ours]
-       is privileged in case of any conflict (e.g. different affectation of the
-       same student) *)
+    (** Merges all changes from [theirs] and [ours], based on [ancestor]. [ours]
+        is privileged in case of any conflict (e.g. different affectation of the
+        same student) *)
     val three_way_merge:
       ancestor:t -> theirs:t -> ours:t -> t
-
-    (* val 
-     *   ((float * float) * Token.Set.t) list -> assignments *)
-
-    (* val is_automatic:
-     *   assignments -> bool
-     * 
-     * val is_open_assignment:
-     *   Token.t -> assignments -> [> `Closed | `Deadline of float]
-     * 
-     * val default_assignment:
-     *   assignments -> assignment
-     * 
-     * val exists_assignment:
-     *   assignments -> (Token.t -> assignment -> bool) -> bool
-     * 
-     * val fold_over_assignments:
-     *   assignments -> (Token.t -> assignment -> 'a -> 'a) -> 'a -> 'a
-     * 
-     * val token_map_of_assignments:
-     *   assignments -> assignment Token.Map.t *)
 
     val make_assignments:
       status Token.Map.t -> status -> assignments
 
-    (* val consider_token_for_assignment:
-     *   assignments -> Token.t -> assignments option *)
-
-
-    val enc:
-      t Json_encoding.encoding
-
-    (* val default:
-     *   id -> t *)
+    val enc: t Json_encoding.encoding
 
   end
 
