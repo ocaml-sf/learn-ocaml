@@ -109,6 +109,7 @@ module Student: sig
     token: student token;
     nickname: string option;
     results: (float * int option) SMap.t;
+    creation_date: float;
     tags: SSet.t;
   }
 

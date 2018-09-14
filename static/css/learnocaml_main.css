@@ -1089,6 +1089,16 @@ tr.exercise_group:hover {
     cursor: pointer;
 }
 
+/* #students_list td {
+ *     width: min-content;
+ *     width: -moz-min-content;
+ *     width: -webkit-min-content;
+ * }
+ * 
+ * #students_list td:last-child {
+ *     width: auto;
+ * } */
+
 .selected {
     background-color: #9bd /*#58f*/;
 }
@@ -1100,6 +1110,18 @@ tr.exercise_group:hover {
 .changed {
     outline: 2px dotted #9d9;
     outline-offset: 0px;
+}
+
+.student_hidden {
+    display: none;
+}
+
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
 }
 
 /*

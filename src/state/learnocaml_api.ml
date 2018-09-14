@@ -262,6 +262,11 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["teacher"; "students.json"], Some token
         when Token.is_teacher token ->
           Students_list token |> k
+      | `POST body, ["teacher"; "students.json"], Some token
+        when Token.is_teacher token ->
+          (match Json.decode (J.list (J.tup2 Student.enc Student.enc)) body with
+           | students -> Set_students_list (token, students) |> k
+           | exception e -> Invalid_request (Printexc.to_string e) |> k)
       | `GET, ["teacher"; "students.csv"], Some token
         when Token.is_teacher token ->
           Students_csv (token, [], []) |> k

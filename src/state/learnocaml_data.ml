@@ -279,27 +279,31 @@ module Student = struct
     token: student token;
     nickname: string option;
     results: (float * int option) SMap.t;
+    creation_date: float;
     tags: SSet.t;
   }
 
   let enc =
     let open Json_encoding in
-    obj4
+    obj5
       (req "token" string)
       (opt "nickname" string)
       (dft "results" (assoc (tup2 float (option int))) [])
+      (dft "creation_date" float 0.)
       (dft "tags" (list string) [])
     |> conv
       (fun t ->
          Token.to_string t.token,
-         t.nickname, SMap.bindings t.results, SSet.elements t.tags)
-      (fun (token, nickname, results, tags) -> {
+         t.nickname, SMap.bindings t.results, t.creation_date,
+         SSet.elements t.tags)
+      (fun (token, nickname, results, creation_date, tags) -> {
            token = Token.parse token;
            nickname;
            results =
              List.fold_left (fun m (s, r) -> SMap.add s r m)
                SMap.empty
                results;
+           creation_date;
            tags = SSet.of_list tags;
          })
 
@@ -307,6 +311,7 @@ module Student = struct
     token;
     nickname = None;
     results = SMap.empty;
+    creation_date = Unix.gettimeofday ();
     tags = SSet.empty;
   }
 
@@ -330,7 +335,10 @@ module Student = struct
           SMap.find_opt id theirs.results)
         ancestor.results ours.results
     in
-    { token; tags; nickname; results }
+    let creation_date =
+      min ancestor.creation_date (min theirs.creation_date ours.creation_date)
+    in
+    { token; tags; nickname; creation_date; results }
 
   module Index = struct
 

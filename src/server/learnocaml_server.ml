@@ -104,7 +104,7 @@ let caching: type resp. resp Api.request -> caching = function
   | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
   | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
 
-  | Api.Exercise (_, id) -> Shortcache None
+  | Api.Exercise _ -> Shortcache None
 
   | Api.Lesson_index () -> Shortcache (Some ["lessons"])
   | Api.Lesson id -> Shortcache (Some ["lesson";id])
@@ -548,7 +548,8 @@ let launch () =
                  | Cached {deflated_body = Some s; _} -> Lwt.return s
                  | Cached
                      ({deflated_body = None;
-                       caching = Longcache key | Shortcache Some key} as c) ->
+                       caching = Longcache key | Shortcache Some key;
+                       _ } as c) ->
                      compress body >|= fun s ->
                      Memory_cache.add key {c with deflated_body = Some s};
                      s

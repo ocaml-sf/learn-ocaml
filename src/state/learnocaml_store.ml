@@ -324,7 +324,10 @@ module Student = struct
             save.Save.all_exercise_states
         in
         let tags = SSet.empty in
-        Lwt.return {token; nickname; results; tags}
+        let creation_date =
+          Unix.((stat (Token.path token)).st_ctime)
+        in
+        Lwt.return {token; nickname; results; creation_date; tags}
 
   module Index = struct
 
