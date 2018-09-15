@@ -1,3 +1,5 @@
+.PHONY: icons
+
 all: icons dune
 
 FILES = $(wildcard \
