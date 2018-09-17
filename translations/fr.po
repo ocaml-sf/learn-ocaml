@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-09-14 22:38+0200\n"
+"PO-Revision-Date: 2018-09-17 18:17+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -385,7 +385,7 @@ msgstr "Se connecter"
 
 #: src/app/learnocaml_index_main.ml:718,9--19
 #: src/app/learnocaml_index_main.ml:720,9--19
-#: src/app/learnocaml_teacher_tab.ml:414,25--35
+#: src/app/learnocaml_teacher_tab.ml:416,25--35
 msgid "Nickname"
 msgstr "Pseudonyme"
 
@@ -459,83 +459,75 @@ msgstr "tout nouvel étudiant"
 msgid "Students"
 msgstr "Étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:403,29--37
-msgid "search"
-msgstr "chercher"
+#: src/app/learnocaml_teacher_tab.ml:410,23--32
+msgid "Sort by"
+msgstr "Trier par"
 
-#: src/app/learnocaml_teacher_tab.ml:408,23--33
-msgid "Sort by:"
-msgstr "Tri par:"
-
-#: src/app/learnocaml_teacher_tab.ml:416,25--32
+#: src/app/learnocaml_teacher_tab.ml:418,25--32
 msgid "Token"
 msgstr "Token"
 
-#: src/app/learnocaml_teacher_tab.ml:418,25--40
+#: src/app/learnocaml_teacher_tab.ml:420,25--40
 msgid "Creation date"
 msgstr "Date d'entrée"
 
-#: src/app/learnocaml_teacher_tab.ml:420,25--31
+#: src/app/learnocaml_teacher_tab.ml:422,25--31
 msgid "Tags"
 msgstr "Tags"
 
-#: src/app/learnocaml_teacher_tab.ml:438,24--34
-msgid "Add tags"
-msgstr "Ajouter les tags"
+#: src/app/learnocaml_teacher_tab.ml:430,29--35
+msgid "tags"
+msgstr "tags"
 
-#: src/app/learnocaml_teacher_tab.ml:445,24--37
-msgid "Remove tags"
-msgstr "Retirer les tags"
-
-#: src/app/learnocaml_teacher_tab.ml:499,16--28
+#: src/app/learnocaml_teacher_tab.ml:502,16--28
 msgid "1 exercise"
 msgstr "1 exercice"
 
-#: src/app/learnocaml_teacher_tab.ml:500,32--46
+#: src/app/learnocaml_teacher_tab.ml:503,32--46
 msgid "%d exercises"
 msgstr "%d exercices"
 
-#: src/app/learnocaml_teacher_tab.ml:503,23--34
+#: src/app/learnocaml_teacher_tab.ml:506,23--34
 msgid "1 student"
 msgstr "1 étudiant"
 
-#: src/app/learnocaml_teacher_tab.ml:504,39--52
+#: src/app/learnocaml_teacher_tab.ml:507,39--52
 msgid "%d students"
 msgstr "%d étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:505,38--52
+#: src/app/learnocaml_teacher_tab.ml:508,38--52
 msgid "%d+ students"
 msgstr "%d+ étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:607,34--50
+#: src/app/learnocaml_teacher_tab.ml:610,34--50
 msgid "New assignment"
 msgstr "Nouveau devoir"
 
-#: src/app/learnocaml_teacher_tab.ml:665,19--31
+#: src/app/learnocaml_teacher_tab.ml:668,19--31
 msgid "Open/Close"
 msgstr "Ouvrir/Fermer"
 
-#: src/app/learnocaml_teacher_tab.ml:683,39--52
+#: src/app/learnocaml_teacher_tab.ml:686,39--52
 msgid "Assignments"
 msgstr "Devoirs"
 
-#: src/app/learnocaml_teacher_tab.ml:762,21--28
+#: src/app/learnocaml_teacher_tab.ml:765,21--28
 msgid "Apply"
 msgstr "Appliquer"
 
-#: src/app/learnocaml_teacher_tab.ml:763,57--66
+#: src/app/learnocaml_teacher_tab.ml:766,57--66
 msgid "Actions"
 msgstr "Actions"
 
-#: src/app/learnocaml_teacher_tab.ml:766,26--52
+#: src/app/learnocaml_teacher_tab.ml:769,26--52
 msgid "Create new teacher token"
 msgstr "Créer un nouveau token prof."
 
-#: src/app/learnocaml_teacher_tab.ml:768,26--56
+#: src/app/learnocaml_teacher_tab.ml:771,26--56
 msgid "Download student data as CSV"
 msgstr "Exporter les données étudiants en CSV"
 
-#: src/app/learnocaml_teacher_tab.ml:940,58--75
+#: src/app/learnocaml_teacher_tab.ml:943,58--75
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
@@ -601,6 +593,12 @@ msgstr "Lancement du banc de test."
 #: src/grader/grading.ml:155,38--67
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
+
+#~ msgid "search"
+#~ msgstr "chercher"
+
+#~ msgid "Remove tags"
+#~ msgstr "Retirer les tags"
 
 #~ msgid "INVALID NICKNAME"
 #~ msgstr "PSEUDONYME INVALIDE"
