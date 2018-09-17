@@ -963,7 +963,7 @@ let teacher_tab token _select _params () =
     Lwt.return_unit
   end;
   toggle_selected_students := begin
-    fun ?force ?(update = force <> None) students ->
+    fun ?force ?(update = force=None) students ->
     Lwt.async @@ fun () ->
     let students, onoff = match force with
       | Some set -> students, set
