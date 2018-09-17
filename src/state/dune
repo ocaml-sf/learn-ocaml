@@ -1,3 +1,9 @@
+(rule
+ (targets learnocaml_version.ml)
+ (action (with-stdout-to %{targets}
+           (run echo "let v = \"%{version:learn-ocaml}\"")))
+)
+
 (library
  (name learnocaml_data)
  (wrapped false)
@@ -11,7 +17,7 @@
  (name learnocaml_api)
  (wrapped false)
  (flags :standard -warn-error +8)
- (modules Learnocaml_api)
+ (modules Learnocaml_version Learnocaml_api)
  (libraries ocplib-json-typed
             ezjsonm
             learnocaml_data)
