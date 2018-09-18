@@ -601,13 +601,13 @@ let teacher_tab token _select _params () =
       assignment_line id
     in
     let new_assg_id = "new_assignment" in
+    let new_assg_button = H.button [H.pcdata [%i"New assignment"]] in
     let table = H.table [] in
     let new_assg_line =
       H.tr ~a:[
         H.a_id new_assg_id;
       ] [
-        H.td ~a:[H.a_colspan 10]
-          [ H.button [H.pcdata [%i"New assignment"]] ]
+        H.td ~a:[H.a_colspan 10] [ new_assg_button ]
       ]
     in
     let new_assignment () =
@@ -634,7 +634,7 @@ let teacher_tab token _select _params () =
       !assignment_change id;
       !toggle_select_assignment id
     in
-    Manip.Ev.onclick new_assg_line (fun _ -> new_assignment (); false);
+    Manip.Ev.onclick new_assg_button (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
     (List.rev
        (ATM.fold (fun (assg, tokens, dft) exos acc ->

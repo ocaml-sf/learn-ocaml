@@ -104,7 +104,7 @@ let caching: type resp. resp Api.request -> caching = function
   | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
   | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
 
-  | Api.Exercise _ -> Shortcache None
+  | Api.Exercise _ -> Nocache
 
   | Api.Lesson_index () -> Shortcache (Some ["lessons"])
   | Api.Lesson id -> Shortcache (Some ["lesson";id])
