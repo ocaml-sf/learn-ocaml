@@ -267,6 +267,7 @@ end
 open Args
 
 let main o =
+  Printf.printf "Learnocaml v.%s running.\n" Learnocaml_api.version;
   let grade () =
     if List.mem Grade o.commands then
       (if List.mem Build o.commands || List.mem Serve o.commands then
@@ -392,6 +393,7 @@ let main_cmd =
   Cmdliner.Term.info
     ~man
     ~doc:"Learn-ocaml web-app manager"
+    ~version:Learnocaml_api.version
     "learn-ocaml"
 
 let () =

@@ -13,6 +13,7 @@
  (flags :standard -warn-error -4-42-44-45-48)
  (preprocess (pps ppx_ocplib_i18n))
  (modules Ocplib_i18n)
+ (preprocessor_deps (glob_files ../../translations/*.po))
 )
 
 (library
@@ -22,7 +23,6 @@
  (kind ppx_rewriter)
  (libraries ocaml-migrate-parsetree)
  (modules Ppx_ocplib_i18n)
- (preprocessor_deps ../../translations/*.po)
 )
 
 (library
