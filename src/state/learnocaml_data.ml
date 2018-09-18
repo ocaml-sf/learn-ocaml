@@ -139,15 +139,23 @@ module Save = struct
            | None, Some i | Some i, None -> Some i
            | Some a, Some b -> Some (sync_item a b))
         index_a index_b in
+    let all_exercise_states =
+      sync_map sync_exercise_state
+        a.all_exercise_states
+        b.all_exercise_states
+    in
+    let all_exercise_editors =
+      sync_map sync_exercise_edits
+        a.all_exercise_editors
+        b.all_exercise_editors
+      |> SMap.filter (fun id (ts, sol) ->
+          match SMap.find_opt id all_exercise_states with
+          | Some {Answer.mtime; _} when mtime > ts -> false
+          | _ -> true)
+    in
     { nickname = if b.nickname = "" then a.nickname else b.nickname;
-      all_exercise_editors =
-        sync_map sync_exercise_edits
-          a.all_exercise_editors
-          b.all_exercise_editors;
-      all_exercise_states =
-        sync_map sync_exercise_state
-          a.all_exercise_states
-          b.all_exercise_states ;
+      all_exercise_editors;
+      all_exercise_states;
       all_toplevel_histories =
         sync_map sync_snapshot
           a.all_toplevel_histories
