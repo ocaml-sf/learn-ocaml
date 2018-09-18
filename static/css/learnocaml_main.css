@@ -1124,6 +1124,51 @@ tr.exercise_group:hover {
     font-family: Inconsolata;
 }
 
+#students_filter_box label,
+#students_filter_box select {
+  height: 22px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-width: 1px;
+  padding: 2px;
+  margin: 0 3px;
+}
+
+.filler_h {
+  flex: auto;
+}
+
+#students_filter_box {
+    height: 24px;
+    font-size: 16px;
+    margin: 0 6px;
+    display:flex;
+    flex-direction: row;
+}
+
+#students_pane input {
+    height: 24px;
+    margin: 0 1px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 140px;
+}
+
+#students_pane button {
+    padding: 1px;
+    margin: 0 1px;
+    width: 24px;
+    height: 24px;
+    border-width: 1px;
+}
+
+#student_controls {
+  text-align: right;
+  padding-left: auto;
+  padding-right: 0;
+  vertical-align: top;
+}
+
 /*
 .assg_finished {
     background-color: #b88;

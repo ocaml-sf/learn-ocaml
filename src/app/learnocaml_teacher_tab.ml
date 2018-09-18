@@ -392,7 +392,8 @@ let teacher_tab token _select _params () =
             !toggle_selected_students all;
             true
           );
-      ] [H.pcdata [%i"Students"];  H.pcdata " \xe2\x98\x90" (* U+2610 *)]
+      ] [H.pcdata [%i"Students"];
+         H.pcdata " \xe2\x98\x90" (* U+2610 ballot box *)]
     in
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
@@ -400,12 +401,13 @@ let teacher_tab token _select _params () =
         H.input ~a:[
           H.a_id "student_search_field";
           H.a_input_type `Search;
-          H.a_placeholder [%i"search"];
+          H.a_placeholder "\xf0\x9f\x94\x8d" (* U+1F50D magnifying glass *);
           H.a_list student_tags_list_id;
           H.a_oninput (fun _ev -> set_student_filtering (); true);
         ] ();
+        H.div ~a:[H.a_class ["filler_h"]] [];
         H.label ~a:[H.a_label_for "student_sort"]
-          [H.pcdata [%i"Sort by:"]];
+          [H.pcdata [%i"Sort by"]];
         H.select ~a:[
           H.a_id "student_sort";
           H.a_oninput (fun _ev -> fill_students_pane (); true);
@@ -425,6 +427,7 @@ let teacher_tab token _select _params () =
         H.input ~a:[
           H.a_input_type `Text;
           H.a_list student_tags_list_id;
+          H.a_placeholder [%i"tags"];
         ] ()
       in
       H.div ~a:[H.a_id "student_controls"] [
@@ -435,14 +438,14 @@ let teacher_tab token _select _params () =
                 (List.filter ((<>) "")
                    (String.split_on_char ' ' (Manip.value tag_input)));
               true)
-        ] [ H.pcdata [%i"Add tags"] ];
+        ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
         H.button ~a:[
           H.a_onclick (fun _ev ->
               remove_student_tags
                 (List.filter ((<>) "")
                    (String.split_on_char ' ' (Manip.value tag_input)));
               true);
-        ] [ H.pcdata [%i"Remove tags"] ];
+        ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
       ]
     ]
   in
