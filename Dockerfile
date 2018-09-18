@@ -9,6 +9,7 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN opam switch 4.05
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
+RUN opam install conf-libev
 RUN opam install . --deps-only --locked
 
 ADD static static
@@ -29,7 +30,7 @@ FROM alpine:3.7 as program
 LABEL Description="learn-ocaml app manager" Vendor="OCamlPro" Version="0.6"
 
 RUN apk update
-RUN apk add ncurses-libs dumb-init
+RUN apk add ncurses-libs libev dumb-init
 RUN addgroup learn-ocaml
 RUN adduser learn-ocaml -DG learn-ocaml
 
@@ -53,7 +54,7 @@ FROM alpine:3.7 as client
 LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.6"
 
 RUN apk update
-RUN apk add ncurses-libs dumb-init
+RUN apk add ncurses-libs libev dumb-init
 RUN addgroup learn-ocaml
 RUN adduser learn-ocaml -DG learn-ocaml
 
