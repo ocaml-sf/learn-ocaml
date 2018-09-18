@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2018 OCamlPro.
  *
  * Learn-OCaml is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Learnocaml_server
+type t = {
+  sync_dir: string;
+  cert: string option;
+  port: int;
+}
 
-let () =
-  Arg.parse args
-    (fun _ -> raise (Arg.Bad "unexpected argument"))
-    "Usage: learnocaml-server [options]" ;
-  ignore (Lwt_main.run (launch ()))
+val term: string Cmdliner.Term.t -> t Cmdliner.Term.t

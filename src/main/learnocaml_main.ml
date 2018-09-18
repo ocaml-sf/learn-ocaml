@@ -197,54 +197,8 @@ module Args = struct
   end
 
   module Server = struct
+    include Learnocaml_server_args
     let info = info ~docs:"SERVER OPTIONS"
-
-    let sync_dir =
-      value & opt string "./sync" & info ["sync-dir"] ~docv:"DIR" ~doc:
-        "Directory where to store user sync tokens"
-
-    let default_http_port = 8080
-    let default_https_port = 8443
-
-    let cert =
-      value & opt (some string) None &
-      info ["cert"] ~docv:"BASENAME" ~env:(Arg.env_var "LEARNOCAML_CERT") ~doc:
-        "HTTPS certificate: this option turns on HTTPS, and requires files \
-         $(i,BASENAME.pem) and $(i,BASENAME.key) to be present. They will be \
-         used as the server certificate and key, respectively. A passphrase \
-         may be asked on the terminal if the key file is encrypted."
-
-    let port =
-      value & opt (some int) None &
-      info ["port";"p"] ~docv:"PORT" ~env:(Arg.env_var "LEARNOCAML_PORT") ~doc:
-        (Printf.sprintf
-           "The TCP port on which to run the server. Defaults to %d, or %d if \
-            HTTPS is enabled."
-           default_http_port default_https_port)
-
-    type t = {
-      sync_dir: string;
-      cert: string option;
-      port: int;
-    }
-
-    let term =
-      let apply app_dir sync_dir port cert =
-        Learnocaml_store.static_dir := app_dir;
-        Learnocaml_store.sync_dir := sync_dir;
-        let port = match port, cert with
-          | Some p, _ -> p
-          | None, Some _ -> default_https_port
-          | None, None -> default_http_port
-        in
-        Learnocaml_server.cert_key_files :=
-          (match cert with
-           | Some base -> Some (base ^ ".pem", base ^ ".key");
-           | None -> None);
-        Learnocaml_server.port := port;
-        { sync_dir; port; cert }
-      in
-      Term.(const apply $app_dir $sync_dir $port $cert)
   end
 
   type t = {
@@ -261,7 +215,7 @@ module Args = struct
       { commands; app_dir; repo_dir; grader; builder; server }
     in
     Term.(const apply $commands $app_dir $repo_dir
-          $Grader.term $Builder.term $Server.term)
+          $Grader.term $Builder.term $Server.term app_dir)
 end
 
 open Args
@@ -337,9 +291,20 @@ let main o =
   in
   let run_server () =
     if List.mem Serve o.commands then
-      (Printf.printf "Starting server on port %d\n%!"
-         !Learnocaml_server.port;
-       Learnocaml_server.launch ())
+      let native_server = Sys.executable_name ^ "-server" in
+      if Sys.file_exists native_server then
+        let server_args =
+          let open Server in
+          ("--app-dir="^o.app_dir) ::
+          ("--sync-dir="^o.server.sync_dir) ::
+          ("--port="^string_of_int o.server.port) ::
+          (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
+        in
+        Unix.execv native_server (Array.of_list (native_server::server_args))
+      else
+        Printf.printf "Starting server on port %d\n%!"
+          !Learnocaml_server.port;
+      Learnocaml_server.launch ()
     else
       Lwt.return true
   in
