@@ -118,7 +118,7 @@ let display_stars ex_meta =
       pcdata [%i "Difficulty:"];
       pcdata " "; (* lets not add whitespaces into translation strings (double
                      colon are mandatory, though, since rules are not the same
-                     in english or french for example *)
+                     in english or french for example). *)
       stars
     ]
   ]
