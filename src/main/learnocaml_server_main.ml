@@ -20,8 +20,23 @@ open Learnocaml_server_args
 let main o =
   Printf.printf "Learnocaml server v.%s starting on port %d\n%!"
     Learnocaml_api.version o.port;
-  let r = Lwt_main.run (Learnocaml_server.launch ()) in
-  exit (if r then 0 else 10)
+  let rec run () =
+    let minimum_duration = 15. in
+    let t0 = Unix.time () in
+    try Lwt_main.run (Learnocaml_server.launch ())
+    with Unix.Unix_error (err, fn, arg) ->
+      Format.eprintf "SERVER CRASH in %s(%s):@ @[<hv 2>%s@]@."
+        fn arg (Unix.error_message err);
+      let dt = Unix.time () -. t0 in
+      if dt < minimum_duration then
+        (Format.eprintf "Live time was only %.0fs, aborting (<%fs)@."
+           dt minimum_duration;
+         exit 20)
+      else
+        (Format.eprintf "Server was live %.0f seconds. Respawning@." dt;
+         run ())
+  in
+  exit (if run () then 0 else 10)
 
 let man = [
   `S "DESCRIPTION";
