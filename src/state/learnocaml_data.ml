@@ -463,15 +463,26 @@ module Exercise = struct
 
     module Skill_tree = struct
 
-      type kind = Skill of skill | Backward of id | Forward of id
+      type kind = Skill of skill | Exercise of id
 
       type node =
           Node of id * (node * kind) list
 
+      let apply_filters filters ex_seen skill_seen =
+        List.iter (function
+              Skill s -> skill_seen := SSet.add s !skill_seen
+            | Exercise e  -> ex_seen := SSet.add e !ex_seen) filters
+
       (* Naive version of skill dependencies tree *)
-      let compute_skill_tree ?(depth = 2) skill exs (focus, requirements) =
+      let compute_skill_tree
+          ?(depth = 2)
+          skill
+          exs
+          (focus, requirements)
+          filters =
         let ex_seen = ref SSet.empty in
         let skill_seen = ref SSet.empty in
+        apply_filters filters ex_seen skill_seen;
         let rec compute_exercises depth skill =
           if not @@ SSet.mem skill !skill_seen then
             begin

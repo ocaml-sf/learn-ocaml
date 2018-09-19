@@ -171,12 +171,13 @@ module Exercise: sig
 
     module Skill_tree : sig
 
-      type kind = Skill of skill | Backward of id | Forward of id
+      type kind = Skill of skill | Exercise of id
 
       type node = Node of id * (node * kind) list
 
       val compute_skill_tree :
-        ?depth:int -> skill -> (id * Meta.t) list -> (t * t) -> (node * kind) list
+        ?depth:int -> skill -> (id * Meta.t) list -> (t * t) -> kind list
+        -> (node * kind) list
 
     end
 
