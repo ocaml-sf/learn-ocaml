@@ -457,6 +457,14 @@ let () =
         hide_loading ~id:"learnocaml-exo-loading" () ;
         typecheck true
   end ;
+  Window.onunload (fun _ev ->
+      let key = Learnocaml_local_storage.exercise_state id in
+      let ans = Learnocaml_local_storage.retrieve key in
+      Learnocaml_local_storage.store key
+        { ans with Answer.solution = Ace.get_contents ace;
+                   mtime = gettimeofday () };
+      true
+    );
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->
