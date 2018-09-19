@@ -320,6 +320,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         _ ->
           Static path |> k
 
+      | `GET, ["favicon.ico"], _ ->
+          Static ["icons"; "favicon.ico"] |> k
+
       | meth, path, _ ->
           Invalid_request
             (Printf.sprintf "%s /%s%s"

@@ -8,6 +8,7 @@ FILES = $(wildcard \
   *.html\
   icons/*.svg\
   icons/*.gif\
+  icons/*.ico\
   fonts/*.woff\
   css/*.css\
 ) $(shell find js/mathjax ! -type d)
