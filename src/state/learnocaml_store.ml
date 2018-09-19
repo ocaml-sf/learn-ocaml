@@ -55,6 +55,25 @@ let read_static_file path enc =
   Lwt_io.(with_file ~mode: Input path read) >|=
   Json_codec.decode enc
 
+let write ?(no_create=false) file contents =
+  (if not (Sys.file_exists file) then
+     if no_create then Lwt.fail Not_found
+     else Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file)
+   else Lwt.return_unit)
+  >>= fun () ->
+  let rec write_tmp () =
+    let tmpfile = Printf.sprintf "%s.%07x.tmp" file (Random.int 0x0fffffff) in
+    Lwt.catch (fun () ->
+        Lwt_io.(with_file tmpfile
+                  ~flags:Unix.[O_WRONLY; O_NONBLOCK; O_CREAT; O_EXCL]
+                  ~mode:Output
+                  (fun chan -> write chan contents)) >|= fun () ->
+        tmpfile)
+      (function Unix.Unix_error (Unix.EEXIST, _, _) -> write_tmp ()
+              | e -> raise e)
+  in
+  write_tmp () >>= fun tmpfile -> Lwt_unix.rename tmpfile file
+
 
 module Lesson = struct
 
@@ -144,8 +163,7 @@ module Exercise = struct
       Lazy.force tbl >>= fun tbl ->
       let l = Hashtbl.fold (fun _ s acc -> s::acc) tbl [] in
       let s = Json_codec.encode (J.list enc) l in
-      Lwt_io.(with_file ~mode:Output (store_file ())
-                (fun oc -> write oc s))
+      write (store_file ()) s
 
     let get id =
       Lazy.force tbl >>= fun tbl ->
@@ -287,21 +305,13 @@ module Save = struct
     | e -> Lwt.fail e
 
   let set token save =
-    let flags =
-      if Token.is_teacher token then
-        Unix.([O_WRONLY; O_NONBLOCK; O_TRUNC])
-      else
-        Unix.([O_WRONLY; O_NONBLOCK; O_CREAT; O_TRUNC])
-    in
     let file = Token.path token in
-    Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file) >>= fun () ->
     Lwt.catch (fun () ->
-        Lwt_io.(with_file ~flags ~mode:Output file
-                  (fun chan -> write chan (Json_codec.encode enc save))))
-    @@ function
-    | Unix.Unix_error (Unix.ENOENT, _, _) ->
-        Lwt.fail_with "Unregistered teacher token"
-    | e -> Lwt.fail e
+        write ~no_create:(Token.is_teacher token) file
+          (Json_codec.encode enc save))
+      (function
+        | Not_found -> Lwt.fail_with "Unregistered teacher token"
+        | e -> Lwt.fail e)
 
 end
 
@@ -362,8 +372,7 @@ module Student = struct
     let save () =
       Lazy.force map >>= fun map ->
       let s = Json_codec.encode store_enc !map in
-      Lwt_io.(with_file ~mode:Output (store_file ())
-                (fun oc -> write oc s))
+      write (store_file ()) s
 
     let get_student map token =
       Lwt.try_bind (fun () -> get_saved token)
