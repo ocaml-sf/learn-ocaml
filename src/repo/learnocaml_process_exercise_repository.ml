@@ -242,7 +242,15 @@ let main dest_dir =
              Lwt_list.map_p,
              spawn_grader
          in
-         listmap (fun (id, _, exercise, json_path, changed, dump_outputs,dump_reports) ->
+         listmap (fun (id, ex_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
+               Lwt_stream.iter_p (fun base ->
+                 let d = Filename.concat ex_dir base in
+                 let dst = String.concat Filename.dir_sep [dest_dir; "static"; id; base] in
+                 if Sys.is_directory d && base.[0] <> '.' then
+                   (Lwt_utils.mkdir_p (Filename.dirname dst) >>= fun () ->
+                    Lwt_utils.copy_tree d dst)
+                 else Lwt.return_unit)
+                 (Lwt_unix.files_of_directory ex_dir) >>= fun () ->
                if not changed then begin
                  Format.printf "%-24s (no changes)@." id ;
                  Lwt.return true
