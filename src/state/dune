@@ -1,7 +1,7 @@
 (rule
  (targets learnocaml_version.ml)
  (action (with-stdout-to %{targets}
-           (run echo "let v = \"%{version:learn-ocaml}\"")))
+           (echo "let v = \"%{version:learn-ocaml}\"")))
 )
 
 (library

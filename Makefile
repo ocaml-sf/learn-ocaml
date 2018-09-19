@@ -78,10 +78,12 @@ docker-images: Dockerfile learn-ocaml.opam
 	@docker build -t learn-ocaml-client --target client docker
 	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
-publish-docker-images: version docker-images
-	docker tag learn-ocaml ocamlsf/learn-ocaml:`cat version`
+VERSION = $(shell opam show ./learn-ocaml.opam -f version)
+
+publish-docker-images: docker-images
+	docker tag learn-ocaml ocamlsf/learn-ocaml:$(VERSION)
 	docker tag learn-ocaml ocamlsf/learn-ocaml:dev
-	docker image push ocamlsf/learn-ocaml:`cat version`
+	docker image push ocamlsf/learn-ocaml:$(VERSION)
 	docker image push ocamlsf/learn-ocaml:dev
 
 clean:
