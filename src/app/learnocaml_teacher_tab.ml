@@ -1155,6 +1155,7 @@ let teacher_tab token _select _params () =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
       students_div;
+      skills_div;
       control_div;
       actions_div;
     ]
