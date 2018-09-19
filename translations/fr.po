@@ -33,17 +33,17 @@ msgstr "difficulté: %d / 40"
 #: src/app/learnocaml_exercise_main.ml:118,17--30
 #, fuzzy
 msgid "Difficulty:"
-msgstr "difficulté: %d / 40"
+msgstr "Difficulté:"
 
 #: src/app/learnocaml_exercise_main.ml:128,34--43
 #, fuzzy
 msgid "Project"
-msgstr "projet"
+msgstr "Projet"
 
 #: src/app/learnocaml_exercise_main.ml:129,34--43
 #, fuzzy
 msgid "Problem"
-msgstr "problème"
+msgstr "Problème"
 
 #: src/app/learnocaml_exercise_main.ml:130,35--45
 #: src/app/learnocaml_exercise_main.ml:304,37--47
@@ -57,7 +57,7 @@ msgstr "Type: %s"
 #: src/app/learnocaml_exercise_main.ml:254,32--54
 #, fuzzy
 msgid "Exercise identifier:"
-msgstr "Exercice échoué"
+msgstr "Identifiant de l'exercice :"
 
 #: src/app/learnocaml_exercise_main.ml:256,22--34
 msgid "Author(s):"
@@ -74,12 +74,12 @@ msgstr "Compétences requises :"
 #: src/app/learnocaml_exercise_main.ml:270,8--29
 #, fuzzy
 msgid "Previous exercises:"
-msgstr "%d exercices"
+msgstr "Exercices précédents :"
 
 #: src/app/learnocaml_exercise_main.ml:275,10--32
 #, fuzzy
 msgid "Exercises following:"
-msgstr "Exercice échoué"
+msgstr "Exercices suivants :"
 
 #: src/app/learnocaml_exercise_main.ml:283,19--29
 msgid "Metadata"
@@ -90,7 +90,7 @@ msgid "Preparing the environment"
 msgstr "Préparation de l'environnement"
 
 #: src/app/learnocaml_exercise_main.ml:301,39--47
-#: src/app/learnocaml_exercise_main.ml:305,37--45
+#: src/app/learnocaml_exercise_main.ml:306,37--45
 msgid "Editor"
 msgstr "Éditeur"
 
@@ -99,15 +99,19 @@ msgstr "Éditeur"
 msgid "Toplevel"
 msgstr "Toplevel"
 
-#: src/app/learnocaml_exercise_main.ml:306,27--70
+#: src/app/learnocaml_exercise_main.ml:305,37--46
+msgid "Details"
+msgstr "Détails"
+
+#: src/app/learnocaml_exercise_main.ml:307,27--70
 msgid "Click the Grade button to get your report"
 msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
 
-#: src/app/learnocaml_exercise_main.ml:317,18--29
+#: src/app/learnocaml_exercise_main.ml:318,18--29
 msgid "TIME'S UP"
 msgstr "TEMPS ÉCOULÉ"
 
-#: src/app/learnocaml_exercise_main.ml:318,7--119
+#: src/app/learnocaml_exercise_main.ml:319,7--119
 msgid ""
 "The deadline for this exercise has expired. Any changes you make from now on "
 "will remain local only."
@@ -115,97 +119,97 @@ msgstr ""
 "La date limite de rendu de cet exercice est passée. Vos changements ne "
 "seront plus sauvegardés sur le serveur."
 
-#: src/app/learnocaml_exercise_main.ml:363,25--49
+#: src/app/learnocaml_exercise_main.ml:364,25--49
 msgid "loading the prelude..."
 msgstr "Chargement du prélude..."
 
-#: src/app/learnocaml_exercise_main.ml:368,41--59
+#: src/app/learnocaml_exercise_main.ml:369,41--59
 msgid "error in prelude"
 msgstr "erreur dans le prélude"
 
-#: src/app/learnocaml_exercise_main.ml:420,26--33
+#: src/app/learnocaml_exercise_main.ml:421,26--33
 #: src/app/learnocaml_index_main.ml:476,57--64
 #: src/app/learnocaml_index_main.ml:542,57--64
 msgid "Clear"
 msgstr "Effacer"
 
-#: src/app/learnocaml_exercise_main.ml:425,25--32
-#: src/app/learnocaml_exercise_main.ml:538,26--33
+#: src/app/learnocaml_exercise_main.ml:426,25--32
+#: src/app/learnocaml_exercise_main.ml:539,26--33
 #: src/app/learnocaml_index_main.ml:483,24--31
 #: src/app/learnocaml_index_main.ml:547,24--31
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: src/app/learnocaml_exercise_main.ml:431,22--35
+#: src/app/learnocaml_exercise_main.ml:432,22--35
 #: src/app/learnocaml_index_main.ml:489,53--66
 #: src/app/learnocaml_index_main.ml:551,53--66
 msgid "Eval phrase"
 msgstr "Évaluer la phrase"
 
-#: src/app/learnocaml_exercise_main.ml:450,39--54
+#: src/app/learnocaml_exercise_main.ml:451,39--54
 msgid "OCaml prelude"
 msgstr "Prélude OCaml"
 
-#: src/app/learnocaml_exercise_main.ml:457,62--68
+#: src/app/learnocaml_exercise_main.ml:458,62--68
 msgid "Hide"
 msgstr "Cacher"
 
-#: src/app/learnocaml_exercise_main.ml:461,62--68
+#: src/app/learnocaml_exercise_main.ml:462,62--68
 msgid "Show"
 msgstr "Montrer"
 
-#: src/app/learnocaml_exercise_main.ml:505,35--80
+#: src/app/learnocaml_exercise_main.ml:506,35--80
 msgid "No description available for this exercise."
 msgstr "Aucune description pour cet exercice."
 
-#: src/app/learnocaml_exercise_main.ml:543,23--29
+#: src/app/learnocaml_exercise_main.ml:544,23--29
 #: src/app/learnocaml_index_main.ml:862,38--44
 msgid "Sync"
 msgstr "Sync"
 
-#: src/app/learnocaml_exercise_main.ml:548,27--37
+#: src/app/learnocaml_exercise_main.ml:549,27--37
 msgid "Download"
 msgstr "Télécharger"
 
-#: src/app/learnocaml_exercise_main.ml:578,28--35
+#: src/app/learnocaml_exercise_main.ml:579,28--35
 msgid "Check"
 msgstr "Valider"
 
-#: src/app/learnocaml_exercise_main.ml:583,22--33
+#: src/app/learnocaml_exercise_main.ml:584,22--33
 msgid "Eval code"
 msgstr "Évaluer le code"
 
-#: src/app/learnocaml_exercise_main.ml:591,23--34
+#: src/app/learnocaml_exercise_main.ml:592,23--34
 #: src/app/learnocaml_index_main.ml:768,48--59
 #: src/app/learnocaml_teacher_tab.ml:211,21--32
 msgid "Exercises"
 msgstr "Exercices"
 
-#: src/app/learnocaml_exercise_main.ml:601,25--33
+#: src/app/learnocaml_exercise_main.ml:602,25--33
 msgid "Grade!"
 msgstr "Noter!"
 
-#: src/app/learnocaml_exercise_main.ml:604,51--58
+#: src/app/learnocaml_exercise_main.ml:605,51--58
 msgid "abort"
 msgstr "abandonner"
 
-#: src/app/learnocaml_exercise_main.ml:608,38--73
+#: src/app/learnocaml_exercise_main.ml:609,38--73
 msgid "Grading is taking a lot of time, "
 msgstr "La notation prend longtemps, "
 
-#: src/app/learnocaml_exercise_main.ml:614,38--60
+#: src/app/learnocaml_exercise_main.ml:615,38--60
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: src/app/learnocaml_exercise_main.ml:629,60--86
+#: src/app/learnocaml_exercise_main.ml:630,60--86
 msgid "Grading aborted by user."
 msgstr "Notation annulée par l'utilisateur"
 
-#: src/app/learnocaml_exercise_main.ml:651,38--59
+#: src/app/learnocaml_exercise_main.ml:652,38--59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: src/app/learnocaml_exercise_main.ml:652,27--85
+#: src/app/learnocaml_exercise_main.ml:653,27--85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 

@@ -116,6 +116,9 @@ let display_stars ex_meta =
   div ~a:[ a_class [ "stars" ] ] [
     p [
       pcdata [%i "Difficulty:"];
+      pcdata " "; (* lets not add whitespaces into translation strings (double
+                     colon are mandatory, though, since rules are not the same
+                     in english or french for example *)
       stars
     ]
   ]
@@ -253,7 +256,7 @@ let display_meta token ex_meta id =
   let ident =
     Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
   let authors =
-    span [ pcdata [%i "Author(s):" ] ] :: display_authors ex_meta.Meta.author in
+    span [ pcdata [%i "Author(s):" ]; pcdata " " ] :: display_authors ex_meta.Meta.author in
   let focus =
     [%i "Skills trained:"],
     display_list ~sep:(pcdata "") @@
@@ -302,6 +305,7 @@ let set_string_translations () =
     "learnocaml-exo-button-toplevel", [%i"Toplevel"];
     "learnocaml-exo-button-report", [%i"Report"];
     "learnocaml-exo-button-text", [%i"Exercise"];
+    "learnocaml-exo-button-meta", [%i"Details"];
     "learnocaml-exo-editor-pane", [%i"Editor"];
     "txt_grade_report", [%i"Click the Grade button to get your report"];
   ] in
