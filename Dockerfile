@@ -1,5 +1,5 @@
 FROM ocaml/opam2:alpine-3.7-ocaml-4.05 as compilation
-LABEL Description="learn-ocaml building" Vendor="OCamlPro" Version="0.6"
+LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR learn-ocaml
 
@@ -9,7 +9,6 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN opam switch 4.05
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
-RUN opam install conf-libev
 RUN opam install . --deps-only --locked
 
 ADD static static
@@ -27,7 +26,7 @@ RUN opam install . --destdir /home/opam/install-prefix
 
 
 FROM alpine:3.7 as program
-LABEL Description="learn-ocaml app manager" Vendor="OCamlPro" Version="0.6"
+LABEL Description="learn-ocaml app manager" Vendor="OCamlPro"
 
 RUN apk update
 RUN apk add ncurses-libs libev dumb-init
@@ -51,7 +50,7 @@ ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 
 
 FROM alpine:3.7 as client
-LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro" Version="0.6"
+LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro"
 
 RUN apk update
 RUN apk add ncurses-libs libev dumb-init

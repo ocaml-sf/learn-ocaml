@@ -576,8 +576,11 @@ let teacher_tab token _select _params () =
     let atm =
       SMap.fold (fun id st atm ->
           let assg = st.ES.assignments in
-          let stl = ES.by_status all_tokens assg in
           let default = ES.default_assignment assg in
+          let stl =
+            (default, Token.Set.empty) ::
+            ES.by_status all_tokens assg
+          in
           List.fold_left (fun atm (status, tokens) ->
               match status with
               | ES.Open | ES.Closed -> atm

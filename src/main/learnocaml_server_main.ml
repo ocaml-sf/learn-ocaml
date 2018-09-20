@@ -16,6 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 open Learnocaml_server_args
+open Lwt.Infix
+
+let signal_waiter =
+  let waiter, wakener = Lwt.wait () in
+  let handler signum =
+    Format.eprintf "%s caught: stopping@."
+      (if signum = Sys.sigint then "SIGINT" else
+       if signum = Sys.sigterm then "SIGTERM" else
+         "Signal");
+    Lwt.wakeup_later wakener (128 - signum) in
+  let _ = Lwt_unix.on_signal Sys.sigint handler in
+  let _ = Lwt_unix.on_signal Sys.sigterm handler in
+  waiter
 
 let main o =
   Printf.printf "Learnocaml server v.%s starting on port %d\n%!"
@@ -23,7 +36,11 @@ let main o =
   let rec run () =
     let minimum_duration = 15. in
     let t0 = Unix.time () in
-    try Lwt_main.run (Learnocaml_server.launch ())
+    try
+      Lwt_main.run @@ Lwt.pick [
+        (Learnocaml_server.launch () >|= function true -> 0 | false -> 10);
+        signal_waiter
+      ]
     with Unix.Unix_error (err, fn, arg) ->
       Format.eprintf "SERVER CRASH in %s(%s):@ @[<hv 2>%s@]@."
         fn arg (Unix.error_message err);
@@ -36,7 +53,7 @@ let main o =
         (Format.eprintf "Server was live %.0f seconds. Respawning@." dt;
          run ())
   in
-  exit (if run () then 0 else 10)
+  exit (run ())
 
 let man = [
   `S "DESCRIPTION";
