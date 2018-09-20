@@ -9,7 +9,6 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN opam switch 4.05
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
-RUN opam install conf-libev
 RUN opam install . --deps-only --locked
 
 ADD static static

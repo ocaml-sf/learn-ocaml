@@ -46,11 +46,11 @@ depends: [
   "ocp-ocamlres" {= "0.4"}
   "ppx_cstruct" {= "3.2.1"}
   "ppx_tools" {= "5.0+4.05.0"}
+  "conf-libev" {= "4-11"}
 ]
 build: [
-  [make "build"]
-  [make "-C" "static"]
-  [make "learn-ocaml.install"]
+  [make "static"]
+  ["dune" "build" "-p" name]
 ]
 install: [
   ["mkdir" "-p" "%{_:share}%"]
