@@ -649,6 +649,27 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "none";
   token
 
+let logout_dialog onlogout =
+  let logout_overlay = find_component "logout-overlay" in
+  Manip.SetCss.display logout_overlay "block";
+  let ok_button = find_component "logout-ok-button" in
+  let cancel_button = find_component "logout-cancel-button" in
+  let token_display =
+    find_component "logout-token-reminder"
+    |> Tyxml_js.To_dom.of_input in
+  begin
+    try
+      let token = get_stored_token () in
+      token_display##.value := Js.string (Token.to_string token)
+    with Not_found -> ()
+  end;
+  let onclick f t _ =
+    f ();
+    Manip.SetCss.display logout_overlay "none";
+    t in
+  Manip.Ev.onclick ok_button (onclick onlogout false);
+  Manip.Ev.onclick cancel_button (onclick (fun () -> ()) false)
+
 let init_sync_token button_state =
   catch
     (fun () ->
@@ -706,6 +727,10 @@ let set_string_translations () =
     "txt_returning", [%i"Returning user"];
     "txt_returning_dialog", [%i"Enter your token"];
     "txt_login_returning",  [%i"Connect"];
+    "txt-logout", [%i "Logout"];
+    "txt-logout-token", [%i "Before log out, be sure to save your token"];
+    "txt-logout-ok", [%i "Logout"];
+    "txt-logout-cancel", [%i "Cancel"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -886,8 +911,13 @@ let () =
       reload ();
       Lwt.return_unit
     in
+    let display_logout_dialog _ =
+      logout_dialog
+        (function _ -> Lwt.async logout);
+      false
+    in
     Manip.Ev.onclick (find_component "learnocaml-logout")
-      (function _ -> Lwt.async logout; false)
+      display_logout_dialog
   end;
   begin
     let nickname_field = find_component "learnocaml-nickname" in
