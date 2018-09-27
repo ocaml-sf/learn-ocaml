@@ -155,7 +155,19 @@ body {
 }
 #learnocaml-logout {
   float: right;
-  color: #d82;
+  flex: 1;
+  display: block;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #bbb 0%, #888 100%);
+  color: #ddd;
+  border-radius: 5px;
+  padding: 5px;
+  margin-right: 10px;
+  font-size: 18px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
 }
 #learnocaml-logout:hover {
   cursor: pointer;
@@ -1094,7 +1106,7 @@ tr.exercise_group:hover {
  *     width: -moz-min-content;
  *     width: -webkit-min-content;
  * }
- * 
+ *
  * #students_list td:last-child {
  *     width: auto;
  * } */
@@ -1144,6 +1156,7 @@ tr.exercise_group:hover {
     margin: 0 6px;
     display:flex;
     flex-direction: row;
+    flex-shrink: 0;
 }
 
 #students_pane input {
