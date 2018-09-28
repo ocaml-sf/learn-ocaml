@@ -570,6 +570,11 @@ let teacher_tab token _select _params () =
           | n -> n
       end)
     in
+    let atm_add atm key id =
+      match ATM.find_opt key atm with
+      | None -> ATM.add key (SSet.singleton id) atm
+      | Some set -> ATM.add key (SSet.add id set) atm
+    in
     let all_tokens =
       Token.Map.fold (fun t _ -> Token.Set.add t) !students_map Token.Set.empty
     in
@@ -577,9 +582,18 @@ let teacher_tab token _select _params () =
       SMap.fold (fun id st atm ->
           let assg = st.ES.assignments in
           let default = ES.default_assignment assg in
-          let stl =
-            (default, Token.Set.empty) ::
-            ES.by_status all_tokens assg
+          let stl = ES.by_status all_tokens assg in
+          let atm = match default with
+            | ES.Assigned {start; stop} ->
+                let explicit_tokens =
+                  Token.Map.fold (fun tok _ -> Token.Set.add tok)
+                    assg.ES.token_map Token.Set.empty
+                in
+                let implicit_tokens =
+                  Token.Set.diff all_tokens explicit_tokens
+                in
+                atm_add atm ((start, stop), implicit_tokens, true) id
+            | _ -> atm
           in
           List.fold_left (fun atm (status, tokens) ->
               match status with
