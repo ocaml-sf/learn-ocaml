@@ -155,7 +155,19 @@ body {
 }
 #learnocaml-logout {
   float: right;
-  color: #d82;
+  flex: 1;
+  display: block;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #bbb 0%, #888 100%);
+  color: #ddd;
+  border-radius: 5px;
+  padding: 5px;
+  margin-right: 10px;
+  font-size: 18px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
 }
 #learnocaml-logout:hover {
   cursor: pointer;
@@ -1094,7 +1106,7 @@ tr.exercise_group:hover {
  *     width: -moz-min-content;
  *     width: -webkit-min-content;
  * }
- * 
+ *
  * #students_list td:last-child {
  *     width: auto;
  * } */
@@ -1144,6 +1156,7 @@ tr.exercise_group:hover {
     margin: 0 6px;
     display:flex;
     flex-direction: row;
+    flex-shrink: 0;
 }
 
 #students_pane input {
@@ -1273,4 +1286,80 @@ div#login-overlay button {
   box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
   text-align: center;
   min-width: 10em;
+}
+
+#logout-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    z-index: 22220;
+    overflow: auto;
+}
+#logout-div {
+    margin: 30px auto;
+    background-color: #666;
+    border-radius: 3px;
+    box-shadow: 10px 10px 4px 2px rgba(0,0,0,0.2);
+    padding-bottom: 10px;
+}
+@media (min-width: 1000px) {
+    #logout-div {
+        width: 30vw;
+    }
+}
+#logout-overlay h4 {
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+    background-color: #bbb;
+    color: black;
+    border-radius: 3px 3px 0 0;
+}
+#logout-div > div {
+    padding: 20px;
+}
+#logout-div > div > div {
+    padding: 20px;
+    display: block;
+    float: left;
+    vertical-align: middle;
+}
+div#logout-overlay input {
+  display: block;
+  float: right;
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  font-size: 16px;
+  line-height: 30px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  font-family: 'Inconsolata';
+  text-align: center;
+  vertical-align: middle;
+}
+div#logout-overlay button {
+  display: block;
+  clear: both;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 15px auto;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
+  min-width: 10em;
+}
+#logout-div-buttons {
+  display: flex;
+}
+#logout-token {
+  display: flex;
+  align-items: center;
 }

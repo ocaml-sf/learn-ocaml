@@ -45,7 +45,10 @@
              readonly="readonly"
              id="learnocaml-save-token-field">
       <div id="txt_token_share"><!--You can share it between devices.--></div>
-      <input type="text" value="" placeholder="Nickname" size="16" id="learnocaml-nickname">
+      <div id="learnocaml-id-div">
+        <input type="text" value="" placeholder="Nickname" size="16" id="learnocaml-nickname">
+        <div id="learnocaml-logout">Logout</div>
+      </div>
       <hr class="line">
       <div id="txt_progression_local"><!--Progression is saved locally in the browser.--></div>
       <div id="learnocaml-sync-buttons">
@@ -74,7 +77,6 @@
       <hr class="glue">
       <div class="footer">
         <div id="learnocaml-version"></div>
-        <div id="learnocaml-logout">Logout</div>
       </div>
     </div>
     <div id="learnocaml-main-content">
@@ -112,6 +114,21 @@
                  autocomplete="off">
         </div>
         <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+      </div>
+    </div>
+    <div id="logout-overlay">
+      <div id="logout-div">
+        <h4 id="txt_logout"><!-- Logout --></h4>
+        <div id="logout-token">
+          <div id="txt_logout_token"><!-- Before log out, be sure to save your token. --></div>
+          <input id="logout-token-reminder" type="text" placeholder="XXX-XXX-XXX-XXX"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 minlength="2" autocomplete="off" readonly="true"></input>
+          </div>
+        <div id="logout-div-buttons">
+          <button id="logout-cancel-button"><span id="txt_logout_cancel"><!-- Cancel --></span></button>
+          <button id="logout-ok-button"><span id="txt_logout_ok"><!-- Logout --></span></button>
+        </div>
       </div>
     </div>
   </body>
