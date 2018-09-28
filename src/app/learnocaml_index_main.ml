@@ -727,10 +727,10 @@ let set_string_translations () =
     "txt_returning", [%i"Returning user"];
     "txt_returning_dialog", [%i"Enter your token"];
     "txt_login_returning",  [%i"Connect"];
-    "txt-logout", [%i "Logout"];
-    "txt-logout-token", [%i "Before log out, be sure to save your token"];
-    "txt-logout-ok", [%i "Logout"];
-    "txt-logout-cancel", [%i "Cancel"];
+    "txt_logout", [%i "Logout"];
+    "txt_logout_token", [%i "Before log out, be sure to save your token"];
+    "txt_logout_ok", [%i "Logout"];
+    "txt_logout_cancel", [%i "Cancel"];
   ] in
   List.iter
     (fun (id, text) ->
