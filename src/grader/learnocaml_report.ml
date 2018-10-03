@@ -103,12 +103,12 @@ let result items =
         (successes + isuccesses, failures || ifailures))
       (0, false) items
   and do_item = function
-    | Message (text, status) ->
+    | Message (_text, status) ->
         begin match status with
           | Success n -> (n, false)
           | Failure -> (0, true)
           | Warning | Informative | Important -> (0, false) end
-    | Section (title, contents) ->
+    | Section (_title, contents) ->
         do_report contents in
   do_report items
 
@@ -210,7 +210,7 @@ let format items =
                 | None -> format_text text
                 | Some score -> E ("span", [ "class", "score" ], [ T score ]) :: format_text text) ])
     | Section (title, contents) ->
-        let (successes, failures) as result, formatted_report = format_report contents in
+        let result, formatted_report = format_report contents in
         let result_class, score, folder = match result with
           | (0, false) ->
               "informative folded", [], unfolder
@@ -235,7 +235,7 @@ let format items =
                 folder :: format_text title @ score) ;
              E ("div", [ "class", "report" ], formatted_report) ])
   and format_text text =
-    let rec format = function
+    let format = function
       | Text w ->
           T w
       | Break ->

@@ -232,7 +232,7 @@ let inside (l, c) { loc_start = (sl, sc) ; loc_end = (el, ec) } =
 let last (l, c) { loc_end = (el, ec) } =
   l = el && c = ec - 1
 
-let hilight_pretty cls pretty ?num locs lbl =
+let hilight_pretty cls pretty locs lbl =
   let hilight_one pretty loc =
     let rec hilight_one pretty pos acc = match pretty with
       | [] -> List.rev acc, pos

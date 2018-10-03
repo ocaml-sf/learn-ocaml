@@ -103,7 +103,7 @@ let redirect_channel ?(tee = (fun _ _ -> ())) name channel callback =
     let cur = ref { channel ; name ; tee ; callback ; prev = None } in
     redirections := (channel, cur) :: !redirections ;
     let append text =
-      let { tee ; name ; callback } = !cur in
+      let { tee ; name ; callback ; _ } = !cur in
       tee name text ;
       callback text in
     Sys_js.set_channel_flusher channel append ;

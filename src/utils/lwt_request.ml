@@ -15,9 +15,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-open Js_utils
-open Lwt.Infix
-
 exception Request_failed of (int * string)
 
 let url_encode_list l =

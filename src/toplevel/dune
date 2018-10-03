@@ -11,7 +11,7 @@
 (executable
  (name learnocaml_toplevel_worker_main)
  (modes byte)
- (flags :standard -warn-error -4-42-44-45-48-41-32-27)
+ (flags :standard -w -41 -warn-error -4-42-44-45-48-32-27)
  (link_flags :standard -linkall)
  (libraries jsutils
             js_of_ocaml
@@ -38,7 +38,7 @@
  (name learnocaml_toplevel)
  (wrapped false)
  (modes byte)
- (flags :standard -w -9 -warn-error -27)
+ (flags :standard -w -9-41 -warn-error -27)
  (libraries toploop_results
             jsutils
             js_of_ocaml

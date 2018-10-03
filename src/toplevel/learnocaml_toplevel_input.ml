@@ -38,7 +38,7 @@ let indent_ocaml_textarea textbox =
     match l with
     | [] -> assert false
     | (i,(lo,up))::_ when up >= c -> c,i,lo,up
-    | (_,(lo,up))::rem -> find rem c in
+    | _::rem -> find rem c in
   let v = textbox##.value in
   let pos =
     let c1 = (Obj.magic textbox)##.selectionStart
@@ -51,11 +51,11 @@ let indent_ocaml_textarea textbox =
     else None in
   let f = match pos with
     | None -> (fun _ -> true)
-    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) -> (fun l -> l>=(line1+1) && l<=(line2+1)) in
+    | Some ((_,line1,_,_),(_,line2,_,_)) -> (fun l -> l>=(line1+1) && l<=(line2+1)) in
   let v = indent_caml (Js.to_string v) f in
   textbox##.value:=Js.string v;
   begin match pos with
-    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) ->
+    | Some ((c1,line1,_,up1),(c2,line2,_,up2)) ->
       let l = loop v [] (0,0) in
       let (lo1'',up1'') = List.assoc line1 l in
       let (lo2'',up2'') = List.assoc line2 l in

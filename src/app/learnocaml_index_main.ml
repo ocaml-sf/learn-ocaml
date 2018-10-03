@@ -18,7 +18,6 @@
 open Js_utils
 open Lwt
 open Learnocaml_data
-open Learnocaml_index
 open Learnocaml_common
 
 module H = Tyxml_js.Html5
@@ -44,11 +43,11 @@ let exercises_tab token _ _ () =
               let pct_init =
                 match SMap.find exercise_id all_exercise_states with
                 | exception Not_found -> None
-                | { Answer.grade } -> grade in
+                | { Answer.grade ; _ } -> grade in
               let pct_signal, pct_signal_set = React.S.create pct_init in
               Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
                 Some (function
-                    | Some { Answer.grade } -> pct_signal_set grade
+                    | Some { Answer.grade ; _ } -> pct_signal_set grade
                     | None -> pct_signal_set None) ;
               let pct_text_signal =
                 React.S.map
@@ -114,7 +113,7 @@ let exercises_tab token _ _ () =
   Lwt.return list_div
 ;;
 
-let lessons_tab select (arg, set_arg, delete_arg) () =
+let lessons_tab select (arg, set_arg, _delete_arg) () =
   show_loading ~id:"learnocaml-main-loading"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading lessons"] ] ] ] ;
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -147,7 +146,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
   let load_lesson ~loading () =
     let selector = Tyxml_js.To_dom.of_select selector in
     let id = Js.to_string selector##.value in
-    Server_caller.fetch_lesson id >>= fun { Lesson.steps } ->
+    Server_caller.fetch_lesson id >>= fun { Lesson.steps; _ } ->
     Manip.removeChildren main_div ;
     if loading then begin
       show_loading ~id:"learnocaml-main-loading"
@@ -264,7 +263,7 @@ let lessons_tab select (arg, set_arg, delete_arg) () =
   Lwt.return lesson_div
 ;;
 
-let tryocaml_tab select (arg, set_arg, delete_arg) () =
+let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let open Tutorial in
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
@@ -327,7 +326,7 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   Server_caller.fetch_tutorial_index () >>= fun index ->
   let index =
     List.flatten @@ List.fold_left
-      (fun acc (_, { Index.series_tutorials }) ->
+      (fun acc (_, { Index.series_tutorials; _ }) ->
          series_tutorials :: acc)
       [] index in
   let options =
@@ -345,13 +344,14 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
     let rec loop = function
       | [] -> assert false
       | [ _ ] (* assumes single id *) -> None, None
-      | { Tutorial.Index.name = one } ::
-        { Tutorial.Index.name = two } :: _ when id = one -> None, Some two
-      | { Tutorial.Index.name = one } ::
-        { Tutorial.Index.name = two } :: [] when id = two -> Some one, None
-      | { Tutorial.Index.name = one } ::
-        { Tutorial.Index.name = two } ::
-        { Tutorial.Index.name = three } :: _ when id = two -> Some one, Some three
+      | { Tutorial.Index.name = one ; _ } ::
+        { Tutorial.Index.name = two ; _ } :: _ when id = one -> None, Some two
+      | { Tutorial.Index.name = one ; _ } ::
+        { Tutorial.Index.name = two ; _ } :: [] when id = two -> Some one, None
+      | { Tutorial.Index.name = one ; _ } ::
+        { Tutorial.Index.name = two ; _ } ::
+        { Tutorial.Index.name = three ; _} :: _ when id = two ->
+          Some one, Some three
       |  _ :: rest -> loop rest
     in loop index in
   let current_tutorial_name = ref @@
@@ -366,8 +366,8 @@ let tryocaml_tab select (arg, set_arg, delete_arg) () =
   let next_button_state = button_state () in
   let prev_step_button_state = button_state () in
   let next_step_button_state = button_state () in
-  let rec load_tutorial tutorial_name step_id () =
-    Server_caller.fetch_tutorial tutorial_name >>= fun { Tutorial.steps } ->
+  let load_tutorial tutorial_name step_id () =
+    Server_caller.fetch_tutorial tutorial_name >>= fun { Tutorial.steps; _ } ->
     set_arg "tutorial" tutorial_name ;
     set_arg "step" (string_of_int step_id) ;
     let prev, next = prev_and_next tutorial_name in
@@ -821,7 +821,7 @@ let () =
              | Some div ->
                  List.iter (fun (n, v) -> set_arg n v) !args ;
                  Manip.appendChild content_div div ;
-                 Lwt.return div
+                 Lwt.return_unit
              | None ->
                  let arg name =
                    arg name in
@@ -833,8 +833,8 @@ let () =
                    delete_arg name in
                  callback select (arg, set_arg, delete_arg) () >>= fun fresh ->
                  div := Some fresh ;
-                 Lwt.return fresh
-           end >>= fun div ->
+                 Lwt.return_unit
+           end >>= fun () ->
            set_arg "activity" id ;
            Manip.addClass btn "active" ;
            menu_hidden := true ;

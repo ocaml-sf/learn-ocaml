@@ -74,6 +74,8 @@ module Manip : sig
   val addClass: 'a elt -> string -> unit
   val removeClass: 'a elt -> string -> unit
 
+  val scrollIntoView: ?bottom:bool -> 'a elt -> unit
+
   (* Returns [true] if the class has been set, [false] if it was unset *)
   val toggleClass: 'a elt -> string -> bool
 
@@ -152,6 +154,7 @@ module Manip : sig
     val borderTopWidth: 'a elt -> string
     val borderTopWidthPx: 'a elt -> int
     val borderWidth: 'a elt -> string
+    val borderWidthPx: 'a elt -> int
     val bottom: 'a elt -> string
     val captionSide: 'a elt -> string
     val clear: 'a elt -> string
