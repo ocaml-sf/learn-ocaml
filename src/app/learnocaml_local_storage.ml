@@ -75,14 +75,14 @@ let init () =
               Js._true)))
     Js._true |> ignore
 
-let store { store ; key } v =
+let store { store ; key ; _ } v =
   store v ;
   notify key
 
-let retrieve { retrieve } =
+let retrieve { retrieve ; _ } =
   retrieve ()
 
-let delete { delete ; key } =
+let delete { delete ; key ; _ } =
   delete () ;
   notify key
 
@@ -129,7 +129,7 @@ let retrieve_single ?default name enc () =
               raise (Json_encoding.Cannot_destruct
                        ([ `Field "localStorage" ; `Field name ], exn))))
 
-let delete_single name enc () =
+let delete_single name _enc () =
   Js.Optdef.case
     (Dom_html.window##.localStorage)
     (fun () -> failwith "local storage support required")

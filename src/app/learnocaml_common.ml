@@ -364,11 +364,11 @@ let extract_text_from_rich_text text =
     | [] -> String.concat " " (List.rev acc)
     | Text text :: rest ->
         render (text :: acc) rest
-    | Code { code } :: rest ->
+    | Code { code ; _ } :: rest ->
         render (("[" ^ code ^ "]") :: acc) rest
     | Emph text :: rest ->
         render (("*" ^ render [] text ^ "*") :: acc) rest
-    | Image { alt } :: rest ->
+    | Image { alt ; _ } :: rest ->
         render (("(" ^ alt ^ ")") :: acc) rest
     | Math code :: rest ->
         render (("$" ^ code ^ "$") :: acc) rest in

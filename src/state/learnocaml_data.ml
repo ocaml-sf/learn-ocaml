@@ -148,7 +148,7 @@ module Save = struct
       sync_map sync_exercise_edits
         a.all_exercise_editors
         b.all_exercise_editors
-      |> SMap.filter (fun id (ts, sol) ->
+      |> SMap.filter (fun id (ts, _) ->
           match SMap.find_opt id all_exercise_states with
           | Some {Answer.mtime; _} when mtime > ts -> false
           | _ -> true)

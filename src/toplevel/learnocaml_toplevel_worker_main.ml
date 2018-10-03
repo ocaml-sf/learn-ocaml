@@ -46,15 +46,6 @@ module IntMap = Map.Make(struct
     let compare (x:int) (y:int) = Pervasives.compare x y
   end)
 
-let record_ref, get_ref =
-  let ref_map = ref IntMap.empty in
-  let record_ref (f : unit -> Js.js_string Js.t) =
-    let id = IntMap.cardinal !ref_map in
-    ref_map := IntMap.add id f !ref_map;
-    id
-  and get_ref id = IntMap.find id !ref_map () in
-  record_ref, get_ref
-
 (* Limit the frequency of sent messages to one per ms, using an active
    loop (yuck) because, well, there is no other concurrency primitive
    and we do not want to fill a memory buffer but really "pause" the
@@ -258,7 +249,7 @@ let () =
   in
   let path = "/worker_cmis" in
   Sys_js.mount ~path
-    (fun ~prefix ~path ->
+    (fun ~prefix:_ ~path ->
        match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)

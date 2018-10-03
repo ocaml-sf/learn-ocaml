@@ -18,7 +18,7 @@
 
 let doc = Dom_html.document
 let window = Dom_html.window
-let loc = Js.Unsafe.variable "location"
+(* let loc = Js.Unsafe.variable "location" *)
 
 let alert s = window##(alert (Js.string s))
 let confirm s = Js.to_bool (window##(confirm (Js.string s)))
@@ -30,27 +30,24 @@ let js_error obj = Firebug.console##(error obj)
 
 let log fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(log (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(log (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let debug fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(debug (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(debug (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let warn fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(warn (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(warn (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let error fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(error (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(error (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
-
-let is_hidden div =
-  div##.style##.display = Js.string "none"
 
 let reload () = window##.location##reload
 
@@ -274,19 +271,6 @@ module Manip = struct
   let replaceChildren elt elts =
     let node = get_node elt in
     raw_replaceChildren node elts
-
-  let rec filterElements nodes = match nodes with
-    | [] -> []
-    | node :: nodes ->
-      let elts = filterElements nodes in
-      Js.Opt.case
-        (Dom.CoerceTo.element node)
-        (fun () -> elts)
-        (fun elt -> elt :: elts)
-
-  let childElements elt =
-    let node = get_node elt in
-    filterElements (Dom.list_of_nodeList (node##.childNodes))
 
   let children elt =
     let node = get_node elt in
@@ -1208,7 +1192,7 @@ module MakeLocal(V: sig type t val name: string end) = struct
 
   let name = Js.string V.name
 
-  let get () =
+  let get (): V.t option =
     try
       let s = get_storage () in
       match Js.Opt.to_option (s##(getItem name)) with
@@ -1216,7 +1200,7 @@ module MakeLocal(V: sig type t val name: string end) = struct
       | Some s -> Some (Json.unsafe_input s)
     with Not_found -> None
 
-  let set v =
+  let set: V.t -> unit = fun v ->
     try
       let s = get_storage () in
       let str = Json.output v in

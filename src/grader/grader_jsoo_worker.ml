@@ -22,7 +22,7 @@ let get_grade ?callback exo solution =
       Embedded_cmis.root
       Embedded_grading_cmis.root in
   Sys_js.mount ~path
-    (fun ~prefix ~path ->
+    (fun ~prefix:_ ~path ->
        match OCamlRes.Res.find (OCamlRes.Path.of_string path) root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
@@ -54,9 +54,9 @@ let () =
         Answer (report, stdout, stderr, outcomes)
     | Error exn ->
         let msg = match exn with
-          | Grading.User_code_error { Toploop_results.msg } ->
+          | Grading.User_code_error { Toploop_results.msg ; _ } ->
               [%i"Error in your solution:\n"] ^ msg
-          | Grading.Internal_error (step, { Toploop_results.msg }) ->
+          | Grading.Internal_error (step, { Toploop_results.msg ; _ }) ->
               [%i"Error in the exercise "] ^ step ^ "\n" ^ msg
           | Grading.Invalid_grader ->
               [%i"Internal error:\nThe grader did not return a report."]

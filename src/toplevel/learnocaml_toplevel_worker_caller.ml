@@ -225,7 +225,7 @@ let create_fd worker pp =
   fd
 
 let close_fd worker fd =
-  worker.fds <- IntMap.remove worker.fd_counter worker.fds
+  worker.fds <- IntMap.remove fd worker.fds
 
 let reset worker ?(timeout = fun () -> never_ending) () =
   if !debug then Js_utils.debug "Host: reset";

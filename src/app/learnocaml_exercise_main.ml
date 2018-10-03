@@ -64,7 +64,7 @@ let init_tabs, select_tab =
   init_tabs, select_tab
 
 let display_report exo report =
-  let score, failed = Report.result report in
+  let score, _failed = Report.result report in
   let report_button = find_component "learnocaml-exo-button-report" in
   Manip.removeClass report_button "success" ;
   Manip.removeClass report_button "failure" ;
@@ -153,7 +153,7 @@ let () =
     Server_caller.fetch_exercise token id
   in
   let after_init top =
-    exercise_fetch >>= fun (meta, exo, deadline) ->
+    exercise_fetch >>= fun (_meta, exo, _deadline) ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
@@ -206,10 +206,10 @@ let () =
        | None -> ());
   let solution =
     match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-    | { Answer.report = Some report ; solution } ->
+    | { Answer.report = Some report ; solution ; _ } ->
         let _ : int = display_report exo report in
         Some solution
-    | { Answer.report = None ; solution } ->
+    | { Answer.report = None ; solution ; _ } ->
         Some solution
     | exception Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
@@ -264,7 +264,7 @@ let () =
     Manip.Ev.onclick prelude_btn
       (fun _ -> state := not !state ; update () ; true) ;
     Manip.appendChildren text_container
-      Tyxml_js.Html5.[ prelude_title ; prelude_container ]
+      [ prelude_title ; prelude_container ]
   end ;
   Js.Opt.case
     (text_iframe##.contentDocument)

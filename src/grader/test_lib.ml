@@ -697,13 +697,15 @@ module Make
 
     let ast_check_expr : Parsetree.expression ast_checker =
       ast_check @@ fun (check_expr, _) expr ->
-                   let expr = ast_location_stripper.Ast_mapper.expr ast_location_stripper expr in
-                   check_expr expr
+      let expr =
+        ast_location_stripper.Ast_mapper.expr ast_location_stripper expr
+      in
+      ignore @@ check_expr expr
 
     let ast_check_structure =
       ast_check @@ fun (_, check_structure) structure ->
       let structure = ast_location_stripper.Ast_mapper.structure ast_location_stripper structure in
-      check_structure structure
+      ignore @@ check_structure structure
 
     let forbid_syntax n = let already = ref false in fun _ ->
         if !already then [] else begin

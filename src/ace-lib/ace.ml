@@ -101,7 +101,7 @@ let set_mode {editor} name =
 
 type mark_type = Error | Warning | Message
 
-let string_of_make_type = function
+let string_of_make_type: mark_type -> string = function
   | Error -> "error"
   | Warning -> "warning"
   | Message -> "message"
@@ -173,7 +173,7 @@ let get_keybinding_menu e =
     Js.Optdef.case
       ext
       (fun () -> None)
-      (fun ext ->
+      (fun _ext ->
          e.keybinding_menu <- true;
          Some (Obj.magic e.editor : keybinding_menu Js.t))
 
@@ -283,4 +283,4 @@ let delete doc range =
   doc##(replace range (Js.string ""))
 
 let remove { editor } dir =
-  editor##(remove (Js.string "left"))
+  editor##(remove (Js.string dir))
