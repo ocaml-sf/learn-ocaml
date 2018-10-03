@@ -73,12 +73,13 @@ let exercises_tab token _ _ () =
                   pct_signal in
               a ~a:[ a_href ("exercise.html#id=" ^ exercise_id ^ "&action=open") ;
                      a_class [ "exercise" ] ] [
-                div ~a:[ a_class [ "descr" ] ] [
-                  h1 [ pcdata title ] ;
-                  p [ match short_description with
-                      | None -> pcdata [%i"No description available."]
-                      | Some text -> pcdata text ] ;
-                ] ;
+                div ~a:[ a_class [ "descr" ] ] (
+                  h1 [ pcdata title ] ::
+                  begin match short_description with
+                    | None -> []
+                    | Some text -> [ pcdata text ]
+                  end
+                );
                 div ~a:[ a_class [ "time-left" ] ] [H.pcdata time_left];
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   stars_div stars;
