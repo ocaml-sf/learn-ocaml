@@ -648,6 +648,7 @@ let () =
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
+        Ace.focus ace ;
         Lwt.return ()
     | Toploop_results.Error _ ->
         let msg =
@@ -661,6 +662,7 @@ let () =
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         hide_loading ~id:"learnocaml-exo-loading" () ;
+        Ace.focus ace ;
         typecheck true
   end ;
   Window.onunload (fun _ev ->
