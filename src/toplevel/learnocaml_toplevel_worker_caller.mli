@@ -41,7 +41,7 @@ type t
            console).
 
     @param js_file the web worker [.js] file.
-           (default: ["js/learnocaml-toplevel-worker.js"]). *)
+           (default: ["/js/learnocaml-toplevel-worker.js"]). *)
 val create:
   ?js_file: string ->
   ?after_init:(t -> unit Lwt.t) ->

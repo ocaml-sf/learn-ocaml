@@ -510,7 +510,14 @@ let launch () =
     let uri = Request.uri req in
     let path = Uri.path uri in
     let path = Stringext.split ~on:'/' path in
-    let path = List.filter ((<>) "") path in
+    let path =
+      let rec clean = function
+        | [] | [_] as l -> l
+        | ""::l -> clean l
+        | s::l -> s::clean l
+      in
+      clean path
+    in
     let path = List.map Uri.pct_decode path in
     let query = Uri.query uri in
     let args = List.map (fun (s, l) -> s, String.concat "," l) query in

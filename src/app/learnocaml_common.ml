@@ -191,7 +191,7 @@ let show_loading ?(id = "ocp-loading-layer") contents =
   Manip.(removeClass elt "loaded") ;
   Manip.(addClass elt "loading") ;
   let chamo_src =
-    "icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
+    "/icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
   Manip.replaceChildren elt
     H.[
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -296,7 +296,7 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     H.(button [
-        img ~alt:"" ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
         span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
       ]) in
@@ -516,6 +516,6 @@ let stars_div stars =
     let num = 5 * int_of_float (stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-    let src = Format.asprintf "icons/stars_%02d.svg" num in
+    let src = Format.asprintf "/icons/stars_%02d.svg" num in
     H.img ~alt ~src ()
   ]
