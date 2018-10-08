@@ -64,7 +64,7 @@ REPO ?= demo-repository
 
 testrun: build install
 	rm -rf www/css
-	learn-ocaml build --repo $(REPO) -j8
+	learn-ocaml build --repo $(REPO) -j1
 	rm -rf www/css
 	ln -s ../static/css www
 	learn-ocaml serve

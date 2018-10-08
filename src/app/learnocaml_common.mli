@@ -29,7 +29,19 @@ val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t
 
 val fatal : ?title: string -> string -> unit
 
-val alert : ?title: string -> string -> unit
+val alert : ?title: string -> ?buttons: Html_types.div_content Tyxml_js.Html.elt list -> string -> unit
+
+val ext_alert :
+  title: string ->
+  ?buttons: Html_types.div_content_fun Tyxml_js.Html.elt list ->
+  [< Html_types.div_content ] Tyxml_js.Html.elt list ->
+  unit
+
+val confirm :
+  title: string ->
+  ?ok_label: string -> ?cancel_label: string ->
+  [< Html_types.div_content ] Tyxml_js.Html.elt list ->
+  (unit -> unit) -> unit
 
 val catch_with_alert : ?printer: (exn -> string) -> (unit -> unit Lwt.t) -> unit Lwt.t
 

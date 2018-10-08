@@ -11,7 +11,6 @@ body {
   -khtml-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  cursor: default;
   flex: 0 0 auto;
   text-align: center;
   vertical-align: middle;
@@ -47,20 +46,22 @@ body {
   top: 50%;
   content: "";
 }
+#learnocaml-main-panel > h3 {
+  text-align: center;
+  margin-top: 0;
+}
 #learnocaml-main-panel > div#learnocaml-sync-buttons {
-  display: flex;
-  flex-direction: row;
-  margin: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-gap: 10px;
+  margin-bottom: 10px;
 }
 #learnocaml-sync-buttons > button {
-  flex: 1;
-  display: block;
   border: 1px #fff solid;
-  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  background: linear-gradient(to bottom, #bbb 0%, #888 100%);
   color: #fff;
   border-radius: 5px;
   padding: 5px;
-  margin-right: 10px;
   font-size: 18px;
   line-height: 22px;
   font-weight: bold;
@@ -72,11 +73,12 @@ body {
   border-radius: 5px;
 }
 #learnocaml-sync-buttons > button:last-child {
-  margin-right: 0;
+  grid-column: 3;
 }
 #learnocaml-sync-buttons > button > img {
   height: 32px;
   margin: auto;
+  margin-top: 10px;
 }
 #learnocaml-sync-buttons > button > * {
   padding: 5px;
@@ -84,38 +86,19 @@ body {
   display: block;
   text-align: center;
 }
-#learnocaml-save-token-field {
-  display: block;
-  margin: 10px auto 10px auto;
-  flex: 0 0 auto;
-  border: 1px #fff solid;
-  background: #ccc;
-  color: transparent;
-  text-shadow: 0 0 .8ex black;
-  border-radius: 5px;
-  padding: 5px;
-  font-size: 24px;
-  line-height: 30px;
-  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
-  text-align: center;
-  font-family: 'Inconsolata';
-}
-#learnocaml-save-token-field:hover {
-  color: #444;
-  text-shadow: none;
-}
 #learnocaml-nickname {
-  display: block;
+//  display: block;
+  font-weight: bold;
   margin: 10px auto 10px auto;
-  flex: 0 0 auto;
+//  flex: 0 0 auto;
   border: 1px #fff solid;
-  background: #ccc;
-  color: #444;
+  background: transparent;
+  color: white;
   border-radius: 5px;
-  padding: 5px;
-  font-size: 18px;
-  line-height: 24px;
-  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  padding: 5px 10px;
+//  font-size: 18px;
+//  line-height: 24px;
+//  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
   text-align: center;
 }
 #learnocaml-main-panel > div.tabs {
@@ -153,32 +136,38 @@ body {
   margin-top: auto;
   margin-bottom: 0;
 }
-#learnocaml-logout {
-  float: right;
-  flex: 1;
-  display: block;
-  border: 1px #fff solid;
-  background: linear-gradient(to bottom, #bbb 0%, #888 100%);
-  color: #ddd;
-  border-radius: 5px;
-  padding: 5px;
-  margin-right: 10px;
-  font-size: 18px;
-  line-height: 22px;
-  font-weight: bold;
-  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
-  text-align: center;
-}
-#learnocaml-logout:hover {
-  cursor: pointer;
-  color: white;
-}
 
 #learnocaml-version {
   float: left;
   color: black;
   font-size: small;
 }
+
+#learnocaml-hide-panel, #learnocaml-show-panel {
+  border: 1px solid white;
+  background-color: #eee;
+  width: 14px;
+  height: 14px;
+  color: black;
+  padding: 10px;
+  cursor: pointer;
+}
+#learnocaml-hide-panel {
+  border-radius: 10px 0 0 0;
+  position: fixed;
+  left: 364px;
+  bottom: 0;
+}
+#learnocaml-show-panel {
+  border-radius: 0 10px 0 0;
+  box-shadow: 0 0 5px #888;
+  z-index: 3000;
+  display: none;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+}
+
 /* Large screen: two columns w/ menu in the left column */
 @media (min-width: 1000px) {
   #learnocaml-main-toolbar {
@@ -274,6 +263,9 @@ body {
     overflow-x: hidden;
   }
   #learnocaml-main-panel.hidden {
+    display: none;
+  }
+  #learnocaml-show-panel, #learnocaml-hide-panel {
     display: none;
   }
 }
@@ -1000,6 +992,11 @@ body {
 }
 
 .learnocaml_token {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 110%;
+  font-weight: bold;
   font-family: 'Inconsolata';
 }
 
