@@ -205,6 +205,24 @@ let main dest_dir =
            if not (SMap.mem id all_exercises) then
              Format.printf "[Warning] Filtered exercise '%s' not found.@." id)
          !exercises_filtered;
+
+       (* Computing skills datas *)
+       let add_skill skill ex skills : Skill.t =
+         match SMap.find_opt skill skills with
+         | None -> SMap.add skill [ex] skills
+         | Some exs -> (SMap.add skill (ex :: exs) skills)
+       in
+       let extract_skills (foc, req) id meta =
+         List.fold_left (fun skills skill ->
+             add_skill skill id skills) foc meta.Meta.focus,
+         List.fold_left (fun skills skill ->
+             add_skill skill id skills) req meta.Meta.requirements
+       in
+       let focus, requirements =
+         Index.fold_exercises extract_skills (SMap.empty, SMap.empty) index in
+       to_file Skill.enc (dest_dir / Learnocaml_index.focus_path) focus >>= fun () ->
+       to_file Skill.enc (dest_dir / Learnocaml_index.requirements_path) requirements >>= fun () ->
+
        let processes_arguments =
          List.rev @@ SMap.fold
            (fun id exercise acc ->

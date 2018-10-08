@@ -397,6 +397,16 @@ module Request_handler = struct
       | Api.Tutorial id ->
           Tutorial.get id >>= respond_json cache
 
+      | Api.Focused_skills_index () ->
+          Exercise.Skill.get_focus_index () >>= respond_json cache
+      | Api.Focusing_skill s ->
+          Exercise.Skill.get_focused s >>= respond_json cache
+
+      | Api.Required_skills_index () ->
+          Exercise.Skill.get_requirements_index () >>= respond_json cache
+      | Api.Requiring_skill s ->
+          Exercise.Skill.get_required s >>= respond_json cache
+
       | Api.Exercise_status_index token ->
           with_verified_teacher_token token @@ fun () ->
           Exercise.Status.all () >>= respond_json cache

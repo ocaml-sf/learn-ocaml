@@ -453,6 +453,16 @@ module Exercise = struct
 
   end
 
+  module Skill = struct
+
+    type skill = string
+
+    type t = (id list) SMap.t
+
+    let enc = SMap.enc (Json_encoding.(list string))
+
+  end
+
   module Status = struct
 
     type tag = string
@@ -564,13 +574,13 @@ module Exercise = struct
       in
       { id; tags; assignments = { default; token_map } }
 
-    (* let make_status tokens default *) 
+    (* let make_status tokens default *)
 
     (* let exists_assignment a pred =
      *   Token.Map.exists pred a.token_map ||
      *   match a.default with
      *   | None -> false
-     *   | Some df -> *) 
+     *   | Some df -> *)
 
     (* let fold_over_assignments a f init =
      *   Token.Map.fold f a.token_map init *)
@@ -583,10 +593,10 @@ module Exercise = struct
 
     (* let is_token_eligible _ _ =
      *   true
-     * 
+     *
      * let default_assignment a =
      *   a.default_assignment
-     * 
+     *
      * let assignment_for_token a _ =
      *   a.default_assignment *)
 
@@ -596,7 +606,7 @@ module Exercise = struct
      *     Some { a with token_map = Token.Map.add t assignment a.token_map }
      *   else
      *     None
-     * 
+     *
      * type status =
      *   | Open
      *   | Closed

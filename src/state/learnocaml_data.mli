@@ -161,6 +161,16 @@ module Exercise: sig
 
   end
 
+  module Skill : sig
+
+    type skill = string
+
+    type t = (id list) SMap.t
+
+    val enc : t Json_encoding.encoding
+
+  end
+
   module Status: sig
 
     type tag = string

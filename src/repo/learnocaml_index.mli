@@ -34,3 +34,7 @@ val tutorial_index_path : string
 val tutorials_dir : string
 
 val tutorial_path : string -> string
+
+val focus_path : string
+
+val requirements_path : string

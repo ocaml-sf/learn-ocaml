@@ -129,3 +129,18 @@ code, which will be described and detailed in another section.
 
 Maximum score that is possible to get for this exercise, even if the grader
 grades more. Overridden by the field `max_score`, if present in `meta.json`.
+
+# Metadata
+
+When building the corpus and extracting the metadatas of all exercises, the
+builder will generate two files `requirements.json` and `focus.json`, which
+aggregates every skill present in their respecting fields in every
+`meta.json`. It associates a skill to the list of exercises that requires it (or
+focuses on it). These files behave as some sort of static database for this
+information and should not be written by hand.
+
+Their format is the following:
+
+```
+[{ "<skill name>" : [ "<exercise_id>" ; .. ; "<exercise_id>" ] }; .. ]
+```
