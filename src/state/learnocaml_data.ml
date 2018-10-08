@@ -461,61 +461,6 @@ module Exercise = struct
 
     let enc = SMap.enc (Json_encoding.(list string))
 
-    module Skill_tree = struct
-
-      type kind = Skill of skill | Exercise of id
-
-      type node =
-          Node of id * (node * kind) list
-
-      let apply_filters filters ex_seen skill_seen =
-        List.iter (function
-              Skill s -> skill_seen := SSet.add s !skill_seen
-            | Exercise e  -> ex_seen := SSet.add e !ex_seen) filters
-
-      (* Naive version of skill dependencies tree *)
-      let compute_skill_tree
-          ?(depth = 2)
-          skill
-          exs
-          (focus, requirements)
-          filters =
-        let ex_seen = ref SSet.empty in
-        let skill_seen = ref SSet.empty in
-        apply_filters filters ex_seen skill_seen;
-        let rec compute_exercises depth skill =
-          if not @@ SSet.mem skill !skill_seen then
-            begin
-              skill_seen := SSet.add skill !skill_seen;
-              let exs_focus = SMap.find skill focus in
-              List.fold_left
-                (fun acc e ->
-                   match compute_skills depth e with
-                     Some n -> (n, Skill skill) :: acc
-                   | None -> acc)
-                [] exs_focus
-            end
-          else []
-        and compute_skills depth ex =
-          if not @@ SSet.mem ex !ex_seen && depth > 0 then
-            begin
-              ex_seen := SSet.add ex !ex_seen;
-              try let meta = List.assoc ex exs in
-                let req = meta.Meta.requirements in
-                let deps =
-                  List.fold_left
-                    (fun acc s -> compute_exercises (depth-1) s :: acc) [] req
-                  |> List.flatten
-                in
-                Some (Node (ex, deps))
-              with Not_found -> Some (Node (ex, []))
-            end
-          else None
-        in
-        compute_exercises depth skill
-
-    end
-
   end
 
   module Status = struct

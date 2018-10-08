@@ -169,18 +169,6 @@ module Exercise: sig
 
     val enc : t Json_encoding.encoding
 
-    module Skill_tree : sig
-
-      type kind = Skill of skill | Exercise of id
-
-      type node = Node of id * (node * kind) list
-
-      val compute_skill_tree :
-        ?depth:int -> skill -> (id * Meta.t) list -> (t * t) -> kind list
-        -> (node * kind) list
-
-    end
-
   end
 
   module Status: sig
