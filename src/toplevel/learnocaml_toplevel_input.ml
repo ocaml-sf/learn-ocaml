@@ -133,6 +133,8 @@ let go_forward ({ history ; textbox } as input) =
     textbox##.value := Js.string (Learnocaml_toplevel_history.current history) ;
     resize input
 
+let focus input = input.textbox##focus
+
 let setup
     ?sizing ?history
     ?(on_resize = (fun () -> ()))

@@ -67,3 +67,6 @@ val go_backward : input -> unit
 
 (** Simulates a hit on the [Down] key *)
 val go_forward : input -> unit
+
+(** Sets focus to the text input field *)
+val focus : input -> unit
