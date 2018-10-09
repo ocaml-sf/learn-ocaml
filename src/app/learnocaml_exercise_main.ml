@@ -555,6 +555,13 @@ let () =
     Learnocaml_common.fake_download ~name ~contents ;
     Lwt.return ()
   end ;
+  begin editor_button
+      ~group: toplevel_buttons_group
+      ~icon: "run" [%i"Eval code"] @@ fun () ->
+    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
+    select_tab "toplevel";
+    Lwt.return_unit
+  end ;
   let typecheck set_class =
     Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
     let error, warnings =
@@ -577,12 +584,6 @@ let () =
     Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
     Ace.focus ace ;
     Lwt.return () in
-  begin toplevel_button
-      ~group: toplevel_buttons_group
-      ~icon: "run" [%i"Eval code"] @@ fun () ->
-    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
-    Lwt.return ()
-  end ;
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
