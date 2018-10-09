@@ -577,11 +577,6 @@ let () =
     Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
     Ace.focus ace ;
     Lwt.return () in
-  begin editor_button
-      ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck true
-  end ;
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "run" [%i"Eval code"] @@ fun () ->
@@ -601,6 +596,10 @@ let () =
   let callback text =
     Manip.appendChild messages Tyxml_js.Html5.(li [ pcdata text ]) in
   let worker = ref (Grading_jsoo.get_grade ~callback exo) in
+  begin toolbar_button
+      ~icon: "typecheck" [%i"Compile"] @@ fun () ->
+    typecheck true
+  end;
   begin toolbar_button
       ~icon: "reload" [%i"Grade!"] @@ fun () ->
     let aborted, abort_message =
