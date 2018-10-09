@@ -275,7 +275,7 @@ let get_line_tokens line st row doc =
     let open Approx_tokens in
     let open Nstream in
     match Nstream.next_full stream with
-    | None | Some ({token = EOF ; _}, _, _) -> assert false
+    | None | Some ({token = EOF ; _}, _, _) -> st, List.rev tokens
     | Some (tok, lex_ctxt, stream) ->
         let block = IndentBlock.update !config.indent st.block stream tok; in
         let tok, block, offset =
