@@ -592,6 +592,12 @@ let toplevel_tab select _ () =
   hide_loading ();
   Lwt.return div
 
+let teacher_tab token a b () =
+  show_loading [%i"Loading student info"];
+  Learnocaml_teacher_tab.teacher_tab token a b () >>= fun div ->
+  hide_loading ();
+  Lwt.return div
+
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
@@ -601,6 +607,7 @@ let token_disp_div token =
   H.input ~a: [
     H.a_input_type `Text;
     H.a_size 17;
+    H.a_style "font-size: 110%; font-weight: bold;";
     H.a_class ["learnocaml_token"];
     H.a_readonly ();
     H.a_value (Token.to_string token);
@@ -763,7 +770,7 @@ let () =
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
-           [ "teacher", ([%i"Teach"], Learnocaml_teacher_tab.teacher_tab t) ]
+           [ "teacher", ([%i"Teach"], teacher_tab t) ]
        | _ -> [])
     in
     let container = El.tab_buttons_container in
