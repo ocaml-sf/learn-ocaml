@@ -52,10 +52,7 @@
           Learnocaml_toplevel_output
           Learnocaml_toplevel_input
           Learnocaml_toplevel)
- (preprocess (per_module
-              ((pps js_of_ocaml.ppx) Learnocaml_toplevel_worker_caller
-               Learnocaml_toplevel_output
-               Learnocaml_toplevel_input)))
+ (preprocess (pps js_of_ocaml.ppx))
 )
 
 (install

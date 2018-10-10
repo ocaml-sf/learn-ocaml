@@ -471,9 +471,6 @@ body {
   line-height: 26px;
 }
 @media (min-width: 1000px) {
-  #learnocaml-exo-tab-meta {
-    position: relative;
-  }
   #learnocaml-exo-tab-meta::after {
     position: absolute;
     left:0; top:0; bottom: 0px; width: 8px;

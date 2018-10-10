@@ -108,7 +108,11 @@ let start_timeout top _name timeout =
       top.current_timeout_prompt <- top.timeout_prompt top ;
       top.current_timeout_prompt
 
+let input_focus top f =
+  f () >>= fun r -> Learnocaml_toplevel_input.focus top.input; Lwt.return r
+
 let reset_with_timeout top ?timeout () =
+  input_focus top @@ fun () ->
   match top.status with
   | `Reset (t, _) -> t
   | `Idle ->
@@ -139,6 +143,7 @@ let reset top =
   reset_with_timeout top ~timeout ()
 
 let protect_execution top exec =
+  input_focus top @@ fun () ->
   wait_for_prompts top >>= fun () ->
   match top.status with
   | `Reset _ | `Execute _ ->
@@ -177,6 +182,7 @@ let protect_execution top exec =
       thread
 
 let execute_phrase top ?timeout content =
+  input_focus top @@ fun () ->
   let phrase = Learnocaml_toplevel_output.phrase () in
   let pp_code = Learnocaml_toplevel_output.output_code ~phrase top.output in
   let pp_answer = Learnocaml_toplevel_output.output_answer ~phrase top.output in
