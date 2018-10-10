@@ -73,7 +73,7 @@ let teacher_tab token _select _params () =
   let selected_students = Hashtbl.create 117 in
   let selected_assignment = ref None in
   let exercises_index = ref (Exercise.Index.Exercises []) in
-  let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in
+  (* let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in *)
   let students_map = ref Token.Map.empty in
   let assignments_tbl = Hashtbl.create 59 in
   let students_changes = ref Token.Map.empty in
@@ -456,6 +456,7 @@ let teacher_tab token _select _params () =
     Manip.replaceChildren exercises_list_div [H.table table];
   in
 
+(*
   let skills_list_div =
     H.div ~a:[H.a_id "focus_list"] [H.pcdata [%i"Loading..."]]
   in
@@ -499,7 +500,7 @@ let teacher_tab token _select _params () =
           skill_line id exs :: acc) (fst !skills_index) requirements in
     Manip.replaceChildren skills_list_div [H.table skills]
   in
-
+*)
   let assignment_line id =
     let selected = !selected_assignment = Some id in
     let now = gettimeofday () in
@@ -1155,7 +1156,7 @@ let teacher_tab token _select _params () =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
       students_div;
-      skills_div;
+      (* skills_div; *)
       control_div;
       actions_div;
     ]
@@ -1164,13 +1165,13 @@ let teacher_tab token _select _params () =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
     >|= fun (index, _) -> exercises_index := index
   in
-  let fetch_skills =
-    Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
-    >>= fun focus ->
-    Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
-    >|= fun requirements ->
-    skills_index := focus, requirements
-  in
+  (* let fetch_skills =
+   *   Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
+   *   >>= fun focus ->
+   *   Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
+   *   >|= fun requirements ->
+   *   skills_index := focus, requirements
+   * in *)
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
@@ -1189,9 +1190,9 @@ let teacher_tab token _select _params () =
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
-  Lwt.join [fetch_exercises; fetch_skills; fetch_stats; fetch_students] >>= fun () ->
+  Lwt.join [fetch_exercises; (* fetch_skills; *) fetch_stats; fetch_students] >>= fun () ->
   fill_exercises_pane ();
-  fill_skills_pane ();
+  (* fill_skills_pane (); *)
   fill_students_pane ();
   fill_control_div ();
   Lwt.return div
