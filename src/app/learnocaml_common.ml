@@ -19,11 +19,13 @@ open Js_utils
 open Lwt.Infix
 open Learnocaml_data
 
+module H = Tyxml_js.Html
+
 let find_div_or_append_to_body id =
   match Manip.by_id id with
   | Some div -> div
   | None ->
-      let div = Tyxml_js.Html.(div ~a:[ a_id id ]) [] in
+      let div = H.(div ~a:[ a_id id ]) [] in
       Manip.(appendChild Elt.body) div;
       div
 
@@ -85,11 +87,11 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
            background: rgba(0,0,0,0.8);\
            color: white;\
            z-index: 22222;" in
-        let div = Tyxml_js.Html.(div ~a:[ a_id id ; a_style sty ]) [] in
+        let div = H.(div ~a:[ a_id id ; a_style sty ]) [] in
         Manip.(appendChild Elt.body) div;
         div in
   Manip.replaceChildren div
-    Tyxml_js.Html.
+    H.
       [ div ~a: [ a_style "flex: 1" ] [] ;
         div ~a: [ a_style "border: 3px white double;\
                            font-family: 'Inconsolata', monospace;\
@@ -106,9 +108,28 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
               [ pcdata (String.trim message) ] ] ;
         div ~a: [ a_style "flex: 1" ] [] ]
 
-let alert ?(title=[%i"ERROR"]) message =
-  let id = "ocp-alert-layer" in
-  let div = match Manip.by_id id with
+let dialog_layer_id = "ocp-dialog-layer"
+
+let box_button txt f =
+  H.button ~a: [
+    H.a_style "display: block;\
+               margin: 10px auto;\
+               padding: 5px 10px;\
+               border: none;\
+               background-color: white;\
+               color: black;\
+               text-align: center;";
+    H.a_onclick (fun _ -> f (); false)
+  ] [ H.pcdata txt ]
+
+let close_button txt =
+  box_button txt @@ fun () ->
+  match Manip.by_id dialog_layer_id with
+  | Some div -> Manip.removeChild Manip.Elt.body div; false
+  | None -> (); false
+
+let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
+  let div = match Manip.by_id dialog_layer_id with
     | Some div -> div
     | None ->
         let sty =
@@ -119,10 +140,9 @@ let alert ?(title=[%i"ERROR"]) message =
            background: rgba(0,0,0,0.8);\
            color: white;\
            z-index: 22221;" in
-        let div = Tyxml_js.Html.(div ~a:[ a_id id ; a_style sty ]) [] in
+        let div = H.(div ~a:[ a_id dialog_layer_id ; a_style sty ]) [] in
         Manip.(appendChild Elt.body) div;
         div in
-  let module H = Tyxml_js.Html in
   Manip.replaceChildren div [
     H.div ~a: [ H.a_style "flex: 1" ] [] ;
     H.div ~a: [ H.a_style "border: 3px white double;\
@@ -130,27 +150,26 @@ let alert ?(title=[%i"ERROR"]) message =
                            flex: 0 0 auto;\
                            background: black;\
                            margin: auto;"]
-      [ H.h3 ~a: [ H.a_style "margin: 0;\
-                              padding: 10px;\
-                              text-align: center;" ]
-          [ H.pcdata title ] ;
-        H.pre ~a: [ H.a_style "margin: 0;\
-                               border-top: 1px white solid;\
-                               padding: 20px;" ]
-          [ H.pcdata (String.trim message) ];
-        H.button ~a: [H.a_style "display: block;\
-                                 margin: 10px auto;\
-                                 padding: 5px 10px;\
-                                 border: none;\
-                                 background-color: white;\
-                                 color: black;\
-                                 text-align: center;";
-                      H.a_onclick (fun _ ->
-                          Manip.removeChild Manip.Elt.body div;
-                          false)]
-          [ H.pcdata "OK" ]
-      ] ;
+      ([ H.h3 ~a: [ H.a_style "margin: 0;\
+                               padding: 10px;\
+                               text-align: center;" ]
+           [ H.pcdata title ] ;
+         H.div ~a: [ H.a_style "margin: 0;\
+                                border-top: 1px white solid;\
+                                padding: 20px;" ]
+           message;
+         H.div ~a:[ H.a_style "display: flex; flex-direction: row;"]
+           buttons]);
     H.div ~a: [ H.a_style "flex: 1" ] [];
+  ]
+
+let alert ?(title=[%i"ERROR"]) ?buttons message =
+  ext_alert ~title ?buttons [ H.pre [H.pcdata (String.trim message)] ]
+
+let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
+  ext_alert ~title contents ~buttons:[
+    box_button ok_label f;
+    close_button cancel_label;
   ]
 
 let default_exn_printer = function
@@ -174,7 +193,7 @@ let show_loading ?(id = "ocp-loading-layer") contents =
   let chamo_src =
     "icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
   Manip.replaceChildren elt
-    Tyxml_js.Html.[
+    H.[
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
       div ~a: [ a_class [ "messages" ] ] contents
     ]
@@ -276,8 +295,8 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | None -> button_group ()
     | Some group -> group in
   let button =
-    Tyxml_js.Html.(button [
-        img ~alt:(lbl ^ " icon") ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+    H.(button [
+        img ~alt:"" ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
         span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
       ]) in
@@ -318,7 +337,6 @@ let dropdown ~id ~title items =
       Manip.SetCss.display menu disp;
       false
     in
-    let module H = Tyxml_js.Html in
     H.div ~a: [H.a_class ["dropdown_btn"]] [
       H.button ~a: [H.a_onclick toggle]
         (title @ [H.pcdata " \xe2\x96\xb4" (* U+25B4 *)]);
@@ -335,10 +353,10 @@ let render_rich_text ?on_runnable_clicked text =
     | [] -> List.rev acc
     | Text text :: rest ->
         render
-          (Tyxml_js.Html.pcdata text :: acc)
+          (H.pcdata text :: acc)
           rest
     | Code { code ; runnable } :: rest ->
-        let elt = Tyxml_js.Html.code [ Tyxml_js.Html.pcdata code ] in
+        let elt = H.code [ H.pcdata code ] in
         (match runnable, on_runnable_clicked with
          | true, Some cb ->
              Manip.addClass elt "runnable" ;
@@ -347,15 +365,15 @@ let render_rich_text ?on_runnable_clicked text =
         render (elt :: acc) rest ;
     | Emph text :: rest ->
         render
-          (Tyxml_js.Html.em (render [] text) :: acc)
+          (H.em (render [] text) :: acc)
           rest
     | Image _ :: _ -> assert false
     | Math code :: rest ->
         render
-          (Tyxml_js.Html.pcdata ("`" ^ code ^ "`") :: acc)
+          (H.pcdata ("`" ^ code ^ "`") :: acc)
           rest in
   (render [] text
-   :> [< Html_types.phrasing > `Code `Em `PCDATA ] Tyxml_js.Html.elt list)
+   :> [< Html_types.phrasing > `Code `Em `PCDATA ] H.elt list)
 
 let extract_text_from_rich_text text =
   let open Learnocaml_data.Tutorial in
@@ -494,7 +512,6 @@ let countdown ?(ontimeout = fun () -> ()) container t =
 let flog fmt = Printf.ksprintf (fun s -> Firebug.console##log(Js.string s)) fmt
 
 let stars_div stars =
-  let module H = Tyxml_js.Html5 in
   H.div ~a:[ H.a_class [ "stars" ] ] [
     let num = 5 * int_of_float (stars *. 2.) in
     let num = max (min num 40) 0 in
