@@ -79,14 +79,16 @@ let () =
               (Printexc.to_string e))
   | _ -> None
 
+let urlpath p = String.concat "/" (""::p)
+
 let request req =
   let do_req = function
     | { Learnocaml_api.meth = `GET; path; args } ->
-        Lwt_request.get ?headers:None ~url:(String.concat "/" path) ~args:args
+        Lwt_request.get ?headers:None ~url:(urlpath path) ~args:args
     | { Learnocaml_api.meth = `POST body; path; args } ->
         let get_args = match args with [] -> None | a -> Some a in
         Lwt_request.post ?headers:None ?get_args
-          ~url:(String.concat "/" path) ~body:(Some body)
+          ~url:(urlpath path) ~body:(Some body)
   in
   Lwt.catch (fun () ->
       Api_client.make_request (fun http_request ->

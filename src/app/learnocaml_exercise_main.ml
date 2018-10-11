@@ -110,7 +110,7 @@ let display_stars ex_meta =
     let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-    let src = Format.asprintf "icons/stars_%02d.svg" num in
+    let src = Format.asprintf "/icons/stars_%02d.svg" num in
     img ~alt ~src ()
   in
   div ~a:[ a_class [ "stars" ] ] [
@@ -143,18 +143,13 @@ let get_exercise_meta token id =
 
 let exercise_link ?(cl = []) id content =
   let open Tyxml_js.Html5 in
-  a ~a:[ a_href ("exercise.html#id=" ^ id ^ "&action=open") ;
+  a ~a:[ a_href ("/exercises/"^id^"/") ;
          a_class cl ;
-         (* dirty trick to reload the page *)
-         a_onclick (fun _ ->
-             Js_utils.set_fragment [("id", id); ("action", "open")];
-             window##.location##reload; true)
        ]
     content
 
 let display_exercise_meta id meta_value content_id =
   let open Tyxml_js.Html5 in
-  let open Learnocaml_data.Exercise in
   let content = find_component content_id in
   Lazy.force meta_value >>= fun meta ->
   let descr =
@@ -323,7 +318,13 @@ let make_readonly () =
         from now on will remain local only."]
 
 let () =
-  Lwt.async_exception_hook := begin function
+  Lwt.async_exception_hook := begin fun e ->
+    Firebug.console##log (Js.string
+                            (Printexc.to_string e ^
+                             if Printexc.backtrace_status () then
+                               Printexc.get_backtrace ()
+                             else ""));
+    match e with
     | Failure message -> fatal message
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
@@ -353,7 +354,11 @@ let () =
    | exception Not_found -> ());
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
-  let id = arg "id" in
+  let id = match Url.Current.path with
+    | "" :: "exercises" :: p | "exercises" :: p ->
+        String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
+    | _ -> arg "id"
+  in
   let exercise_fetch =
     token >>= fun token ->
     Server_caller.fetch_exercise token id
@@ -478,7 +483,7 @@ let () =
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        let mathjax_url =
-         "js/mathjax/MathJax.js?delayStartupUntil=configured"
+         "/js/mathjax/MathJax.js?delayStartupUntil=configured"
        in
        let mathjax_config =
          "MathJax.Hub.Config({\n\
@@ -513,7 +518,7 @@ let () =
             <html><head>\
             <title>%s - exercise text</title>\
             <meta charset='UTF-8'>\
-            <link rel='stylesheet' href='css/learnocaml_standalone_description.css'>\
+            <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
             <script type='text/x-mathjax-config'>%s</script>
             <script type='text/javascript' src='%s'></script>\
             </head>\
@@ -590,7 +595,7 @@ let () =
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
     Dom_html.window##.location##assign
-      (Js.string "index.html#activity=exercises") ;
+      (Js.string "/index.html#activity=exercises") ;
     Lwt.return ()
   end ;
   let messages = Tyxml_js.Html5.ul [] in

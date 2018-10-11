@@ -117,7 +117,7 @@ let exercises_tab token _ _ () =
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in
-              a ~a:[ a_href ("exercise.html#id=" ^ exercise_id ^ "&action=open") ;
+              a ~a:[ a_href ("/exercises/" ^ Url.urlencode exercise_id ^ "/") ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] (
                   h1 [ pcdata title ] ::
