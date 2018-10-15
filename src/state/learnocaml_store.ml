@@ -55,6 +55,25 @@ let read_static_file path enc =
   Lwt_io.(with_file ~mode: Input path read) >|=
   Json_codec.decode enc
 
+let with_git_register =
+  let git_mutex = Lwt_mutex.create () in
+  fun dir f ->
+    let git args () =
+      Lwt_process.exec ("", Array.of_list ("git"::"-C"::dir::args)) >>= function
+      | Unix.WEXITED 0 -> Lwt.return_unit
+      | _ -> Lwt.fail_with ("git command failed: " ^ String.concat " " args)
+    in
+    Lwt_mutex.with_lock git_mutex @@ fun () ->
+    (if Sys.file_exists (Filename.concat dir ".git") then
+       git ["reset";"--hard"] ()
+     else
+       git ["init"] () >>=
+       git ["config";"--local";"user.name";"Learn-OCaml user"] >>=
+       git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
+    f >>= fun file ->
+    git ["add";file] () >>=
+    git ["commit";"-m";"Update"]
+
 let write ?(no_create=false) file contents =
   (if not (Sys.file_exists file) then
      if no_create then Lwt.fail Not_found
@@ -72,7 +91,9 @@ let write ?(no_create=false) file contents =
       (function Unix.Unix_error (Unix.EEXIST, _, _) -> write_tmp ()
               | e -> raise e)
   in
-  write_tmp () >>= fun tmpfile -> Lwt_unix.rename tmpfile file
+  with_git_register (Filename.dirname file) @@ fun () ->
+  write_tmp () >>= fun tmpfile ->
+  Lwt_unix.rename tmpfile file >|= fun () -> Filename.basename file
 
 
 module Lesson = struct
