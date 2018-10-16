@@ -13,6 +13,8 @@ Assuming your exercise repository is in directory REPOSITORY, you can either:
 
       docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server ocamlsf/learn-ocaml:dev
 
+NB: Do not forget to escape `:` if it appears in `REPOSITORY` to avoid a parsing error of the command line arguments.
+
 - or generate a new docker image that includes your repository:
 
       cd REPOSITORY
