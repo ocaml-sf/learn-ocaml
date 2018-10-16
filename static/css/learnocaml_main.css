@@ -1096,6 +1096,29 @@ tr.exercise_group:hover {
     cursor: pointer;
 }
 
+td.student-progression {
+    text-align: right;
+}
+
+.student-progression > div {
+    display: inline-block;
+    height: 1ex;
+    border: 1px solid;
+    border-radius: .3ex;
+    width: 32px;
+    margin: 3px;
+}
+
+.student-progression > div.progr-closed {
+    border-color: #b77;
+}
+.student-progression > div.progr-open {
+    border-color: #8b8;
+}
+.student-progression > div.progr-assigned {
+    border-color: #77b;
+}
+
 /* #students_list td {
  *     width: min-content;
  *     width: -moz-min-content;

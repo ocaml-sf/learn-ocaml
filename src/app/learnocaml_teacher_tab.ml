@@ -73,7 +73,7 @@ let teacher_tab token _select _params () =
   let selected_students = Hashtbl.create 117 in
   let selected_assignment = ref None in
   let exercises_index = ref (Exercise.Index.Exercises []) in
-  let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in
+  (* let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in *)
   let students_map = ref Token.Map.empty in
   let assignments_tbl = Hashtbl.create 59 in
   let students_changes = ref Token.Map.empty in
@@ -258,6 +258,9 @@ let teacher_tab token _select _params () =
       ];
     ]
   in
+  let student_progression_id tok =
+    "student-progression-" ^ Token.to_string tok
+  in
   let fill_students_pane () =
     let compare =
       let open Student in
@@ -300,6 +303,9 @@ let teacher_tab token _select _params () =
                 | Some n -> [H.pcdata n]
                 | _ -> []);
             H.td (List.map tag_div (SSet.elements st.Student.tags));
+            H.td ~a:[H.a_id (student_progression_id st.Student.token);
+                     H.a_class ["student-progression"]]
+              [];
           ])
         all_students
     in
@@ -456,6 +462,7 @@ let teacher_tab token _select _params () =
     Manip.replaceChildren exercises_list_div [H.table table];
   in
 
+(*
   let skills_list_div =
     H.div ~a:[H.a_id "focus_list"] [H.pcdata [%i"Loading..."]]
   in
@@ -499,7 +506,7 @@ let teacher_tab token _select _params () =
           skill_line id exs :: acc) (fst !skills_index) requirements in
     Manip.replaceChildren skills_list_div [H.table skills]
   in
-
+*)
   let assignment_line id =
     let selected = !selected_assignment = Some id in
     let now = gettimeofday () in
@@ -1151,11 +1158,76 @@ let teacher_tab token _select _params () =
     Lwt.return_unit
   end;
 
+  let fill_students_progression () =
+    let now = gettimeofday () in
+    let students_assignments =
+      let addl x tok tmap =
+        Token.Map.add tok
+          (x :: try Token.Map.find tok tmap with Not_found -> [])
+          tmap
+      in
+      Hashtbl.fold (fun _ ((start, stop), tokens, exos, _dft) acc ->
+          if start > now then acc
+          else Token.Set.fold (addl (stop, exos)) tokens acc)
+        assignments_tbl
+        (Token.Map.map (fun _ -> []) !students_map)
+    in
+    let open_exercises =
+      SMap.fold (fun ex st acc ->
+          if ES.(st.assignments.default = Open) then ex::acc else acc)
+        !status_map []
+      |> List.rev
+    in
+    let css_gradient = function
+      | [] -> "background:white"
+      | _::_ as l ->
+          let step = 100. /. float_of_int (List.length l) in
+          let color = function
+            | None -> "white"
+            | Some score ->
+                Printf.sprintf "hsl(%d, 100%%, 67%%)"
+                  (int_of_float (score *. 138.))
+          in
+          Printf.sprintf "background:linear-gradient(to right,%s)"
+            (String.concat ","
+               (List.mapi (fun i score ->
+                    Printf.sprintf "%s %.0f%%,%s %.0f%%"
+                      (color score) (float_of_int i *. step)
+                      (color score) (float_of_int (i+1) *. step))
+                   l))
+    in
+    let div_assg ~cls grades =
+      H.div ~a:[H.a_class [cls]; H.a_style (css_gradient grades)] []
+    in
+    Token.Map.iter (fun tok st ->
+        let parent_div = find_component (student_progression_id tok) in
+        let assgs = Token.Map.find tok students_assignments in
+        let assgs = List.sort compare assgs in
+        let status = st.Student.results in
+        let grades exlist =
+          List.map (fun ex ->
+              match SMap.find_opt ex status with
+              | Some (_, Some g) -> Some (float_of_int g /. 100.)
+              | _ -> None)
+            exlist
+        in
+        Manip.appendChildren parent_div @@
+        List.map (fun (deadl,exos) ->
+            div_assg
+              ~cls:(if deadl < now then "progr-closed" else "progr-assigned")
+              (grades (SSet.elements exos)))
+          assgs;
+        if open_exercises <> [] then
+          Manip.appendChild parent_div @@
+          div_assg ~cls:"progr-open" (grades open_exercises))
+      !students_map
+  in
+
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
       students_div;
-      skills_div;
+      (* skills_div; *)
       control_div;
       actions_div;
     ]
@@ -1164,13 +1236,13 @@ let teacher_tab token _select _params () =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
     >|= fun (index, _) -> exercises_index := index
   in
-  let fetch_skills =
-    Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
-    >>= fun focus ->
-    Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
-    >|= fun requirements ->
-    skills_index := focus, requirements
-  in
+  (* let fetch_skills =
+   *   Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
+   *   >>= fun focus ->
+   *   Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
+   *   >|= fun requirements ->
+   *   skills_index := focus, requirements
+   * in *)
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
@@ -1189,9 +1261,10 @@ let teacher_tab token _select _params () =
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
-  Lwt.join [fetch_exercises; fetch_skills; fetch_stats; fetch_students] >>= fun () ->
+  Lwt.join [fetch_exercises; (* fetch_skills; *) fetch_stats; fetch_students] >>= fun () ->
   fill_exercises_pane ();
-  fill_skills_pane ();
+  (* fill_skills_pane (); *)
   fill_students_pane ();
   fill_control_div ();
+  fill_students_progression ();
   Lwt.return div
