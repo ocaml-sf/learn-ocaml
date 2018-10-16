@@ -1111,12 +1111,15 @@ td.student-progression {
 
 .student-progression > div.progr-closed {
     border-color: #b77;
+    width: 24px;
 }
 .student-progression > div.progr-open {
     border-color: #8b8;
+    width: 36px;
 }
 .student-progression > div.progr-assigned {
     border-color: #77b;
+    width: 24px;
 }
 
 /* #students_list td {
@@ -1152,6 +1155,10 @@ td.student-progression {
     margin: 0 3px;
     border-radius: 4px;
     font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
 }
 
 #students_filter_box label,
