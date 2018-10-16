@@ -888,7 +888,7 @@ module Make
         | Error (Failure s) when s = "EXCESS"->
             Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
         | Error Stack_overflow ->
-            Learnocaml_report.[ Message ([ Text "Your code did too many recursions." ], Failure) ]
+            Learnocaml_report.[ Message ([ Text "Stack overflow. Too many recursions?" ], Failure) ]
         | Error Timeout ->
             Learnocaml_report.[ Message ([ Text "Your code exceeded the time limit. Too many recursions?" ], Failure) ]
         | Error exn ->
@@ -905,7 +905,7 @@ module Make
     | Error (Failure s), _ when s = "EXCESS" ->
         Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
     | Error Stack_overflow, _ ->
-        Learnocaml_report.[ Message ([ Text "Your code did too many recursions." ], Failure) ]
+        Learnocaml_report.[ Message ([ Text "Stack overflow. Too many recursions?" ], Failure) ]
     | Error _, Error _ -> []
     | Error exn, Ok _ ->
         Learnocaml_report.[ Message ([ Text "Unexpected exception" ; Code (Printexc.to_string exn) ], Failure) ]
