@@ -1,7 +1,7 @@
 Learn-OCaml
 ===========
 
-This is Learn OCaml, a Web platform for learning the OCaml language,
+This is Learn-OCaml, a Web platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
@@ -25,10 +25,10 @@ Howtos
 Contacts
 --------
 
-To ask any question about how to use Learn OCaml, subscribe to
+To ask any question about how to use Learn-OCaml, subscribe to
 the mailing-list [learn-ocaml-club](https://sympa.inria.fr/sympa/subscribe/learn-ocaml-club).
 
-To discuss about the development of Learn OCaml, subscribe to
+To discuss about the development of Learn-OCaml, subscribe to
 the mailing-list [learn-ocaml-dev](https://sympa.inria.fr/sympa/subscribe/learn-ocaml-dev).
 
 License and copyright
@@ -72,7 +72,7 @@ See [https://opensource.org/licenses/BSD-3-Clause].
 Authors and Acknowledgements
 ----------------------------
 
-Learn OCaml is a software by OCamlPro.
+Learn-OCaml is a software by OCamlPro.
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 
