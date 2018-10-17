@@ -303,9 +303,11 @@ let teacher_tab token _select _params () =
                 | Some n -> [H.pcdata n]
                 | _ -> []);
             H.td (List.map tag_div (SSet.elements st.Student.tags));
-            H.td ~a:[H.a_id (student_progression_id st.Student.token);
-                     H.a_class ["student-progression"]]
-              [];
+            try find_component (student_progression_id st.Student.token)
+            with Failure _ ->
+              H.td ~a:[H.a_id (student_progression_id st.Student.token);
+                       H.a_class ["student-progression"]]
+                [];
           ])
         all_students
     in
