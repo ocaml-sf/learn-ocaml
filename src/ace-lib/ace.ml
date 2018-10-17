@@ -265,6 +265,9 @@ let set_font_size {editor} sz =
 let set_tab_size {editor} sz =
   editor##getSession##(setTabSize sz)
 
+let set_readonly {editor} t =
+  editor##setReadOnly (Js.bool t)
+
 let get_state { editor } row =
   editor##getSession##(getState row)
 

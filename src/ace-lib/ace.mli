@@ -68,6 +68,7 @@ val add_keybinding:
 
 val set_font_size: 'a editor -> int -> unit
 val set_tab_size: 'a editor -> int -> unit
+val set_readonly: 'a editor -> bool -> unit
 val get_state: 'a editor -> int -> < .. > Js.t
 
 val get_last: 'a editor -> Ace_types.position Js.t

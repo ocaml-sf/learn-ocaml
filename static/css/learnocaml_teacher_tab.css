@@ -80,13 +80,6 @@
     float: right;
 }
 
-.learnocaml_token {
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
-  font-family: 'Inconsolata';
-}
-
 .dropdown_btn {
     position: relative;
     display: inline-block;

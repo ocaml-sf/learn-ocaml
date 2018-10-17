@@ -167,6 +167,10 @@ let teacher_tab token _select _params () =
           acc groups_list
     | Exercise.Index.Exercises exlist ->
         List.fold_left (fun acc (id, meta) ->
+            let open_ () =
+              let _win = window_open ("/exercises/"^id^"/") "_blank" in
+              false
+            in
             match meta with None -> acc | Some meta ->
             let st = status id in
             let hid = exercise_line_id id in
@@ -178,6 +182,10 @@ let teacher_tab token _select _params () =
               H.a_id hid;
               H.a_class ("exercise_line" :: classes);
               H.a_onclick (fun _ -> !toggle_selected_exercises [id]; false);
+              H.a_ondblclick (fun _ -> open_ ());
+              H.a_onmouseup (fun ev ->
+                  Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
+                  if btn = Dom_html.Middle_button then open_ () else true);
             ] [
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
@@ -243,13 +251,31 @@ let teacher_tab token _select _params () =
       [H.pcdata (Token.to_string tk)]
   in
   let make_student_line ?(selected=false) st contents =
-    H.tr ~a:[
-      H.a_id (student_line_id st);
-      H.a_class (["student_line"] @ if selected then ["selected"] else []);
-      H.a_onclick (fun _ ->
-          !toggle_selected_students [st];
-          true);
-    ] (auto_checkbox_td () :: contents)
+    let open_student_tab =
+      let f t =
+        let _win =
+          window_open (Printf.sprintf "/student-view.html?token=%s"
+                         (Token.to_string t)) "_blank"
+        in
+        false
+      in
+      match st with
+      | `Token t ->
+          [ H.a_ondblclick (fun _ -> f t);
+            H.a_onmouseup (fun ev ->
+                Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
+                if btn = Dom_html.Middle_button then f t else true)
+          ]
+      | `Any -> []
+    in
+    H.tr ~a:([
+        H.a_id (student_line_id st);
+        H.a_class (["student_line"] @ if selected then ["selected"] else []);
+        H.a_onclick (fun _ ->
+            !toggle_selected_students [st];
+            true);
+      ] @ open_student_tab)
+      (auto_checkbox_td () :: contents)
   in
   let anystudents_line =
     make_student_line `Any [
@@ -615,56 +641,10 @@ let teacher_tab token _select _params () =
     Token.Set.diff all_tokens (unassigned_students exercises all_tokens)
   in
   let assignments_table () =
-    let module ATM = Map.Make(struct
-        type t = (float * float) * Token.Set.t * bool
-        let compare (d1, ts1, dft1) (d2, ts2, dft2) =
-          match compare d1 d2 with
-          | 0 -> (match Token.Set.compare ts1 ts2 with
-              | 0 -> compare dft1 dft2
-              | n -> n)
-          | n -> n
-      end)
-    in
-    let atm_add atm key id =
-      match ATM.find_opt key atm with
-      | None -> ATM.add key (SSet.singleton id) atm
-      | Some set -> ATM.add key (SSet.add id set) atm
-    in
     let all_tokens =
       Token.Map.fold (fun t _ -> Token.Set.add t) !students_map Token.Set.empty
     in
-    let atm =
-      SMap.fold (fun id st atm ->
-          let assg = st.ES.assignments in
-          let default = ES.default_assignment assg in
-          let stl = ES.by_status all_tokens assg in
-          let atm = match default with
-            | ES.Assigned {start; stop} ->
-                let explicit_tokens =
-                  Token.Map.fold (fun tok _ -> Token.Set.add tok)
-                    assg.ES.token_map Token.Set.empty
-                in
-                let implicit_tokens =
-                  Token.Set.diff all_tokens explicit_tokens
-                in
-                atm_add atm ((start, stop), implicit_tokens, true) id
-            | _ -> atm
-          in
-          List.fold_left (fun atm (status, tokens) ->
-              match status with
-              | ES.Open | ES.Closed -> atm
-              | ES.Assigned {start; stop} ->
-                  let key = (start, stop), tokens, (status = default) in
-                  match ATM.find_opt key atm with
-                  | None ->
-                      ATM.add key (SSet.singleton id) atm
-                  | Some ids ->
-                     ATM.add key (SSet.add id ids) atm)
-            atm
-            stl)
-        (status_current ())
-        ATM.empty
-    in
+    let assignments = get_assignments all_tokens (status_current ()) in
     let line_n = ref 0 in
     let make_line assg tokens exo_ids mode =
       incr line_n;
@@ -708,10 +688,8 @@ let teacher_tab token _select _params () =
     in
     Manip.Ev.onclick new_assg_button (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
-    (List.rev
-       (ATM.fold (fun (assg, tokens, dft) exos acc ->
-            make_line assg tokens exos dft :: acc)
-           atm [])) @
+    List.map (fun (assg, tokens, dft, exos) -> make_line assg tokens exos dft)
+      assignments @
     [new_assg_line];
     table
   in
@@ -1184,18 +1162,12 @@ let teacher_tab token _select _params () =
       | [] -> "background:white"
       | _::_ as l ->
           let step = 100. /. float_of_int (List.length l) in
-          let color = function
-            | None -> "white"
-            | Some score ->
-                Printf.sprintf "hsl(%d, 100%%, 67%%)"
-                  (int_of_float (score *. 138.))
-          in
           Printf.sprintf "background:linear-gradient(to right,%s)"
             (String.concat ","
                (List.mapi (fun i score ->
                     Printf.sprintf "%s %.0f%%,%s %.0f%%"
-                      (color score) (float_of_int i *. step)
-                      (color score) (float_of_int (i+1) *. step))
+                      (grade_color score) (float_of_int i *. step)
+                      (grade_color score) (float_of_int (i+1) *. step))
                    l))
     in
     let div_assg ~cls grades =
@@ -1209,7 +1181,7 @@ let teacher_tab token _select _params () =
         let grades exlist =
           List.map (fun ex ->
               match SMap.find_opt ex status with
-              | Some (_, Some g) -> Some (float_of_int g /. 100.)
+              | Some (_, g) -> g
               | _ -> None)
             exlist
         in

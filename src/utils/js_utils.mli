@@ -47,6 +47,7 @@ module Manip : sig
   val clone: ?deep:bool -> 'a elt -> 'a elt
 
   val appendChild: ?before:'a elt -> 'b elt ->  'c elt -> unit
+  val appendToHead: ?before:'a elt -> 'c elt -> unit
   val appendToBody: ?before:'a elt -> 'c elt -> unit
   val appendChildren: ?before:'a elt -> 'b elt ->  'c elt list -> unit
   val appendChildFirst: 'b elt ->  'c elt -> unit

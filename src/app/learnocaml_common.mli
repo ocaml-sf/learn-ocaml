@@ -133,4 +133,22 @@ val string_of_seconds: int -> string
 
 val flog: ('a, unit, string, unit) format4 -> 'a
 
-val stars_div: float -> [> Html_types.div ]  Tyxml_js.Html5.elt
+val stars_div: float -> [> Html_types.div ] Tyxml_js.Html5.elt
+
+(** Returns an HTML string expected to be put in an iframe *)
+val exercise_text:
+  Exercise.Meta.t -> Exercise.t -> string
+
+val string_of_exercise_kind: Exercise.Meta.kind -> string
+
+val get_assignments:
+  Token.Set.t -> Exercise.Status.t SMap.t ->
+  ((float * float) * Token.Set.t * bool * SSet.t) list
+
+(** Returns a CSS color from a grade
+    (red for 0, green for 100, grey for None) *)
+val grade_color: int option -> string
+
+val string_of_date: ?time:bool -> float -> string
+
+val date: ?time:bool -> float -> [> Html_types.time ] Tyxml_js.Html5.elt

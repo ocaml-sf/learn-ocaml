@@ -280,6 +280,10 @@ module Manip = struct
     let body = (Of_dom.of_body Dom_html.window##.document##.body) in
     appendChild ?before body elt2
 
+  let appendToHead ?before elt2 =
+    let head = (Of_dom.of_head Dom_html.window##.document##.head) in
+    appendChild ?before head elt2
+
   let get_elt_input name elt : Dom_html.inputElement Js.t =
     Js.Opt.case
       (Dom_html.CoerceTo.input (get_elt name elt))

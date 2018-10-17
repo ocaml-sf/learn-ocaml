@@ -20,6 +20,8 @@ open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
 
+module H = Tyxml_js.Html
+
 let init_tabs, select_tab =
   let names = [ "text" ; "toplevel" ; "report" ; "editor"; "meta" ] in
   let current = ref "text" in
@@ -126,12 +128,7 @@ let display_stars ex_meta =
 let display_kind ex_meta =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
-  let kind_repr =
-    match ex_meta.Meta.kind with
-    | Exercise.Meta.Project -> [%i"Project"]
-    | Exercise.Meta.Problem -> [%i"Problem"]
-    | Exercise.Meta.Exercise -> [%i"Exercise"]
-  in
+  let kind_repr = string_of_exercise_kind ex_meta.Meta.kind in
   div ~a:[ a_class [ "length" ] ] [
     p [ pcdata (Format.sprintf [%if "Kind: %s"] kind_repr) ]
   ]
@@ -495,57 +492,8 @@ let () =
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
-       let mathjax_url =
-         "/js/mathjax/MathJax.js?delayStartupUntil=configured"
-       in
-       let mathjax_config =
-         "MathJax.Hub.Config({\n\
-         \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
-         \  extensions: [],\n\
-         \  showMathMenu: false,\n\
-         \  showMathMenuMSIE: false,\n\
-         \  \"HTML-CSS\": {\n\
-         \    imageFont: null\n\
-         \  }
-          });"
-        (* the following would allow comma instead of dot for the decimal separator,
-           but should depend on the language the exercise is in, not the language of the
-           app
-           "AsciiMath: {\n\
-           \  decimal: \"" ^[%i"."]^ "\"\n\
-            },\n"
-         *)
-       in
-       (* Looking for the description in the correct language. *)
-       let descr =
-         let lang = "" in
-         try
-           List.assoc lang (Learnocaml_exercise.(access File.descr exo))
-         with
-           Not_found ->
-             try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
-             with Not_found -> [%i "No description available for this exercise." ]
-         in
-       let html = Format.asprintf
-           "<!DOCTYPE html>\
-            <html><head>\
-            <title>%s - exercise text</title>\
-            <meta charset='UTF-8'>\
-            <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
-            <script type='text/x-mathjax-config'>%s</script>
-            <script type='text/javascript' src='%s'></script>\
-            </head>\
-            <body>\
-            %s\
-            </body>\
-            <script type='text/javascript'>MathJax.Hub.Configured()</script>\
-            </html>"
-           ex_meta.Exercise.Meta.title
-           mathjax_config
-           mathjax_url
-           descr in
        d##open_;
-       d##write (Js.string html);
+       d##write (Js.string (exercise_text ex_meta exo));
        d##close) ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
