@@ -1,0 +1,342 @@
+#learnocaml-main-teacher {
+  position: absolute;
+  top:0 ; left:0; right:0; bottom:0;
+  display: grid;
+}
+
+#learnocaml-main-teacher > * {
+  padding: 4px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1399px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+    }
+}
+@media (min-width: 1400px) {
+    #learnocaml-main-teacher {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr fit-content(40%) auto auto;
+        height: 100vh;
+    }
+    #learnocaml-main-teacher > #control_pane {
+        grid-column: 1 / 3;
+    }
+    #learnocaml-main-teacher > #teacher_menubar {
+        grid-column: 1 / 3;
+        overflow: visible;
+    }
+}
+
+.learnocaml_pane {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.learnocaml_pane > * {
+    margin: 4px;
+}
+
+.learnocaml_pane > fieldset {
+    overflow-y: auto;
+    flex: auto;
+}
+
+.learnocaml_pane legend {
+    cursor: cell;
+}
+
+#learnocaml-main-teacher > #teacher_menubar > * {
+    float: right;
+}
+
+#learnocaml-main-teacher > #teacher_menubar > #status-text-div {
+    float: left;
+    margin-left: 16px;
+}
+
+#learnocaml-main-teacher > #teacher_menubar .warning {
+    font-weight: bold;
+    color: red;
+}
+
+#learnocaml-main-teacher table {
+    width: 100%;
+    border-spacing: 0;
+    /* width: calc(100% - 8px);
+     * margin: 4px;
+     * border: 1px solid #aaa; */
+}
+
+#learnocaml-main-teacher table td {
+    padding: 2px;
+}
+
+#teacher_actions {
+    float: right;
+}
+
+.learnocaml_token {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-family: 'Inconsolata';
+}
+
+.dropdown_btn {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown_content {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 32px;
+    z-index: 100;
+    background-color: #eee;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    width: -webkit-max-content;
+    width: -moz-max-content;
+}
+
+.dropdown_content ul {
+    list-style-type: none;
+    padding: 0
+}
+.dropdown_content li {
+    padding: 5px 10px;
+}
+.dropdown_content li:hover {
+    background-color: #bbc;
+    cursor: pointer;
+}
+
+.exo_open {
+    color: black;
+    background-color: #8b8;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+.exo_closed {
+    color: black;
+    background-color: #b77;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+.exo_assigned {
+    color: black;
+    background-color: #77b;
+    padding: 1px;
+    border-radius: 4px;
+}
+
+tr.exercise_line.disabled, tr.student_line.disabled {
+    color: #a52;
+}
+
+div.auto_checkbox {
+    width: 6px;
+    height: 6px;
+    margin: 1px;
+    padding: 3px;
+    border: 1px solid black;
+}
+
+.selected div.auto_checkbox {
+    background-clip: content-box;
+    background-color: black;
+}
+
+.disabled div.auto_checkbox {
+    background-color: #aaa;
+}
+
+td.auto_checkbox {
+    width: 12px;
+}
+
+tr.exercise_line:hover:not(.disabled):not(.selected),
+tr.student_line:hover:not(.disabled):not(.selected),
+tr.assg_line:hover:not(.disabled):not(.selected) {
+    background-color: #fff;
+}
+tr.exercise_line:hover:not(.disabled),
+tr.student_line:hover:not(.disabled) {
+    cursor: cell;
+}
+
+tr.assg_line:hover {
+    cursor: pointer;
+}
+
+tr.exercise_group:hover {
+    cursor: cell;
+}
+
+.remove-cross {
+    text-align: right;
+    cursor: pointer;
+}
+
+td.student-progression {
+    text-align: right;
+}
+
+.student-progression > div {
+    display: inline-block;
+    height: 1ex;
+    border: 1px solid;
+    border-radius: .3ex;
+    width: 32px;
+    margin: 3px;
+}
+
+.student-progression > div.progr-closed {
+    border-color: #b77;
+    width: 24px;
+}
+.student-progression > div.progr-open {
+    border-color: #8b8;
+    width: 36px;
+}
+.student-progression > div.progr-assigned {
+    border-color: #77b;
+    width: 24px;
+}
+
+/* #students_list td {
+ *     width: min-content;
+ *     width: -moz-min-content;
+ *     width: -webkit-min-content;
+ * }
+ *
+ * #students_list td:last-child {
+ *     width: auto;
+ * } */
+
+.selected {
+    background-color: #9bd /*#58f*/;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+.student_hidden {
+    display: none;
+}
+
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
+}
+
+#students_filter_box label,
+#students_filter_box select {
+  height: 22px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-width: 1px;
+  padding: 2px;
+  margin: 0 3px;
+}
+
+.filler_h {
+  flex: auto;
+}
+
+#students_filter_box {
+    height: 24px;
+    font-size: 16px;
+    margin: 0 6px;
+    display:flex;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+#students_pane input {
+    height: 24px;
+    margin: 0 1px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 140px;
+}
+
+#students_pane button {
+    padding: 1px;
+    margin: 0 1px;
+    width: 24px;
+    height: 24px;
+    border-width: 1px;
+}
+
+#student_controls {
+  text-align: right;
+  padding-left: auto;
+  padding-right: 0;
+  vertical-align: top;
+}
+
+/*
+.assg_finished {
+    background-color: #b88;
+}
+.assg_active {
+    background-color: #dd9;
+}
+.assg_notstarted {
+}
+*/
+
+input.date_past {
+    border: 1px solid #b88;
+    border-radius: 3px;
+}
+input.date_future {
+    border: 1px solid #8b8;
+    border-radius: 3px;
+}
+
+.future_students {
+    text-align: center;
+    font-style: italic;
+}
+.future_students::before {
+    font-style: normal;
+    content: "〈";
+}
+.future_students::after {
+    font-style: normal;
+    content: "〉";
+}
+
+.skill_title {
+    text-align: left;
+    colspan: 0;
+}
+
+.skill_line {
+}
+
+.skill_name_td {
+    padding-left:1em !important;
+}

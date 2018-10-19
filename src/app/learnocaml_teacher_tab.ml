@@ -1225,6 +1225,9 @@ let teacher_tab token _select _params () =
       !students_map
   in
 
+  Manip.appendToHead
+    (H.link ~rel:[`Stylesheet] ~href:"/css/learnocaml_teacher_tab.css" ());
+
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
