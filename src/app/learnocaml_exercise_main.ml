@@ -359,6 +359,8 @@ let () =
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
     | _ -> arg "id"
   in
+  Dom_html.document##.title :=
+    Js.string (id ^ " - " ^ [%i"Learn OCaml"] ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
     token >>= fun token ->
     Server_caller.fetch_exercise token id

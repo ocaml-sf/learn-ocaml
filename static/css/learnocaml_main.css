@@ -50,11 +50,14 @@ body {
   text-align: center;
   margin-top: 0;
 }
+#learnocaml-main-panel > #learnocaml-id-div {
+  margin-top: 20px;
+}
 #learnocaml-main-panel > div#learnocaml-sync-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-gap: 10px;
-  margin-bottom: 10px;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: stretch;
 }
 #learnocaml-sync-buttons > button {
   border: 1px #fff solid;
@@ -62,18 +65,14 @@ body {
   color: #fff;
   border-radius: 5px;
   padding: 5px;
-  font-size: 18px;
-  line-height: 22px;
-  font-weight: bold;
+  width: calc(33% - 6.67px);
+  margin-top: 10px;
   box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
   text-align: center;
 }
 #learnocaml-sync-buttons > button::before,
 #learnocaml-sync-buttons > button::after {
   border-radius: 5px;
-}
-#learnocaml-sync-buttons > button:last-child {
-  grid-column: 3;
 }
 #learnocaml-sync-buttons > button > img {
   height: 32px;
@@ -155,7 +154,7 @@ body {
 #learnocaml-hide-panel {
   border-radius: 10px 0 0 0;
   position: fixed;
-  left: 364px;
+  left: 324px;
   bottom: 0;
 }
 #learnocaml-show-panel {
@@ -172,7 +171,7 @@ body {
 @media (min-width: 1000px) {
   #learnocaml-main-toolbar {
     position: absolute;
-    left: 0; top: 0; height: 60px; width: 400px;
+    left: 0; top: 0; height: 60px; width: 360px;
     background: #222;
     color: #fff;
     z-index: 1020;
@@ -191,7 +190,7 @@ body {
   }
   #learnocaml-main-panel {
     position: absolute;
-    left: 0; top: 60px; bottom: 0; width: 380px;
+    left: 0; top: 60px; bottom: 0; width: 340px;
     margin: 0; padding: 0 10px 10px 10px;
     z-index: 1003;
     overflow-y: auto;
@@ -205,13 +204,13 @@ body {
   }
   #learnocaml-main-content {
     position: absolute;
-    left: 401px; top: 0; right: 0; bottom: 0;
+    left: 361px; top: 0; right: 0; bottom: 0;
     overflow-x: hidden;
     overflow-y: auto;
   }
   #learnocaml-main-loading {
     position: absolute;
-    top: 0; left: 400; right: 0; bottom: 0;
+    top: 0; left: 360; right: 0; bottom: 0;
   }
 }
 /* Medium screen: one column w/ popup menu */
@@ -1111,12 +1110,15 @@ td.student-progression {
 
 .student-progression > div.progr-closed {
     border-color: #b77;
+    width: 24px;
 }
 .student-progression > div.progr-open {
     border-color: #8b8;
+    width: 36px;
 }
 .student-progression > div.progr-assigned {
     border-color: #77b;
+    width: 24px;
 }
 
 /* #students_list td {
@@ -1152,6 +1154,10 @@ td.student-progression {
     margin: 0 3px;
     border-radius: 4px;
     font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
 }
 
 #students_filter_box label,
