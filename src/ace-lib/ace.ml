@@ -63,9 +63,10 @@ let get_contents ?range {editor} =
   | Some r ->
       Js.to_string @@ document##(getTextRange r)
 
-let set_contents {editor} code =
-  let document = (editor##getSession)##getDocument in
-  document##(setValue (Js.string code))
+let set_contents ?(reset_undo=false) {editor} code =
+  let session = editor##getSession in
+  session##getDocument##setValue (Js.string code);
+  if reset_undo then session##getUndoManager##reset
 
 let get_selection_range {editor} = editor##getSelectionRange
 

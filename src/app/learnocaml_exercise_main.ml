@@ -540,7 +540,7 @@ let () =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
   let ace = Ocaml_mode.get_editor editor in
-  Ace.set_contents ace
+  Ace.set_contents ace ~reset_undo:true
     (match solution with
      | Some solution -> solution
      | None -> Learnocaml_exercise.(access File.template exo)) ;

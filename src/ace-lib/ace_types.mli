@@ -54,6 +54,11 @@ class type document = object
   method getLength : int Js.meth
 end
 
+class type undoManager = object
+  method undo : bool Js.t -> range Js.t Js.meth
+  method redo : bool Js.t -> unit Js.meth
+  method reset : unit Js.meth
+end
 
 class type editSession = object
   method getDocument : document Js.t Js.meth
@@ -72,6 +77,7 @@ class type editSession = object
     bool Js.t -> int Js.js_array Js.t Js.meth
   method removeMarker : int -> unit Js.meth
   method getState : 'a. int -> (< .. > as 'a) Js.t Js.meth
+  method getUndoManager : undoManager Js.t Js.meth
 end
 
 class type selection = object

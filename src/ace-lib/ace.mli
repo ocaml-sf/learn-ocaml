@@ -38,7 +38,7 @@ val greater_position:
 
 val get_contents: ?range:Ace_types.range Js.t -> 'a editor -> string
 val get_line: 'a editor -> int -> string
-val set_contents: 'a editor -> string -> unit
+val set_contents: ?reset_undo:bool -> 'a editor -> string -> unit
 
 val get_selection_range: 'a editor -> Ace_types.range Js.t
 val get_selection: 'a editor -> string
