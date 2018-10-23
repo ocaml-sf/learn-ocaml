@@ -23,64 +23,65 @@ module type S = sig
 
   type nonrec 'a result = ('a, exn) result
 
-  (*----------------------------------------------------------------------------*)
-
   (** {1 AST checkers}
 
    Various functions to explore the student's code AST and
    enforce restrictions on the student's code.  *)
 
   module Ast_checker : sig
-    (** Since the user's code is reified, the parsed abstract syntax tree is available
-        in the testing environment, as a variable named [code_ast], with type
-        [Parsetree.structure]. As such, it can be checked using the iterators in the
-        module [Ast_mapper] from [compiler-libs]. However, [Test_lib] provides some
-        functions to check the Parsetree. *)
+
+    (** Since the user's code is reified, the parsed abstract syntax
+       tree is available in the testing environment, as a variable
+       named [code_ast], with type [Parsetree.structure]. As such, it
+       can be checked using the iterators in the module [Ast_mapper]
+       from [compiler-libs]. However, [Test_lib] provides some
+       functions to check the Parsetree. *)
 
     (** {2 Checkers} *)
 
     (** The functional type ['a ast_checker] describes the functions
-       used for AST introspection. It takes as input the introspect
-       objects (mainly [Parsetree structure] like [code_ast] or
-       [Parsetree expression]) and has several optional arguments that
-       are here to put restrictions easily on various parts of the
-       AST. For example, adding [~on_open: forbid "open"] will prevent
-       the student from using [open] syntax by returning a [Failure]
-       report the first time that one [open] is found in the input
-       [Parsetree] structure or expression.
+       used for AST introspection. Such a function takes as input the
+       introspected objects (mainly [Parsetree structure] like
+       [code_ast] or [Parsetree expression]).
 
-        - [~on_expression]: function called each time a
-       [Parsetree.expression] is met.
+       For example, adding [~on_open: forbid "open"] will prevent the
+       student from using [open] syntax by returning a [Failure]
+       report at the first occurrence of the [open] keyword in the
+       input [Parsetree] structure or expression.
 
-        - [~on_pattern]: function called each time a
-       [Parsetree.pattern] is met.
+       This function has several optional arguments to describe the
+       behavior of the AST checker on various parts of the AST. Each
+       argument corresponds to a specific type:
 
-        - [~on_structure_item]: function called each time a
-       [Parsetree.structure_item] is met.
+        - [~on_expression]: [Parsetree.expression] ;
 
-        - [~on_external]: function called each time a
-       [value_description] is met.
+        - [~on_pattern]: [Parsetree.pattern] ;
 
-        - [~on_include]: function called each time a
-       [Parsetree.include_declaration] is met.
+        - [~on_structure_item]: [Parsetree.structure_item] ;
 
-        - [~on_open]: function called each time a
-       [Parsetree.open_description] is met.
+        - [~on_external]: [value_description] ;
 
-        - [~on_module_occurence]: function called each time a module
-       is used. The string input is the name of the module.
+        - [~on_include]: [Parsetree.include_declaration] ;
+
+        - [~on_open]: [Parsetree.open_description] ;
+
+       Besides, there are more high-level checkers:
+
+        - [~on_module_occurence]: this function is called each time a
+       module is used. The string input is the name of the module.
 
         - [~on_variable_occurence]: function called each time a
        variable is used. The string input is the name of the
        variable. The function [rectrict] and [forbid] can be used to
        construct this function.
 
-
         - [~on_function_call]: function called each time a function
        call is used. The first argument of this function is the
        [Parsetree.expression] of the called function. The second
        argument is the arguments represented by a tupple [(name,
-       expression)]. *)
+       expression)].
+
+    *)
     type 'a ast_checker =
       ?on_expression: (Parsetree.expression -> Learnocaml_report.t) ->
       ?on_pattern: (Parsetree.pattern -> Learnocaml_report.t) ->
@@ -90,9 +91,10 @@ module type S = sig
       ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
       ?on_module_occurence: (string -> Learnocaml_report.t) ->
       ?on_variable_occurence: (string -> Learnocaml_report.t) ->
-      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
-      'a -> Learnocaml_report.t
-
+      ?on_function_call: (
+          (Parsetree.expression
+           * (string * Parsetree.expression) list) -> Learnocaml_report.t)
+      -> 'a -> Learnocaml_report.t
 
     (** [ast_check_expr] builds an {{!ast_checker}AST checker} for
        [Parsetree] expressions. This function can be used as
@@ -114,7 +116,10 @@ module type S = sig
        concatenated with the report resulting of [cb] applied to
        [expr]. Otherwise, it teturns a {!LearnOcaml_report.Failure}
        report. *)
-    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.t) -> Learnocaml_report.t
+    val find_binding :
+      Parsetree.structure -> string
+      -> (Parsetree.expression -> Learnocaml_report.t)
+      -> Learnocaml_report.t
 
     (** {2 Functions for optional arguments of checkers} *)
     (** The following functions are classic functions to use as
@@ -130,7 +135,8 @@ module type S = sig
        report is {e The text1 text2 is forbidden} where [text1] is the
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
-    val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
+    val forbid :
+      string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
 
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
@@ -138,14 +144,16 @@ module type S = sig
        report is {e The text1 text2 is not allowed} where [text1] is
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
-    val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
+    val restrict :
+      string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
 
     (** [require k pr _ t] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time this functon is called. The
        message of the report is {e Found text1 text2} where
        [text1] is value of [k] and [text2] is the result of [pr]
        applies to [t]. Otherwise, an empty report is returned. *)
-    val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
+    val require :
+      string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
     (** {3 For expressions } *)
 
@@ -155,8 +163,10 @@ module type S = sig
        expressions [exprs]. The message of the report is {e
        The text1 text2 is forbidden} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
-       returned.  *)
-    val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
+       returned. *)
+    val forbid_expr :
+      string -> Parsetree.expression list
+      -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
@@ -165,16 +175,21 @@ module type S = sig
        The text1 text2 is not allowed} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
-    val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
+    val restrict_expr :
+      string -> Parsetree.expression list
+      -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time this functon is called. The
        message of the success report is {e Found text1 text2} where
        [text1] is value of [name] and [text2] is the result of [pr]
        applies to [t]. Otherwise, an empty report is returned. *)
-    val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
+    val require_expr :
+      string -> Parsetree.expression
+      -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** {3 For syntax } *)
+
     (** These functions are very restricted function to either forbid
        any use of a particular syntax or require to have at least one
        use of it. Their first argument is used to build the message of
@@ -201,11 +216,12 @@ module type S = sig
     (** {2 AST sanity checks } *)
 
     (** [ast_sanity_check ~modules ast cb] *)
-    val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
+    val ast_sanity_check :
+      ?modules: string list -> Parsetree.structure
+      -> (unit -> Learnocaml_report.t)
+      -> Learnocaml_report.t
 
   end
-
-  (*----------------------------------------------------------------------------*)
 
   (** {1 Testers and IO testers} *)
 
@@ -213,7 +229,6 @@ module type S = sig
      argument [~test], [~test_stdout] and [~test_stderr] of the various
      {{!Test_functions_function.test_functions_fun_sec}grading functions
      for functions}. *)
-
 
   (** Functions of type [tester] are used to compare student result
      with solution result. The first {!S.result} is the student
@@ -225,8 +240,6 @@ module type S = sig
      standard out or standard error channels with solution ones. *)
   type io_tester =
     string -> string -> Learnocaml_report.t
-
-  (*----------------------------------------------------------------------------*)
 
   module Tester : sig
     (** Testers are essentially used for the optional arguments
@@ -340,9 +353,6 @@ module type S = sig
 
   end
 
-
-  (*----------------------------------------------------------------------------*)
-
   (** {1 Mutation observer builders} *)
 
   (** Functions to help to build the optional arguments
@@ -378,8 +388,9 @@ module type S = sig
 
        [blit src dst] copies [src] into [dst].*)
     val arg_mutation_test_callbacks:
-      ?test: 'a tester -> dup: ('a -> 'a) -> blit:('a -> 'a -> unit) -> 'a Ty.ty ->
-      'a arg_mutation_test_callbacks
+      ?test: 'a tester -> dup: ('a -> 'a)
+      -> blit:('a -> 'a -> unit) -> 'a Ty.ty
+      -> 'a arg_mutation_test_callbacks
 
     (** [array_arg_mutation_test_callbacks ~test_arr ty] builds
        [before_user], [before_reference] and [test] such than [test] can
@@ -403,11 +414,10 @@ module type S = sig
 
   end
 
-  (*----------------------------------------------------------------------------*)
-
   (** {1 Samplers } *)
 
-  (** [Sampler] provides a library of predefined samplers for {{!Test_functions_function}grading functions}.*)
+  (** [Sampler] provides a library of predefined samplers for
+     {{!Test_functions_function}grading functions}.*)
   module Sampler : sig
 
     type 'a sampler = unit -> 'a
@@ -441,7 +451,10 @@ module type S = sig
 
      If [~dups:false] ([true] by default), all elements of generated
        list are unique.*)
-    val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
+    val sample_list :
+      ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool
+      -> 'a sampler
+      -> 'a list sampler
 
     (** [sample_array ~min_size ~max_size sample] returns an array
        sampler that generates an array of random length between
@@ -453,7 +466,10 @@ module type S = sig
 
      If [~dups:false] ([true] by default), all elements of generated
        array are unique.*)
-    val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
+    val sample_array :
+      ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool
+      -> 'a sampler
+      -> 'a array sampler
 
     (** [sample_alternatively s] returns a sampler that mimics
        randomly the behavior of one of [s] sampler and change at each
@@ -473,8 +489,6 @@ module type S = sig
 
     val printable_fun : string -> (_ -> _ as 'f) -> 'f
   end
-
-  (*----------------------------------------------------------------------------*)
 
   (** {1 Grading functions for references and variables } *)
 
@@ -514,8 +528,6 @@ module type S = sig
 
   end
 
-  (*----------------------------------------------------------------------------*)
-
   (** {1 Grading functions for types} *)
 
   (** Grading function for types. *)
@@ -525,15 +537,15 @@ module type S = sig
 
     val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
 
-    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
+    val abstract_type :
+      ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
 
-    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+    val test_student_code :
+      'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     val test_module_property :
       'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
   end
-
-  (*----------------------------------------------------------------------------*)
 
   (** {1 Grading functions for functions }*)
 
@@ -598,8 +610,11 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.t
+      ?after : ('a -> ('b * string * string)
+                -> ('b * string * string)
+                -> Learnocaml_report.t) ->
+      ('a -> 'b) Ty.ty -> string
+      -> ('a * 'b * string * string) list -> Learnocaml_report.t
 
     (** [test_function_1_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
@@ -619,7 +634,10 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> unit) ->
       ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a
+                -> ('b * string * string)
+                -> ('b * string * string)
+                -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.t
 
@@ -643,11 +661,12 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> unit) ->
       ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a
+                -> ('b * string * string)
+                -> ('b * string * string)
+                -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
 
     (** {3 Binary functions }*)
 
@@ -669,8 +688,13 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
+      ?after : ('a -> 'b -> ('c * string * string)
+                -> ('c * string * string)
+                -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * string * string) list
+      -> Learnocaml_report.t
 
     (** [test_function_2_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
@@ -691,9 +715,15 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> unit) ->
       ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a -> 'b
+                -> ('c * string * string)
+                -> ('c * string * string)
+                -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.t
+      ('a -> 'b -> 'c) Ty.ty -> string
+      -> ('a -> 'b -> 'c)
+      -> ('a * 'b) list
+      -> Learnocaml_report.t
 
     (** [test_function_2_against_soltion ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
@@ -715,11 +745,12 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> unit) ->
       ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a -> 'b
+                -> ('c * string * string)
+                -> ('c * string * string)
+                -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
       ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
 
     (** {3 Three-arguments functions }*)
 
@@ -741,8 +772,12 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
+      ?after : ('a -> 'b -> 'c
+                -> ('d * string * string)
+                -> ('d * string * string) -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd) Ty.ty -> string
+      -> ('a * 'b * 'c * 'd * string * string) list
+      -> Learnocaml_report.t
 
     (** [test_function_3_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
@@ -764,9 +799,16 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a -> 'b -> 'c
+                -> ('d * string * string)
+                -> ('d * string * string)
+                -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
+      ('a -> 'b -> 'c -> 'd) Ty.ty
+      -> string
+      -> ('a -> 'b -> 'c -> 'd)
+      -> ('a * 'b * 'c) list
+      -> Learnocaml_report.t
 
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
@@ -789,11 +831,13 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?after : ('a -> 'b -> 'c
+                -> ('d * string * string)
+                -> ('d * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
+      ('a -> 'b -> 'c -> 'd) Ty.ty
+      -> string -> ('a * 'b * 'c) list
+      -> Learnocaml_report.t
 
     (** {3 Four-arguments functions }*)
 
@@ -815,8 +859,13 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
+      ?after : ('a -> 'b -> 'c -> 'd
+                -> ('e * string * string)
+                -> ('e * string * string)
+                -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
+      -> ('a * 'b * 'c * 'd * 'e * string * string) list
+      -> Learnocaml_report.t
 
     (** [test_function_4_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
@@ -838,10 +887,14 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
-    -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+      ?after : ('a -> 'b -> 'c -> 'd
+                -> ('e * string * string)
+                -> ('e * string * string)
+                -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
+      -> ('a -> 'b -> 'c -> 'd -> 'e)
+      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
@@ -864,9 +917,13 @@ module type S = sig
       ?test_stderr: io_tester ->
       ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+      ?after : ('a -> 'b -> 'c -> 'd
+                -> ('e * string * string)
+                -> ('e * string * string)
+                -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
+      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
@@ -947,7 +1004,6 @@ module type S = sig
        builders}.  *)
   end
 
-  (*----------------------------------------------------------------------------*)
   (** {1 Generic grading functions} *)
 
   (** Grading functions for functions with more than 4 arguments. Most
@@ -970,12 +1026,10 @@ module type S = sig
         raised. Mays also return a timeout error. *)
     val result : (unit -> 'a) -> 'a result
 
-    (*----------------------------------------------------------------------------*)
-
     (** The type of arguments, represented as heterogeneous lists.
 
         Usage: [arg 3 @@ arg "word" @@ last false]
-        
+
         Alternatively: [3 @: "word" @:!! false]
      *)
     type ('arrow, 'uarrow, 'ret) args
@@ -1020,7 +1074,10 @@ module type S = sig
 
     (** {2 Lookup functions} *)
 
-    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
+    type 'a lookup =
+      unit
+      -> [ `Found of string * Learnocaml_report.t * 'a
+         | `Unbound of string * Learnocaml_report.t ]
 
     val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
     val lookup_student : 'a Ty.ty -> string -> 'a lookup
@@ -1031,7 +1088,8 @@ module type S = sig
     (** {2 Generic grading functions}*)
 
     (** [test_value lookup cb] *)
-    val test_value : 'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+    val test_value :
+      'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
     (** [test_function ~test ~test_stdout ~test_stderr ~before ~after
         prot uf tests]  *)
@@ -1109,7 +1167,10 @@ module type S = sig
   end
 
     (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
-   val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
+   val (@@@) :
+     ('a -> Learnocaml_report.t)
+     -> ('a -> Learnocaml_report.t)
+     -> ('a -> Learnocaml_report.t)
 
    (**/**)
    include (module type of Ast_checker)
