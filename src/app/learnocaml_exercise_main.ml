@@ -317,6 +317,17 @@ let make_readonly () =
     [%i"The deadline for this exercise has expired. Any changes you make \
         from now on will remain local only."]
 
+let local_save ace id =
+  let key = Learnocaml_local_storage.exercise_state id in
+  let ans =
+    try Learnocaml_local_storage.retrieve key with Not_found ->
+      Answer.{solution = ""; mtime = 0.; report = None; grade = None}
+  in
+  Learnocaml_local_storage.store key
+    { ans with Answer.solution = Ace.get_contents ace;
+               mtime = gettimeofday () }
+
+
 let () =
   Lwt.async_exception_hook := begin fun e ->
     Firebug.console##log (Js.string
@@ -360,7 +371,7 @@ let () =
     | _ -> arg "id"
   in
   Dom_html.document##.title :=
-    Js.string (id ^ " - " ^ [%i"Learn OCaml"] ^" v."^ Learnocaml_api.version);
+    Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
     token >>= fun token ->
     Server_caller.fetch_exercise token id
@@ -540,7 +551,7 @@ let () =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
   let ace = Ocaml_mode.get_editor editor in
-  Ace.set_contents ace
+  Ace.set_contents ace ~reset_undo:true
     (match solution with
      | Some solution -> solution
      | None -> Learnocaml_exercise.(access File.template exo)) ;
@@ -673,14 +684,7 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
-  Window.onunload (fun _ev ->
-      let key = Learnocaml_local_storage.exercise_state id in
-      let ans = Learnocaml_local_storage.retrieve key in
-      Learnocaml_local_storage.store key
-        { ans with Answer.solution = Ace.get_contents ace;
-                   mtime = gettimeofday () };
-      true
-    );
+  Window.onunload (fun _ev -> local_save ace id; true);
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->

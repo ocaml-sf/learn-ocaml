@@ -398,12 +398,14 @@ let set_state_from_save_file ?token save =
   match token with None -> () | Some t -> store sync_token t;
   store nickname save.nickname;
   store all_exercise_states
-    (SMap.mapi (fun id ans ->
-         match SMap.find_opt id save.all_exercise_editors with
-         | Some (mtime, solution) ->
-             {ans with Answer.solution; mtime}
-         | None -> ans)
-        save.all_exercise_states);
+    (SMap.merge (fun id ans edi ->
+         match ans, edi with
+         | Some ans, Some (mtime, solution) ->
+             Some {ans with Answer.solution; mtime}
+         | None, Some (mtime, solution) ->
+             Some Answer.{grade = None; report = None; solution; mtime}
+         | ans, _ -> ans)
+        save.all_exercise_states save.all_exercise_editors);
   store all_toplevel_histories save.all_toplevel_histories;
   store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
 
