@@ -21,7 +21,7 @@ msgstr ""
 #: src/app/learnocaml_student_view.ml:263,33--41
 #: src/app/learnocaml_student_view.ml:267,33--41
 #: src/app/learnocaml_student_view.ml:272,33--41
-#: src/app/learnocaml_student_view.ml:345,39--47
+#: src/app/learnocaml_student_view.ml:342,39--47
 msgid "Report"
 msgstr "Rapport"
 
@@ -30,7 +30,7 @@ msgid "No description available."
 msgstr "Aucune description."
 
 #: src/app/learnocaml_exercise_main.ml:114,34--55
-#: src/app/learnocaml_common.ml:520,34--55
+#: src/app/learnocaml_common.ml:522,34--55
 msgid "difficulty: %d / 40"
 msgstr "difficulté: %d / 40"
 
@@ -71,7 +71,7 @@ msgid "Metadata"
 msgstr "Métadonnées"
 
 #: src/app/learnocaml_exercise_main.ml:295,24--51
-#: src/app/learnocaml_student_view.ml:343,24--51
+#: src/app/learnocaml_student_view.ml:340,24--51
 msgid "Preparing the environment"
 msgstr "Préparation de l'environnement"
 
@@ -94,7 +94,6 @@ msgid "Details"
 msgstr "Détails"
 
 #: src/app/learnocaml_exercise_main.ml:302,27--70
-#: src/app/learnocaml_student_view.ml:348,27--70
 msgid "Click the Grade button to get your report"
 msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
 
@@ -149,54 +148,62 @@ msgstr "Cacher"
 msgid "Show"
 msgstr "Montrer"
 
-#: src/app/learnocaml_exercise_main.ml:513,23--29
+#: src/app/learnocaml_exercise_main.ml:509,22--37
+msgid "START FROM SCRATCH"
+msgstr "TOUT RECOMMENCER"
+
+#: src/app/learnocaml_exercise_main.ml:510,19--68
+msgid "This will discard all your edits. Are you sure?"
+msgstr "Toutes vos modifications seront perdues. Vous êtes sûr·e ?"
+
+#: src/app/learnocaml_exercise_main.ml:516,23--29
 msgid "Sync"
 msgstr "Sync"
 
-#: src/app/learnocaml_exercise_main.ml:518,27--37
+#: src/app/learnocaml_exercise_main.ml:521,27--37
 msgid "Download"
 msgstr "Télécharger"
 
-#: src/app/learnocaml_exercise_main.ml:526,22--33
+#: src/app/learnocaml_exercise_main.ml:529,22--33
 msgid "Eval code"
 msgstr "Évaluer le code"
 
-#: src/app/learnocaml_exercise_main.ml:557,23--34
+#: src/app/learnocaml_exercise_main.ml:560,23--34
 #: src/app/learnocaml_index_main.ml:769,48--59
 #: src/app/learnocaml_teacher_tab.ml:219,21--32
-#: src/app/learnocaml_student_view.ml:344,37--48
+#: src/app/learnocaml_student_view.ml:341,37--48
 msgid "Exercises"
 msgstr "Exercices"
 
-#: src/app/learnocaml_exercise_main.ml:567,28--37
+#: src/app/learnocaml_exercise_main.ml:570,28--37
 msgid "Compile"
 msgstr "Compiler"
 
-#: src/app/learnocaml_exercise_main.ml:571,25--33
+#: src/app/learnocaml_exercise_main.ml:574,25--33
 msgid "Grade!"
 msgstr "Noter!"
 
-#: src/app/learnocaml_exercise_main.ml:574,51--58
+#: src/app/learnocaml_exercise_main.ml:577,51--58
 msgid "abort"
 msgstr "abandonner"
 
-#: src/app/learnocaml_exercise_main.ml:578,38--73
+#: src/app/learnocaml_exercise_main.ml:581,38--73
 msgid "Grading is taking a lot of time, "
 msgstr "La notation prend longtemps, "
 
-#: src/app/learnocaml_exercise_main.ml:584,38--60
+#: src/app/learnocaml_exercise_main.ml:587,38--60
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: src/app/learnocaml_exercise_main.ml:599,60--86
+#: src/app/learnocaml_exercise_main.ml:602,60--86
 msgid "Grading aborted by user."
 msgstr "Notation annulée par l'utilisateur"
 
-#: src/app/learnocaml_exercise_main.ml:622,38--59
+#: src/app/learnocaml_exercise_main.ml:625,38--59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: src/app/learnocaml_exercise_main.ml:623,27--85
+#: src/app/learnocaml_exercise_main.ml:626,27--85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 
@@ -253,46 +260,46 @@ msgstr "@[<v 2>Réussite %d: %a@]\""
 msgid "INTERNAL ERROR"
 msgstr "ERREUR INTERNE"
 
-#: src/app/learnocaml_common.ml:131,50--54
-#: src/app/learnocaml_common.ml:169,33--37
+#: src/app/learnocaml_common.ml:132,50--54
+#: src/app/learnocaml_common.ml:171,33--37
 msgid "OK"
 msgstr "OK"
 
-#: src/app/learnocaml_common.ml:166,21--28
+#: src/app/learnocaml_common.ml:168,21--28
 msgid "ERROR"
 msgstr "ERREUR"
 
-#: src/app/learnocaml_common.ml:169,58--66
+#: src/app/learnocaml_common.ml:171,58--66
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/app/learnocaml_common.ml:487,39--50
+#: src/app/learnocaml_common.ml:489,39--50
 msgid "%dd %02dh"
 msgstr "%dj %02dh"
 
-#: src/app/learnocaml_common.ml:488,40--51
+#: src/app/learnocaml_common.ml:490,40--51
 msgid "%02d:%02d"
 msgstr "%02d:%02d"
 
-#: src/app/learnocaml_common.ml:489,23--36
+#: src/app/learnocaml_common.ml:491,23--36
 msgid "0:%02d:%02d"
 msgstr "0:%02d:%02d"
 
-#: src/app/learnocaml_common.ml:555,30--75
+#: src/app/learnocaml_common.ml:557,30--75
 msgid "No description available for this exercise."
 msgstr "Aucune description pour cet exercice."
 
-#: src/app/learnocaml_common.ml:577,32--41
+#: src/app/learnocaml_common.ml:579,32--41
 #: src/app/learnocaml_index_main.ml:134,57--66
 msgid "project"
 msgstr "projet"
 
-#: src/app/learnocaml_common.ml:578,32--41
+#: src/app/learnocaml_common.ml:580,32--41
 #: src/app/learnocaml_index_main.ml:135,57--66
 msgid "problem"
 msgstr "problème"
 
-#: src/app/learnocaml_common.ml:579,33--43
+#: src/app/learnocaml_common.ml:581,33--43
 #: src/app/learnocaml_index_main.ml:136,58--68
 msgid "exercise"
 msgstr "exercice"
@@ -623,15 +630,15 @@ msgstr "NOTE INCOHÉRENTE: suspicion de triche"
 msgid "No report available"
 msgstr "Aucun rapport"
 
-#: src/app/learnocaml_student_view.ml:346,37--46
+#: src/app/learnocaml_student_view.ml:343,37--46
 msgid "Subject"
 msgstr "Énoncé"
 
-#: src/app/learnocaml_student_view.ml:347,39--47
+#: src/app/learnocaml_student_view.ml:344,39--47
 msgid "Answer"
 msgstr "Réponse"
 
-#: src/app/learnocaml_student_view.ml:382,8--29
+#: src/app/learnocaml_student_view.ml:379,8--29
 msgid "Status of student: "
 msgstr "Vue étudiant: "
 

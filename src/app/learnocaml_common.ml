@@ -119,14 +119,15 @@ let box_button txt f =
                background-color: white;\
                color: black;\
                text-align: center;";
-    H.a_onclick (fun _ -> f (); false)
+    H.a_onclick (fun _ ->
+        f ();
+        match Manip.by_id dialog_layer_id with
+        | Some div -> Manip.removeChild Manip.Elt.body div; false
+        | None -> (); false)
   ] [ H.pcdata txt ]
 
 let close_button txt =
-  box_button txt @@ fun () ->
-  match Manip.by_id dialog_layer_id with
-  | Some div -> Manip.removeChild Manip.Elt.body div; false
-  | None -> (); false
+  box_button txt @@ fun () -> ()
 
 let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
   let div = match Manip.by_id dialog_layer_id with
@@ -149,7 +150,8 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
                            font-family: 'Inconsolata', monospace;\
                            flex: 0 0 auto;\
                            background: black;\
-                           margin: auto;"]
+                           margin: auto;\
+                           max-width: 50%;"]
       ([ H.h3 ~a: [ H.a_style "margin: 0;\
                                padding: 10px;\
                                text-align: center;" ]
@@ -398,7 +400,7 @@ let set_state_from_save_file ?token save =
   match token with None -> () | Some t -> store sync_token t;
   store nickname save.nickname;
   store all_exercise_states
-    (SMap.merge (fun id ans edi ->
+    (SMap.merge (fun _ ans edi ->
          match ans, edi with
          | Some ans, Some (mtime, solution) ->
              Some {ans with Answer.solution; mtime}

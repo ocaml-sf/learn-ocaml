@@ -506,7 +506,10 @@ let () =
   Ace.set_font_size ace 18;
   begin editor_button
       ~icon: "cleanup" [%i"Reset"] @@ fun () ->
-    Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)) ;
+    confirm ~title:[%i"START FROM SCRATCH"]
+      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      (fun () ->
+         Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)));
     Lwt.return ()
   end ;
   begin editor_button
