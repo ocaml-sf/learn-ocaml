@@ -47,12 +47,13 @@ module El = struct
       btn = snd (id ("learnocaml-exo-button-" ^ name));
       tab = snd (id ("learnocaml-exo-tab-" ^ name));
     }
+    let stats = tid "stats"
     let list = tid "list"
     let report = tid "report"
     let editor = tid "editor"
     let text = tid "text"
 
-    let all = [list; report; editor; text]
+    let all = [stats; list; report; editor; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
@@ -72,10 +73,10 @@ let show_loading msg =
 
 let tab_select_signal, select_tab =
   let open El.Tabs in
-  let current = ref report in
+  let current = ref stats in
   let cls = "front-tab" in
   let tab_select_signal, tab_select_signal_set =
-    React.S.create report
+    React.S.create !current
   in
   let select_tab el =
     let prev = !current in
@@ -95,14 +96,10 @@ let tab_select_signal, select_tab =
 
 let selected_exercise_signal, set_selected_exercise = React.S.create None
 
-let exercises_tab teacher_token student_token answers =
-  Server_caller.request_exn (Learnocaml_api.Exercise_index teacher_token)
-  >>= fun (index, _) ->
-  Server_caller.request_exn (Learnocaml_api.Exercise_status_index teacher_token)
-  >>= fun status_list ->
+let gather_assignments student_token index status =
   let status_map =
     List.fold_left (fun m ex -> SMap.add ex.Exercise.Status.id ex m)
-      SMap.empty status_list
+      SMap.empty status
   in
   let assignments =
     get_assignments (Token.Set.singleton student_token) status_map
@@ -118,11 +115,31 @@ let exercises_tab teacher_token student_token answers =
         | _ -> acc)
       status_map []
   in
+  let assgs =
+    List.map (fun ((start, stop), _tok, _dft, ids) -> Some (start, stop), ids)
+      assignments @
+    match open_exercises with [] -> [] | l -> [None, SSet.of_list l]
+  in
+  List.map (fun (dates, ids) ->
+      (* Reorder the exercises in the index order *)
+      let index =
+        Exercise.Index.filter (fun id _ -> SSet.mem id ids) index
+      in
+      dates,
+      List.rev @@ Exercise.Index.fold_exercises (fun l id meta ->
+          if SSet.mem id ids then
+            (id, meta,
+             try (SMap.find id status_map).Exercise.Status.tags
+             with Not_found -> [])::l
+          else l)
+        [] index)
+    assgs
+
+let exercises_tab assignments answers =
   let grade_sty grade =
     H.a_style ("background-color:"^grade_color grade)
   in
-  let exercise_line id ans =
-    let meta = Exercise.Index.find index id in
+  let exercise_line (id, meta, _) ans =
     let grade, mtime = match ans with
       | None -> None, None
       | Some Answer.{grade; mtime; _} -> grade, Some mtime
@@ -152,27 +169,13 @@ let exercises_tab teacher_token student_token answers =
       ];
     ]
   in
-  let blocks =
-    List.map (fun ((start, stop), _tok, _dft, ids) -> Some (start, stop), ids)
-      assignments @
-    match open_exercises with [] -> [] | l -> [None, SSet.of_list l]
-  in
   let[@warning "-3"] assg_lines =
-    (* tyxml_js maks a_scope as deprecated in HTML5, which is wrong: it's
+    (* tyxml_js marks a_scope as deprecated in HTML5, which is wrong: it's
        deprecated for <td> but not for <th>. *)
     let now = gettimeofday () in
-    List.map (fun (assg, ex_ids) ->
-        let index =
-          Exercise.Index.filter (fun id _ -> SSet.mem id ex_ids) index
-        in
-        let ids =
-          List.rev @@
-          Exercise.Index.fold_exercises (fun l id _ ->
-              if SSet.mem id ex_ids then id::l else l)
-            [] index
-        in
+    List.map (fun (assg, ids) ->
         let states =
-          List.map (fun id -> SMap.find_opt id answers) ids
+          List.map (fun (id, _, _) -> SMap.find_opt id answers) ids
         in
         let avg_grade, mtime =
           let tot, n, mtime =
@@ -208,7 +211,7 @@ let exercises_tab teacher_token student_token answers =
           H.th ~a:[ H.a_scope `Rowgroup; H.a_colspan 4 ] text;
           H.th ~a:[ H.a_scope `Rowgroup;
                     H.a_class ["grade"] ] [
-            H.pcdata (Printf.sprintf "%0.1f%%" avg_grade)
+            H.pcdata (Printf.sprintf "%01.1f%%" avg_grade)
           ];
           H.th ~a:[ H.a_scope `Rowgroup;
                     H.a_class ["last-updated"] ] [
@@ -217,17 +220,92 @@ let exercises_tab teacher_token student_token answers =
         ] ::
         List.map2 exercise_line ids states
       )
-      blocks
+      assignments
   in
   match assg_lines with
   | [] -> Lwt.return (H.pcdata "No assigned or open exercises found")
   | lines -> Lwt.return (H.table (List.concat lines))
 
-let init_exercises_tab teacher_token student_token answers =
-  show_loading [%i"Loading exercises"];
-  exercises_tab teacher_token student_token answers >|= fun tbl ->
-  Manip.replaceChildren El.Tabs.(list.tab) [tbl];
-  hide_loading ()
+let stats_tab assignments answers =
+  let smap_add n m key =
+    try
+      let tot, count = SMap.find key m in
+      SMap.add key (n + tot, count + 1) m
+    with Not_found ->
+      SMap.add key (n, 1) m
+  in
+  let total_grade, n_attempted, n_total, by_tag =
+    List.fold_left
+      (fun acc (_dates, exercises) ->
+         List.fold_left
+           (fun
+             (total_grade, n_attempted, n_total, by_tag)
+             (id, _meta, tags) ->
+             match SMap.find_opt id answers with
+             | None ->
+                 (total_grade, n_attempted, n_total + 1,
+                  List.fold_left (smap_add 0) by_tag tags)
+             | Some a ->
+                 let g = match a.Answer.grade with None -> 0 | Some g -> g in
+                 total_grade + g,
+                 n_attempted + 1,
+                 n_total + 1,
+                 List.fold_left (smap_add g) by_tag tags)
+           acc exercises)
+      (0, 0, 0, SMap.empty)
+      assignments
+  in
+  let item ?(indent=0) lbl title v =
+    H.tr ~a:[H.a_title title] [
+      H.td ~a:[H.a_class ["stats-label"];
+               H.a_style ("margin-left:"^string_of_int (indent * 8)^"px")]
+        [H.pcdata lbl];
+      H.td v
+    ]
+  in
+  let pct x y =
+    let r =
+      if y = 0 then None
+      else Some (100. *. float_of_int x /. float_of_int y) in
+    let color =
+      grade_color (match r with None -> None | Some r -> Some (int_of_float r))
+    in
+    H.span ~a:[H.a_class ["grade"; "stats-pct"];
+               H.a_style ("background-color:"^color)]
+      [H.pcdata (match r with
+           | None -> "--%"
+           | Some r -> Printf.sprintf "%02.1f%%" r)]
+  in [
+    H.h3 [H.pcdata [%i"Student stats"]];
+    H.table ~a:[H.a_class ["student-stats"]] ([
+      item [%i"average"]
+        [%i"The average grade over all accessible exercises"]
+        [pct total_grade (100 * n_total)];
+      item [%i"attempted"]
+        [%i"The amount of accessible exercises that have been attempted"]
+        [pct n_attempted n_total];
+      item [%i"success"]
+        [%i"The average grade over attempted exercises"]
+        [pct total_grade (100 * n_attempted)];
+      H.tr [H.th ~a:[H.a_colspan 2] [H.pcdata [%i"success by tag"]]];
+    ] @
+        List.map (fun (tag, (tot, count)) ->
+            item ~indent:1 tag
+              ([%i"Success over exercises having tag "]^tag)
+              [pct tot count];
+          )
+          (SMap.bindings by_tag));
+  ]
+
+let init_exercises_and_stats_tabs teacher_token student_token answers =
+  Server_caller.request_exn (Learnocaml_api.Exercise_index teacher_token)
+  >>= fun (index, _) ->
+  Server_caller.request_exn (Learnocaml_api.Exercise_status_index teacher_token)
+  >>= fun status ->
+  let assignments = gather_assignments student_token index status in
+  Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
+  exercises_tab assignments answers >|= fun tbl ->
+  Manip.replaceChildren El.Tabs.(list.tab) [tbl]
 
 let _exercise_selection_updater =
   let previously_selected = ref None in
@@ -239,7 +317,10 @@ let _exercise_selection_updater =
   previously_selected := id;
   match id with
   | None -> ()
-  | Some id -> Manip.addClass (line id) "selected"
+  | Some id ->
+      Manip.addClass (line id) "selected";
+      if React.S.value tab_select_signal = El.Tabs.list then
+        select_tab El.Tabs.report
 
 let restore_report_button () =
   let report_button = El.Tabs.(report.btn) in
@@ -338,6 +419,7 @@ let update_tabs meta exo ans =
 let set_string_translations () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
+    "learnocaml-exo-button-stats", [%i"Stats"];
     "learnocaml-exo-button-list", [%i"Exercises"];
     "learnocaml-exo-button-report", [%i"Report"];
     "learnocaml-exo-button-text", [%i"Subject"];
@@ -380,8 +462,10 @@ let () =
   Server_caller.request_exn (Learnocaml_api.Fetch_save student_token)
   >>= fun save ->
   Manip.setInnerText El.nickname save.Save.nickname;
-  init_exercises_tab teacher_token student_token save.Save.all_exercise_states
+  init_exercises_and_stats_tabs
+    teacher_token student_token save.Save.all_exercise_states
   >>= fun () ->
+  hide_loading ();
   let _sig =
     selected_exercise_signal |> React.S.map @@ function
     | None -> ()

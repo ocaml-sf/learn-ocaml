@@ -65,6 +65,16 @@
   }
 }
 
+/* -------------------- loading splash screen --------------------- */
+#learnocaml-exo-loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#learnocaml-exo-loading.loading,
+#learnocaml-exo-loading.loaded {
+  background: rgba(200,200,200,0.9);
+}
+
 /* -------------------- tabs and tab buttons ---------------------- */
 #learnocaml-exo-tab-buttons {
   position: absolute;
@@ -235,6 +245,29 @@
     top: 80px;
   }
 }
+/* -------------------- stats pane ------------------------------ */
+#learnocaml-exo-tab-stats {
+  padding: 5px;
+}
+table.student-stats {
+  margin: auto;
+  min-width: 40%;
+  border: 1px solid white;
+}
+table.student-stats tr:hover {
+  background-color: #9bd;
+}
+table.student-stats th {
+  text-align: left;
+  font-weight: normal;
+  background-color: #aaa;
+}
+td.stats-pct {
+  text-align: right;
+  font-family: 'Inconsolata', monospace;
+  padding: 1px;
+}
+
 /* -------------------- exercise list --------------------------- */
 #learnocaml-exo-tab-list table {
   border-collapse: collapse;
@@ -283,3 +316,49 @@
   font-weight: normal;
   text-align: center;
 }
+
+/* -------------------- ACE overriding ---------------------------- */
+#learnocaml-exo-editor-pane {
+  font-size: 16px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-exo-editor-pane .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-exo-editor-pane .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-exo-editor-pane .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-exo-editor-pane .ace_constant { color: #acf; }
+#learnocaml-exo-editor-pane .ace_string { color: #acf; }
+#learnocaml-exo-editor-pane .ace_function { color: #fff; }
+#learnocaml-exo-editor-pane .ace_type { color: #fff; }
+#learnocaml-exo-editor-pane .ace_operator { color: #fff; }
+#learnocaml-exo-editor-pane .ace_meta { color: #fff; }
+#learnocaml-exo-editor-pane .ace_variable { color: #fff; }
+#learnocaml-exo-editor-pane .ace_text { color: #fff; }
+#learnocaml-exo-editor-pane .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-exo-editor-pane .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-exo-editor-pane .ace_selected-word { background: #e80; opacity: 0.2; }
