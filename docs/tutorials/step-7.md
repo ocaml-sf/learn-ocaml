@@ -26,7 +26,7 @@ val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
 In the examples below, we use the user-defined type :
 
-````ocaml
+```ocaml
 type tri = Zero | One | Two
 exception OutOfRange of int
 ```
@@ -112,7 +112,7 @@ for more information. Some typical examples are shown below.
 In these examples, we grade functions that print `tri`, `tri list` and
 `tri list list` with the same `tri` type as previously.
 
-````ocaml
+```ocaml
 type tri = Zero | One | Two
 ```
 
@@ -204,7 +204,7 @@ let exercise_2 =
 	[10 ; 20]
 ```
 
---- [Previous
-step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
+---
+[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
 
 [Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
