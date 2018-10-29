@@ -5,14 +5,14 @@
 ## Test functions for variables
 There are 3 test functions for variables.
 
-### Signatures 
+### Signatures
 ```ocaml
   val test_variable :
     'a Ty.ty -> string -> 'a -> Learnocaml_report.report
 
   val test_variable_against_solution :
     'a Ty.ty -> string -> Learnocaml_report.report
-	
+
   val test_variable_property :
     'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 ```
@@ -26,9 +26,9 @@ it is directly compared to an expected result and not to a solution.
 let exercise_0 =
   grade_variable [%ty: int] "forty_two" 42
 ```
-  
+
 #### More classical example with `grade_variable_against_solution`
-`grade_variable_against_solution` is more versatile and works 
+`grade_variable_against_solution` is more versatile and works
 basically like `grade_function_against_solution`.
 ```ocaml
 let exercise_1 =
@@ -46,32 +46,32 @@ let exercise_2 =
     (
       fun s ->
       match s with
-      | Right -> if vect.x > 0. then 
+      | Right -> if vect.x > 0. then
                    [ Message ([ Text "Expected value"] , Success 1) ]
-                 else if vect.x = 0. then 
+                 else if vect.x = 0. then
                    [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Middle" ; Text "."] , Informative) ]
                  else
                    [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Left" ; Text "."] , Informative) ]
-      | Left -> if vect.x < 0. then 
+      | Left -> if vect.x < 0. then
                   [ Message ([ Text "Expected value"] , Success 1) ]
-                else if vect.x = 0. then 
+                else if vect.x = 0. then
                   [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Middle" ; Text "."] , Informative) ]
                  else
                    [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Right" ; Text "."] , Informative) ]
-      | Middle -> if vect.x = 0. then 
+      | Middle -> if vect.x = 0. then
                   [ Message ([ Text "Expected value"] , Success 1) ]
-                else if vect.x > 0. then 
+                else if vect.x > 0. then
                   [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Right" ; Text "."] , Informative) ]
                  else
                    [ Message ([ Text "Wrong value"] , Failure) ;
                      Message ([ Text "The answer should "; Code "Left" ; Text "."] , Informative) ]
     )
-	```
+```
 
 ---
 [Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
