@@ -66,7 +66,8 @@ module Args = struct
 
     let output_json =
       value & opt (some dir) None & info ["output-json"] ~docv:"DIR" ~doc:
-        "save the graded exercise in JSON format in the given file"
+        "save the processed exercises in JSON format in `.json` files, \
+         in the given directory."
 
     let grade_student =
       value & opt (some file) None & info ["grade-student";"s"] ~docv:"FILE" ~doc:
@@ -111,7 +112,6 @@ module Args = struct
           output_json grade_student display_outcomes quiet
           display_std_outputs dump_outputs dump_reports timeout verbose =
         let exercises = List.flatten exercises in
-        Grader_cli.output_json := output_json;
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
         Grader_cli.display_callback := not quiet;
@@ -228,9 +228,16 @@ let main o =
          failwith "The 'grade' command is incompatible with 'build' and \
                    'serve'";
        Lwt_list.fold_left_s (fun i ex ->
+           let json_output = match o.grader.Grader.output_json with
+             | None -> None
+             | Some o ->
+                 Some (Filename.concat o
+                         (String.map (function '/' -> '_' | c -> c) ex
+                          ^ ".json"))
+           in
            Lwt.catch
              (fun () ->
-                Grader_cli.grade_from_dir ~print_result:true ex o.grader.Grader.output_json
+                Grader_cli.grade_from_dir ~print_result:true ex json_output
                 >|= function Ok () -> i | Error _ -> 1)
              (fun e ->
                 Printf.ksprintf failwith

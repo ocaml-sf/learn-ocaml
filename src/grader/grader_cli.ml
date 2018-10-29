@@ -20,7 +20,6 @@ let dump_outputs = ref None
 let dump_reports = ref None
 let display_callback = ref false
 let display_outcomes = ref false
-let output_json = ref None
 let grade_student = ref None
 let individual_timeout = ref None
 let display_reports = ref false
