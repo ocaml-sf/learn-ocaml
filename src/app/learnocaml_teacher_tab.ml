@@ -23,6 +23,22 @@ open Learnocaml_common
 module H = Tyxml_js.Html5
 module ES = Exercise.Status
 
+let filter_input input_id list_id apply_fun =
+  let input_field =
+    H.input ~a:[
+      H.a_id input_id;
+      H.a_input_type `Search;
+      H.a_placeholder "\xf0\x9f\x94\x8d" (* U+1F50D magnifying glass *);
+      H.a_list list_id;
+    ] ()
+  in
+  Manip.Ev.oninput input_field (fun _ev ->
+      apply_fun (Manip.value input_field);
+      true);
+  H.div ~a:[H.a_class ["filter_input"]] [
+    H.datalist ~a:[H.a_id list_id] ();
+    input_field;
+  ]
 
 let teacher_tab token _select _params () =
   let action_new_token () =
@@ -65,7 +81,7 @@ let teacher_tab token _select _params () =
   let selected_students = Hashtbl.create 117 in
   let selected_assignment = ref None in
   let exercises_index = ref (Exercise.Index.Exercises []) in
-  (* let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in *)
+  let all_exercise_skills = ref SSet.empty in
   let students_map = ref Token.Map.empty in
   let assignments_tbl = Hashtbl.create 59 in
   let students_changes = ref Token.Map.empty in
@@ -98,6 +114,7 @@ let teacher_tab token _select _params () =
       Student.default token
   in
   let exercise_line_id id = "learnocaml_exercise_"^id in
+  let exercise_group_id id = "exercise_group_"^id in
   let student_line_id student =
     "learnocaml_student_" ^ match student with
     | `Any -> "any"
@@ -127,7 +144,8 @@ let teacher_tab token _select _params () =
 
   (* Action function callbacks *)
   let update_changed_status = ref (fun () -> assert false) in
-  let toggle_selected_exercises = ref (fun ?force:_ _ -> assert false) in
+  let toggle_selected_exercises =
+    ref (fun ?force:_ ?update:_ _ -> assert false) in
   let toggle_selected_students =
     ref (fun ?force:_ ?update:_ _ -> assert false)
   in
@@ -145,7 +163,7 @@ let teacher_tab token _select _params () =
             let all_children = all_exercises g.Exercise.Index.contents in
             let acc =
               H.tr ~a:[
-                H.a_id ("exercise_group_"^id);
+                H.a_id (exercise_group_id id);
                 H.a_class ["exercise_group"];
                 H.a_onclick (fun _ ->
                     !toggle_selected_exercises all_children; false);
@@ -208,9 +226,61 @@ let teacher_tab token _select _params () =
             ] :: acc)
           acc exlist
   in
+  let set_exercise_filtering str =
+    let skills, keywords =
+      List.partition (fun s -> SSet.mem s !all_exercise_skills)
+        (List.filter ((<>) "") (String.split_on_char ' ' str))
+    in
+    let res =
+      List.map (fun s ->
+          new%js Js.regExp_withFlags (Js.string s) (Js.string "i"))
+        keywords
+    in
+    let matches std =
+      (List.for_all (fun re ->
+           let strmatch = function
+             | None -> false
+             | Some s -> Js.to_bool (re##test (Js.string s))
+           in
+           strmatch std.Exercise.Meta.id ||
+           strmatch (Some std.Exercise.Meta.title) ||
+           strmatch std.Exercise.Meta.short_description)
+          res)
+      &&
+      List.for_all (fun skill ->
+          List.mem skill std.Exercise.Meta.focus ||
+          List.mem skill std.Exercise.Meta.requirements)
+        skills
+    in
+    let rec hide = function
+      | Exercise.Index.Groups groups_list ->
+          List.fold_left (fun (empty0, hidden0) (id, g) ->
+              let empty, hidden = hide g.Exercise.Index.contents in
+              let elt = find_component (exercise_group_id id) in
+              if empty then Manip.addClass elt "exercise_hidden"
+              else Manip.removeClass elt "exercise_hidden";
+              empty && empty0, List.rev_append hidden hidden0)
+            (true, []) groups_list
+      | Exercise.Index.Exercises l ->
+          List.fold_left (fun (empty, hidden) (id, ex) ->
+              let elt = find_component (exercise_line_id id) in
+              match ex with
+              | Some ex when matches ex ->
+                  Manip.removeClass elt "exercise_hidden";
+                  false, hidden
+              | _ ->
+                  Manip.addClass elt "exercise_hidden";
+                  empty, (id::hidden))
+            (true, []) l
+    in
+    let _empty, hidden = hide !exercises_index in
+    if !selected_assignment = None then
+      !toggle_selected_exercises ~force:false ~update:true hidden
+  in
   let exercises_list_div =
     H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
   in
+  let exercise_tags_list_id = "exercise_tags_list" in
   let exercises_div =
     let legend =
       H.legend ~a:[
@@ -220,9 +290,9 @@ let teacher_tab token _select _params () =
       ] [H.pcdata [%i"Exercises"]; H.pcdata " \xe2\x98\x90" (* U+2610 *)]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
-      H.div ~a:[H.a_id "exercises_filter_box"] [
-        (* TODO: filtering tools *)
-      ];
+      H.div ~a:[H.a_class ["exercises_filter_box"]]
+        [filter_input "exercises_search_field"
+           exercise_tags_list_id set_exercise_filtering];
       H.fieldset ~legend [ exercises_list_div ]
     ]
   in
@@ -350,8 +420,7 @@ let teacher_tab token _select _params () =
             ))
           ())
   in
-  let set_student_filtering () =
-    let str = Manip.value (find_component "student_search_field") in
+  let set_student_filtering str =
     let tags, keywords =
       List.partition (fun s -> SSet.mem s !all_student_tags)
         (List.filter ((<>) "") (String.split_on_char ' ' str))
@@ -402,7 +471,8 @@ let teacher_tab token _select _params () =
           else acc)
         selected !students_changes;
     fill_students_pane ();
-    set_student_filtering ();
+    set_student_filtering
+      (Manip.value (find_component "student_search_field"));
     !update_changed_status ();
   in
   let add_student_tags tags =
@@ -435,13 +505,8 @@ let teacher_tab token _select _params () =
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
         H.datalist ~a:[H.a_id student_tags_list_id] ();
-        H.input ~a:[
-          H.a_id "student_search_field";
-          H.a_input_type `Search;
-          H.a_placeholder "\xf0\x9f\x94\x8d" (* U+1F50D magnifying glass *);
-          H.a_list student_tags_list_id;
-          H.a_oninput (fun _ev -> set_student_filtering (); true);
-        ] ();
+        filter_input "student_search_field"
+          student_tags_list_id set_student_filtering;
         H.div ~a:[H.a_class ["filler_h"]] [];
         H.label ~a:[H.a_label_for "student_sort"]
           [H.pcdata [%i"Sort by"]];
@@ -470,6 +535,7 @@ let teacher_tab token _select _params () =
       H.div ~a:[H.a_id "student_controls"] [
         tag_input;
         H.button ~a:[
+          H.a_class ["addremove"];
           H.a_onclick (fun _ev ->
               add_student_tags
                 (List.filter ((<>) "")
@@ -477,6 +543,7 @@ let teacher_tab token _select _params () =
               true)
         ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
         H.button ~a:[
+          H.a_class ["addremove"];
           H.a_onclick (fun _ev ->
               remove_student_tags
                 (List.filter ((<>) "")
@@ -994,7 +1061,8 @@ let teacher_tab token _select _params () =
       (Manip.replaceChildren status_text_div [H.pcdata [%i"Unsaved changes"]];
        Manip.addClass status_text_div "warning")
   end;
-  toggle_selected_exercises := begin fun ?force ids ->
+  toggle_selected_exercises := begin
+    fun ?force ?(update = force=None) ids ->
     Lwt.async @@ fun () ->
     let ids, onoff = match force with
       | Some set -> ids, set
@@ -1002,7 +1070,9 @@ let teacher_tab token _select _params () =
           let ids =
             List.filter (fun id ->
                 match Manip.by_id (exercise_line_id id) with
-                | Some elt -> not (Manip.hasClass elt "disabled")
+                | Some elt ->
+                    not (Manip.hasClass elt "disabled") &&
+                    not (Manip.hasClass elt "exercise_hidden")
                 | None -> false)
               ids
           in
@@ -1013,7 +1083,7 @@ let teacher_tab token _select _params () =
      | None -> ()
      | Some aid ->
          set_assignment aid ~exos:(SSet.of_list (htbl_keys selected_exercises)));
-    if force = None then update_disabled_both ();
+    if update then update_disabled_both ();
     Lwt.return_unit
   end;
   toggle_selected_students := begin

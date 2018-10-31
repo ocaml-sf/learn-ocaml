@@ -433,6 +433,9 @@ module Manip = struct
     let onchange_select elt f =
       let elt = get_elt_select "Ev.onchange_select" elt in
       elt##.onchange := (bool_cb f)
+    let oninput elt f =
+      let elt = get_elt_input "Ev.oninput" elt in
+      elt##.oninput := (bool_cb f)
   end
 
   module Attr = struct

@@ -227,7 +227,7 @@ td.student-progression {
     outline-offset: 0px;
 }
 
-.student_hidden {
+.student_hidden, .exercise_hidden {
     display: none;
 }
 
@@ -243,8 +243,8 @@ td.student-progression {
     width: 40px;
 }
 
-#students_filter_box label,
-#students_filter_box select {
+.filter_box label,
+#learnocaml-main-teacher select {
   height: 22px;
   font-size: 14px;
   vertical-align: middle;
@@ -257,7 +257,8 @@ td.student-progression {
   flex: auto;
 }
 
-#students_filter_box {
+#students_filter_box,
+#exercises_filter_box {
     height: 24px;
     font-size: 16px;
     margin: 0 6px;
@@ -266,7 +267,8 @@ td.student-progression {
     flex-shrink: 0;
 }
 
-#students_pane input {
+#students_pane input,
+#exercises_pane input {
     height: 24px;
     margin: 0 1px;
     border: 1px solid #aaa;
@@ -274,7 +276,7 @@ td.student-progression {
     width: 140px;
 }
 
-#students_pane button {
+button.addremove {
     padding: 1px;
     margin: 0 1px;
     width: 24px;
