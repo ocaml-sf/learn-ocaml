@@ -453,19 +453,9 @@ module Exercise = struct
 
   end
 
-  module Skill = struct
-
-    type skill = string
-
-    type t = (id list) SMap.t
-
-    let enc = SMap.enc (Json_encoding.(list string))
-
-  end
-
   module Status = struct
 
-    type tag = string
+    type skill = [`Plus | `Minus] * string
 
     type status =
       | Open
@@ -479,7 +469,8 @@ module Exercise = struct
 
     type t = {
       id: id;
-      tags: tag list;
+      skills_prereq: skill list;
+      skills_focus: skill list;
       assignments: assignments;
     }
 
@@ -505,6 +496,29 @@ module Exercise = struct
          else `Deadline (a.stop -. t)
       | Open -> `Open
       | Closed -> `Closed
+
+    let get_skills ~base skills =
+      SSet.elements @@
+      List.fold_left (fun acc (op, sk) ->
+          match op with
+          | `Plus -> SSet.add sk acc
+          | `Minus -> SSet.remove sk acc)
+        (SSet.of_list base) skills
+
+    let make_skills ~base current =
+       let base = SSet.of_list base in
+       let current = SSet.of_list current in
+       SSet.fold (fun sk acc -> (`Plus, sk) :: acc)
+         (SSet.diff current base) @@
+       SSet.fold (fun sk acc -> (`Minus, sk) :: acc)
+         (SSet.diff base current) @@
+       []
+
+    let skills_prereq meta status =
+      get_skills ~base:meta.Meta.requirements status.skills_prereq
+
+    let skills_focus meta status =
+      get_skills ~base:meta.Meta.focus status.skills_focus
 
     module STM = Map.Make(struct
         type t = status
@@ -533,12 +547,30 @@ module Exercise = struct
       let id = ancestor.id in
       if id <> theirs.id || id <> ours.id then
         invalid_arg "three_way_merge";
-      let tags =
-        SSet.merge3
-          ~ancestor:(SSet.of_list ancestor.tags)
-          ~theirs:(SSet.of_list theirs.tags)
-          ~ours:(SSet.of_list ours.tags)
-        |> SSet.elements
+      let skills_merge3 field =
+        let aux filter =
+          SSet.merge3
+            ~ancestor:(filter ancestor)
+            ~theirs:(filter theirs)
+            ~ours:(filter ours)
+          |> SSet.elements
+        in
+        List.map (fun sk -> `Plus, sk)
+          (aux (fun a ->
+               List.fold_left (fun acc -> function
+                   |`Plus, sk -> SSet.add sk acc
+                   | _ -> acc) SSet.empty (field a))) @
+        List.map (fun sk -> `Minus, sk)
+          (aux (fun a ->
+               List.fold_left (fun acc -> function
+                   |`Minus, sk -> SSet.add sk acc
+                   | _ -> acc) SSet.empty (field a)))
+      in
+      let skills_prereq =
+        skills_merge3 (fun a -> a.skills_prereq)
+      in
+      let skills_focus =
+        skills_merge3 (fun a -> a.skills_focus)
       in
       let default =
         if ours.assignments.default <> ancestor.assignments.default
@@ -572,45 +604,13 @@ module Exercise = struct
           theirs.assignments.token_map
           token_map
       in
-      { id; tags; assignments = { default; token_map } }
-
-    (* let make_status tokens default *)
-
-    (* let exists_assignment a pred =
-     *   Token.Map.exists pred a.token_map ||
-     *   match a.default with
-     *   | None -> false
-     *   | Some df -> *)
-
-    (* let fold_over_assignments a f init =
-     *   Token.Map.fold f a.token_map init *)
-
-    (* let token_map_of_assignments a =
-     *   a.token_map *)
+      { id;
+        skills_prereq;
+        skills_focus;
+        assignments = { default; token_map } }
 
     let make_assignments token_map default =
       { token_map; default }
-
-    (* let is_token_eligible _ _ =
-     *   true
-     *
-     * let default_assignment a =
-     *   a.default_assignment
-     *
-     * let assignment_for_token a _ =
-     *   a.default_assignment *)
-
-    (* let consider_token_for_assignment a t =
-     *   if is_token_eligible a t then
-     *     let assignment = assignment_for_token a t in
-     *     Some { a with token_map = Token.Map.add t assignment a.token_map }
-     *   else
-     *     None
-     *
-     * type status =
-     *   | Open
-     *   | Closed
-     *   | Assigned of assignments *)
 
     let enc =
       let status_enc =
@@ -643,74 +643,32 @@ module Exercise = struct
           (J.dft "default" status_enc empty_assignments.default)
           (J.dft "token_map" (J.assoc status_enc) [])
       in
-      enc_check_version_2 @@
-      J.conv
-        (fun t -> t.id, t.tags, t.assignments)
-        (fun (id, tags, assignments) ->
-           {id; tags; assignments})
-      @@
-      J.obj3
-        (J.req "id" J.string)
-        (J.dft "tags" (J.list J.string) [])
-        (J.dft "assignments" assignments_enc empty_assignments)
-
-
-
-(*
-    let enc =
-      let assignments_enc =
-        let token_map_enc =
-          J.conv
-            (fun m ->
-              Token.Map.bindings m |> List.map (fun (tok, a) ->
-                                          Token.to_string tok,
-                                          (a.start, a.stop)))
-            (List.fold_left (fun acc (tok, (start, stop)) ->
-                 Token.Map.add (Token.parse tok) {start; stop} acc)
-               Token.Map.empty)
-            (J.assoc
-               (J.obj2
-                  (J.req "start" J.float)
-                  (J.req "stop" J.float)))
-        in
-        let assignment_enc =
-          J.conv
-            (fun a -> (a.start, a.stop))
-            (fun (start, stop) -> { start; stop })
-            (J.obj2
-               (J.req "start" J.float)
-               (J.req "stop" J.float))
-        in
-        J.conv
-          (fun a -> (a.token_map, a.default_assignment))
-          (fun (t, d) -> { token_map = t; default_assignment = d})
-          (J.obj2
-             (J.req "token_map" token_map_enc)
-             (J.req "default_assignment" assignment_enc))
-      in
-      let status_enc =
+      let skill_enc =
         J.union [
-          J.case (J.constant "open")
-            (function Open -> Some () | _ -> None) (fun () -> Open);
-          J.case (J.constant "closed")
-            (function Closed -> Some () | _ -> None) (fun () -> Closed);
-          J.case (J.obj1 (J.req "assigned" assignments_enc))
-            (function Assigned a -> Some a | _ -> None) (fun a -> Assigned a);
+          J.case (J.obj1 (J.req "plus" J.string))
+            (function `Plus, sk -> Some sk | _ -> None)
+            (fun sk -> `Plus, sk);
+          J.case (J.obj1 (J.req "minus" J.string))
+            (function `Minus, sk -> Some sk | _ -> None)
+            (fun sk -> `Minus, sk);
         ]
       in
+      enc_check_version_2 @@
       J.conv
-        (fun t -> t.id, t.tags, t.status)
-        (fun (id, tags, status) ->
-           {id; tags; status})
+        (fun t -> t.id, t.skills_prereq, t.skills_focus, t.assignments)
+        (fun (id, skills_prereq, skills_focus, assignments) ->
+           {id; skills_prereq; skills_focus; assignments})
       @@
-      J.obj3
+      J.obj4
         (J.req "id" J.string)
-        (J.dft "tags" (J.list J.string) [])
-        (J.dft "status" status_enc Open)
-*)
+        (J.dft "skills_prereq" (J.list skill_enc) [])
+        (J.dft "skills_focus" (J.list skill_enc) [])
+        (J.dft "assignments" assignments_enc empty_assignments)
+
     let default id = {
       id;
-      tags = [];
+      skills_prereq = [];
+      skills_focus = [];
       assignments = {
         token_map = Token.Map.empty;
         default = Open;
@@ -790,13 +748,46 @@ module Exercise = struct
 
     let find_opt t id = try Some (find t id) with Not_found -> None
 
+    let rec map_exercises f = function
+      | Groups gs ->
+          Groups
+            (List.map (fun (id, (g: group)) ->
+                 (id, {g with contents = map_exercises f g.contents}))
+                gs)
+      | Exercises l ->
+          Exercises
+            (List.map (function
+                 | (id, Some ex) -> (id, Some (f id ex))
+                 | x -> x)
+                l)
+
+    let rec mapk_exercises f t k =
+      let rec mapk_list acc f l k = match l with
+        | x::r -> f x (fun y -> mapk_list (y::acc) f r @@ k)
+        | [] -> List.rev acc |> k
+      in
+      match t with
+      | Groups gs ->
+          mapk_list [] (fun (id, (g: group)) k ->
+              mapk_exercises f g.contents
+              @@ fun contents -> (id, {g with contents}) |> k)
+            gs
+          @@ fun gs -> Groups gs |> k
+      | Exercises l ->
+          mapk_list [] (fun e k -> match e with
+              | (id, Some ex) ->
+                  f id ex @@ fun ex -> (id, Some ex) |> k
+              | x -> x |> k)
+            l
+          @@ fun l -> Exercises l |> k
+
     let rec fold_exercises f acc = function
       | Groups gs ->
           List.fold_left
             (fun acc (_, (g: group)) -> fold_exercises f acc g.contents)
             acc gs
       | Exercises l ->
-          List.fold_left (fun acc ->function
+          List.fold_left (fun acc -> function
               | (id, Some ex) -> f acc id ex
               | _ -> acc)
             acc l

@@ -43,14 +43,6 @@ let teacher_tab token _select _params () =
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
   in
-  let tag_div tag =
-    let color =
-      Printf.sprintf "#%06x" ((Hashtbl.hash tag lor 0x808080) land 0xffffff)
-    in
-    H.span ~a:[H.a_class ["tag"];
-               H.a_style ("background-color: "^color)]
-      [H.pcdata tag]
-  in
   let htbl_keys t = Hashtbl.fold (fun k _ acc -> k::acc) t [] in
   let elt e =
     Js.Opt.case
@@ -178,6 +170,8 @@ let teacher_tab token _select _params () =
               (if exercise_changed_status id then ["changed"] else []) @
               (if Hashtbl.mem selected_exercises id then ["selected"] else [])
             in
+            let skills_prereq = ES.skills_prereq meta st in
+            let skills_focus = ES.skills_focus meta st in
             H.tr ~a:[
               H.a_id hid;
               H.a_class ("exercise_line" :: classes);
@@ -192,7 +186,14 @@ let teacher_tab token _select _params () =
                 [ H.pcdata meta.Exercise.Meta.title ];
               H.td (List.map H.pcdata meta.Exercise.Meta.focus);
               H.td [stars_div meta.Exercise.Meta.stars];
-              H.td (List.map tag_div st.ES.tags);
+              H.td ~a:[H.a_class ["skills-prereq"]]
+                (List.map tag_span skills_prereq @
+                 if skills_prereq <> [] || skills_focus <> []
+                 then [H.pcdata "\xe2\x87\xa2"]
+                 (* U+21E2, rightwards dashed arrow *)
+                 else []);
+              H.td ~a:[H.a_class ["skills-focus"]]
+                (List.map tag_span skills_focus);
               H.td [
                 let cls, text =
                   if Token.Map.is_empty ES.(st.assignments.token_map) then
@@ -328,7 +329,7 @@ let teacher_tab token _select _params () =
             H.td (match st.Student.nickname with
                 | Some n -> [H.pcdata n]
                 | _ -> []);
-            H.td (List.map tag_div (SSet.elements st.Student.tags));
+            H.td (List.map tag_span (SSet.elements st.Student.tags));
             try find_component (student_progression_id st.Student.token)
             with Failure _ ->
               H.td ~a:[H.a_id (student_progression_id st.Student.token);

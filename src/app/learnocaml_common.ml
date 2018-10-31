@@ -657,3 +657,11 @@ let date ?(time=false) t =
       (Js.to_string (if time then date##toLocaleString
                      else date##toLocaleDateString))
   ]
+
+let tag_span tag =
+  let color =
+    Printf.sprintf "#%06x" ((Hashtbl.hash tag lor 0x808080) land 0xffffff)
+  in
+  H.span ~a:[H.a_class ["tag"];
+             H.a_style ("background-color: "^color)]
+    [H.pcdata tag]

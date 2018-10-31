@@ -152,3 +152,5 @@ val grade_color: int option -> string
 val string_of_date: ?time:bool -> float -> string
 
 val date: ?time:bool -> float -> [> Html_types.time ] Tyxml_js.Html5.elt
+
+val tag_span: string -> [> Html_types.span ] Tyxml_js.Html5.elt

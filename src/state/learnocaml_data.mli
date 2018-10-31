@@ -161,19 +161,9 @@ module Exercise: sig
 
   end
 
-  module Skill : sig
-
-    type skill = string
-
-    type t = (id list) SMap.t
-
-    val enc : t Json_encoding.encoding
-
-  end
-
   module Status: sig
 
-    type tag = string
+    type skill
 
     type status =
       | Open
@@ -187,7 +177,8 @@ module Exercise: sig
 
     type t = {
       id: id;
-      tags: tag list;
+      skills_prereq: skill list;
+      skills_focus: skill list;
       assignments: assignments;
     }
 
@@ -205,6 +196,20 @@ module Exercise: sig
 
     val by_status:
       Token.Set.t -> assignments -> (status * Token.Set.t) list
+
+    (** Computes the current set of skills from the base list (from Meta.t),
+        using the mutable changes in the Status.skill list. E.g. {[
+          get_skills ~base:meta.Meta.requirements st.skills_prereq
+        ]} *)
+    val get_skills: base:string list -> skill list -> string list
+
+    val skills_prereq: Meta.t -> t -> string list
+
+    val skills_focus: Meta.t -> t -> string list
+
+    (** Generates a skill list that can be saved, such that
+        {[get_skills ~base (make_skills ~base l) = l]} *)
+    val make_skills: base:string list -> string list -> skill list
 
     (** Merges all changes from [theirs] and [ours], based on [ancestor]. [ours]
         is privileged in case of any conflict (e.g. different affectation of the
@@ -234,9 +239,17 @@ module Exercise: sig
 
     val find_opt: t -> id -> Meta.t option
 
+    val map_exercises: (id -> Meta.t -> Meta.t) -> t -> t
+
     val fold_exercises: ('a -> id -> Meta.t -> 'a) -> 'a -> t -> 'a
 
     val filter: (id -> Meta.t -> bool) -> t -> t
+
+    (** CPS version of [map_exercises] *)
+    val mapk_exercises:
+      (id -> Meta.t -> (Meta.t -> 'a) -> 'a) ->
+      t ->
+      (t -> 'a) -> 'a
 
     (** CPS version of [filter] *)
     val filterk: (id -> Meta.t -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a

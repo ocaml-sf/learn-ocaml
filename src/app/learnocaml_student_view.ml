@@ -128,9 +128,13 @@ let gather_assignments student_token index status =
       dates,
       List.rev @@ Exercise.Index.fold_exercises (fun l id meta ->
           if SSet.mem id ids then
+            let st = SMap.find_opt id status_map in
             (id, meta,
-             try (SMap.find id status_map).Exercise.Status.tags
-             with Not_found -> [])::l
+             (match st with None -> [] | Some st ->
+                 Exercise.Status.skills_prereq meta st),
+             (match st with None -> [] | Some st ->
+                 Exercise.Status.skills_focus meta st))
+            :: l
           else l)
         [] index)
     assgs
@@ -139,7 +143,7 @@ let exercises_tab assignments answers =
   let grade_sty grade =
     H.a_style ("background-color:"^grade_color grade)
   in
-  let exercise_line (id, meta, _) ans =
+  let exercise_line (id, meta, _, _) ans =
     let grade, mtime = match ans with
       | None -> None, None
       | Some Answer.{grade; mtime; _} -> grade, Some mtime
@@ -175,7 +179,7 @@ let exercises_tab assignments answers =
     let now = gettimeofday () in
     List.map (fun (assg, ids) ->
         let states =
-          List.map (fun (id, _, _) -> SMap.find_opt id answers) ids
+          List.map (fun (id, _, _, _) -> SMap.find_opt id answers) ids
         in
         let avg_grade, mtime =
           let tot, n, mtime =
@@ -234,67 +238,88 @@ let stats_tab assignments answers =
     with Not_found ->
       SMap.add key (n, 1) m
   in
-  let total_grade, n_attempted, n_total, by_tag =
+  let total_grade, n_attempted, n_total, by_prereq, by_focus =
     List.fold_left
       (fun acc (_dates, exercises) ->
          List.fold_left
            (fun
-             (total_grade, n_attempted, n_total, by_tag)
-             (id, _meta, tags) ->
+             (total_grade, n_attempted, n_total, by_prereq, by_focus)
+             (id, _meta, prereq, focus) ->
              match SMap.find_opt id answers with
              | None ->
                  (total_grade, n_attempted, n_total + 1,
-                  List.fold_left (smap_add 0) by_tag tags)
+                  List.fold_left (smap_add 0) by_prereq prereq,
+                  List.fold_left (smap_add 0) by_focus focus)
              | Some a ->
                  let g = match a.Answer.grade with None -> 0 | Some g -> g in
                  total_grade + g,
                  n_attempted + 1,
                  n_total + 1,
-                 List.fold_left (smap_add g) by_tag tags)
+                 List.fold_left (smap_add g) by_prereq prereq,
+                 List.fold_left (smap_add g) by_focus focus)
            acc exercises)
-      (0, 0, 0, SMap.empty)
+      (0, 0, 0, SMap.empty, SMap.empty)
       assignments
   in
-  let item ?(indent=0) lbl title v =
+  let item ?(indent=0) ?(fmt = H.pcdata) lbl title v =
     H.tr ~a:[H.a_title title] [
       H.td ~a:[H.a_class ["stats-label"];
                H.a_style ("margin-left:"^string_of_int (indent * 8)^"px")]
-        [H.pcdata lbl];
+        [fmt lbl];
       H.td v
     ]
   in
   let pct x y =
-    let r =
-      if y = 0 then None
-      else Some (100. *. float_of_int x /. float_of_int y) in
-    let color =
-      grade_color (match r with None -> None | Some r -> Some (int_of_float r))
+    let cls = H.a_class ["grade"; "stats-pct"] in
+    if y = 0 then
+      H.div ~a:[cls; H.a_style ("background-color:"^grade_color None)]
+        [H.pcdata "--%"]
+    else
+    let r = 100. *. float_of_int x /. float_of_int y in
+    let color = grade_color (Some (int_of_float r)) in
+    let background =
+      Printf.sprintf "background:linear-gradient(to right,\
+                      %s 0%%,%s %.0f%%,transparent %.0f%%)"
+        color color r r
     in
-    H.span ~a:[H.a_class ["grade"; "stats-pct"];
-               H.a_style ("background-color:"^color)]
-      [H.pcdata (match r with
-           | None -> "--%"
-           | Some r -> Printf.sprintf "%02.1f%%" r)]
+    H.div ~a:[H.a_class ["grade"; "stats-pct"];
+               H.a_style background]
+      [H.pcdata (Printf.sprintf "%02.1f%%" r)]
   in [
     H.h3 [H.pcdata [%i"Student stats"]];
-    H.table ~a:[H.a_class ["student-stats"]] ([
-      item [%i"average"]
-        [%i"The average grade over all accessible exercises"]
-        [pct total_grade (100 * n_total)];
-      item [%i"attempted"]
-        [%i"The amount of accessible exercises that have been attempted"]
-        [pct n_attempted n_total];
-      item [%i"success"]
-        [%i"The average grade over attempted exercises"]
-        [pct total_grade (100 * n_attempted)];
-      H.tr [H.th ~a:[H.a_colspan 2] [H.pcdata [%i"success by tag"]]];
-    ] @
-        List.map (fun (tag, (tot, count)) ->
-            item ~indent:1 tag
-              ([%i"Success over exercises having tag "]^tag)
-              [pct tot count];
-          )
-          (SMap.bindings by_tag));
+    H.table ~a:[H.a_class ["student-stats"]] begin
+      [
+        item [%i"completion"]
+          [%i"The average grade over all accessible exercises"]
+          [pct total_grade (100 * n_total)];
+        item [%i"attempted"]
+          [%i"The amount of accessible exercises that have been attempted"]
+          [pct n_attempted n_total];
+        item [%i"success"]
+          [%i"The average grade over attempted exercises"]
+          [pct total_grade (100 * n_attempted)];
+      ]
+      @
+      (if SMap.is_empty by_focus then [] else
+       H.tr [H.th ~a:[H.a_colspan 2]
+               [H.pcdata [%i"success over exercises training skills"]]] ::
+       List.map (fun (sk, (tot, count)) ->
+           item ~indent:1 ~fmt:tag_span sk
+             ([%i"Success over exercises training skill "]^sk)
+             [pct tot count];
+         )
+         (SMap.bindings by_focus))
+      @
+      (if SMap.is_empty by_prereq then [] else
+       H.tr [H.th ~a:[H.a_colspan 2]
+               [H.pcdata [%i"success over exercises requiring skills"]]] ::
+       List.map (fun (sk, (tot, count)) ->
+           item ~indent:1 ~fmt:tag_span sk
+             ([%i"Success over exercises requiring skill "]^sk)
+             [pct tot count];
+         )
+         (SMap.bindings by_prereq))
+    end
   ]
 
 let init_exercises_and_stats_tabs teacher_token student_token answers =

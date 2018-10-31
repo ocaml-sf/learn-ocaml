@@ -122,64 +122,14 @@ module Exercise = struct
         read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
       ))
 
-  let focus_index =
-    ref (lazy (
-        read_static_file Learnocaml_index.focus_path Exercise.Skill.enc
-      ))
-  let requirements_index =
-    ref (lazy (
-        read_static_file Learnocaml_index.requirements_path Exercise.Skill.enc
-      ))
-
-  module Meta = struct
+  module Meta0 = struct
     include Exercise.Meta
 
     let get id =
       Lazy.force !index >|= fun index -> Exercise.Index.find index id
   end
 
-  module Skill = struct
-    include Exercise.Skill
-
-    let get_focus_index () =
-      Lazy.force !focus_index
-    let get_requirements_index () =
-      Lazy.force !requirements_index
-
-    let reload_focus_index () =
-      read_static_file Learnocaml_index.focus_path Exercise.Skill.enc
-      >|= fun i -> focus_index := lazy (Lwt.return i)
-    let reload_requirements_index () =
-      read_static_file Learnocaml_index.requirements_path Exercise.Skill.enc
-      >|= fun i -> requirements_index := lazy (Lwt.return i)
-
-    let get_focused id =
-      Lazy.force !focus_index >|= fun focus_index ->
-      match SMap.find_opt id focus_index with
-      | None -> []
-      | Some l -> l
-
-    let get_required id =
-      Lazy.force !requirements_index >|= fun requirements_index ->
-      match SMap.find_opt id requirements_index with
-      | None -> []
-      | Some l -> l
-  end
-
-  module Index = struct
-    include Exercise.Index
-
-
-    let get () = Lazy.force !index
-
-    let reload () =
-      read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
-      >|= fun i -> index := lazy (Lwt.return i)
-
-  end
-
   module Status = struct
-
     include Exercise.Status
 
     let store_file () = Filename.concat !sync_dir "exercises.json"
@@ -205,7 +155,7 @@ module Exercise = struct
     let get id =
       Lazy.force tbl >>= fun tbl ->
       try Lwt.return (Hashtbl.find tbl id)
-      with Not_found -> Meta.get id >|= fun _ -> default id
+      with Not_found -> Meta0.get id >|= fun _ -> default id
 
     let set =
       let mutex = Lwt_mutex.create () in
@@ -231,10 +181,41 @@ module Exercise = struct
 
   end
 
+  module Meta = struct
+    include Meta0
+
+    let get id =
+      get id >>= fun m ->
+      Status.get id >|= fun s ->
+      { m with
+        requirements = Status.skills_prereq m s;
+        focus = Status.skills_focus m s }
+
+  end
+
+  module Index = struct
+    include Exercise.Index
+
+
+    let get () =
+      Lazy.force !index >>= fun index ->
+      Exercise.Index.mapk_exercises (fun id m k ->
+          Status.get id >>= fun s ->
+          { m with Meta.requirements = Status.skills_prereq m s;
+                   Meta.focus = Status.skills_focus m s }
+          |> k)
+        index
+        Lwt.return
+
+    let reload () =
+      read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc
+      >|= fun i -> index := lazy (Lwt.return i)
+
+  end
+
   include (Exercise: module type of struct include Exercise end
            with type id := id
             and module Meta := Meta
-            and module Skill := Skill
             and module Status := Status
             and module Index := Index)
 
