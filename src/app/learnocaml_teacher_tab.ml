@@ -28,7 +28,6 @@ let filter_input input_id list_id apply_fun =
     H.input ~a:[
       H.a_id input_id;
       H.a_input_type `Search;
-      H.a_placeholder "\xf0\x9f\x94\x8d" (* U+1F50D magnifying glass *);
       H.a_list list_id;
     ] ()
   in
@@ -38,7 +37,44 @@ let filter_input input_id list_id apply_fun =
   H.div ~a:[H.a_class ["filter_input"]] [
     H.datalist ~a:[H.a_id list_id] ();
     input_field;
+    H.span ~a:[
+      H.a_class ["filter_reset_cross"];
+      H.a_onclick (fun _ ->
+          (Tyxml_js.To_dom.of_input input_field)##.value := Js.string "";
+          apply_fun "";
+          true);
+    ]
+      [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
   ]
+
+let tag_addremove list_id placeholder add_fun remove_fun =
+  let tag_input =
+    H.input ~a:[
+      H.a_input_type `Text;
+      H.a_list list_id;
+      H.a_placeholder placeholder;
+    ] ()
+  in
+  let get_input_list () =
+    List.filter ((<>) "")
+      (String.split_on_char ' ' (Manip.value tag_input))
+  in
+  H.div [
+    tag_input;
+    H.button ~a:[
+      H.a_class ["addremove"];
+      H.a_onclick (fun _ev ->
+          add_fun (get_input_list ());
+          true)
+    ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
+    H.button ~a:[
+      H.a_class ["addremove"];
+      H.a_onclick (fun _ev ->
+          remove_fun (get_input_list ());
+          true);
+    ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
+  ]
+
 
 let teacher_tab token _select _params () =
   let action_new_token () =
@@ -202,8 +238,6 @@ let teacher_tab token _select _params () =
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
                 [ H.pcdata meta.Exercise.Meta.title ];
-              H.td (List.map H.pcdata meta.Exercise.Meta.focus);
-              H.td [stars_div meta.Exercise.Meta.stars];
               H.td ~a:[H.a_class ["skills-prereq"]]
                 (List.map tag_span skills_prereq @
                  if skills_prereq <> [] || skills_focus <> []
@@ -212,6 +246,7 @@ let teacher_tab token _select _params () =
                  else []);
               H.td ~a:[H.a_class ["skills-focus"]]
                 (List.map tag_span skills_focus);
+              H.td [stars_div meta.Exercise.Meta.stars];
               H.td [
                 let cls, text =
                   if Token.Map.is_empty ES.(st.assignments.token_map) then
@@ -236,20 +271,21 @@ let teacher_tab token _select _params () =
           new%js Js.regExp_withFlags (Js.string s) (Js.string "i"))
         keywords
     in
-    let matches std =
+    let matches id meta =
+      let st = get_status id in
       (List.for_all (fun re ->
            let strmatch = function
              | None -> false
              | Some s -> Js.to_bool (re##test (Js.string s))
            in
-           strmatch std.Exercise.Meta.id ||
-           strmatch (Some std.Exercise.Meta.title) ||
-           strmatch std.Exercise.Meta.short_description)
+           strmatch meta.Exercise.Meta.id ||
+           strmatch (Some meta.Exercise.Meta.title) ||
+           strmatch meta.Exercise.Meta.short_description)
           res)
       &&
       List.for_all (fun skill ->
-          List.mem skill std.Exercise.Meta.focus ||
-          List.mem skill std.Exercise.Meta.requirements)
+          List.mem skill (ES.skills_focus meta st) ||
+          List.mem skill (ES.skills_prereq meta st))
         skills
     in
     let rec hide = function
@@ -265,7 +301,7 @@ let teacher_tab token _select _params () =
           List.fold_left (fun (empty, hidden) (id, ex) ->
               let elt = find_component (exercise_line_id id) in
               match ex with
-              | Some ex when matches ex ->
+              | Some ex when matches id ex ->
                   Manip.removeClass elt "exercise_hidden";
                   false, hidden
               | _ ->
@@ -280,7 +316,7 @@ let teacher_tab token _select _params () =
   let exercises_list_div =
     H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
   in
-  let exercise_tags_list_id = "exercise_tags_list" in
+  let exercise_skills_list_id = "exercise_skills_list" in
   let exercises_div =
     let legend =
       H.legend ~a:[
@@ -290,10 +326,11 @@ let teacher_tab token _select _params () =
       ] [H.pcdata [%i"Exercises"]; H.pcdata " \xe2\x98\x90" (* U+2610 *)]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
-      H.div ~a:[H.a_class ["exercises_filter_box"]]
-        [filter_input "exercises_search_field"
-           exercise_tags_list_id set_exercise_filtering];
-      H.fieldset ~legend [ exercises_list_div ]
+      H.div ~a:[H.a_id "exercises_filter_box"] [
+        H.datalist ~a:[H.a_id exercise_skills_list_id] ();
+        filter_input "exercises_search_field"
+          exercise_skills_list_id set_exercise_filtering];
+      H.fieldset ~legend [ exercises_list_div ];
     ]
   in
   let students_list_div =
@@ -525,84 +562,38 @@ let teacher_tab token _select _params () =
         ]
       ];
       H.fieldset ~legend [ students_list_div ];
-      let tag_input =
-        H.input ~a:[
-          H.a_input_type `Text;
-          H.a_list student_tags_list_id;
-          H.a_placeholder [%i"tags"];
-        ] ()
-      in
       H.div ~a:[H.a_id "student_controls"] [
-        tag_input;
-        H.button ~a:[
-          H.a_class ["addremove"];
-          H.a_onclick (fun _ev ->
-              add_student_tags
-                (List.filter ((<>) "")
-                   (String.split_on_char ' ' (Manip.value tag_input)));
-              true)
-        ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
-        H.button ~a:[
-          H.a_class ["addremove"];
-          H.a_onclick (fun _ev ->
-              remove_student_tags
-                (List.filter ((<>) "")
-                   (String.split_on_char ' ' (Manip.value tag_input)));
-              true);
-        ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
+        tag_addremove student_tags_list_id [%i"tags"]
+          add_student_tags remove_student_tags;
       ]
     ]
   in
   let fill_exercises_pane () =
     let table = List.rev (mk_table 0 [] get_status !exercises_index) in
     Manip.replaceChildren exercises_list_div [H.table table];
+    all_exercise_skills :=
+      Exercise.Index.fold_exercises (fun acc id meta ->
+          let st = get_status id in
+          let acc =
+            List.fold_left (fun acc sk -> SSet.add sk acc)
+              acc (ES.skills_prereq meta st)
+          in
+          List.fold_left (fun acc sk -> SSet.add sk acc)
+            acc (ES.skills_focus meta st))
+        SSet.empty
+        !exercises_index;
+    Manip.replaceSelf (find_component exercise_skills_list_id)
+      (H.datalist ~a:[H.a_id exercise_skills_list_id] ~children:(
+          `Options
+            (SSet.fold (fun skill acc -> H.option (H.pcdata skill) :: acc)
+               !all_exercise_skills []
+            ))
+          ());
+    match Manip.value (find_component "exercises_search_field") with
+    | "" -> ()
+    | s -> set_exercise_filtering s
   in
 
-(*
-  let skills_list_div =
-    H.div ~a:[H.a_id "focus_list"] [H.pcdata [%i"Loading..."]]
-  in
-  let skills_div =
-    let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            (* TODO: Select all skills and derive a set of exercises *)
-            true
-          );
-      ] [H.pcdata [%i"Skills"]]
-    in
-    H.div ~a:[H.a_id "skills_pane"; H.a_class ["learnocaml_pane"]] [
-      H.div ~a:[H.a_id "skills_filter_box"] [
-        (* TODO: filtering tools (if necessary for skills?) *)
-      ];
-      H.fieldset ~legend [
-        skills_list_div;
-      ];
-    ]
-  in
-  let skill_line_id id = "skill_line_"^id in
-  let skill_line id exs =
-    H.tr ~a:[
-      H.a_id (skill_line_id id);
-      H.a_class ["skill_line"];
-    ] [ H.td ~a:[ H.a_class [ "skill_name_td" ] ] [ H.pcdata id ] ;
-        H.td (List.map H.pcdata exs)
-      ]
-  in
-  let fill_skills_pane () =
-    (* Having one table for requirements and focus allows a better handling
-       of the indentation *)
-    let requirements =
-      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Requirements"]]] ::
-      SMap.fold (fun id exs acc ->
-          skill_line id exs :: acc) (snd !skills_index) [] in
-    let skills =
-      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Focus"]]] ::
-      SMap.fold (fun id exs acc ->
-          skill_line id exs :: acc) (fst !skills_index) requirements in
-    Manip.replaceChildren skills_list_div [H.table skills]
-  in
-*)
   let assignment_line id =
     let selected = !selected_assignment = Some id in
     let now = gettimeofday () in
@@ -673,7 +664,7 @@ let teacher_tab token _select _params () =
       H.td [H.pcdata n_students];
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
-        [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
+        [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
       (* todo: add common tags *)
     ]
   in
@@ -761,6 +752,47 @@ let teacher_tab token _select _params () =
     [new_assg_line];
     table
   in
+  let change_exercise_skills op of_meta of_status update_status =
+    status_changes :=
+      Hashtbl.fold
+        (fun id () ->
+           let base = of_meta (Exercise.Index.find !exercises_index id) in
+           let st = get_status id in
+           let current = op (ES.get_skills ~base (of_status st)) in
+           SMap.add id (update_status st (ES.make_skills ~base current)))
+        selected_exercises
+        !status_changes;
+    fill_exercises_pane ();
+    !update_changed_status ()
+  in
+  let add_requirements skills =
+    change_exercise_skills
+      (List.rev_append skills)
+      (fun meta -> meta.Exercise.Meta.requirements)
+      (fun st -> st.ES.skills_prereq)
+      (fun st skills_prereq -> {st with ES.skills_prereq})
+  in
+  let remove_requirements skills =
+    change_exercise_skills
+      (List.filter (fun s -> not (List.mem s skills)))
+      (fun meta -> meta.Exercise.Meta.requirements)
+      (fun st -> st.ES.skills_prereq)
+      (fun st skills_prereq -> {st with ES.skills_prereq})
+  in
+  let add_focus skills =
+    change_exercise_skills
+      (List.rev_append skills)
+      (fun meta -> meta.Exercise.Meta.focus)
+      (fun st -> st.ES.skills_focus)
+      (fun st skills_focus -> {st with ES.skills_focus})
+  in
+  let remove_focus skills =
+    change_exercise_skills
+      (List.filter (fun s -> not (List.mem s skills)))
+      (fun meta -> meta.Exercise.Meta.focus)
+      (fun st -> st.ES.skills_focus)
+      (fun st skills_focus -> {st with ES.skills_focus})
+  in
   let open_close_button =
     H.button ~a:[
       H.a_onclick (fun _ ->
@@ -787,13 +819,14 @@ let teacher_tab token _select _params () =
   in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
-      open_close_button
-      (* H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Add assignment"]];
-       * H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Add tag"]];
-       * H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Remove tag"]]; *)
+      open_close_button;
+      H.div ~a:[H.a_class ["filler_h"]] [];
+      tag_addremove exercise_skills_list_id [%i"required skills"]
+        (add_requirements) (remove_requirements);
+      H.div ~a:[H.a_id "skills-arrow"]
+        [H.pcdata "\xe2\x87\xa2"]; (* U+21E2, rightwards dashed arrow *)
+      tag_addremove exercise_skills_list_id [%i"trained skills"]
+        (add_focus) (remove_focus);
     ]
   in
   Manip.appendChild exercises_div exercise_control_div;
@@ -1282,15 +1315,9 @@ let teacher_tab token _select _params () =
   in
   let fetch_exercises =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
-    >|= fun (index, _) -> exercises_index := index
+    >|= fun (index, _) ->
+    exercises_index := index
   in
-  (* let fetch_skills =
-   *   Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
-   *   >>= fun focus ->
-   *   Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
-   *   >|= fun requirements ->
-   *   skills_index := focus, requirements
-   * in *)
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
@@ -1309,7 +1336,16 @@ let teacher_tab token _select _params () =
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
-  Lwt.join [fetch_exercises; (* fetch_skills; *) fetch_stats; fetch_students] >>= fun () ->
+  Lwt.join [fetch_exercises; fetch_stats; fetch_students] >>= fun () ->
+  exercises_index :=
+    Exercise.Index.map_exercises (fun id meta ->
+        let st = get_status id in
+        Exercise.Meta.{ meta with
+          requirements =
+            ES.skills_base ~current:meta.requirements st.ES.skills_prereq;
+          focus =
+            ES.skills_base ~current:meta.focus st.ES.skills_focus; })
+      !exercises_index;
   fill_exercises_pane ();
   (* fill_skills_pane (); *)
   fill_students_pane ();

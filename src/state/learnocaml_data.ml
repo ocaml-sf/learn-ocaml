@@ -505,6 +505,12 @@ module Exercise = struct
           | `Minus -> SSet.remove sk acc)
         (SSet.of_list base) skills
 
+    let skills_base ~current skills =
+      get_skills ~base:current (List.map (function
+          | `Plus, x -> `Minus, x
+          | `Minus, x -> `Plus, x)
+          skills)
+
     let make_skills ~base current =
        let base = SSet.of_list base in
        let current = SSet.of_list current in

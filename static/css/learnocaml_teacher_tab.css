@@ -276,12 +276,339 @@ td.student-progression {
     width: 140px;
 }
 
+.filter_reset_cross {
+        cursor: pointer;
+}
+
+td.student-progression {
+    text-align: right;
+}
+
+.student-progression > div {
+    display: inline-block;
+    height: 1ex;
+    border: 1px solid;
+    border-radius: .3ex;
+    width: 32px;
+    margin: 3px;
+}
+
+.student-progression > div.progr-closed {
+    border-color: #b77;
+    width: 24px;
+}
+.student-progression > div.progr-open {
+    border-color: #8b8;
+    width: 36px;
+}
+.student-progression > div.progr-assigned {
+    border-color: #77b;
+    width: 24px;
+}
+
+/* #students_list td {
+ *     width: min-content;
+ *     width: -moz-min-content;
+ *     width: -webkit-min-content;
+ * }
+ *
+ * #students_list td:last-child {
+ *     width: auto;
+ * } */
+
+.selected {
+    background-color: #9bd /*#58f*/;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+.student_hidden, .exercise_hidden {
+    display: none;
+}
+
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
+}
+
+.filter_box label,
+#learnocaml-main-teacher select {
+  height: 22px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-width: 1px;
+  padding: 2px;
+  margin: 0 3px;
+}
+
+.filler_h {
+  flex: auto;
+}
+
+#students_filter_box,
+#exercises_filter_box {
+    height: 24px;
+    font-size: 16px;
+    margin: 0 6px;
+    display:flex;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+#students_pane input,
+#exercises_pane input {
+    height: 24px;
+    margin: 0 1px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 140px;
+}
+
+.filter_reset_cross {
+        cursor: pointer;
+}
+
+td.student-progression {
+    text-align: right;
+}
+
+.student-progression > div {
+    display: inline-block;
+    height: 1ex;
+    border: 1px solid;
+    border-radius: .3ex;
+    width: 32px;
+    margin: 3px;
+}
+
+.student-progression > div.progr-closed {
+    border-color: #b77;
+    width: 24px;
+}
+.student-progression > div.progr-open {
+    border-color: #8b8;
+    width: 36px;
+}
+.student-progression > div.progr-assigned {
+    border-color: #77b;
+    width: 24px;
+}
+
+/* #students_list td {
+ *     width: min-content;
+ *     width: -moz-min-content;
+ *     width: -webkit-min-content;
+ * }
+ *
+ * #students_list td:last-child {
+ *     width: auto;
+ * } */
+
+.selected {
+    background-color: #9bd /*#58f*/;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+.student_hidden, .exercise_hidden {
+    display: none;
+}
+
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
+}
+
+.filter_box label,
+#learnocaml-main-teacher select {
+  height: 22px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-width: 1px;
+  padding: 2px;
+  margin: 0 3px;
+}
+
+.filler_h {
+  flex: auto;
+}
+
+#students_filter_box,
+#exercises_filter_box {
+    height: 24px;
+    font-size: 16px;
+    margin: 0 6px;
+    display:flex;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+#students_pane input,
+#exercises_pane input {
+    height: 24px;
+    margin: 0 1px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 140px;
+}
+
+.filter_reset_cross {
+        cursor: pointer;
+}
+
+td.student-progression {
+    text-align: right;
+}
+
+.student-progression > div {
+    display: inline-block;
+    height: 1ex;
+    border: 1px solid;
+    border-radius: .3ex;
+    width: 32px;
+    margin: 3px;
+}
+
+.student-progression > div.progr-closed {
+    border-color: #b77;
+    width: 24px;
+}
+.student-progression > div.progr-open {
+    border-color: #8b8;
+    width: 36px;
+}
+.student-progression > div.progr-assigned {
+    border-color: #77b;
+    width: 24px;
+}
+
+/* #students_list td {
+ *     width: min-content;
+ *     width: -moz-min-content;
+ *     width: -webkit-min-content;
+ * }
+ *
+ * #students_list td:last-child {
+ *     width: auto;
+ * } */
+
+.selected {
+    background-color: #9bd /*#58f*/;
+}
+
+.selected:hover {
+    background-color: #bbc;
+}
+
+.changed {
+    outline: 2px dotted #9d9;
+    outline-offset: 0px;
+}
+
+.student_hidden, .exercise_hidden {
+    display: none;
+}
+
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
+}
+
+#exercises_pane .stars > img {
+    width: 40px;
+}
+
+.filter_box label,
+#learnocaml-main-teacher select {
+  height: 22px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-width: 1px;
+  padding: 2px;
+  margin: 0 3px;
+}
+
+.filler_h {
+  flex: auto;
+}
+
+#students_filter_box,
+#exercises_filter_box {
+    height: 24px;
+    font-size: 16px;
+    margin: 0 6px;
+    display:flex;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+#students_pane input,
+#exercises_pane input {
+    height: 24px;
+    margin: 0 1px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    width: 140px;
+}
+.filter_input input {
+    padding-left: 22px;
+    padding-right: 22px;
+}
+.filter_reset_cross {
+    cursor: pointer;
+    width: 16px;
+    position: relative;
+    margin-left: -19px;
+}
+.filter_input::before {
+    position: absolute;
+    margin: 3px;
+    content: "🔍";
+    width: 16px;
+}
+
 button.addremove {
     padding: 1px;
     margin: 0 1px;
     width: 24px;
     height: 24px;
     border-width: 1px;
+}
+
+#exercise_controls {
+    display: flex;
+    flex-direction: row;
 }
 
 #student_controls {
@@ -324,14 +651,11 @@ input.date_future {
     content: "〉";
 }
 
-.skill_title {
-    text-align: left;
-    colspan: 0;
+td.skills-prereq {
+    text-align: right;
 }
-
-.skill_line {
-}
-
-.skill_name_td {
-    padding-left:1em !important;
+#skills-arrow {
+    font-size: 18px;
+    line-height: 24px;
+    margin: 0 5px;
 }

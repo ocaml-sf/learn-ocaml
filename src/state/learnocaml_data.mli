@@ -203,12 +203,21 @@ module Exercise: sig
         ]} *)
     val get_skills: base:string list -> skill list -> string list
 
+    (** The opposite of [get_skills]: retrieves the base from the already
+        updated version and the skill list that has been applied to it. Since the
+        server provides [skills] (= [get_skills meta_base status_skills]), this
+        is useful to recover [meta_base]. *)
+    val skills_base: current:string list -> skill list -> string list
+
     val skills_prereq: Meta.t -> t -> string list
 
     val skills_focus: Meta.t -> t -> string list
 
     (** Generates a skill list that can be saved, such that
-        {[get_skills ~base (make_skills ~base l) = l]} *)
+        {[get_skills ~base (make_skills ~base l) = l]}.
+
+        Remember to call [skills_base] first on the base if you got the
+        skills from the meta returned by the server. *)
     val make_skills: base:string list -> string list -> skill list
 
     (** Merges all changes from [theirs] and [ours], based on [ancestor]. [ours]

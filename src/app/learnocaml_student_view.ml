@@ -306,7 +306,7 @@ let stats_tab assignments answers =
        List.map (fun (sk, (tot, count)) ->
            item ~indent:1 ~fmt:tag_span sk
              ([%i"Success over exercises training skill "]^sk)
-             [pct tot count];
+             [pct tot (100 * count)];
          )
          (SMap.bindings by_focus))
       @
@@ -316,7 +316,7 @@ let stats_tab assignments answers =
        List.map (fun (sk, (tot, count)) ->
            item ~indent:1 ~fmt:tag_span sk
              ([%i"Success over exercises requiring skill "]^sk)
-             [pct tot count];
+             [pct tot (100 * count)];
          )
          (SMap.bindings by_prereq))
     end
