@@ -927,11 +927,16 @@ div#login-overlay > h1 {
     border-radius: 3px;
     box-shadow: 10px 10px 4px 2px rgba(0,0,0,0.2);
     padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
 }
 @media (min-width: 1000px) {
     #login-new, #login-returning {
         width: 30vw;
     }
+}
+.filler_h {
+  flex: auto;
 }
 #login-overlay h4 {
     text-align: center;
@@ -943,30 +948,24 @@ div#login-overlay > h1 {
 }
 #login-new > div, #login-returning > div {
     padding: 20px;
+    display: flex;
+    flex-direction: row;
 }
 #login-new > div > div, #login-returning > div > div {
-    padding: 20px;
-    display: block;
-    float: left;
-    vertical-align: middle;
+  line-height: 30px;
 }
 div#login-overlay input {
-  display: block;
-  float: right;
   border: 1px #fff solid;
   background: #ccc;
   color: #444;
   border-radius: 5px;
   font-size: 16px;
-  line-height: 30px;
   box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
   font-family: 'Inconsolata';
   text-align: center;
-  vertical-align: middle;
+  max-height: 30px;
 }
 div#login-overlay button {
-  display: block;
-  clear: both;
   border: 1px #fff solid;
   background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
   color: #fff;
