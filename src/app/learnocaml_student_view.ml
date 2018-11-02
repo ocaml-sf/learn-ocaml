@@ -96,6 +96,9 @@ let tab_select_signal, select_tab =
 
 let selected_exercise_signal, set_selected_exercise = React.S.create None
 
+let hl_prereq_signal, set_hl_prereq_signal = React.S.create None
+let hl_focus_signal, set_hl_focus_signal = React.S.create None
+
 let gather_assignments student_token index status =
   let status_map =
     List.fold_left (fun m ex -> SMap.add ex.Exercise.Status.id ex m)
@@ -148,30 +151,50 @@ let exercises_tab assignments answers =
       | None -> None, None
       | Some Answer.{grade; mtime; _} -> grade, Some mtime
     in
-    H.tr ~a:[ H.a_id (El.Dyn.exercise_line_id id);
-              H.a_class ["learnocaml-exercise-line"];
-              H.a_onclick (fun _ ->
-                  set_selected_exercise (Some id);
-                  true) ] [
-      H.td ~a:[ H.a_class ["exercise-id"] ] [ H.pcdata id ];
-      H.td ~a:[ H.a_class ["exercise-title"] ]
-        [ H.pcdata meta.Exercise.Meta.title ];
-      H.td ~a:[ H.a_class ["exercise-kind"] ] [
-        H.pcdata (string_of_exercise_kind meta.Exercise.Meta.kind);
-      ];
-      H.td ~a:[ H.a_class ["exercise-stars"] ]
-        [ stars_div meta.Exercise.Meta.stars ];
-      H.td ~a:[ H.a_class ["grade"]; grade_sty grade ] [
-        match grade with
-        | None -> H.pcdata ""
-        | Some g -> H.pcdata (Printf.sprintf "%d%%" g)
-      ];
-      H.td ~a:[ H.a_class ["last-updated"] ] [
-        match mtime with
-        | None -> H.pcdata ""
-        | Some t -> date ~time:true t
-      ];
-    ]
+    let line =
+      H.tr ~a:[ H.a_id (El.Dyn.exercise_line_id id);
+                H.a_class ["learnocaml-exercise-line"];
+                H.a_onclick (fun _ ->
+                    set_selected_exercise (Some id);
+                    true) ] [
+        H.td ~a:[ H.a_class ["exercise-id"] ] [ H.pcdata id ];
+        H.td ~a:[ H.a_class ["exercise-title"] ]
+          [ H.pcdata meta.Exercise.Meta.title ];
+        H.td ~a:[ H.a_class ["exercise-kind"] ] [
+          H.pcdata (string_of_exercise_kind meta.Exercise.Meta.kind);
+        ];
+        H.td ~a:[ H.a_class ["exercise-stars"] ]
+          [ stars_div meta.Exercise.Meta.stars ];
+        H.td ~a:[ H.a_class ["grade"]; grade_sty grade ] [
+          match grade with
+          | None -> H.pcdata ""
+          | Some g -> H.pcdata (Printf.sprintf "%d%%" g)
+        ];
+        H.td ~a:[ H.a_class ["last-updated"] ] [
+          match mtime with
+          | None -> H.pcdata ""
+          | Some t -> date ~time:true t
+        ];
+      ]
+    in
+    let cls = "exercise-highlight" in
+    let prereq_sigs =
+      React.S.map
+        (function
+          | Some sel when List.mem sel meta.Exercise.Meta.requirements ->
+              Manip.addClass line cls
+          | _ -> Manip.removeClass line cls)
+        hl_prereq_signal
+    in
+    let focus_sigs =
+      React.S.map
+        (function
+          | Some sel when List.mem sel meta.Exercise.Meta.focus ->
+              Manip.addClass line cls
+          | _ -> Manip.removeClass line cls)
+        hl_focus_signal
+    in
+    line, (prereq_sigs, focus_sigs)
   in
   let[@warning "-3"] assg_lines =
     (* tyxml_js marks a_scope as deprecated in HTML5, which is wrong: it's
@@ -192,6 +215,9 @@ let exercises_tab assignments answers =
           in
           (if n = 0 then 0. else float_of_int tot /. float_of_int n),
           (if mtime = 0. then None else Some mtime)
+        in
+        let lines, sighandlers =
+          List.split (List.map2 exercise_line ids states)
         in
         let text =
           match assg with
@@ -222,13 +248,28 @@ let exercises_tab assignments answers =
             match mtime with Some t -> date ~time:true t | None -> H.pcdata "";
           ];
         ] ::
-        List.map2 exercise_line ids states
+        lines,
+        sighandlers
       )
       assignments
   in
   match assg_lines with
-  | [] -> Lwt.return (H.pcdata "No assigned or open exercises found")
-  | lines -> Lwt.return (H.table (List.concat lines))
+  | [] -> Lwt.return (H.pcdata "No assigned or open exercises found", None)
+  | lines ->
+      let lines, sighandlers = List.split lines in
+      Lwt.return (H.table (List.concat lines), Some sighandlers)
+
+let mouseover_toggle_signal elt sigvalue setter =
+  let rec hdl _ =
+    Manip.Ev.onmouseout elt (fun _ ->
+        setter None;
+        Manip.Ev.onmouseover elt hdl;
+        true
+      );
+    setter (Some sigvalue);
+    true
+  in
+  Manip.Ev.onmouseover elt hdl
 
 let stats_tab assignments answers =
   let smap_add n m key =
@@ -264,7 +305,7 @@ let stats_tab assignments answers =
   let item ?(indent=0) ?(fmt = H.pcdata) lbl title v =
     H.tr ~a:[H.a_title title] [
       H.td ~a:[H.a_class ["stats-label"];
-               H.a_style ("margin-left:"^string_of_int (indent * 8)^"px")]
+               H.a_style ("padding-left:"^string_of_int (indent * 8)^"px")]
         [fmt lbl];
       H.td v
     ]
@@ -304,9 +345,13 @@ let stats_tab assignments answers =
        H.tr [H.th ~a:[H.a_colspan 2]
                [H.pcdata [%i"success over exercises training skills"]]] ::
        List.map (fun (sk, (tot, count)) ->
-           item ~indent:1 ~fmt:tag_span sk
-             ([%i"Success over exercises training skill "]^sk)
-             [pct tot (100 * count)];
+           let i =
+             item ~indent:1 ~fmt:tag_span sk
+               ([%i"Success over exercises training skill "]^sk)
+               [pct tot (100 * count)]
+           in
+           mouseover_toggle_signal i sk set_hl_focus_signal;
+           i
          )
          (SMap.bindings by_focus))
       @
@@ -314,9 +359,13 @@ let stats_tab assignments answers =
        H.tr [H.th ~a:[H.a_colspan 2]
                [H.pcdata [%i"success over exercises requiring skills"]]] ::
        List.map (fun (sk, (tot, count)) ->
-           item ~indent:1 ~fmt:tag_span sk
-             ([%i"Success over exercises requiring skill "]^sk)
-             [pct tot (100 * count)];
+           let i =
+             item ~indent:1 ~fmt:tag_span sk
+               ([%i"Success over exercises requiring skill "]^sk)
+               [pct tot (100 * count)]
+           in
+           mouseover_toggle_signal i sk set_hl_prereq_signal;
+           i
          )
          (SMap.bindings by_prereq))
     end
@@ -329,8 +378,9 @@ let init_exercises_and_stats_tabs teacher_token student_token answers =
   >>= fun status ->
   let assignments = gather_assignments student_token index status in
   Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
-  exercises_tab assignments answers >|= fun tbl ->
-  Manip.replaceChildren El.Tabs.(list.tab) [tbl]
+  exercises_tab assignments answers >|= fun (tbl, sighandlers) ->
+  Manip.replaceChildren El.Tabs.(list.tab) [tbl];
+  sighandlers
 
 let _exercise_selection_updater =
   let previously_selected = ref None in
@@ -344,7 +394,8 @@ let _exercise_selection_updater =
   | None -> ()
   | Some id ->
       Manip.addClass (line id) "selected";
-      if React.S.value tab_select_signal = El.Tabs.list then
+      let selected_tab =  React.S.value tab_select_signal in
+      if selected_tab = El.Tabs.list || selected_tab = El.Tabs.stats then
         select_tab El.Tabs.report
 
 let restore_report_button () =
@@ -489,7 +540,7 @@ let () =
   Manip.setInnerText El.nickname save.Save.nickname;
   init_exercises_and_stats_tabs
     teacher_token student_token save.Save.all_exercise_states
-  >>= fun () ->
+  >>= fun _sighandlers ->
   hide_loading ();
   let _sig =
     selected_exercise_signal |> React.S.map @@ function
@@ -504,182 +555,4 @@ let () =
         update_tabs meta exo ans;
         Lwt.return_unit
   in
-
-
-
-
-  Lwt.return_unit (*
-  let init_tabs token =
-    let get_opt o = Js.Optdef.get o (fun () -> false) in
-    let tabs =
-      (if get_opt config##.enableTryocaml
-       then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
-      (if get_opt config##.enableLessons
-       then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-      (match token, get_opt config##.enableExercises with
-       | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
-       | _ -> []) @
-      (if get_opt config##.enableToplevel
-       then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
-      (match token with
-       | Some t when Token.is_teacher t ->
-           [ "teacher", ([%i"Teach"], teacher_tab t) ]
-       | _ -> [])
-    in
-    let container = El.tab_buttons_container in
-    let current_btn = ref None in
-    let current_args = ref (ref []) in
-    let mutex = Lwt_mutex.create () in
-    Manip.removeChildren container ;
-    List.map
-      (fun (id, (name, callback)) ->
-         let btn = Tyxml_js.Html5.(button [ pcdata name]) in
-         let div = ref None in
-         let args = ref [] in
-         let rec select () =
-           Lwt_mutex.lock mutex >>= fun () ->
-           begin match !current_btn with
-             | None -> ()
-             | Some btn -> Manip.removeClass btn "active"
-           end ;
-           Manip.removeChildren El.content ;
-           List.iter (fun (n, _) -> delete_arg n) !(!current_args) ;
-           begin match !div with
-             | Some div ->
-                 List.iter (fun (n, v) -> set_arg n v) !args ;
-                 Manip.appendChild El.content div ;
-                 Lwt.return_unit
-             | None ->
-                 let arg name =
-                   arg name in
-                 let set_arg name value =
-                   args := set_assoc name value !args ;
-                   set_arg name value in
-                 let delete_arg name =
-                   args := delete_assoc name !args ;
-                   delete_arg name in
-                 callback select (arg, set_arg, delete_arg) () >>= fun fresh ->
-                 div := Some fresh ;
-                 Lwt.return_unit
-           end >>= fun () ->
-           set_arg "activity" id ;
-           Manip.addClass btn "active" ;
-           menu_hidden := true ;
-           Manip.addClass El.menu "hidden" ;
-           current_btn := Some btn ;
-           current_args := args ;
-           Lwt_mutex.unlock mutex ;
-           Lwt.return () in
-         Manip.Ev.onclick btn
-           (fun _ -> Lwt.async select ; true) ;
-         Manip.appendChild container btn ;
-         id, (name, select))
-      tabs
-  in
-  let download_save () =
-    let name = "learnocaml-main.json" in
-    let contents =
-      let json =
-        Json_repr_browser.Json_encoding.construct
-          Save.enc
-          (get_state_as_save_file ~include_reports:true ()) in
-      Js._JSON##(stringify json) in
-    Learnocaml_common.fake_download ~name ~contents ;
-    Lwt.return ()
-  in
-  let import_save () =
-    Learnocaml_common.fake_upload () >>= fun (_, contents) ->
-    let save_file =
-      Json_repr_browser.Json_encoding.destruct
-        Save.enc
-        (Js._JSON##(parse contents)) in
-    let token = try Some (get_stored_token ()) with Not_found -> None in
-    set_state_from_save_file ?token save_file ;
-    (Tyxml_js.To_dom.of_input El.nickname_field)##.value :=
-      Js.string save_file.Save.nickname;
-    let _tabs = init_tabs token in
-    no_tab_selected ();
-    Lwt.return ()
-  in
-  let logout_dialog () =
-    Lwt.catch
-      (fun () ->
-         sync () >|= fun _ ->
-         [%i"Be sure to write down your token before logging out:"])
-      (fun _ ->
-         Lwt.return
-           [%i"WARNING: the data could not be synchronised with the server. \
-               Logging out will lose your local changes, be sure you exported \
-               a backup."])
-    >|= fun s ->
-    confirm ~title:[%i"Logout"] ~ok_label:[%i"Logout"]
-      [H.p [H.pcdata s];
-       H.div ~a:[H.a_style "text-align: center;"]
-         [token_disp_div (get_stored_token ())]]
-      (fun () ->
-         Lwt.async @@ fun () ->
-         Learnocaml_local_storage.clear ();
-         reload ();
-         Lwt.return_unit)
-  in
-  List.iter (fun (text, icon, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~icon text f)
-    [
-      [%i"Show token"], "token", (fun () ->
-          show_token_dialog (get_stored_token ());
-          Lwt.return_unit);
-      [%i"Sync workspace"], "sync", (fun () ->
-          catch_with_alert @@ fun () ->
-          sync () >>= fun _ -> Lwt.return_unit);
-      [%i"Export to file"], "download", download_save;
-      [%i"Import"], "upload", import_save;
-      [%i"Logout"], "logout",
-      (fun () -> Lwt.async logout_dialog; Lwt.return_unit);
-    ];
-  begin button
-      ~container:El.toolbar
-      ~theme:"white" ~icon: "menu" [%i"Menu"] @@ fun () ->
-    menu_hidden := not !menu_hidden ;
-    if !menu_hidden then
-      Manip.addClass El.menu "hidden"
-    else
-      Manip.removeClass El.menu "hidden" ;
-    Lwt.return ()
-  end ;
-  begin
-    (try
-       let nickname = Learnocaml_local_storage.(retrieve nickname) in
-       (Tyxml_js.To_dom.of_input El.nickname_field)##.value := Js.string nickname;
-     with Not_found -> ());
-    let save_nickname () =
-      Learnocaml_local_storage.(store nickname) @@
-      Js.to_string (Tyxml_js.To_dom.of_input El.nickname_field)##.value
-    in
-    Manip.Ev.onreturn El.nickname_field (fun _ -> save_nickname ());
-    Manip.Ev.onblur El.nickname_field (fun _ -> save_nickname (); true);
-  end ;
-  Manip.Ev.onclick El.hide_panel (fun _ ->
-      Manip.SetCss.display El.toolbar "none";
-      Manip.SetCss.display El.menu "none";
-      Manip.SetCss.left El.content "0";
-      Manip.SetCss.display El.show_panel "block";
-      true);
-  Manip.Ev.onclick El.show_panel (fun _ ->
-      let xset elt f =
-        Js.Opt.iter (Dom_html.CoerceTo.element (H.toelt elt)) f
-      in
-      xset El.toolbar (fun s -> s##.style##.display := Js.string "");
-      xset El.menu (fun s -> s##.style##.display := Js.string "");
-      xset El.content (fun s -> s##.style##.left := Js.string "");
-      Manip.SetCss.display El.show_panel "none";
-      true);
-  init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
-  try
-    let activity = arg "activity" in
-    let (_, select) = List.assoc activity tabs in
-    select ()
-  with Not_found ->
-    no_tab_selected ();
-    Lwt.return ()
-;;
-*)
+  Lwt.return_unit
