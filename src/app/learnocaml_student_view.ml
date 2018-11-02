@@ -523,6 +523,7 @@ let () =
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
+  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   set_string_translations ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then

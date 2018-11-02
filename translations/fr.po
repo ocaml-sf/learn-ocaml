@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-10-25 17:53+0200\n"
+"PO-Revision-Date: 2018-11-05 12:34+0100\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -16,92 +16,92 @@ msgstr ""
 #: src/app/learnocaml_exercise_main.ml:81,33--41
 #: src/app/learnocaml_exercise_main.ml:85,33--41
 #: src/app/learnocaml_exercise_main.ml:90,33--41
-#: src/app/learnocaml_exercise_main.ml:298,39--47
-#: src/app/learnocaml_student_view.ml:250,31--39
-#: src/app/learnocaml_student_view.ml:263,33--41
-#: src/app/learnocaml_student_view.ml:267,33--41
-#: src/app/learnocaml_student_view.ml:272,33--41
-#: src/app/learnocaml_student_view.ml:342,39--47
+#: src/app/learnocaml_exercise_main.ml:352,39--47
+#: src/app/learnocaml_student_view.ml:407,31--39
+#: src/app/learnocaml_student_view.ml:420,33--41
+#: src/app/learnocaml_student_view.ml:424,33--41
+#: src/app/learnocaml_student_view.ml:429,33--41
+#: src/app/learnocaml_student_view.ml:500,39--47
 msgid "Report"
 msgstr "Rapport"
 
-#: src/app/learnocaml_exercise_main.ml:104,28--55
-msgid "No description available."
-msgstr "Aucune description."
-
-#: src/app/learnocaml_exercise_main.ml:114,34--55
+#: src/app/learnocaml_exercise_main.ml:116,34--55
 #: src/app/learnocaml_common.ml:522,34--55
 msgid "difficulty: %d / 40"
 msgstr "difficulté: %d / 40"
 
-#: src/app/learnocaml_exercise_main.ml:120,17--30
+#: src/app/learnocaml_exercise_main.ml:122,17--30
 msgid "Difficulty:"
 msgstr "Difficulté:"
 
-#: src/app/learnocaml_exercise_main.ml:133,36--46
+#: src/app/learnocaml_exercise_main.ml:135,36--46
 msgid "Kind: %s"
 msgstr "Type: %s"
 
-#: src/app/learnocaml_exercise_main.ml:249,32--54
-msgid "Exercise identifier:"
+#: src/app/learnocaml_exercise_main.ml:256,32--45
+msgid "Identifier:"
 msgstr "Identifiant de l'exercice :"
 
-#: src/app/learnocaml_exercise_main.ml:251,22--34
-msgid "Author(s):"
-msgstr "Auteur(s) :"
+#: src/app/learnocaml_exercise_main.ml:260,44--52
+msgid "Author"
+msgstr "Auteur"
 
-#: src/app/learnocaml_exercise_main.ml:253,8--25
+#: src/app/learnocaml_exercise_main.ml:260,64--73
+msgid "Authors"
+msgstr "Auteurs"
+
+#: src/app/learnocaml_exercise_main.ml:281,8--25
 msgid "Skills trained:"
 msgstr "Compétences pratiquées :"
 
-#: src/app/learnocaml_exercise_main.ml:259,8--26
+#: src/app/learnocaml_exercise_main.ml:290,8--26
 msgid "Skills required:"
 msgstr "Compétences requises :"
 
-#: src/app/learnocaml_exercise_main.ml:265,8--29
+#: src/app/learnocaml_exercise_main.ml:309,7--28
 msgid "Previous exercises:"
 msgstr "Exercices précédents :"
 
-#: src/app/learnocaml_exercise_main.ml:270,10--32
-msgid "Exercises following:"
+#: src/app/learnocaml_exercise_main.ml:323,7--24
+msgid "Next exercises:"
 msgstr "Exercices suivants :"
 
-#: src/app/learnocaml_exercise_main.ml:278,19--29
+#: src/app/learnocaml_exercise_main.ml:329,19--29
 msgid "Metadata"
 msgstr "Métadonnées"
 
-#: src/app/learnocaml_exercise_main.ml:295,24--51
-#: src/app/learnocaml_student_view.ml:340,24--51
+#: src/app/learnocaml_exercise_main.ml:349,24--51
+#: src/app/learnocaml_student_view.ml:497,24--51
 msgid "Preparing the environment"
 msgstr "Préparation de l'environnement"
 
-#: src/app/learnocaml_exercise_main.ml:296,39--47
-#: src/app/learnocaml_exercise_main.ml:301,37--45
+#: src/app/learnocaml_exercise_main.ml:350,39--47
+#: src/app/learnocaml_exercise_main.ml:355,37--45
 msgid "Editor"
 msgstr "Éditeur"
 
-#: src/app/learnocaml_exercise_main.ml:297,41--51
+#: src/app/learnocaml_exercise_main.ml:351,41--51
 #: src/app/learnocaml_index_main.ml:772,30--40
 msgid "Toplevel"
 msgstr "Toplevel"
 
-#: src/app/learnocaml_exercise_main.ml:299,37--47
+#: src/app/learnocaml_exercise_main.ml:353,37--47
 msgid "Exercise"
 msgstr "Exercice"
 
-#: src/app/learnocaml_exercise_main.ml:300,37--46
+#: src/app/learnocaml_exercise_main.ml:354,37--46
 msgid "Details"
 msgstr "Détails"
 
-#: src/app/learnocaml_exercise_main.ml:302,27--70
+#: src/app/learnocaml_exercise_main.ml:356,27--70
 msgid "Click the Grade button to get your report"
 msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
 
-#: src/app/learnocaml_exercise_main.ml:313,18--29
+#: src/app/learnocaml_exercise_main.ml:367,18--29
 msgid "TIME'S UP"
 msgstr "TEMPS ÉCOULÉ"
 
-#: src/app/learnocaml_exercise_main.ml:314,7--119
+#: src/app/learnocaml_exercise_main.ml:368,7--119
 msgid ""
 "The deadline for this exercise has expired. Any changes you make from now on "
 "will remain local only."
@@ -109,101 +109,101 @@ msgstr ""
 "La date limite de rendu de cet exercice est passée. Vos changements ne "
 "seront plus sauvegardés sur le serveur."
 
-#: src/app/learnocaml_exercise_main.ml:382,25--49
+#: src/app/learnocaml_exercise_main.ml:436,25--49
 msgid "loading the prelude..."
 msgstr "Chargement du prélude..."
 
-#: src/app/learnocaml_exercise_main.ml:387,41--59
+#: src/app/learnocaml_exercise_main.ml:441,41--59
 msgid "error in prelude"
 msgstr "erreur dans le prélude"
 
-#: src/app/learnocaml_exercise_main.ml:439,26--33
+#: src/app/learnocaml_exercise_main.ml:504,26--33
 #: src/app/learnocaml_index_main.ml:515,57--64
 #: src/app/learnocaml_index_main.ml:579,57--64
 msgid "Clear"
 msgstr "Effacer"
 
-#: src/app/learnocaml_exercise_main.ml:444,25--32
-#: src/app/learnocaml_exercise_main.ml:508,26--33
+#: src/app/learnocaml_exercise_main.ml:509,25--32
+#: src/app/learnocaml_exercise_main.ml:572,26--33
 #: src/app/learnocaml_index_main.ml:522,24--31
 #: src/app/learnocaml_index_main.ml:584,24--31
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: src/app/learnocaml_exercise_main.ml:450,22--35
+#: src/app/learnocaml_exercise_main.ml:515,22--35
 #: src/app/learnocaml_index_main.ml:528,53--66
 #: src/app/learnocaml_index_main.ml:588,53--66
 msgid "Eval phrase"
 msgstr "Évaluer la phrase"
 
-#: src/app/learnocaml_exercise_main.ml:469,39--54
+#: src/app/learnocaml_exercise_main.ml:534,39--54
 msgid "OCaml prelude"
 msgstr "Prélude OCaml"
 
-#: src/app/learnocaml_exercise_main.ml:476,62--68
+#: src/app/learnocaml_exercise_main.ml:541,62--68
 msgid "Hide"
 msgstr "Cacher"
 
-#: src/app/learnocaml_exercise_main.ml:480,62--68
+#: src/app/learnocaml_exercise_main.ml:545,62--68
 msgid "Show"
 msgstr "Montrer"
 
-#: src/app/learnocaml_exercise_main.ml:509,22--37
+#: src/app/learnocaml_exercise_main.ml:573,22--42
 msgid "START FROM SCRATCH"
 msgstr "TOUT RECOMMENCER"
 
-#: src/app/learnocaml_exercise_main.ml:510,19--68
+#: src/app/learnocaml_exercise_main.ml:574,19--68
 msgid "This will discard all your edits. Are you sure?"
 msgstr "Toutes vos modifications seront perdues. Vous êtes sûr·e ?"
 
-#: src/app/learnocaml_exercise_main.ml:516,23--29
+#: src/app/learnocaml_exercise_main.ml:580,23--29
 msgid "Sync"
 msgstr "Sync"
 
-#: src/app/learnocaml_exercise_main.ml:521,27--37
+#: src/app/learnocaml_exercise_main.ml:585,27--37
 msgid "Download"
 msgstr "Télécharger"
 
-#: src/app/learnocaml_exercise_main.ml:529,22--33
+#: src/app/learnocaml_exercise_main.ml:593,22--33
 msgid "Eval code"
 msgstr "Évaluer le code"
 
-#: src/app/learnocaml_exercise_main.ml:560,23--34
+#: src/app/learnocaml_exercise_main.ml:624,23--34
 #: src/app/learnocaml_index_main.ml:769,48--59
-#: src/app/learnocaml_teacher_tab.ml:219,21--32
-#: src/app/learnocaml_student_view.ml:341,37--48
+#: src/app/learnocaml_teacher_tab.ml:326,21--32
+#: src/app/learnocaml_student_view.ml:499,37--48
 msgid "Exercises"
 msgstr "Exercices"
 
-#: src/app/learnocaml_exercise_main.ml:570,28--37
+#: src/app/learnocaml_exercise_main.ml:634,28--37
 msgid "Compile"
 msgstr "Compiler"
 
-#: src/app/learnocaml_exercise_main.ml:574,25--33
+#: src/app/learnocaml_exercise_main.ml:638,25--33
 msgid "Grade!"
 msgstr "Noter!"
 
-#: src/app/learnocaml_exercise_main.ml:577,51--58
+#: src/app/learnocaml_exercise_main.ml:641,51--58
 msgid "abort"
 msgstr "abandonner"
 
-#: src/app/learnocaml_exercise_main.ml:581,38--73
+#: src/app/learnocaml_exercise_main.ml:645,38--73
 msgid "Grading is taking a lot of time, "
 msgstr "La notation prend longtemps, "
 
-#: src/app/learnocaml_exercise_main.ml:587,38--60
+#: src/app/learnocaml_exercise_main.ml:651,38--60
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: src/app/learnocaml_exercise_main.ml:602,60--86
+#: src/app/learnocaml_exercise_main.ml:666,60--86
 msgid "Grading aborted by user."
-msgstr "Notation annulée par l'utilisateur"
+msgstr "Notation annulée par l'utilisateur."
 
-#: src/app/learnocaml_exercise_main.ml:625,38--59
+#: src/app/learnocaml_exercise_main.ml:689,38--59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: src/app/learnocaml_exercise_main.ml:626,27--85
+#: src/app/learnocaml_exercise_main.ml:690,27--85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 
@@ -254,7 +254,7 @@ msgstr "@[<v 2>Important: %a@]"
 
 #: src/grader/learnocaml_report.ml:533,58--83
 msgid "@[<v 2>Success %d: %a@]"
-msgstr "@[<v 2>Réussite %d: %a@]\""
+msgstr "@[<v 2>Réussite %d: %a@]"
 
 #: src/app/learnocaml_common.ml:76,21--37
 msgid "INTERNAL ERROR"
@@ -310,7 +310,7 @@ msgstr "Erreur dans votre solution:\n"
 
 #: src/grader/grader_jsoo_worker.ml:60,17--41
 msgid "Error in the exercise "
-msgstr "Chargement des exercices"
+msgstr "Erreur dans l'exercice "
 
 #: src/grader/grader_jsoo_worker.ml:62,17--71
 msgid ""
@@ -318,14 +318,13 @@ msgid ""
 "The grader did not return a report."
 msgstr ""
 "Erreur interne:\n"
-"Le 'grader' n'a pas retourné de rapport."
+"Le moteur de notation n'a pas retourné de rapport."
 
 #: src/grader/grader_jsoo_worker.ml:64,17--38
 msgid "Unexpected error:\n"
 msgstr "Erreur inattendue:\n"
 
 #: src/app/learnocaml_index_main.ml:75,18--37
-#: src/app/learnocaml_student_view.ml:227,18--37
 msgid "Loading exercises"
 msgstr "Chargement des exercices"
 
@@ -433,7 +432,7 @@ msgstr "Se connecter"
 
 #: src/app/learnocaml_index_main.ml:720,9--19
 #: src/app/learnocaml_index_main.ml:722,9--19
-#: src/app/learnocaml_teacher_tab.ml:452,25--35
+#: src/app/learnocaml_teacher_tab.ml:555,25--35
 msgid "Nickname"
 msgstr "Pseudonyme"
 
@@ -492,11 +491,11 @@ msgstr "Importer"
 msgid "Menu"
 msgstr "Menu"
 
-#: src/app/learnocaml_teacher_tab.ml:31,20--35
+#: src/app/learnocaml_teacher_tab.ml:83,20--35
 msgid "TEACHER TOKEN"
 msgstr "TOKEN PROF."
 
-#: src/app/learnocaml_teacher_tab.ml:32,26--105
+#: src/app/learnocaml_teacher_tab.ml:84,26--105
 msgid ""
 "New teacher token created:\n"
 "%s\n"
@@ -508,139 +507,195 @@ msgstr ""
 "\n"
 "Notez-le !"
 
-#: src/app/learnocaml_teacher_tab.ml:200,48--54
+#: src/app/learnocaml_teacher_tab.ml:254,48--54
 msgid "Open"
 msgstr "Ouvert"
 
-#: src/app/learnocaml_teacher_tab.ml:201,52--60
+#: src/app/learnocaml_teacher_tab.ml:255,52--60
 msgid "Closed"
 msgstr "Fermé"
 
-#: src/app/learnocaml_teacher_tab.ml:202,58--68
-#: src/app/learnocaml_teacher_tab.ml:203,42--52
+#: src/app/learnocaml_teacher_tab.ml:256,58--68
+#: src/app/learnocaml_teacher_tab.ml:257,42--52
 msgid "Assigned"
 msgstr "Devoir"
 
-#: src/app/learnocaml_teacher_tab.ml:211,52--64
-#: src/app/learnocaml_teacher_tab.ml:229,51--63
+#: src/app/learnocaml_teacher_tab.ml:317,52--64
+#: src/app/learnocaml_teacher_tab.ml:337,51--63
 msgid "Loading..."
 msgstr "Chargement..."
 
-#: src/app/learnocaml_teacher_tab.ml:283,20--41
+#: src/app/learnocaml_teacher_tab.ml:391,20--41
 msgid "any future students"
 msgstr "tout nouvel étudiant"
 
-#: src/app/learnocaml_teacher_tab.ml:431,21--31
+#: src/app/learnocaml_teacher_tab.ml:539,21--31
 msgid "Students"
 msgstr "Étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:446,23--32
+#: src/app/learnocaml_teacher_tab.ml:549,23--32
 msgid "Sort by"
 msgstr "Tri par"
 
-#: src/app/learnocaml_teacher_tab.ml:454,25--32
+#: src/app/learnocaml_teacher_tab.ml:557,25--32
 msgid "Token"
 msgstr "Token"
 
-#: src/app/learnocaml_teacher_tab.ml:456,25--40
+#: src/app/learnocaml_teacher_tab.ml:559,25--40
 msgid "Creation date"
 msgstr "Date d'entrée"
 
-#: src/app/learnocaml_teacher_tab.ml:458,25--31
+#: src/app/learnocaml_teacher_tab.ml:561,25--31
 msgid "Tags"
 msgstr "Tags"
 
-#: src/app/learnocaml_teacher_tab.ml:466,29--35
+#: src/app/learnocaml_teacher_tab.ml:566,46--52
 msgid "tags"
 msgstr "tags"
 
-#: src/app/learnocaml_teacher_tab.ml:583,16--28
+#: src/app/learnocaml_teacher_tab.ml:642,16--28
 msgid "1 exercise"
 msgstr "1 exercice"
 
-#: src/app/learnocaml_teacher_tab.ml:584,32--46
+#: src/app/learnocaml_teacher_tab.ml:643,32--46
 msgid "%d exercises"
 msgstr "%d exercices"
 
-#: src/app/learnocaml_teacher_tab.ml:587,23--34
+#: src/app/learnocaml_teacher_tab.ml:646,23--34
 msgid "1 student"
 msgstr "1 étudiant"
 
-#: src/app/learnocaml_teacher_tab.ml:588,39--52
+#: src/app/learnocaml_teacher_tab.ml:647,39--52
 msgid "%d students"
 msgstr "%d étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:589,38--52
+#: src/app/learnocaml_teacher_tab.ml:648,38--52
 msgid "%d+ students"
 msgstr "%d+ étudiants"
 
-#: src/app/learnocaml_teacher_tab.ml:656,48--64
+#: src/app/learnocaml_teacher_tab.ml:715,48--64
 msgid "New assignment"
 msgstr "Nouveau devoir"
 
-#: src/app/learnocaml_teacher_tab.ml:718,19--31
+#: src/app/learnocaml_teacher_tab.ml:818,19--31
 msgid "Open/Close"
 msgstr "Ouvrir/Fermer"
 
-#: src/app/learnocaml_teacher_tab.ml:736,39--52
+#: src/app/learnocaml_teacher_tab.ml:824,47--64
+msgid "required skills"
+msgstr "comp. requises"
+
+#: src/app/learnocaml_teacher_tab.ml:828,47--63
+msgid "trained skills"
+msgstr "comp. travaillées"
+
+#: src/app/learnocaml_teacher_tab.ml:837,39--52
 msgid "Assignments"
 msgstr "Devoirs"
 
-#: src/app/learnocaml_teacher_tab.ml:815,21--28
+#: src/app/learnocaml_teacher_tab.ml:916,21--28
 msgid "Apply"
 msgstr "Appliquer"
 
-#: src/app/learnocaml_teacher_tab.ml:816,57--66
+#: src/app/learnocaml_teacher_tab.ml:917,57--66
 msgid "Actions"
 msgstr "Actions"
 
-#: src/app/learnocaml_teacher_tab.ml:819,26--52
+#: src/app/learnocaml_teacher_tab.ml:920,26--52
 msgid "Create new teacher token"
-msgstr "Créer un nouveau token prof."
+msgstr "Créer un nouveau token enseignant"
 
-#: src/app/learnocaml_teacher_tab.ml:821,26--56
+#: src/app/learnocaml_teacher_tab.ml:922,26--56
 msgid "Download student data as CSV"
 msgstr "Exporter les données étudiants en CSV"
 
-#: src/app/learnocaml_teacher_tab.ml:993,58--75
+#: src/app/learnocaml_teacher_tab.ml:1094,58--75
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
-#: src/app/learnocaml_student_view.ml:192,27--57
+#: src/app/learnocaml_student_view.ml:225,27--57
 msgid "Future assignment (starting "
 msgstr "Devoir à venir (à partir du "
 
-#: src/app/learnocaml_student_view.ml:196,27--52
+#: src/app/learnocaml_student_view.ml:229,27--52
 msgid "Terminated assignment ("
 msgstr "Devoir terminé ("
 
-#: src/app/learnocaml_student_view.ml:200,27--53
+#: src/app/learnocaml_student_view.ml:233,27--53
 msgid "Ongoing assignment (due "
 msgstr "Devoir en cours (à rendre le "
 
-#: src/app/learnocaml_student_view.ml:204,27--43
+#: src/app/learnocaml_student_view.ml:237,27--43
 msgid "Open exercises"
 msgstr "Exercices ouverts"
 
-#: src/app/learnocaml_student_view.ml:324,29--70
+#: src/app/learnocaml_student_view.ml:330,22--37
+msgid "Student stats"
+msgstr "Statistiques de l'étudiant"
+
+#: src/app/learnocaml_student_view.ml:333,16--28
+msgid "completion"
+msgstr "complétion"
+
+#: src/app/learnocaml_student_view.ml:334,13--62
+msgid "The average grade over all accessible exercises"
+msgstr "Note moyenne sur tous les exercices accessibles"
+
+#: src/app/learnocaml_student_view.ml:336,16--27
+msgid "attempted"
+msgstr "commencés"
+
+#: src/app/learnocaml_student_view.ml:337,13--74
+msgid "The amount of accessible exercises that have been attempted"
+msgstr "La proportion d'exercices accessibles qui ont été commencés"
+
+#: src/app/learnocaml_student_view.ml:339,16--25
+msgid "success"
+msgstr "réussite"
+
+#: src/app/learnocaml_student_view.ml:340,13--57
+msgid "The average grade over attempted exercises"
+msgstr "La note moyenne sur les exercices commencés"
+
+#: src/app/learnocaml_student_view.ml:346,28--68
+msgid "success over exercises training skills"
+msgstr "moyenne sur les exercices entraînant les compétences"
+
+#: src/app/learnocaml_student_view.ml:350,19--59
+msgid "Success over exercises training skill "
+msgstr "Moyenne sur les exercices entraînant la compétence "
+
+#: src/app/learnocaml_student_view.ml:360,28--69
+msgid "success over exercises requiring skills"
+msgstr "moyenne sur les exercices requérant les compétences"
+
+#: src/app/learnocaml_student_view.ml:364,19--60
+msgid "Success over exercises requiring skill "
+msgstr "Moyenne sur les exercices requérant la compétence "
+
+#: src/app/learnocaml_student_view.ml:481,29--70
 msgid "GRADE DOESN'T MATCH: cheating suspected"
 msgstr "NOTE INCOHÉRENTE: suspicion de triche"
 
-#: src/app/learnocaml_student_view.ml:328,28--49
+#: src/app/learnocaml_student_view.ml:485,28--49
 msgid "No report available"
 msgstr "Aucun rapport"
 
-#: src/app/learnocaml_student_view.ml:343,37--46
+#: src/app/learnocaml_student_view.ml:498,38--45
+msgid "Stats"
+msgstr "Statistiques"
+
+#: src/app/learnocaml_student_view.ml:501,37--46
 msgid "Subject"
 msgstr "Énoncé"
 
-#: src/app/learnocaml_student_view.ml:344,39--47
+#: src/app/learnocaml_student_view.ml:502,39--47
 msgid "Answer"
 msgstr "Réponse"
 
-#: src/app/learnocaml_student_view.ml:379,8--29
+#: src/app/learnocaml_student_view.ml:537,8--29
 msgid "Status of student: "
-msgstr "Vue étudiant: "
+msgstr "Suivi étudiant: "
 
 #: src/grader/grading.ml:25,27--66
 msgid ""
@@ -704,6 +759,12 @@ msgstr "Lancement du banc de test."
 #: src/grader/grading.ml:155,38--67
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
+
+#~ msgid "No description available."
+#~ msgstr "Aucune description."
+
+#~ msgid "Exercises following:"
+#~ msgstr "Exercices suivants :"
 
 #~ msgid "Project"
 #~ msgstr "Projet"

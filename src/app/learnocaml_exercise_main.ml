@@ -189,7 +189,7 @@ let get_skill_index token =
       | `Focus s -> SSet.elements (SMap.find s focus)
     with Not_found -> []
 
-let display_skill_meta skill exs content_id =
+let display_skill_meta _skill exs content_id =
   let content = find_component content_id in
   Manip.replaceChildren content
     (display_list @@
