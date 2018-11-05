@@ -34,6 +34,7 @@ depends: [
   "reactiveData" {= "0.2.1"}
   "tyxml" {= "4.2.0"}
   "pprint" {= "20171003"}
+  "lwt_react" {= "1.1.1"}
   "cohttp-lwt-unix" {= "1.0.2"}
   "ezjsonm" {= "0.5.0"}
   "js_of_ocaml-tyxml" {= "3.2.0"}
