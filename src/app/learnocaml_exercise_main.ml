@@ -20,6 +20,8 @@ open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
 
+module H = Tyxml_js.Html
+
 let init_tabs, select_tab =
   let names = [ "text" ; "toplevel" ; "report" ; "editor"; "meta" ] in
   let current = ref "text" in
@@ -96,12 +98,14 @@ let display_report exo report =
 let display_descr ex_meta =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
-  div ~a:[ a_class [ "descr" ] ] [
-    h2 ~a:[ a_class [ "learnocaml-exo-meta-category" ] ] [ pcdata ex_meta.Meta.title ] ;
-    p [ match ex_meta.Meta.short_description with
-        | None -> pcdata [%i"No description available."]
-        | Some text -> pcdata text ] ;
-  ]
+  match ex_meta.Meta.short_description with
+  | None -> div ~a:[ a_class [ "descr" ] ] []
+  | Some descr ->
+      div ~a:[ a_class [ "descr" ] ] [
+        h2 ~a:[ a_class [ "learnocaml-exo-meta-category" ] ]
+          [ pcdata ex_meta.Meta.title ] ;
+        p [ pcdata descr ] ;
+      ]
 
 let display_stars ex_meta =
   let open Tyxml_js.Html5 in
@@ -126,20 +130,10 @@ let display_stars ex_meta =
 let display_kind ex_meta =
   let open Tyxml_js.Html5 in
   let open Learnocaml_data.Exercise in
-  let kind_repr =
-    match ex_meta.Meta.kind with
-    | Exercise.Meta.Project -> [%i"Project"]
-    | Exercise.Meta.Problem -> [%i"Problem"]
-    | Exercise.Meta.Exercise -> [%i"Exercise"]
-  in
+  let kind_repr = string_of_exercise_kind ex_meta.Meta.kind in
   div ~a:[ a_class [ "length" ] ] [
     p [ pcdata (Format.sprintf [%if "Kind: %s"] kind_repr) ]
   ]
-
-let get_exercise_meta token id =
-  token >>= fun token ->
-  Server_caller.fetch_exercise token id >>= fun (meta, _, _) ->
-  Lwt.return meta
 
 let exercise_link ?(cl = []) id content =
   let open Tyxml_js.Html5 in
@@ -148,14 +142,12 @@ let exercise_link ?(cl = []) id content =
        ]
     content
 
-let display_exercise_meta id meta_value content_id =
-  let open Tyxml_js.Html5 in
+let display_exercise_meta id meta content_id =
   let content = find_component content_id in
-  Lazy.force meta_value >>= fun meta ->
   let descr =
     exercise_link ~cl:[ "exercise" ] id [
       display_descr meta ;
-      div ~a:[  ] [
+      H.div ~a:[  ] [
         display_stars meta ;
         display_kind meta ;
       ]
@@ -174,17 +166,31 @@ let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
   in
   gen [] l |> List.rev
 
-let get_skill_index skill =
-  let req = match skill with
-      `Focus s -> Learnocaml_api.Focusing_skill s
-    | `Requirements s -> Learnocaml_api.Requiring_skill s
-  in
-  Server_caller.request_exn req
+let get_skill_index token =
+  let index = lazy (
+    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+    >|= fun (index, _) ->
+    Exercise.Index.fold_exercises (fun (req, focus) id meta ->
+        let add sk id map =
+          SMap.add sk
+            (SSet.add id (try SMap.find sk map with Not_found -> SSet.empty))
+            map
+        in
+        List.fold_left (fun acc sk -> add sk id acc) req
+          meta.Exercise.Meta.requirements,
+        List.fold_left (fun acc sk -> add sk id acc) focus
+          meta.Exercise.Meta.focus
+      ) (SMap.empty, SMap.empty) index
+  ) in
+  fun skill ->
+    Lazy.force index >|= fun (req, focus) ->
+    try match skill with
+      | `Requirements s -> SSet.elements (SMap.find s req)
+      | `Focus s -> SSet.elements (SMap.find s focus)
+    with Not_found -> []
 
-
-let display_skill_meta skill exs content_id =
+let display_skill_meta _skill exs content_id =
   let content = find_component content_id in
-  Lazy.force exs >>= fun exs ->
   Manip.replaceChildren content
     (display_list @@
      List.map (fun ex_id ->
@@ -225,13 +231,11 @@ let display_link onclick content_id value =
     div ~a:[a_id cid;
             a_class [ "learnocaml-exo-meta-category" ] ] [] ]
 
-let display_skill_link content_id s =
-  let index = lazy (get_skill_index s) in
+let display_skill_link index content_id s =
   let skill = match s with `Focus s | `Requirements s -> s in
   display_link (display_skill_meta s index) content_id skill
 
-let display_exercise_link content_id token e =
-  let meta = lazy (get_exercise_meta token e) in
+let display_exercise_link content_id meta e =
   display_link (display_exercise_meta e meta) content_id e
 
 let display_authors authors =
@@ -249,31 +253,75 @@ let display_meta token ex_meta id =
   let open Learnocaml_data.Exercise in
   let open Tyxml_js.Html5 in
   let ident =
-    Format.asprintf "%s %s" [%i "Exercise identifier:" ] id in
+    Format.asprintf "%s %s" [%i "Identifier:" ] id in
+  let opt l f = match l with [] -> None | l -> Some (f l) in
   let authors =
-    span [ pcdata [%i "Author(s):" ]; pcdata " " ] :: display_authors ex_meta.Meta.author in
+    opt ex_meta.Meta.author @@ fun author ->
+    let title = match author with [_] -> [%i"Author"] | _ -> [%i"Authors"] in
+    span [ pcdata title; pcdata " " ] ::
+    display_authors author
+  in
+  Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+  >|= fun (index, _) ->
+  let req_map, focus_map =
+    Exercise.Index.fold_exercises (fun (req, focus) id meta ->
+        let add sk id map =
+          SMap.add sk
+            (SSet.add id (try SMap.find sk map with Not_found -> SSet.empty))
+            map
+        in
+        List.fold_left (fun acc sk -> add sk id acc) req
+          meta.Exercise.Meta.requirements,
+        List.fold_left (fun acc sk -> add sk id acc) focus
+          meta.Exercise.Meta.focus
+      ) (SMap.empty, SMap.empty) index
+  in
   let focus =
+    opt ex_meta.Meta.focus @@ fun focus ->
     [%i "Skills trained:"],
     display_list ~sep:(pcdata "") @@
     List.map (fun s ->
-        display_skill_link "learnocaml-exo-focus-meta" (`Focus s))
-      (ex_meta.Meta.focus) in
+        display_skill_link
+          (try SSet.elements (SMap.find s focus_map) with Not_found -> [])
+          "learnocaml-exo-focus-meta" (`Focus s))
+      focus in
   let requirements =
+    opt ex_meta.Meta.requirements @@ fun requirements ->
     [%i "Skills required:"],
-    display_list ~sep:(pcdata "") @@
-    List.map (fun s ->
-        display_skill_link "learnocaml-exo-requirements-meta" (`Requirements s))
-      ex_meta.Meta.requirements  in
-  let backward =
-    [%i "Previous exercises:"],
-    display_list ~sep:(pcdata "") @@
-    List.map (display_exercise_link "learnocaml-exo-backward-meta" token)
-      ex_meta.Meta.backward in
-  let forward =
-      [%i "Exercises following:"],
       display_list ~sep:(pcdata "") @@
-      List.map (display_exercise_link "learnocaml-exo-forward-meta" token)
-        ex_meta.Meta.forward in
+      List.map (fun s ->
+          display_skill_link
+            (try SSet.elements (SMap.find s req_map) with Not_found -> [])
+            "learnocaml-exo-requirements-meta" (`Requirements s))
+        requirements in
+  let backward =
+    let l =
+      List.fold_left (fun acc id ->
+          match Exercise.Index.find_opt index id with
+          | Some meta ->
+              display_exercise_link "learnocaml-exo-backward-meta" meta id
+              :: acc
+          | None -> acc)
+        []
+        (List.rev ex_meta.Meta.backward)
+    in
+    opt l @@ fun l ->
+    [%i"Previous exercises:"], display_list ~sep:(pcdata "") l
+  in
+  let forward =
+    let l =
+      List.fold_left (fun acc id ->
+          match Exercise.Index.find_opt index id with
+          | Some meta ->
+              display_exercise_link "learnocaml-exo-backward-meta" meta id
+              :: acc
+          | None -> acc)
+        []
+        (List.rev ex_meta.Meta.forward)
+    in
+    opt l @@ fun l ->
+    [%i"Next exercises:"], display_list ~sep:(pcdata "") l
+  in
   let tab = find_component "learnocaml-exo-tab-meta" in
   Manip.replaceChildren tab @@
   Tyxml_js.Html5.([
@@ -285,11 +333,14 @@ let display_meta token ex_meta id =
        display_stars ex_meta ::
        display_kind ex_meta ::
        p [ pcdata ident ] ::
-       p authors ::
-       List.map (fun (title, values) ->
-           div
-             (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ] [ pcdata title ] ::
-              values))
+       (match authors with Some a -> p a | None -> div []) ::
+       List.map (function
+           | Some (title, values) ->
+               div
+                 (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ]
+                    [ pcdata title ] ::
+                  values)
+           | None -> div [])
          [ focus ; requirements ; backward ; forward ])
   ])
 
@@ -436,6 +487,17 @@ let () =
     | { Answer.report = None ; solution ; _ } ->
         Some solution
     | exception Not_found -> None in
+  (* ---- details pane -------------------------------------------------- *)
+  let load_meta () =
+    Lwt.async (fun () ->
+        token >>= fun token ->
+        display_meta token ex_meta id)
+  in
+  if arg "tab" = "meta" then load_meta () else
+    Manip.Ev.onclick (find_component "learnocaml-exo-button-meta") (fun _ ->
+        load_meta ();
+        select_tab "meta";
+        true);
   (* ---- toplevel pane ------------------------------------------------- *)
   begin toplevel_button
       ~group: toplevel_buttons_group
@@ -490,62 +552,12 @@ let () =
     Manip.appendChildren text_container
       [ prelude_title ; prelude_container ]
   end ;
-  display_meta token ex_meta id;
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
-       let mathjax_url =
-         "/js/mathjax/MathJax.js?delayStartupUntil=configured"
-       in
-       let mathjax_config =
-         "MathJax.Hub.Config({\n\
-         \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
-         \  extensions: [],\n\
-         \  showMathMenu: false,\n\
-         \  showMathMenuMSIE: false,\n\
-         \  \"HTML-CSS\": {\n\
-         \    imageFont: null\n\
-         \  }
-          });"
-        (* the following would allow comma instead of dot for the decimal separator,
-           but should depend on the language the exercise is in, not the language of the
-           app
-           "AsciiMath: {\n\
-           \  decimal: \"" ^[%i"."]^ "\"\n\
-            },\n"
-         *)
-       in
-       (* Looking for the description in the correct language. *)
-       let descr =
-         let lang = "" in
-         try
-           List.assoc lang (Learnocaml_exercise.(access File.descr exo))
-         with
-           Not_found ->
-             try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
-             with Not_found -> [%i "No description available for this exercise." ]
-         in
-       let html = Format.asprintf
-           "<!DOCTYPE html>\
-            <html><head>\
-            <title>%s - exercise text</title>\
-            <meta charset='UTF-8'>\
-            <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
-            <script type='text/x-mathjax-config'>%s</script>
-            <script type='text/javascript' src='%s'></script>\
-            </head>\
-            <body>\
-            %s\
-            </body>\
-            <script type='text/javascript'>MathJax.Hub.Configured()</script>\
-            </html>"
-           ex_meta.Exercise.Meta.title
-           mathjax_config
-           mathjax_url
-           descr in
        d##open_;
-       d##write (Js.string html);
+       d##write (Js.string (exercise_text ex_meta exo));
        d##close) ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
@@ -558,7 +570,10 @@ let () =
   Ace.set_font_size ace 18;
   begin editor_button
       ~icon: "cleanup" [%i"Reset"] @@ fun () ->
-    Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)) ;
+    confirm ~title:[%i"START FROM SCRATCH"]
+      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      (fun () ->
+         Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)));
     Lwt.return ()
   end ;
   begin editor_button

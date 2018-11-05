@@ -119,14 +119,15 @@ let box_button txt f =
                background-color: white;\
                color: black;\
                text-align: center;";
-    H.a_onclick (fun _ -> f (); false)
+    H.a_onclick (fun _ ->
+        f ();
+        match Manip.by_id dialog_layer_id with
+        | Some div -> Manip.removeChild Manip.Elt.body div; false
+        | None -> (); false)
   ] [ H.pcdata txt ]
 
 let close_button txt =
-  box_button txt @@ fun () ->
-  match Manip.by_id dialog_layer_id with
-  | Some div -> Manip.removeChild Manip.Elt.body div; false
-  | None -> (); false
+  box_button txt @@ fun () -> ()
 
 let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
   let div = match Manip.by_id dialog_layer_id with
@@ -149,7 +150,8 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
                            font-family: 'Inconsolata', monospace;\
                            flex: 0 0 auto;\
                            background: black;\
-                           margin: auto;"]
+                           margin: auto;\
+                           max-width: 50%;"]
       ([ H.h3 ~a: [ H.a_style "margin: 0;\
                                padding: 10px;\
                                text-align: center;" ]
@@ -398,7 +400,7 @@ let set_state_from_save_file ?token save =
   match token with None -> () | Some t -> store sync_token t;
   store nickname save.nickname;
   store all_exercise_states
-    (SMap.merge (fun id ans edi ->
+    (SMap.merge (fun _ ans edi ->
          match ans, edi with
          | Some ans, Some (mtime, solution) ->
              Some {ans with Answer.solution; mtime}
@@ -521,3 +523,145 @@ let stars_div stars =
     let src = Format.asprintf "/icons/stars_%02d.svg" num in
     H.img ~alt ~src ()
   ]
+
+let exercise_text ex_meta exo =
+  let mathjax_url =
+    "/js/mathjax/MathJax.js?delayStartupUntil=configured"
+  in
+  let mathjax_config =
+    "MathJax.Hub.Config({\n\
+    \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
+    \  extensions: [],\n\
+    \  showMathMenu: false,\n\
+    \  showMathMenuMSIE: false,\n\
+    \  \"HTML-CSS\": {\n\
+    \    imageFont: null\n\
+    \  }
+          });"
+    (* the following would allow comma instead of dot for the decimal separator,
+       but should depend on the language the exercise is in, not the language of the
+       app
+       "AsciiMath: {\n\
+       \  decimal: \"" ^[%i"."]^ "\"\n\
+        },\n"
+    *)
+  in
+  (* Looking for the description in the correct language. *)
+  let descr =
+    let lang = "" in
+    try
+      List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+    with
+      Not_found ->
+        try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+        with Not_found -> [%i "No description available for this exercise." ]
+  in
+  Format.asprintf
+    "<!DOCTYPE html>\
+     <html><head>\
+     <title>%s - exercise text</title>\
+     <meta charset='UTF-8'>\
+     <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
+     <script type='text/x-mathjax-config'>%s</script>
+            <script type='text/javascript' src='%s'></script>\
+     </head>\
+     <body>\
+     %s\
+     </body>\
+     <script type='text/javascript'>MathJax.Hub.Configured()</script>\
+     </html>"
+    ex_meta.Exercise.Meta.title
+    mathjax_config
+    mathjax_url
+    descr
+
+let string_of_exercise_kind = function
+  | Exercise.Meta.Project -> [%i"project"]
+  | Exercise.Meta.Problem -> [%i"problem"]
+  | Exercise.Meta.Exercise -> [%i"exercise"]
+
+let grade_color = function
+  | None -> "#808080"
+  | Some score ->
+      Printf.sprintf "hsl(%d, 100%%, 67%%)"
+        (int_of_float (float_of_int score /. 100. *. 138.))
+
+let get_assignments tokens exos_status =
+  let module ES = Exercise.Status in
+  let module ATM = Map.Make(struct
+      type t = (float * float) * Token.Set.t * bool
+      let compare (d1, ts1, dft1) (d2, ts2, dft2) =
+        match compare d1 d2 with
+        | 0 -> (match Token.Set.compare ts1 ts2 with
+            | 0 -> compare dft1 dft2
+            | n -> n)
+        | n -> n
+    end)
+  in
+  let atm_add atm key id =
+    match ATM.find_opt key atm with
+    | None -> ATM.add key (SSet.singleton id) atm
+    | Some set -> ATM.add key (SSet.add id set) atm
+  in
+  let atm =
+    SMap.fold (fun id st atm ->
+        let assg = st.ES.assignments in
+        let default = ES.default_assignment assg in
+        let stl = ES.by_status tokens assg in
+        let atm = match default with
+          | ES.Assigned {start; stop} ->
+              let explicit_tokens =
+                Token.Map.fold (fun tok _ -> Token.Set.add tok)
+                  assg.ES.token_map Token.Set.empty
+              in
+              let implicit_tokens =
+                Token.Set.diff tokens explicit_tokens
+              in
+              atm_add atm ((start, stop), implicit_tokens, true) id
+          | _ -> atm
+        in
+        List.fold_left (fun atm (status, tokens) ->
+            match status with
+            | ES.Open | ES.Closed -> atm
+            | ES.Assigned {start; stop} ->
+                let key = (start, stop), tokens, (status = default) in
+                match ATM.find_opt key atm with
+                | None ->
+                    ATM.add key (SSet.singleton id) atm
+                | Some ids ->
+                    ATM.add key (SSet.add id ids) atm)
+          atm
+          stl)
+      exos_status
+      ATM.empty
+  in
+  ATM.fold (fun (assg, tokens, dft) exos l ->
+      (assg, tokens, dft, exos) :: l)
+    atm []
+  |> List.rev
+
+let string_of_date ?(time=false) t =
+  let date = new%js Js.date_fromTimeValue (t *. 1000.) in
+  if time then
+    Printf.sprintf "%04d-%02d-%02d %02d:%02d"
+      date##getFullYear (date##getMonth + 1) date##getDate
+      date##getHours date##getMinutes
+  else
+    Printf.sprintf "%04d-%02d-%02d"
+      date##getFullYear (date##getMonth + 1) date##getDate
+
+let date ?(time=false) t =
+  let date = new%js Js.date_fromTimeValue (t *. 1000.) in
+  H.time ~a:[ H.a_datetime (Js.to_string date##toISOString) ] [
+    H.pcdata
+      (Js.to_string (if time then date##toLocaleString
+                     else date##toLocaleDateString))
+  ]
+
+let tag_span tag =
+  let color =
+    Printf.sprintf "#%06x" ((Hashtbl.hash tag lor 0x808080) land 0xffffff)
+  in
+  H.span ~a:[H.a_class ["tag"];
+             H.a_style ("background-color: "^color)]
+    [H.pcdata tag]

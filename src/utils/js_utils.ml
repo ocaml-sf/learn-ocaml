@@ -280,6 +280,10 @@ module Manip = struct
     let body = (Of_dom.of_body Dom_html.window##.document##.body) in
     appendChild ?before body elt2
 
+  let appendToHead ?before elt2 =
+    let head = (Of_dom.of_head Dom_html.window##.document##.head) in
+    appendChild ?before head elt2
+
   let get_elt_input name elt : Dom_html.inputElement Js.t =
     Js.Opt.case
       (Dom_html.CoerceTo.input (get_elt name elt))
@@ -429,6 +433,9 @@ module Manip = struct
     let onchange_select elt f =
       let elt = get_elt_select "Ev.onchange_select" elt in
       elt##.onchange := (bool_cb f)
+    let oninput elt f =
+      let elt = get_elt_input "Ev.oninput" elt in
+      elt##.oninput := (bool_cb f)
   end
 
   module Attr = struct

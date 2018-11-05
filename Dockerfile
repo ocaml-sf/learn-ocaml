@@ -21,6 +21,7 @@ ADD demo-repository demo-repository
 RUN echo "bytelink += [\"-custom\"]" >addflags.ocp
 RUN sudo chown -R opam:nogroup .
 
+ENV OPAMVERBOSE 1
 RUN opam install . --destdir /home/opam/install-prefix
 
 

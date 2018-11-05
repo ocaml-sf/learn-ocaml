@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml"
-version: "0.8"
+version: "0.9"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
@@ -26,14 +26,12 @@ depends: [
   "js_of_ocaml-tyxml"
   "lwt" {>= "3.2.0" & < "4.0.0"}
   "lwt_ssl"
+  "lwt_react"
   "ocp-indent-nlfork"
   "ocp-ocamlres" {= "0.4"}
   "ocplib-json-typed" {= "0.6"}
   "pprint"
   "ppx_tools"
-  "react"
-  "reactiveData"
-  "tyxml"
   "base" {= "v0.9.4"}
   "cohttp" {>= "1.0.0"}
   "cohttp-lwt-unix" {>= "1.0.0"}

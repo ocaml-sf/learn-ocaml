@@ -743,7 +743,7 @@ let () =
   Lwt.async @@ fun () ->
   set_string_translations ();
   Dom_html.document##.title :=
-    Js.string ([%i"Learn OCaml"] ^ " v."^Learnocaml_api.version);
+    Js.string ("Learn OCaml" ^ " v."^Learnocaml_api.version);
   Manip.setInnerText El.version ("v."^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
   let sync_button_state = button_state () in

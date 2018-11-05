@@ -32,9 +32,6 @@ val display_callback: bool ref
 (** Should compiler outcome be printed ? *)
 val display_outcomes: bool ref
 
-(** Where to put the graded exercise *)
-val output_json: string option ref
-
 (** Should the tool grade a student file instead of 'solution.ml' ? *)
 val grade_student: string option ref
 

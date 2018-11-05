@@ -47,6 +47,7 @@ module Manip : sig
   val clone: ?deep:bool -> 'a elt -> 'a elt
 
   val appendChild: ?before:'a elt -> 'b elt ->  'c elt -> unit
+  val appendToHead: ?before:'a elt -> 'c elt -> unit
   val appendToBody: ?before:'a elt -> 'c elt -> unit
   val appendChildren: ?before:'a elt -> 'b elt ->  'c elt list -> unit
   val appendChildFirst: 'b elt ->  'c elt -> unit
@@ -109,6 +110,7 @@ module Manip : sig
     val onreturn: ('a,Dom_html.keyboardEvent) ev_unit
     val onchange: ('a,Dom_html.event) ev
     val onchange_select: ('a,Dom_html.event) ev
+    val oninput: ('a,Dom_html.event) ev
   end
 
   module Attr : sig

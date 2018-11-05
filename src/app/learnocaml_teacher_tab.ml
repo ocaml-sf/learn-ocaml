@@ -23,6 +23,58 @@ open Learnocaml_common
 module H = Tyxml_js.Html5
 module ES = Exercise.Status
 
+let filter_input input_id list_id apply_fun =
+  let input_field =
+    H.input ~a:[
+      H.a_id input_id;
+      H.a_input_type `Search;
+      H.a_list list_id;
+    ] ()
+  in
+  Manip.Ev.oninput input_field (fun _ev ->
+      apply_fun (Manip.value input_field);
+      true);
+  H.div ~a:[H.a_class ["filter_input"]] [
+    H.datalist ~a:[H.a_id list_id] ();
+    input_field;
+    H.span ~a:[
+      H.a_class ["filter_reset_cross"];
+      H.a_onclick (fun _ ->
+          (Tyxml_js.To_dom.of_input input_field)##.value := Js.string "";
+          apply_fun "";
+          true);
+    ]
+      [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
+  ]
+
+let tag_addremove list_id placeholder add_fun remove_fun =
+  let tag_input =
+    H.input ~a:[
+      H.a_input_type `Text;
+      H.a_list list_id;
+      H.a_placeholder placeholder;
+    ] ()
+  in
+  let get_input_list () =
+    List.filter ((<>) "")
+      (String.split_on_char ' ' (Manip.value tag_input))
+  in
+  H.div [
+    tag_input;
+    H.button ~a:[
+      H.a_class ["addremove"];
+      H.a_onclick (fun _ev ->
+          add_fun (get_input_list ());
+          true)
+    ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
+    H.button ~a:[
+      H.a_class ["addremove"];
+      H.a_onclick (fun _ev ->
+          remove_fun (get_input_list ());
+          true);
+    ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
+  ]
+
 
 let teacher_tab token _select _params () =
   let action_new_token () =
@@ -42,14 +94,6 @@ let teacher_tab token _select _params () =
   in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
-  in
-  let tag_div tag =
-    let color =
-      Printf.sprintf "#%06x" ((Hashtbl.hash tag lor 0x808080) land 0xffffff)
-    in
-    H.span ~a:[H.a_class ["tag"];
-               H.a_style ("background-color: "^color)]
-      [H.pcdata tag]
   in
   let htbl_keys t = Hashtbl.fold (fun k _ acc -> k::acc) t [] in
   let elt e =
@@ -73,7 +117,7 @@ let teacher_tab token _select _params () =
   let selected_students = Hashtbl.create 117 in
   let selected_assignment = ref None in
   let exercises_index = ref (Exercise.Index.Exercises []) in
-  (* let skills_index = ref ((SMap.empty, SMap.empty) : Exercise.Skill.t * Exercise.Skill.t) in *)
+  let all_exercise_skills = ref SSet.empty in
   let students_map = ref Token.Map.empty in
   let assignments_tbl = Hashtbl.create 59 in
   let students_changes = ref Token.Map.empty in
@@ -106,6 +150,7 @@ let teacher_tab token _select _params () =
       Student.default token
   in
   let exercise_line_id id = "learnocaml_exercise_"^id in
+  let exercise_group_id id = "exercise_group_"^id in
   let student_line_id student =
     "learnocaml_student_" ^ match student with
     | `Any -> "any"
@@ -135,7 +180,8 @@ let teacher_tab token _select _params () =
 
   (* Action function callbacks *)
   let update_changed_status = ref (fun () -> assert false) in
-  let toggle_selected_exercises = ref (fun ?force:_ _ -> assert false) in
+  let toggle_selected_exercises =
+    ref (fun ?force:_ ?update:_ _ -> assert false) in
   let toggle_selected_students =
     ref (fun ?force:_ ?update:_ _ -> assert false)
   in
@@ -153,7 +199,7 @@ let teacher_tab token _select _params () =
             let all_children = all_exercises g.Exercise.Index.contents in
             let acc =
               H.tr ~a:[
-                H.a_id ("exercise_group_"^id);
+                H.a_id (exercise_group_id id);
                 H.a_class ["exercise_group"];
                 H.a_onclick (fun _ ->
                     !toggle_selected_exercises all_children; false);
@@ -167,6 +213,10 @@ let teacher_tab token _select _params () =
           acc groups_list
     | Exercise.Index.Exercises exlist ->
         List.fold_left (fun acc (id, meta) ->
+            let open_ () =
+              let _win = window_open ("/exercises/"^id^"/") "_blank" in
+              false
+            in
             match meta with None -> acc | Some meta ->
             let st = status id in
             let hid = exercise_line_id id in
@@ -174,17 +224,29 @@ let teacher_tab token _select _params () =
               (if exercise_changed_status id then ["changed"] else []) @
               (if Hashtbl.mem selected_exercises id then ["selected"] else [])
             in
+            let skills_prereq = ES.skills_prereq meta st in
+            let skills_focus = ES.skills_focus meta st in
             H.tr ~a:[
               H.a_id hid;
               H.a_class ("exercise_line" :: classes);
               H.a_onclick (fun _ -> !toggle_selected_exercises [id]; false);
+              H.a_ondblclick (fun _ -> open_ ());
+              H.a_onmouseup (fun ev ->
+                  Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
+                  if btn = Dom_html.Middle_button then open_ () else true);
             ] [
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
                 [ H.pcdata meta.Exercise.Meta.title ];
-              H.td (List.map H.pcdata meta.Exercise.Meta.focus);
+              H.td ~a:[H.a_class ["skills-prereq"]]
+                (List.map tag_span skills_prereq @
+                 if skills_prereq <> [] || skills_focus <> []
+                 then [H.pcdata "\xe2\x87\xa2"]
+                 (* U+21E2, rightwards dashed arrow *)
+                 else []);
+              H.td ~a:[H.a_class ["skills-focus"]]
+                (List.map tag_span skills_focus);
               H.td [stars_div meta.Exercise.Meta.stars];
-              H.td (List.map tag_div st.ES.tags);
               H.td [
                 let cls, text =
                   if Token.Map.is_empty ES.(st.assignments.token_map) then
@@ -199,9 +261,62 @@ let teacher_tab token _select _params () =
             ] :: acc)
           acc exlist
   in
+  let set_exercise_filtering str =
+    let skills, keywords =
+      List.partition (fun s -> SSet.mem s !all_exercise_skills)
+        (List.filter ((<>) "") (String.split_on_char ' ' str))
+    in
+    let res =
+      List.map (fun s ->
+          new%js Js.regExp_withFlags (Js.string s) (Js.string "i"))
+        keywords
+    in
+    let matches id meta =
+      let st = get_status id in
+      (List.for_all (fun re ->
+           let strmatch = function
+             | None -> false
+             | Some s -> Js.to_bool (re##test (Js.string s))
+           in
+           strmatch meta.Exercise.Meta.id ||
+           strmatch (Some meta.Exercise.Meta.title) ||
+           strmatch meta.Exercise.Meta.short_description)
+          res)
+      &&
+      List.for_all (fun skill ->
+          List.mem skill (ES.skills_focus meta st) ||
+          List.mem skill (ES.skills_prereq meta st))
+        skills
+    in
+    let rec hide = function
+      | Exercise.Index.Groups groups_list ->
+          List.fold_left (fun (empty0, hidden0) (id, g) ->
+              let empty, hidden = hide g.Exercise.Index.contents in
+              let elt = find_component (exercise_group_id id) in
+              if empty then Manip.addClass elt "exercise_hidden"
+              else Manip.removeClass elt "exercise_hidden";
+              empty && empty0, List.rev_append hidden hidden0)
+            (true, []) groups_list
+      | Exercise.Index.Exercises l ->
+          List.fold_left (fun (empty, hidden) (id, ex) ->
+              let elt = find_component (exercise_line_id id) in
+              match ex with
+              | Some ex when matches id ex ->
+                  Manip.removeClass elt "exercise_hidden";
+                  false, hidden
+              | _ ->
+                  Manip.addClass elt "exercise_hidden";
+                  empty, (id::hidden))
+            (true, []) l
+    in
+    let _empty, hidden = hide !exercises_index in
+    if !selected_assignment = None then
+      !toggle_selected_exercises ~force:false ~update:true hidden
+  in
   let exercises_list_div =
     H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
   in
+  let exercise_skills_list_id = "exercise_skills_list" in
   let exercises_div =
     let legend =
       H.legend ~a:[
@@ -212,9 +327,10 @@ let teacher_tab token _select _params () =
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
-        (* TODO: filtering tools *)
-      ];
-      H.fieldset ~legend [ exercises_list_div ]
+        H.datalist ~a:[H.a_id exercise_skills_list_id] ();
+        filter_input "exercises_search_field"
+          exercise_skills_list_id set_exercise_filtering];
+      H.fieldset ~legend [ exercises_list_div ];
     ]
   in
   let students_list_div =
@@ -243,13 +359,31 @@ let teacher_tab token _select _params () =
       [H.pcdata (Token.to_string tk)]
   in
   let make_student_line ?(selected=false) st contents =
-    H.tr ~a:[
-      H.a_id (student_line_id st);
-      H.a_class (["student_line"] @ if selected then ["selected"] else []);
-      H.a_onclick (fun _ ->
-          !toggle_selected_students [st];
-          true);
-    ] (auto_checkbox_td () :: contents)
+    let open_student_tab =
+      let f t =
+        let _win =
+          window_open (Printf.sprintf "/student-view.html?token=%s"
+                         (Token.to_string t)) "_blank"
+        in
+        false
+      in
+      match st with
+      | `Token t ->
+          [ H.a_ondblclick (fun _ -> f t);
+            H.a_onmouseup (fun ev ->
+                Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
+                if btn = Dom_html.Middle_button then f t else true)
+          ]
+      | `Any -> []
+    in
+    H.tr ~a:([
+        H.a_id (student_line_id st);
+        H.a_class (["student_line"] @ if selected then ["selected"] else []);
+        H.a_onclick (fun _ ->
+            !toggle_selected_students [st];
+            true);
+      ] @ open_student_tab)
+      (auto_checkbox_td () :: contents)
   in
   let anystudents_line =
     make_student_line `Any [
@@ -302,7 +436,7 @@ let teacher_tab token _select _params () =
             H.td (match st.Student.nickname with
                 | Some n -> [H.pcdata n]
                 | _ -> []);
-            H.td (List.map tag_div (SSet.elements st.Student.tags));
+            H.td (List.map tag_span (SSet.elements st.Student.tags));
             try find_component (student_progression_id st.Student.token)
             with Failure _ ->
               H.td ~a:[H.a_id (student_progression_id st.Student.token);
@@ -323,8 +457,7 @@ let teacher_tab token _select _params () =
             ))
           ())
   in
-  let set_student_filtering () =
-    let str = Manip.value (find_component "student_search_field") in
+  let set_student_filtering str =
     let tags, keywords =
       List.partition (fun s -> SSet.mem s !all_student_tags)
         (List.filter ((<>) "") (String.split_on_char ' ' str))
@@ -375,7 +508,8 @@ let teacher_tab token _select _params () =
           else acc)
         selected !students_changes;
     fill_students_pane ();
-    set_student_filtering ();
+    set_student_filtering
+      (Manip.value (find_component "student_search_field"));
     !update_changed_status ();
   in
   let add_student_tags tags =
@@ -408,13 +542,8 @@ let teacher_tab token _select _params () =
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
         H.datalist ~a:[H.a_id student_tags_list_id] ();
-        H.input ~a:[
-          H.a_id "student_search_field";
-          H.a_input_type `Search;
-          H.a_placeholder "\xf0\x9f\x94\x8d" (* U+1F50D magnifying glass *);
-          H.a_list student_tags_list_id;
-          H.a_oninput (fun _ev -> set_student_filtering (); true);
-        ] ();
+        filter_input "student_search_field"
+          student_tags_list_id set_student_filtering;
         H.div ~a:[H.a_class ["filler_h"]] [];
         H.label ~a:[H.a_label_for "student_sort"]
           [H.pcdata [%i"Sort by"]];
@@ -433,82 +562,38 @@ let teacher_tab token _select _params () =
         ]
       ];
       H.fieldset ~legend [ students_list_div ];
-      let tag_input =
-        H.input ~a:[
-          H.a_input_type `Text;
-          H.a_list student_tags_list_id;
-          H.a_placeholder [%i"tags"];
-        ] ()
-      in
       H.div ~a:[H.a_id "student_controls"] [
-        tag_input;
-        H.button ~a:[
-          H.a_onclick (fun _ev ->
-              add_student_tags
-                (List.filter ((<>) "")
-                   (String.split_on_char ' ' (Manip.value tag_input)));
-              true)
-        ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
-        H.button ~a:[
-          H.a_onclick (fun _ev ->
-              remove_student_tags
-                (List.filter ((<>) "")
-                   (String.split_on_char ' ' (Manip.value tag_input)));
-              true);
-        ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
+        tag_addremove student_tags_list_id [%i"tags"]
+          add_student_tags remove_student_tags;
       ]
     ]
   in
   let fill_exercises_pane () =
     let table = List.rev (mk_table 0 [] get_status !exercises_index) in
     Manip.replaceChildren exercises_list_div [H.table table];
+    all_exercise_skills :=
+      Exercise.Index.fold_exercises (fun acc id meta ->
+          let st = get_status id in
+          let acc =
+            List.fold_left (fun acc sk -> SSet.add sk acc)
+              acc (ES.skills_prereq meta st)
+          in
+          List.fold_left (fun acc sk -> SSet.add sk acc)
+            acc (ES.skills_focus meta st))
+        SSet.empty
+        !exercises_index;
+    Manip.replaceSelf (find_component exercise_skills_list_id)
+      (H.datalist ~a:[H.a_id exercise_skills_list_id] ~children:(
+          `Options
+            (SSet.fold (fun skill acc -> H.option (H.pcdata skill) :: acc)
+               !all_exercise_skills []
+            ))
+          ());
+    match Manip.value (find_component "exercises_search_field") with
+    | "" -> ()
+    | s -> set_exercise_filtering s
   in
 
-(*
-  let skills_list_div =
-    H.div ~a:[H.a_id "focus_list"] [H.pcdata [%i"Loading..."]]
-  in
-  let skills_div =
-    let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            (* TODO: Select all skills and derive a set of exercises *)
-            true
-          );
-      ] [H.pcdata [%i"Skills"]]
-    in
-    H.div ~a:[H.a_id "skills_pane"; H.a_class ["learnocaml_pane"]] [
-      H.div ~a:[H.a_id "skills_filter_box"] [
-        (* TODO: filtering tools (if necessary for skills?) *)
-      ];
-      H.fieldset ~legend [
-        skills_list_div;
-      ];
-    ]
-  in
-  let skill_line_id id = "skill_line_"^id in
-  let skill_line id exs =
-    H.tr ~a:[
-      H.a_id (skill_line_id id);
-      H.a_class ["skill_line"];
-    ] [ H.td ~a:[ H.a_class [ "skill_name_td" ] ] [ H.pcdata id ] ;
-        H.td (List.map H.pcdata exs)
-      ]
-  in
-  let fill_skills_pane () =
-    (* Having one table for requirements and focus allows a better handling
-       of the indentation *)
-    let requirements =
-      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Requirements"]]] ::
-      SMap.fold (fun id exs acc ->
-          skill_line id exs :: acc) (snd !skills_index) [] in
-    let skills =
-      H.tr [H.th ~a:[H.a_class ["skill_title"]] [H.pcdata [%i "Focus"]]] ::
-      SMap.fold (fun id exs acc ->
-          skill_line id exs :: acc) (fst !skills_index) requirements in
-    Manip.replaceChildren skills_list_div [H.table skills]
-  in
-*)
   let assignment_line id =
     let selected = !selected_assignment = Some id in
     let now = gettimeofday () in
@@ -579,7 +664,7 @@ let teacher_tab token _select _params () =
       H.td [H.pcdata n_students];
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
-        [H.pcdata "\xe2\xa8\x82" (* U+2A02 *)];
+        [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
       (* todo: add common tags *)
     ]
   in
@@ -615,56 +700,10 @@ let teacher_tab token _select _params () =
     Token.Set.diff all_tokens (unassigned_students exercises all_tokens)
   in
   let assignments_table () =
-    let module ATM = Map.Make(struct
-        type t = (float * float) * Token.Set.t * bool
-        let compare (d1, ts1, dft1) (d2, ts2, dft2) =
-          match compare d1 d2 with
-          | 0 -> (match Token.Set.compare ts1 ts2 with
-              | 0 -> compare dft1 dft2
-              | n -> n)
-          | n -> n
-      end)
-    in
-    let atm_add atm key id =
-      match ATM.find_opt key atm with
-      | None -> ATM.add key (SSet.singleton id) atm
-      | Some set -> ATM.add key (SSet.add id set) atm
-    in
     let all_tokens =
       Token.Map.fold (fun t _ -> Token.Set.add t) !students_map Token.Set.empty
     in
-    let atm =
-      SMap.fold (fun id st atm ->
-          let assg = st.ES.assignments in
-          let default = ES.default_assignment assg in
-          let stl = ES.by_status all_tokens assg in
-          let atm = match default with
-            | ES.Assigned {start; stop} ->
-                let explicit_tokens =
-                  Token.Map.fold (fun tok _ -> Token.Set.add tok)
-                    assg.ES.token_map Token.Set.empty
-                in
-                let implicit_tokens =
-                  Token.Set.diff all_tokens explicit_tokens
-                in
-                atm_add atm ((start, stop), implicit_tokens, true) id
-            | _ -> atm
-          in
-          List.fold_left (fun atm (status, tokens) ->
-              match status with
-              | ES.Open | ES.Closed -> atm
-              | ES.Assigned {start; stop} ->
-                  let key = (start, stop), tokens, (status = default) in
-                  match ATM.find_opt key atm with
-                  | None ->
-                      ATM.add key (SSet.singleton id) atm
-                  | Some ids ->
-                     ATM.add key (SSet.add id ids) atm)
-            atm
-            stl)
-        (status_current ())
-        ATM.empty
-    in
+    let assignments = get_assignments all_tokens (status_current ()) in
     let line_n = ref 0 in
     let make_line assg tokens exo_ids mode =
       incr line_n;
@@ -708,12 +747,51 @@ let teacher_tab token _select _params () =
     in
     Manip.Ev.onclick new_assg_button (fun _ -> new_assignment (); false);
     Manip.replaceChildren table @@
-    (List.rev
-       (ATM.fold (fun (assg, tokens, dft) exos acc ->
-            make_line assg tokens exos dft :: acc)
-           atm [])) @
+    List.map (fun (assg, tokens, dft, exos) -> make_line assg tokens exos dft)
+      assignments @
     [new_assg_line];
     table
+  in
+  let change_exercise_skills op of_meta of_status update_status =
+    status_changes :=
+      Hashtbl.fold
+        (fun id () ->
+           let base = of_meta (Exercise.Index.find !exercises_index id) in
+           let st = get_status id in
+           let current = op (ES.get_skills ~base (of_status st)) in
+           SMap.add id (update_status st (ES.make_skills ~base current)))
+        selected_exercises
+        !status_changes;
+    fill_exercises_pane ();
+    !update_changed_status ()
+  in
+  let add_requirements skills =
+    change_exercise_skills
+      (List.rev_append skills)
+      (fun meta -> meta.Exercise.Meta.requirements)
+      (fun st -> st.ES.skills_prereq)
+      (fun st skills_prereq -> {st with ES.skills_prereq})
+  in
+  let remove_requirements skills =
+    change_exercise_skills
+      (List.filter (fun s -> not (List.mem s skills)))
+      (fun meta -> meta.Exercise.Meta.requirements)
+      (fun st -> st.ES.skills_prereq)
+      (fun st skills_prereq -> {st with ES.skills_prereq})
+  in
+  let add_focus skills =
+    change_exercise_skills
+      (List.rev_append skills)
+      (fun meta -> meta.Exercise.Meta.focus)
+      (fun st -> st.ES.skills_focus)
+      (fun st skills_focus -> {st with ES.skills_focus})
+  in
+  let remove_focus skills =
+    change_exercise_skills
+      (List.filter (fun s -> not (List.mem s skills)))
+      (fun meta -> meta.Exercise.Meta.focus)
+      (fun st -> st.ES.skills_focus)
+      (fun st skills_focus -> {st with ES.skills_focus})
   in
   let open_close_button =
     H.button ~a:[
@@ -741,13 +819,14 @@ let teacher_tab token _select _params () =
   in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
-      open_close_button
-      (* H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Add assignment"]];
-       * H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Add tag"]];
-       * H.button ~a:[ H.a_disabled () ]
-       *   [H.pcdata [%i"Remove tag"]]; *)
+      open_close_button;
+      H.div ~a:[H.a_class ["filler_h"]] [];
+      tag_addremove exercise_skills_list_id [%i"required skills"]
+        (add_requirements) (remove_requirements);
+      H.div ~a:[H.a_id "skills-arrow"]
+        [H.pcdata "\xe2\x87\xa2"]; (* U+21E2, rightwards dashed arrow *)
+      tag_addremove exercise_skills_list_id [%i"trained skills"]
+        (add_focus) (remove_focus);
     ]
   in
   Manip.appendChild exercises_div exercise_control_div;
@@ -1015,7 +1094,8 @@ let teacher_tab token _select _params () =
       (Manip.replaceChildren status_text_div [H.pcdata [%i"Unsaved changes"]];
        Manip.addClass status_text_div "warning")
   end;
-  toggle_selected_exercises := begin fun ?force ids ->
+  toggle_selected_exercises := begin
+    fun ?force ?(update = force=None) ids ->
     Lwt.async @@ fun () ->
     let ids, onoff = match force with
       | Some set -> ids, set
@@ -1023,7 +1103,9 @@ let teacher_tab token _select _params () =
           let ids =
             List.filter (fun id ->
                 match Manip.by_id (exercise_line_id id) with
-                | Some elt -> not (Manip.hasClass elt "disabled")
+                | Some elt ->
+                    not (Manip.hasClass elt "disabled") &&
+                    not (Manip.hasClass elt "exercise_hidden")
                 | None -> false)
               ids
           in
@@ -1034,7 +1116,7 @@ let teacher_tab token _select _params () =
      | None -> ()
      | Some aid ->
          set_assignment aid ~exos:(SSet.of_list (htbl_keys selected_exercises)));
-    if force = None then update_disabled_both ();
+    if update then update_disabled_both ();
     Lwt.return_unit
   end;
   toggle_selected_students := begin
@@ -1184,18 +1266,12 @@ let teacher_tab token _select _params () =
       | [] -> "background:white"
       | _::_ as l ->
           let step = 100. /. float_of_int (List.length l) in
-          let color = function
-            | None -> "white"
-            | Some score ->
-                Printf.sprintf "hsl(%d, 100%%, 67%%)"
-                  (int_of_float (score *. 138.))
-          in
           Printf.sprintf "background:linear-gradient(to right,%s)"
             (String.concat ","
                (List.mapi (fun i score ->
                     Printf.sprintf "%s %.0f%%,%s %.0f%%"
-                      (color score) (float_of_int i *. step)
-                      (color score) (float_of_int (i+1) *. step))
+                      (grade_color score) (float_of_int i *. step)
+                      (grade_color score) (float_of_int (i+1) *. step))
                    l))
     in
     let div_assg ~cls grades =
@@ -1209,7 +1285,7 @@ let teacher_tab token _select _params () =
         let grades exlist =
           List.map (fun ex ->
               match SMap.find_opt ex status with
-              | Some (_, Some g) -> Some (float_of_int g /. 100.)
+              | Some (_, g) -> g
               | _ -> None)
             exlist
         in
@@ -1225,6 +1301,9 @@ let teacher_tab token _select _params () =
       !students_map
   in
 
+  Manip.appendToHead
+    (H.link ~rel:[`Stylesheet] ~href:"/css/learnocaml_teacher_tab.css" ());
+
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
@@ -1236,15 +1315,9 @@ let teacher_tab token _select _params () =
   in
   let fetch_exercises =
     Server_caller.request_exn (Learnocaml_api.Exercise_index token)
-    >|= fun (index, _) -> exercises_index := index
+    >|= fun (index, _) ->
+    exercises_index := index
   in
-  (* let fetch_skills =
-   *   Server_caller.request_exn (Learnocaml_api.Focused_skills_index ())
-   *   >>= fun focus ->
-   *   Server_caller.request_exn (Learnocaml_api.Required_skills_index ())
-   *   >|= fun requirements ->
-   *   skills_index := focus, requirements
-   * in *)
   let fetch_stats =
     Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
@@ -1263,7 +1336,16 @@ let teacher_tab token _select _params () =
   in
   let content_div = find_component "learnocaml-main-content" in
   Manip.appendChild content_div div;
-  Lwt.join [fetch_exercises; (* fetch_skills; *) fetch_stats; fetch_students] >>= fun () ->
+  Lwt.join [fetch_exercises; fetch_stats; fetch_students] >>= fun () ->
+  exercises_index :=
+    Exercise.Index.map_exercises (fun id meta ->
+        let st = get_status id in
+        Exercise.Meta.{ meta with
+          requirements =
+            ES.skills_base ~current:meta.requirements st.ES.skills_prereq;
+          focus =
+            ES.skills_base ~current:meta.focus st.ES.skills_focus; })
+      !exercises_index;
   fill_exercises_pane ();
   (* fill_skills_pane (); *)
   fill_students_pane ();
