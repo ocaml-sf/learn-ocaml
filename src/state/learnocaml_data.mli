@@ -265,6 +265,25 @@ module Exercise: sig
 
   end
 
+  (** Dependency graph of exercises *)
+  module Graph : sig
+
+    type relation = Skill of string | Exercise of id
+
+    (** An exercise depends on others, by a skill or/and backward relation *)
+    type node = private {
+      name : id;
+      mutable children : (node * relation list) list
+    }
+
+    val compute_graph : Index.t -> node list
+
+    (** Computes a set of exercises that might be needed to do the exercise
+        given. *)
+    val compute_exercise_set : node -> string list
+
+  end
+
 end
 
 module Lesson: sig

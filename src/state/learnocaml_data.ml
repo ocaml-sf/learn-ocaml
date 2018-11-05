@@ -842,6 +842,87 @@ module Exercise = struct
 
   end
 
+  module Graph = struct
+
+    type relation = Skill of string | Exercise of id
+
+    type node =
+      { name : id;
+        mutable children : (node * relation list) list }
+
+    let ex_node exs id =
+      try Hashtbl.find exs id
+      with Not_found ->
+        let node = { name = id; children = [] } in
+        Hashtbl.add exs id node;
+        node
+
+    let merge_children ch =
+      let rec merge acc = function
+        | [] -> acc
+        | (n, ks) :: [] -> (n, ks) :: acc
+        | (n, ks) :: (((n', ks') :: rem) as ch') ->
+            if n.name = n'.name then merge acc ((n, ks @ ks') :: rem)
+            else merge ((n, ks) :: acc) ch'
+      in
+      List.fast_sort (fun (n1, _) (n2, _) -> compare n1.name n2.name) ch
+      |> merge []
+
+
+    let compute_node ex_id ex_meta focus exercises =
+      let exs =
+        List.map (fun id -> ex_node exercises id, [Exercise ex_id])
+          ex_meta.Meta.backward
+      in
+      let exs =
+        List.fold_left (fun exs skill ->
+            List.fold_left (fun exs id ->
+                (ex_node exercises id, [Skill skill]) :: exs)
+              exs (SMap.find skill focus)
+          ) exs ex_meta.Meta.requirements
+      in
+      let exs = merge_children exs in
+      let node = ex_node exercises ex_id in
+      node.children <- exs;
+      node
+
+    let focus_map exercises =
+      let add_ex focus (id, skill) =
+        let exs =
+          try SMap.find skill focus
+          with Not_found -> [] in
+        SMap.add skill (id :: exs) focus
+      in
+      Index.fold_exercises
+        (fun focus id meta ->
+           List.fold_left add_ex focus
+           @@ List.map (fun s -> id, s) meta.Meta.focus)
+        SMap.empty exercises
+
+    let compute_graph exercises =
+      let exercises_nodes = Hashtbl.create 17 in
+      let focus = focus_map exercises in
+      let compute acc ex_id ex_meta =
+        compute_node ex_id ex_meta focus exercises_nodes :: acc
+      in
+      Index.fold_exercises (fun acc id meta -> compute acc id meta) [] exercises
+
+    let compute_exercise_set graph =
+      let seen = ref SSet.empty in
+      let rec compute acc node =
+        if SSet.mem node.name !seen then acc
+        else begin
+          seen := SSet.add node.name !seen;
+          List.fold_right (fun (node, _kinds) acc ->
+              compute acc node)
+            node.children
+            (node.name :: acc)
+        end
+      in
+      compute [] graph
+
+  end
+
 end
 
 module Lesson = struct
