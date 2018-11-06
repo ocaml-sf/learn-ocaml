@@ -79,46 +79,25 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
   let div = match Manip.by_id id with
     | Some div -> div
     | None ->
-        let sty =
-          "display: flex;\
-           flex-direction: column;\
-           position: absolute;\
-           top: 0; left: 0; bottom: 0; right: 0;\
-           background: rgba(0,0,0,0.8);\
-           color: white;\
-           z-index: 22222;" in
-        let div = H.(div ~a:[ a_id id ; a_style sty ]) [] in
+        let div =
+          H.div ~a:[ H.a_id id ;
+                     H.a_class ["learnocaml-dialog-overlay"]
+                   ]
+            []
+        in
         Manip.(appendChild Elt.body) div;
         div in
-  Manip.replaceChildren div
-    H.
-      [ div ~a: [ a_style "flex: 1" ] [] ;
-        div ~a: [ a_style "border: 3px white double;\
-                           font-family: 'Inconsolata', monospace;\
-                           flex: 0 0 auto;\
-                           background: black;\
-                           margin: auto;"]
-          [ h3 ~a: [ a_style "margin: 0;\
-                              padding: 10px;\
-                              text-align: center;" ]
-              [ pcdata titletext ] ;
-            pre ~a: [ a_style "margin: 0;\
-                               border-top: 1px white solid;\
-                               padding: 20px;" ]
-              [ pcdata (String.trim message) ] ] ;
-        div ~a: [ a_style "flex: 1" ] [] ]
+  Manip.replaceChildren div [
+    H.div [
+      H.h3 [ H.pcdata titletext ];
+      H.div [ H.pre [ H.pcdata (String.trim message) ] ];
+    ]
+  ]
 
 let dialog_layer_id = "ocp-dialog-layer"
 
 let box_button txt f =
   H.button ~a: [
-    H.a_style "display: block;\
-               margin: 10px auto;\
-               padding: 5px 10px;\
-               border: none;\
-               background-color: white;\
-               color: black;\
-               text-align: center;";
     H.a_onclick (fun _ ->
         f ();
         match Manip.by_id dialog_layer_id with
@@ -133,37 +112,32 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
   let div = match Manip.by_id dialog_layer_id with
     | Some div -> div
     | None ->
-        let sty =
-          "display: flex;\
-           flex-direction: column;\
-           position: absolute;\
-           top: 0; left: 0; bottom: 0; right: 0;\
-           background: rgba(0,0,0,0.8);\
-           color: white;\
-           z-index: 22221;" in
-        let div = H.(div ~a:[ a_id dialog_layer_id ; a_style sty ]) [] in
+        let div =
+          H.div ~a:[ H.a_id dialog_layer_id ;
+                     H.a_class ["learnocaml-dialog-overlay"] ]
+            []
+        in
         Manip.(appendChild Elt.body) div;
         div in
   Manip.replaceChildren div [
-    H.div ~a: [ H.a_style "flex: 1" ] [] ;
-    H.div ~a: [ H.a_style "border: 3px white double;\
-                           font-family: 'Inconsolata', monospace;\
-                           flex: 0 0 auto;\
-                           background: black;\
-                           margin: auto;\
-                           max-width: 50%;"]
-      ([ H.h3 ~a: [ H.a_style "margin: 0;\
-                               padding: 10px;\
-                               text-align: center;" ]
-           [ H.pcdata title ] ;
-         H.div ~a: [ H.a_style "margin: 0;\
-                                border-top: 1px white solid;\
-                                padding: 20px;" ]
-           message;
-         H.div ~a:[ H.a_style "display: flex; flex-direction: row;"]
-           buttons]);
-    H.div ~a: [ H.a_style "flex: 1" ] [];
+    H.div [
+      H.h3 [ H.pcdata title ];
+      H.div message;
+      H.div ~a:[ H.a_class ["buttons"] ] buttons;
+    ]
   ]
+
+let lwt_alert ~title ~buttons message =
+  let waiter, wakener = Lwt.task () in
+  let buttons =
+    List.map (fun (txt, f) ->
+        box_button txt (fun () ->
+            Lwt.async @@ fun () ->
+            f () >|= Lwt.wakeup_later wakener))
+      buttons
+  in
+  ext_alert ~title message ~buttons;
+  waiter
 
 let alert ?(title=[%i"ERROR"]) ?buttons message =
   ext_alert ~title ?buttons [ H.pre [H.pcdata (String.trim message)] ]
