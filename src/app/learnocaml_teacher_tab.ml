@@ -75,10 +75,9 @@ let tag_addremove list_id placeholder add_fun remove_fun =
     ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
   ]
 
-
-let teacher_tab token _select _params () =
+let rec teacher_tab token _select _params () =
   let action_new_token () =
-    Server_caller.request_exn (Learnocaml_api.Create_teacher_token token)
+    retrieve (Learnocaml_api.Create_teacher_token token)
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
@@ -86,7 +85,7 @@ let teacher_tab token _select _params () =
          (Token.to_string new_token))
   in
   let action_csv_export () =
-    Server_caller.request_exn (Learnocaml_api.Students_csv (token, [], []))
+    retrieve (Learnocaml_api.Students_csv (token, [], []))
     >|= fun csv ->
     Learnocaml_common.fake_download
       ~name:"learnocaml.csv"
@@ -887,12 +886,16 @@ let teacher_tab token _select _params () =
       Token.Map.fold (fun _ x acc -> x::acc) students_changes_map []
     in
     (if changes = [] then Lwt.return () else
-       Server_caller.request_exn
-         (Learnocaml_api.Set_exercise_status (token, changes))) >|= fun () ->
+       retrieve
+         (Learnocaml_api.Set_exercise_status (token, changes)))
+    >|= fun () ->
     (if students_changes = [] then Lwt.return () else
-       Server_caller.request_exn
-         (Learnocaml_api.Set_students_list (token, students_changes))) >|=
-    reload;
+       retrieve
+         (Learnocaml_api.Set_students_list (token, students_changes)))
+    >|= fun () ->
+    (* Reload the full tab: a bit more costly, but safer & simpler *)
+    teacher_tab token _select _params () >|=
+    Manip.replaceSelf (find_component "learnocaml-main-teacher")
     (* status_map := status_current ();
      * status_changes := SMap.empty;
      * Hashtbl.clear selected_exercises;
@@ -1289,7 +1292,7 @@ let teacher_tab token _select _params () =
               | _ -> None)
             exlist
         in
-        Manip.appendChildren parent_div @@
+        Manip.replaceChildren parent_div @@
         List.map (fun (deadl,exos) ->
             div_assg
               ~cls:(if deadl < now then "progr-closed" else "progr-assigned")
@@ -1301,9 +1304,6 @@ let teacher_tab token _select _params () =
       !students_map
   in
 
-  Manip.appendToHead
-    (H.link ~rel:[`Stylesheet] ~href:"/css/learnocaml_teacher_tab.css" ());
-
   let div =
     H.div ~a: [H.a_id "learnocaml-main-teacher"] [
       exercises_div;
@@ -1314,12 +1314,12 @@ let teacher_tab token _select _params () =
     ]
   in
   let fetch_exercises =
-    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+    retrieve (Learnocaml_api.Exercise_index token)
     >|= fun (index, _) ->
     exercises_index := index
   in
   let fetch_stats =
-    Server_caller.request_exn (Learnocaml_api.Exercise_status_index token)
+    retrieve (Learnocaml_api.Exercise_status_index token)
     >|= fun statuses ->
     let map =
       List.fold_left (fun m ex -> SMap.add ex.ES.id ex m)
@@ -1328,7 +1328,7 @@ let teacher_tab token _select _params () =
     status_map := map
   in
   let fetch_students =
-    Server_caller.request_exn (Learnocaml_api.Students_list token)
+    retrieve (Learnocaml_api.Students_list token)
     >|= fun students ->
     students_map :=
       List.fold_left (fun m st -> Token.Map.add st.Student.token st m)

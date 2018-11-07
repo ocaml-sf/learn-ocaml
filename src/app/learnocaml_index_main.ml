@@ -66,15 +66,12 @@ module El = struct
   end
 end
 
-let hide_loading () = hide_loading ~id:El.loading_id ()
-
-let show_loading msg =
-  show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
+let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
 
 let exercises_tab token _ _ () =
-  show_loading [%i"Loading exercises"];
+  show_loading [%i"Loading exercises"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
-  Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+  retrieve (Learnocaml_api.Exercise_index token)
   >>= fun (index, deadlines) ->
   let format_exercise_list all_exercise_states =
     let rec format_contents lvl acc contents =
@@ -157,14 +154,12 @@ let exercises_tab token _ _ () =
     | l -> H.div ~a:[H.a_id El.Dyn.exercise_list_id] l
   in
     Manip.appendChild El.content list_div;
-  hide_loading ();
   Lwt.return list_div
-;;
 
 let lessons_tab select (arg, set_arg, _delete_arg) () =
-  show_loading [%i"Loading lessons"];
+  show_loading [%i"Loading lessons"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
-  Server_caller.fetch_lesson_index () >>= fun index ->
+  retrieve (Learnocaml_api.Lesson_index ()) >>= fun index ->
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
   let main_div =
@@ -192,9 +187,11 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
   let load_lesson ~loading () =
     let selector = Tyxml_js.To_dom.of_select selector in
     let id = Js.to_string selector##.value in
-    Server_caller.fetch_lesson id >>= fun { Lesson.steps; _ } ->
+    retrieve ~ignore:Lesson.{title=""; steps=[]}
+      (Learnocaml_api.Lesson id) >>= fun { Lesson.steps; _ } ->
     Manip.removeChildren main_div ;
-    if loading then show_loading [%i"Running OCaml examples"];
+    (if loading then show_loading [%i"Running OCaml examples"]
+     else fun f -> f ()) @@ fun () ->
     let timeout_prompt =
       Learnocaml_toplevel.make_timeout_popup
         ~on_show: (fun () -> Lwt.async select)
@@ -218,7 +215,7 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
         ~snapshot () in
     let toplevel_buttons_group = button_group () in
     disable_button_group toplevel_buttons_group (* enabled after init *) ;
-    Learnocaml_toplevel.create
+    create_toplevel
       ~display_welcome: false
       ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
@@ -254,7 +251,6 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
           enable_button prev_button_state ;
           enable_button next_button_state
     end ;
-    if loading then hide_loading ();
     Lwt.return () in
   let group = button_group () in
   begin button
@@ -300,9 +296,7 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
       load_lesson ~loading: false ()
     with Not_found -> failwith "lesson not found"
   end >>= fun () ->
-  hide_loading ();
   Lwt.return lesson_div
-;;
 
 let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let open Tutorial in
@@ -349,7 +343,7 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_launch =
-    Learnocaml_toplevel.create
+    create_toplevel
       ~on_disable_input: (fun _ ->
           Manip.addClass step_div "disabled" ;
           disable_button_group toplevel_buttons_group)
@@ -359,10 +353,10 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
       ~history ~timeout_prompt ~flood_prompt
       ~container: toplevel_div
       () in
-  show_loading [%i"Loading tutorials"];
+  show_loading [%i"Loading tutorials"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
   Manip.appendChild El.content tutorial_div ;
-  Server_caller.fetch_tutorial_index () >>= fun index ->
+  retrieve ~ignore:[] (Learnocaml_api.Tutorial_index ()) >>= fun index ->
   let index =
     List.flatten @@ List.fold_left
       (fun acc (_, { Index.series_tutorials; _ }) ->
@@ -406,7 +400,8 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let prev_step_button_state = button_state () in
   let next_step_button_state = button_state () in
   let load_tutorial tutorial_name step_id () =
-    Server_caller.fetch_tutorial tutorial_name >>= fun { Tutorial.steps; _ } ->
+    retrieve ~ignore:{Tutorial.title = []; steps = []}
+      (Learnocaml_api.Tutorial tutorial_name) >>= fun { Tutorial.steps; _ } ->
     set_arg "tutorial" tutorial_name ;
     set_arg "step" (string_of_int step_id) ;
     let prev, next = prev_and_next tutorial_name in
@@ -531,9 +526,8 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
     Lwt.return ()
   end ;
   toplevel_launch >>= fun _ ->
-  hide_loading ();
   Lwt.return tutorial_div
-;;
+
 
 let toplevel_tab select _ () =
   let container =
@@ -543,7 +537,7 @@ let toplevel_tab select _ () =
   let div =
     Tyxml_js.Html5.(div ~a: [ a_id El.Dyn.toplevel_id ])
       [ container ; buttons_div ] in
-  show_loading [%i"Launching OCaml"];
+  show_loading [%i"Launching OCaml"] @@ fun () ->
   let timeout_prompt =
     Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> Lwt.async select)
@@ -567,7 +561,7 @@ let toplevel_tab select _ () =
       ~snapshot () in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
-  Learnocaml_toplevel.create
+  create_toplevel
     ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
     ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
     ~history ~timeout_prompt ~flood_prompt
@@ -589,13 +583,11 @@ let toplevel_tab select _ () =
     Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
-  hide_loading ();
   Lwt.return div
 
 let teacher_tab token a b () =
-  show_loading [%i"Loading student info"];
+  show_loading [%i"Loading student info"] @@ fun () ->
   Learnocaml_teacher_tab.teacher_tab token a b () >>= fun div ->
-  hide_loading ();
   Lwt.return div
 
 let get_stored_token () =
@@ -632,14 +624,14 @@ let init_token_dialog () =
        Lwt.return_none)
     else
       (Learnocaml_local_storage.(store nickname) nickname;
-       Server_caller.request_exn
+       retrieve
          (Learnocaml_api.Create_token (None, Some nickname))
        >>= fun token ->
        Learnocaml_local_storage.(store sync_token) token;
        show_token_dialog token;
        Lwt.return_some (token, nickname))
   in
-  let login_token () =
+  let rec login_token () =
     let input = input_tok in
     match Token.parse (Manip.value input) with
     | exception (Failure _) ->
@@ -655,7 +647,13 @@ let init_token_dialog () =
               [%i"The entered token couldn't be recognised."];
             Lwt.return_none
         | Error e ->
-            Lwt.fail_with (Server_caller.string_of_error e)
+            lwt_alert ~title:[%i"REQUEST ERROR"] [
+              H.p [H.pcdata [%i"Could not retrieve data from server"]];
+              H.code [H.pcdata (Server_caller.string_of_error e)];
+            ] ~buttons:[
+              [%i"Retry"], (fun () -> login_token ());
+              [%i"Cancel"], (fun () -> Lwt.return_none);
+            ]
   in
   let handler f t = fun _ ->
     Lwt.async (fun () ->
@@ -735,6 +733,7 @@ let () =
                                Printexc.get_backtrace ()
                              else ""));
     match e with
+    | Lwt.Canceled -> ()
     | Failure message -> fatal message
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
@@ -778,7 +777,7 @@ let () =
     let container = El.tab_buttons_container in
     let current_btn = ref None in
     let current_args = ref (ref []) in
-    let mutex = Lwt_mutex.create () in
+    let select_thread = ref None in
     Manip.removeChildren container ;
     List.map
       (fun (id, (name, callback)) ->
@@ -786,39 +785,47 @@ let () =
          let div = ref None in
          let args = ref [] in
          let rec select () =
-           Lwt_mutex.lock mutex >>= fun () ->
-           begin match !current_btn with
-             | None -> ()
-             | Some btn -> Manip.removeClass btn "active"
-           end ;
-           Manip.removeChildren El.content ;
-           List.iter (fun (n, _) -> delete_arg n) !(!current_args) ;
-           begin match !div with
-             | Some div ->
-                 List.iter (fun (n, v) -> set_arg n v) !args ;
-                 Manip.appendChild El.content div ;
-                 Lwt.return_unit
-             | None ->
-                 let arg name =
-                   arg name in
-                 let set_arg name value =
-                   args := set_assoc name value !args ;
-                   set_arg name value in
-                 let delete_arg name =
-                   args := delete_assoc name !args ;
-                   delete_arg name in
-                 callback select (arg, set_arg, delete_arg) () >>= fun fresh ->
-                 div := Some fresh ;
-                 Lwt.return_unit
-           end >>= fun () ->
-           set_arg "activity" id ;
-           Manip.addClass btn "active" ;
-           menu_hidden := true ;
-           Manip.addClass El.menu "hidden" ;
-           current_btn := Some btn ;
-           current_args := args ;
-           Lwt_mutex.unlock mutex ;
-           Lwt.return () in
+           let th () =
+             Lwt.pause () >>= fun () ->
+             begin match !current_btn with
+               | None -> ()
+               | Some btn -> Manip.removeClass btn "active"
+             end ;
+             Manip.removeChildren El.content ;
+             List.iter (fun (n, _) -> delete_arg n) !(!current_args) ;
+             begin match !div with
+               | Some div ->
+                   List.iter (fun (n, v) -> set_arg n v) !args ;
+                   Manip.appendChild El.content div ;
+                   Lwt.return_unit
+               | None ->
+                   let arg name =
+                     arg name in
+                   let set_arg name value =
+                     args := set_assoc name value !args ;
+                     set_arg name value in
+                   let delete_arg name =
+                     args := delete_assoc name !args ;
+                     delete_arg name in
+                   callback select (arg, set_arg, delete_arg) () >>= fun fresh ->
+                   div := Some fresh ;
+                   Lwt.return_unit
+             end >>= fun () ->
+             set_arg "activity" id ;
+             Manip.addClass btn "active" ;
+             menu_hidden := true ;
+             Manip.addClass El.menu "hidden" ;
+             current_btn := Some btn ;
+             current_args := args ;
+             Lwt.return_unit
+           in
+           (match !select_thread with None -> () | Some th -> Lwt.cancel th);
+           Lwt.finalize (fun () ->
+               let th = th () in
+               select_thread := Some th;
+               th)
+             (fun () -> select_thread := None; Lwt.return_unit)
+         in
          Manip.Ev.onclick btn
            (fun _ -> Lwt.async select ; true) ;
          Manip.appendChild container btn ;
@@ -851,15 +858,16 @@ let () =
     Lwt.return ()
   in
   let logout_dialog () =
-    Lwt.catch
-      (fun () ->
-         sync () >|= fun _ ->
-         [%i"Be sure to write down your token before logging out:"])
-      (fun _ ->
-         Lwt.return
-           [%i"WARNING: the data could not be synchronised with the server. \
-               Logging out will lose your local changes, be sure you exported \
-               a backup."])
+    Server_caller.request
+      (Learnocaml_api.Update_save
+         (get_stored_token (), get_state_as_save_file ()))
+    >|= (function
+        | Ok _ ->
+            [%i"Be sure to write down your token before logging out:"]
+        | Error _ ->
+            [%i"WARNING: the data could not be synchronised with the server. \
+                Logging out will lose your local changes, be sure you exported \
+                a backup."])
     >|= fun s ->
     confirm ~title:[%i"Logout"] ~ok_label:[%i"Logout"]
       [H.p [H.pcdata s];
@@ -930,4 +938,3 @@ let () =
   with Not_found ->
     no_tab_selected ();
     Lwt.return ()
-;;

@@ -390,7 +390,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
       flooded := total
     end
 
-let welcome_phrase =
+let welcome_phrase () =
   "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version) ;\
    print_endline \" - type your OCaml phrase in the box below and press [Enter]\" ;\
    print_endline \" - use [Shift-Enter] to break lines without triggering execution\" ;\
@@ -491,7 +491,7 @@ let create
         Learnocaml_toplevel_worker_caller.execute
           ~pp_answer: (fun _ -> ())
           ~print_outcome: false
-          worker welcome_phrase >>= fun _ ->
+          worker (welcome_phrase ()) >>= fun _ ->
         Lwt.return ()
       else Lwt.return ()
     end >>= fun _ ->

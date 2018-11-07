@@ -161,18 +161,29 @@ let hide_loading ?(id = "ocp-loading-layer") () =
   Manip.(removeClass elt "loading") ;
   Manip.(addClass elt "loaded")
 
-let show_loading ?(id = "ocp-loading-layer") contents =
-  let elt = find_div_or_append_to_body id in
-  Manip.(addClass elt "loading-layer") ;
-  Manip.(removeClass elt "loaded") ;
-  Manip.(addClass elt "loading") ;
-  let chamo_src =
-    "/icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
-  Manip.replaceChildren elt
-    H.[
-      div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
-      div ~a: [ a_class [ "messages" ] ] contents
-    ]
+let show_loading ?(id = "ocp-loading-layer") contents f =
+  let show () =
+    let elt = find_div_or_append_to_body id in
+    Manip.(addClass elt "loading-layer") ;
+    Manip.(removeClass elt "loaded") ;
+    Manip.(addClass elt "loading") ;
+    let chamo_src =
+      "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
+    Manip.replaceChildren elt
+      H.[
+        div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
+        div ~a: [ a_class [ "messages" ] ] contents
+      ]
+  in
+  let hide () =
+    let elt = find_div_or_append_to_body id in
+    Manip.(removeClass elt "initial") ;
+    Manip.(removeClass elt "loading") ;
+    Manip.(addClass elt "loaded")
+  in
+  Lwt.finalize
+    (fun () -> show (); f ())
+    (fun () -> hide (); Lwt.return_unit)
 
 let set_assoc name value =
   let rec set acc = function
@@ -385,6 +396,21 @@ let set_state_from_save_file ?token save =
   store all_toplevel_histories save.all_toplevel_histories;
   store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
 
+let rec retrieve ?ignore req =
+  Server_caller.request req >>= function
+  | Ok x -> Lwt.return x
+  | Error e ->
+      lwt_alert ~title:[%i"REQUEST ERROR"] [
+        H.p [H.pcdata [%i"Could not retrieve data from server"]];
+        H.code [H.pcdata (Server_caller.string_of_error e)];
+      ] ~buttons:(
+        ([%i"Retry"], (fun () -> retrieve req)) ::
+        (match ignore with
+         | None -> []
+         | Some v -> [[%i"Ignore"], fun () -> Lwt.return v]) @
+        [[%i"Cancel"], (fun () -> Lwt.fail Lwt.Canceled)]
+      )
+
 let get_state_as_save_file ?(include_reports = false) () =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
@@ -401,7 +427,7 @@ let get_state_as_save_file ?(include_reports = false) () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let sync_save token save_file =
+let rec sync_save token save_file =
   Server_caller.request (Learnocaml_api.Update_save (token, save_file))
   >>= function
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
@@ -413,7 +439,14 @@ let sync_save token save_file =
         (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
       set_state_from_save_file ~token save;
       Lwt.return save
-  | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+  | Error e ->
+      lwt_alert ~title:[%i"SYNC FAILED"] [
+        H.p [H.pcdata [%i"Could not synchronise save with the server"]];
+        H.code [H.pcdata (Server_caller.string_of_error e)];
+      ] ~buttons:[
+        [%i"Retry"], (fun () -> sync_save token save_file);
+        [%i"Ignore"], (fun () -> Lwt.return save_file);
+      ]
 
 let sync token = sync_save token (get_state_as_save_file ())
 
@@ -639,3 +672,21 @@ let tag_span tag =
   H.span ~a:[H.a_class ["tag"];
              H.a_style ("background-color: "^color)]
     [H.pcdata tag]
+
+let get_worker_code name =
+  let worker_url = ref None in
+  fun () -> match !worker_url with
+    | None ->
+        retrieve (Learnocaml_api.Static ["js"; name]) >|= fun js ->
+        let url = js_code_url js in worker_url := Some url; url
+    | Some url -> Lwt.return url
+
+let create_toplevel =
+  let get_worker = get_worker_code "learnocaml-toplevel-worker.js" in
+  fun
+    ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
+    ~timeout_prompt ~flood_prompt ~container () ->
+    get_worker () >>= fun worker_js_file ->
+    Learnocaml_toplevel.create ~worker_js_file
+      ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
+      ~timeout_prompt ~flood_prompt ~container ()

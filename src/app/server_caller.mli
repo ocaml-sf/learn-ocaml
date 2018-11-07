@@ -32,24 +32,11 @@ val request: 'a Learnocaml_api.request -> ('a, request_error) result Lwt.t
 exception Cannot_fetch of string
 val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t
 
-
-(* val fetch : string -> string Lwt.t
- * 
- * val fetch_exercise_index : unit -> Learnocaml_index.group_contents Lwt.t *)
-
-val fetch_exercise:
+val[@deprecated] fetch_exercise:
   Token.t -> Exercise.id -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
 
-val fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
-val fetch_lesson : string -> Lesson.t Lwt.t
+val[@deprecated] fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
+val[@deprecated] fetch_lesson : string -> Lesson.t Lwt.t
 
-val fetch_tutorial_index : unit -> Tutorial.Index.t Lwt.t
-val fetch_tutorial : string -> Tutorial.t Lwt.t
-
-(*
-val gimme_sync_token : unit -> string Lwt.t
-
-val fetch_save_file : token: string -> Learnocaml_sync.save_file option Lwt.t
-
-val upload_save_file : token: string -> Learnocaml_sync.save_file -> unit Lwt.t
-*)
+val[@deprecated] fetch_tutorial_index : unit -> Tutorial.Index.t Lwt.t
+val[@deprecated] fetch_tutorial : string -> Tutorial.t Lwt.t
