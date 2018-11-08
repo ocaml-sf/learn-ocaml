@@ -282,11 +282,14 @@ module Exercise: sig
 
     (** Computes the dependency graph of exercises, and filters out exercises
         or skills if any are given. *)
-    val compute_graph : filters:relation list -> Index.t -> node list
+    val compute_graph : ?filters:relation list -> Index.t -> node list
 
     (** Computes a set of exercises that appear as dependencies of the given
         exercise. *)
     val compute_exercise_set : node -> string list
+
+    (** Dumps the graph as a `dot` representation, into the given formatter. *)
+    val dump_dot : Format.formatter -> node list -> unit
 
   end
 

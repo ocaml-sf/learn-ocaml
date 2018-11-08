@@ -101,6 +101,11 @@ module Args = struct
       value & flag & info ["verbose"; "v"] ~doc:
         "Display detailed grading reports to stdout"
 
+    let dump_dot =
+      value & opt (some string) None & info ["dump-dot"] ~doc:
+        "Generates a dependency graph of the repository and dumps it into the \
+         given file"
+
     type t = {
       exercises: string list;
       output_json: string option;
@@ -110,7 +115,8 @@ module Args = struct
       let apply
           exercises
           output_json grade_student display_outcomes quiet
-          display_std_outputs dump_outputs dump_reports timeout verbose =
+          display_std_outputs dump_outputs dump_reports timeout
+          verbose dump_dot =
         let exercises = List.flatten exercises in
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
@@ -120,6 +126,7 @@ module Args = struct
         Grader_cli.dump_reports := dump_reports;
         Grader_cli.individual_timeout := timeout;
         Grader_cli.display_reports := verbose;
+        Grader_cli.dump_dot := dump_dot;
         Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         { exercises; output_json }
@@ -127,7 +134,7 @@ module Args = struct
       Term.(const apply
             $exercises $output_json $grade_student $display_outcomes
             $quiet $display_std_outputs $dump_outputs $dump_reports
-            $timeout $verbose)
+            $timeout $verbose $dump_dot)
   end
 
   module Builder = struct

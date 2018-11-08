@@ -917,7 +917,7 @@ module Exercise = struct
               meta.Meta.backward in
           { meta with Meta.requirements; Meta.focus; Meta.backward })
 
-    let compute_graph ~filters exercises =
+    let compute_graph ?(filters=[]) exercises =
       let exercises_nodes = Hashtbl.create 17 in
       let ex_filtered = apply_filters filters exercises in
       let focus = focus_map ex_filtered in
@@ -939,6 +939,28 @@ module Exercise = struct
         end
       in
       compute [] graph
+
+    let dump_dot fmt nodes =
+      let print_kind fmt = function
+        | Skill s -> Format.fprintf fmt "(S %s)" s
+        | Exercise s -> Format.fprintf fmt "(E %s)" s
+      in
+      let print_child fmt ex child kinds =
+        Format.fprintf fmt "%s -> %s [label=\"%a\"];\n"
+          ex
+          child.name
+          (fun fmt -> List.iter (print_kind fmt)) kinds
+      in
+      let print_node fmt n =
+        List.iter (fun (child, kinds) ->
+            print_child fmt n.name child kinds)
+          n.children
+      in
+      Format.fprintf fmt
+        "digraph exercises {\n\
+         %a\n\
+         }"
+        (fun fmt -> List.iter (print_node fmt)) nodes
 
   end
 

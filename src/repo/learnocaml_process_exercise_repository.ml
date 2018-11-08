@@ -60,6 +60,14 @@ let dump_outputs = ref None
 
 let dump_reports = ref None
 
+let dump_dot exs =
+  match !Grader_cli.dump_dot with
+    None -> Lwt.return ()
+  | Some filename ->
+      let graph = Exercise.Graph.compute_graph ~filters:[] exs in
+      Lwt_io.with_file ~mode:Lwt_io.Output filename
+        (fun oc -> Lwt_io.write oc (Format.asprintf "%a" Exercise.Graph.dump_dot graph))
+
 let n_processes = ref 1
 
 let print_grader_error exercise = function
@@ -201,6 +209,7 @@ let main dest_dir =
        in
        fill_structure SMap.empty structure >>= fun (all_exercises, index) ->
        to_file Index.enc (dest_dir / Learnocaml_index.exercise_index_path) index >>= fun () ->
+       dump_dot index >>= fun () ->
        SSet.iter (fun id ->
            if not (SMap.mem id all_exercises) then
              Format.printf "[Warning] Filtered exercise '%s' not found.@." id)

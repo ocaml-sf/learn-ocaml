@@ -23,6 +23,7 @@ let display_outcomes = ref false
 let grade_student = ref None
 let individual_timeout = ref None
 let display_reports = ref false
+let dump_dot = ref None
 
 open Lwt.Infix
 
