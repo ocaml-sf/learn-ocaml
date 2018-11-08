@@ -850,6 +850,9 @@ module Exercise = struct
       { name : id;
         mutable children : (node * relation list) list }
 
+    let node_exercise { name; _ } = name
+    let node_children { children; _ } = children
+
     let ex_node exs id =
       try Hashtbl.find exs id
       with Not_found ->
@@ -899,13 +902,29 @@ module Exercise = struct
            @@ List.map (fun s -> id, s) meta.Meta.focus)
         SMap.empty exercises
 
-    let compute_graph exercises =
+    let apply_filters filters exercises =
+      Index.filter (fun id _ ->
+          not (List.mem (Exercise id) filters)) exercises |>
+      Index.map_exercises (fun _ meta ->
+          let requirements =
+            List.filter (fun s -> not (List.mem (Skill s) filters))
+              meta.Meta.requirements in
+          let focus =
+            List.filter (fun s -> not (List.mem (Skill s) filters))
+              meta.Meta.focus in
+          let backward =
+            List.filter (fun s -> not (List.mem (Exercise s) filters))
+              meta.Meta.backward in
+          { meta with Meta.requirements; Meta.focus; Meta.backward })
+
+    let compute_graph ~filters exercises =
       let exercises_nodes = Hashtbl.create 17 in
-      let focus = focus_map exercises in
+      let ex_filtered = apply_filters filters exercises in
+      let focus = focus_map ex_filtered in
       let compute acc ex_id ex_meta =
         compute_node ex_id ex_meta focus exercises_nodes :: acc
       in
-      Index.fold_exercises (fun acc id meta -> compute acc id meta) [] exercises
+      Index.fold_exercises (fun acc id meta -> compute acc id meta) [] ex_filtered
 
     let compute_exercise_set graph =
       let seen = ref SSet.empty in
