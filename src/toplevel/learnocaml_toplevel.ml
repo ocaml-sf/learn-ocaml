@@ -83,7 +83,7 @@ let scroll { output; _ } =
 let clear { output; _ } =
   Learnocaml_toplevel_output.clear output ;
   Learnocaml_toplevel_output.output_stdout output
-    "The toplevel has been cleared.\n"
+    [%i"The toplevel has been cleared.\n"]
 
 (* let never_ending =
  *   let t = fst (Lwt.wait ()) in
@@ -331,7 +331,7 @@ let make_flood_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata "Flooded output!" ] ;
+          [ h1 [ pcdata [%i"Flooded output!"] ] ;
             div ~a: [ a_class [ "message" ] ]
               [ pcdata (Printf.sprintf
                           [%if"Your code is flooding the %s channel."] name) ;
@@ -374,7 +374,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
            top.current_flood_prompt <-
              (top.flood_prompt top name (fun () -> !flooded) >>= function
                | true ->
-                   real (Printf.sprintf "\nInterrupted output channel %s.\n" name) ;
+                   real (Printf.sprintf [%if"\nInterrupted output channel %s.\n"] name) ;
                    hook := ignore ;
                    Lwt.return ()
                | false ->
@@ -390,11 +390,13 @@ let wrap_flusher_to_prevent_flood top name hook real =
     end
 
 let welcome_phrase () =
-  "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
-   print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
-   print_endline \" - use [Shift-Enter] to break lines without triggering execution\";\n\
-   print_endline \" - use [Ctrl-UP] once to reuse the previous entry\";\n\
-   print_endline \" - use [Ctrl-UP] / [Ctrl-DOWN] to navigate through history\" ;;"
+  [%i"Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
+      print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
+      print_endline \" - use [Shift-Enter] to break lines without triggering execution\";\n\
+      print_endline \" - use [Ctrl-\\xe2\\x86\\x91] once to reuse the previous entry\";\n\
+      print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] \
+      to navigate through history\" ;;"]
+  (* U+2191 upwards arrow, U+2193 downwards arrow*)
 
 let create
     ?worker_js_file
@@ -498,7 +500,7 @@ let create
     if not !first_time then
       let phrase = Learnocaml_toplevel_output.phrase () in
       Learnocaml_toplevel_output.output_stdout output ~phrase
-        "The toplevel has been reset.\n"
+        [%i"The toplevel has been reset.\n"]
     else
       first_time := false ;
     Learnocaml_toplevel_worker_caller.register_callback worker "print_html"

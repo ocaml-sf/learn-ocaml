@@ -1,10 +1,11 @@
 *~
 
 _obuild
+_build
 _opam
 .opam-switch
 Makefile.local
-
+docker/
 src/ppx-metaquot/ast_lifter.ml
 
 learnocaml-server.byte

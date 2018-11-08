@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-11-08 12:12+0100\n"
+"PO-Revision-Date: 2018-11-08 18:51+0100\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -334,6 +334,10 @@ msgstr "problème"
 msgid "exercise"
 msgstr "exercice"
 
+#: src/toplevel/learnocaml_toplevel.ml:86,7--41
+msgid "The toplevel has been cleared.\n"
+msgstr "Le toplevel a été nettoyé.\n"
+
 #: src/toplevel/learnocaml_toplevel.ml:273,36--49
 msgid "%d seconds!"
 msgstr "%d secondes !"
@@ -367,6 +371,10 @@ msgstr "Afficher quand même !"
 msgid "Hide output!"
 msgstr "Masquer la sortie !"
 
+#: src/toplevel/learnocaml_toplevel.ml:334,27--44
+msgid "Flooded output!"
+msgstr "La sortie déborde !"
+
 #: src/toplevel/learnocaml_toplevel.ml:337,30--69
 msgid "Your code is flooding the %s channel."
 msgstr "Votre code submerge le canal %s."
@@ -378,6 +386,35 @@ msgstr "Il a déjà affiché "
 #: src/toplevel/learnocaml_toplevel.ml:341,26--35
 msgid " bytes."
 msgstr " octets."
+
+#: src/toplevel/learnocaml_toplevel.ml:377,44--80
+msgid ""
+"\n"
+"Interrupted output channel %s.\n"
+msgstr "\nCanal de sortie %s interrompu.\n"
+
+#: src/toplevel/learnocaml_toplevel.ml:393,5--464
+msgid ""
+"Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n"
+"print_endline \" - type your OCaml phrase in the box below and press "
+"[Enter]\";\n"
+"print_endline \" - use [Shift-Enter] to break lines without triggering "
+"execution\";\n"
+"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] once to reuse the previous "
+"entry\";\n"
+"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] to "
+"navigate through history\" ;;"
+msgstr ""
+"Printf.printf \"Bienvenue sur OCaml %s\\n%!\" (Sys.ocaml_version);\n"
+"print_endline \" - entrez une phrase OCaml dans le champ ci-dessous et appuyez sur [Entrée]\";\n"
+"print_endline \" - utilisez [Maj-entrée] pour passer à la ligne sans déclencher d'exécution\";\n"
+"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] pour retrouver votre entrée précédente\";\n"
+"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] pour naviguer dans l'historique\";;"
+
+#: src/toplevel/learnocaml_toplevel.ml:503,11--43
+msgid "The toplevel has been reset.\n"
+msgstr "Le toplevel a été redémarré.\n"
+
 #: src/grader/grader_jsoo_worker.ml:58,17--44
 msgid "Error in your solution:\n"
 msgstr "Erreur dans votre solution:\n"
