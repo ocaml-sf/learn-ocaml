@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-11-07 16:59+0100\n"
+"PO-Revision-Date: 2018-11-08 12:12+0100\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -334,6 +334,50 @@ msgstr "problème"
 msgid "exercise"
 msgstr "exercice"
 
+#: src/toplevel/learnocaml_toplevel.ml:273,36--49
+msgid "%d seconds!"
+msgstr "%d secondes !"
+
+#: src/toplevel/learnocaml_toplevel.ml:276,23--33
+msgid "Kill it!"
+msgstr "Le terminer !"
+
+#: src/toplevel/learnocaml_toplevel.ml:286,27--43
+msgid "Infinite loop?"
+msgstr "Boucle infinie ?"
+
+#: src/toplevel/learnocaml_toplevel.ml:288,26--69
+msgid "The toplevel has not been responding for "
+msgstr "Le toplevel ne répond plus depuis "
+
+#: src/toplevel/learnocaml_toplevel.ml:290,26--37
+#: src/toplevel/learnocaml_toplevel.ml:294,26--37
+msgid " seconds."
+msgstr " secondes."
+
+#: src/toplevel/learnocaml_toplevel.ml:292,26--49
+msgid "It will be killed in "
+msgstr "Il sera terminé dans "
+
+#: src/toplevel/learnocaml_toplevel.ml:323,23--37
+msgid "Show anyway!"
+msgstr "Afficher quand même !"
+
+#: src/toplevel/learnocaml_toplevel.ml:325,23--37
+msgid "Hide output!"
+msgstr "Masquer la sortie !"
+
+#: src/toplevel/learnocaml_toplevel.ml:337,30--69
+msgid "Your code is flooding the %s channel."
+msgstr "Votre code submerge le canal %s."
+
+#: src/toplevel/learnocaml_toplevel.ml:339,26--51
+msgid "It has already printed "
+msgstr "Il a déjà affiché "
+
+#: src/toplevel/learnocaml_toplevel.ml:341,26--35
+msgid " bytes."
+msgstr " octets."
 #: src/grader/grader_jsoo_worker.ml:58,17--44
 msgid "Error in your solution:\n"
 msgstr "Erreur dans votre solution:\n"

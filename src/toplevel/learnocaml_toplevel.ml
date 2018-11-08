@@ -270,10 +270,10 @@ let make_timeout_popup
   let t0 = Sys.time () in
   let countdown = ref countdown in
   let btn_continue =
-    let label = Format.asprintf "%d seconds!" refill_step in
+    let label = Format.asprintf [%if"%d seconds!"] refill_step in
     button [ pcdata label ] in
   let btn_stop =
-    button [ pcdata "Kill it!" ] in
+    button [ pcdata [%i"Kill it!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> countdown := !countdown + refill_step ; true) ;
   Manip.Ev.onclick btn_stop
@@ -283,15 +283,15 @@ let make_timeout_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata "Infinite loop?" ] ;
+          [ h1 [ pcdata [%i"Infinite loop?"] ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata "The toplevel has not been responding for " ;
+              [ pcdata [%i"The toplevel has not been responding for "] ;
                 clock_span ;
-                pcdata " seconds." ;
+                pcdata [%i" seconds."] ;
                 br () ;
-                pcdata "It will be killed in " ;
+                pcdata [%i"It will be killed in "] ;
                 countdown_span ;
-                pcdata " seconds." ] ;
+                pcdata [%i" seconds."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Lwt.catch
@@ -320,9 +320,9 @@ let make_flood_popup
   let open Tyxml_js.Html5 in
   let answer = ref None in
   let btn_continue =
-    button [ pcdata "Show anyway!" ] in
+    button [ pcdata [%i"Show anyway!"] ] in
   let btn_stop =
-    button [ pcdata "Hide output!" ] in
+    button [ pcdata [%i"Hide output!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> answer := Some false ; true) ;
   Manip.Ev.onclick btn_stop
@@ -333,13 +333,12 @@ let make_flood_popup
       [ div ~a: [ a_class [ "dialog" ] ]
           [ h1 [ pcdata "Flooded output!" ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata "Your code is flooding the " ;
-                pcdata name ;
-                pcdata " channel. " ;
+              [ pcdata (Printf.sprintf
+                          [%if"Your code is flooding the %s channel."] name) ;
                 br ();
-                pcdata "It has already printed " ;
+                pcdata [%i"It has already printed "] ;
                 qty_span ;
-                pcdata " bytes." ] ;
+                pcdata [%i" bytes."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Manip.appendChild container dialog ;
@@ -375,7 +374,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
            top.current_flood_prompt <-
              (top.flood_prompt top name (fun () -> !flooded) >>= function
                | true ->
-                   real ("\nInterrupted output channel " ^ name ^ ".\n") ;
+                   real (Printf.sprintf "\nInterrupted output channel %s.\n" name) ;
                    hook := ignore ;
                    Lwt.return ()
                | false ->
@@ -391,11 +390,11 @@ let wrap_flusher_to_prevent_flood top name hook real =
     end
 
 let welcome_phrase () =
-  "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version) ;\
-   print_endline \" - type your OCaml phrase in the box below and press [Enter]\" ;\
-   print_endline \" - use [Shift-Enter] to break lines without triggering execution\" ;\
-   print_endline \" - use [Ctrl-↑] once to reuse the previous entry\" ;\
-   print_endline \" - use [Ctrl-↑] / [Ctrl-↓] to navigate through history\" ;;"
+  "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
+   print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
+   print_endline \" - use [Shift-Enter] to break lines without triggering execution\";\n\
+   print_endline \" - use [Ctrl-UP] once to reuse the previous entry\";\n\
+   print_endline \" - use [Ctrl-UP] / [Ctrl-DOWN] to navigate through history\" ;;"
 
 let create
     ?worker_js_file
@@ -414,6 +413,7 @@ let create
     ?(oldify = true)
     ?(display_welcome = true)
     ~container () =
+  (match get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   let output_div = Html5.div [] in
   let input_div = Html5.div [] in
   Manip.appendChild container output_div;
