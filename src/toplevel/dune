@@ -47,12 +47,13 @@
             ace
             ocplib-json-typed
             learnocaml_toplevel_history
-            learnocaml_toplevel_worker_messages)
+            learnocaml_toplevel_worker_messages
+            ocplib_i18n)
  (modules Learnocaml_toplevel_worker_caller
           Learnocaml_toplevel_output
           Learnocaml_toplevel_input
           Learnocaml_toplevel)
- (preprocess (pps js_of_ocaml.ppx))
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
 )
 
 (install

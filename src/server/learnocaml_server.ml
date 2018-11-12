@@ -318,8 +318,8 @@ module Request_handler = struct
           let columns =
             "token" :: "nickname" ::
             (List.fold_left (fun acc ex_id ->
-                 (ex_id ^ " date") ::
                  (ex_id ^ " grade") ::
+                 (ex_id ^ " date") ::
                  acc)
                 [] (List.rev all_exercises))
           in

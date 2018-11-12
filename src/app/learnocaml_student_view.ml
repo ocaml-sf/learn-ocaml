@@ -66,11 +66,6 @@ module El = struct
 
 end
 
-let hide_loading () = hide_loading ~id:El.loading_id ()
-
-let show_loading msg =
-  show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
-
 let tab_select_signal, select_tab =
   let open El.Tabs in
   let current = ref stats in
@@ -372,9 +367,9 @@ let stats_tab assignments answers =
   ]
 
 let init_exercises_and_stats_tabs teacher_token student_token answers =
-  Server_caller.request_exn (Learnocaml_api.Exercise_index teacher_token)
+  retrieve (Learnocaml_api.Exercise_index teacher_token)
   >>= fun (index, _) ->
-  Server_caller.request_exn (Learnocaml_api.Exercise_status_index teacher_token)
+  retrieve (Learnocaml_api.Exercise_status_index teacher_token)
   >>= fun status ->
   let assignments = gather_assignments student_token index status in
   Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
@@ -494,7 +489,7 @@ let update_tabs meta exo ans =
 
 let set_string_translations () =
   let translations = [
-    "txt_preparing", [%i"Preparing the environment"];
+    "txt_loading", [%i"Loading student data"];
     "learnocaml-exo-button-stats", [%i"Stats"];
     "learnocaml-exo-button-list", [%i"Exercises"];
     "learnocaml-exo-button-report", [%i"Report"];
@@ -536,20 +531,19 @@ let () =
   in
   Manip.setInnerText El.token
     ([%i"Status of student: "] ^ Token.to_string student_token);
-  Server_caller.request_exn (Learnocaml_api.Fetch_save student_token)
+  retrieve (Learnocaml_api.Fetch_save student_token)
   >>= fun save ->
   Manip.setInnerText El.nickname save.Save.nickname;
   init_exercises_and_stats_tabs
     teacher_token student_token save.Save.all_exercise_states
   >>= fun _sighandlers ->
-  hide_loading ();
+  hide_loading ~id:El.loading_id ();
   let _sig =
     selected_exercise_signal |> React.S.map @@ function
     | None -> ()
     | Some ex_id ->
         Lwt.async @@ fun () ->
-        Server_caller.request_exn
-          (Learnocaml_api.Exercise (teacher_token, ex_id))
+        retrieve (Learnocaml_api.Exercise (teacher_token, ex_id))
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in

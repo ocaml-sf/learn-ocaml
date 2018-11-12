@@ -79,46 +79,25 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
   let div = match Manip.by_id id with
     | Some div -> div
     | None ->
-        let sty =
-          "display: flex;\
-           flex-direction: column;\
-           position: absolute;\
-           top: 0; left: 0; bottom: 0; right: 0;\
-           background: rgba(0,0,0,0.8);\
-           color: white;\
-           z-index: 22222;" in
-        let div = H.(div ~a:[ a_id id ; a_style sty ]) [] in
+        let div =
+          H.div ~a:[ H.a_id id ;
+                     H.a_class ["learnocaml-dialog-overlay"]
+                   ]
+            []
+        in
         Manip.(appendChild Elt.body) div;
         div in
-  Manip.replaceChildren div
-    H.
-      [ div ~a: [ a_style "flex: 1" ] [] ;
-        div ~a: [ a_style "border: 3px white double;\
-                           font-family: 'Inconsolata', monospace;\
-                           flex: 0 0 auto;\
-                           background: black;\
-                           margin: auto;"]
-          [ h3 ~a: [ a_style "margin: 0;\
-                              padding: 10px;\
-                              text-align: center;" ]
-              [ pcdata titletext ] ;
-            pre ~a: [ a_style "margin: 0;\
-                               border-top: 1px white solid;\
-                               padding: 20px;" ]
-              [ pcdata (String.trim message) ] ] ;
-        div ~a: [ a_style "flex: 1" ] [] ]
+  Manip.replaceChildren div [
+    H.div [
+      H.h3 [ H.pcdata titletext ];
+      H.div [ H.pre [ H.pcdata (String.trim message) ] ];
+    ]
+  ]
 
 let dialog_layer_id = "ocp-dialog-layer"
 
 let box_button txt f =
   H.button ~a: [
-    H.a_style "display: block;\
-               margin: 10px auto;\
-               padding: 5px 10px;\
-               border: none;\
-               background-color: white;\
-               color: black;\
-               text-align: center;";
     H.a_onclick (fun _ ->
         f ();
         match Manip.by_id dialog_layer_id with
@@ -133,37 +112,32 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
   let div = match Manip.by_id dialog_layer_id with
     | Some div -> div
     | None ->
-        let sty =
-          "display: flex;\
-           flex-direction: column;\
-           position: absolute;\
-           top: 0; left: 0; bottom: 0; right: 0;\
-           background: rgba(0,0,0,0.8);\
-           color: white;\
-           z-index: 22221;" in
-        let div = H.(div ~a:[ a_id dialog_layer_id ; a_style sty ]) [] in
+        let div =
+          H.div ~a:[ H.a_id dialog_layer_id ;
+                     H.a_class ["learnocaml-dialog-overlay"] ]
+            []
+        in
         Manip.(appendChild Elt.body) div;
         div in
   Manip.replaceChildren div [
-    H.div ~a: [ H.a_style "flex: 1" ] [] ;
-    H.div ~a: [ H.a_style "border: 3px white double;\
-                           font-family: 'Inconsolata', monospace;\
-                           flex: 0 0 auto;\
-                           background: black;\
-                           margin: auto;\
-                           max-width: 50%;"]
-      ([ H.h3 ~a: [ H.a_style "margin: 0;\
-                               padding: 10px;\
-                               text-align: center;" ]
-           [ H.pcdata title ] ;
-         H.div ~a: [ H.a_style "margin: 0;\
-                                border-top: 1px white solid;\
-                                padding: 20px;" ]
-           message;
-         H.div ~a:[ H.a_style "display: flex; flex-direction: row;"]
-           buttons]);
-    H.div ~a: [ H.a_style "flex: 1" ] [];
+    H.div [
+      H.h3 [ H.pcdata title ];
+      H.div message;
+      H.div ~a:[ H.a_class ["buttons"] ] buttons;
+    ]
   ]
+
+let lwt_alert ~title ~buttons message =
+  let waiter, wakener = Lwt.task () in
+  let buttons =
+    List.map (fun (txt, f) ->
+        box_button txt (fun () ->
+            Lwt.async @@ fun () ->
+            f () >|= Lwt.wakeup_later wakener))
+      buttons
+  in
+  ext_alert ~title message ~buttons;
+  waiter
 
 let alert ?(title=[%i"ERROR"]) ?buttons message =
   ext_alert ~title ?buttons [ H.pre [H.pcdata (String.trim message)] ]
@@ -187,18 +161,29 @@ let hide_loading ?(id = "ocp-loading-layer") () =
   Manip.(removeClass elt "loading") ;
   Manip.(addClass elt "loaded")
 
-let show_loading ?(id = "ocp-loading-layer") contents =
-  let elt = find_div_or_append_to_body id in
-  Manip.(addClass elt "loading-layer") ;
-  Manip.(removeClass elt "loaded") ;
-  Manip.(addClass elt "loading") ;
-  let chamo_src =
-    "/icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
-  Manip.replaceChildren elt
-    H.[
-      div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
-      div ~a: [ a_class [ "messages" ] ] contents
-    ]
+let show_loading ?(id = "ocp-loading-layer") contents f =
+  let show () =
+    let elt = find_div_or_append_to_body id in
+    Manip.(addClass elt "loading-layer") ;
+    Manip.(removeClass elt "loaded") ;
+    Manip.(addClass elt "loading") ;
+    let chamo_src =
+      "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
+    Manip.replaceChildren elt
+      H.[
+        div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
+        div ~a: [ a_class [ "messages" ] ] contents
+      ]
+  in
+  let hide () =
+    let elt = find_div_or_append_to_body id in
+    Manip.(removeClass elt "initial") ;
+    Manip.(removeClass elt "loading") ;
+    Manip.(addClass elt "loaded")
+  in
+  Lwt.finalize
+    (fun () -> show (); f ())
+    (fun () -> hide (); Lwt.return_unit)
 
 let set_assoc name value =
   let rec set acc = function
@@ -411,6 +396,21 @@ let set_state_from_save_file ?token save =
   store all_toplevel_histories save.all_toplevel_histories;
   store all_exercise_toplevel_histories save.all_exercise_toplevel_histories
 
+let rec retrieve ?ignore req =
+  Server_caller.request req >>= function
+  | Ok x -> Lwt.return x
+  | Error e ->
+      lwt_alert ~title:[%i"REQUEST ERROR"] [
+        H.p [H.pcdata [%i"Could not retrieve data from server"]];
+        H.code [H.pcdata (Server_caller.string_of_error e)];
+      ] ~buttons:(
+        ([%i"Retry"], (fun () -> retrieve req)) ::
+        (match ignore with
+         | None -> []
+         | Some v -> [[%i"Ignore"], fun () -> Lwt.return v]) @
+        [[%i"Cancel"], (fun () -> Lwt.fail Lwt.Canceled)]
+      )
+
 let get_state_as_save_file ?(include_reports = false) () =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
@@ -427,7 +427,7 @@ let get_state_as_save_file ?(include_reports = false) () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let sync_save token save_file =
+let rec sync_save token save_file =
   Server_caller.request (Learnocaml_api.Update_save (token, save_file))
   >>= function
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
@@ -439,7 +439,14 @@ let sync_save token save_file =
         (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
       set_state_from_save_file ~token save;
       Lwt.return save
-  | Error e -> Lwt.fail_with (Server_caller.string_of_error e)
+  | Error e ->
+      lwt_alert ~title:[%i"SYNC FAILED"] [
+        H.p [H.pcdata [%i"Could not synchronise save with the server"]];
+        H.code [H.pcdata (Server_caller.string_of_error e)];
+      ] ~buttons:[
+        [%i"Retry"], (fun () -> sync_save token save_file);
+        [%i"Ignore"], (fun () -> Lwt.return save_file);
+      ]
 
 let sync token = sync_save token (get_state_as_save_file ())
 
@@ -665,3 +672,21 @@ let tag_span tag =
   H.span ~a:[H.a_class ["tag"];
              H.a_style ("background-color: "^color)]
     [H.pcdata tag]
+
+let get_worker_code name =
+  let worker_url = ref None in
+  fun () -> match !worker_url with
+    | None ->
+        retrieve (Learnocaml_api.Static ["js"; name]) >|= fun js ->
+        let url = js_code_url js in worker_url := Some url; url
+    | Some url -> Lwt.return url
+
+let create_toplevel =
+  let get_worker = get_worker_code "learnocaml-toplevel-worker.js" in
+  fun
+    ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
+    ~timeout_prompt ~flood_prompt ~container () ->
+    get_worker () >>= fun worker_js_file ->
+    Learnocaml_toplevel.create ~worker_js_file
+      ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
+      ~timeout_prompt ~flood_prompt ~container ()

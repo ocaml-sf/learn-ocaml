@@ -399,3 +399,13 @@ module MakeLocal(V: sig type t val name: string end) : sig
   val get: unit -> V.t option
   val set: V.t -> unit
 end
+
+(** Returns an URL that can be passed to [Worker.create] from a string
+    containing the code *)
+val js_code_url: string -> string
+
+(* (\** Wrapper for [Worker.create] that uses JS code as a string instead of a URL*\)
+ * val worker_with_code: string -> ('a, 'b) Worker.worker Js.t
+ * 
+ * (\** Similar to [Worker.create], but retrieves the js file manually *\)
+ * val worker: string -> ('a, 'b) Worker.worker Js.t Lwt.t *)

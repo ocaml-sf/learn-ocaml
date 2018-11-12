@@ -37,6 +37,12 @@ val ext_alert :
   [< Html_types.div_content ] Tyxml_js.Html.elt list ->
   unit
 
+val lwt_alert :
+  title: string ->
+  buttons: (string * (unit -> 'a Lwt.t)) list ->
+  [< Html_types.div_content ] Tyxml_js.Html.elt list ->
+  'a Lwt.t
+
 val confirm :
   title: string ->
   ?ok_label: string -> ?cancel_label: string ->
@@ -47,7 +53,9 @@ val catch_with_alert : ?printer: (exn -> string) -> (unit -> unit Lwt.t) -> unit
 
 val hide_loading : ?id: string -> unit -> unit
 
-val show_loading : ?id: string -> [< Html_types.div_content_fun ] Tyxml_js.Html.elt list -> unit
+val show_loading :
+  ?id: string -> [< Html_types.div_content_fun ] Tyxml_js.Html.elt list ->
+  (unit -> 'a Lwt.t) -> 'a Lwt.t
 
 val set_assoc : string -> 'a -> (string * 'a) list -> (string * 'a) list
 
@@ -154,3 +162,20 @@ val string_of_date: ?time:bool -> float -> string
 val date: ?time:bool -> float -> [> Html_types.time ] Tyxml_js.Html5.elt
 
 val tag_span: string -> [> Html_types.span ] Tyxml_js.Html5.elt
+
+(** A protected call to Server_caller.request *)
+val retrieve: ?ignore:'a -> 'a Learnocaml_api.request -> 'a Lwt.t
+
+val get_worker_code: string -> (unit -> string Lwt.t)
+
+val create_toplevel:
+  ?display_welcome: bool ->
+  ?on_disable_input:(Learnocaml_toplevel.t -> unit) ->
+  ?on_enable_input:(Learnocaml_toplevel.t -> unit) ->
+  ?history:Learnocaml_toplevel_history.history ->
+  ?after_init:(Learnocaml_toplevel.t -> unit Lwt.t) ->
+  timeout_prompt:(Learnocaml_toplevel.t -> unit Lwt.t) ->
+  flood_prompt: (Learnocaml_toplevel.t -> string -> (unit -> int) -> bool Lwt.t) ->
+  container:[`Div] Tyxml_js.Html5.elt ->
+  unit ->
+  Learnocaml_toplevel.t Lwt.t

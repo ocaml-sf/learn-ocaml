@@ -65,6 +65,13 @@ let init_tabs, select_tab =
     select_tab !current in
   init_tabs, select_tab
 
+let get_grade =
+  let get_worker = get_worker_code "learnocaml-grader-worker.js" in
+  fun ?callback ?timeout exercise ->
+    get_worker () >>= fun worker_js_file ->
+    Grading_jsoo.get_grade ~worker_js_file ?callback ?timeout exercise
+
+
 let display_report exo report =
   let score, _failed = Report.result report in
   let report_button = find_component "learnocaml-exo-button-report" in
@@ -168,7 +175,7 @@ let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
 
 let get_skill_index token =
   let index = lazy (
-    Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+    retrieve (Learnocaml_api.Exercise_index token)
     >|= fun (index, _) ->
     Exercise.Index.fold_exercises (fun (req, focus) id meta ->
         let add sk id map =
@@ -261,7 +268,7 @@ let display_meta token ex_meta id =
     span [ pcdata title; pcdata " " ] ::
     display_authors author
   in
-  Server_caller.request_exn (Learnocaml_api.Exercise_index token)
+  retrieve (Learnocaml_api.Exercise_index token)
   >|= fun (index, _) ->
   let req_map, focus_map =
     Exercise.Index.fold_exercises (fun (req, focus) id meta ->
@@ -400,7 +407,7 @@ let () =
       Learnocaml_local_storage.(retrieve sync_token) |>
       Lwt.return
     with Not_found ->
-      Server_caller.request_exn (Learnocaml_api.Create_token (None, None))
+      retrieve (Learnocaml_api.Create_token (None, None))
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       token
@@ -425,7 +432,7 @@ let () =
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
     token >>= fun token ->
-    Server_caller.fetch_exercise token id
+    retrieve (Learnocaml_api.Exercise (token, id))
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
@@ -463,7 +470,7 @@ let () =
       ~max_size: 99
       ~snapshot () in
   let toplevel_launch =
-    Learnocaml_toplevel.create
+    create_toplevel
       ~after_init ~timeout_prompt ~flood_prompt
       ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
@@ -629,7 +636,9 @@ let () =
   let messages = Tyxml_js.Html5.ul [] in
   let callback text =
     Manip.appendChild messages Tyxml_js.Html5.(li [ pcdata text ]) in
-  let worker = ref (Grading_jsoo.get_grade ~callback exo) in
+  let worker =
+    ref (get_grade ~callback exo)
+  in
   begin toolbar_button
       ~icon: "typecheck" [%i"Compile"] @@ fun () ->
     typecheck true
@@ -650,15 +659,23 @@ let () =
     Manip.replaceChildren messages
       Tyxml_js.Html5.[ li [ pcdata [%i"Launching the grader"] ] ] ;
     let submit_report = not !is_readonly in (* Don't count the grading time *)
-    show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ] ;
+    show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ]
+    @@ fun () ->
     Lwt_js.sleep 1. >>= fun () ->
     let solution = Ace.get_contents ace in
     Learnocaml_toplevel.check top solution >>= fun res ->
     match res with
     | Toploop_results.Ok ((), _) ->
         let grading =
-          !worker solution >>= fun (report, _, _, _) ->
-          Lwt.return report in
+          Lwt.finalize
+            (fun () ->
+               !worker >>= fun w ->
+               w solution >>= fun (report, _, _, _) ->
+               Lwt.return report)
+            (fun () ->
+               worker := get_grade ~callback exo;
+               Lwt.return_unit)
+        in
         let abortion =
           Lwt_js.sleep 5. >>= fun () ->
           Manip.SetCss.opacity abort_message (Some "1") ;
@@ -666,7 +683,6 @@ let () =
           Lwt.return Learnocaml_report.[ Message ([ Text [%i"Grading aborted by user."] ], Failure) ] in
         Lwt.pick [ grading ; abortion ] >>= fun report ->
         let grade = display_report exo report in
-        worker := Grading_jsoo.get_grade ~callback exo ;
         let editor, answer =
           if submit_report then
             None,
@@ -681,7 +697,6 @@ let () =
         sync_exercise token id ?answer ?editor >>= fun _save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
-        hide_loading ~id:"learnocaml-exo-loading" () ;
         Ace.focus ace ;
         Lwt.return ()
     | Toploop_results.Error _ ->
@@ -695,7 +710,6 @@ let () =
             mtime = gettimeofday () } ;
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
-        hide_loading ~id:"learnocaml-exo-loading" () ;
         Ace.focus ace ;
         typecheck true
   end ;

@@ -233,3 +233,58 @@ button[disabled]::before {
     vertical-align: -10px;
   }
 }
+
+/* -------------------- overlay dialog boxes ----------------------- */
+div.learnocaml-dialog-overlay {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  z-index: 22221;
+}
+div.learnocaml-dialog-overlay > div::before,
+div.learnocaml-dialog-overlay > div::after {
+  content: "";
+  flex: 1;
+}
+div.learnocaml-dialog-overlay > div {
+  border: 3px white double;
+  font-family: 'Inconsolata', monospace;
+  flex: 0 0 auto;
+  background: black;
+  margin: auto;
+  max-width: 50%;
+}
+div.learnocaml-dialog-overlay > div > h3 {
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+}
+div.learnocaml-dialog-overlay > div > h3 + div {
+  margin: 0;
+  border-top: 1px solid white;
+  padding: 20px;
+}
+div.learnocaml-dialog-overlay > div > div.buttons {
+  display: flex;
+  flex-direction: row;
+}
+div.learnocaml-dialog-overlay > div > div.buttons > button {
+  display: block;
+  margin: 10px auto;
+  padding: 5px 10px;
+  border: none;
+  background-color: white;
+  color: black;
+  text-align: center;
+}
+div.learnocaml-dialog-overlay > div code {
+  display: block;
+  margin: auto;
+  background-color: #444;
+  font-size: 80%;
+  padding: 4px;
+  border: 1px solid #666;
+}

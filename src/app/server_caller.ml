@@ -62,6 +62,7 @@ type request_error = [
 ]
 
 let string_of_error = function
+  | `Unreachable "" -> "Server unreachable"
   | `Unreachable s -> "Server unreachable: " ^ s
   | `Not_found s -> "URL not found: " ^ s
   | `Http_error (code, s) ->
