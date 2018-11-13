@@ -31,9 +31,9 @@ module Json_codec = struct
      | s -> Ezjsonm.from_string s)
     |> J.destruct enc
 
-  let encode enc x =
+  let encode ?minify enc x =
     match J.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string json
+    | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
     | `Null -> ""
     | _ -> assert false
 end
@@ -355,7 +355,7 @@ module Save = struct
     let file = Token.path token in
     Lwt.catch (fun () ->
         write ~no_create:(Token.is_teacher token) file
-          (Json_codec.encode enc save))
+          (Json_codec.encode ~minify:false enc save))
       (function
         | Not_found -> Lwt.fail_with "Unregistered teacher token"
         | e -> Lwt.fail e)

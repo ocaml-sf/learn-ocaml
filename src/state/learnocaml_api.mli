@@ -92,7 +92,7 @@ type http_request = {
 
 module type JSON_CODEC = sig
   val decode: 'a Json_encoding.encoding -> string -> 'a
-  val encode: 'a Json_encoding.encoding -> 'a -> string
+  val encode: ?minify:bool -> 'a Json_encoding.encoding -> 'a -> string
 end
 
 module type REQUEST_HANDLER = sig

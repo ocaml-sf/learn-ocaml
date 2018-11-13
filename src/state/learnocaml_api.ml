@@ -75,7 +75,7 @@ module J = Json_encoding
 
 module type JSON_CODEC = sig
   val decode: 'a J.encoding -> string -> 'a
-  val encode: 'a J.encoding -> 'a -> string
+  val encode: ?minify:bool -> 'a J.encoding -> 'a -> string
 end
 
 module Conversions (Json: JSON_CODEC) = struct

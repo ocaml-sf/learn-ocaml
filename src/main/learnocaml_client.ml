@@ -417,7 +417,7 @@ module Json_codec = struct
      | s -> Ezjsonm.from_string s)
     |> Json_encoding.destruct enc
 
-  let encode enc x =
+  let encode ?minify:_ enc x =
     match Json_encoding.construct enc x with
     | `A _ | `O _ as json -> Ezjsonm.to_string json
     | `Null -> ""

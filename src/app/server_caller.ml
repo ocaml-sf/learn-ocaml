@@ -45,7 +45,7 @@ module Json_codec = struct
     Js._JSON##(parse (Js.string s)) |>
     Json_repr_browser.Json_encoding.destruct enc
 
-  let encode enc x =
+  let encode ?minify:_ enc x =
     let json = Json_repr_browser.Json_encoding.construct enc x in
     Js.to_string Js._JSON##(stringify json)
 
