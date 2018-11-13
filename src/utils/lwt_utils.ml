@@ -44,3 +44,24 @@ let copy_tree src dst =
     (function
       | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_tree"
       | e -> raise e)
+
+type 'a with_lock = { with_lock: 'b. 'a -> (unit -> 'b Lwt.t) -> 'b Lwt.t }
+
+let gen_mutex_table: type t. unit -> t with_lock = fun () ->
+  let table = Hashtbl.create 223 in
+  let get_mutex key =
+    try Hashtbl.find table key with Not_found ->
+      let mutex = Lwt_mutex.create () in
+      Hashtbl.add table key mutex;
+      mutex
+  in
+  let with_lock key f =
+    let mutex = get_mutex key in
+    Lwt_mutex.with_lock mutex @@ fun () ->
+    Lwt.finalize f @@ fun () ->
+    if Lwt_mutex.is_empty mutex then
+      (* we still hold the mutex, nobody else is waiting: drop it *)
+      Hashtbl.remove table key;
+    Lwt.return_unit
+  in
+  { with_lock }

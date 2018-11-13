@@ -56,44 +56,51 @@ let read_static_file path enc =
   Json_codec.decode enc
 
 let with_git_register =
-  let git_mutex = Lwt_mutex.create () in
-  fun dir f ->
+  let dir_mutex = Lwt_utils.gen_mutex_table () in
+  fun dir (f: unit -> string list Lwt.t) ->
     let git args () =
       Lwt_process.exec ("", Array.of_list ("git"::"-C"::dir::args)) >>= function
       | Unix.WEXITED 0 -> Lwt.return_unit
       | _ -> Lwt.fail_with ("git command failed: " ^ String.concat " " args)
     in
-    Lwt_mutex.with_lock git_mutex @@ fun () ->
+    dir_mutex.Lwt_utils.with_lock dir @@ fun () ->
     (if Sys.file_exists (Filename.concat dir ".git") then
        git ["reset";"--hard"] ()
      else
        git ["init"] () >>=
        git ["config";"--local";"user.name";"Learn-OCaml user"] >>=
        git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
-    f >>= fun file ->
-    git ["add";file] () >>=
+    f >>= fun files ->
+    git ("add"::"--"::files) () >>=
     git ["commit";"-m";"Update"]
 
-let write ?(no_create=false) file contents =
+let write ?(no_create=false) file ?(extra=[]) contents =
+  let dir = Filename.dirname file in
   (if not (Sys.file_exists file) then
      if no_create then Lwt.fail Not_found
-     else Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file)
+     else Lwt_utils.mkdir_p ~perm:0o700 dir
    else Lwt.return_unit)
   >>= fun () ->
+  let file = Filename.basename file in
+  let write_file ?(flags=[Unix.O_TRUNC]) (fname, contents) =
+    Lwt_io.(with_file (Filename.concat dir fname)
+              ~flags:Unix.(O_WRONLY::O_NONBLOCK::O_CREAT::flags)
+              ~mode:Output
+              (fun chan -> write chan contents)) >|= fun () ->
+    fname
+  in
   let rec write_tmp () =
     let tmpfile = Printf.sprintf "%s.%07x.tmp" file (Random.int 0x0fffffff) in
-    Lwt.catch (fun () ->
-        Lwt_io.(with_file tmpfile
-                  ~flags:Unix.[O_WRONLY; O_NONBLOCK; O_CREAT; O_EXCL]
-                  ~mode:Output
-                  (fun chan -> write chan contents)) >|= fun () ->
-        tmpfile)
+    Lwt.catch
+      (fun () -> write_file ~flags:[Unix.O_EXCL] (tmpfile, contents))
       (function Unix.Unix_error (Unix.EEXIST, _, _) -> write_tmp ()
               | e -> raise e)
   in
-  with_git_register (Filename.dirname file) @@ fun () ->
+  with_git_register dir @@ fun () ->
   write_tmp () >>= fun tmpfile ->
-  Lwt_unix.rename tmpfile file >|= fun () -> Filename.basename file
+  Lwt_unix.rename tmpfile file >>= fun () ->
+  Lwt_list.map_s write_file extra >>= fun extra ->
+  Lwt.return (file :: extra)
 
 
 module Lesson = struct

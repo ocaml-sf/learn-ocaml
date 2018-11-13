@@ -198,7 +198,7 @@ module Request_handler = struct
     | Response ({contents; _} as r) -> Response {r with contents = f contents}
     | (Cached _ | Status _) as r -> r
 
-  let token_save_mutexes = Hashtbl.create 223
+  let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
   let callback_raw: type resp. caching -> resp Api.request -> resp ret
     = fun cache -> function
@@ -253,27 +253,15 @@ module Request_handler = struct
                 List.fold_left (fun m (id,save) -> SMap.add id save m)
                   SMap.empty valid_exercise_states }
           in
-          let key = (token :> Token.t) in
-          let mutex =
-            try Hashtbl.find token_save_mutexes key with Not_found ->
-              let mut = Lwt_mutex.create () in
-              Hashtbl.add token_save_mutexes key mut;
-              mut
-          in
-          Lwt_mutex.with_lock mutex @@ fun () ->
-          Lwt.finalize (fun () ->
+          token_save_mutex.Lwt_utils.with_lock (token :> Token.t) (fun () ->
               Save.get token >>= function
               | None ->
                   Lwt.return
                     (Status {code = `Not_found;
                              body = Token.to_string token})
               | Some prev_save ->
-                let save = Save.sync prev_save save in
-                Save.set token save >>= fun () -> respond_json cache save)
-            (fun () ->
-               if Lwt_mutex.is_empty mutex
-               then Hashtbl.remove token_save_mutexes key;
-               Lwt.return_unit)
+                  let save = Save.sync prev_save save in
+                  Save.set token save >>= fun () -> respond_json cache save)
 
       | Api.Students_list token ->
           with_verified_teacher_token token @@ fun () ->
