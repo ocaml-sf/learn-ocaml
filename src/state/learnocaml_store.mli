@@ -30,6 +30,12 @@ val sync_dir: string ref
 (** Used both for file i/o and request handling *)
 module Json_codec: Learnocaml_api.JSON_CODEC
 
+(* [sanitise_path prefix subdir] simplifies "." and ".." references in [subdir],
+   and returns the concatenation, but guaranteeing the result remains below
+   [prefix] (not accounting for symlinks of course, this is purely syntaxical)
+*)
+val sanitise_path: string -> string list -> string
+
 (** {2 Static data} *)
 
 module Lesson: sig

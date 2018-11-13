@@ -629,8 +629,10 @@ let main o =
   let solution, exercise_id =
     match o.solution_file, o.exercise_id with
     | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
-    | Some f, None -> f, Filename.(remove_extension (basename f))
     | Some f, Some id -> f, id
+    | Some f, None ->
+        let id = Filename.remove_extension f in
+        f, id
   in
   status_line "Reading solution.";
   Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read

@@ -38,21 +38,22 @@ module Json_codec = struct
     | _ -> assert false
 end
 
+let sanitise_path prefix subpath =
+  let rec resolve acc = function
+    | [] -> List.rev acc
+    | "" :: rest -> resolve acc rest
+    | "." :: rest -> resolve acc rest
+    | ".." :: rest ->
+        begin match acc with
+          | [] -> resolve [] rest
+          | _ :: acc -> resolve acc rest end
+    | name :: rest -> resolve (name :: acc) rest
+  in
+  String.concat Filename.dir_sep (prefix :: resolve [] subpath)
+
 let read_static_file path enc =
-  let path = String.split_on_char '/' path in (* FIXME *)
-  let shorten path =
-    let rec resolve acc = function
-      | [] -> List.rev acc
-      | "." :: rest -> resolve acc rest
-      | ".." :: rest ->
-          begin match acc with
-            | [] -> resolve [] rest
-            | _ :: acc -> resolve acc rest end
-      | name :: rest -> resolve (name :: acc) rest in
-    resolve [] path in
-  let path =
-    String.concat Filename.dir_sep (!static_dir :: shorten path) in
-  Lwt_io.(with_file ~mode: Input path read) >|=
+  let path = String.split_on_char '/' path in
+  Lwt_io.(with_file ~mode: Input (sanitise_path !static_dir path) read) >|=
   Json_codec.decode enc
 
 let with_git_register =
@@ -72,7 +73,8 @@ let with_git_register =
        git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
     f >>= fun files ->
     git ("add"::"--"::files) () >>=
-    git ["commit";"-m";"Update"]
+    git ["commit";"-m";"Update"] >>=
+    git ["update-server-info"]
 
 let write ?(no_create=false) file ?(extra=[]) contents =
   let dir = Filename.dirname file in
@@ -83,7 +85,9 @@ let write ?(no_create=false) file ?(extra=[]) contents =
   >>= fun () ->
   let file = Filename.basename file in
   let write_file ?(flags=[Unix.O_TRUNC]) (fname, contents) =
-    Lwt_io.(with_file (Filename.concat dir fname)
+    let file = sanitise_path dir (String.split_on_char '/' fname) in
+    Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file) >>= fun () ->
+    Lwt_io.(with_file file
               ~flags:Unix.(O_WRONLY::O_NONBLOCK::O_CREAT::flags)
               ~mode:Output
               (fun chan -> write chan contents)) >|= fun () ->
@@ -391,8 +395,23 @@ module Save = struct
           Lwt_unix.rename tmp file
       | _ -> Lwt.return_unit)
     >>= fun () ->
+    let extra =
+      SMap.fold (fun ex ans acc ->
+          let filename = ex ^ ".ml" in
+          let contents =
+            String.concat "\n" [
+              Printf.sprintf "(* GRADE: % 02d%% *)"
+                (match ans.Answer.grade with Some g -> g | None -> 0);
+              ans.Answer.solution;
+              ""
+            ]
+          in
+          (filename, contents) :: acc)
+        save.all_exercise_states
+        []
+    in
     Lwt.catch (fun () ->
-        write ~no_create:(Token.is_teacher token) file
+        write ~no_create:(Token.is_teacher token) ~extra file
           (Json_codec.encode ~minify:false enc save))
       (function
         | Not_found -> Lwt.fail_with "Unregistered teacher token"

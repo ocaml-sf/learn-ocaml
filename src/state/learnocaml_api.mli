@@ -45,6 +45,9 @@ type _ request =
       'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
+  | Git:
+      'a token * string list -> string request
+
   | Students_list:
       teacher token -> Student.t list request
   | Set_students_list:
