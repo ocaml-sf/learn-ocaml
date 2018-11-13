@@ -90,7 +90,7 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
   Manip.replaceChildren div [
     H.div [
       H.h3 [ H.pcdata titletext ];
-      H.div [ H.pre [ H.pcdata (String.trim message) ] ];
+      H.div [ H.p [ H.pcdata (String.trim message) ] ];
     ]
   ]
 
@@ -140,7 +140,7 @@ let lwt_alert ~title ~buttons message =
   waiter
 
 let alert ?(title=[%i"ERROR"]) ?buttons message =
-  ext_alert ~title ?buttons [ H.pre [H.pcdata (String.trim message)] ]
+  ext_alert ~title ?buttons [ H.p [H.pcdata (String.trim message)] ]
 
 let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
   ext_alert ~title contents ~buttons:[
