@@ -364,6 +364,10 @@ module Token = struct
         aux (Lwt_unix.files_of_directory (base / d)) acc
       in
       scan (fun d acc ->
+          let d =
+            if Filename.basename d = "save.json" then Filename.dirname d
+            else d
+          in
           let stok = String.map (function '/' | '\\' -> '-' | c -> c) d in
           try Lwt.return (Token.parse stok :: acc)
           with Failure _ -> Lwt.return acc
