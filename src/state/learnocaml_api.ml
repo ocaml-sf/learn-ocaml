@@ -32,6 +32,8 @@ type _ request =
       'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
+  | Git: 'a token * string list -> string request
+
   | Students_list:
       teacher token -> Student.t list request
   | Set_students_list:
@@ -75,7 +77,7 @@ module J = Json_encoding
 
 module type JSON_CODEC = sig
   val decode: 'a J.encoding -> string -> 'a
-  val encode: 'a J.encoding -> 'a -> string
+  val encode: ?minify:bool -> 'a J.encoding -> 'a -> string
 end
 
 module Conversions (Json: JSON_CODEC) = struct
@@ -103,6 +105,7 @@ module Conversions (Json: JSON_CODEC) = struct
           json Save.enc
       | Update_save _ ->
           json Save.enc
+      | Git _ -> str
       | Students_list _ ->
           json (J.list Student.enc)
       | Set_students_list _ ->
@@ -166,6 +169,8 @@ module Conversions (Json: JSON_CODEC) = struct
         get ~token ["save.json"]
     | Update_save (token, save) ->
         post ~token ["sync"] (Json.encode Save.enc save)
+    | Git _ ->
+        assert false (* Reserved for the [git] client *)
 
     | Students_list token ->
         assert (Token.is_teacher token);
@@ -261,6 +266,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           (match Json.decode Save.enc body with
            | save -> Update_save (token, save) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `GET, (stoken::"learnocaml-workspace.git"::p), None ->
+          (match Token.parse stoken with
+           | token -> Git (token, p) |> k
+           | exception Failure e -> Invalid_request e |> k)
 
       | `GET, ["teacher"; "students.json"], Some token
         when Token.is_teacher token ->

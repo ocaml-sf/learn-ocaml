@@ -44,6 +44,7 @@ depends: [
   "yojson" {>= "1.4.0" }
   "ppx_cstruct"
   "decompress" {= "0.8"}
+  "conf-git"
 ]
 build: [
   [make "static"]

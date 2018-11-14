@@ -31,48 +31,81 @@ module Json_codec = struct
      | s -> Ezjsonm.from_string s)
     |> J.destruct enc
 
-  let encode enc x =
+  let encode ?minify enc x =
     match J.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string json
+    | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
     | `Null -> ""
     | _ -> assert false
 end
 
+let sanitise_path prefix subpath =
+  let rec resolve acc = function
+    | [] -> List.rev acc
+    | "" :: rest -> resolve acc rest
+    | "." :: rest -> resolve acc rest
+    | ".." :: rest ->
+        begin match acc with
+          | [] -> resolve [] rest
+          | _ :: acc -> resolve acc rest end
+    | name :: rest -> resolve (name :: acc) rest
+  in
+  String.concat Filename.dir_sep (prefix :: resolve [] subpath)
+
 let read_static_file path enc =
-  let path = String.split_on_char '/' path in (* FIXME *)
-  let shorten path =
-    let rec resolve acc = function
-      | [] -> List.rev acc
-      | "." :: rest -> resolve acc rest
-      | ".." :: rest ->
-          begin match acc with
-            | [] -> resolve [] rest
-            | _ :: acc -> resolve acc rest end
-      | name :: rest -> resolve (name :: acc) rest in
-    resolve [] path in
-  let path =
-    String.concat Filename.dir_sep (!static_dir :: shorten path) in
-  Lwt_io.(with_file ~mode: Input path read) >|=
+  let path = String.split_on_char '/' path in
+  Lwt_io.(with_file ~mode: Input (sanitise_path !static_dir path) read) >|=
   Json_codec.decode enc
 
-let write ?(no_create=false) file contents =
+let with_git_register =
+  let dir_mutex = Lwt_utils.gen_mutex_table () in
+  fun dir (f: unit -> string list Lwt.t) ->
+    let git args () =
+      Lwt_process.exec ("", Array.of_list ("git"::"-C"::dir::args)) >>= function
+      | Unix.WEXITED 0 -> Lwt.return_unit
+      | _ -> Lwt.fail_with ("git command failed: " ^ String.concat " " args)
+    in
+    dir_mutex.Lwt_utils.with_lock dir @@ fun () ->
+    (if Sys.file_exists (Filename.concat dir ".git") then
+       git ["reset";"--hard"] ()
+     else
+       git ["init"] () >>=
+       git ["config";"--local";"user.name";"Learn-OCaml user"] >>=
+       git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
+    f >>= fun files ->
+    git ("add"::"--"::files) () >>=
+    git ["commit";"-m";"Update"] >>=
+    git ["update-server-info"]
+
+let write ?(no_create=false) file ?(extra=[]) contents =
+  let dir = Filename.dirname file in
   (if not (Sys.file_exists file) then
      if no_create then Lwt.fail Not_found
-     else Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file)
+     else Lwt_utils.mkdir_p ~perm:0o700 dir
    else Lwt.return_unit)
   >>= fun () ->
+  let file = Filename.basename file in
+  let write_file ?(flags=[Unix.O_TRUNC]) (fname, contents) =
+    let file = sanitise_path dir (String.split_on_char '/' fname) in
+    Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file) >>= fun () ->
+    Lwt_io.(with_file file
+              ~flags:Unix.(O_WRONLY::O_NONBLOCK::O_CREAT::flags)
+              ~mode:Output
+              (fun chan -> write chan contents)) >|= fun () ->
+    fname
+  in
   let rec write_tmp () =
     let tmpfile = Printf.sprintf "%s.%07x.tmp" file (Random.int 0x0fffffff) in
-    Lwt.catch (fun () ->
-        Lwt_io.(with_file tmpfile
-                  ~flags:Unix.[O_WRONLY; O_NONBLOCK; O_CREAT; O_EXCL]
-                  ~mode:Output
-                  (fun chan -> write chan contents)) >|= fun () ->
-        tmpfile)
+    Lwt.catch
+      (fun () -> write_file ~flags:[Unix.O_EXCL] (tmpfile, contents))
       (function Unix.Unix_error (Unix.EEXIST, _, _) -> write_tmp ()
-              | e -> raise e)
+              | e -> Lwt.fail e)
   in
-  write_tmp () >>= fun tmpfile -> Lwt_unix.rename tmpfile file
+  with_git_register dir @@ fun () ->
+  write_tmp () >>= fun tmpfile ->
+  Lwt_unix.rename (Filename.concat dir tmpfile) (Filename.concat dir file)
+  >>= fun () ->
+  Lwt_list.map_s write_file extra >>= fun extra ->
+  Lwt.return (file :: extra)
 
 
 module Lesson = struct
@@ -143,7 +176,7 @@ module Exercise = struct
           tbl)
       @@ function
       | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return tbl
-      | e -> raise e
+      | e -> Lwt.fail e
     )
 
     let save () =
@@ -223,8 +256,8 @@ module Exercise = struct
     Lwt.catch
       (fun () -> read_static_file (Learnocaml_index.exercise_path id) enc)
       (function
-        | Unix.Unix_error _ -> raise Not_found
-        | e -> raise e)
+        | Unix.Unix_error _ -> Lwt.fail Not_found
+        | e -> Lwt.fail e)
 
 end
 
@@ -235,8 +268,24 @@ module Token = struct
   let path token =
     Filename.concat !sync_dir (Token.to_path token)
 
+  let save_path token = Filename.concat (path token) "save.json"
+
+  let find_save token =
+    let save = save_path token in
+    Lwt_unix.file_exists save >>= function
+    | true -> Lwt.return_some save
+    | false ->
+        (* old layout: json stored directly as [path] instead of
+           [path/save.json] *)
+        let old_save = path token in
+        Lwt_unix.file_exists old_save >>= fun ex ->
+        if ex && not (Sys.is_directory old_save) then
+          Lwt.return_some old_save
+        else
+          Lwt.return_none
+
   let exists token =
-    Lwt_unix.file_exists (path token)
+    find_save token >|= function None -> false | Some _ -> true
 
   let check_teacher token =
     if is_teacher token then exists token
@@ -245,7 +294,7 @@ module Token = struct
   let create_gen rnd =
     let rec aux () =
       let token = rnd () in
-      let file = path token in
+      let file = save_path token in
       Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname file) >>= fun () ->
       Lwt.catch (fun () ->
           Lwt_io.with_file ~mode:Lwt_io.Output ~perm:0o700 file
@@ -253,7 +302,7 @@ module Token = struct
             (fun _chan -> Lwt.return token))
       @@ function
       | Unix.Unix_error (Unix.EEXIST, _, _) -> aux ()
-      | e -> raise e
+      | e -> Lwt.fail e
     in
     aux ()
 
@@ -262,21 +311,34 @@ module Token = struct
       Lwt.fail (Invalid_argument "Registration of teacher token not allowed")
     else
       Lwt.catch (fun () ->
-          Lwt_io.with_file ~mode:Lwt_io.Output ~perm:0o700 (path token)
+          Lwt_io.with_file ~mode:Lwt_io.Output ~perm:0o700 (save_path token)
             ~flags:Unix.([O_WRONLY; O_NONBLOCK; O_CREAT; O_EXCL])
             (fun _chan -> Lwt.return_unit))
       @@ function
       | Unix.Unix_error (Unix.EEXIST, _, _) ->
           Lwt.fail_with "token already exists"
-      | e -> raise e
+      | e -> Lwt.fail e
 
   let create_student () =
     create_gen random
 
   let create_teacher () = create_gen random_teacher
 
-  let delete token = Lwt_unix.unlink (path token)
-  (* todo: cleanup empty dirs? *)
+  let delete token =
+    let rec rec_rmdir d =
+      Lwt.catch (fun () ->
+          Lwt_unix.rmdir d >>= fun () ->
+          let parent = Filename.dirname d in
+          if parent = d then Lwt.return_unit else rec_rmdir parent)
+        (function
+          | Unix.Unix_error (Unix.EINVAL, _, _) -> Lwt.return_unit
+          | e -> Lwt.fail e)
+    in
+    find_save token >>= function
+    | None -> Lwt.return_unit
+    | Some f ->
+        Lwt_unix.unlink f >>= fun () ->
+        rec_rmdir (Filename.dirname f)
 
   module Index = struct
 
@@ -316,18 +378,41 @@ module Save = struct
   include Save
 
   let get token =
-    Lwt.catch (fun () ->
-        Lwt_io.with_file ~mode:Lwt_io.Input (Token.path token)
-          (fun chan -> Lwt_io.read chan >|= Json_codec.decode (J.option enc)))
-    @@ function
-    | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_none
-    | e -> Lwt.fail e
+    Token.find_save token >>= function
+    | Some save ->
+        Lwt_io.with_file ~mode:Lwt_io.Input save @@ fun chan ->
+        Lwt_io.read chan >|= Json_codec.decode (J.option enc)
+    | None -> Lwt.return_none
 
   let set token save =
-    let file = Token.path token in
+    let file = Token.save_path token in
+    (Token.find_save token >>= function
+      | Some f when f <> file ->
+          (* save file uses an old layout, move it to preserve attrs *)
+          let tmp = f ^ ".tmp" in
+          Lwt_unix.rename f tmp >>= fun () ->
+          Lwt_utils.mkdir_p (Filename.dirname file) >>= fun () ->
+          Lwt_unix.rename tmp file
+      | _ -> Lwt.return_unit)
+    >>= fun () ->
+    let extra =
+      SMap.fold (fun ex ans acc ->
+          let filename = ex ^ ".ml" in
+          let contents =
+            String.concat "\n" [
+              Printf.sprintf "(* GRADE: % 02d%% *)"
+                (match ans.Answer.grade with Some g -> g | None -> 0);
+              ans.Answer.solution;
+              ""
+            ]
+          in
+          (filename, contents) :: acc)
+        save.all_exercise_states
+        []
+    in
     Lwt.catch (fun () ->
-        write ~no_create:(Token.is_teacher token) file
-          (Json_codec.encode enc save))
+        write ~no_create:(Token.is_teacher token) ~extra file
+          (Json_codec.encode ~minify:false enc save))
       (function
         | Not_found -> Lwt.fail_with "Unregistered teacher token"
         | e -> Lwt.fail e)
@@ -353,10 +438,11 @@ module Student = struct
             save.Save.all_exercise_states
         in
         let tags = SSet.empty in
-        let creation_date =
-          Unix.((stat (Token.path token)).st_ctime)
-        in
-        Lwt.return {token; nickname; results; creation_date; tags}
+        (Token.find_save token >>= function
+          | None -> Lwt.return 0.
+          | Some f -> Lwt_unix.stat f >|= fun st -> st.Unix.st_ctime)
+        >|= fun creation_date ->
+        {token; nickname; results; creation_date; tags}
 
   module Index = struct
 
@@ -384,7 +470,7 @@ module Student = struct
           Json_codec.decode store_enc)
         (function
           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return Token.Map.empty
-          | e -> raise e)
+          | e -> Lwt.fail e)
 
     let map = lazy (load () >|= fun m -> ref m)
 

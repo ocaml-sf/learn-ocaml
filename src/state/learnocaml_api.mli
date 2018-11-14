@@ -45,6 +45,9 @@ type _ request =
       'a token -> Save.t request
   | Update_save:
       'a token * Save.t -> Save.t request
+  | Git:
+      'a token * string list -> string request
+
   | Students_list:
       teacher token -> Student.t list request
   | Set_students_list:
@@ -92,7 +95,7 @@ type http_request = {
 
 module type JSON_CODEC = sig
   val decode: 'a Json_encoding.encoding -> string -> 'a
-  val encode: 'a Json_encoding.encoding -> 'a -> string
+  val encode: ?minify:bool -> 'a Json_encoding.encoding -> 'a -> string
 end
 
 module type REQUEST_HANDLER = sig
