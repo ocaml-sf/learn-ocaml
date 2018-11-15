@@ -10,6 +10,7 @@ ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config
 RUN opam switch 4.05
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
+RUN opam update
 RUN opam install . --deps-only --locked
 
 ADD static static
