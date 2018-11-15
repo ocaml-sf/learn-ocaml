@@ -63,3 +63,9 @@ description: """
 This contains the binaries forming the engine for the learn-ocaml platform, and
 the common files. A demo exercise repository is also provided as example.
 """
+pin-depends: [
+  [
+    "js_of_ocaml.3.2.0"
+    "git+https://github.com/AltGr/js_of_ocaml.git#fix-oc-utf8"
+  ]
+]
