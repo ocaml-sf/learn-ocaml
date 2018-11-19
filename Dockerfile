@@ -31,7 +31,7 @@ FROM alpine:3.7 as program
 LABEL Description="learn-ocaml app manager" Vendor="OCamlPro"
 
 RUN apk update
-RUN apk add ncurses-libs libev dumb-init
+RUN apk add ncurses-libs libev dumb-init git
 RUN addgroup learn-ocaml
 RUN adduser learn-ocaml -DG learn-ocaml
 
