@@ -41,6 +41,9 @@ val individual_timeout: int option ref
 (** Display reports to stderr *)
 val display_reports: bool ref
 
+(** Should the tool generate and dump a dependency graph of the exercises and where *)
+val dump_dot: string option ref
+
 (** {2 Functions} *)
 
 (** Runs the grading process *)

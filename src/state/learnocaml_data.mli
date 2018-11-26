@@ -265,6 +265,34 @@ module Exercise: sig
 
   end
 
+  (** Dependency graph of exercises *)
+  module Graph : sig
+
+    (** Two exercises can be related either by a skill dependency, or backward
+        relationship *)
+    type relation = Skill of string | Exercise of id
+
+    (** An exercise depends on others, by a skill or/and backward relation.
+        Due to hashconsing, its representation is not directly available.
+    *)
+    type node
+
+    val node_exercise : node -> id
+    val node_children : node -> (node * relation list) list
+
+    (** Computes the dependency graph of exercises, and filters out exercises
+        or skills if any are given. *)
+    val compute_graph : ?filters:relation list -> Index.t -> node list
+
+    (** Computes a set of exercises that appear as dependencies of the given
+        exercise. *)
+    val compute_exercise_set : node -> string list
+
+    (** Dumps the graph as a `dot` representation, into the given formatter. *)
+    val dump_dot : Format.formatter -> node list -> unit
+
+  end
+
 end
 
 module Lesson: sig

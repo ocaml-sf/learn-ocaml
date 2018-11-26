@@ -842,6 +842,128 @@ module Exercise = struct
 
   end
 
+  module Graph = struct
+
+    type relation = Skill of string | Exercise of id
+
+    type node =
+      { name : id;
+        mutable children : (node * relation list) list }
+
+    let node_exercise { name; _ } = name
+    let node_children { children; _ } = children
+
+    let ex_node exs id =
+      try Hashtbl.find exs id
+      with Not_found ->
+        let node = { name = id; children = [] } in
+        Hashtbl.add exs id node;
+        node
+
+    let merge_children ch =
+      let rec merge acc = function
+        | [] -> acc
+        | (n, ks) :: [] -> (n, ks) :: acc
+        | (n, ks) :: (((n', ks') :: rem) as ch') ->
+            if n.name = n'.name then merge acc ((n, ks @ ks') :: rem)
+            else merge ((n, ks) :: acc) ch'
+      in
+      List.fast_sort (fun (n1, _) (n2, _) -> compare n1.name n2.name) ch
+      |> merge []
+
+
+    let compute_node ex_id ex_meta focus exercises =
+      let exs =
+        List.map (fun id -> ex_node exercises id, [Exercise ex_id])
+          ex_meta.Meta.backward
+      in
+      let exs =
+        List.fold_left (fun exs skill ->
+            List.fold_left (fun exs id ->
+                (ex_node exercises id, [Skill skill]) :: exs)
+              exs (SMap.find skill focus)
+          ) exs ex_meta.Meta.requirements
+      in
+      let exs = merge_children exs in
+      let node = ex_node exercises ex_id in
+      node.children <- exs;
+      node
+
+    let focus_map exercises =
+      let add_ex focus (id, skill) =
+        let exs =
+          try SMap.find skill focus
+          with Not_found -> [] in
+        SMap.add skill (id :: exs) focus
+      in
+      Index.fold_exercises
+        (fun focus id meta ->
+           List.fold_left add_ex focus
+           @@ List.map (fun s -> id, s) meta.Meta.focus)
+        SMap.empty exercises
+
+    let apply_filters filters exercises =
+      Index.filter (fun id _ ->
+          not (List.mem (Exercise id) filters)) exercises |>
+      Index.map_exercises (fun _ meta ->
+          let requirements =
+            List.filter (fun s -> not (List.mem (Skill s) filters))
+              meta.Meta.requirements in
+          let focus =
+            List.filter (fun s -> not (List.mem (Skill s) filters))
+              meta.Meta.focus in
+          let backward =
+            List.filter (fun s -> not (List.mem (Exercise s) filters))
+              meta.Meta.backward in
+          { meta with Meta.requirements; Meta.focus; Meta.backward })
+
+    let compute_graph ?(filters=[]) exercises =
+      let exercises_nodes = Hashtbl.create 17 in
+      let ex_filtered = apply_filters filters exercises in
+      let focus = focus_map ex_filtered in
+      let compute acc ex_id ex_meta =
+        compute_node ex_id ex_meta focus exercises_nodes :: acc
+      in
+      Index.fold_exercises (fun acc id meta -> compute acc id meta) [] ex_filtered
+
+    let compute_exercise_set graph =
+      let seen = ref SSet.empty in
+      let rec compute acc node =
+        if SSet.mem node.name !seen then acc
+        else begin
+          seen := SSet.add node.name !seen;
+          List.fold_right (fun (node, _kinds) acc ->
+              compute acc node)
+            node.children
+            (node.name :: acc)
+        end
+      in
+      compute [] graph
+
+    let dump_dot fmt nodes =
+      let print_kind fmt = function
+        | Skill s -> Format.fprintf fmt "(S %s)" s
+        | Exercise s -> Format.fprintf fmt "(E %s)" s
+      in
+      let print_child fmt ex child kinds =
+        Format.fprintf fmt "%s -> %s [label=\"%a\"];\n"
+          ex
+          child.name
+          (fun fmt -> List.iter (print_kind fmt)) kinds
+      in
+      let print_node fmt n =
+        List.iter (fun (child, kinds) ->
+            print_child fmt n.name child kinds)
+          n.children
+      in
+      Format.fprintf fmt
+        "digraph exercises {\n\
+         %a\n\
+         }"
+        (fun fmt -> List.iter (print_node fmt)) nodes
+
+  end
+
 end
 
 module Lesson = struct
