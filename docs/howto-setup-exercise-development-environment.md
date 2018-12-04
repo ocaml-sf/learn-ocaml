@@ -45,18 +45,6 @@ First, clone the current learn-ocaml source tree:
 git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
 
-Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
-ready:
-```
-opam switch create . --deps-only --locked
-opam install opam-installer
-eval $(opam env)
-```
-(Alternatively, use `opam install . --deps-only` to install the dependencies in
-your current opam switch, without creating a dedicated one)
-
-Then, compile and install the platform:
-
 If you do not have a GitHub account, do instead:
 ```
 git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
@@ -70,7 +58,7 @@ opam install opam-installer
 eval $(opam env)
 ```
 (Alternatively, use `opam install . --deps-only` to install the dependencies in
-your current opam switch, without creating a dedicated one)
+your current opam switch, without creating a dedicated one.)
 
 
 Second, compile and install the platform:
