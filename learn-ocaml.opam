@@ -45,6 +45,7 @@ depends: [
   "ppx_cstruct"
   "decompress" {= "0.8"}
   "conf-git"
+  "odoc" {build}
 ]
 build: [
   [make "static"]
