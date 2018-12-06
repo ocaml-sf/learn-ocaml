@@ -480,7 +480,7 @@ let compress ?(level = 4) data =
        (fun output_buffer len ->
           Buffer.add_subbytes res output_buffer 0 len;
           0xFFFF))
-    (Decompress.Zlib_deflate.default ~proof:Decompress.B.proof_bytes level)
+    (Decompress.Zlib_deflate.default ~witness:Decompress.B.bytes level)
   >>= function
   | Ok _ -> Lwt.return (Buffer.contents res)
   | Error _ -> Lwt.fail_with "Could not compress"
