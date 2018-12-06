@@ -49,7 +49,7 @@ depends: [
   "ppx_tools" {= "5.0+4.05.0"}
   "conf-libev" {= "4-11"}
   "conf-git" {= "1.0"}
-  "odoc" {build && = "1.3.0"}
+  "odoc" {build & = "1.3.0"}
 ]
 build: [
   [make "static"]
