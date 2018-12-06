@@ -43,9 +43,9 @@ depends: [
   "easy-format" {>= "1.3.0" }
   "yojson" {>= "1.4.0" }
   "ppx_cstruct"
-  "decompress" {= "0.8"}
+  "decompress" {= "0.8.1"}
   "conf-git"
-  "odoc" {build}
+  "odoc" {build & = "1.3.0"}
 ]
 build: [
   [make "static"]
