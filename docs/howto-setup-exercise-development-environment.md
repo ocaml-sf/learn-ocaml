@@ -1,7 +1,7 @@
-How to setup your development environment
+How to set up your development environment
 =========================================
 
-This section explains how to setup a development environment on your
+This section explains how to set up a development environment on your
 local machine. At the end of this tutorial, you will be able to follow
 the tutorial `howto-write-an-exercise.md`. For the moment, only
 GNU/Linux and MacOS X are supported.
@@ -74,7 +74,7 @@ learn-ocaml --help
 This should open the manpage of the command-line tool to interact
 with the platform.
 
-## Step 2: Setup a work directory
+## Step 2: Set up a work directory
 
 Now, let us go back to `$DIR` and create a root for the source tree of exercises:
 ```
