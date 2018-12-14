@@ -6,6 +6,6 @@ sudo: required
 services:
   - docker
 before_install:
-  - docker build -t learn-ocaml --target program .
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build -t learn-ocaml --target program; fi
 script:
-  - sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
