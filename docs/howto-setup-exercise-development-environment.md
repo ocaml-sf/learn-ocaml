@@ -8,10 +8,16 @@ GNU/Linux and MacOS X are supported.
 
 > An alternative to following the instructions below is to use a pre-built
 > Docker container. Assuming you have an exercise repository in directory
-> `REPOSITORY` (absolute path), and a recent enough version of Docker installed,
+> `$REPOSITORY` (absolute path), and a recent enough version of Docker installed,
 > use:
 >
->     docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server altgr/learn-ocaml
+>     docker version # If this fails, find out how to run Docker, first
+>     docker login
+>     docker run --rm \
+>       -v $REPOSITORY:/repository:ro \
+>       -v learn-ocaml-sync:/sync \
+>       -p 80:8080 --name learn-ocaml-server \
+>       ocamlsf/learn-ocaml
 >
 > This will start an instance of the learn-ocaml server on port 80 (ignore the
 > message about 8080, this is the port used internally).
