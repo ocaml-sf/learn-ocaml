@@ -3,8 +3,6 @@ os:
   - linux
   - osx
 sudo: required
-services:
-  - docker
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build -t learn-ocaml --target program .; fi
 script:
