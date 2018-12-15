@@ -7,3 +7,4 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build -t learn-ocaml --target program .; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh .ci-macosx.sh
