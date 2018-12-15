@@ -1,6 +1,5 @@
 #!/bin/sh
 
-curl -LO https://raw.githubusercontent.com/GiovanniBussi/macports-ci/master/macports-ci
-sudo /bin/sh ./macports-ci install
-sudo port install opam
+brew update
+brew install opam
 opam --version
