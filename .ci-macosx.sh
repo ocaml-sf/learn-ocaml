@@ -2,6 +2,6 @@
 
 brew update
 brew install opam
-opam init
-opam install . --deps-only
+opam init -y
+opam install -y . --deps-only
 make && make opaminstall
