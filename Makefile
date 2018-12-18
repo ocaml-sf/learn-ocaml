@@ -91,7 +91,7 @@ clean:
 	-rm -f translations/$*.pot
 	@${MAKE} -C static clean
 	-rm -rf www
-	-find -name \*~ -delete
+	-find . -name "*~" -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally
 	BUILDID="build-$$RANDOM";					\
