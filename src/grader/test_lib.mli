@@ -44,7 +44,7 @@ module type S = sig
        introspected objects (mainly [Parsetree structure] like
        [code_ast] or [Parsetree expression]).
 
-       For example, adding [~on_open: forbid "open"] will prevent the
+       For example, adding [~on_open: (forbid "open")] will prevent the
        student from using [open] syntax by returning a [Failure]
        report at the first occurrence of the [open] keyword in the
        input [Parsetree] structure or expression.
@@ -70,10 +70,10 @@ module type S = sig
         - [~on_module_occurence]: this function is called each time a
        module is used. The string input is the name of the module.
 
-        - [~on_variable_occurence]: function called each time a
-       variable is used. The string input is the name of the
-       variable. The function [rectrict] and [forbid] can be used to
-       construct this function.
+        - [~on_variable_occurence]: function called each time a free
+       variable (relative to the AST given as argument) is used.
+       The string input is the name of the variable. The functions
+       [restrict] and [forbid] can be used to construct this function.
 
         - [~on_function_call]: function called each time a function
        call is used. The first argument of this function is the
@@ -112,9 +112,9 @@ module type S = sig
     (** [find_binding code_ast name cb] looks for the top level
        variable [name] in [code_ast] and its associated Parsetree
        expression [expr] ([let name = expr]). If the variable is
-       found, it returns an {!LearnOcaml_report.Informative} report
+       found, it returns an {!Learnocaml_report.Informative} report
        concatenated with the report resulting of [cb] applied to
-       [expr]. Otherwise, it teturns a {!LearnOcaml_report.Failure}
+       [expr]. Otherwise, it returns a {!Learnocaml_report.Failure}
        report. *)
     val find_binding :
       Parsetree.structure -> string
@@ -195,8 +195,8 @@ module type S = sig
        use of it. Their first argument is used to build the message of
        the return report and the second argument is simply ignored.
 
-        For example, adding [~on_include: forbid "include" ~on_open:
-       forbid "open"] prevents the student from using [open] and
+        For example, adding [~on_include: (forbid "include") ~on_open:
+       (forbid "open")] prevents the student from using [open] and
        [include] syntaxes. *)
 
     (** [forbid_syntax n _] returns a
