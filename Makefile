@@ -1,4 +1,4 @@
-all: build
+all: static build
 
 # config variables ------------------------------------------------------------
 
