@@ -59,25 +59,12 @@ make && make opaminstall
 
 * Build the app for your given exercise repository. This will put it into a
   `www/` directory:
+  ```
+  learn-ocaml build --repo DIR
+  ```
+  (depending on your opam configuration, you might need to run the command from the `learn-ocaml` directory or to specify the absolute path to the command: `.../learn-ocaml/_opam/bin/learn-ocaml`)
+
+* Run the learn-ocaml web server
 ```
-learn-ocaml build --repo DIR
+learn-ocaml serve --port 8080
 ```
-
-* Then either put the resulting directory ```www/``` behind a Web server.
-
-This step is mandatory. Indeed, if you try to open the ```index.html``` file
-directly from the local file system, it will fail for security restrictions
-enforced by modern Web browsers. Hence, you need a local web server.
-
-* Use the provided minimal server, that also does the job,
-  and includes a minimal server-side synchronization mechanism.
-
-  You can launch it via
-
-      learn-ocaml serve --port 8080
-
-* If you do not have a Web server configured, and don't need synchronisation you can probably use some
-  other tool that is already present on your machine. For instance,
-  running ```python3 -m http.server 8080``` or ```php -S
-  localhost:8080``` in the ```www``` directory and pointing you browser
-  to ```http://localhost:8080/``` should do the job.
