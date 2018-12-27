@@ -50,7 +50,7 @@ module type S = sig
     val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
     val forbid_syntax : string -> (_ -> Learnocaml_report.t)
     val require_syntax : string -> (_ -> Learnocaml_report.t)
-   
+
     val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
 
   end
@@ -299,6 +299,8 @@ module type S = sig
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_generic : sig
+
+    val run_timeout : (unit -> 'a) -> 'a
 
     val exec : (unit -> 'a) -> ('a * string * string) result
 
@@ -1099,6 +1101,7 @@ module Make
     open Tester
 
     let sigalrm_handler = Sys.Signal_handle (fun _ -> raise Timeout)
+
     let run_timeout ~time v =
       let old_behavior = Sys.signal Sys.sigalrm sigalrm_handler in
       let reset_sigalrm () = Sys.set_signal Sys.sigalrm old_behavior
@@ -1109,13 +1112,18 @@ module Make
          with exc ->
            reset_sigalrm (); raise exc
 
+    let run_timeout v =
+      match Params.timeout with
+      | Some time ->
+          run_timeout ~time v
+      | None ->
+          v()
+
     let exec v =
       Introspection.grab_stdout () ;
       Introspection.grab_stderr () ;
       try
-        let res = match timeout with
-          | Some time -> run_timeout ~time v
-          | None -> v () in
+        let res = run_timeout v in
         let out = Introspection.release_stdout () in
         let err = Introspection.release_stderr () in
         Ok (res, out, err)
@@ -1350,7 +1358,7 @@ module Make
       test_function_against_generic ?gen
         ?test ?test_stdout ?test_stderr
         ?before_reference ?before_user ?after ?sampler prot uf rf tests
-      
+
     let test_function_against_solution ?gen
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler prot name tests =

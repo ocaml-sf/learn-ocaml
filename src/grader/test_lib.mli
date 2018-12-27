@@ -1013,6 +1013,11 @@ module type S = sig
      grading functions.  *)
   module Test_functions_generic : sig
 
+    (** [run_timeout v] executes [v()] under an optional time limit.
+        The exceptions raised by [v] are intentionally *not* caught,
+        so the caller is able to catch and get a backtrace, if desired. *)
+    val run_timeout : (unit -> 'a) -> 'a
+
     (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
         if no exception is raised and where [r] is the result of [v
         ()], [stdout] the standard output string (possibly empty) and
