@@ -597,7 +597,7 @@ module type S = sig
        [name] by directly comparing obtained outputs against expected
        outputs.
 
-     A test [(arg-1, r, out, err)] results of a
+     A test [(arg-1, r, out, err)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1] is equal to [r] and if standard output and
        standard error messages match [out] and [err] respectively. The
@@ -620,7 +620,7 @@ module type S = sig
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [arg-1] results of a {!LearnOcaml_report.Success 1} report
+     A test [arg-1] results in a {!LearnOcaml_report.Success 1} report
        if the student function applied to [arg-1] gives the same
        result than the solution function [rf] applied to [arg-1]. Otherwise
        the result of a test is a {!Learnocaml_report.Failure} report.
@@ -646,7 +646,7 @@ module type S = sig
        which must be defined under name [name] in the corresponding
        [solution.ml] file.
 
-     A test [arg-1] results of a {!LearnOcaml_report.Success 1} report
+     A test [arg-1] results in a {!LearnOcaml_report.Success 1} report
        if the student function applied to [arg-1] gives the same
        result than the solution function [rf] applied to
        [arg-1]. Otherwise the result of a test is a
@@ -674,7 +674,7 @@ module type S = sig
        [name] by directly comparing obtained outputs against expected
        outputs.
 
-     A test [(arg-1, arg-2, r, out, err)] results of a
+     A test [(arg-1, arg-2, r, out, err)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1] and [arg-2] is equal to [r] and if standard
        output and standard error messages match [out] and [err]
@@ -700,7 +700,7 @@ module type S = sig
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
+     A test [(arg-1, arg-2)] results in a {!LearnOcaml_report.Success
        1} report if the student function applied to [arg-1] and
        [arg-2] gives the same result than the solution function [rf]
        applied to the same arguments. Otherwise the result of a test is a
@@ -730,7 +730,7 @@ module type S = sig
        be defined under name [name] in the corresponding [solution.ml]
        file.
 
-     A test [(arg-1, arg-2)] results of a {!LearnOcaml_report.Success
+     A test [(arg-1, arg-2)] results in a {!LearnOcaml_report.Success
        1} report if the student function applied to [arg-1] and
        [arg-2] gives the same result than the solution function [rf]
        applied to the same arguments. Otherwise the result of a test
@@ -758,7 +758,7 @@ module type S = sig
        [name] by directly comparing obtained outputs against expected
        outputs.
 
-     A test [(arg-1, arg-2, arg-3, r, out, err)] results of a
+     A test [(arg-1, arg-2, arg-3, r, out, err)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] is equal to [r] and if
        standard output and standard error messages match [out] and
@@ -783,7 +783,7 @@ module type S = sig
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [(arg-1, arg-2, arg-3)] results of a
+     A test [(arg-1, arg-2, arg-3)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] gives the same result
        than the solution function [rf] applied to the same
@@ -815,7 +815,7 @@ module type S = sig
        be defined under name [name] in the corresponding [solution.ml]
        file.
 
-     A test [(arg-1, arg-2, arg-3)] results of a
+     A test [(arg-1, arg-2, arg-3)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] gives the same result
        than the solution function [rf] applied to the same
@@ -845,7 +845,7 @@ module type S = sig
        [name] by directly comparing obtained outputs against expected
        outputs.
 
-     A test [(arg-1, arg-2, arg-3, arg-4, r, out, err)] results of a
+     A test [(arg-1, arg-2, arg-3, arg-4, r, out, err)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] is equal to
        [r] and if standard output and standard error messages match
@@ -871,7 +871,7 @@ module type S = sig
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [(arg-1, arg-2, arg-3m arg-4)] results of a
+     A test [(arg-1, arg-2, arg-3m arg-4)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
        result than the solution function [rf] applied to the same
@@ -901,7 +901,7 @@ module type S = sig
        which must be defined under name [name] in the corresponding
        [solution.ml] file.
 
-     A test [(arg-1, arg-2, arg-3, arg-4)] results of a
+     A test [(arg-1, arg-2, arg-3, arg-4)] results in a
        {!LearnOcaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
        result than the solution function [rf] applied to the same
@@ -1013,17 +1013,22 @@ module type S = sig
      grading functions.  *)
   module Test_functions_generic : sig
 
+    (** [run_timeout v] executes [v()] under an optional time limit.
+        The exceptions raised by [v] are intentionally *not* caught,
+        so the caller is able to catch and get a backtrace, if desired. *)
+    val run_timeout : (unit -> 'a) -> 'a
+
     (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
         if no exception is raised and where [r] is the result of [v
         ()], [stdout] the standard output string (possibly empty) and
         [stderr] the standard error string (possibly empty) or returns
-        [Error exn] is exception [exn] is raised. Mays also return a
+        [Error exn] is exception [exn] is raised. May also return a
         timeout error. *)
     val exec : (unit -> 'a) -> ('a * string * string) result
 
     (** [result v] executes [v ()] and returns [Ok r] where [r] is
         the result of [v ()] or [Error exn] if exception [exn] is
-        raised. Mays also return a timeout error. *)
+        raised. May also return a timeout error. *)
     val result : (unit -> 'a) -> 'a result
 
     (** The type of arguments, represented as heterogeneous lists.
