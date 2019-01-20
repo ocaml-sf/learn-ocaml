@@ -175,11 +175,11 @@
 #learnocaml-report .important > .title {
   border-color: #67f;
 }
-#learnocaml-report .success .text .score {
-  color: green;
-}
 #learnocaml-report .failure .text .score {
   color: red;
+}
+#learnocaml-report .success .text .score {
+  color: green;
 }
 #learnocaml-report div > .folded .report {
   display: none;
