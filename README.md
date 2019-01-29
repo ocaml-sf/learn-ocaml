@@ -1,16 +1,11 @@
 Learn-OCaml
 ===========
 
-This is Learn-OCaml, a Web platform for learning the OCaml language,
+This is Learn-OCaml, a platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-This software is still under development, no public announcement has been made yet.
-
-A demo is available at: [http://try.ocamlpro.com/learn-ocaml-demo/].
-
-The exercises and lessons are in another github repository:
-[learn-ocaml-repository](https://github.com/ocaml-sf/learn-ocaml-repository).
+A demo is available at: [http://learn-ocaml.hackojo.org/].
 
 ![Build status logo](https://travis-ci.org/ocaml-sf/learn-ocaml.svg)
 
@@ -36,15 +31,14 @@ License and copyright
 
 Unless explicitly written below or in the files themselves, the source
 code for the app, images, static files, course content and exercises
-are placed under the GNU Affero General Public License version 3. This
-practically means that any instance of the app must provide its source
-code to its users.  See [http://www.gnu.org/licenses/agpl-3.0.html].
+are placed under the MIT license.
 
 Lightly modified third party components ACE and ppx_metaquot are
 included, under their original licenses (respectively BSD and MIT).
 
-The OCamlPro logo images are (c) OCamPro. Redistribution is permitted,
-alteration requires prior written authorization by OCamlPro.
+The OCamlPro logo images are (c) OCamlPro. Redistribution is
+permitted, alteration requires prior written authorization by
+OCamlPro.
 
 The OCaml / ocaml.org logo is released under the very liberal UNLICENSE.
 See [https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md].
