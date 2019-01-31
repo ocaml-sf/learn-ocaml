@@ -541,7 +541,7 @@ let print ppf items =
     | Text w :: rest ->
         Format.fprintf ppf "@[<hov>%a@]%a" Format.pp_print_text w print_text rest
     | Break :: rest ->
-        Format.fprintf ppf "%a" print_text rest
+        Format.fprintf ppf "@\n%a" print_text rest
     | Code s :: rest ->
         Format.fprintf ppf "@,%a%a" print_code s print_text rest
     | Output s :: rest ->

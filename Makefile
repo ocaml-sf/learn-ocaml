@@ -1,13 +1,5 @@
 all: static build
 
-# config variables ------------------------------------------------------------
-
-# where the static data should be put
-PREFIX ?= /usr/local
-WWW ?= $(PREFIX)/share/learn-ocaml/www
-
-# end of config variables -----------------------------------------------------
-
 DUNE = dune
 DUNE_ARGS = --profile=release
 
@@ -31,9 +23,7 @@ install: static doc
 	@${DUNE} install ${DUNE_ARGS}
 
 uninstall:
-	@rm -f ${PREFIX}/bin/learn-ocaml
-	@rm -rf ${PREFIX}/share/learn-ocaml
-	@rm -f ${PREFIX}/share/bash-completion/completions/learn-ocaml
+	@${DUNE} uninstall
 
 static/dune:
 	@${MAKE} -C static dune
