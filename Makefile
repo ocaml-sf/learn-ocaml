@@ -83,8 +83,10 @@ VERSION = $(shell opam show ./learn-ocaml.opam -f version)
 publish-docker-images: docker-images
 	docker tag learn-ocaml ocamlsf/learn-ocaml:$(VERSION)
 	docker tag learn-ocaml ocamlsf/learn-ocaml:dev
+	docker tag learn-ocaml ocamlsf/learn-ocaml:latest
 	docker image push ocamlsf/learn-ocaml:$(VERSION)
 	docker image push ocamlsf/learn-ocaml:dev
+	docker image push ocamlsf/learn-ocaml:latest
 
 clean:
 	@${DUNE} clean
