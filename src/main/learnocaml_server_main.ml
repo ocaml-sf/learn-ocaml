@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
  * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Learnocaml_server_args
 open Lwt.Infix
@@ -64,9 +55,8 @@ let man = [
   `S "SERVER OPTIONS";
   `S "AUTHORS";
   `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
-      Çağdaş Bozman and Grégoire Henry. It is licensed under the GNU Affero \
-      General Public License version 3: any instance of the app must provide \
-      its source code to its users.";
+      Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
+      the MIT License.";
   `S "BUGS";
   `P "Bugs should be reported to \
       $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
