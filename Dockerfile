@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.7-ocaml-4.05 as compilation
+FROM ocaml/opam2:alpine-3.7 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR learn-ocaml
@@ -8,9 +8,9 @@ RUN sudo chown -R opam:nogroup .
 
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config
+RUN opam repository set-url default http://opam.ocaml.org
 RUN opam switch 4.05
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
-RUN opam update
 RUN opam install . --deps-only --locked
 
 ADD static static
@@ -19,11 +19,12 @@ ADD src src
 ADD scripts scripts
 ADD Makefile Makefile
 ADD demo-repository demo-repository
-RUN echo "bytelink += [\"-custom\"]" >addflags.ocp
+ADD dune-project dune-project
+ADD dune dune
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
-RUN opam install . --destdir /home/opam/install-prefix
+RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
 
