@@ -22,49 +22,15 @@ open Learnocaml_data
 
 module H = Tyxml_js.Html
 
-let init_tabs, select_tab =
-  let names = [ "toplevel" ; "editor"; ] in
-  let current = ref "toplevel" in
-  let select_tab name =
-    set_arg "tab" name ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-button-" ^ !current))
-      "front-tab" ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-tab-" ^ !current))
-      "front-tab" ;
-    Manip.enable
-      (find_component ("learnocaml-exo-button-" ^ !current)) ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-button-" ^ name))
-      "front-tab" ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-tab-" ^ name))
-      "front-tab" ;
-    Manip.disable
-      (find_component ("learnocaml-exo-button-" ^ name)) ;
-    current := name in
-  let init_tabs () =
-    current := begin try
-        let requested = arg "tab" in
-        if List.mem requested names then requested else "toplevel"
-      with Not_found -> "toplevel"
-    end ;
-    List.iter
-      (fun name ->
-         Manip.removeClass
-           (find_component ("learnocaml-exo-button-" ^ name))
-           "front-tab" ;
-         Manip.removeClass
-           (find_component ("learnocaml-exo-tab-" ^ name))
-           "front-tab" ;
-         Manip.Ev.onclick
-           (find_component ("learnocaml-exo-button-" ^ name))
-           (fun _ -> select_tab name ; true))
-      names ;
-    select_tab !current in
-  init_tabs, select_tab
+module Ids = struct
+  let editor_pane = "learnocaml-exo-tab-editor"
+  let toplevel_pane = "learnocaml-exo-tab-toplevel"
+end
 
+let tabs = [ Ids.editor_pane; Ids.toplevel_pane ]
+
+let select_tab id =
+  Manip.focus (find_component id)
 
 let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
   let open Tyxml_js.Html5 in
@@ -79,13 +45,9 @@ let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
 let set_string_translations () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
-    "learnocaml-exo-button-editor", [%i"Editor"];
-    "learnocaml-exo-button-toplevel", [%i"Toplevel"];
-    "learnocaml-exo-button-report", [%i"Report"];
-    "learnocaml-exo-button-text", [%i"Exercise"];
-    "learnocaml-exo-button-meta", [%i"Details"];
+    (* "learnocaml-exo-button-editor", [%i"Editor"];
+     * "learnocaml-exo-button-toplevel", [%i"Toplevel"]; *)
     "learnocaml-exo-editor-pane", [%i"Editor"];
-    "txt_grade_report", [%i"Click the Grade button to get your report"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -129,7 +91,7 @@ let () =
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
-    | _ -> arg "id"
+    | _ -> try arg "id" with Not_found -> "sandbox"
   in
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
@@ -138,11 +100,11 @@ let () =
   in
   let timeout_prompt =
     Learnocaml_toplevel.make_timeout_popup
-      ~on_show: (fun () -> select_tab "toplevel")
+      ~on_show: (fun () -> select_tab Ids.toplevel_pane)
       () in
   let flood_prompt =
     Learnocaml_toplevel.make_flood_popup
-      ~on_show: (fun () -> select_tab "toplevel")
+      ~on_show: (fun () -> select_tab Ids.toplevel_pane)
       () in
   let history =
     let storage_key =
@@ -215,7 +177,7 @@ let () =
       ~group: toplevel_buttons_group
       ~icon: "run" [%i"Eval code"] @@ fun () ->
     Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
-    select_tab "toplevel";
+    select_tab Ids.toplevel_pane;
     Lwt.return_unit
   end ;
   let typecheck set_class =
