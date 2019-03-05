@@ -66,6 +66,7 @@ let local_save ace id =
 
 
 let () =
+  log "GO";
   Lwt.async_exception_hook := begin fun e ->
     Firebug.console##log (Js.string
                             (Printexc.to_string e ^
@@ -79,7 +80,9 @@ let () =
   end ;
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
+  log "TRANSL";
   set_string_translations ();
+  log "INIT STORAGE";
   Learnocaml_local_storage.init () ;
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
@@ -127,12 +130,15 @@ let () =
       ~container:(find_component "learnocaml-exo-toplevel-pane")
       ~history () in
   init_tabs () ;
+  log "init_tabs";
+  log "toplevel launch";
   toplevel_launch >>= fun top ->
   let solution =
     match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.solution ; _ } -> Some solution
     | exception Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
+  log "button";
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "cleanup" [%i"Clear"] @@ fun () ->
@@ -151,6 +157,7 @@ let () =
     Lwt.return ()
   end ;
   (* ---- editor pane --------------------------------------------------- *)
+  log "editor";
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
   let ace = Ocaml_mode.get_editor editor in
@@ -211,6 +218,7 @@ let () =
   end;
   Window.onunload (fun _ev -> local_save ace id; true);
   (* ---- return -------------------------------------------------------- *)
+  log "RUN";
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
