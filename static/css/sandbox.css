@@ -311,35 +311,40 @@ div.learnocaml-dialog-overlay > div code {
   display: flex;
   flex-direction: column;
   height: calc(100% - 55px);
+  /*! overflow: hidden; */
+  /*! justify-content: stretch; */
 }
 .toplevel-pane > div.toplevel-output {
-  flex: 1;
-  margin: 0 0 -1px 0;
-  padding: 0;
+  flex: 1 1 auto;
+  /*! margin: 0 0 -1px 0; */
+  /*! padding: 0; */
   overflow-x: auto;
   overflow-y: scroll;
   background: var(--bg-text);
+  max-height: calc(100% - 38px);
+  max-width: 754px;
 }
 .toplevel-pane > div.toplevel-input {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 5px 5px 5px 25px;
-  position: relative;
+  flex: 0 0 max-content;
+  margin: 10px 0 0 0;
+  padding: 5px;
+  /*! position: relative; */
   background: #ddd;
-  border-top: 1px #666 solid;
+  /*! border-top: 1px #666 solid; */
   /* box-shadow: inset 2px 2px 5px 1px rgba(0,0,0,0.3) ; */
-  position: relative;
+  /*! position: relative; */
 }
+/*
 .toplevel-pane > div.toplevel-input::before {
   position: absolute;
   left: 0px; right: 0px; top: -5px; height: 5px;
   background: var(--bg-light);
   content:"";
 }
-.toplevel-pane > div.toplevel-input::after {
+*/
+..toplevel-pane > div.toplevel-input > textarea:::before {
   position: absolute;
   background: transparent;
-  content:"";
   margin: 0;
   display: block;
   padding: 5px 5px 5px 10px;
@@ -381,7 +386,6 @@ div.learnocaml-dialog-overlay > div code {
   font-size: 18px;
   line-height: inherit;
   font-family: 'Inconsolata', monospace;
-  margin: 0;
 }
 .toplevel-pane .toplevel-html-block,
 .toplevel-pane pre.toplevel-output,
@@ -391,8 +395,9 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane pre.toplevel-warning {
   margin: 0px;
   padding: 4px 2px 4px 4px;
-  border-left: 10px black solid;
+  /*! border-left: 10px black solid; */
   white-space: pre-wrap;
+  /*! margin-right: 6px; */
 }
 .toplevel-pane pre.toplevel-answer {
   background: var(--bg-code);
@@ -401,6 +406,7 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane pre.toplevel-code {
   background: var(--bg-code-curline);
   border-left-color: #444;
+  /*! width: 100%; */
 }
 .toplevel-pane pre.toplevel-error {
   background: var(--bg-code-error);
@@ -461,8 +467,8 @@ div.learnocaml-dialog-overlay > div code {
   border: none ;
   border-top: 1px #444 solid;
   border-bottom: 1px #444 solid;
-  background: rgba(0,0,0,0.25);
-  height: 12px;
+  background: var(--bg-heavy);
+  height: 10px;
 }
 
 .toplevel-pane .old + hr:not(.old) {
@@ -605,7 +611,10 @@ div.learnocaml-dialog-overlay > div code {
   content: "";
 }
 
-
+.toplevel-pane pre.toplevel-code::before {
+  color: white;
+  content: "# ";
+}
 /* -------------------- loading splash screen --------------------- */
 #learnocaml-exo-loading {
   position: absolute;
@@ -631,27 +640,31 @@ div.learnocaml-dialog-overlay > div code {
   left: 0;
   bottom: 10px;
   right: 0;
-  display: grid;
+  /*! display: grid; */
   overflow: hidden;
   grid-template-columns: 1fr 800px fit-content(80em) 1fr;
   grid-gap: 10px;
-  /*! display: flex; */
-  /*! flex-direction: row; */
+  display: flex;
+  flex-direction: row;
 }
 
 #learnocaml-exo-tabs > div.placeholder-column {
   background-color: transparent;
+  flex: 1;
 }
 
 #learnocaml-exo-tabs > div {
   background-color: var(--bg-heavy);
-  /*! height: 100%; */
+  max-height: 100%;
+  /*! font-family: 'Inconsolata', monospace; */
+  flex: 0 0 754px;
 }
 
 #learnocaml-exo-tab-editor {
   font-size: 18px;
   font-family: 'Inconsolata', monospace;
   resize: horizontal;
+  /*! flex: 0 0 754px; */
 }
 
 #learnocaml-exo-tab-toplevel {
