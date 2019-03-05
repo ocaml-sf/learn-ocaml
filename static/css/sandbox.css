@@ -1,22 +1,30 @@
 /* Color theme */
 :root {
-    --bg-heavy: #b12f0b;
-    --bg-light: #fdb55f;
-    --bg-button: #f90;
+    --bg-heavy: #fff;
+    --bg-light: #fff;
+    --bg-button: #626e60;
     --fg-button: #fff;
-    --bg-text: #fdb55f;
+    --bg-text: #3c3c3c;
     --txt-light: white;
     --txt-dark: black;
-    --code-comment: #e80;
-    --code-constant: #acf;
-    --code-string: #acf;
-    --code-function: #fff;
-    --code-type: #fff;
-    --code-operator: #fff;
-    --code-meta: #fff;
-    --code-variable: #fff;
-    --code-text: #fff;
-    --code-error: #c33;
+
+    --bg-code: #1b3849;
+    --bg-code-selected: #708b99;
+    --bg-code-curline: #132733;
+    --bg-code-cursor: #8ba7a7;
+    --bg-code-error: #a82c1c;
+    --bg-code-warning: #2b4849;
+    --code-text: #f8f8f8;
+    --code-constant: #ff3a83;
+    --code-builtin: #9df39f;
+    --code-comment: #90abb9;
+    --code-function: #efe900;
+    --code-operator: #1e9ae0;
+    --code-string: #55e439;
+    --code-type: #9df39f;
+    --code-variable: #f8f8f8 /*#fb9a4b*/;
+    --code-keyword: #ffaa00;
+    --code-meta: #9df39f;
 }
 
 body {
@@ -25,7 +33,7 @@ body {
   line-height: 18px;
   margin: 0;
   padding: 0 auto;
-  background: var(--bg-heavy);
+  background: var(--bg-light);
   height: 100vh;
 }
 button, select {
@@ -55,11 +63,20 @@ select, button {
   position: relative;
 }
 /* -------------------- buttons ----------------------------------- */
+.buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin: 10px 0;
+  grid-gap: 10px;
+}
+
 button {
   background-color: var(--bg-button);
-  margin: 10px;
+  color: var(--fg-button);
   padding: 10px;
   border: none;
+  flex: 1;
 }
 
 button::before,
@@ -293,6 +310,7 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane {
   display: flex;
   flex-direction: column;
+  height: calc(100% - 55px);
 }
 .toplevel-pane > div.toplevel-output {
   flex: 1;
@@ -300,7 +318,7 @@ div.learnocaml-dialog-overlay > div code {
   padding: 0;
   overflow-x: auto;
   overflow-y: scroll;
-  background: var(--bg-light);
+  background: var(--bg-text);
 }
 .toplevel-pane > div.toplevel-input {
   flex: 0 0 auto;
@@ -315,7 +333,7 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane > div.toplevel-input::before {
   position: absolute;
   left: 0px; right: 0px; top: -5px; height: 5px;
-  background: #dd6600;
+  background: var(--bg-light);
   content:"";
 }
 .toplevel-pane > div.toplevel-input::after {
@@ -377,30 +395,30 @@ div.learnocaml-dialog-overlay > div code {
   white-space: pre-wrap;
 }
 .toplevel-pane pre.toplevel-answer {
-  background: #888;
+  background: var(--bg-code);
   border-left-color: #666;
 }
 .toplevel-pane pre.toplevel-code {
-  background: #666;
+  background: var(--bg-code-curline);
   border-left-color: #444;
 }
 .toplevel-pane pre.toplevel-error {
-  background: #800;
+  background: var(--bg-code-error);
   border-left-color: #600;
   color: var(--txt-light);
 }
 .toplevel-pane pre.toplevel-warning {
-  background: #a80;
+  background: var(--bg-code-warning);
   border-left-color: #860;
   color: var(--txt-light);
 }
 .toplevel-pane .toplevel-html-block {
-  background: #eee;
+  background: var(--bg-text);
   border-left-color: #ccc;
   color: var(--txt-dark);
 }
 .toplevel-pane pre.toplevel-output {
-  background: #333;
+  background: var(--bg-text);
   border-left-color: #000;
   color: var(--txt-dark);
 }
@@ -509,7 +527,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 .toplevel-code .variable,
 .toplevel-answer .variable {
-  color: var(--code-variable);
+  color: var(--code-text);
 }
 .toplevel-code .text,
 .toplevel-answer .text {
@@ -517,7 +535,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 .toplevel-code .error,
 .toplevel-answer .error {
-  color: var(--code-error);
+  background-color: var(--bg-code-error);
 }
 .toplevel-code .toplevel-hilighted-error,
 .toplevel-answer .toplevel-hilighted-error {
@@ -607,7 +625,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 #learnocaml-exo-tabs {
-  text-align: center;
+  /*! text-align: center; */
   position: absolute;
   top: 80px;
   left: 0;
@@ -617,6 +635,8 @@ div.learnocaml-dialog-overlay > div code {
   overflow: hidden;
   grid-template-columns: 1fr 800px fit-content(80em) 1fr;
   grid-gap: 10px;
+  /*! display: flex; */
+  /*! flex-direction: row; */
 }
 
 #learnocaml-exo-tabs > div.placeholder-column {
@@ -624,8 +644,8 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 #learnocaml-exo-tabs > div {
-  background-color: var(--bg-light);
-  /* height: 100%; */
+  background-color: var(--bg-heavy);
+  /*! height: 100%; */
 }
 
 #learnocaml-exo-tab-editor {
@@ -639,37 +659,41 @@ div.learnocaml-dialog-overlay > div code {
 
 #learnocaml-exo-tab-editor > .pane {
   width: 100%;
-  height: calc(100vh - 80px);
-  background: var(--bg-text);
-  color: var(--text-light);
-  /* z-index: 1002; */
+  height: calc(100% - 55px);
+  background: var(--bg-code);
+  color: var(--code-text);
+  /*! z-index: 1002; */
 }
+/*
 #learnocaml-exo-tab-editor > .buttons {
   /* position: absolute;
-   * left: 0; bottom: 0px; width: 100%; */ height: 40px;
-  background: var(--bg-button);
-  color: var(--fg-button);
-  line-height: 40px;
-  display: flex;
-  flex-direction: row;
+   * left: 0; bottom: 0px; width: 100%; */ /*! height: 40px; */
+  /*! background: var(--bg-button); */
+  /*! color: var(--fg-button); */
+  /*! line-height: 40px; */
+  /*! display: flex; */
+  /*! flex-direction: row; */
   /* z-index: 1003; */
-}
+/*}*/
+/*
 #learnocaml-exo-tab-editor > .buttons::after {
   position: absolute;
   bottom: 40px; left: 0px; height: 5px; width: 100%;
   background: rgba(0,0,0,0.4);
   content:"";
 }
-#learnocaml-exo-tab-editor > .buttons > button {
-  flex: 1;
-  background: none;
-  border: none;
-  color: #eee;
-  /* text-shadow: 2px 2px 5px rgba(0,0,0,0.4); */
-  border-top: 1px #eee solid;
-  position: relative;
-  padding: 0;
-}
+*/
+
+/* #learnocaml-exo-tab-editor > .buttons > button {
+ *   flex: 1;
+ *   background: none;
+ *   border: none;
+ *   color: #eee;
+ *   /\* text-shadow: 2px 2px 5px rgba(0,0,0,0.4); *\/
+ *   border-top: 1px #eee solid;
+ *   position: relative;
+ *   padding: 0;
+ * } */
 
 
 /* -------------------- ACE overriding ---------------------------- */
@@ -678,11 +702,11 @@ div.learnocaml-dialog-overlay > div code {
   font-family: 'Inconsolata', monospace;
 }
 #learnocaml-exo-editor-pane .ace_gutter {
-  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  background: linear-gradient(to left, transparent 0, transparent 8px, #ccc 8px, #ccc 9px, #444 9px) ;
   color: #ccc;
 }
 #learnocaml-exo-editor-pane .ace_gutter-active-line {
-  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  background: linear-gradient(to left, #777 0, #777 8px, #ccc 8px, #ccc 9px, #678 9px) ;
   color: #888;
 }
 #learnocaml-exo-editor-pane .ace_gutter-cell {

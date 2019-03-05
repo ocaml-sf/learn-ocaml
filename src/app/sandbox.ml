@@ -90,7 +90,7 @@ let () =
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
-  let editor_button = button ~container: editor_toolbar ~theme: "light" in
+  let editor_button = button ~container: editor_toolbar ~theme: "dark" in
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
@@ -129,7 +129,6 @@ let () =
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
       ~container:(find_component "learnocaml-exo-toplevel-pane")
       ~history () in
-  init_tabs () ;
   log "init_tabs";
   log "toplevel launch";
   toplevel_launch >>= fun top ->
@@ -166,27 +165,6 @@ let () =
      | Some solution -> solution
      | None -> "") ;
   Ace.set_font_size ace 18;
-  begin editor_button
-      ~icon: "cleanup" [%i"Reset"] @@ fun () ->
-    confirm ~title:[%i"START FROM SCRATCH"]
-      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
-      (fun () -> Ace.set_contents ace "");
-    Lwt.return ()
-  end ;
-  begin editor_button
-      ~icon: "download" [%i"Download"] @@ fun () ->
-    let name = id ^ ".ml" in
-    let contents = Js.string (Ace.get_contents ace) in
-    Learnocaml_common.fake_download ~name ~contents ;
-    Lwt.return ()
-  end ;
-  begin editor_button
-      ~group: toplevel_buttons_group
-      ~icon: "run" [%i"Eval code"] @@ fun () ->
-    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
-    select_tab Ids.toplevel_pane;
-    Lwt.return_unit
-  end ;
   let typecheck set_class =
     Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
     let error, warnings =
@@ -209,13 +187,32 @@ let () =
     Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
     Ace.focus ace ;
     Lwt.return () in
-  (* ---- main toolbar -------------------------------------------------- *)
-  let exo_toolbar = find_component "learnocaml-exo-toolbar" in
-  let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
-  begin toolbar_button
-      ~icon: "typecheck" [%i"Compile"] @@ fun () ->
+  begin editor_button
+      ~icon: "cleanup" [%i"Clear"] @@ fun () ->
+    confirm ~title:[%i"CLEAR FILE"]
+      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      (fun () -> Ace.set_contents ace "");
+    Lwt.return ()
+  end ;
+  begin editor_button
+      ~icon: "download" [%i"Download"] @@ fun () ->
+    let name = id ^ ".ml" in
+    let contents = Js.string (Ace.get_contents ace) in
+    Learnocaml_common.fake_download ~name ~contents ;
+    Lwt.return ()
+  end ;
+  begin editor_button
+      ~group: toplevel_buttons_group
+      ~icon: "typecheck" [%i"Check"] @@ fun () ->
     typecheck true
   end;
+  begin editor_button
+      ~group: toplevel_buttons_group
+      ~icon: "run" [%i"Eval code"] @@ fun () ->
+    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
+    select_tab Ids.toplevel_pane;
+    Lwt.return_unit
+  end ;
   Window.onunload (fun _ev -> local_save ace id; true);
   (* ---- return -------------------------------------------------------- *)
   log "RUN";
@@ -223,4 +220,3 @@ let () =
   typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()
-;;
