@@ -406,6 +406,7 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane pre.toplevel-code {
   background: var(--bg-code-curline);
   border-left-color: #444;
+  border-top: 10px solid white;
   /*! width: 100%; */
 }
 .toplevel-pane pre.toplevel-error {
@@ -434,10 +435,10 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane > div.toplevel-output .old {
   position: relative;
 }
-.toplevel-pane > div.toplevel-output .old::before {
+.toplevel-pane > div.toplevel-output .old {
   position: absolute;
   top: -1px; left: -10px; right: 0; bottom: -1px;
-  background: rgba(138,138,130,0.7);
+  background: rgba(255,255,255,0.4);
   content: "";
 }
 
@@ -463,17 +464,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 .toplevel-pane hr {
-  margin: 0px;
-  border: none ;
-  border-top: 1px #444 solid;
-  border-bottom: 1px #444 solid;
-  background: var(--bg-heavy);
-  height: 10px;
-}
-
-.toplevel-pane .old + hr:not(.old) {
-  border-top: 1px black solid;
-  background: rgba(0,0,0,0.4);
+  display: none;
 }
 
 .toplevel-pane pre.toplevel-code .ref {
@@ -657,7 +648,7 @@ div.learnocaml-dialog-overlay > div code {
   background-color: var(--bg-heavy);
   max-height: 100%;
   /*! font-family: 'Inconsolata', monospace; */
-  flex: 0 0 754px;
+  flex: 0 0 780px;
 }
 
 #learnocaml-exo-tab-editor {
@@ -719,17 +710,17 @@ div.learnocaml-dialog-overlay > div code {
   color: #ccc;
 }
 #learnocaml-exo-editor-pane .ace_gutter-active-line {
-  background: linear-gradient(to left, #777 0, #777 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  background: linear-gradient(to left, transparent 0, transparent 8px, #ccc 8px, #ccc 9px, #678 9px) ;
   color: #888;
 }
 #learnocaml-exo-editor-pane .ace_gutter-cell {
   padding: 0 14px 0 0;
 }
 #learnocaml-exo-editor-pane .ace_gutter-cell.ace_warning {
-  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 4px, transparent 80%) ;
 }
 #learnocaml-exo-editor-pane .ace_gutter-cell.ace_error {
-  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 4px, transparent 80%) ;
 }
 #learnocaml-exo-editor-pane .ace_comment { color: var(--code-comment);
                                            font-style: italic; }
