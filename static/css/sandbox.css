@@ -310,9 +310,11 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 55px);
+  /*! height: calc(100% - 55px); */
   /*! overflow: hidden; */
   /*! justify-content: stretch; */
+  flex: 0 1 auto;
+  height: calc(100% - 55px);
 }
 .toplevel-pane > div.toplevel-output {
   flex: 1 1 auto;
@@ -321,8 +323,9 @@ div.learnocaml-dialog-overlay > div code {
   overflow-x: auto;
   overflow-y: scroll;
   background: var(--bg-text);
-  max-height: calc(100% - 38px);
-  max-width: 754px;
+  /*! max-height: calc(100% - 38px); */
+  /*! max-width: 100%; */
+  width: 100%;
 }
 .toplevel-pane > div.toplevel-input {
   flex: 0 0 max-content;
@@ -342,7 +345,7 @@ div.learnocaml-dialog-overlay > div code {
   content:"";
 }
 */
-..toplevel-pane > div.toplevel-input > textarea:::before {
+.toplevel-pane > div.toplevel-input > textarea::before {
   position: absolute;
   background: transparent;
   margin: 0;
@@ -398,6 +401,7 @@ div.learnocaml-dialog-overlay > div code {
   /*! border-left: 10px black solid; */
   white-space: pre-wrap;
   /*! margin-right: 6px; */
+  min-width: max-content;
 }
 .toplevel-pane pre.toplevel-answer {
   background: var(--bg-code);
@@ -629,14 +633,20 @@ div.learnocaml-dialog-overlay > div code {
   position: absolute;
   top: 80px;
   left: 0;
-  bottom: 10px;
   right: 0;
   /*! display: grid; */
-  overflow: hidden;
-  grid-template-columns: 1fr 800px fit-content(80em) 1fr;
+  /*! overflow: hidden; */
+  /*  grid-template-columns: 1fr 800px fit-content(80em) 1fr;*/
   grid-gap: 10px;
   display: flex;
+  justify-content: space-around;
+  bottom: 0px;
   flex-direction: row;
+}
+@media(max-width: 1599px) {
+  #learnocaml-exo-tabs > div:not(.front-tab){
+    display: none;
+  }
 }
 
 #learnocaml-exo-tabs > div.placeholder-column {
@@ -646,9 +656,13 @@ div.learnocaml-dialog-overlay > div code {
 
 #learnocaml-exo-tabs > div {
   background-color: var(--bg-heavy);
-  max-height: 100%;
   /*! font-family: 'Inconsolata', monospace; */
   flex: 0 0 780px;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  max-width: 780px;
+  height: 100%;
 }
 
 #learnocaml-exo-tab-editor {
@@ -763,19 +777,28 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-success::after {
-  content: "✓";
+  content: "â";
   color: #0a0;
   text-shadow: 0px 0px 40px #6F6;
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-warn::after {
-  content: "⚠";
+  content: "â ";
   color: #ec0;
   text-shadow: 0px 0px 40px #Fe6;
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-error::after {
-  content: "❌";
+  content: "â";
   color: #b00;
   text-shadow: 0px 0px 40px #F66;
 }
+
+.toplevel-pane div.toplevel-output > :last-child::after {
+  display: none;
+}
+
+.toplevel-pane pre.toplevel-code+pre.toplevel-code::before {
+  content: "  "
+}
+
