@@ -20,3 +20,7 @@ val repr: Parsetree.core_type -> 'a ty
 val print: 'a ty -> string
 val domains: ('a -> 'b) ty -> 'a ty * 'b ty
 val curry: 'a ty -> 'b ty -> ('a -> 'b) ty
+val pair2: 'a ty -> 'b ty -> ('a * 'b) ty
+val pair3: 'a ty -> 'b ty -> 'c ty -> ('a * 'b * 'c) ty
+val pair4: 'a ty -> 'b ty -> 'c ty -> 'd ty -> ('a * 'b * 'c * 'd) ty
+val lst: 'a ty -> ('a list) ty

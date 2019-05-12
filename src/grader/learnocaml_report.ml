@@ -202,7 +202,10 @@ let format items =
                 | Some score -> E ("span", [ "class", "score" ], [ T score ]) :: format_text text) ])
     | Section (title, contents) ->
         let result, formatted_report = format_report contents in
-        let result_class, score, folder = match result with
+        let result_class, score, folder =
+          (* Hack: never fold the style report *)
+          if title = [Text "Style report"] then ("informative", [], unfolder)
+          else match result with
           | (0, false) ->
               "informative folded", [], unfolder
           | (n, false) ->

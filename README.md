@@ -1,3 +1,12 @@
+Teaching the Art of Functional Programming
+==========================================
+
+This is a fork of the Learn-OCaml platform, with extensions implemented as described in the ICFP '19 submission *Teaching the Art of Functional Programming Using Automated Grading*.
+
+Instructions for setting up and running the Learn-OCaml platform can be found in the base repository's README, copied below.
+
+The demo exercise in the folder `demo_repository` is modified from the original to include a demo of the mutation testing and style checking functionality.
+
 Learn-OCaml
 ===========
 
