@@ -232,6 +232,11 @@ module type S = sig
   type io_tester =
     string -> string -> Learnocaml_report.t
 
+  (** The exception [Timeout limit] is raised by [run_timeout]. Thus, the
+      functions [exec] and [result] can return [Error (Timeout limit)].
+      The integer [limit] is the maximum time that was allowed, in seconds. *)
+  exception Timeout of int
+
   module Tester : sig
     (** Testers are essentially used for the optional arguments
        [~test], [~test_stdout], [~test_stderr] of
@@ -1013,13 +1018,14 @@ module type S = sig
         if no exception is raised and where [r] is the result of [v
         ()], [stdout] the standard output string (possibly empty) and
         [stderr] the standard error string (possibly empty) or returns
-        [Error exn] is exception [exn] is raised. May also return a
-        timeout error. *)
+        [Error exn] is exception [exn] is raised. In particular, a
+        timeout error [Error (Timeout limit)] can be returned. *)
     val exec : (unit -> 'a) -> ('a * string * string) result
 
     (** [result v] executes [v ()] and returns [Ok r] where [r] is
         the result of [v ()] or [Error exn] if exception [exn] is
-        raised. May also return a timeout error. *)
+        raised. In particular, a timeout error [Error (Timeout limit)]
+        can be returned. *)
     val result : (unit -> 'a) -> 'a result
 
     (** The type of arguments, represented as heterogeneous lists.
