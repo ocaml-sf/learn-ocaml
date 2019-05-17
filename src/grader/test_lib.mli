@@ -418,7 +418,7 @@ module type S = sig
     (** [sample_int ()] returns a random integer between -5 and 5. *)
     val sample_int : int sampler
 
-    (** [sample_float ()] returns a random float betwenn -5. and 5. *)
+    (** [sample_float ()] returns a random float between -5. and 5. *)
     val sample_float : float sampler
 
     (** [sample_string ()] returns a randomly long random string. *)
@@ -490,7 +490,7 @@ module type S = sig
        report if reference [got] value is equal to [exp] and
        {!LearnOcaml_report.Failure} report otherwise.
 
-        {e WARNING:} contrary to other grading functions, you can not
+        {e WARNING:} contrary to other grading functions, you cannot
        use this function to evaluate a reference defined or modified
        in student's code. In this case, you should use
        {{!Mutation}mutation functions}. This function should be used
