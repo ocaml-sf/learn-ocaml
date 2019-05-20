@@ -1,5 +1,13 @@
 #!/bin/bash
 
+green () {
+    echo -e "\e[32mOK: $1\e[0m"
+}
+
+red () {
+    echo -e "\e[31mNOT OK: $1\e[0m"
+}
+
 # Temporary directory
 TMP=$(mktemp -d)
 
@@ -31,17 +39,21 @@ do
     do
 	# Grade file
 	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" $TOSEND > res.json
+	if [ $? -ne 0 ]
+	then
+	   red "$DIR/$TOSEND"
+	fi
 	# If there is something to compare
 	if [ -f "$TOSEND.json" ]
 	then
 	    diff res.json "$TOSEND.json"
 	    if [ $? -ne 0 ]
 	    then
-	       echo Diff failed
+	       red "$DIR/$TOSEND"
 	       break 2
 	    fi
 	fi
-	echo -e "OK \e[32m$DIR/$TOSEND passed\e[0m"
+        green "$DIR/$TOSEND"
 	rm res.json
     done
     popd > /dev/null
