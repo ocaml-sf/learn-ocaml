@@ -38,15 +38,15 @@ do
     for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
     do
 	# Grade file
-	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" $TOSEND > res.json
+	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" $TOSEND > res.txt
 	if [ $? -ne 0 ]
 	then
 	   red "$DIR/$TOSEND"
 	fi
 	# If there is something to compare
-	if [ -f "$TOSEND.json" ]
+	if [ -f "$TOSEND.txt" ]
 	then
-	    diff res.json "$TOSEND.json"
+	    diff res.txt "$TOSEND.txt"
 	    if [ $? -ne 0 ]
 	    then
 	       red "$DIR/$TOSEND"
@@ -54,7 +54,7 @@ do
 	    fi
 	fi
         green "$DIR/$TOSEND"
-	rm res.json
+	rm res.txt
     done
     popd > /dev/null
 done
