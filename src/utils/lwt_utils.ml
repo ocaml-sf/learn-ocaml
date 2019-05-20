@@ -21,20 +21,24 @@ let rec mkdir_p ?(perm=0o755) dir =
       Lwt_unix.mkdir dir perm
 
 let copy_tree src dst =
-  Lwt.catch (fun () ->
-      mkdir_p dst >>= fun () ->
-      let cmd =
-        Array.concat
-          [[|"cp"; "-PR"|];
-           Array.map (Filename.concat src) (Sys.readdir src);
-           [|dst|]]
-      in
-      Lwt_process.exec ("", cmd) >>= fun r ->
-      if r <> Unix.WEXITED 0 then Lwt.fail_with "copy_tree"
-      else Lwt.return_unit)
-    (function
-      | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_tree"
-      | e -> raise e)
+  let files = Sys.readdir src
+  in
+  if Array.length files = 0 then Lwt.return_unit
+  else
+    Lwt.catch (fun () ->
+        mkdir_p dst >>= fun () ->
+        let cmd =
+          Array.concat
+            [[|"cp"; "-PR"|];
+             Array.map (Filename.concat src) files;
+             [|dst|]]
+        in
+        Lwt_process.exec ("", cmd) >>= fun r ->
+        if r <> Unix.WEXITED 0 then Lwt.fail_with "copy_tree"
+        else Lwt.return_unit)
+      (function
+        | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_tree"
+        | e -> raise e)
 
 type 'a with_lock = { with_lock: 'b. 'a -> (unit -> 'b Lwt.t) -> 'b Lwt.t }
 
