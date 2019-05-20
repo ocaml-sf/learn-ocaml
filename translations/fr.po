@@ -598,6 +598,10 @@ msgstr "Exporter vers un fichier"
 msgid "Import"
 msgstr "Importer"
 
+#: src/app/learnocaml_index_main.ml:893
+msgid "Download all source files"
+msgstr "Télécharger tous les fichiers sources"
+
 #: src/app/learnocaml_index_main.ml:898,38--44
 msgid "Menu"
 msgstr "Menu"

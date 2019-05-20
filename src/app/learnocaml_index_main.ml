@@ -848,6 +848,9 @@ let () =
     no_tab_selected ();
     Lwt.return ()
   in
+  let download_all () =
+    Lwt.return ()
+  in
   let logout_dialog () =
     Server_caller.request
       (Learnocaml_api.Update_save
@@ -881,6 +884,7 @@ let () =
           sync () >>= fun _ -> Lwt.return_unit);
       [%i"Export to file"], "download", download_save;
       [%i"Import"], "upload", import_save;
+      [%i"Download all source files"], "download", download_all;
       [%i"Logout"], "logout",
       (fun () -> Lwt.async logout_dialog; Lwt.return_unit);
     ];
