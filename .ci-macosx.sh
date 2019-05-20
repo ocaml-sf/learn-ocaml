@@ -2,6 +2,7 @@
 
 brew update
 brew install opam
+brew install libev
 opam init -y --compiler=4.05.0
 eval $(opam env)
 
