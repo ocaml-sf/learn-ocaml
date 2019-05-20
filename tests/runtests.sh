@@ -23,8 +23,17 @@ sleep 2
 # Get the token
 TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
 
-# Send data to the server
-learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" --json demo.ml
+# For each subdirectory
+for D in `find . -type d`
+do
+    pushd $D
+    for tosend in `find . -name "*.ml" -type f`
+    do
+	# Send data to the server
+	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" --json $tosend
+    done
+    popd
+done
 
 # Cleanup
 rm -rf $TMP
