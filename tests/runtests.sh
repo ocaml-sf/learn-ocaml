@@ -1,13 +1,16 @@
 #!/bin/bash
 
+# Print in green $1
 green () {
     echo -e "\e[32mOK: $1\e[0m"
 }
 
+# print in red $2
 red () {
     echo -e "\e[31mNOT OK: $1\e[0m"
 }
 
+# run a server in $TMP/test-repo
 run_server (){
     # Build the reporistory
     pushd $TMP > /dev/null
@@ -28,7 +31,7 @@ run_server (){
 # Temporary directory
 TMP=$(mktemp -d)
 
-# For each subdirectory
+# For each subdirectory (ie. each corpus)
 for DIR in `ls -d */`
 do
     pushd $DIR > /dev/null
@@ -41,7 +44,8 @@ do
 
     # Get the token
     TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
-    
+
+    # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo`
     do
 	pushd $SUBDIR > /dev/null
