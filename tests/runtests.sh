@@ -26,7 +26,7 @@ TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save
 # For each subdirectory
 for DIR in `find . -type d ! -path .`
 do
-    pushd $DIR
+    pushd $DIR > /dev/null
     for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
     do
 	# Grade file
@@ -44,7 +44,7 @@ do
 	echo -e "OK \e[32m$DIR/$TOSEND passed\e[0m"
 	rm res.json
     done
-    popd
+    popd > /dev/null
 done
 
 # Cleanup
