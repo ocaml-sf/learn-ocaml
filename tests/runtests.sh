@@ -14,7 +14,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Run the server in background
-learn-ocaml serve &
+learn-ocaml serve > /dev/null &
 popd
 
 # Wait for the server to be initialized
@@ -24,13 +24,25 @@ sleep 2
 TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
 
 # For each subdirectory
-for D in `find . -type d`
+for DIR in `find . -type d`
 do
-    pushd $D
-    for tosend in `find . -name "*.ml" -type f`
+    pushd $DIR
+    for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
     do
-	# Send data to the server
-	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" --json $tosend
+	# Grade file
+	learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" $TOSEND > res.json
+	# If there is something to compare
+	if [ -f "$TOSEND.json" ]
+	then
+	    diff res.json "$TOSEND.json"
+	    if [ $? -ne 0 ]
+	    then
+	       echo Diff failed
+	       break 2
+	    fi
+	fi
+	echo -e "OK \e[32m$DIR/$TOSEND passed\e[0m"
+	rm res.json
     done
     popd
 done
