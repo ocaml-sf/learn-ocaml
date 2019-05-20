@@ -5,7 +5,7 @@ green () {
     echo -e "\e[32mOK: $1\e[0m"
 }
 
-# print in red $2
+# print in red $1
 red () {
     echo -e "\e[31mNOT OK: $1\e[0m"
 }
