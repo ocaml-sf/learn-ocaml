@@ -24,7 +24,7 @@ sleep 2
 TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
 
 # For each subdirectory
-for DIR in `find . -type d`
+for DIR in `find . -type d ! -path .`
 do
     pushd $DIR
     for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
