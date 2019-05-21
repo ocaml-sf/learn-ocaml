@@ -4,7 +4,7 @@ os:
   - osx
 sudo: required
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build -t learn-ocaml --target program .; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make docker-images; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd tests; sh -c ./runtests.sh; fi
