@@ -40,8 +40,6 @@ RUN adduser learn-ocaml -DG learn-ocaml
 VOLUME ["/repository"]
 RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
 VOLUME ["/sync"]
-RUN mkdir -p /out && chown learn-ocaml:learn-ocaml /out
-VOLUME ["/out"]
 EXPOSE 8080
 EXPOSE 8443
 
