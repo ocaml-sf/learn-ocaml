@@ -14,17 +14,20 @@ red () {
 run_server (){
     SYNC=$(pwd)/$DIR/sync
     REPO=$(pwd)/$DIR/repo
-    echo $SYNC
+
+    TMP=$(mktemp -d)
+    OUTDATA=/tmp/learn-ocaml/out
+
     # Build the reporistory
-    docker run --rm  -v $SYNC:/sync -v $REPO:/repository learn-ocaml build
-    
+    docker run -v $TMP:/tmp/learn-ocaml/out -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
+
     if [ $? -ne 0 ]; then
 	echo Build failed
 	exit 1
     fi
 
     # Run the server in background
-    SERVERID=$(docker run --rm -d -v $(pwd)/$DIR:/home/opam/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml  serve)
+    SERVERID=$(docker run --rm -d -v $TMP:$OUTDATA -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml serve --app-dir=$OUTDATA)
 
     # Wait for the server to be initialized
     sleep 2
@@ -32,6 +35,8 @@ run_server (){
 
 clean (){
     popd > /dev/null
+
+    rm -rf $TMP
 
     docker kill $SERVERID > /dev/null
 }
@@ -45,12 +50,10 @@ do
 
     echo " :*: Doing $DIR"
 
-    #cp -r -L repo $TMP/test-repo
-
     # Get the token
     TOKEN=$(find sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
 
-    echo "$TOKEN"
+    echo "TOKEN: $TOKEN"
 
     # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
@@ -61,7 +64,7 @@ do
 	do
 	    # Grade file
 	    docker exec -i $SERVERID \
-	      learn-ocaml-client --server http://localhost:8080 --token="$TOKEN" --id="$SUBDIR" /home/opam/actual/$SUBDIR/$TOSEND
+	      learn-ocaml-client --server http://localhost:8080 --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt
 	    if [ $? -ne 0 ]
 	    then
 		red "$DIR$TOSEND"
