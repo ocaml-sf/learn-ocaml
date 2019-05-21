@@ -21,8 +21,7 @@ let rec mkdir_p ?(perm=0o755) dir =
       Lwt_unix.mkdir dir perm
 
 let copy_tree src dst =
-  let files = Sys.readdir src
-  in
+  let files = Sys.readdir src in
   if Array.length files = 0 then Lwt.return_unit
   else
     Lwt.catch (fun () ->
