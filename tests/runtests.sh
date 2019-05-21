@@ -12,8 +12,11 @@ red () {
 
 # run a server in $TMP/test-repo
 run_server (){
+    SYNC=$(pwd)/$DIR/sync
+    REPO=$(pwd)/$DIR/repo
+    echo $SYNC
     # Build the reporistory
-    docker run --rm  -v sync:/sync -v test-repo:/repository learn-ocaml build
+    docker run --rm  -v $SYNC:/sync -v $REPO:/repository learn-ocaml build
     
     if [ $? -ne 0 ]; then
 	echo Build failed
@@ -21,7 +24,7 @@ run_server (){
     fi
 
     # Run the server in background
-    SERVERID=$(docker run --rm -d -v $(pwd)/$DIR:/home/opam/actual -v sync:/sync -v test-repo:/repository learn-ocaml serve)
+    SERVERID=$(docker run --rm -d -v $(pwd)/$DIR:/home/opam/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml  serve)
 
     # Wait for the server to be initialized
     sleep 2
@@ -45,7 +48,9 @@ do
     #cp -r -L repo $TMP/test-repo
 
     # Get the token
-    #TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
+    TOKEN=$(find sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
+
+    echo "$TOKEN"
 
     # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
@@ -55,8 +60,8 @@ do
 	for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
 	do
 	    # Grade file
-	    docker exec $SERVERID \
-	    learn-ocaml-client --server http://localhost:8080 --id="$SUBDIR" /home/opam/actual/$SUBDIR/$TOSEND > res.txt
+	    docker exec -i $SERVERID \
+	      learn-ocaml-client --server http://localhost:8080 --token="$TOKEN" --id="$SUBDIR" /home/opam/actual/$SUBDIR/$TOSEND
 	    if [ $? -ne 0 ]
 	    then
 		red "$DIR$TOSEND"
