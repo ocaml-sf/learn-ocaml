@@ -19,8 +19,8 @@ run_server (){
     TMP=$(pwd)/out
     OUTDATA=/home/learn-ocaml/out
 
-    # Build the reporistory
-    docker run -v $TMP:$OUTDATA -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
+    # Build the repo
+    docker run --user learn-ocaml -v $TMP:$OUTDATA -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
 
     if [ $? -ne 0 ]; then
 	echo Build failed
@@ -28,7 +28,7 @@ run_server (){
     fi
 
     # Run the server in background
-    SERVERID=$(docker run --rm -d -v $TMP:$OUTDATA -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml serve --app-dir=$OUTDATA)
+    SERVERID=$(docker run --user learn-ocaml --rm -d -v $TMP:$OUTDATA -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml serve --app-dir=$OUTDATA)
 
     # Wait for the server to be initialized
     sleep 2
