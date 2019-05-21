@@ -13,50 +13,55 @@ red () {
 # run a server in $TMP/test-repo
 run_server (){
     # Build the reporistory
-    pushd $TMP > /dev/null
-    learn-ocaml build --repo test-repo
+    docker run --rm  -v sync:/sync -v test-repo:/repository learn-ocaml build
+    
     if [ $? -ne 0 ]; then
 	echo Build failed
 	exit 1
     fi
 
     # Run the server in background
-    learn-ocaml serve > /dev/null &
-    popd > /dev/null
+    SERVERID=$(docker run --rm -d -v $(pwd)/$DIR:/home/opam/actual -v sync:/sync -v test-repo:/repository learn-ocaml serve)
 
     # Wait for the server to be initialized
     sleep 2
 }
 
-# Temporary directory
-TMP=$(mktemp -d)
+clean (){
+    popd > /dev/null
+
+    docker kill $SERVERID > /dev/null
+}
 
 # For each subdirectory (ie. each corpus)
 for DIR in `ls -d */`
 do
+    run_server
+
     pushd $DIR > /dev/null
 
     echo " :*: Doing $DIR"
 
-    cp -r -L repo $TMP/test-repo
-
-    run_server
+    #cp -r -L repo $TMP/test-repo
 
     # Get the token
-    TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
+    #TOKEN=$(find $TMP/sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
 
     # For each subdir (ie. each exercice)
-    for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo`
+    for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
     do
 	pushd $SUBDIR > /dev/null
 
 	for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
 	do
 	    # Grade file
-	    learn-ocaml-client --server http://localhost:8080 --token "$TOKEN" --id="$SUBDIR" $TOSEND > res.txt
+	    docker exec $SERVERID \
+	    learn-ocaml-client --server http://localhost:8080 --id="$SUBDIR" /home/opam/actual/$SUBDIR/$TOSEND > res.txt
 	    if [ $? -ne 0 ]
 	    then
 		red "$DIR$TOSEND"
+		clean
+		exit 1
 	    fi
 	    # If there is something to compare
 	    if [ -f "$TOSEND.txt" ]
@@ -65,18 +70,15 @@ do
 		if [ $? -ne 0 ]
 		then
 		    red "$DIR$TOSEND"
-		    break
+		    clean
+		    exit 1
 		fi
 	    fi
             green "$DIR$TOSEND"
 	    rm res.txt
 	done
 
-	popd > /dev/null
-	# Cleanup
-	rm -rf $TMP/*
-
-	kill $!
+	clean
     done
     popd > /dev/null
 done
