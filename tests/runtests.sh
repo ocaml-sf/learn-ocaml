@@ -16,10 +16,10 @@ run_server (){
     REPO=$(pwd)/$DIR/repo
 
     TMP=$(mktemp -d)
-    OUTDATA=/tmp/learn-ocaml/out
+    OUTDATA=/home/learn-ocaml/out
 
     # Build the reporistory
-    docker run -v $TMP:/tmp/learn-ocaml/out -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
+    docker run -v $TMP:$OUTDATA -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
 
     if [ $? -ne 0 ]; then
 	echo Build failed
