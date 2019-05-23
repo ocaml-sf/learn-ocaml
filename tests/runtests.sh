@@ -1,13 +1,15 @@
 #!/bin/bash
 
+let count=0
+
 # print in green $1
 green () {
-    echo -e "\e[32mOK: $1\e[0m"
+    echo -e "\e[32m$1\e[0m"
 }
 
 # print in red $1
 red () {
-    echo -e "\e[31mNOT OK: $1\e[0m"
+    echo -e "\e[31m$1\e[0m"
 }
 
 # run a server in a docker container
@@ -15,16 +17,13 @@ run_server (){
     SYNC=$(pwd)/$DIR/sync
     REPO=$(pwd)/$DIR/repo
 
-    if [ $? -ne 0 ]; then
-	echo Build failed
-	exit 1
-    fi
-
-    docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve"
-    exit 1
-
     # Run the server in background
     SERVERID=$(docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve" )
+
+    if [ $? -ne 0 ]; then
+        red "BUILD FAILED"
+	exit 1
+    fi
 
     # Wait for the server to be initialized
     sleep 2
@@ -43,12 +42,10 @@ do
 
     pushd $DIR > /dev/null
 
-    echo " :*: Doing $DIR"
+    echo " :*: Doing $DIR :"
 
     # Get the token
     TOKEN=$(find sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
-
-    echo "TOKEN: $TOKEN"
 
     # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
@@ -59,10 +56,11 @@ do
 	do
 	    # Grade file
 	    docker exec -i $SERVERID \
-	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt
+	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt 2> stderr.txt
 	    if [ $? -ne 0 ]
 	    then
-		red "$DIR$TOSEND"
+		red "NOT OK: $DIR$TOSEND"
+		cat stderr.txt
 		clean
 		exit 1
 	    fi
@@ -72,16 +70,19 @@ do
 		diff res.txt "$TOSEND.txt"
 		if [ $? -ne 0 ]
 		then
-		    red "$DIR$TOSEND"
+		    red "DIFF FAILED: $DIR$TOSEND"
 		    clean
 		    exit 1
 		fi
 	    fi
-            green "$DIR$TOSEND"
-	    rm res.txt
+            green "OK: $DIR$TOSEND"
+	    rm res.txt stderr.txt
+	    let count++
 	done
 
 	clean
     done
     popd > /dev/null
 done
+
+green "\nALL $count TESTS PASSED\n"
