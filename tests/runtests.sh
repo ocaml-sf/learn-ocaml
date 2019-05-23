@@ -18,6 +18,7 @@ run_server (){
     REPO=$(pwd)/$DIR/repo
 
     mkdir $DIR/sync 2>/dev/null
+    chmod o+w $DIR/sync
 
     # Run the server in background
     SERVERID=$(docker run --entrypoint '' -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve")
