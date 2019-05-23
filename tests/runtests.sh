@@ -3,7 +3,7 @@
 let count=0
 
 # If the first argument is "set", the script will replace all the expected answers by
-# the response of the server. It is useful when you need to init a set of tests.
+# the response of the server. It is useful when you need to initialize a set of tests.
 
 SETTER=0
 if [ "$1" == "set" ]; then SETTER=1; fi
@@ -54,6 +54,11 @@ clean (){
     docker rm   $SERVERID > /dev/null
 }
 
+clean_fail (){
+    clean
+    exit 1
+}
+
 # For each subdirectory (ie. each corpus)
 for DIR in `ls -d */`
 do
@@ -77,31 +82,24 @@ do
 	    # Grade file
 	    docker exec -i $SERVERID \
 	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt
-	    if [ $? -ne 0 ]
-	    then
+	    if [ $? -ne 0 ]; then
 		red "NOT OK: $DIR$TOSEND"
 		cat stderr.txt
-		clean
-		exit 1
+	        clean_fail
 	    fi
-	    if [ $SETTER -eq 1 ]
-	    then
+	    if [ $SETTER -eq 1 ]; then
 	       cp res.json "$TOSEND.json"
 	    else
 		# If there isn't something to compare
-		if [ ! -f "$TOSEND.json" ]
-		then
+		if [ ! -f "$TOSEND.json" ]; then
 		    red "$TOSEND.json does not exist"
-		    clean
-		    exit 1
+		    clean_fail
 		else
 		    diff res.json "$TOSEND.json"
 		    # If diff failed
-		    if [ $? -ne 0 ]
-		    then
+		    if [ $? -ne 0 ]; then
 			red "DIFF FAILED: $DIR$TOSEND"
-			clean
-			exit 1
+			clean_fail
 		    fi
 		fi
 	    fi
