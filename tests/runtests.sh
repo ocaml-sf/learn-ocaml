@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Print in green $1
+# print in green $1
 green () {
     echo -e "\e[32mOK: $1\e[0m"
 }
@@ -10,7 +10,7 @@ red () {
     echo -e "\e[31mNOT OK: $1\e[0m"
 }
 
-# run a server in $TMP/test-repo
+# run a server in a docker container
 run_server (){
     SYNC=$(pwd)/$DIR/sync
     REPO=$(pwd)/$DIR/repo
@@ -56,7 +56,7 @@ do
 	do
 	    # Grade file
 	    docker exec -i $SERVERID \
-	      learn-ocaml-client --server http://localhost:8080 --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt
+	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt
 	    if [ $? -ne 0 ]
 	    then
 		red "$DIR$TOSEND"
