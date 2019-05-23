@@ -48,7 +48,7 @@ do
 
     pushd $DIR > /dev/null
 
-    echo " :*: Doing $DIR :"
+    echo "---> Doing $DIR:"
 
     # Get the token
     TOKEN=$(find sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
