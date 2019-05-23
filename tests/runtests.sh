@@ -20,6 +20,9 @@ run_server (){
 	exit 1
     fi
 
+    docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve"
+    exit 1
+
     # Run the server in background
     SERVERID=$(docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve" )
 
