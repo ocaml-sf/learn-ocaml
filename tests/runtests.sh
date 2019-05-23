@@ -61,10 +61,11 @@ do
     TOKEN=$(find sync -maxdepth 5 -mindepth 5 | head -n 1 | sed 's|sync/||' | sed 's|/|-|g')
 
     # For each subdir (ie. each exercice)
-    for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
+    for SUBDIR in `find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
     do
 	pushd $SUBDIR > /dev/null
 
+	# For each solution
 	for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
 	do
 	    # Grade file
@@ -77,7 +78,7 @@ do
 		clean
 		exit 1
 	    fi
-	    # If there is something to compare
+	    # If there isn't something to compare
 	    if [ ! -f "$TOSEND.json" ]
 	    then
 		red "$TOSEND.json does not exist"
@@ -85,6 +86,7 @@ do
 		exit 1
 	    else
 		diff res.json "$TOSEND.json"
+		# If diff failed
 		if [ $? -ne 0 ]
 		then
 		    red "DIFF FAILED: $DIR$TOSEND"
