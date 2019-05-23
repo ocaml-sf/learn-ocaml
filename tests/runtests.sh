@@ -18,7 +18,7 @@ run_server (){
     REPO=$(pwd)/$DIR/repo
 
     # Run the server in background
-    SERVERID=$(docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve" )
+    docker run --entrypoint '' --rm -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve"
 
     if [ $? -ne 0 ]; then
         red "BUILD FAILED"
