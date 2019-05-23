@@ -57,8 +57,8 @@ do
 
     echo "---> Doing $DIR:"
 
-    # Get the token
-    TOKEN=$(find sync -maxdepth 5 -mindepth 5 | sed 's|sync/||' | sed 's|/|-|g')
+    # Get the token from the sync/ directory
+    TOKEN=$(find sync -maxdepth 5 -mindepth 5 | head -n 1 | sed 's|sync/||' | sed 's|/|-|g')
 
     # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
@@ -69,7 +69,7 @@ do
 	do
 	    # Grade file
 	    docker exec -i $SERVERID \
-	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.txt 2> stderr.txt
+	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt
 	    if [ $? -ne 0 ]
 	    then
 		red "NOT OK: $DIR$TOSEND"
@@ -78,9 +78,9 @@ do
 		exit 1
 	    fi
 	    # If there is something to compare
-	    if [ -f "$TOSEND.txt" ]
+	    if [ -f "$TOSEND.json" ]
 	    then
-		diff res.txt "$TOSEND.txt"
+		diff res.json "$TOSEND.json"
 		if [ $? -ne 0 ]
 		then
 		    red "DIFF FAILED: $DIR$TOSEND"
@@ -89,7 +89,7 @@ do
 		fi
 	    fi
             green "OK: $DIR$TOSEND"
-	    rm res.txt stderr.txt
+	    rm res.json stderr.txt
 	    let count++
 	done
 
