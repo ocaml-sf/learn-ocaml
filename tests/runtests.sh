@@ -78,8 +78,12 @@ do
 		exit 1
 	    fi
 	    # If there is something to compare
-	    if [ -f "$TOSEND.json" ]
+	    if [ ! -f "$TOSEND.json" ]
 	    then
+		red "$TOSEND.json does not exist"
+		clean
+		exit 1
+	    else
 		diff res.json "$TOSEND.json"
 		if [ $? -ne 0 ]
 		then
