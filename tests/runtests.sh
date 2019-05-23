@@ -42,6 +42,7 @@ run_server (){
 
 clean (){
     popd > /dev/null
+    chmod o-w sync
 
     docker kill $SERVERID > /dev/null
     docker rm   $SERVERID > /dev/null
