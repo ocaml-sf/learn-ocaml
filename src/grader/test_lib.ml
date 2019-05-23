@@ -54,6 +54,8 @@ module type S = sig
   type io_tester =
     string -> string -> Learnocaml_report.t
 
+  exception Timeout of int
+
   (*----------------------------------------------------------------------------*)
 
   module Tester : sig
@@ -860,7 +862,7 @@ module Make
   let typed_printer ty ppf v =
     Introspection.print_value ppf v ty
 
-  exception Timeout
+  exception Timeout of int
 
   (*----------------------------------------------------------------------------*)
 
@@ -882,8 +884,9 @@ module Make
             Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
         | Error Stack_overflow ->
             Learnocaml_report.[ Message ([ Text "Stack overflow. Too many recursions?" ], Failure) ]
-        | Error Timeout ->
-            Learnocaml_report.[ Message ([ Text "Your code exceeded the time limit. Too many recursions?" ], Failure) ]
+        | Error (Timeout limit) ->
+            let msg = Format.sprintf "Your code exceeded the time limit of %d seconds." limit in
+            Learnocaml_report.[ Message ([ Text msg ], Failure) ]
         | Error exn ->
             Learnocaml_report.[ Message ([ Text "Wrong exception" ; Code (Printexc.to_string exn) ], Failure) ] end
 
@@ -1091,10 +1094,11 @@ module Make
     open Params
     open Tester
 
-    let sigalrm_handler = Sys.Signal_handle (fun _ -> raise Timeout)
+    let sigalrm_handler time =
+      Sys.Signal_handle (fun _ -> raise (Timeout time))
 
     let run_timeout ~time v =
-      let old_behavior = Sys.signal Sys.sigalrm sigalrm_handler in
+      let old_behavior = Sys.signal Sys.sigalrm (sigalrm_handler time) in
       let reset_sigalrm () = Sys.set_signal Sys.sigalrm old_behavior
       in ignore (Unix.alarm time);
          try
