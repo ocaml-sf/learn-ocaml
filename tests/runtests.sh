@@ -15,20 +15,13 @@ run_server (){
     SYNC=$(pwd)/$DIR/sync
     REPO=$(pwd)/$DIR/repo
 
-    mkdir out
-    TMP=$(pwd)/out
-    OUTDATA=/home/learn-ocaml/out
-
-    # Build the repo
-    docker run --user learn-ocaml -v $TMP:$OUTDATA -v $SYNC:/sync -v $REPO:/repository learn-ocaml build -o $OUTDATA
-
     if [ $? -ne 0 ]; then
 	echo Build failed
 	exit 1
     fi
 
     # Run the server in background
-    SERVERID=$(docker run --user learn-ocaml --rm -d -v $TMP:$OUTDATA -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml serve --app-dir=$OUTDATA)
+    SERVERID=$(docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve" )
 
     # Wait for the server to be initialized
     sleep 2
@@ -36,8 +29,6 @@ run_server (){
 
 clean (){
     popd > /dev/null
-
-    rm -rf $TMP
 
     docker kill $SERVERID > /dev/null
 }
