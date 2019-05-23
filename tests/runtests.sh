@@ -17,22 +17,28 @@ run_server (){
     SYNC=$(pwd)/$DIR/sync
     REPO=$(pwd)/$DIR/repo
 
-    # Run the server in background
-    SERVERID=$(docker run --entrypoint '' --rm -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve")
+    mkdir $DIR/sync 2>/dev/null
 
-    if [ $? -ne 0 ]; then
-        red "BUILD FAILED"
-	exit 1
-    fi
+    # Run the server in background
+    SERVERID=$(docker run --entrypoint '' -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 
     # Wait for the server to be initialized
     sleep 2
+
+    if [ "$(docker ps -q)" == "" ]; then
+	red "PROBLEM, server is not running.\n"
+	red "LOGS:"
+	docker logs $SERVERID
+	docker rm $SERVERID
+	exit 1
+    fi
 }
 
 clean (){
     popd > /dev/null
 
     docker kill $SERVERID > /dev/null
+    docker rm   $SERVERID > /dev/null
 }
 
 # For each subdirectory (ie. each corpus)
