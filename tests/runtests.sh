@@ -27,9 +27,14 @@ run_server (){
 
     if [ "$(docker ps -q)" == "" ]; then
 	red "PROBLEM, server is not running.\n"
+
+	red "LS:"
+	ls -Rl $DIR
+	echo ""
+
 	red "LOGS:"
 	docker logs $SERVERID
-	docker rm $SERVERID
+	docker rm $SERVERID > /dev/null
 	exit 1
     fi
 }
