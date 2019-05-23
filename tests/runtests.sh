@@ -58,7 +58,7 @@ do
     echo "---> Doing $DIR:"
 
     # Get the token
-    TOKEN=$(find sync -name \*.json -printf '%P' | sed 's|/|-|g' | sed 's|-save.json||')
+    TOKEN=$(find sync -maxdepth 5 -mindepth 5 | sed 's|sync/||' | sed 's|/|-|g')
 
     # For each subdir (ie. each exercice)
     for SUBDIR in `find .  -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
