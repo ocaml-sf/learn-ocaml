@@ -2,6 +2,12 @@
 
 let count=0
 
+# If the first argument is "set", the script will replace all the expected answers by
+# the response of the server. It is useful when you need to init a set of tests.
+
+SETTER=0
+if [ "$1" == "set" ]; then SETTER=1; fi
+
 # print in green $1
 green () {
     echo -e "\e[32m$1\e[0m"
@@ -78,20 +84,25 @@ do
 		clean
 		exit 1
 	    fi
-	    # If there isn't something to compare
-	    if [ ! -f "$TOSEND.json" ]
+	    if [ $SETTER -eq 1 ]
 	    then
-		red "$TOSEND.json does not exist"
-		clean
-		exit 1
+	       cp res.json "$TOSEND.json"
 	    else
-		diff res.json "$TOSEND.json"
-		# If diff failed
-		if [ $? -ne 0 ]
+		# If there isn't something to compare
+		if [ ! -f "$TOSEND.json" ]
 		then
-		    red "DIFF FAILED: $DIR$TOSEND"
+		    red "$TOSEND.json does not exist"
 		    clean
 		    exit 1
+		else
+		    diff res.json "$TOSEND.json"
+		    # If diff failed
+		    if [ $? -ne 0 ]
+		    then
+			red "DIFF FAILED: $DIR$TOSEND"
+			clean
+			exit 1
+		    fi
 		fi
 	    fi
             green "OK: $DIR$TOSEND"

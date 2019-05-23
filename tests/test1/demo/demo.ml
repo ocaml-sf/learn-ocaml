@@ -1,1 +1,1 @@
-let plus x y = x + y
+let plus = ( + )
