@@ -213,6 +213,15 @@ module Request_handler = struct
           Lwt.return
             (Status {code = `Internal_server_error;
                      body = Printexc.to_string exn})
+      | Api.Archive_zip token ->
+          let open Lwt_process in
+          let path = Filename.concat !sync_dir (Token.to_path token) in 
+          let cmd = shell ("git archive master --format=zip -0 --remote="^path)
+          and stdout = `FD_copy Unix.stdout in
+          Lwt_process.pread ~stdin:stdout cmd >|= fun contents ->
+          Response { contents = contents;
+                     content_type = "application/zip; charset=latin-1";
+                     caching = Nocache }
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in

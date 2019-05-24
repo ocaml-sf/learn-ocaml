@@ -34,6 +34,8 @@ type _ request =
       teacher token -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
+  | Archive_zip:
+      'a token -> string request
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git:
