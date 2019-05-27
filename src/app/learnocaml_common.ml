@@ -424,7 +424,7 @@ let rec sync_save token save_file =
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
   | Error (`Not_found _) ->
       Server_caller.request_exn
-        (Learnocaml_api.Create_token (Some token, None)) >>= fun _token ->
+        (Learnocaml_api.Create_token ("", Some token, None)) >>= fun _token ->
       assert (_token = token);
       Server_caller.request_exn
         (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
