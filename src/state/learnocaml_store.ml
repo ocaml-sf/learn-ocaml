@@ -118,6 +118,13 @@ module Lesson = struct
 
 end
 
+module Server = struct
+
+  let get () =
+      read_static_file Learnocaml_index.tutorial_index_path Server.enc
+
+end
+
 module Tutorial = struct
 
   module Index = struct

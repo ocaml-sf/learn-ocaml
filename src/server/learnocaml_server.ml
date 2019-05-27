@@ -9,6 +9,8 @@
 open Learnocaml_data
 open Learnocaml_store
 
+open Json_encoding
+
 let port = ref 8080
 
 let cert_key_files = ref None
@@ -477,6 +479,8 @@ let compress ?(level = 4) data =
   | Error _ -> Lwt.fail_with "Could not compress"
 
 let launch () =
+  Learnocaml_store.Server.get () >>= fun config ->
+  let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in

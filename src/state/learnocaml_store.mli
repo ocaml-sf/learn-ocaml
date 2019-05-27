@@ -42,6 +42,10 @@ module Lesson: sig
 
 end
 
+module Server : sig
+  val get : unit -> Server.config Lwt.t
+end
+
 module Tutorial: sig
 
   module Index: sig

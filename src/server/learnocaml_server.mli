@@ -9,6 +9,7 @@
 (** Configuration options *)
 
 val port: int ref
+val config: string ref
 val cert_key_files: (string * string) option ref
 
 val args: (Arg.key * Arg.spec * Arg.doc) list

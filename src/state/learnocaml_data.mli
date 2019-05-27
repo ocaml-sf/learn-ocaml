@@ -120,6 +120,14 @@ module Student: sig
 
 end
 
+module Server : sig
+  type config = {
+    secret : int (* A hashed secret *)
+  }
+
+  val enc: config Json_encoding.encoding
+end
+
 module Exercise: sig
 
   type id = string

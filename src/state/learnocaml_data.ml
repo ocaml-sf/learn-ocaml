@@ -373,6 +373,16 @@ let enc_check_version_2 enc =
        exercise)
     (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
 
+module Server = struct
+  type config = {
+    secret : int (* A hashed secret *)
+  }
+
+  let enc =
+    J.conv (fun c -> c.secret) (fun secret -> {secret}) @@
+      J.obj1 (J.req "secret" J.int)
+end
+
 module Exercise = struct
 
   type id = string
