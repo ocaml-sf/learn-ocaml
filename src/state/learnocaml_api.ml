@@ -16,7 +16,7 @@ type _ request =
   | Version:
       unit -> string request
   | Create_token:
-      student token option * string option -> student token request
+      string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
   | Fetch_save:
@@ -149,8 +149,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Version () ->
         get ["version"]
 
-    | Create_token (token, nick) ->
-        get ?token (["sync"; "new"] @
+    | Create_token (secret_candiate, token, nick) ->
+        get ?token (["sync"; "new"; secret_candiate] @
                     (match nick with None -> [] | Some n -> [n]))
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
@@ -217,7 +217,7 @@ module type REQUEST_HANDLER = sig
   type 'resp ret
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: 'resp request -> 'resp ret
+  val callback: int -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -227,9 +227,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
   let rec last =
     function [f] -> Some f | [] -> None | _::r -> last r
 
-  let handler request =
+  let handler secret request =
       let k req =
-        Rh.callback req |> Rh.map_ret (C.response_encode req)
+        Rh.callback secret req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with
@@ -244,10 +244,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["version"], _ ->
           Version () |> k
 
-      | `GET, ["sync"; "new"], token ->
-          Create_token (token, None) |> k
-      | `GET, ["sync"; "new"; nick], token ->
-          Create_token (token, Some nick) |> k
+      | `GET, ["sync"; "new"; secret_candidate], token ->
+          Create_token (secret_candidate, token, None) |> k
+      | `GET, ["sync"; "new"; secret_candidate; nick], token ->
+          Create_token (secret_candidate, token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
 

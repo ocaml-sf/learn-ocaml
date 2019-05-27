@@ -169,7 +169,6 @@ module Memory_cache = struct
 
 end
 
-
 module Request_handler = struct
 
   type 'a ret = 'a response Lwt.t
@@ -181,18 +180,20 @@ module Request_handler = struct
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. caching -> resp Api.request -> resp ret
-    = fun cache -> function
+  let callback_raw: type resp. int -> caching -> resp Api.request -> resp ret
+    = fun secret cache -> function
       | Api.Version () ->
           respond_json cache Api.version
       | Api.Static path ->
           respond_static cache path
-      | Api.Create_token (None, nick) ->
-          Token.create_student () >>= fun tok ->
-          (match nick with None -> Lwt.return_unit | Some nickname ->
-              Save.set tok Save.{empty with nickname}) >>= fun () ->
-          respond_json cache tok
-      | Api.Create_token (Some token, _nick) ->
+      | Api.Create_token (secret_candidate, None, nick) ->
+         if Hashtbl.hash secret_candidate != secret
+         then failwith "TODO";
+         Token.create_student () >>= fun tok ->
+         (match nick with None -> Lwt.return_unit | Some nickname ->
+             Save.set tok Save.{empty with nickname}) >>= fun () ->
+         respond_json cache tok
+      | Api.Create_token (_, Some token, _nick) -> (* TODO verify *)
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
             (function
@@ -398,10 +399,10 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           Lwt.return (Status {code = `Bad_request; body})
 
-  let callback: type resp. resp Api.request -> resp ret = fun req ->
+  let callback: type resp. int -> resp Api.request -> resp ret = fun secret req ->
     let cache = caching req in
     let respond () =
-      Lwt.catch (fun () -> callback_raw cache req)
+      Lwt.catch (fun () -> callback_raw secret cache req)
         (function
           | Not_found ->
               Lwt.return (Status {code = `Not_found;
@@ -569,7 +570,7 @@ let launch () =
     >>= (function
         | Ok req ->
             log conn req;
-            Api_server.handler req
+            Api_server.handler secret req
         | Error (code, body) -> Lwt.return (Status {code; body}))
     >>=
     respond
