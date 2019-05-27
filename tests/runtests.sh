@@ -2,8 +2,9 @@
 
 let count=0
 
-# If the first argument is "set", the script will replace all the expected answers by
-# the response of the server. It is useful when you need to initialize a set of tests.
+# If the first argument is "set", the script will replace all the expected 
+# answers by the response of the server. It is useful when you need to
+# initialize a set of tests.
 
 SETTER=0
 if [ "$1" == "set" ]; then SETTER=1; fi
@@ -27,7 +28,12 @@ run_server (){
     chmod o+w $DIR/sync
 
     # Run the server in background
-    SERVERID=$(docker run --entrypoint '' -d -v $(pwd)/$DIR:/home/learn-ocaml/actual -v $SYNC:/sync -v $REPO:/repository learn-ocaml /bin/sh -c "learn-ocaml --sync-dir=/sync --repo=/repository build && learn-ocaml --sync-dir=/sync --repo=/repository build serve")
+    SERVERID=$(docker run --entrypoint '' -d \
+      -v $(pwd)/$DIR:/home/learn-ocaml/actual \
+      -v $SYNC:/sync -v $REPO:/repository \
+      learn-ocaml /bin/sh \
+        -c "learn-ocaml --sync-dir=/sync --repo=/repository build && 
+learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 
     # Wait for the server to be initialized
     sleep 2
@@ -81,7 +87,9 @@ do
 	do
 	    # Grade file
 	    docker exec -i $SERVERID \
-	      learn-ocaml-client --server http://localhost:8080 --json --token="$TOKEN" --id="$SUBDIR" /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt
+	      learn-ocaml-client --server http://localhost:8080 --json \
+	      --token="$TOKEN" --id="$SUBDIR" \
+	      /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt
 	    if [ $? -ne 0 ]; then
 		red "NOT OK: $DIR$TOSEND"
 		cat stderr.txt
