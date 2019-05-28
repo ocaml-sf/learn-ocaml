@@ -23,7 +23,7 @@
    store it in a variable):
 
    module Style_check = Style_checking.Make ()
-   Typed_ast_lib.ast_check_structure
+   Style_check.ast_style_check_structure
      (Style_check.all_checkers ())
      (Typed_ast_lib.tast_of_parsetree_structure code_ast)
 *)
