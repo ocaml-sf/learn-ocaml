@@ -614,9 +614,10 @@ let init_token_dialog () =
       (Manip.SetCss.borderColor input_nick "#f44";
        Lwt.return_none)
     else
+      ask_string ~title:"" [] >>= fun secret ->
       (Learnocaml_local_storage.(store nickname) nickname;
        retrieve
-         (Learnocaml_api.Create_token (None, Some nickname))
+         (Learnocaml_api.Create_token (secret,None, Some nickname))
        >>= fun token ->
        Learnocaml_local_storage.(store sync_token) token;
        show_token_dialog token;

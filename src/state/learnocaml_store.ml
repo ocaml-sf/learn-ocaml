@@ -121,7 +121,7 @@ end
 module Server = struct
 
   let get () =
-      read_static_file Learnocaml_index.tutorial_index_path Server.enc
+      read_static_file Learnocaml_index.server_path Server.enc
 
 end
 

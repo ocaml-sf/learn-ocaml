@@ -398,7 +398,8 @@ let () =
       Learnocaml_local_storage.(retrieve sync_token) |>
       Lwt.return
     with Not_found ->
-      retrieve (Learnocaml_api.Create_token (None, None))
+      ask_string ~title:"Secret" [] >>= fun secret ->
+      retrieve (Learnocaml_api.Create_token (secret, None, None))
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       token

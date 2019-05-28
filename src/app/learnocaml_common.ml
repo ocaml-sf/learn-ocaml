@@ -137,7 +137,21 @@ let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f 
   ext_alert ~title contents ~buttons:[
     box_button ok_label f;
     close_button cancel_label;
-  ]
+    ]
+
+let ask_string ~title ?(ok_label=[%i"OK"]) contents =
+  let input_field =
+    H.input ~a:[
+        (* H.a_id input_id; *)
+        H.a_input_type `Text;
+        (* H.a_list list_id; *)
+      ] ()
+  in
+  let result_t, up = Lwt.wait () in
+  ext_alert ~title (contents @ [input_field]) ~buttons:[
+      box_button ok_label (fun () -> Lwt.wakeup up @@ Manip.value input_field)
+    ];
+  result_t
 
 let default_exn_printer = function
   | Failure msg -> msg

@@ -40,6 +40,12 @@ val confirm :
   [< Html_types.div_content ] Tyxml_js.Html.elt list ->
   (unit -> unit) -> unit
 
+val ask_string :
+  title: string ->
+  ?ok_label: string ->
+  [< Html_types.div_content > `Input] Tyxml_js.Html.elt list ->
+  string Lwt.t
+
 val catch_with_alert : ?printer: (exn -> string) -> (unit -> unit Lwt.t) -> unit Lwt.t
 
 val hide_loading : ?id: string -> unit -> unit
