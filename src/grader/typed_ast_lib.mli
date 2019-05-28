@@ -60,7 +60,7 @@ val ast_check_structure: checker -> Typed_ast.structure -> checker_result list
 val find_binding:
   Typed_ast.structure
   -> string
-  -> (Asttypes.rec_flag -> Ident.t -> Typed_ast.expression -> Learnocaml_report.t)
+  -> (Asttypes.rec_flag -> Path.t -> Typed_ast.expression -> Learnocaml_report.t)
   -> Learnocaml_report.t
 
 (* check_tailcalls id ~points expr checks that all calls to id in
@@ -72,7 +72,7 @@ val find_binding:
    The default value for points is 1.
 *)
 val check_tailcalls:
-  Ident.t -> ?points: int -> Typed_ast.expression -> Learnocaml_report.t
+  Path.t -> ?points: int -> Typed_ast.expression -> Learnocaml_report.t
 
 (* Looking up identifiers in the environment an expression was typed in.
    Raises Not_found if the identifier is not found in the environment.

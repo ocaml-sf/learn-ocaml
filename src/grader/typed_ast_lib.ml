@@ -1335,12 +1335,15 @@ let variables_bound_by_pattern pat =
     !vars
   end
 
-let bound_variables expr =
+let check_bound_vars fn ast =
   let (vars, checker) = bound_variable_checker () in
   begin
-    ignore (checker.expression checker expr);
+    ignore ((fn checker) checker ast);
     !vars
   end
+
+let bound_variables =
+  check_bound_vars (fun checker -> checker.expression)
 
 let free_variables expr =
   VarSet.diff (variables expr) (bound_variables expr)
@@ -1371,7 +1374,7 @@ let find_binding sstr name f =
           | [] -> find_let tl
           | {svb_pat = Spat_var (id, {Asttypes.txt; _}); svb_expr} :: _
             when txt = name ->
-              found_binding name :: f rf id svb_expr
+              found_binding name :: f rf (Path.Pident id) svb_expr
           | _ :: tl -> find_var tl
         in
         find_var vbs
@@ -1408,14 +1411,14 @@ let line_number loc =
   let ln = loc.Location.loc_start.Lexing.pos_lnum in
   string_of_int ln
 
-let check_tailcalls id =
+let check_tailcalls var =
   let open Typed_ast in
   let is_id_call expr =
     match expr.sexp_desc with
     | Sexp_apply (f, _) ->
         begin
           match f.sexp_desc with
-          | Sexp_ident (Path.Pident id', _) -> Ident.same id id'
+          | Sexp_ident (var', _) -> Path.same var var'
           | _ -> false
         end
     | _ -> false
@@ -1549,7 +1552,7 @@ let check_tailcalls id =
     | None ->
         [Message (
             [Text "All calls to";
-             Code (Ident.name id);
+             Code (Path.name var);
              Text "are tail calls"
             ],
             Success points)]
@@ -1571,7 +1574,7 @@ let check_tailcalls id =
         [Message (
             [Text ("On line " ^ line ^ ", ");
              Text "found a call to";
-             Code (Ident.name id);
+             Code (Path.name var);
              Text "that is not in tail position"]
             @ suffix,
             Failure)]
