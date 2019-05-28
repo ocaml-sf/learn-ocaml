@@ -29,7 +29,7 @@ let copy_file src dst =
     (function
      | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_file"
      | e -> raise e)
-  
+
 let copy_tree src dst =
   let files = Sys.readdir src in
   if Array.length files = 0 then Lwt.return_unit

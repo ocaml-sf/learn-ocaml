@@ -552,7 +552,7 @@ let init ?(local=false) ?server ?token () =
         Console.input ~default:default_server uri
   in
   let get_new_token nickname =
-    Printf.eprintf "Please provide the secret :";
+    Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
     | Some secret_candidate -> fetch server (Api.Create_token (secret_candidate, None, nickname))
     | None -> failwith "Please provide a secret"

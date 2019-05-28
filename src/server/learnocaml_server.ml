@@ -197,7 +197,7 @@ module Request_handler = struct
            (match nick with None -> Lwt.return_unit | Some nickname ->
              Save.set tok Save.{empty with nickname}) >>= fun () ->
              respond_json cache tok
-      | Api.Create_token (_, Some token, _nick) -> (* TODO verify *)
+      | Api.Create_token (_secret_candidate, Some token, _nick) ->
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
             (function

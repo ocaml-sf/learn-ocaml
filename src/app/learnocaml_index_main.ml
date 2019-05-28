@@ -610,23 +610,19 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "block";
   let get_token, got_token = Lwt.task () in
   let create_token () =
-    let nickname = Manip.value input_nick in
+    let nickname = String.trim (Manip.value input_nick) in
     if Token.check nickname || String.length nickname < 2 then
       (Manip.SetCss.borderColor input_nick "#f44";
        Lwt.return_none)
     else
       let secret = String.trim (Manip.value input_secret) in
-      if String.length nickname < 1 then
-        (Manip.SetCss.borderColor input_secret "#f44";
-         Lwt.return_none)
-      else
-        (Learnocaml_local_storage.(store nickname) nickname;
-         retrieve
-           (Learnocaml_api.Create_token (secret,None, Some nickname))
-         >>= fun token ->
-         Learnocaml_local_storage.(store sync_token) token;
-         show_token_dialog token;
-         Lwt.return_some (token, nickname))
+      (Learnocaml_local_storage.(store nickname) nickname;
+       retrieve
+         (Learnocaml_api.Create_token (secret, None, Some nickname))
+       >>= fun token ->
+       Learnocaml_local_storage.(store sync_token) token;
+       show_token_dialog token;
+       Lwt.return_some (token, nickname))
   in
   let rec login_token () =
     let input = input_tok in
