@@ -547,6 +547,12 @@ msgstr "Se connecter"
 msgid "Nickname"
 msgstr "Pseudonyme"
 
+msgid "Secret"
+msgstr "Secret"
+
+msgid "Enter the secret"
+msgstr "Entrez le secret"
+
 #: src/app/learnocaml_index_main.ml:755,41--62
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."

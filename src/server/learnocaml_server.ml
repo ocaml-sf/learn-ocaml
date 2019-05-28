@@ -9,8 +9,6 @@
 open Learnocaml_data
 open Learnocaml_store
 
-open Json_encoding
-
 let port = ref 8080
 
 let cert_key_files = ref None
