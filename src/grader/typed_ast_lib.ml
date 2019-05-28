@@ -1366,12 +1366,12 @@ let find_binding sstr name f =
   let rec find_let = function
     | [] -> could_not_find_binding name
 
-    | Sstr_value (_, vbs) :: tl ->
+    | Sstr_value (rf, vbs) :: tl ->
         let rec find_var = function
           | [] -> find_let tl
-          | ({svb_pat = Spat_var (_, {Asttypes.txt; _}); _} as vb) :: _
+          | {svb_pat = Spat_var (id, {Asttypes.txt; _}); svb_expr} :: _
             when txt = name ->
-              found_binding name :: f vb
+              found_binding name :: f rf id svb_expr
           | _ :: tl -> find_var tl
         in
         find_var vbs

@@ -60,7 +60,7 @@ val ast_check_structure: checker -> Typed_ast.structure -> checker_result list
 val find_binding:
   Typed_ast.structure
   -> string
-  -> (Typed_ast.value_binding -> Learnocaml_report.t)
+  -> (Asttypes.rec_flag -> Ident.t -> Typed_ast.expression -> Learnocaml_report.t)
   -> Learnocaml_report.t
 
 (* check_tailcalls id ~points expr checks that all calls to id in
