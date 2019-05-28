@@ -25,7 +25,8 @@ module Make () : S = struct
     {sexp_desc;
      sexp_env = Env.empty;
      sexp_type = Predef.type_unit;
-     sexp_loc = Location.none}
+     sexp_loc = Location.none;
+     sexp_attrs = []}
   let structure_of_item item =
     {sstr_items = [item];
      sstr_type = [];

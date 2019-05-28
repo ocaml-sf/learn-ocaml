@@ -69,7 +69,8 @@ module PtoS = struct
     {sc_lhs; sc_guard; sc_rhs}
 
   and expr_aux expr texpr =
-    let {pexp_desc = desc; pexp_loc = loc; _} = expr in
+    let {pexp_desc = desc; pexp_loc = loc; pexp_attributes = attrs; _} = expr
+    in
     let {exp_desc = tdesc; exp_type = typ; exp_env; _} = texpr in
     let sexp_desc = match desc, tdesc with
       | Pexp_ident _, Texp_ident (path, lid, _) ->
@@ -179,7 +180,11 @@ module PtoS = struct
       | _ ->
           raise (UnimplementedConstruct "expression")
     in
-    {sexp_desc; sexp_env = exp_env; sexp_type = typ; sexp_loc = loc}
+    {sexp_desc;
+     sexp_env = exp_env;
+     sexp_type = typ;
+     sexp_loc = loc;
+     sexp_attrs = attrs;}
 
   and pattern pat tpat =
     match pat.ppat_desc, tpat.pat_desc with
@@ -690,6 +695,7 @@ module Typed_ast_mapper = struct
     let sexp_type = expr.sexp_type in
     let sexp_env = expr.sexp_env in
     let sexp_loc = expr.sexp_loc in
+    let sexp_attrs = expr.sexp_attrs in
     let sexp_desc = match expr.sexp_desc with
     | Sexp_ident _
     | Sexp_constant _ as expr -> expr
@@ -739,7 +745,7 @@ module Typed_ast_mapper = struct
     | Sexp_open (ovf, lid, exp) ->
         Sexp_open (ovf, lid, sub.expression sub exp)
     in
-    {sexp_desc; sexp_env; sexp_type; sexp_loc}
+    {sexp_desc; sexp_env; sexp_type; sexp_loc; sexp_attrs}
 
   let pattern sub = function
     | Spat_any
@@ -1118,7 +1124,8 @@ module Typed_ast_fragments = struct
     {sexp_desc;
      sexp_env = Env.empty;
      sexp_type = Predef.type_unit;
-     sexp_loc = Location.none}
+     sexp_loc = Location.none;
+     sexp_attrs = []}
 
   let path_of_id id =
     let open PtoS in
