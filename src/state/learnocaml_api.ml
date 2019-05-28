@@ -217,7 +217,7 @@ module type REQUEST_HANDLER = sig
   type 'resp ret
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: int -> 'resp request -> 'resp ret
+  val callback: int option -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct

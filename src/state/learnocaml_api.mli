@@ -94,14 +94,14 @@ module type REQUEST_HANDLER = sig
 
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: int -> 'resp request -> 'resp ret
+  val callback: int option -> 'resp request -> 'resp ret
 end
 
 module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
 
   (** Helper to define a server: handles recognition of the incoming request, and
       encoding of the response. *)
-  val handler: int -> http_request -> string Rh.ret
+  val handler: int option -> http_request -> string Rh.ret
 
 end
 

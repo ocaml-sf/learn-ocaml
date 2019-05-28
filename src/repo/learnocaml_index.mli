@@ -30,4 +30,4 @@ val focus_path : string
 
 val requirements_path : string
 
-val server_path : string
+val server_config_path : string

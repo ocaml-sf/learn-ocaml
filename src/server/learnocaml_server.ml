@@ -180,14 +180,18 @@ module Request_handler = struct
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. int -> caching -> resp Api.request -> resp ret
+  let callback_raw: type resp. int option -> caching -> resp Api.request -> resp ret
     = fun secret cache -> function
       | Api.Version () ->
           respond_json cache Api.version
       | Api.Static path ->
           respond_static cache path
       | Api.Create_token (secret_candidate, None, nick) ->
-         if Hashtbl.hash secret_candidate != secret
+         let know_secret =
+           match secret with
+           | None -> true
+           | Some x -> Hashtbl.hash secret_candidate = x in
+         if not know_secret
          then Lwt.return (Status {code = `Forbidden;
                                   body = "Bad secret"})
          else
@@ -401,7 +405,7 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           Lwt.return (Status {code = `Bad_request; body})
 
-  let callback: type resp. int -> resp Api.request -> resp ret = fun secret req ->
+  let callback: type resp. int option -> resp Api.request -> resp ret = fun secret req ->
     let cache = caching req in
     let respond () =
       Lwt.catch (fun () -> callback_raw secret cache req)
@@ -483,7 +487,11 @@ let compress ?(level = 4) data =
 
 let launch () =
   Learnocaml_store.Server.get () >>= fun config ->
-  let secret = Learnocaml_data.Server.(config.secret) in
+  let secret =
+    match Learnocaml_data.Server.(config.secret) with
+    | None -> None
+    | Some str -> Some (Hashtbl.hash str)
+  in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in

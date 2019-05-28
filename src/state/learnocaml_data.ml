@@ -375,12 +375,12 @@ let enc_check_version_2 enc =
 
 module Server = struct
   type config = {
-    secret : int (* A hashed secret *)
-  }
+    secret : string option (* maybe a secret *)
+    }
 
   let enc =
     J.conv (fun c -> c.secret) (fun secret -> {secret}) @@
-      J.obj1 (J.req "secret" J.int)
+      J.obj1 (J.opt "secret" J.string)
 end
 
 module Exercise = struct

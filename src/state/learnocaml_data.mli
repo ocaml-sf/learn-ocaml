@@ -122,9 +122,9 @@ end
 
 module Server : sig
   type config = {
-    secret : int (* A hashed secret *)
-  }
-
+    secret : string option (* maybe a secret *)
+    }
+  
   val enc: config Json_encoding.encoding
 end
 
