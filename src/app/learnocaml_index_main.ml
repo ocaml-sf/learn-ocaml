@@ -42,6 +42,7 @@ module El = struct
   module Login_overlay = struct
     let login_overlay_id, login_overlay = id "login-overlay"
     let input_nick_id, input_nick = id "login-nickname-input"
+    let input_secret_id, input_secret = id "login-secret-input"
     let button_new_id, button_new = id "login-new-button"
     let input_tok_id, input_tok = id "login-token-input"
     let button_connect_id, button_connect = id "login-connect-button"
@@ -609,19 +610,23 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "block";
   let get_token, got_token = Lwt.task () in
   let create_token () =
-    let nickname = String.trim (Manip.value input_nick) in
+    let nickname = Manip.value input_nick in
     if Token.check nickname || String.length nickname < 2 then
       (Manip.SetCss.borderColor input_nick "#f44";
        Lwt.return_none)
     else
-      ask_string ~title:"" [] >>= fun secret ->
-      (Learnocaml_local_storage.(store nickname) nickname;
-       retrieve
-         (Learnocaml_api.Create_token (secret,None, Some nickname))
-       >>= fun token ->
-       Learnocaml_local_storage.(store sync_token) token;
-       show_token_dialog token;
-       Lwt.return_some (token, nickname))
+      let secret = String.trim (Manip.value input_secret) in
+      if String.length nickname < 1 then
+        (Manip.SetCss.borderColor input_secret "#f44";
+         Lwt.return_none)
+      else
+        (Learnocaml_local_storage.(store nickname) nickname;
+         retrieve
+           (Learnocaml_api.Create_token (secret,None, Some nickname))
+         >>= fun token ->
+         Learnocaml_local_storage.(store sync_token) token;
+         show_token_dialog token;
+         Lwt.return_some (token, nickname))
   in
   let rec login_token () =
     let input = input_tok in
@@ -696,6 +701,7 @@ let set_string_translations () =
       [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
     "txt_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_first_connection_secret", [%i"Secret"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
     "txt_returning_dialog", [%i"Enter your token"];

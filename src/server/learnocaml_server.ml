@@ -188,11 +188,13 @@ module Request_handler = struct
           respond_static cache path
       | Api.Create_token (secret_candidate, None, nick) ->
          if Hashtbl.hash secret_candidate != secret
-         then failwith "TODO";
-         Token.create_student () >>= fun tok ->
-         (match nick with None -> Lwt.return_unit | Some nickname ->
+         then Lwt.return (Status {code = `Forbidden;
+                                  body = "Bad secret"})
+         else
+           Token.create_student () >>= fun tok ->
+           (match nick with None -> Lwt.return_unit | Some nickname ->
              Save.set tok Save.{empty with nickname}) >>= fun () ->
-         respond_json cache tok
+             respond_json cache tok
       | Api.Create_token (_, Some token, _nick) -> (* TODO verify *)
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
