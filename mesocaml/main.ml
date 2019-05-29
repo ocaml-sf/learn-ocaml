@@ -42,16 +42,53 @@ let bindOption f = function
   | None -> None
   | Some x -> f x
 
-(* Renvoie la liste des différents Answer.t associés à exo_name *)
-let get_exo_states exo_name lst : (Token.t * Answer.t) list =
+let impl_of_string s = Parse.implementation (Lexing.from_string s)
+
+let get_with_pred p =
+  let rec aux =
+  function
+  | [] -> None
+  | x::xs ->
+     match p x with
+     | None -> aux xs
+     | res -> res
+  in aux
+
+type func_res = Asttypes.rec_flag * Parsetree.value_binding list
+
+let find_func f : Parsetree.structure_item list -> func_res option =
+  let open Parsetree in
+  let pred c =
+    match c.pstr_desc with
+    | Pstr_value (r,(x::_ as body)) ->
+       begin
+         match x.pvb_pat.ppat_desc with
+         | Ppat_var v ->
+            if v.txt = f
+            then Some (r,body)
+            else None
+         | _ -> None
+       end
+    | _ -> None
+  in
+  get_with_pred pred
+
+(* Renvoie la liste des différents Answer.t associés à exo_name et fun_name *)
+let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list =
   Lwt_main.run @@
     Lwt_list.filter_map_s
       (fun t ->
         Learnocaml_store.Save.get t >|=
         bindOption
           (fun x ->
-            fmapOption (fun x -> t,x) @@
-              SMap.find_opt exo_name Save.(x.all_exercise_states))
+            bindOption
+              (fun x ->
+                fmapOption
+                  (fun r -> t,x,r)
+                  (find_func fun_name (impl_of_string Answer.(x.solution)))
+                )
+              (SMap.find_opt exo_name Save.(x.all_exercise_states))
+          )
       )
       lst
 
@@ -60,7 +97,7 @@ let get_exo_states exo_name lst : (Token.t * Answer.t) list =
    - Le second contient une map (note -> answer list)
 *)
 let partition_by_grade =
-  let aux (nonlst,acc) ((_,x) as e) =
+  let aux (nonlst,acc) ((_,x,_) as e) =
     match Answer.(x.grade) with
     | None -> e::nonlst,acc
     | Some g ->
@@ -72,21 +109,46 @@ let partition_by_grade =
   in
   List.fold_left aux ([], IntMap.empty)
 
+(*
+  Sépare les codes entre ceux étants marqués comme récursifs et les autres.
+*)
+let refine_part_with_rec =
+  IntMap.map
+    (List.partition
+        (fun (_,_,(isrec,_)) ->
+          match isrec with
+          | Asttypes.Recursive -> true
+          | _ -> false
+        )
+    )
+
+let fst3 (a,_,_) = a
+
 let print_part m =
-  Printf.printf "%d class where found:\n" (IntMap.cardinal m);
+  Printf.printf "%d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
-    (fun k lst ->
-      Printf.printf " %d pc: %d answers, repr: %s\n" k (List.length lst) (Token.to_string @@ fst @@ List.hd lst)
+    (fun k (lstr,lstnr) ->
+      let reclength = List.length lstr in
+      let nonreclength = List.length lstnr in
+      let sumlength = reclength + nonreclength in
+      Printf.printf " %d pc: %d answers\n" k sumlength;
+      if reclength != 0
+      then
+        Printf.printf "  %d where recursive, repr: %s\n" reclength (Token.to_string @@ fst3 @@ List.hd lstr);
+      if nonreclength != 0
+      then
+        Printf.printf "  %d where nonrecursive, repr: %s\n" nonreclength (Token.to_string @@ fst3 @@ List.hd lstnr);
     )
     m
 
-let main sync exo_name _fun_name =
+let main sync exo_name fun_name =
   Learnocaml_store.sync_dir := Filename.concat (Sys.getcwd ()) sync;
   let lst = get_all_token sync in
-  let saves = get_exo_states exo_name lst in
+  let saves = get_exo_states exo_name fun_name lst in
   Printf.printf "%d matching repositories found.\n" (List.length saves);
   let nonlst,map = partition_by_grade saves in
-  Printf.printf "%d codes was not graded.\n" (List.length nonlst);
+  let map = refine_part_with_rec map in
+  Printf.printf "%d codes were not graded.\n" (List.length nonlst);
   print_part map;
   ()
 

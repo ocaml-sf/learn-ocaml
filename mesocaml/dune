@@ -1,3 +1,4 @@
 (executable
  (name main)
- (libraries lwt learnocaml_store learnocaml_data))
+ (libraries compiler-libs.common lwt learnocaml_store learnocaml_data)
+ )
