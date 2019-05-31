@@ -868,14 +868,16 @@ module Make
 
   module Tester = struct
 
-  let test_generic eq canon ty va vb =
-    let to_string v = Format.asprintf "%a" (typed_printer ty) v in
+    let test_generic eq canon ty va vb =
+    let print_with ty = Format.asprintf "%a" (typed_printer ty) in
+    let to_string     = print_with ty in
+    let exn_to_string = print_with [%ty: exn] in
     if eq (canon va) (canon vb) then
       begin match va with
         | Ok v ->
             Learnocaml_report.[ Message ([ Text "Correct value" ; Code (to_string v) ], Success 1) ]
         | Error exn ->
-            Learnocaml_report.[ Message ([ Text "Correct exception" ; Code (Printexc.to_string exn) ], Success 1) ] end
+            Learnocaml_report.[ Message ([ Text "Correct exception" ; Code (exn_to_string exn) ], Success 1) ] end
     else
       begin match va with
         | Ok v ->
@@ -888,7 +890,7 @@ module Make
             let msg = Format.sprintf "Your code exceeded the time limit of %d seconds." limit in
             Learnocaml_report.[ Message ([ Text msg ], Failure) ]
         | Error exn ->
-            Learnocaml_report.[ Message ([ Text "Wrong exception" ; Code (Printexc.to_string exn) ], Failure) ] end
+           Learnocaml_report.[ Message ([ Text "Wrong exception" ; Code (exn_to_string exn) ], Failure) ] end
 
   let test_ignore ty va vb =
     let to_string v = Format.asprintf "%a" (typed_printer ty) v in
