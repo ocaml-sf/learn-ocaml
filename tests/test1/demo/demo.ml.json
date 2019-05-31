@@ -1,0 +1,177 @@
+[
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "plus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "plus",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 1 1",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "2",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 2 2",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "4",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 10 -10",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "0",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "minus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "minus",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "times",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "times",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "divide",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "divide",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  }
+]
