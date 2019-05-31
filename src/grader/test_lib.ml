@@ -745,17 +745,17 @@ module Make
             Learnocaml_report.[ Message ([ Text "Found " ;  Text k ; Text " " ; Code (pr n) ], Success 5) ]
           end
 
+      let print_exp = Format.asprintf "%a" Pprintast.expression
+      let stripper = ast_location_stripper.Ast_mapper.expr ast_location_stripper
+
       let restrict_expr name exprs =
-        let pr expr = Format.asprintf "%a" Pprintast.expression expr in
-        restrict name pr (List.map (ast_location_stripper.Ast_mapper.expr ast_location_stripper) exprs)
+        restrict name print_exp (List.map stripper exprs)
 
       let forbid_expr name exprs =
-        let pr expr = Format.asprintf "%a" Pprintast.expression expr in
-        forbid name pr (List.map (ast_location_stripper.Ast_mapper.expr ast_location_stripper) exprs)
+        forbid name print_exp (List.map stripper exprs)
 
       let require_expr name expr =
-        let pr expr = Format.asprintf "%a" Pprintast.expression expr in
-        require name pr (ast_location_stripper.Ast_mapper.expr ast_location_stripper expr)
+        require name print_exp (stripper expr)
 
       let ast_sanity_check ?(modules = []) ast cb =
         let modules =
@@ -868,37 +868,38 @@ module Make
 
   module Tester = struct
 
+    let print_with ty = Format.asprintf "%a" (typed_printer ty)
+    let exn_to_string = print_with [%ty: exn]
+
     let test_generic eq canon ty va vb =
-    let print_with ty = Format.asprintf "%a" (typed_printer ty) in
-    let to_string     = print_with ty in
-    let exn_to_string = print_with [%ty: exn] in
+    let to_string = print_with ty in
     if eq (canon va) (canon vb) then
-      begin match va with
-        | Ok v ->
-            Learnocaml_report.[ Message ([ Text "Correct value" ; Code (to_string v) ], Success 1) ]
-        | Error exn ->
-            Learnocaml_report.[ Message ([ Text "Correct exception" ; Code (exn_to_string exn) ], Success 1) ] end
+      let txt_msg, code_msg =
+        match va with
+        | Ok v ->      "Correct value"     , to_string v
+        | Error exn -> "Correct exception" , exn_to_string exn
+      in Learnocaml_report.[ Message ([Text txt_msg; Code code_msg], Success 1) ]
     else
-      begin match va with
+      let txt_msgs =
+        match va with
         | Ok v ->
-            Learnocaml_report.[ Message ([ Text "Wrong value" ; Code (to_string v) ], Failure) ]
-        | Error (Failure s) when s = "EXCESS"->
-            Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
+           Learnocaml_report.[Text "Wrong value" ; Code (to_string v)]
+        | Error (Failure s) when s = "EXCESS" ->
+           Learnocaml_report.[Text "Your code exceeded the output buffer size limit."]
         | Error Stack_overflow ->
-            Learnocaml_report.[ Message ([ Text "Stack overflow. Too many recursions?" ], Failure) ]
+           Learnocaml_report.[Text "Stack overflow. Too many recursions?"]
         | Error (Timeout limit) ->
-            let msg = Format.sprintf "Your code exceeded the time limit of %d seconds." limit in
-            Learnocaml_report.[ Message ([ Text msg ], Failure) ]
+           Learnocaml_report.[Text (Format.sprintf "Your code exceeded the time limit of %d seconds." limit)]
         | Error exn ->
-           Learnocaml_report.[ Message ([ Text "Wrong exception" ; Code (exn_to_string exn) ], Failure) ] end
+           Learnocaml_report.[Text "Wrong exception" ; Code (exn_to_string exn)]
+      in Learnocaml_report.[ Message (txt_msgs, Failure) ]
 
   let test_ignore ty va vb =
-    let to_string v = Format.asprintf "%a" (typed_printer ty) v in
     match va, vb with
     | Ok _, Ok _ -> []
     | Ok v, Error _ ->
         Learnocaml_report.[ Message ([ Text "Unexpected result" ;
-                            Code (to_string v) ;
+                            Code (print_with ty v) ;
                             Text "instead of exception" ], Failure) ]
     | Error (Failure s), _ when s = "EXCESS" ->
         Learnocaml_report.[ Message ([ Text "Your code exceeded the output buffer size limit." ], Failure) ]
@@ -906,7 +907,7 @@ module Make
         Learnocaml_report.[ Message ([ Text "Stack overflow. Too many recursions?" ], Failure) ]
     | Error _, Error _ -> []
     | Error exn, Ok _ ->
-        Learnocaml_report.[ Message ([ Text "Unexpected exception" ; Code (Printexc.to_string exn) ], Failure) ]
+        Learnocaml_report.[ Message ([ Text "Unexpected exception" ; Code (exn_to_string exn) ], Failure) ]
 
   let test ty va vb =
     test_generic (=) (fun x -> x) ty va vb
@@ -1377,11 +1378,12 @@ module Make
 
     let test_ref ty got exp =
       let open Learnocaml_report in
-      let to_string v = [ Code (Format.asprintf "%a" (typed_printer ty) v) ] in
+      let mk_txt str =
+        [ Text str; Code (print_with ty !got)] in
       if !got = exp then
-        [ Message ([ Text "Correct value" ] @ to_string !got, Success 1) ]
+        [ Message (mk_txt "Correct value", Success 1) ]
       else
-        [ Message ([ Text "Wrong value" ] @ to_string !got, Failure) ]
+        [ Message (mk_txt "Wrong value"  , Failure) ]
 
     let test_variable ty name r =
       test_value (lookup_student ty name) @@ fun v ->
