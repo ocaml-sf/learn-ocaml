@@ -1,8 +1,9 @@
 open Learnocaml_data
-
-open Lwt.Infix
+open Learnocaml_report
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
+
+open Lwt.Infix
    
 (* Return all the token in sync *)
 let get_all_token sync =
@@ -94,61 +95,105 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list 
 
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
-   - Le second contient une map (note -> answer list)
+   - Le second contient les report des réponses notées
 *)
-let partition_by_grade =
-  let aux (nonlst,acc) ((_,x,_) as e) =
-    match Answer.(x.grade) with
+let partition_WasGraded =
+  let aux (nonlst,acc) ((a,x,b) as e) =
+    match Answer.(x.report) with
     | None -> e::nonlst,acc
-    | Some g ->
-       let lst =
-         match IntMap.find_opt g acc with
-         | None -> [e]
-         | Some xs -> e::xs
-       in nonlst,IntMap.add g lst acc
+    | Some g -> nonlst,(a,g,b)::acc
   in
-  List.fold_left aux ([], IntMap.empty)
+  List.fold_left aux ([], [])
+
+let partition_FunExist fun_name =
+  let pred (_,x,_) =
+    let rec inner_pred =
+      function
+      | Message (x,_) ->
+         begin
+           match x with
+           | Text found::Code fn::Text t::_ ->
+              found = "Found" && fn = fun_name && t = "with compatible type."
+           | _ -> false
+         end
+      | Section (_,x) -> List.exists inner_pred x
+    in List.exists inner_pred x
+  in List.partition pred
+
+let partition_by_grade funname =
+  let rec get_relative_section = function
+    | [] -> []
+    | (Message _)::xs -> get_relative_section xs
+    | (Section (t,res))::xs ->
+       match t with
+       | Text func::Code  fn::_ ->
+          if func = "Function:" && fn = funname
+          then res
+          else get_relative_section xs
+       | _ -> get_relative_section xs
+  in
+  let rec get_grade xs =
+    let aux acc =
+      function
+      | Section (_,s) -> get_grade s
+      | Message (_,s) ->
+         match s with
+         | Success i -> acc + i
+         | _ -> acc
+    in
+    List.fold_left aux 0 xs
+  in
+  let aux acc ((_,x,_) as e) =
+    let sec = get_relative_section x in
+    let g = get_grade sec in
+    let lst =
+      match IntMap.find_opt g acc with
+      | None -> [e]
+      | Some xs -> e::xs
+    in IntMap.add g lst acc
+  in
+  List.fold_left aux IntMap.empty
 
 (*
   Sépare les codes entre ceux étants marqués comme récursifs et les autres.
 *)
 let refine_part_with_rec =
-  IntMap.map
-    (List.partition
-        (fun (_,_,(isrec,_)) ->
-          match isrec with
-          | Asttypes.Recursive -> true
-          | _ -> false
-        )
-    )
+  let pred (_,_,(isrec,_))=
+    match isrec with
+    | Asttypes.Recursive -> true
+    | _ -> false
+  in IntMap.map (List.partition pred)
 
-let fst3 (a,_,_) = a
+  let fst3 (a,_,_) = a
 
 let print_part m =
-  Printf.printf "%d classes were found:\n" (IntMap.cardinal m);
+  Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
     (fun k (lstr,lstnr) ->
       let reclength = List.length lstr in
       let nonreclength = List.length lstnr in
       let sumlength = reclength + nonreclength in
-      Printf.printf " %d pc: %d answers\n" k sumlength;
+      Printf.printf " %d pts: %d answers\n" k sumlength;
       if reclength != 0
       then
-        Printf.printf "  %d where recursive, repr: %s\n" reclength (Token.to_string @@ fst3 @@ List.hd lstr);
+        Printf.printf "  %d were recursive, repr: %s\n" reclength (Token.to_string @@ fst3 @@ List.hd lstr);
       if nonreclength != 0
       then
-        Printf.printf "  %d where nonrecursive, repr: %s\n" nonreclength (Token.to_string @@ fst3 @@ List.hd lstnr);
+        Printf.printf "  %d were nonrecursive, repr: %s\n" nonreclength (Token.to_string @@ fst3 @@ List.hd lstnr);
     )
-    m
+m
 
 let main sync exo_name fun_name =
   Learnocaml_store.sync_dir := Filename.concat (Sys.getcwd ()) sync;
   let lst = get_all_token sync in
   let saves = get_exo_states exo_name fun_name lst in
   Printf.printf "%d matching repositories found.\n" (List.length saves);
-  let nonlst,map = partition_by_grade saves in
+  let nonlst,lst = partition_WasGraded saves in
+  let funexist,nonfunexist = partition_FunExist fun_name lst in
+  let map = partition_by_grade fun_name funexist in
   let map = refine_part_with_rec map in
   Printf.printf "%d codes were not graded.\n" (List.length nonlst);
+  Printf.printf "When graded, %d codes didn't implemented %s with right type.\n" (List.length nonfunexist) fun_name;
   print_part map;
   ()
 
