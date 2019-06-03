@@ -256,9 +256,13 @@ let main o =
                  (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
        >>= fun () ->
-       Lwt_utils.copy_file
-         (o.repo_dir/"server_config.json")
-         (o.app_dir/"server_config.json")
+       let server_config = o.repo_dir/"server_config.json" in
+       (if Sys.file_exists server_config
+        then
+          Lwt_utils.copy_file
+            (o.repo_dir/"server_config.json")
+            (o.app_dir/"server_config.json")
+        else Lwt.return ())
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->

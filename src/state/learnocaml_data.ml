@@ -378,6 +378,8 @@ module Server = struct
     secret : string option (* maybe a secret *)
     }
 
+  let default = {secret = None}
+
   let enc =
     J.conv (fun c -> c.secret) (fun secret -> {secret}) @@
       J.obj1 (J.opt "secret" J.string)

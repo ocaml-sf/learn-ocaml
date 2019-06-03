@@ -125,6 +125,8 @@ module Server : sig
     secret : string option (* maybe a secret *)
     }
 
+  val default : config
+
   val enc: config Json_encoding.encoding
 end
 
