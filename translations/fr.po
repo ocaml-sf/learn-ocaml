@@ -563,6 +563,10 @@ msgstr "Cours"
 msgid "Teach"
 msgstr "Enseignement"
 
+#: src/app/learnocaml_index_main.ml
+msgid "Failed to download archive. Please try again later!"
+msgstr "Le téléchargement de l'archive a échoué. Veuillez réessayer ulterieurement!"
+
 #: src/app/learnocaml_index_main.ml:866,15--69
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token:"

@@ -856,7 +856,7 @@ let () =
           let contents = Js.string zip in
           Learnocaml_common.fake_download ~name ~contents
       | Error e -> 
-        alert ~title:"DOWNLOAD ARCHIVE FAILED"
+        alert ~title:[%i"Failed to download archive. Please try again later!"]
           (Server_caller.string_of_error e)
   in
   let logout_dialog () =
