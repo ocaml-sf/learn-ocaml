@@ -61,7 +61,12 @@ let hash_iterator accr =
          ; gaccr (self.pat self) p
          ; gaccr (self.expr self) e
          ]
-    | _ -> ()
+    | Pexp_match (e,cl) ->
+       hash_string_lst accr
+         [ gaccr (self.expr self) e;
+           gaccr (self.cases self) cl
+         ]
+    | _ -> accr := Digest.string "expr_desc"
   in
   let expr self e =
     hash_string_lst accr

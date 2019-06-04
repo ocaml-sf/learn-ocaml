@@ -93,27 +93,6 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list 
       )
       lst
 
-let hm_part lst =
-  let hm = Hashtbl.create 100 in
-  List.iter
-    (fun (t,_,(_,x)) ->
-      let hash = Ast_utils.hash_of_valbind x in
-      match Hashtbl.find_opt hm hash with
-      | None -> Hashtbl.add hm hash [t]
-      | Some xs ->
-         Hashtbl.remove hm hash;
-         Hashtbl.add hm hash (t::xs)
-    ) lst;
-  hm
-
-let print_hm =
-  let print_token_lst xs =
-    Printf.printf "HCLASS: %s\n\n" @@
-      String.concat ", " @@
-        List.map Token.to_string xs
-  in
-  Hashtbl.iter (fun _ -> print_token_lst)
-
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
    - Le second contient les report des réponses notées
@@ -175,32 +154,36 @@ let partition_by_grade funname =
   in
   List.fold_left aux IntMap.empty
 
-(*
-  Sépare les codes entre ceux étants marqués comme récursifs et les autres.
-*)
-let refine_part_with_rec =
-  let pred (_,_,(isrec,_))=
-    match isrec with
-    | Asttypes.Recursive -> true
-    | _ -> false
-  in IntMap.map (List.partition pred)
+module HM = Map.Make(struct type t = string let compare = compare end)
 
-let fst3 (a,_,_) = a
+let hm_part =
+  List.fold_left
+    (fun hm (t,_,(_,x)) ->
+      let hash = Ast_utils.hash_of_valbind x in
+      match HM.find_opt hash hm with
+      | None -> HM.add hash [t] hm
+      | Some xs -> HM.add hash (t::xs) hm
+    ) HM.empty
+
+let print_hm =
+  let print_token_lst xs =
+    Printf.printf "   HCLASS: %s\n" @@
+      String.concat ", " @@
+        List.map Token.to_string xs
+  in
+  HM.iter (fun _ -> print_token_lst)
+
+let refine_with_hm =
+  IntMap.map (fun x -> List.length x, hm_part x)
 
 let print_part m =
   Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
-    (fun k (lstr,lstnr) ->
-      let reclength = List.length lstr in
-      let nonreclength = List.length lstnr in
-      let sumlength = reclength + nonreclength in
-      Printf.printf " %d pts: %d answers\n" k sumlength;
-      if reclength != 0
-      then
-        Printf.printf "  %d were recursive, repr: %s\n" reclength (Token.to_string @@ fst3 @@ List.hd lstr);
-      if nonreclength != 0
-      then
-        Printf.printf "  %d were nonrecursive, repr: %s\n" nonreclength (Token.to_string @@ fst3 @@ List.hd lstnr);
+    (fun k (len, hm) ->
+      Printf.printf " %d pts: %d answers\n" k len;
+      Printf.printf "  HM CLASSES: %d\n" (HM.cardinal hm);
+      print_hm hm;
+      print_endline ""
     )
 m
 
@@ -212,12 +195,10 @@ let main sync exo_name fun_name =
   let nonlst,lst = partition_WasGraded saves in
   let funexist,nonfunexist = partition_FunExist fun_name lst in
   let map = partition_by_grade fun_name funexist in
-  let map = refine_part_with_rec map in
+  let map = refine_with_hm map in
   Printf.printf "%d codes were not graded.\n" (List.length nonlst);
   Printf.printf "When graded, %d codes didn't implemented %s with right type.\n" (List.length nonfunexist) fun_name;
   print_part map;
-  print_endline "\n";
-  print_hm (hm_part funexist);
   ()
 
 let () =
