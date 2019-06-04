@@ -158,8 +158,8 @@ module HM = Map.Make(struct type t = string let compare = compare end)
 
 let hm_part =
   List.fold_left
-    (fun hm (t,_,(_,x)) ->
-      let hash = Ast_utils.hash_of_valbind x in
+    (fun hm (t,_,x) ->
+      let hash = Ast_utils.hash_of_value x in
       match HM.find_opt hash hm with
       | None -> HM.add hash [t] hm
       | Some xs -> HM.add hash (t::xs) hm
