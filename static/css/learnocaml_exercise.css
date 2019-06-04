@@ -162,7 +162,7 @@ body {
     left: 0; right: 0px; bottom: 0px;
   }
   #learnocaml-exo-tab-editor > .pane {
-    margin-top: 5px;
+    margin-top: 0;
   }
   #learnocaml-exo-tab-editor::after {
     position: absolute;
@@ -213,6 +213,7 @@ body {
   display: block;
   font-weight: normal;
   z-index: 1005;
+  width: 100%;
 }
 #learnocaml-exo-prelude > h1:first-child {
   margin-top: 0;
