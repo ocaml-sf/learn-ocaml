@@ -31,7 +31,7 @@ type tri = Zero | One | Two
 exception OutOfRange of int
 ```
 
-For the first graded function, we want to be sure the student funtion
+For the first graded function, we want to be sure the student function
 returned both the right `Ok` output and the right exception with its
 is correct argument. The predefined tester that compares both possible
 results with `Pervasives.compare` function is called `test`. This is
@@ -183,7 +183,7 @@ let exercise_1 =
 ```
 
 Obviously we only check here that the output integer is in the right
-range (but this is just a trival example).
+range (but this is just a trivial example).
 
 The second example is a function using the previous one to generate a list of integers.
 ```ocaml

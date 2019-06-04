@@ -228,8 +228,8 @@ let exercise_2bis =
     []
 ```
 
-#### Third example: 'first_elt' (tupple)
-In case you want to grade a function with a tupple as an input type,
+#### Third example: 'first_elt' (tuple)
+In case you want to grade a function with a tuple as an input type,
 you can either use method 1 or define an alias and use method 2.
 
 ##### Method 1

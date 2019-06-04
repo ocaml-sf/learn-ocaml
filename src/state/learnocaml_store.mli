@@ -13,7 +13,7 @@ open Learnocaml_data
 (** All static data accesses will be made relative to this directory *)
 val static_dir: string ref
 
-(** All mutable data accesss will be made relative to this directory *)
+(** All mutable data access will be made relative to this directory *)
 val sync_dir: string ref
 
 (** {2 Utility server-side conversion functions} *)
