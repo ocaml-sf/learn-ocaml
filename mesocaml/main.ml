@@ -93,6 +93,27 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list 
       )
       lst
 
+let hm_part lst =
+  let hm = Hashtbl.create 100 in
+  List.iter
+    (fun (t,_,(_,x)) ->
+      let hash = Ast_utils.hash_of_valbind x in
+      match Hashtbl.find_opt hm hash with
+      | None -> Hashtbl.add hm hash [t]
+      | Some xs ->
+         Hashtbl.remove hm hash;
+         Hashtbl.add hm hash (t::xs)
+    ) lst;
+  hm
+
+let print_hm =
+  let print_token_lst xs =
+    Printf.printf "HCLASS: %s\n\n" @@
+      String.concat ", " @@
+        List.map Token.to_string xs
+  in
+  Hashtbl.iter (fun _ -> print_token_lst)
+
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
    - Le second contient les report des réponses notées
@@ -164,7 +185,7 @@ let refine_part_with_rec =
     | _ -> false
   in IntMap.map (List.partition pred)
 
-  let fst3 (a,_,_) = a
+let fst3 (a,_,_) = a
 
 let print_part m =
   Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
@@ -195,6 +216,8 @@ let main sync exo_name fun_name =
   Printf.printf "%d codes were not graded.\n" (List.length nonlst);
   Printf.printf "When graded, %d codes didn't implemented %s with right type.\n" (List.length nonfunexist) fun_name;
   print_part map;
+  print_endline "\n";
+  print_hm (hm_part funexist);
   ()
 
 let () =
