@@ -77,7 +77,8 @@
        %{ocaml-config:standard_library}/stack.cmi
        %{ocaml-config:standard_library}/string.cmi
        %{ocaml-config:standard_library}/sys.cmi
-       %{ocaml-config:standard_library}/uchar.cmi)
+       %{ocaml-config:standard_library}/uchar.cmi
+       %{ocaml-config:standard_library}/weak.cmi )
  (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
