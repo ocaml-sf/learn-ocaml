@@ -650,9 +650,13 @@ let main o =
   if o.verbosity >= 1 then prerr_newline ();
   match report with
   | Error e ->
-      Printf.eprintf "[ERROR] Could not do the grading: %s"
-        (Printexc.to_string e);
-      Lwt.return 10
+     let str =
+       match Grading.string_of_exn e with
+       | Some s -> s
+       | None   -> Printexc.to_string e
+     in
+     Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
+     Lwt.return 10
   | Ok report ->
       (match o.output_format with
        | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
