@@ -161,17 +161,29 @@ let hm_part =
     (fun hm (t,_,x) ->
       let hash = Ast_utils.hash_of_bindings x in
       match HM.find_opt hash hm with
-      | None -> HM.add hash [t] hm
-      | Some xs -> HM.add hash (t::xs) hm
+      | None -> HM.add hash (x,[t]) hm
+      | Some (_,xs) -> HM.add hash (x,(t::xs)) hm
     ) HM.empty
 
 let print_hm =
+  let print_bindings (r,xs)=
+    let pstr_desc = Parsetree.Pstr_value (r,xs) in
+    let pstr_loc = Location.none in
+    let str =
+      Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}] in
+    print_endline "----";
+    print_endline str;
+    print_endline "----"
+  in
   let print_token_lst xs =
     Printf.printf "   HCLASS: %s\n" @@
       String.concat ", " @@
         List.map Token.to_string xs
   in
-  HM.iter (fun _ -> print_token_lst)
+  HM.iter
+    (fun _ (x,xs) ->
+      print_token_lst xs;
+      print_bindings x)
 
 let refine_with_hm =
   IntMap.map (fun x -> List.length x, hm_part x)

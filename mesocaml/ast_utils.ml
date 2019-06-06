@@ -103,10 +103,27 @@ let hash_iterator accr =
       ]
     with Exit -> default_iterator.expr self e
   in
+  let hash_pattern_desc self = function
+    | Ppat_any -> accr := Digest.string "any"
+    | Ppat_var _ -> accr := Digest.string "var"
+    | Ppat_constant _ -> accr := Digest.string "constant"
+    | Ppat_interval _ -> accr := Digest.string "interval"
+    | Ppat_alias (p,_) ->
+       hash_string_lst accr "alias"
+         [ gaccr (self.pat self) p ]
+    | Ppat_array xs ->
+       hash_string_lst accr "array" @@
+         (List.map  (gaccr (self.pat self)) xs)
+    | Ppat_or (u,v) ->
+       hash_string_lst accr "or"
+         [ gaccr (self.pat self) u
+         ; gaccr (self.pat self) v]
+    | _ -> accr := Digest.string ""
+  in
   let pat self p =
     hash_string_lst accr "pat"
-      [ Digest.string "pattern_desc";
-        gaccr (self.attributes self) p.ppat_attributes
+      [ gaccr (hash_pattern_desc self) p.ppat_desc
+      ; gaccr (self.attributes self) p.ppat_attributes
       ]
   in
   let structure self =
