@@ -156,7 +156,7 @@ let hash_of_struct structure =
   hi.structure hi structure;
   !accr
 
-let hash_of_value (r,v) =
+let hash_of_bindings (r,v) =
   let accr = ref "" in
   let hi = hash_iterator accr in
   hi.structure_item hi {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none};
