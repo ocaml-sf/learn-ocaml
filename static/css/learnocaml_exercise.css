@@ -194,12 +194,11 @@ body {
 
 #learnocaml-exo-prelude {
   overflow: hidden;
-  width: 800px;
   left: 0;
   top: 61px;
   z-index: 1002;
   border-bottom: thin solid #eee;
-
+  width: 100%;
 }
 #learnocaml-exo-prelude > h1 {
   position: relative;
@@ -209,11 +208,13 @@ body {
   font-size: 20px;
   line-height: 22px;
   margin: 0;
-  padding: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   display: block;
   font-weight: normal;
   z-index: 1005;
   width: 100%;
+  text-align: center;
 }
 #learnocaml-exo-prelude > h1:first-child {
   margin-top: 0;
@@ -223,12 +224,15 @@ body {
   border: none;
   border-left: 1px #eee solid;
   color: #eee;
-  background: none;
-  margin: -10px;
-  padding: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-top: -10px;
+  margin-bottom: -10px;
   font-size: 20px;
   line-height: 22px;
   z-index: 1006;
+  width: 20%;
+  background: #222; 
 }
 #learnocaml-exo-prelude > iframe {
   border: none;
@@ -242,6 +246,7 @@ body {
   margin: 0;
   padding: 5px 10px 5px 10px;
   overflow: auto;
+  width: 100%;
 }
 #learnocaml-exo-prelude > h1::after {
   position: absolute;
