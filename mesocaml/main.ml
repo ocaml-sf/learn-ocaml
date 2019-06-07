@@ -1,9 +1,10 @@
 open Learnocaml_data
 open Learnocaml_report
 
-module IntMap = Map.Make(struct type t = int let compare = compare end)
-
 open Lwt.Infix
+
+module IntMap = Map.Make(struct type t = int let compare = compare end)
+module HM = Map.Make(struct type t = string let compare = compare end)
    
 (* Return all the token in sync *)
 let get_all_token sync =
@@ -154,19 +155,20 @@ let partition_by_grade funname =
   in
   List.fold_left aux IntMap.empty
 
-module HM = Map.Make(struct type t = string let compare = compare end)
-
 let addInHm x t hm hash =
   match HM.find_opt hash hm with
   | None -> HM.add hash (x,[t]) hm
   | Some (_,xs) -> HM.add hash (x,(t::xs)) hm
 
-let hm_part =
-  List.fold_left
-    (fun (hmfull,hmsub) (t,_,x) ->
-      let hash,lst = Ast_utils.hash_of_bindings 30 x in
-      addInHm x t hmfull hash, List.fold_left (addInHm x t) hmsub lst
-    ) (HM.empty, HM.empty)
+let hm_part m =
+  let hashtbl = Hashtbl.create 100 in
+  let hm = List.fold_left
+    (fun hmfull (t,_,x) ->
+      let (p,hash),lst = Ast_utils.hash_of_bindings 30 x in
+      Hashtbl.add hashtbl t ((p,hash)::lst);
+      addInHm x t hmfull hash
+    ) HM.empty m
+  in hm,Clustering.cluster hashtbl
 
 let print_hm =
   let print_bindings (r,xs)=
@@ -189,14 +191,14 @@ let print_hm =
       print_bindings x)
 
 let refine_with_hm =
-  IntMap.map (fun x -> List.length x, hm_part x)
+  IntMap.map (fun x -> List.length x, (hm_part x))
 
 let print_part m =
   Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
     (fun k (len, (hmfull,hmpart)) ->
       Printf.printf " %d pts: %d answers\n" k len;
-      Printf.printf " %d parts found\n" (HM.cardinal hmpart);
+      Printf.printf "****\n%s\n****\n" (Clustering.string_of_token_tree hmpart);
       Printf.printf "  HM CLASSES: %d\n" (HM.cardinal hmfull);
       print_hm hmfull;
       print_endline ""

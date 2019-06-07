@@ -14,7 +14,7 @@ let h1 x = 1,[],x
 let hash_string_lst x xs =
   let p,lst, xs =
     List.fold_right
-      (fun (u,l,x) (v,l',xs) -> u+v,(if u > !alpha then x::l@l' else l'),x::xs)
+      (fun (u,l,x) (v,l',xs) -> u+v,(if u > !alpha then (u,x)::l@l' else l'),x::xs)
       xs (0,[],[]) in
   1+p,lst,Digest.string @@
     String.concat "" (Digest.string x::xs)
@@ -141,14 +141,14 @@ and hash_structure_item x =
        ]
   | _ -> failwith "hash_structure_item"
 
-let hash_of_structure a s =
-  alpha := a;
-  let _poids,ss_arbres,h = hash_structure s
-  in
-  h, List.sort (fun x y -> - (compare x y)) ss_arbres
-
 let hash_of_bindings a (r,v) =
   alpha := a;
-  let _poids,ss_arbres,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
+  let poids,ss_arbres,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
   in
-  h, List.sort (fun x y -> - (compare x y)) ss_arbres
+  (poids,h), List.sort (fun x y -> - (compare x y)) ss_arbres
+
+let hash_of_structure a s =
+  alpha := a;
+  let poids,ss_arbres,h = hash_structure s
+  in
+  (poids,h), List.sort (fun x y -> - (compare x y)) ss_arbres
