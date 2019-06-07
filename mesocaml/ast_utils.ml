@@ -6,13 +6,17 @@ open Asttypes
    - hash_string_lst (et donc hash_lst) ajoute 1 à la somme des poids des sous-arbres
  *)
 
-let h1 x = 1,x
+(* Limite de poids d'ajout des sous-arbres *)
+let alpha = ref 0 (* OCAML... *)
+
+let h1 x = 1,[],x
 
 let hash_string_lst x xs =
-  let p, xs =
+  let p,lst, xs =
     List.fold_right
-      (fun (u,x) (v,xs) -> u+v,x::xs) xs (0,[]) in
-  1+p,Digest.string @@
+      (fun (u,l,x) (v,l',xs) -> u+v,(if u > !alpha then x::l@l' else l'),x::xs)
+      xs (0,[],[]) in
+  1+p,lst,Digest.string @@
     String.concat "" (Digest.string x::xs)
 
 let hash_lst f x xs =
@@ -127,7 +131,7 @@ and hash_case pc =
     ; hash_option hash_expression pc.pc_guard
     ; hash_expression pc.pc_rhs
     ]
-(* and hash_structure xs = hash_lst hash_structure_item "structure" xs *)
+and hash_structure xs = hash_lst hash_structure_item "structure" xs
 and hash_structure_item x =
   match x.pstr_desc with
   | Pstr_value (p,r) ->
@@ -137,8 +141,14 @@ and hash_structure_item x =
        ]
   | _ -> failwith "hash_structure_item"
 
-let hash_of_bindings (r,v) =
-  let _poids,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
+let hash_of_structure a s =
+  alpha := a;
+  let _poids,ss_arbres,h = hash_structure s
   in
-  Printf.printf "%d\n" _poids;
-  h
+  h, List.sort (fun x y -> - (compare x y)) ss_arbres
+
+let hash_of_bindings a (r,v) =
+  alpha := a;
+  let _poids,ss_arbres,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
+  in
+  h, List.sort (fun x y -> - (compare x y)) ss_arbres

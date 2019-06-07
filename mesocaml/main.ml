@@ -156,14 +156,17 @@ let partition_by_grade funname =
 
 module HM = Map.Make(struct type t = string let compare = compare end)
 
+let addInHm x t hm hash =
+  match HM.find_opt hash hm with
+  | None -> HM.add hash (x,[t]) hm
+  | Some (_,xs) -> HM.add hash (x,(t::xs)) hm
+
 let hm_part =
   List.fold_left
-    (fun hm (t,_,x) ->
-      let hash = Ast_utils.hash_of_bindings x in
-      match HM.find_opt hash hm with
-      | None -> HM.add hash (x,[t]) hm
-      | Some (_,xs) -> HM.add hash (x,(t::xs)) hm
-    ) HM.empty
+    (fun (hmfull,hmsub) (t,_,x) ->
+      let hash,lst = Ast_utils.hash_of_bindings 30 x in
+      addInHm x t hmfull hash, List.fold_left (addInHm x t) hmsub lst
+    ) (HM.empty, HM.empty)
 
 let print_hm =
   let print_bindings (r,xs)=
@@ -191,10 +194,11 @@ let refine_with_hm =
 let print_part m =
   Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
-    (fun k (len, hm) ->
+    (fun k (len, (hmfull,hmpart)) ->
       Printf.printf " %d pts: %d answers\n" k len;
-      Printf.printf "  HM CLASSES: %d\n" (HM.cardinal hm);
-      print_hm hm;
+      Printf.printf " %d parts found\n" (HM.cardinal hmpart);
+      Printf.printf "  HM CLASSES: %d\n" (HM.cardinal hmfull);
+      print_hm hmfull;
       print_endline ""
     )
 m
