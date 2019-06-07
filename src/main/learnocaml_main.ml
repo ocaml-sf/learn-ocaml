@@ -259,8 +259,15 @@ let main o =
        let server_config = o.repo_dir/"server_config.json" in
        (if Sys.file_exists server_config
         then
-          Lwt_utils.copy_file
-            (o.repo_dir/"server_config.json")
+          Learnocaml_store.Server.get_from_file server_config >>= fun pre_config ->
+          let sha_config =
+            Learnocaml_data.Server.({secret =
+                                       match pre_config.secret with
+                                       | None -> None
+                                       | Some x -> Some (Sha.sha512 x)})
+          in
+          Learnocaml_store.Server.write_to_file
+            sha_config
             (o.app_dir/"server_config.json")
         else Lwt.return ())
        >>= fun () ->

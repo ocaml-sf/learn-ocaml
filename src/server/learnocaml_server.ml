@@ -483,13 +483,9 @@ let compress ?(level = 4) data =
   | Ok _ -> Lwt.return (Buffer.contents res)
   | Error _ -> Lwt.fail_with "Could not compress"
 
-let fmapOption f = function
-  | None -> None
-  | Some x -> Some (f x)
-
 let launch () =
   Learnocaml_store.Server.get () >>= fun config ->
-  let secret = fmapOption Sha.sha512 (Learnocaml_data.Server.(config.secret)) in
+  let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in

@@ -120,6 +120,9 @@ end
 
 module Server = struct
 
+  let get_from_file p =
+    read_static_file p Server.enc
+
   let get () =
     Lwt.catch
       (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
@@ -129,6 +132,9 @@ module Server = struct
         | e -> raise e
       )
 
+  let write_to_file s p =
+    let s = Json_codec.encode Server.enc s in
+    write p s
 end
 
 module Tutorial = struct
