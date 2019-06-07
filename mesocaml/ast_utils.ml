@@ -1,18 +1,19 @@
 open Parsetree
 open Asttypes
 
-(* TODO hash node *)
+(* Pour le poids:
+   - Chaque constante à poids 1
+   - hash_string_lst (et donc hash_lst) ajoute 1 à la somme des poids des sous-arbres
+ *)
 
-let hash_string_lst x xs=
-  Digest.string @@
+let h1 x = 1,x
+
+let hash_string_lst x xs =
+  let p, xs =
+    List.fold_right
+      (fun (u,x) (v,xs) -> u+v,x::xs) xs (0,[]) in
+  1+p,Digest.string @@
     String.concat "" (Digest.string x::xs)
-
-(* let hash_lst accr f self x xs =
-  let res =
-    List.fold_left
-      (fun acc x -> f self x; !accr :: acc)
-      [] xs in
-  hash_string_lst accr x (List.sort compare res) *)
 
 let hash_lst f x xs =
   let res =
@@ -25,12 +26,14 @@ let hash_lst_anon f xs = hash_lst f "" xs
 
 let hash_option f =
   function
-  | None -> Digest.string "None"
+  | None -> h1 @@ Digest.string "None"
   | Some x -> f x
 
-let hash_rec_flag = function
-  | Recursive -> Digest.string "Recursive"
-  | Nonrecursive -> Digest.string "Nonrecursive"
+let hash_rec_flag x =
+  h1 @@
+    match x with
+    | Recursive -> Digest.string "Recursive"
+    | Nonrecursive -> Digest.string "Nonrecursive"
 
 let hash_arg_label _ = Digest.string "arg_label" (* Important ? *)
 
@@ -40,11 +43,18 @@ let rec hash_value_binding x =
     [ hash_pattern x.pvb_pat
     ; hash_expression x.pvb_expr
     ]
+and hash_pattern x =
+  try hash_pattern_desc x.ppat_desc
+  with
+  | Exit -> Pprintast.pattern Format.std_formatter x;
+            failwith "hash_pattern"
 and hash_pattern_desc = function
-  | Ppat_any -> Digest.string "any"
-  | Ppat_var _ -> Digest.string "var"
-  | Ppat_constant _ -> Digest.string "constant"
-  | Ppat_interval _ -> Digest.string "interval"
+  | Ppat_any -> h1 @@ Digest.string "any"
+  | Ppat_var _ -> h1 @@ Digest.string "var"
+  | Ppat_constant _ -> h1 @@ Digest.string "constant"
+  | Ppat_interval _ -> h1 @@ Digest.string "interval"
+  | Ppat_tuple xs ->
+     hash_lst hash_pattern "tuple" xs
   | Ppat_alias (p,_) ->
      hash_string_lst "alias"
        [ hash_pattern p ]
@@ -55,12 +65,18 @@ and hash_pattern_desc = function
      hash_string_lst "or"
        [ hash_pattern u
        ; hash_pattern v]
-  | _ -> failwith "hash_pattern_desc"
-and hash_pattern x = hash_pattern_desc x.ppat_desc
-and hash_expression x = hash_expression_desc x.pexp_desc
+  | Ppat_construct (_,x) ->
+     hash_string_lst "construct"
+       [ hash_option hash_pattern x ]
+  | _ -> raise Exit
+and hash_expression x =
+  try hash_expression_desc x.pexp_desc
+  with
+  | Exit -> Pprintast.expression Format.std_formatter x;
+            failwith "hash_expression"
 and hash_expression_desc = function
-  | Pexp_ident    _ -> Digest.string "ident"
-  | Pexp_constant _ -> Digest.string "const"
+  | Pexp_ident    _ -> h1 @@ Digest.string "ident"
+  | Pexp_constant _ -> h1 @@ Digest.string "const"
   | Pexp_let (r,valbindl,e) ->
      hash_string_lst "let"
        [ hash_rec_flag r
@@ -73,7 +89,7 @@ and hash_expression_desc = function
        [hash_cases xs]
   | Pexp_fun (arg,oe,p,e) ->
      hash_string_lst "fun"
-       [ hash_arg_label arg
+       [ h1 @@ hash_arg_label arg
        ; hash_option (hash_expression) oe
        ; hash_pattern p
        ; hash_expression e
@@ -94,6 +110,9 @@ and hash_expression_desc = function
        ]
   | Pexp_tuple xs ->
      hash_lst hash_expression "tuple" xs
+  | Pexp_construct (_,e) ->
+     hash_string_lst "construct"
+       [ hash_option (hash_expression) e ]
   | Pexp_ifthenelse (i,f,e) ->
      hash_string_lst "ifthenelse"
        [ hash_expression i
@@ -119,4 +138,7 @@ and hash_structure_item x =
   | _ -> failwith "hash_structure_item"
 
 let hash_of_bindings (r,v) =
-  hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
+  let _poids,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
+  in
+  Printf.printf "%d\n" _poids;
+  h

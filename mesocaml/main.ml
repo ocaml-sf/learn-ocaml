@@ -65,7 +65,7 @@ let find_func f : Parsetree.structure_item list -> func_res option =
        begin
          match x.pvb_pat.ppat_desc with
          | Ppat_var v ->
-            if v.txt = f
+            if Asttypes.(v.txt) = f
             then Some (r,body)
             else None
          | _ -> None
