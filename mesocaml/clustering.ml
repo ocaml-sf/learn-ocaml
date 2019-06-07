@@ -1,5 +1,6 @@
 open Learnocaml_data
 
+(* To represent a hierachical cluster *)
 type 'a tree =
   | Node of ('a tree * 'a tree)
   | Leaf of 'a
@@ -29,8 +30,12 @@ let rec intersect x y =
 
 let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
 
+(* Just a big value *)
 let big_value = 100.
 
+(* Compute the distance between two clusters, 
+   if there are Nodes, takes the maximum distance 
+*)
 let rec dist hm x y =
   match x,y with
   | Leaf x, Leaf y ->
@@ -49,6 +54,7 @@ let rec dist hm x y =
   | Node (u,v), l | l, Node (u,v) ->
      max (dist hm u l) (dist hm v l)
 
+(* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist hm xs =
   let min = ref (big_value +. 1., None) in
   List.iter
@@ -68,10 +74,12 @@ let get_min_dist hm xs =
   | None -> failwith "get_min_dist, empty list"
   | Some x -> x
 
+(* Merge two elements of a cluster *)
 let merge u v xs =
   let xs = List.filter (fun x -> x != u && x != v) xs in
   (Node (u,v))::xs
 
+(* Compute a hierarchical cluster from data *)
 let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
   let rec aux = function
     | [] -> failwith "cluster, empty list"
