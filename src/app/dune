@@ -30,6 +30,7 @@
  (flags :standard -warn-error -6-9-27-33-39)
  (libraries ezjsonm
             ace
+	    sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
@@ -50,6 +51,7 @@
  (libraries ezjsonm
             grading_jsoo
             ace
+	    sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel

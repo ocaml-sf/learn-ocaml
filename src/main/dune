@@ -27,6 +27,7 @@
  (flags :standard -linkall)
  (modules Learnocaml_client)
  (libraries cmdliner
+ 	    sha
             lwt.unix
             lwt_utils
             cohttp.lwt
