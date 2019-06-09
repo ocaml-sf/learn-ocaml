@@ -7,3 +7,5 @@ type 'a tree =
 val string_of_token_tree : (Token.t list) tree list -> string
 
 val cluster : (Token.t, (int * string) list) Hashtbl.t -> (Token.t list) tree list
+
+val cluster_flatten : (Token.t, (int * string) list) Hashtbl.t -> (Token.t list) list list

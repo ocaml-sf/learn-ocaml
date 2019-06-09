@@ -103,7 +103,6 @@ let rec remove_hash_in_tree = function
   | Node (u,v) -> Node (remove_hash_in_tree u, remove_hash_in_tree v)
 
 (* Compute a hierarchical cluster from data *)
-(* The head of hash list is the main hash *)
 let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
   let rec aux res = function
     | [] -> failwith "cluster, empty list"
@@ -117,3 +116,11 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
     List.map (fun x -> Leaf x) @@
       Hashtbl.fold (fun x xs acc -> add_in_eq x (List.sort compare xs) acc) m []
   in List.map remove_hash_in_tree (aux [] start)
+
+let rec flatten = function
+  | Leaf x -> [x]
+  | Node (u,v) -> List.rev_append (flatten u) (flatten v)
+
+(* Compute a hierarchical cluster from data *)
+(* Flatten the obtained trees *)
+let cluster_flatten m = List.map flatten (cluster m)

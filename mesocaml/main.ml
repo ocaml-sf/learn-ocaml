@@ -4,8 +4,7 @@ open Learnocaml_report
 open Lwt.Infix
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
-module HM = Map.Make(struct type t = string let compare = compare end)
-   
+
 (* Return all the token in sync *)
 let get_all_token sync =
   let rec aux acc f =
@@ -155,22 +154,25 @@ let partition_by_grade funname =
   in
   List.fold_left aux IntMap.empty
 
-let addInHm x t hm hash =
-  match HM.find_opt hash hm with
-  | None -> HM.add hash (x,[t]) hm
-  | Some (_,xs) -> HM.add hash (x,(t::xs)) hm
-
 let hm_part m =
   let hashtbl = Hashtbl.create 100 in
-  let hm = List.fold_left
-    (fun hmfull (t,_,x) ->
-      let (p,hash),lst = Ast_utils.hash_of_bindings 30 x in
-      Hashtbl.add hashtbl t ((p,hash)::lst);
-      addInHm x t hmfull hash
-    ) HM.empty m
-  in hm,Clustering.cluster hashtbl
+  List.iter
+    (fun (t,_,x) ->
+      let hash,lst = Ast_utils.hash_of_bindings 30 x in
+      Hashtbl.add hashtbl t (hash::lst)
+    ) m;
+  Clustering.cluster_flatten hashtbl
 
-let print_hm =
+exception Found of func_res
+let assoc_3 t lst =
+  try
+    List.iter (fun (t',_,x) -> if t = t' then raise (Found x) else ()) lst;
+    failwith "assoc_3"
+  with
+  | Found x -> x
+
+
+let print_hm assoc =
   let print_bindings (r,xs)=
     let pstr_desc = Parsetree.Pstr_value (r,xs) in
     let pstr_loc = Location.none in
@@ -181,27 +183,32 @@ let print_hm =
     print_endline "----"
   in
   let print_token_lst xs =
-    Printf.printf "   HCLASS: %s\n" @@
+    Printf.printf "+ %s\n" @@
       String.concat ", " @@
         List.map Token.to_string xs
   in
-  HM.iter
-    (fun _ (x,xs) ->
-      print_token_lst xs;
-      print_bindings x)
+  List.iter
+    (fun lst ->
+      Printf.printf "**** HCLASS with %d Sub-classe(s):\n" (List.length lst);
+      List.iter
+        (fun xs ->
+          print_token_lst xs;
+          print_bindings (assoc_3 (List.hd xs) assoc)
+        )
+        lst;
+      print_endline ""
+    )
 
 let refine_with_hm =
-  IntMap.map (fun x -> List.length x, (hm_part x))
+  IntMap.map (fun x -> x, hm_part x)
 
 let print_part m =
   Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
   IntMap.iter
-    (fun k (len, (hmfull,hmpart)) ->
-      Printf.printf " %d pts: %d answers\n" k len;
-      Printf.printf "****\n%s\n****\n" (Clustering.string_of_token_tree hmpart);
-      Printf.printf "  HM CLASSES: %d\n" (HM.cardinal hmfull);
-      print_hm hmfull;
-      print_endline ""
+    (fun k (assoc, hmpart) ->
+      Printf.printf " %d pts: %d answers\n" k (List.length assoc);
+      Printf.printf "  HM CLASSES: %d\n" (List.length hmpart);
+      print_hm assoc hmpart
     )
 m
 
