@@ -72,6 +72,7 @@ and hash_pattern_desc = function
   | Ppat_construct (_,x) ->
      hash_string_lst "construct"
        [ hash_option hash_pattern x ]
+  | Ppat_constraint _ -> h1 "" (* On ne s'intéresse pas aux annotations de types *)
   | _ -> raise Exit
 and hash_expression x =
   try hash_expression_desc x.pexp_desc
