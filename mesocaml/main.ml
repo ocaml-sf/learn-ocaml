@@ -148,7 +148,7 @@ let hm_part m =
   let hashtbl = Hashtbl.create 100 in
   List.iter
     (fun (t,_,x) ->
-      let hash,lst = Ast_utils.hash_of_bindings 30 x in
+      let hash,lst = Ast_utils.hash_of_bindings 75 x in
       Hashtbl.add hashtbl t (hash::lst)
     ) m;
   Clustering.cluster_flatten hashtbl

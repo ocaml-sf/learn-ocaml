@@ -6,15 +6,12 @@ open Asttypes
    - hash_string_lst (et donc hash_lst) ajoute 1 à la somme des poids des sous-arbres
  *)
 
-(* Limite de poids d'ajout des sous-arbres *)
-let alpha = ref 0 (* OCAML... *)
-
 let h1 x = 1,[],x
 
 let hash_string_lst x xs =
   let p,lst, xs =
     List.fold_right
-      (fun (u,l,x) (v,l',xs) -> u+v,(if u > !alpha then (u,x)::l@l' else l'),x::xs)
+      (fun (u,l,x) (v,l',xs) -> u+v,(u,x)::l@l',x::xs)
       xs (0,[],[]) in
   1+p,lst,Digest.string @@
     String.concat "" (Digest.string x::xs)
@@ -142,14 +139,18 @@ and hash_structure_item x =
        ]
   | _ -> failwith "hash_structure_item"
 
-let hash_of_bindings a (r,v) =
-  alpha := a;
+let sort_filter alpha x xs =
+  let x = float_of_int x in
+  List.sort compare (List.filter (fun (u,_) -> float_of_int u > alpha *. x) xs)
+
+let hash_of_bindings alpha (r,v) =
+  let alpha = (float_of_int alpha) /. 100. in
   let poids,ss_arbres,h = hash_structure_item {pstr_desc=(Pstr_value (r,v)); pstr_loc=Location.none}
   in
-  (poids,h), List.sort (fun x y -> - (compare x y)) ss_arbres
+  (poids,h), sort_filter alpha poids ss_arbres
 
-let hash_of_structure a s =
-  alpha := a;
+let hash_of_structure alpha s =
+  let alpha = (float_of_int alpha) /. 100. in
   let poids,ss_arbres,h = hash_structure s
   in
-  (poids,h), List.sort (fun x y -> - (compare x y)) ss_arbres
+  (poids,h), sort_filter alpha poids ss_arbres
