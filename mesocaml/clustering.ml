@@ -12,12 +12,6 @@ let string_of_tree printer =
     | Leaf a -> printer a
   in aux
 
-let string_of_token_tree xs =
-  List.fold_right
-    (fun x acc ->
-      string_of_tree (fun xs -> String.concat ", " @@ List.map Token.to_string xs) x ^ "\n" ^ acc )
-    xs ""
-
 (* Suppose that x and y are sorted *)
 let rec intersect x y =
   match x,y with
@@ -33,7 +27,7 @@ let rec intersect x y =
 
 let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
 
-(* NB: None est plus grand que tout *)
+(* NB: None is the biggest number *)
 
 let compare_option x y =
   match x with
@@ -49,22 +43,24 @@ let max_option x y =
   else x
 
 (* Compute the distance between two clusters,
-   if there are Nodes, takes the maximum distance
+   if there are Nodes, takes choose using f (max gives complete-linkage clustering)
 *)
-let rec dist x y =
-  match x,y with
-  | Leaf (x,_), Leaf (y,_) ->
-     begin
-       match intersect x y with
-       | [] -> None
-       | xs -> Some (1. /. (float_of_int (sum_of_fst xs)))
-     end
-  | Node (u,v), Node (u',v') ->
-     max_option
-       (max_option (dist u u') (dist u v'))
-       (max_option (dist v u') (dist v v'))
-  | Node (u,v), l | l, Node (u,v) ->
-     max_option (dist u l) (dist v l)
+let dist f =
+  let rec aux x y =
+    match x,y with
+    | Leaf (x,_), Leaf (y,_) ->
+       begin
+         match intersect x y with
+         | [] -> None
+         | xs -> Some (1. /. (float_of_int (sum_of_fst xs)))
+       end
+    | Node (u,v), Node (u',v') ->
+       f
+         (f (aux u u') (aux u v'))
+         (f (aux v u') (aux v v'))
+    | Node (u,v), l | l, Node (u,v) ->
+       f (aux u l) (aux v l)
+  in aux
 
 (* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist xs =
@@ -74,7 +70,7 @@ let get_min_dist xs =
       List.iter (fun y ->
           if x != y
           then
-            let d = dist x y in
+            let d = dist max_option x y in
             if compare_option d (fst !min)
             then min := (d,Some (x,y))
             else ();

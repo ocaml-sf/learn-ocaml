@@ -3,6 +3,8 @@ open Learnocaml_report
 
 open Lwt.Infix
 
+open Utils
+
 module IntMap = Map.Make(struct type t = int let compare = compare end)
 
 (* Return all the token in sync *)
@@ -30,18 +32,6 @@ let get_all_token sync =
       else acc
   in
   aux [] sync
-
-let maybe e f = function
-  | None -> e
-  | Some x -> f x
-
-let fmapOption f = function
-  | None -> None
-  | Some x -> Some (f x)
-
-let bindOption f = function
-  | None -> None
-  | Some x -> f x
 
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
@@ -171,7 +161,6 @@ let assoc_3 t lst =
   with
   | Found x -> x
 
-
 let print_hm assoc =
   let print_bindings (r,xs)=
     let pstr_desc = Parsetree.Pstr_value (r,xs) in
@@ -210,7 +199,7 @@ let print_part m =
       Printf.printf "  HM CLASSES: %d\n" (List.length hmpart);
       print_hm assoc hmpart
     )
-m
+    m
 
 let main sync exo_name fun_name =
   Learnocaml_store.sync_dir := Filename.concat (Sys.getcwd ()) sync;
