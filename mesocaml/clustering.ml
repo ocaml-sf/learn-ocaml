@@ -8,11 +8,17 @@ type 'a tree =
   | Leaf of 'a
 
 let string_of_tree printer =
-  let rec aux = function
+  let rec aux i xs =
+    let first = String.make i ' ' in
+    match xs with
     | Node (p,u,v) ->
-       "Node "^ string_of_float p  ^ " (" ^ aux u  ^ ") (" ^ aux v ^ ")"
-    | Leaf a -> printer a
-  in aux
+       first ^ "Node " ^ string_of_float p  ^ ":\n"
+       ^ aux (i+1) u ^ "\n"
+       ^ aux (i+1) v
+    | Leaf a -> first ^ "Leaf: " ^ printer a
+  in aux 0
+
+let string_of_token_list xs = String.concat ", " @@ List.map Token.to_string xs
 
 (* Suppose that x and y are sorted *)
 let rec intersect x y =

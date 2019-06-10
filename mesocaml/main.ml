@@ -148,10 +148,10 @@ let hm_part m =
   let hashtbl = Hashtbl.create 100 in
   List.iter
     (fun (t,_,x) ->
-      let hash,lst = Ast_utils.hash_of_bindings 75 x in
+      let hash,lst = Ast_utils.hash_of_bindings 50 x in
       Hashtbl.add hashtbl t (hash::lst)
     ) m;
-  Clustering.cluster_flatten hashtbl
+  Clustering.cluster hashtbl
 
 exception Found of func_res
 let assoc_3 t lst =
@@ -162,30 +162,22 @@ let assoc_3 t lst =
   | Found x -> x
 
 let print_hm assoc =
-  let print_bindings (r,xs)=
+  let string_of_bindings (r,xs)=
     let pstr_desc = Parsetree.Pstr_value (r,xs) in
     let pstr_loc = Location.none in
     let str =
       Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}] in
-    print_endline "----";
-    print_endline str;
-    print_endline "----"
-  in
-  let print_token_lst xs =
-    Printf.printf "+ %s\n" @@
-      String.concat ", " @@
-        List.map Token.to_string xs
+    "----\n" ^ str ^ "\n----\n"
   in
   List.iter
     (fun lst ->
-      Printf.printf "**** HCLASS with %d Sub-classe(s):\n" (List.length lst);
-      List.iter
-        (fun xs ->
-          print_token_lst xs;
-          print_bindings (assoc_3 (List.hd xs) assoc)
-        )
-        lst;
-      print_endline ""
+      print_endline @@
+        Clustering.string_of_tree
+          (fun xs ->
+            Clustering.string_of_token_list xs ^ "\n"
+            ^ string_of_bindings (assoc_3 (List.hd xs) assoc)
+          )
+          lst;
     )
 
 let refine_with_hm =
