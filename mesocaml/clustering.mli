@@ -1,7 +1,7 @@
 open Learnocaml_data
 
 type 'a tree =
-  | Node of ('a tree * 'a tree)
+  | Node of (float * 'a tree * 'a tree)
   | Leaf of 'a
 
 val string_of_tree : ('a -> string) -> 'a tree -> string

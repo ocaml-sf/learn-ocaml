@@ -1,14 +1,16 @@
 open Learnocaml_data
 
+open Utils
+
 (* To represent a hierachical cluster *)
 type 'a tree =
-  | Node of ('a tree * 'a tree)
+  | Node of (float * 'a tree * 'a tree)
   | Leaf of 'a
 
 let string_of_tree printer =
   let rec aux = function
-    | Node (u,v) ->
-       "Node (" ^ aux u  ^ ") (" ^ aux v ^ ")"
+    | Node (p,u,v) ->
+       "Node "^ string_of_float p  ^ " (" ^ aux u  ^ ") (" ^ aux v ^ ")"
     | Leaf a -> printer a
   in aux
 
@@ -29,18 +31,22 @@ let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
 
 (* NB: None is the biggest number *)
 
+type 'a compare_option = True of 'a | False
+
 let compare_option x y =
   match x with
-  | None -> false
+  | None -> False
   | Some x' ->
      match y with
-     | None -> true
-     | Some y' -> x' < y'
+     | None -> True x'
+     | Some y' ->
+        if x' < y'
+        then True x' else False
 
 let max_option x y =
-  if compare_option x y
-  then y
-  else x
+  match compare_option x y with
+  | True _ -> y
+  | False ->  x
 
 (* Compute the distance between two clusters,
    if there are Nodes, takes choose using f (max gives complete-linkage clustering)
@@ -54,26 +60,26 @@ let dist f =
          | [] -> None
          | xs -> Some (1. /. (float_of_int (sum_of_fst xs)))
        end
-    | Node (u,v), Node (u',v') ->
+    | Node (_,u,v), Node (_,u',v') ->
        f
          (f (aux u u') (aux u v'))
          (f (aux v u') (aux v v'))
-    | Node (u,v), l | l, Node (u,v) ->
+    | Node (_,u,v), l | l, Node (_,u,v) ->
        f (aux u l) (aux v l)
   in aux
 
 (* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist xs =
-  let min = ref (None, None) in
+  let min = ref None in
   List.iter
     (fun x ->
       List.iter (fun y ->
           if x != y
           then
             let d = dist max_option x y in
-            if compare_option d (fst !min)
-            then min := (d,Some (x,y))
-            else ();
+            match compare_option d (fmapOption fst !min) with
+            | True d -> min := Some (d,(x,y))
+            | False -> ();
         )
      xs
     )
@@ -81,9 +87,9 @@ let get_min_dist xs =
   !min
 
 (* Merge two elements of a cluster *)
-let merge u v xs =
+let merge p u v xs =
   let xs = List.filter (fun x -> x != u && x != v) xs in
-  (Node (u,v))::xs
+  (Node (p,u,v))::xs
 
 let add_in_eq x xs =
   let rec go = function
@@ -96,7 +102,7 @@ let add_in_eq x xs =
 
 let rec remove_hash_in_tree = function
   | Leaf (_,x) -> Leaf x
-  | Node (u,v) -> Node (remove_hash_in_tree u, remove_hash_in_tree v)
+  | Node (p,u,v) -> Node (p,remove_hash_in_tree u, remove_hash_in_tree v)
 
 (* Compute a hierarchical cluster from data *)
 let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
@@ -105,8 +111,8 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
     | [a] -> a::res
     | x::xs as lst ->
        match get_min_dist lst with
-       | (_,None) -> aux (x::res) xs
-       | (_, Some (u,v)) -> aux res (merge u v lst)
+       | None -> aux (x::res) xs
+       | Some (p, (u,v)) -> aux res (merge p u v lst)
   in
   let start =
     List.map (fun x -> Leaf x) @@
@@ -115,7 +121,7 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
 
 let rec flatten = function
   | Leaf x -> [x]
-  | Node (u,v) -> List.rev_append (flatten u) (flatten v)
+  | Node (_,u,v) -> List.rev_append (flatten u) (flatten v)
 
 (* Compute a hierarchical cluster from data *)
 (* Flatten the obtained trees *)
