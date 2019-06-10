@@ -20,6 +20,10 @@ let string_of_tree printer =
 
 let string_of_token_list xs = String.concat ", " @@ List.map Token.to_string xs
 
+let rec sum_leaf_size = function
+  | Leaf xs -> List.length xs
+  | Node (_,u,v) -> sum_leaf_size u + sum_leaf_size v
+
 (* Suppose that x and y are sorted *)
 let rec intersect x y =
   match x,y with
@@ -123,7 +127,10 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
   let start =
     List.map (fun x -> Leaf x) @@
       Hashtbl.fold (fun x xs acc -> add_in_eq x (List.sort compare xs) acc) m []
-  in List.map remove_hash_in_tree (aux [] start)
+  in
+  List.sort (fun x y -> compare (sum_leaf_size x) (sum_leaf_size y)) @@
+    List.map remove_hash_in_tree @@
+      aux [] start
 
 let rec flatten = function
   | Leaf x -> [x]
