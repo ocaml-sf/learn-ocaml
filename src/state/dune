@@ -20,6 +20,7 @@
  (modules Learnocaml_version Learnocaml_api)
  (libraries ocplib-json-typed
             ezjsonm
+	    cohttp.lwt
             learnocaml_data)
 )
 

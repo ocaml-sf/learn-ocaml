@@ -176,14 +176,28 @@ module Request_handler = struct
     | Response ({contents; _} as r) -> Response {r with contents = f contents}
     | (Cached _ | Status _) as r -> r
 
+  let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  let alphanum_len = String.length alphanum
+
+  let nonce_req : (Conduit.endp, string) Hashtbl.t = Hashtbl.create 533
+
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. string option -> caching -> resp Api.request -> resp ret
-    = fun secret cache -> function
+  let callback_raw: type resp. Conduit.endp -> string option -> caching -> resp Api.request -> resp ret
+    = fun conn secret cache -> function
       | Api.Version () ->
           respond_json cache Api.version
       | Api.Static path ->
           respond_static cache path
+      | Api.Nonce () ->
+         begin
+           match Hashtbl.find_opt nonce_req conn with
+           | Some x -> respond_json cache x
+           | None ->
+              let nonce = String.init 10 (fun _ -> alphanum.[Random.int alphanum_len]) in
+              Hashtbl.add nonce_req conn nonce;
+              respond_json cache nonce
+         end
       | Api.Create_token (secret_candidate, None, nick) ->
          let know_secret =
            match secret with
@@ -403,10 +417,10 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           Lwt.return (Status {code = `Bad_request; body})
 
-  let callback: type resp. string option -> resp Api.request -> resp ret = fun secret req ->
+  let callback: type resp. Conduit.endp -> string option -> resp Api.request -> resp ret = fun conn secret req ->
     let cache = caching req in
     let respond () =
-      Lwt.catch (fun () -> callback_raw secret cache req)
+      Lwt.catch (fun () -> callback_raw conn secret cache req)
         (function
           | Not_found ->
               Lwt.return (Status {code = `Not_found;
@@ -484,6 +498,7 @@ let compress ?(level = 4) data =
   | Error _ -> Lwt.fail_with "Could not compress"
 
 let launch () =
+  Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
   let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
@@ -574,7 +589,7 @@ let launch () =
     >>= (function
         | Ok req ->
             log conn req;
-            Api_server.handler secret req
+            Api_server.handler (Conduit_lwt_unix.endp_of_flow (fst conn)) secret req
         | Error (code, body) -> Lwt.return (Status {code; body}))
     >>=
     respond
@@ -585,7 +600,6 @@ let launch () =
     | Some (crt, key) ->
         `TLS (`Crt_file_path crt, `Key_file_path key, `No_password, `Port !port)
   in
-  Random.self_init () ;
   init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
       Server.create
