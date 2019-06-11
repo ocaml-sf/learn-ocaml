@@ -199,18 +199,24 @@ module Request_handler = struct
               respond_json cache nonce
          end
       | Api.Create_token (secret_candidate, None, nick) ->
-         let know_secret =
-           match secret with
-           | None -> true
-           | Some x -> secret_candidate = x in
-         if not know_secret
-         then Lwt.return (Status {code = `Forbidden;
-                                  body = "Bad secret"})
-         else
-           Token.create_student () >>= fun tok ->
-           (match nick with None -> Lwt.return_unit | Some nickname ->
-             Save.set tok Save.{empty with nickname}) >>= fun () ->
-             respond_json cache tok
+         begin
+           let bad_req = Status {code = `Forbidden; body = "Bad secret"} in
+           match Hashtbl.find_opt nonce_req conn with
+           | None -> Lwt.return bad_req
+           | Some nonce ->
+              let know_secret =
+                match secret with
+                | None -> true
+                | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
+              if not know_secret
+              then Lwt.return bad_req
+              else
+                Token.create_student () >>= fun tok ->
+                (match nick with | None -> Lwt.return_unit
+                                 | Some nickname ->
+                                    Save.set tok Save.{empty with nickname})
+                >>= fun () -> respond_json cache tok
+         end
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)

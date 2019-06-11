@@ -555,7 +555,12 @@ let init ?(local=false) ?server ?token () =
     Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
     | Some secret_candidate ->
-       fetch server (Api.Create_token (Sha.sha512 secret_candidate, None, nickname))
+       let secret_candidate = Sha.sha512 secret_candidate in
+       fetch server (Api.Nonce ())
+       >>= fun nonce ->
+       fetch
+         server
+         (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
     | None -> failwith "Please provide a secret"
   in
   let get_token () =
