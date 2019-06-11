@@ -96,7 +96,7 @@ module File = struct
       if ciphered then
         let prefix =
           Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
-        decode (Xor.decode ~prefix raw)
+        decode (Learnocaml_xor.decode ~prefix raw)
       else
         decode raw
     with Not_found -> raise (Missing_file ("get  " ^ key))
@@ -108,7 +108,7 @@ module File = struct
     if ciphered then
       let prefix =
         Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
-      StringMap.add key (Xor.encode ~prefix (encode raw)) ex
+      StringMap.add key (Learnocaml_xor.encode ~prefix (encode raw)) ex
     else
       StringMap.add key (encode raw) ex
 
@@ -206,7 +206,7 @@ module File = struct
               if ciphered && decipher then
                 let prefix =
                   Digest.string (ex_id  ^ "_" ^ key) in
-                Xor.decode ~prefix raw
+                Learnocaml_xor.decode ~prefix raw
               else
                 raw in
             (* decode / encode now to catch malformed fields earlier *)
@@ -308,7 +308,7 @@ let decipher f ex =
   if f.ciphered then
     let prefix =
       Digest.string (ex.id  ^ "_" ^ f.key) in
-    f.decode (Xor.decode ~prefix raw)
+    f.decode (Learnocaml_xor.decode ~prefix raw)
   else
     f.decode raw
 
@@ -320,7 +320,7 @@ let cipher f v ex =
   if f.ciphered then
     let prefix =
       Digest.string (ex.id  ^ "_" ^ f.key) in
-    f.update (Xor.encode ~prefix (f.encode v)) ex
+    f.update (Learnocaml_xor.encode ~prefix (f.encode v)) ex
   else
     f.update (f.encode v) ex
 
@@ -359,7 +359,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         let ciphered = if ciphered && (not cipher) then
             let prefix =
               Digest.string (ex_id  ^ "_" ^ key) in
-            Xor.decode ~prefix raw
+            Learnocaml_xor.decode ~prefix raw
           else
             raw in
         write_field key ciphered !acc >>= fun nacc ->
