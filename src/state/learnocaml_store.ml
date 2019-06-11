@@ -118,6 +118,27 @@ module Lesson = struct
 
 end
 
+module Server = struct
+
+  let get_from_file p =
+    Lwt_io.(with_file ~mode: Input p read) >|=
+      Json_codec.decode Server.enc
+
+  let get () =
+    Lwt.catch
+      (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
+      (fun e ->
+        match e with
+        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return Server.default
+        | e -> raise e
+      )
+
+  let write_to_file s p =
+    let open Lwt_io in
+    let s = Json_codec.encode Server.enc s in
+    with_file ~mode:output p @@ fun oc -> write oc s
+end
+
 module Tutorial = struct
 
   module Index = struct

@@ -139,6 +139,18 @@ let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f 
     close_button cancel_label;
   ]
 
+let ask_string ~title ?(ok_label=[%i"OK"]) contents =
+  let input_field =
+    H.input ~a:[
+        H.a_input_type `Text;
+      ] ()
+  in
+  let result_t, up = Lwt.wait () in
+  ext_alert ~title (contents @ [input_field]) ~buttons:[
+      box_button ok_label (fun () -> Lwt.wakeup up @@ Manip.value input_field)
+    ];
+  result_t
+
 let default_exn_printer = function
   | Failure msg -> msg
   | e -> Printexc.to_string e
@@ -424,7 +436,7 @@ let rec sync_save token save_file =
   | Ok save -> set_state_from_save_file ~token save; Lwt.return save
   | Error (`Not_found _) ->
       Server_caller.request_exn
-        (Learnocaml_api.Create_token (Some token, None)) >>= fun _token ->
+        (Learnocaml_api.Create_token ("", Some token, None)) >>= fun _token ->
       assert (_token = token);
       Server_caller.request_exn
         (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->

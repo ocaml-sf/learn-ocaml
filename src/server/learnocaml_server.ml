@@ -167,7 +167,6 @@ module Memory_cache = struct
 
 end
 
-
 module Request_handler = struct
 
   type 'a ret = 'a response Lwt.t
@@ -179,18 +178,26 @@ module Request_handler = struct
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. caching -> resp Api.request -> resp ret
-    = fun cache -> function
+  let callback_raw: type resp. string option -> caching -> resp Api.request -> resp ret
+    = fun secret cache -> function
       | Api.Version () ->
           respond_json cache Api.version
       | Api.Static path ->
           respond_static cache path
-      | Api.Create_token (None, nick) ->
-          Token.create_student () >>= fun tok ->
-          (match nick with None -> Lwt.return_unit | Some nickname ->
-              Save.set tok Save.{empty with nickname}) >>= fun () ->
-          respond_json cache tok
-      | Api.Create_token (Some token, _nick) ->
+      | Api.Create_token (secret_candidate, None, nick) ->
+         let know_secret =
+           match secret with
+           | None -> true
+           | Some x -> secret_candidate = x in
+         if not know_secret
+         then Lwt.return (Status {code = `Forbidden;
+                                  body = "Bad secret"})
+         else
+           Token.create_student () >>= fun tok ->
+           (match nick with None -> Lwt.return_unit | Some nickname ->
+             Save.set tok Save.{empty with nickname}) >>= fun () ->
+             respond_json cache tok
+      | Api.Create_token (_secret_candidate, Some token, _nick) ->
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
             (function
@@ -396,10 +403,10 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           Lwt.return (Status {code = `Bad_request; body})
 
-  let callback: type resp. resp Api.request -> resp ret = fun req ->
+  let callback: type resp. string option -> resp Api.request -> resp ret = fun secret req ->
     let cache = caching req in
     let respond () =
-      Lwt.catch (fun () -> callback_raw cache req)
+      Lwt.catch (fun () -> callback_raw secret cache req)
         (function
           | Not_found ->
               Lwt.return (Status {code = `Not_found;
@@ -477,6 +484,8 @@ let compress ?(level = 4) data =
   | Error _ -> Lwt.fail_with "Could not compress"
 
 let launch () =
+  Learnocaml_store.Server.get () >>= fun config ->
+  let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
@@ -565,7 +574,7 @@ let launch () =
     >>= (function
         | Ok req ->
             log conn req;
-            Api_server.handler req
+            Api_server.handler secret req
         | Error (code, body) -> Lwt.return (Status {code; body}))
     >>=
     respond

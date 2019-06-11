@@ -27,3 +27,5 @@ let tutorial_path id = tutorials_dir ^ "/" ^ id ^ ".json"
 let focus_path = "focus.json"
 
 let requirements_path = "requirements.json"
+
+let server_config_path = "server_config.json"

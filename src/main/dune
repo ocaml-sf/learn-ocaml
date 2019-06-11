@@ -13,6 +13,7 @@
  (flags :standard -linkall)
  (modules Learnocaml_main)
  (libraries cmdliner
+            sha
             learnocaml_process_repository_lib
             learnocaml_server_lib
             learnocaml_server_args
@@ -27,6 +28,7 @@
  (flags :standard -linkall)
  (modules Learnocaml_client)
  (libraries cmdliner
+ 	    sha
             lwt.unix
             lwt_utils
             cohttp.lwt

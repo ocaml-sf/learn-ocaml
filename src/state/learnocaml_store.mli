@@ -42,6 +42,12 @@ module Lesson: sig
 
 end
 
+module Server : sig
+  val get_from_file : string -> Server.config Lwt.t
+  val get : unit -> Server.config Lwt.t
+  val write_to_file : Server.config -> string -> unit Lwt.t
+end
+
 module Tutorial: sig
 
   module Index: sig

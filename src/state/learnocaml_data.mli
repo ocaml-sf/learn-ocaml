@@ -120,6 +120,16 @@ module Student: sig
 
 end
 
+module Server : sig
+  type config = {
+    secret : string option (* maybe a secret *)
+    }
+
+  val default : config
+
+  val enc: config Json_encoding.encoding
+end
+
 module Exercise: sig
 
   type id = string
