@@ -157,7 +157,7 @@ let protect_execution top exec =
                  Lwt.return res
              | `Idle | `Reset _ ->
                  (* The task successfully ended between a reset order
-                    and its ack, we fake its cancelation. *)
+                    and its ack, we fake its cancellation. *)
                  Lwt.fail Lwt.Canceled)
           (function
             | Lwt.Canceled ->

@@ -22,7 +22,7 @@ type t
    @param timeout_prompt
      A function called when an operation has taken more than
      [timeout_delay] to execute. The resulting thread triggers the
-     cancelation of this operation when it terminate, and is conversely
+     cancellation of this operation when it terminate, and is conversely
      canceled if the operation terminates before.
      It is the default value for the optional parameter of the
      {!val:execute}, {!val:load} and {!val:reset} functions.

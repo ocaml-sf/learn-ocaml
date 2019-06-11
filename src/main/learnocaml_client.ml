@@ -54,7 +54,7 @@ module Args = struct
     info ["s";"server"] ~docv:"URL" ~doc:
       "The URL of the learn-ocaml server"
       ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
-            "Sets the learn-ocaml server URL. Overriden by $(b,--server).")
+            "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
 
   let solution_file =
     value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
@@ -96,7 +96,7 @@ module Args = struct
       "Your token on the learn-ocaml server. This is required to submit \
        solutions"
       ~env:(Cmdliner.Term.env_info "LEARNOCAML_TOKEN" ~doc:
-              "Sets the learn-ocaml user token on the sever. Overriden by \
+              "Sets the learn-ocaml user token on the sever. Overridden by \
                $(b,--token).")
 
   let local =
