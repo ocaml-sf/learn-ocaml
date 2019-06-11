@@ -47,29 +47,38 @@
 
 (rule
  (targets embedded_cmis.ml)
- (deps %{ocaml-config:standard_library}/pervasives.cmi
-       %{ocaml-config:standard_library}/array.cmi
+ (deps %{ocaml-config:standard_library}/array.cmi
        %{ocaml-config:standard_library}/arrayLabels.cmi
-       %{ocaml-config:standard_library}/list.cmi
+       %{ocaml-config:standard_library}/buffer.cmi
+       %{ocaml-config:standard_library}/bytes.cmi
        %{ocaml-config:standard_library}/camlinternalFormatBasics.cmi
        %{ocaml-config:standard_library}/camlinternalFormat.cmi
-       %{ocaml-config:standard_library}/printf.cmi
-       %{ocaml-config:standard_library}/random.cmi
-       %{ocaml-config:standard_library}/string.cmi
-       %{ocaml-config:standard_library}/bytes.cmi
-       %{ocaml-config:standard_library}/sys.cmi
-       %{ocaml-config:standard_library}/format.cmi
+       %{ocaml-config:standard_library}/camlinternalLazy.cmi
        %{ocaml-config:standard_library}/char.cmi
-       %{ocaml-config:standard_library}/printexc.cmi
+       %{ocaml-config:standard_library}/complex.cmi
        %{ocaml-config:standard_library}/digest.cmi
-       %{ocaml-config:standard_library}/lexing.cmi
-       %{ocaml-config:standard_library}/buffer.cmi
+       %{ocaml-config:standard_library}/filename.cmi
+       %{ocaml-config:standard_library}/format.cmi
        %{ocaml-config:standard_library}/hashtbl.cmi
-       %{ocaml-config:standard_library}/set.cmi
-       %{ocaml-config:standard_library}/map.cmi
-       %{ocaml-config:standard_library}/topdirs.cmi
        %{ocaml-config:standard_library}/int32.cmi
-       %{ocaml-config:standard_library}/int64.cmi)
+       %{ocaml-config:standard_library}/int64.cmi
+       %{ocaml-config:standard_library}/lazy.cmi
+       %{ocaml-config:standard_library}/lexing.cmi
+       %{ocaml-config:standard_library}/list.cmi
+       %{ocaml-config:standard_library}/map.cmi
+       %{ocaml-config:standard_library}/marshal.cmi
+       %{ocaml-config:standard_library}/pervasives.cmi
+       %{ocaml-config:standard_library}/printexc.cmi
+       %{ocaml-config:standard_library}/printf.cmi
+       %{ocaml-config:standard_library}/queue.cmi
+       %{ocaml-config:standard_library}/random.cmi
+       %{ocaml-config:standard_library}/scanf.cmi
+       %{ocaml-config:standard_library}/set.cmi
+       %{ocaml-config:standard_library}/stack.cmi
+       %{ocaml-config:standard_library}/string.cmi
+       %{ocaml-config:standard_library}/sys.cmi
+       %{ocaml-config:standard_library}/uchar.cmi
+       %{ocaml-config:standard_library}/weak.cmi )
  (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
