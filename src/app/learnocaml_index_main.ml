@@ -612,24 +612,20 @@ let init_token_dialog () =
   let create_token () =
     let nickname = String.trim (Manip.value input_nick) in
     if Token.check nickname || String.length nickname < 2 then
-      begin
-        Manip.SetCss.borderColor input_nick "#f44";
-        Lwt.return_none
-      end
+      (Manip.SetCss.borderColor input_nick "#f44";
+       Lwt.return_none)
     else
-      begin
-        let secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
-        retrieve (Learnocaml_api.Nonce ())
-        >>= fun nonce ->
-        let secret = Sha.sha512 (nonce ^ secret) in
-        (Learnocaml_local_storage.(store nickname) nickname;
-         retrieve
-           (Learnocaml_api.Create_token (secret, None, Some nickname))
-         >>= fun token ->
-         Learnocaml_local_storage.(store sync_token) token;
-         show_token_dialog token;
-         Lwt.return_some (token, nickname))
-      end
+      let secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
+      let secret = Sha.sha512 (nonce ^ secret) in
+      (Learnocaml_local_storage.(store nickname) nickname;
+       retrieve
+         (Learnocaml_api.Create_token (secret, None, Some nickname))
+       >>= fun token ->
+       Learnocaml_local_storage.(store sync_token) token;
+       show_token_dialog token;
+       Lwt.return_some (token, nickname))
   in
   let rec login_token () =
     let input = input_tok in
