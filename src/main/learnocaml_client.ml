@@ -26,7 +26,6 @@ module Args = struct
     verbosity: int;
     token: Learnocaml_data.student Learnocaml_data.token option;
     local: bool;
-    set_options: bool;
     fetch: bool;
   }
 
@@ -102,11 +101,6 @@ module Args = struct
       "Generate a configuration file local to the current directory, rather \
        than user-wide"
 
-  let set_options =
-    value & flag & info ["set-options"] ~doc:
-      "Overwrite the configuration file with the command-line options \
-       ($(b,--server), $(b,--token)), and exit"
-
   let fetch =
     value & flag & info ["fetch"] ~doc:
       "Fetch the user's solutions on the server to the current directory and exit"
@@ -114,7 +108,7 @@ module Args = struct
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local set_options fetch =
+        color_when verbose token local fetch =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -129,13 +123,12 @@ module Args = struct
         verbosity = List.length verbose;
         token;
         local;
-        set_options;
         fetch;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $set_options $fetch)
+          $color_when $verbose $token $local $fetch)
 end
 
 module ConfigFile = struct
@@ -582,12 +575,16 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
         | None -> c
         | Some token -> { c with ConfigFile.token}
       in
-      check_server_version c.ConfigFile.server >>= fun () ->
-      (if save_back then
-         ConfigFile.write f c >|= fun () ->
-         Printf.eprintf "Configuration written to %s\n%!" f;
-         exit 0
-       else Lwt.return_unit)
+      check_server_version c.ConfigFile.server
+      >>= fun () ->
+      (
+        if save_back
+        then
+          ConfigFile.write f c >|= fun () ->
+          Printf.eprintf "Configuration written to %s\n%!" f
+        else
+          Lwt.return_unit
+      )
       >|= fun () -> c
   | None -> init ?local ?server:server_opt ?token:token_opt ()
 
@@ -604,9 +601,9 @@ let man p = [
         $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
   ]
 
-let get_config_o o =
+let get_config_o ?save_back o =
   let open Args in
-  get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
+  get_config ~local:o.local ?save_back o.server_url o.token
 
 module Grade = struct
   open Args
@@ -698,7 +695,6 @@ module Grade = struct
 end
 
 module Print_token = struct
-
   let print_tok o =
     get_config_o o
     >>= fun config ->
@@ -718,8 +714,28 @@ module Print_token = struct
       "print-token"
 end
 
+module Set_options = struct
+  let set_opts o =
+    get_config_o ~save_back:true o
+    >|= fun _ -> 0
+
+  let man =  man "Overwrite the configuration file with the command-line options \
+       ($(b,--server), $(b,--token)), and exit"
+
+  let cmd =
+    Cmdliner.Term.(
+      const (fun o -> Pervasives.exit (Lwt_main.run (set_opts o)))
+      $ Args.term),
+    Cmdliner.Term.info
+      ~man
+      ~doc:"Set local configuration and exit"
+      ~version
+      "set-options"
+end
+
 let () =
-  match Cmdliner.Term.eval_choice ~catch:false Grade.cmd [Print_token.cmd]
+  match Cmdliner.Term.eval_choice ~catch:false Grade.cmd
+          [Print_token.cmd; Set_options.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
