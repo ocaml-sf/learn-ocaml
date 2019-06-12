@@ -12,17 +12,64 @@ module Api = Learnocaml_api
 
 let version = Api.version
 
-module Args = struct
+let url_conv =
+  Cmdliner.Arg.conv ~docv:"URL" (
+      (fun s ->
+        try Ok (Uri.of_string s)
+        with e -> Error (`Msg (Printexc.to_string e))),
+      Uri.pp_hum
+    )
+
+let token_conv =
+  Cmdliner.Arg.conv ~docv:"TOKEN" (
+      (fun s ->
+        try Ok (Token.parse s)
+        with Failure msg ->
+          Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
+      (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
+    )
+
+module Args_global = struct
   open Cmdliner
   open Arg
 
-  type global_infos = {
+  type t = {
       server_url: Uri.t option;
       token: Learnocaml_data.student Learnocaml_data.token option;
       local: bool;
     }
 
-  type exercises_infos = {
+  let server_url =
+    value & opt (some url_conv) None &
+    info ["s";"server"] ~docv:"URL" ~doc:
+      "The URL of the learn-ocaml server"
+      ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
+              "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
+
+  let token =
+    value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
+      "Your token on the learn-ocaml server. This is required to submit \
+       solutions"
+      ~env:(Cmdliner.Term.env_info "LEARNOCAML_TOKEN" ~doc:
+              "Sets the learn-ocaml user token on the sever. Overridden by \
+               $(b,--token).")
+
+  let local =
+    value & flag & info ["local"] ~doc:
+      "Generate a configuration file local to the current directory, rather \
+       than user-wide"
+
+  let global server_url token local =
+    {server_url; token; local}
+
+  let term =
+    Term.(const global $server_url $token $local)
+end
+
+module Args_exercises = struct
+  open Cmdliner
+  open Arg
+  type t = {
     solution_file: string option;
     exercise_id: string option;
     output_format: [`Console|`Json|`Html|`Raw];
@@ -30,32 +77,6 @@ module Args = struct
     color: bool;
     verbosity: int;
     }
-
-  type all_infos = (global_infos * exercises_infos)
-
-  let url_conv =
-    conv ~docv:"URL" (
-      (fun s ->
-         try Ok (Uri.of_string s)
-         with e -> Error (`Msg (Printexc.to_string e))),
-      Uri.pp_hum
-    )
-
-  let token_conv =
-    conv ~docv:"TOKEN" (
-      (fun s ->
-         try Ok (Token.parse s)
-         with Failure msg ->
-           Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
-      (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
-    )
-
-  let server_url =
-    value & opt (some url_conv) None &
-    info ["s";"server"] ~docv:"URL" ~doc:
-      "The URL of the learn-ocaml server"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
-            "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
 
   let solution_file =
     value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
@@ -92,22 +113,6 @@ module Args = struct
     value & flag_all & info ["v";"verbose"] ~doc:
       "Be more verbose. Can be repeated"
 
-  let token =
-    value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
-      "Your token on the learn-ocaml server. This is required to submit \
-       solutions"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_TOKEN" ~doc:
-              "Sets the learn-ocaml user token on the sever. Overridden by \
-               $(b,--token).")
-
-  let local =
-    value & flag & info ["local"] ~doc:
-      "Generate a configuration file local to the current directory, rather \
-       than user-wide"
-
-  let global server_url token local =
-    {server_url; token; local}
-
   let exercises solution_file exercise_id output_format dont_submit
         color_when verbose  =
     let color = match color_when with
@@ -123,11 +128,7 @@ module Args = struct
       verbosity = List.length verbose;
     }
 
-  let term_global =
-    Term.(const global
-          $server_url $token $local)
-
-  let term_exercises =
+  let term =
     Term.(const exercises
           $solution_file $exercise_id $output_format $dont_submit
           $color_when $verbose )
@@ -595,14 +596,14 @@ let man p = [
   ]
 
 let get_config_o ?save_back o =
-  let open Args in
+  let open Args_global in
   get_config ~local:o.local ?save_back o.server_url o.token
 
 module Grade = struct
-  open Args
+  open Args_exercises
   let grade go eo =
-    Console.enable_colors := eo.Args.color;
-    Console.enable_utf8 := eo.Args.color;
+    Console.enable_colors := eo.color;
+    Console.enable_utf8 := eo.color;
     get_config_o go
     >>= fun { ConfigFile.server; token } ->
     let status_line =
@@ -676,7 +677,7 @@ module Grade = struct
   let cmd =
     Cmdliner.Term.(
       const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
-      $ Args.term_global $ Args.term_exercises),
+      $ Args_global.term $ Args_exercises.term),
     Cmdliner.Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "grade"
@@ -694,7 +695,7 @@ module Print_token = struct
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (print_tok o)))
-      $ Args.term_global),
+      $ Args_global.term),
     Cmdliner.Term.info ~version ~man
       ~doc:"Just print the configured user token and exit"
       "print-token"
@@ -713,7 +714,7 @@ module Set_options = struct
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (set_opts o)))
-      $ Args.term_global),
+      $ Args_global.term),
     Cmdliner.Term.info ~version ~man
       ~doc:"Set local configuration and exit"
       "set-options"
@@ -743,7 +744,7 @@ module Fetch = struct
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (fetch o)))
-      $ Args.term_global),
+      $ Args_global.term),
     Cmdliner.Term.info ~version ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
@@ -757,7 +758,7 @@ module Main = struct
   let cmd =
     Cmdliner.Term.(
       const (fun go eo -> Pervasives.exit (Lwt_main.run (Grade.grade go eo)))
-      $ Args.term_global $ Args.term_exercises),
+      $ Args_global.term $ Args_exercises.term),
     Cmdliner.Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "learn-ocaml-client"
