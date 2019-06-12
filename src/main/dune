@@ -34,6 +34,7 @@
             cohttp.lwt
             grading_cli
             learnocaml_data
+	    learnocaml_store
             learnocaml_api)
 )
 

@@ -10,51 +10,93 @@ open Learnocaml_data
 open Lwt.Infix
 module Api = Learnocaml_api
 
+open Cmdliner
+open Arg
+
 let version = Api.version
 
-module Args = struct
-  open Cmdliner
-  open Arg
+let url_conv =
+  conv ~docv:"URL" (
+      (fun s ->
+        try Ok (Uri.of_string s)
+        with e -> Error (`Msg (Printexc.to_string e))),
+      Uri.pp_hum
+    )
 
+let token_conv =
+  conv ~docv:"TOKEN" (
+      (fun s ->
+        try Ok (Token.parse s)
+        with Failure msg ->
+          Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
+      (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
+    )
+
+module Args_global = struct
   type t = {
-    server_url: Uri.t option;
+      server_url: Uri.t option;
+      token: Learnocaml_data.student Learnocaml_data.token option;
+      local: bool;
+    }
+
+  let server_url =
+    value & opt (some url_conv) None &
+    info ["s";"server"] ~docv:"URL" ~doc:
+      "The URL of the learn-ocaml server"
+      ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
+              "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
+
+  let token =
+    value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
+      "Your token on the learn-ocaml server. This is required to submit \
+       solutions"
+      ~env:(Term.env_info "LEARNOCAML_TOKEN" ~doc:
+              "Sets the learn-ocaml user token on the sever. Overridden by \
+               $(b,--token).")
+
+  let local =
+    value & flag & info ["local"] ~doc:
+      "Use a configuration file local to the current directory, rather \
+       than user-wide"
+
+  let apply server_url token local =
+    {server_url; token; local}
+
+  let term =
+    Term.(const apply $server_url $token $local)
+
+  let term_server =
+    Term.(const (fun x -> x) $ server_url)
+end
+
+module Args_create_token = struct
+  type t = {
+      nickname : string option;
+      secret : string;
+    }
+
+  let nickname =
+    value & pos 0 (some string) None & info [] ~docv:"NICKNAME" ~doc:
+      "The desired nickname"
+
+  let secret =
+    value & pos 1 string "" & info [] ~docv:"SECRET" ~doc:
+      "The secret. If not provided, use \"\" as a secret"
+
+  let apply nickname secret = {nickname; secret}
+
+  let term = Term.(const apply $ nickname $ secret)
+end
+
+module Args_exercises = struct
+  type t = {
     solution_file: string option;
     exercise_id: string option;
     output_format: [`Console|`Json|`Html|`Raw];
     submit: bool;
     color: bool;
     verbosity: int;
-    token: Learnocaml_data.student Learnocaml_data.token option;
-    local: bool;
-    set_options: bool;
-    print_token: bool;
-    fetch: bool;
-    version: bool;
-  }
-
-  let url_conv =
-    conv ~docv:"URL" (
-      (fun s ->
-         try Ok (Uri.of_string s)
-         with e -> Error (`Msg (Printexc.to_string e))),
-      Uri.pp_hum
-    )
-
-  let token_conv =
-    conv ~docv:"TOKEN" (
-      (fun s ->
-         try Ok (Token.parse s)
-         with Failure msg ->
-           Error (`Msg (Printf.sprintf "Invalid token %s: %s" s msg))),
-      (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
-    )
-
-  let server_url =
-    value & opt (some url_conv) None &
-    info ["s";"server"] ~docv:"URL" ~doc:
-      "The URL of the learn-ocaml server"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
-            "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
+    }
 
   let solution_file =
     value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
@@ -91,64 +133,25 @@ module Args = struct
     value & flag_all & info ["v";"verbose"] ~doc:
       "Be more verbose. Can be repeated"
 
-  let token =
-    value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
-      "Your token on the learn-ocaml server. This is required to submit \
-       solutions"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_TOKEN" ~doc:
-              "Sets the learn-ocaml user token on the sever. Overridden by \
-               $(b,--token).")
-
-  let local =
-    value & flag & info ["local"] ~doc:
-      "Generate a configuration file local to the current directory, rather \
-       than user-wide"
-
-  let set_options =
-    value & flag & info ["set-options"] ~doc:
-      "Overwrite the configuration file with the command-line options \
-       ($(b,--server), $(b,--token)), and exit"
-
-  let print_token =
-    value & flag & info ["print-token"] ~doc:
-      "Just print the configured user token and exit"
-
-  let fetch =
-    value & flag & info ["fetch"] ~doc:
-      "Fetch the user's solutions on the server to the current directory and exit"
-
-  let version =
-    value & flag & info ["version"] ~doc:
-      "Print the version of this program and exit"
+  let apply solution_file exercise_id output_format dont_submit
+        color_when verbose  =
+    let color = match color_when with
+      | Some o -> o
+      | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
+    in
+    {
+      solution_file;
+      exercise_id;
+      output_format;
+      submit = not dont_submit;
+      color;
+      verbosity = List.length verbose;
+    }
 
   let term =
-    let apply
-        server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local set_options print_token fetch version =
-      let color = match color_when with
-        | Some o -> o
-        | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
-      in
-      {
-        server_url;
-        solution_file;
-        exercise_id;
-        output_format;
-        submit = not dont_submit;
-        color;
-        verbosity = List.length verbose;
-        token;
-        local;
-        set_options;
-        print_token;
-        fetch;
-        version;
-      }
-    in
     Term.(const apply
-          $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $set_options $print_token $fetch
-          $version)
+          $solution_file $exercise_id $output_format $dont_submit
+          $color_when $verbose )
 end
 
 module ConfigFile = struct
@@ -400,22 +403,7 @@ let console_report ?(verbose=false) ex report =
   List.iter (fun i -> print_endline (format_item i)) report;
   print_newline ()
 
-(* fixme: copied from Learnocaml_store *)
-module Json_codec = struct
-  let decode enc s =
-    (match s with
-     | "" -> `O []
-     | s -> Ezjsonm.from_string s)
-    |> Json_encoding.destruct enc
-
-  let encode ?minify:_ enc x =
-    match Json_encoding.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string json
-    | `Null -> ""
-    | _ -> assert false
-end
-
-module Api_client = Learnocaml_api.Client (Json_codec)
+module Api_client = Learnocaml_api.Client (Learnocaml_store.Json_codec)
 
 let fetch server_url req =
   let url path args =
@@ -455,15 +443,6 @@ let fetch_exercise server_url token id =
         id
   | e -> Lwt.fail e
 
-let fetch_save server_url token =
-  Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
-  @@ function
-  | Not_found ->
-      Printf.ksprintf Lwt.fail_with
-        "Token %S not found on the server."
-        (Token.to_string token)
-  | e -> Lwt.fail e
-
 let upload_save server_url token save =
   Lwt.catch (fun () -> fetch server_url (Api.Update_save (token, save)))
   @@ function
@@ -471,18 +450,6 @@ let upload_save server_url token save =
       Printf.ksprintf Lwt.fail_with
         "Could not upload the results to the server: %s"
         (match e with Failure s -> s | e -> Printexc.to_string e)
-
-let write_save_files save =
-  Lwt_list.iter_s (fun (id, st) ->
-      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
-      if Sys.file_exists f then
-        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-         Lwt.return_unit)
-      else
-        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
-        Lwt_io.write oc st.Answer.solution >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f)
-    (SMap.bindings (save.Save.all_exercise_states))
 
 let upload_report server token ex solution report =
   let score = get_score report in
@@ -529,28 +496,29 @@ let check_server_version server =
      | e -> Printexc.to_string e);
   exit 1
 
+let get_server =
+  let default_server = Uri.of_string "http://learn-ocaml.org" in
+  function
+  | Some s -> s
+  | None ->
+     Printf.eprintf
+       "Please specify the address of the learn-ocaml server to use \
+        [default: %s]: " (Uri.to_string default_server);
+     let uri s =
+       let u = Uri.of_string s in
+       match Uri.scheme u with
+       | None -> Uri.with_scheme u (Some "http")
+       | Some ("http" (* | "https" *)) -> u
+       | Some s ->
+          failwith (Printf.sprintf
+                      "unsupported scheme %S, please use http://."
+                      s)
+     in
+     Console.input ~default:default_server uri
+
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
-  let default_server = Uri.of_string "http://learn-ocaml.org" in
-  let server =
-    match server with
-    | Some s -> s
-    | None ->
-        Printf.eprintf
-          "Please specify the address of the learn-ocaml server to use \
-           [default: %s]: " (Uri.to_string default_server);
-        let uri s =
-          let u = Uri.of_string s in
-          match Uri.scheme u with
-          | None -> Uri.with_scheme u (Some "http")
-          | Some ("http" (* | "https" *)) -> u
-          | Some s ->
-              failwith (Printf.sprintf
-                          "unsupported scheme %S, please use http://."
-                          s)
-        in
-        Console.input ~default:default_server uri
-  in
+  let server = get_server server in
   let get_new_token nickname =
     Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
@@ -595,117 +563,240 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
         | None -> c
         | Some token -> { c with ConfigFile.token}
       in
-      check_server_version c.ConfigFile.server >>= fun () ->
-      (if save_back then
-         ConfigFile.write f c >|= fun () ->
-         Printf.eprintf "Configuration written to %s\n%!" f;
-         exit 0
-       else Lwt.return_unit)
+      check_server_version c.ConfigFile.server
+      >>= fun () ->
+      (
+        if save_back
+        then
+          ConfigFile.write f c >|= fun () ->
+          Printf.eprintf "Configuration written to %s\n%!" f
+        else
+          Lwt.return_unit
+      )
       >|= fun () -> c
   | None -> init ?local ?server:server_opt ?token:token_opt ()
 
-let main o =
-  Console.enable_colors := o.Args.color;
-  Console.enable_utf8 := o.Args.color;
-  if o.Args.version then
-    (print_endline version; exit 0);
-  let open Args in
-  get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
-  >>= fun { ConfigFile.server; token } ->
-  if o.print_token then
-    (print_endline (Token.to_string token);
-     exit 0);
-  (if o.fetch then
-     (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
-   else Lwt.return_unit) >>= fun () ->
-  let status_line =
-    if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
-  in
-  let solution, exercise_id =
-    match o.solution_file, o.exercise_id with
-    | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
-    | Some f, Some id -> f, id
-    | Some f, None ->
-        let id = Filename.remove_extension f in
-        f, id
-  in
-  status_line "Reading solution.";
-  Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
-  >>= fun solution ->
-  status_line "Fetching exercise data from server.";
-  fetch_exercise server token exercise_id
-  >>= fun (_meta, exercise, deadline) ->
-  if deadline = Some 0. then
-    Printf.eprintf
-      "[ERROR] The deadline is expired, you won't be able to submit.\n";
-  Grading_cli.get_grade ~callback:status_line ?timeout:None
-    exercise solution
-  >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
-  flush stderr;
-  let pr col title s =
-    if o.verbosity >= 1 then
-      let s = String.trim s in
-      if s <> "" then
-        prerr_string (Console.block ~title ~border_color:[col] s)
-  in
-  pr `Green "stdout" ex_stdout;
-  pr `Red "stderr" ex_stderr;
-  pr `Cyan "outcome" ex_outcome;
-  if o.verbosity >= 1 then prerr_newline ();
-  match report with
-  | Error e ->
-     let str =
-       match Grading.string_of_exn e with
-       | Some s -> s
-       | None   -> Printexc.to_string e
-     in
-     Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
-     Lwt.return 10
-  | Ok report ->
-      (match o.output_format with
-       | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
-       | `Raw ->
+let man p = [
+    `S "DESCRIPTION";
+    `P p;
+    `S "OPTIONS";
+    `S "AUTHORS";
+    `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
+        Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
+        the MIT License.";
+    `S "BUGS";
+    `P "Bugs should be reported to \
+        $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
+  ]
+
+let get_config_o ?save_back o =
+  let open Args_global in
+  get_config ~local:o.local ?save_back o.server_url o.token
+
+module Grade = struct
+  open Args_exercises
+  let grade go eo =
+    Console.enable_colors := eo.color;
+    Console.enable_utf8 := eo.color;
+    get_config_o go
+    >>= fun { ConfigFile.server; token } ->
+    let status_line =
+      if eo.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
+    in
+    let solution, exercise_id =
+      match eo.solution_file, eo.exercise_id with
+      | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
+      | Some f, Some id -> f, id
+      | Some f, None ->
+         let id = Filename.remove_extension f in
+         f, id
+    in
+    status_line "Reading solution.";
+    Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
+    >>= fun solution ->
+    status_line "Fetching exercise data from server.";
+    fetch_exercise server token exercise_id
+    >>= fun (_meta, exercise, deadline) ->
+    if deadline = Some 0. then
+      Printf.eprintf
+        "[ERROR] The deadline is expired, you won't be able to submit.\n";
+    Grading_cli.get_grade ~callback:status_line ?timeout:None
+      exercise solution
+    >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
+    flush stderr;
+    let pr col title s =
+      if eo.verbosity >= 1 then
+        let s = String.trim s in
+        if s <> "" then
+          prerr_string (Console.block ~title ~border_color:[col] s)
+    in
+    pr `Green "stdout" ex_stdout;
+    pr `Red "stderr" ex_stderr;
+    pr `Cyan "outcome" ex_outcome;
+    if eo.verbosity >= 1 then prerr_newline ();
+    match report with
+    | Error e ->
+       let str =
+         match Grading.string_of_exn e with
+         | Some s -> s
+         | None   -> Printexc.to_string e
+       in
+       Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
+       Lwt.return 10
+    | Ok report ->
+       (match eo.output_format with
+        | `Console -> console_report ~verbose:(eo.verbosity > 0) exercise report
+        | `Raw ->
            Report.print Format.std_formatter report
-       | `Html ->
+        | `Html ->
            Report.output_html Format.std_formatter report
-       | `Json ->
+        | `Json ->
            match Json_encoding.construct Report.enc report
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
-      if deadline = Some 0. then
-        (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
-         Lwt.return 1)
+       if deadline = Some 0. then
+         (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
+          Lwt.return 1)
+       else
+         upload_report server token exercise solution report >>= fun _ ->
+         Printf.eprintf "Results saved to server\n";
+         Lwt.return 0
+
+  let man =
+    man
+      "Grades an OCaml exercise using a learn-ocaml server, and submits \
+        solutions."
+
+  let cmd =
+    Term.(
+      const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
+      $ Args_global.term $ Args_exercises.term),
+    Term.info ~man
+      ~doc:"Learn-ocaml grading client"
+      "grade"
+end
+
+let use_global f =
+  Term.(
+    const (fun o -> Pervasives.exit (Lwt_main.run (f o)))
+    $ Args_global.term)
+
+module Print_token = struct
+  let print_tok o =
+    get_config_o o
+    >>= fun config ->
+    Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
+    >|= fun () -> 0
+
+  let man = man "Just print the configured user token"
+
+  let cmd =
+    use_global print_tok,
+    Term.info ~man
+      ~doc:"Just print the configured user token"
+      "print-token"
+end
+
+module Set_options = struct
+  let set_opts o =
+    get_config_o ~save_back:true o
+    >|= fun _ -> 0
+
+  let man =
+    man
+      "Overwrite the configuration file with the command-line options \
+       ($(b,--server), $(b,--token))"
+
+  let cmd =
+    use_global set_opts,
+    Term.info ~man
+      ~doc:"Set configuration"
+      "set-options"
+end
+
+module Fetch = struct
+  let fetch_save server_url token =
+    Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
+    @@ function
+      | Not_found ->
+         Printf.ksprintf Lwt.fail_with
+           "Token %S not found on the server."
+           (Token.to_string token)
+      | e -> Lwt.fail e
+
+  let write_save_files save =
+  Lwt_list.iter_s (fun (id, st) ->
+      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
+      if Sys.file_exists f then
+        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+         Lwt.return_unit)
       else
-        upload_report server token exercise solution report >>= fun _ ->
-        Printf.eprintf "Results saved to server\n";
-        Lwt.return 0
+        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
+        Lwt_io.write oc st.Answer.solution >|= fun () ->
+        Printf.eprintf "Wrote file %s\n%!" f)
+    (SMap.bindings (save.Save.all_exercise_states))
 
-let man = [
-  `S "DESCRIPTION";
-  `P "Grades an OCaml exercise using a learn-ocaml server, and submits \
-      solutions.";
-  `S "OPTIONS";
-  `S "AUTHORS";
-  `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
-      Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
-      the MIT License.";
-  `S "BUGS";
-  `P "Bugs should be reported to \
-      $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
-]
+  let fetch o =
+    get_config_o o
+    >>= fun { ConfigFile.server; token } ->
+    fetch_save server token
+    >>= write_save_files
+    >|= fun () -> 0
 
-let main_cmd =
-  Cmdliner.Term.(
-    const (fun o -> Pervasives.exit (Lwt_main.run (main o)))
-    $ Args.term),
-  Cmdliner.Term.info
-    ~man
-    ~doc:"Learn-ocaml grading client"
-    "learn-ocaml-client"
+  let man =
+    man
+      "Fetch the user's solutions on the server to the current directory"
+
+  let cmd =
+    use_global fetch,
+    Term.info ~man
+      ~doc:"Fetch the user's solutions"
+      "fetch"
+end
+
+module Create_token = struct
+  open Args_global
+  open Args_create_token
+
+  let create_tok server_url co =
+    match co.nickname with
+    | None -> Lwt_io.print "You must provide a nickname\n"
+              >|= fun () -> 2
+    | Some nickname ->
+       let server = get_server server_url in
+       fetch server
+         (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
+       >>= fun tok ->
+       Lwt_io.print (Token.to_string tok ^ "\n")
+       >|= fun () -> 0
+
+  let man = man "Create a token on the server with the desired nickname.\
+                 Prodiving a token will test if it exists on the server"
+
+  let cmd =
+    Term.(
+      const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
+      $ Args_global.term_server $ Args_create_token.term),
+    Term.info ~man
+      ~doc:"Create a token"
+      "create-token"
+end
+
+module Main = struct
+  let man =
+    man
+      "Learn-ocaml-client, default command is grade"
+
+  let cmd = fst Grade.cmd,
+    Term.info ~version ~man
+      ~doc:"Learn-ocaml grading client"
+      "learn-ocaml-client"
+end
 
 let () =
-  match Cmdliner.Term.eval ~catch:false main_cmd
+  match Term.eval_choice ~catch:false Main.cmd
+          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd; Create_token.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
