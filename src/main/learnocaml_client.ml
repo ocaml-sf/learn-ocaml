@@ -671,6 +671,11 @@ module Grade = struct
       "grade"
 end
 
+let use_global f =
+  Cmdliner.Term.(
+    const (fun o -> Pervasives.exit (Lwt_main.run (f o)))
+    $ Args_global.term)
+
 module Print_token = struct
   let print_tok o =
     get_config_o o
@@ -681,9 +686,7 @@ module Print_token = struct
   let man = man "Just print the configured user token and exit"
 
   let cmd =
-    Cmdliner.Term.(
-      const (fun o -> Pervasives.exit (Lwt_main.run (print_tok o)))
-      $ Args_global.term),
+    use_global print_tok,
     Cmdliner.Term.info ~version ~man
       ~doc:"Just print the configured user token and exit"
       "print-token"
@@ -700,9 +703,7 @@ module Set_options = struct
        ($(b,--server), $(b,--token)), and exit"
 
   let cmd =
-    Cmdliner.Term.(
-      const (fun o -> Pervasives.exit (Lwt_main.run (set_opts o)))
-      $ Args_global.term),
+    use_global set_opts,
     Cmdliner.Term.info ~version ~man
       ~doc:"Set local configuration and exit"
       "set-options"
@@ -742,9 +743,7 @@ module Fetch = struct
       "Fetch the user's solutions on the server to the current directory and exit"
 
   let cmd =
-    Cmdliner.Term.(
-      const (fun o -> Pervasives.exit (Lwt_main.run (fetch o)))
-      $ Args_global.term),
+    use_global fetch,
     Cmdliner.Term.info ~version ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
@@ -755,10 +754,7 @@ module Main = struct
     man
       "Learn-ocaml-client, default action is grading"
 
-  let cmd =
-    Cmdliner.Term.(
-      const (fun go eo -> Pervasives.exit (Lwt_main.run (Grade.grade go eo)))
-      $ Args_global.term $ Args_exercises.term),
+  let cmd = fst Grade.cmd,
     Cmdliner.Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "learn-ocaml-client"
