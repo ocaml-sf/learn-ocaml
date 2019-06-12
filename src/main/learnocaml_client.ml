@@ -749,9 +749,23 @@ module Fetch = struct
       "fetch"
 end
 
+module Main = struct
+  let man =
+    man
+      "Learn-ocaml-client, default action is grading"
+
+  let cmd =
+    Cmdliner.Term.(
+      const (fun go eo -> Pervasives.exit (Lwt_main.run (Grade.grade go eo)))
+      $ Args.term_global $ Args.term_exercises),
+    Cmdliner.Term.info ~version ~man
+      ~doc:"Learn-ocaml grading client"
+      "learn-ocaml-client"
+end
+
 let () =
-  match Cmdliner.Term.eval_choice ~catch:false Grade.cmd
-          [Print_token.cmd; Set_options.cmd; Fetch.cmd]
+  match Cmdliner.Term.eval_choice ~catch:false Main.cmd
+          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
