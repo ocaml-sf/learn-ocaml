@@ -184,7 +184,6 @@ module Request_handler = struct
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
   let string_of_endp =
-    let open Conduit in
     function
     | `TCP (i,_) -> Ipaddr.to_string i
     | _ -> "" (* TODO ? *)
