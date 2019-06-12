@@ -201,7 +201,7 @@ module Request_handler = struct
            match Hashtbl.find_opt nonce_req conn with
            | Some x -> respond_json cache x
            | None ->
-              let nonce = String.init 10 (fun _ -> alphanum.[Random.int alphanum_len]) in
+              let nonce = String.init 20 (fun _ -> alphanum.[Random.int alphanum_len]) in
               Hashtbl.add nonce_req conn nonce;
               respond_json cache nonce
          end
