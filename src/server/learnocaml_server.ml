@@ -209,7 +209,7 @@ module Request_handler = struct
          begin
            let forbid s = Status {code = `Forbidden; body = s} in
            match Hashtbl.find_opt nonce_req conn with
-           | None -> Lwt.return (forbid "No registered token for your IP adress")
+           | None -> Lwt.return (forbid "No registered token for your IP address")
            | Some nonce ->
               Hashtbl.remove nonce_req conn;
               let know_secret =
