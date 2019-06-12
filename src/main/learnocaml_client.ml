@@ -698,6 +698,23 @@ module Print_token = struct
       "print-token"
 end
 
+module Print_server = struct
+  let print_server o =
+    get_config_o o
+    >>= fun config ->
+    Lwt_io.printl (Uri.to_string config.ConfigFile.server)
+    >|= fun () -> 0
+                
+  let explanation = "Just print the configured server"
+                  
+  let man = man explanation
+          
+  let cmd =
+    use_global print_server,
+    Term.info ~man ~doc:explanation "print-server"
+    
+end
+                    
 module Set_options = struct
   let set_opts o =
     get_config_o ~save_back:true o
@@ -796,7 +813,7 @@ end
 
 let () =
   match Term.eval_choice ~catch:false Main.cmd
-          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd; Create_token.cmd]
+          [Grade.cmd; Print_token.cmd; Print_server.cmd; Set_options.cmd; Fetch.cmd; Create_token.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
