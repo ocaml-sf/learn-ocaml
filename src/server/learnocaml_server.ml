@@ -200,16 +200,16 @@ module Request_handler = struct
          end
       | Api.Create_token (secret_candidate, None, nick) ->
          begin
-           let bad_req = Status {code = `Forbidden; body = "Bad secret"} in
+           let forbid s = Status {code = `Forbidden; body = s} in
            match Hashtbl.find_opt nonce_req conn with
-           | None -> Lwt.return bad_req
+           | None -> Lwt.return (forbid "No registered token")
            | Some nonce ->
               let know_secret =
                 match secret with
                 | None -> true
                 | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
               if not know_secret
-              then Lwt.return bad_req
+              then Lwt.return (forbid "Bad secret")
               else
                 Token.create_student () >>= fun tok ->
                 (match nick with | None -> Lwt.return_unit
