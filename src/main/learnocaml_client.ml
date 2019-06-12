@@ -69,7 +69,7 @@ end
 module Args_create_token = struct
   type t = {
       nickname : string option;
-      secret : string option;
+      secret : string;
     }
 
   let nickname =
@@ -77,7 +77,7 @@ module Args_create_token = struct
       "The desired nickname"
 
   let secret =
-    value & pos 1 (some string) None & info [] ~docv:"SECRET" ~doc:
+    value & pos 1 string "" & info [] ~docv:"SECRET" ~doc:
       "The secret"
 
   let apply nickname secret = {nickname; secret}
@@ -493,28 +493,29 @@ let check_server_version server =
      | e -> Printexc.to_string e);
   exit 1
 
+let get_server =
+  let default_server = Uri.of_string "http://learn-ocaml.org" in
+  function
+  | Some s -> s
+  | None ->
+     Printf.eprintf
+       "Please specify the address of the learn-ocaml server to use \
+        [default: %s]: " (Uri.to_string default_server);
+     let uri s =
+       let u = Uri.of_string s in
+       match Uri.scheme u with
+       | None -> Uri.with_scheme u (Some "http")
+       | Some ("http" (* | "https" *)) -> u
+       | Some s ->
+          failwith (Printf.sprintf
+                      "unsupported scheme %S, please use http://."
+                      s)
+     in
+     Console.input ~default:default_server uri
+
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
-  let default_server = Uri.of_string "http://learn-ocaml.org" in
-  let server =
-    match server with
-    | Some s -> s
-    | None ->
-        Printf.eprintf
-          "Please specify the address of the learn-ocaml server to use \
-           [default: %s]: " (Uri.to_string default_server);
-        let uri s =
-          let u = Uri.of_string s in
-          match Uri.scheme u with
-          | None -> Uri.with_scheme u (Some "http")
-          | Some ("http" (* | "https" *)) -> u
-          | Some s ->
-              failwith (Printf.sprintf
-                          "unsupported scheme %S, please use http://."
-                          s)
-        in
-        Console.input ~default:default_server uri
-  in
+  let server = get_server server in
   let get_new_token nickname =
     Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
@@ -751,6 +752,33 @@ module Fetch = struct
       "fetch"
 end
 
+module Create_token = struct
+  open Args_global
+  open Args_create_token
+
+  let create_tok go co =
+    match co.nickname with
+    | None -> Lwt_io.print "You must provide a nickname\n"
+              >|= fun () -> 2
+    | Some nickname ->
+       let server = get_server go.server_url in
+       fetch server
+         (Api.Create_token (Sha.sha512 co.secret, go.Args_global.token, Some nickname))
+       >>= fun tok ->
+       Lwt_io.print (Token.to_string tok ^ "\n")
+       >|= fun () -> 0
+
+  let man = man "Create a token on the server with the desired nickname"
+
+  let cmd =
+    Term.(
+      const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
+      $ Args_global.term $ Args_create_token.term),
+    Term.info ~version ~man
+      ~doc:"Create a token"
+      "create-token"
+end
+
 module Main = struct
   let man =
     man
@@ -764,7 +792,7 @@ end
 
 let () =
   match Term.eval_choice ~catch:false Main.cmd
-          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd]
+          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd; Create_token.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
