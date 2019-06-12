@@ -26,7 +26,6 @@ module Args = struct
     verbosity: int;
     token: Learnocaml_data.student Learnocaml_data.token option;
     local: bool;
-    fetch: bool;
   }
 
   let url_conv =
@@ -101,14 +100,10 @@ module Args = struct
       "Generate a configuration file local to the current directory, rather \
        than user-wide"
 
-  let fetch =
-    value & flag & info ["fetch"] ~doc:
-      "Fetch the user's solutions on the server to the current directory and exit"
-
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local fetch =
+        color_when verbose token local =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -123,12 +118,11 @@ module Args = struct
         verbosity = List.length verbose;
         token;
         local;
-        fetch;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $fetch)
+          $color_when $verbose $token $local )
 end
 
 module ConfigFile = struct
@@ -612,9 +606,6 @@ module Grade = struct
     Console.enable_utf8 := o.Args.color;
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
-    (if o.fetch then
-       (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
-     else Lwt.return_unit) >>= fun () ->
     let status_line =
       if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
     in
@@ -687,10 +678,8 @@ module Grade = struct
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (grade o)))
       $ Args.term),
-    Cmdliner.Term.info
-      ~man
+    Cmdliner.Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
-      ~version
       "grade"
 end
 
@@ -707,10 +696,8 @@ module Print_token = struct
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (print_tok o)))
       $ Args.term),
-    Cmdliner.Term.info
-      ~man
+    Cmdliner.Term.info ~version ~man
       ~doc:"Just print the configured user token and exit"
-      ~version
       "print-token"
 end
 
@@ -726,16 +713,35 @@ module Set_options = struct
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (set_opts o)))
       $ Args.term),
-    Cmdliner.Term.info
-      ~man
+    Cmdliner.Term.info ~version ~man
       ~doc:"Set local configuration and exit"
-      ~version
       "set-options"
+end
+
+module Fetch = struct
+  let fetch o =
+    get_config_o o
+    >>= fun { ConfigFile.server; token } ->
+    fetch_save server token
+    >>= write_save_files
+    >|= fun () -> 0
+
+  let man =
+    man
+      "Fetch the user's solutions on the server to the current directory and exit"
+
+  let cmd =
+    Cmdliner.Term.(
+      const (fun o -> Pervasives.exit (Lwt_main.run (fetch o)))
+      $ Args.term),
+    Cmdliner.Term.info ~version ~man
+      ~doc:"Fetch the user's solutions"
+      "fetch"
 end
 
 let () =
   match Cmdliner.Term.eval_choice ~catch:false Grade.cmd
-          [Print_token.cmd; Set_options.cmd]
+          [Print_token.cmd; Set_options.cmd; Fetch.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
