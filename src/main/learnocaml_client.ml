@@ -27,7 +27,6 @@ module Args = struct
     token: Learnocaml_data.student Learnocaml_data.token option;
     local: bool;
     set_options: bool;
-    print_token: bool;
     fetch: bool;
   }
 
@@ -108,22 +107,14 @@ module Args = struct
       "Overwrite the configuration file with the command-line options \
        ($(b,--server), $(b,--token)), and exit"
 
-  let print_token =
-    value & flag & info ["print-token"] ~doc:
-      "Just print the configured user token and exit"
-
   let fetch =
     value & flag & info ["fetch"] ~doc:
       "Fetch the user's solutions on the server to the current directory and exit"
 
-  let version =
-    value & flag & info ["version"] ~doc:
-      "Print the version of this program and exit"
-
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local set_options print_token fetch =
+        color_when verbose token local set_options fetch =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -139,13 +130,12 @@ module Args = struct
         token;
         local;
         set_options;
-        print_token;
         fetch;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $set_options $print_token $fetch)
+          $color_when $verbose $token $local $set_options $fetch)
 end
 
 module ConfigFile = struct
@@ -601,107 +591,135 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
       >|= fun () -> c
   | None -> init ?local ?server:server_opt ?token:token_opt ()
 
-let main o =
-  Console.enable_colors := o.Args.color;
-  Console.enable_utf8 := o.Args.color;
+let man p = [
+    `S "DESCRIPTION";
+    `P p;
+    `S "OPTIONS";
+    `S "AUTHORS";
+    `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
+        Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
+        the MIT License.";
+    `S "BUGS";
+    `P "Bugs should be reported to \
+        $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
+  ]
+
+let get_config_o o =
   let open Args in
   get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
-  >>= fun { ConfigFile.server; token } ->
-  if o.print_token then
-    (print_endline (Token.to_string token);
-     exit 0);
-  (if o.fetch then
-     (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
-   else Lwt.return_unit) >>= fun () ->
-  let status_line =
-    if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
-  in
-  let solution, exercise_id =
-    match o.solution_file, o.exercise_id with
-    | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
-    | Some f, Some id -> f, id
-    | Some f, None ->
-        let id = Filename.remove_extension f in
-        f, id
-  in
-  status_line "Reading solution.";
-  Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
-  >>= fun solution ->
-  status_line "Fetching exercise data from server.";
-  fetch_exercise server token exercise_id
-  >>= fun (_meta, exercise, deadline) ->
-  if deadline = Some 0. then
-    Printf.eprintf
-      "[ERROR] The deadline is expired, you won't be able to submit.\n";
-  Grading_cli.get_grade ~callback:status_line ?timeout:None
-    exercise solution
-  >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
-  flush stderr;
-  let pr col title s =
-    if o.verbosity >= 1 then
-      let s = String.trim s in
-      if s <> "" then
-        prerr_string (Console.block ~title ~border_color:[col] s)
-  in
-  pr `Green "stdout" ex_stdout;
-  pr `Red "stderr" ex_stderr;
-  pr `Cyan "outcome" ex_outcome;
-  if o.verbosity >= 1 then prerr_newline ();
-  match report with
-  | Error e ->
-     let str =
-       match Grading.string_of_exn e with
-       | Some s -> s
-       | None   -> Printexc.to_string e
-     in
-     Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
-     Lwt.return 10
-  | Ok report ->
-      (match o.output_format with
-       | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
-       | `Raw ->
+
+module Grade = struct
+  open Args
+  let grade o =
+    Console.enable_colors := o.Args.color;
+    Console.enable_utf8 := o.Args.color;
+    get_config_o o
+    >>= fun { ConfigFile.server; token } ->
+    (if o.fetch then
+       (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
+     else Lwt.return_unit) >>= fun () ->
+    let status_line =
+      if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
+    in
+    let solution, exercise_id =
+      match o.solution_file, o.exercise_id with
+      | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
+      | Some f, Some id -> f, id
+      | Some f, None ->
+         let id = Filename.remove_extension f in
+         f, id
+    in
+    status_line "Reading solution.";
+    Lwt_io.with_file ~mode:Lwt_io.Input solution Lwt_io.read
+    >>= fun solution ->
+    status_line "Fetching exercise data from server.";
+    fetch_exercise server token exercise_id
+    >>= fun (_meta, exercise, deadline) ->
+    if deadline = Some 0. then
+      Printf.eprintf
+        "[ERROR] The deadline is expired, you won't be able to submit.\n";
+    Grading_cli.get_grade ~callback:status_line ?timeout:None
+      exercise solution
+    >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
+    flush stderr;
+    let pr col title s =
+      if o.verbosity >= 1 then
+        let s = String.trim s in
+        if s <> "" then
+          prerr_string (Console.block ~title ~border_color:[col] s)
+    in
+    pr `Green "stdout" ex_stdout;
+    pr `Red "stderr" ex_stderr;
+    pr `Cyan "outcome" ex_outcome;
+    if o.verbosity >= 1 then prerr_newline ();
+    match report with
+    | Error e ->
+       let str =
+         match Grading.string_of_exn e with
+         | Some s -> s
+         | None   -> Printexc.to_string e
+       in
+       Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
+       Lwt.return 10
+    | Ok report ->
+       (match o.output_format with
+        | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
+        | `Raw ->
            Report.print Format.std_formatter report
-       | `Html ->
+        | `Html ->
            Report.output_html Format.std_formatter report
-       | `Json ->
+        | `Json ->
            match Json_encoding.construct Report.enc report
            with
            | `O _ | `A _ as json -> Ezjsonm.to_channel ~minify:false stdout json
            | _ -> assert false);
-      if deadline = Some 0. then
-        (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
-         Lwt.return 1)
-      else
-        upload_report server token exercise solution report >>= fun _ ->
-        Printf.eprintf "Results saved to server\n";
-        Lwt.return 0
+       if deadline = Some 0. then
+         (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
+          Lwt.return 1)
+       else
+         upload_report server token exercise solution report >>= fun _ ->
+         Printf.eprintf "Results saved to server\n";
+         Lwt.return 0
 
-let man = [
-  `S "DESCRIPTION";
-  `P "Grades an OCaml exercise using a learn-ocaml server, and submits \
-      solutions.";
-  `S "OPTIONS";
-  `S "AUTHORS";
-  `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
-      Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
-      the MIT License.";
-  `S "BUGS";
-  `P "Bugs should be reported to \
-      $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
-]
+  let man =
+    man
+      "Grades an OCaml exercise using a learn-ocaml server, and submits \
+        solutions."
 
-let main_cmd =
-  Cmdliner.Term.(
-    const (fun o -> Pervasives.exit (Lwt_main.run (main o)))
-    $ Args.term),
-  Cmdliner.Term.info
-    ~man
-    ~doc:"Learn-ocaml grading client"
-    ~version
-    "learn-ocaml-client"
+  let cmd =
+    Cmdliner.Term.(
+      const (fun o -> Pervasives.exit (Lwt_main.run (grade o)))
+      $ Args.term),
+    Cmdliner.Term.info
+      ~man
+      ~doc:"Learn-ocaml grading client"
+      ~version
+      "grade"
+end
+
+module Print_token = struct
+
+  let print_tok o =
+    get_config_o o
+    >>= fun config ->
+    Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
+    >|= fun () -> 0
+
+  let man = man "Just print the configured user token and exit"
+
+  let cmd =
+    Cmdliner.Term.(
+      const (fun o -> Pervasives.exit (Lwt_main.run (print_tok o)))
+      $ Args.term),
+    Cmdliner.Term.info
+      ~man
+      ~doc:"Just print the configured user token and exit"
+      ~version
+      "print-token"
+end
 
 let () =
-  match Cmdliner.Term.eval ~catch:false main_cmd
+  match Cmdliner.Term.eval_choice ~catch:false Grade.cmd [Print_token.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
