@@ -64,6 +64,9 @@ module Args_global = struct
 
   let term =
     Term.(const apply $server_url $token $local)
+
+  let term_server =
+    Term.(const (fun x -> x) $ server_url)
 end
 
 module Args_create_token = struct
@@ -756,24 +759,25 @@ module Create_token = struct
   open Args_global
   open Args_create_token
 
-  let create_tok go co =
+  let create_tok server_url co =
     match co.nickname with
     | None -> Lwt_io.print "You must provide a nickname\n"
               >|= fun () -> 2
     | Some nickname ->
-       let server = get_server go.server_url in
+       let server = get_server server_url in
        fetch server
-         (Api.Create_token (Sha.sha512 co.secret, go.Args_global.token, Some nickname))
+         (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
        >>= fun tok ->
        Lwt_io.print (Token.to_string tok ^ "\n")
        >|= fun () -> 0
 
-  let man = man "Create a token on the server with the desired nickname"
+  let man = man "Create a token on the server with the desired nickname.\
+                 Prodiving a token will test if it exists on the server"
 
   let cmd =
     Term.(
       const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
-      $ Args_global.term $ Args_create_token.term),
+      $ Args_global.term_server $ Args_create_token.term),
     Term.info ~man
       ~doc:"Create a token"
       "create-token"
