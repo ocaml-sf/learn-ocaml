@@ -29,7 +29,6 @@ module Args = struct
     set_options: bool;
     print_token: bool;
     fetch: bool;
-    version: bool;
   }
 
   let url_conv =
@@ -124,7 +123,7 @@ module Args = struct
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local set_options print_token fetch version =
+        color_when verbose token local set_options print_token fetch =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -142,13 +141,11 @@ module Args = struct
         set_options;
         print_token;
         fetch;
-        version;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $set_options $print_token $fetch
-          $version)
+          $color_when $verbose $token $local $set_options $print_token $fetch)
 end
 
 module ConfigFile = struct
@@ -607,8 +604,6 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
 let main o =
   Console.enable_colors := o.Args.color;
   Console.enable_utf8 := o.Args.color;
-  if o.Args.version then
-    (print_endline version; exit 0);
   let open Args in
   get_config ~local:o.local ~save_back:o.set_options o.server_url o.token
   >>= fun { ConfigFile.server; token } ->
@@ -702,6 +697,7 @@ let main_cmd =
   Cmdliner.Term.info
     ~man
     ~doc:"Learn-ocaml grading client"
+    ~version
     "learn-ocaml-client"
 
 let () =
