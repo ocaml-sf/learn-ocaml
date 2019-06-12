@@ -56,7 +56,7 @@ module Args_global = struct
 
   let local =
     value & flag & info ["local"] ~doc:
-      "Generate a configuration file local to the current directory, rather \
+      "Use a configuration file local to the current directory, rather \
        than user-wide"
 
   let apply server_url token local =
@@ -78,7 +78,7 @@ module Args_create_token = struct
 
   let secret =
     value & pos 1 string "" & info [] ~docv:"SECRET" ~doc:
-      "The secret"
+      "The secret. If not provided, use \"\" as a secret"
 
   let apply nickname secret = {nickname; secret}
 
@@ -669,7 +669,7 @@ module Grade = struct
     Term.(
       const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
       $ Args_global.term $ Args_exercises.term),
-    Term.info ~version ~man
+    Term.info ~man
       ~doc:"Learn-ocaml grading client"
       "grade"
 end
@@ -686,12 +686,12 @@ module Print_token = struct
     Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
     >|= fun () -> 0
 
-  let man = man "Just print the configured user token and exit"
+  let man = man "Just print the configured user token"
 
   let cmd =
     use_global print_tok,
-    Term.info ~version ~man
-      ~doc:"Just print the configured user token and exit"
+    Term.info ~man
+      ~doc:"Just print the configured user token"
       "print-token"
 end
 
@@ -703,12 +703,12 @@ module Set_options = struct
   let man =
     man
       "Overwrite the configuration file with the command-line options \
-       ($(b,--server), $(b,--token)), and exit"
+       ($(b,--server), $(b,--token))"
 
   let cmd =
     use_global set_opts,
-    Term.info ~version ~man
-      ~doc:"Set local configuration and exit"
+    Term.info ~man
+      ~doc:"Set configuration"
       "set-options"
 end
 
@@ -743,11 +743,11 @@ module Fetch = struct
 
   let man =
     man
-      "Fetch the user's solutions on the server to the current directory and exit"
+      "Fetch the user's solutions on the server to the current directory"
 
   let cmd =
     use_global fetch,
-    Term.info ~version ~man
+    Term.info ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
 end
@@ -774,7 +774,7 @@ module Create_token = struct
     Term.(
       const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
       $ Args_global.term $ Args_create_token.term),
-    Term.info ~version ~man
+    Term.info ~man
       ~doc:"Create a token"
       "create-token"
 end
@@ -782,7 +782,7 @@ end
 module Main = struct
   let man =
     man
-      "Learn-ocaml-client, default action is grading"
+      "Learn-ocaml-client, default command is grade"
 
   let cmd = fst Grade.cmd,
     Term.info ~version ~man
