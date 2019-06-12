@@ -16,17 +16,22 @@ module Args = struct
   open Cmdliner
   open Arg
 
-  type t = {
-    server_url: Uri.t option;
+  type global_infos = {
+      server_url: Uri.t option;
+      token: Learnocaml_data.student Learnocaml_data.token option;
+      local: bool;
+    }
+
+  type exercises_infos = {
     solution_file: string option;
     exercise_id: string option;
     output_format: [`Console|`Json|`Html|`Raw];
     submit: bool;
     color: bool;
     verbosity: int;
-    token: Learnocaml_data.student Learnocaml_data.token option;
-    local: bool;
-  }
+    }
+
+  type all_infos = (global_infos * exercises_infos)
 
   let url_conv =
     conv ~docv:"URL" (
@@ -100,29 +105,32 @@ module Args = struct
       "Generate a configuration file local to the current directory, rather \
        than user-wide"
 
-  let term =
-    let apply
-        server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local =
-      let color = match color_when with
-        | Some o -> o
-        | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
-      in
-      {
-        server_url;
-        solution_file;
-        exercise_id;
-        output_format;
-        submit = not dont_submit;
-        color;
-        verbosity = List.length verbose;
-        token;
-        local;
-      }
+  let global server_url token local =
+    {server_url; token; local}
+
+  let exercises solution_file exercise_id output_format dont_submit
+        color_when verbose  =
+    let color = match color_when with
+      | Some o -> o
+      | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
     in
-    Term.(const apply
-          $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local )
+    {
+      solution_file;
+      exercise_id;
+      output_format;
+      submit = not dont_submit;
+      color;
+      verbosity = List.length verbose;
+    }
+
+  let term_global =
+    Term.(const global
+          $server_url $token $local)
+
+  let term_exercises =
+    Term.(const exercises
+          $solution_file $exercise_id $output_format $dont_submit
+          $color_when $verbose )
 end
 
 module ConfigFile = struct
@@ -601,16 +609,16 @@ let get_config_o ?save_back o =
 
 module Grade = struct
   open Args
-  let grade o =
-    Console.enable_colors := o.Args.color;
-    Console.enable_utf8 := o.Args.color;
-    get_config_o o
+  let grade go eo =
+    Console.enable_colors := eo.Args.color;
+    Console.enable_utf8 := eo.Args.color;
+    get_config_o go
     >>= fun { ConfigFile.server; token } ->
     let status_line =
-      if o.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
+      if eo.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
     in
     let solution, exercise_id =
-      match o.solution_file, o.exercise_id with
+      match eo.solution_file, eo.exercise_id with
       | None, _ -> Printf.eprintf "You must specify a file to grade.\n%!"; exit 2
       | Some f, Some id -> f, id
       | Some f, None ->
@@ -631,7 +639,7 @@ module Grade = struct
     >>= fun (report, ex_stdout, ex_stderr, ex_outcome) ->
     flush stderr;
     let pr col title s =
-      if o.verbosity >= 1 then
+      if eo.verbosity >= 1 then
         let s = String.trim s in
         if s <> "" then
           prerr_string (Console.block ~title ~border_color:[col] s)
@@ -639,7 +647,7 @@ module Grade = struct
     pr `Green "stdout" ex_stdout;
     pr `Red "stderr" ex_stderr;
     pr `Cyan "outcome" ex_outcome;
-    if o.verbosity >= 1 then prerr_newline ();
+    if eo.verbosity >= 1 then prerr_newline ();
     match report with
     | Error e ->
        let str =
@@ -650,8 +658,8 @@ module Grade = struct
        Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
        Lwt.return 10
     | Ok report ->
-       (match o.output_format with
-        | `Console -> console_report ~verbose:(o.verbosity > 0) exercise report
+       (match eo.output_format with
+        | `Console -> console_report ~verbose:(eo.verbosity > 0) exercise report
         | `Raw ->
            Report.print Format.std_formatter report
         | `Html ->
@@ -676,8 +684,8 @@ module Grade = struct
 
   let cmd =
     Cmdliner.Term.(
-      const (fun o -> Pervasives.exit (Lwt_main.run (grade o)))
-      $ Args.term),
+      const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
+      $ Args.term_global $ Args.term_exercises),
     Cmdliner.Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "grade"
@@ -695,7 +703,7 @@ module Print_token = struct
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (print_tok o)))
-      $ Args.term),
+      $ Args.term_global),
     Cmdliner.Term.info ~version ~man
       ~doc:"Just print the configured user token and exit"
       "print-token"
@@ -706,13 +714,15 @@ module Set_options = struct
     get_config_o ~save_back:true o
     >|= fun _ -> 0
 
-  let man =  man "Overwrite the configuration file with the command-line options \
+  let man =
+    man
+      "Overwrite the configuration file with the command-line options \
        ($(b,--server), $(b,--token)), and exit"
 
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (set_opts o)))
-      $ Args.term),
+      $ Args.term_global),
     Cmdliner.Term.info ~version ~man
       ~doc:"Set local configuration and exit"
       "set-options"
@@ -733,7 +743,7 @@ module Fetch = struct
   let cmd =
     Cmdliner.Term.(
       const (fun o -> Pervasives.exit (Lwt_main.run (fetch o)))
-      $ Args.term),
+      $ Args.term_global),
     Cmdliner.Term.info ~version ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
