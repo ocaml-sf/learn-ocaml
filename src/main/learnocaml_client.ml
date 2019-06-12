@@ -383,22 +383,7 @@ let console_report ?(verbose=false) ex report =
   List.iter (fun i -> print_endline (format_item i)) report;
   print_newline ()
 
-(* fixme: copied from Learnocaml_store *)
-module Json_codec = struct
-  let decode enc s =
-    (match s with
-     | "" -> `O []
-     | s -> Ezjsonm.from_string s)
-    |> Json_encoding.destruct enc
-
-  let encode ?minify:_ enc x =
-    match Json_encoding.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string json
-    | `Null -> ""
-    | _ -> assert false
-end
-
-module Api_client = Learnocaml_api.Client (Json_codec)
+module Api_client = Learnocaml_api.Client (Learnocaml_store.Json_codec)
 
 let fetch server_url req =
   let url path args =
