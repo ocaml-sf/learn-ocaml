@@ -28,6 +28,7 @@ module Args = struct
     local: bool;
     set_options: bool;
     print_token: bool;
+    print_server: bool; 
     fetch: bool;
     version: bool;
   }
@@ -113,6 +114,10 @@ module Args = struct
     value & flag & info ["print-token"] ~doc:
       "Just print the configured user token and exit"
 
+  let print_server =
+    value & flag & info["print-server"] ~doc:
+      "Just print the configured server and exit"              
+    
   let fetch =
     value & flag & info ["fetch"] ~doc:
       "Fetch the user's solutions on the server to the current directory and exit"
@@ -124,7 +129,7 @@ module Args = struct
   let term =
     let apply
         server_url solution_file exercise_id output_format dont_submit
-        color_when verbose token local set_options print_token fetch version =
+        color_when verbose token local set_options print_token print_server fetch version =
       let color = match color_when with
         | Some o -> o
         | None -> Unix.(isatty stdout) && Sys.getenv_opt "TERM" <> Some "dumb"
@@ -141,13 +146,14 @@ module Args = struct
         local;
         set_options;
         print_token;
+        print_server;
         fetch;
         version;
       }
     in
     Term.(const apply
           $server_url $solution_file $exercise_id $output_format $dont_submit
-          $color_when $verbose $token $local $set_options $print_token $fetch
+          $color_when $verbose $token $local $set_options $print_token $print_server $fetch
           $version)
 end
 
@@ -614,6 +620,9 @@ let main o =
   >>= fun { ConfigFile.server; token } ->
   if o.print_token then
     (print_endline (Token.to_string token);
+     exit 0);
+  if o.print_server then
+    (print_endline (Uri.to_string server);
      exit 0);
   (if o.fetch then
      (fetch_save server token >>= write_save_files >>= fun () -> exit 0)
