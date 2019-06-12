@@ -179,14 +179,14 @@ module Request_handler = struct
   let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let alphanum_len = String.length alphanum
 
-  let nonce_req : (string, string) Hashtbl.t = Hashtbl.create 533
+  let nonce_req : (Ipaddr.t option, string) Hashtbl.t = Hashtbl.create 533
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let string_of_endp =
+  let ipaddr_of_endp =
     function
-    | `TCP (i,_) -> Ipaddr.to_string i
-    | _ -> "" (* TODO ? *)
+    | `TCP (i,_) -> Some i
+    | _ -> None
 
   let callback_raw: type resp. Conduit.endp -> string option -> caching -> resp Api.request -> resp ret
     = fun conn secret cache -> function
@@ -195,7 +195,7 @@ module Request_handler = struct
       | Api.Static path ->
           respond_static cache path
       | Api.Nonce () ->
-         let conn = string_of_endp conn in
+         let conn = ipaddr_of_endp conn in
          begin
            match Hashtbl.find_opt nonce_req conn with
            | Some x -> respond_json cache x
@@ -205,12 +205,13 @@ module Request_handler = struct
               respond_json cache nonce
          end
       | Api.Create_token (secret_candidate, None, nick) ->
-         let conn = string_of_endp conn in
+         let conn = ipaddr_of_endp conn in
          begin
            let forbid s = Status {code = `Forbidden; body = s} in
            match Hashtbl.find_opt nonce_req conn with
-           | None -> Lwt.return (forbid "No registered token")
+           | None -> Lwt.return (forbid "No registered token for your IP adress")
            | Some nonce ->
+              Hashtbl.remove nonce_req conn;
               let know_secret =
                 match secret with
                 | None -> true
