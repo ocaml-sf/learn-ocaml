@@ -10,10 +10,13 @@ open Learnocaml_data
 open Lwt.Infix
 module Api = Learnocaml_api
 
+open Cmdliner
+open Arg
+
 let version = Api.version
 
 let url_conv =
-  Cmdliner.Arg.conv ~docv:"URL" (
+  conv ~docv:"URL" (
       (fun s ->
         try Ok (Uri.of_string s)
         with e -> Error (`Msg (Printexc.to_string e))),
@@ -21,7 +24,7 @@ let url_conv =
     )
 
 let token_conv =
-  Cmdliner.Arg.conv ~docv:"TOKEN" (
+  conv ~docv:"TOKEN" (
       (fun s ->
         try Ok (Token.parse s)
         with Failure msg ->
@@ -30,9 +33,6 @@ let token_conv =
     )
 
 module Args_global = struct
-  open Cmdliner
-  open Arg
-
   type t = {
       server_url: Uri.t option;
       token: Learnocaml_data.student Learnocaml_data.token option;
@@ -43,14 +43,14 @@ module Args_global = struct
     value & opt (some url_conv) None &
     info ["s";"server"] ~docv:"URL" ~doc:
       "The URL of the learn-ocaml server"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_SERVER" ~doc:
+      ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
               "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
 
   let token =
     value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
       "Your token on the learn-ocaml server. This is required to submit \
        solutions"
-      ~env:(Cmdliner.Term.env_info "LEARNOCAML_TOKEN" ~doc:
+      ~env:(Term.env_info "LEARNOCAML_TOKEN" ~doc:
               "Sets the learn-ocaml user token on the sever. Overridden by \
                $(b,--token).")
 
@@ -59,16 +59,33 @@ module Args_global = struct
       "Generate a configuration file local to the current directory, rather \
        than user-wide"
 
-  let global server_url token local =
+  let apply server_url token local =
     {server_url; token; local}
 
   let term =
-    Term.(const global $server_url $token $local)
+    Term.(const apply $server_url $token $local)
+end
+
+module Args_create_token = struct
+  type t = {
+      nickname : string option;
+      secret : string option;
+    }
+
+  let nickname =
+    value & pos 0 (some string) None & info [] ~docv:"NICKNAME" ~doc:
+      "The desired nickname"
+
+  let secret =
+    value & pos 1 (some string) None & info [] ~docv:"SECRET" ~doc:
+      "The secret"
+
+  let apply nickname secret = {nickname; secret}
+
+  let term = Term.(const apply $ nickname $ secret)
 end
 
 module Args_exercises = struct
-  open Cmdliner
-  open Arg
   type t = {
     solution_file: string option;
     exercise_id: string option;
@@ -113,7 +130,7 @@ module Args_exercises = struct
     value & flag_all & info ["v";"verbose"] ~doc:
       "Be more verbose. Can be repeated"
 
-  let exercises solution_file exercise_id output_format dont_submit
+  let apply solution_file exercise_id output_format dont_submit
         color_when verbose  =
     let color = match color_when with
       | Some o -> o
@@ -129,7 +146,7 @@ module Args_exercises = struct
     }
 
   let term =
-    Term.(const exercises
+    Term.(const apply
           $solution_file $exercise_id $output_format $dont_submit
           $color_when $verbose )
 end
@@ -648,16 +665,16 @@ module Grade = struct
         solutions."
 
   let cmd =
-    Cmdliner.Term.(
+    Term.(
       const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
       $ Args_global.term $ Args_exercises.term),
-    Cmdliner.Term.info ~version ~man
+    Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "grade"
 end
 
 let use_global f =
-  Cmdliner.Term.(
+  Term.(
     const (fun o -> Pervasives.exit (Lwt_main.run (f o)))
     $ Args_global.term)
 
@@ -672,7 +689,7 @@ module Print_token = struct
 
   let cmd =
     use_global print_tok,
-    Cmdliner.Term.info ~version ~man
+    Term.info ~version ~man
       ~doc:"Just print the configured user token and exit"
       "print-token"
 end
@@ -689,7 +706,7 @@ module Set_options = struct
 
   let cmd =
     use_global set_opts,
-    Cmdliner.Term.info ~version ~man
+    Term.info ~version ~man
       ~doc:"Set local configuration and exit"
       "set-options"
 end
@@ -729,7 +746,7 @@ module Fetch = struct
 
   let cmd =
     use_global fetch,
-    Cmdliner.Term.info ~version ~man
+    Term.info ~version ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
 end
@@ -740,13 +757,13 @@ module Main = struct
       "Learn-ocaml-client, default action is grading"
 
   let cmd = fst Grade.cmd,
-    Cmdliner.Term.info ~version ~man
+    Term.info ~version ~man
       ~doc:"Learn-ocaml grading client"
       "learn-ocaml-client"
 end
 
 let () =
-  match Cmdliner.Term.eval_choice ~catch:false Main.cmd
+  match Term.eval_choice ~catch:false Main.cmd
           [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd]
   with
   | exception Failure msg ->
