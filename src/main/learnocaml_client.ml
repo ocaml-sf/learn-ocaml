@@ -446,18 +446,6 @@ let upload_save server_url token save =
         "Could not upload the results to the server: %s"
         (match e with Failure s -> s | e -> Printexc.to_string e)
 
-let write_save_files save =
-  Lwt_list.iter_s (fun (id, st) ->
-      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
-      if Sys.file_exists f then
-        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-         Lwt.return_unit)
-      else
-        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
-        Lwt_io.write oc st.Answer.solution >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f)
-    (SMap.bindings (save.Save.all_exercise_states))
-
 let upload_report server token ex solution report =
   let score = get_score report in
   let max_score = max_score ex in
@@ -729,6 +717,18 @@ module Fetch = struct
            "Token %S not found on the server."
            (Token.to_string token)
       | e -> Lwt.fail e
+
+  let write_save_files save =
+  Lwt_list.iter_s (fun (id, st) ->
+      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
+      if Sys.file_exists f then
+        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+         Lwt.return_unit)
+      else
+        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
+        Lwt_io.write oc st.Answer.solution >|= fun () ->
+        Printf.eprintf "Wrote file %s\n%!" f)
+    (SMap.bindings (save.Save.all_exercise_states))
 
   let fetch o =
     get_config_o o
