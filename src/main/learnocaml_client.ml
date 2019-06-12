@@ -437,15 +437,6 @@ let fetch_exercise server_url token id =
         id
   | e -> Lwt.fail e
 
-let fetch_save server_url token =
-  Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
-  @@ function
-  | Not_found ->
-      Printf.ksprintf Lwt.fail_with
-        "Token %S not found on the server."
-        (Token.to_string token)
-  | e -> Lwt.fail e
-
 let upload_save server_url token save =
   Lwt.catch (fun () -> fetch server_url (Api.Update_save (token, save)))
   @@ function
@@ -729,6 +720,15 @@ module Set_options = struct
 end
 
 module Fetch = struct
+  let fetch_save server_url token =
+    Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
+    @@ function
+      | Not_found ->
+         Printf.ksprintf Lwt.fail_with
+           "Token %S not found on the server."
+           (Token.to_string token)
+      | e -> Lwt.fail e
+
   let fetch o =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
