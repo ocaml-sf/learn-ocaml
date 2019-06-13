@@ -1,5 +1,4 @@
 (library
  (name partition)
- (wrapped false)
  (libraries compiler-libs.common lwt learnocaml_store learnocaml_data)
  )

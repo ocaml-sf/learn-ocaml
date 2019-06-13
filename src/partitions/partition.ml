@@ -175,20 +175,30 @@ let print_part m =
 
 type partition_result =
   {
-    non_graded : Token.t list;
+    not_graded : Token.t list;
     bad_type : Token.t list;
-    patition_by_grade : (int * (Token.t)) list;
+    patition_by_grade :
+      (int *
+         ((Token.t * Report.t * func_res) list *
+            Token.t list Clustering.tree list))
+        list;
   }
+
+let list_of_IntMap m =
+  IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
 let parititon exo_name fun_name =
   let saves =
     Lwt_main.run (get_all_token () >>= get_exo_states exo_name fun_name) in
   Printf.printf "%d matching repositories found.\n" (List.length saves);
-  let nonlst,lst = partition_WasGraded saves in
-  let funexist,nonfunexist = partition_FunExist fun_name lst in
+  let not_graded,lst = partition_WasGraded saves in
+  let not_graded = List.map (fun (x,_,_) -> x) not_graded in
+  let funexist,bad_type = partition_FunExist fun_name lst in
+  let bad_type = List.map (fun (x,_,_) -> x) bad_type in
   let map = partition_by_grade fun_name funexist in
   let map = refine_with_hm map in
-  Printf.printf "%d codes were not graded.\n" (List.length nonlst);
-  Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length nonfunexist) fun_name;
+  Printf.printf "%d codes were not graded.\n" (List.length not_graded);
+  Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length bad_type) fun_name;
   print_part map;
-  ()
+  let map = list_of_IntMap map in
+  {not_graded;bad_type;patition_by_grade=map}
