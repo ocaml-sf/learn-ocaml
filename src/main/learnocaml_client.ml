@@ -48,8 +48,8 @@ module Args_global = struct
 
   let token =
     value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
-      "Your token on the learn-ocaml server. This is required to submit \
-       solutions"
+      "Your token on the learn-ocaml server. This is required when submitting \
+       solutions or interracting whith the server."
       ~env:(Term.env_info "LEARNOCAML_TOKEN" ~doc:
               "Sets the learn-ocaml user token on the sever. Overridden by \
                $(b,--token).")
@@ -86,6 +86,14 @@ module Args_create_token = struct
   let apply nickname secret = {nickname; secret}
 
   let term = Term.(const apply $ nickname $ secret)
+end
+
+module Args_exercise_id = struct
+  let id =
+    value & pos 0 (some string) None & info [] ~docv:"ID" ~doc:
+      "The exercise identifier"
+
+  let term = Term.(const (fun x -> x) $ id)
 end
 
 module Args_exercises = struct
@@ -721,6 +729,16 @@ module Set_options = struct
       "set-options"
 end
 
+let write_exercise_file id str =
+  let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
+  if Sys.file_exists f then
+    (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+     Lwt.return_unit)
+  else
+    Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
+        Lwt_io.write oc str >|= fun () ->
+        Printf.eprintf "Wrote file %s\n%!" f
+
 module Fetch = struct
   let fetch_save server_url token =
     Lwt.catch (fun () -> fetch server_url (Api.Fetch_save token))
@@ -733,14 +751,7 @@ module Fetch = struct
 
   let write_save_files save =
   Lwt_list.iter_s (fun (id, st) ->
-      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
-      if Sys.file_exists f then
-        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-         Lwt.return_unit)
-      else
-        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
-        Lwt_io.write oc st.Answer.solution >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f)
+      write_exercise_file id st.Answer.solution)
     (SMap.bindings (save.Save.all_exercise_states))
 
   let fetch o =
@@ -794,6 +805,34 @@ module Create_token = struct
       "create-token"
 end
 
+module Template = struct
+  open ConfigFile
+
+  let template o exercise_id =
+    match exercise_id with
+    | None -> Lwt_io.print "You must provide an exercise id\n"
+              >|= fun () -> 2
+    | Some exercise_id ->
+       get_config_o o
+       >>= fun { server; token } ->
+       fetch_exercise server token exercise_id
+       >>= fun (_meta, exercise, _deadline) ->
+       write_exercise_file
+         exercise_id
+         Learnocaml_exercise.(access File.template exercise)
+       >|= fun () -> 0
+
+  let man = man "Get the template of a given exercise"
+
+  let cmd =
+    Term.(
+      const (fun o id -> Pervasives.exit (Lwt_main.run (template o id)))
+      $ Args_global.term $ Args_exercise_id.term),
+    Term.info ~man
+      ~doc:"Get the template of a given exercise"
+      "template"
+end
+
 module Main = struct
   let man =
     man
@@ -807,7 +846,12 @@ end
 
 let () =
   match Term.eval_choice ~catch:false Main.cmd
-          [Grade.cmd; Print_token.cmd; Set_options.cmd; Fetch.cmd; Create_token.cmd]
+          [ Grade.cmd
+          ; Print_token.cmd
+          ; Set_options.cmd
+          ; Fetch.cmd
+          ; Template.cmd
+          ; Create_token.cmd ]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
