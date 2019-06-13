@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml by OCamlPro - Partition details</title>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <link rel="stylesheet" href="/css/learnocaml_student_view.css">
+    <link rel="stylesheet" href="/css/learnocaml_report.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <!-- var editor = ace.edit("learnocaml-exo-editor-pane"); -->
+    <!-- editor.setOptions({ fontFamily: 'Inconsolata', fontSize: "18px" }); -->
+    <script language="JavaScript" src="/js/learnocaml-student-view.js" defer></script>
+  </head>
+  <body>
+    <!-- Should be kept untouched. -->
+    <div style="display:none">
+      <!-- (Weakly) preload images. -->
+      <img src="/icons/tryocaml_loading_1.gif"><img src="/icons/tryocaml_loading_2.gif">
+      <img src="/icons/tryocaml_loading_3.gif"><img src="/icons/tryocaml_loading_4.gif">
+      <img src="/icons/tryocaml_loading_5.gif"><img src="/icons/tryocaml_loading_6.gif">
+      <img src="/icons/tryocaml_loading_7.gif"><img src="/icons/tryocaml_loading_8.gif">
+      <img src="/icons/tryocaml_loading_9.gif">
+    </div>
+    <!-- Three states: .initial, .loading and .loaded.
+         Set to .loaded when initial loading finished.
+         Set to .loading while loading, then to .loaded. -->
+    <div id="learnocaml-exo-loading" class="loading-layer initial">
+      <div id="chamo"><img id="chamo-img" src="/icons/tryocaml_loading_5.gif"></div>
+      <div class="messages"><ul><li id="txt_loading">Loading student data</li></ul></div>
+    </div>
+    <script language="JavaScript">
+      var n = Math.floor (Math.random () * 8.99) + 1;
+      document.getElementById('chamo-img').src = '/icons/tryocaml_loading_' + n + '.gif';
+    </script>
+    <!-- Anything below could be recreated dynamically, but IDs must be kept. -->
+    <div id="learnocaml-exo-toolbar">
+      <div class="logo">
+        <img src="/icons/logo_ocaml.svg">
+        <span>Learn OCaml</span>
+        <img src="/icons/logo_ocp.svg">
+      </div>
+      <!--
+      <button id="learnocaml-exo-button-grade">
+        <img src="/icons/icon_reload_light.svg">
+        <span class="label">Grade!</span>
+      </button>
+      -->
+      <div id="learnocaml-token">
+      </div>
+      <div id="learnocaml-student-nickname">
+      </div>
+    </div>
+    <div id="learnocaml-exo-tab-buttons">
+      <button id="learnocaml-exo-button-stats" class="front-tab" disabled="">
+        Stats
+      </button>
+      <button id="learnocaml-exo-button-list">Exercises</button>
+      <button id="learnocaml-exo-button-report">
+        Report
+      </button>
+      <button id="learnocaml-exo-button-editor">Answer</button>
+      <button id="learnocaml-exo-button-text">Subject</button>
+    </div>
+    <div id="learnocaml-exo-tabs">
+      <div id="learnocaml-exo-tab-stats" class="front-tab"></div>
+      <div id="learnocaml-exo-tab-list"></div>
+      <div id="learnocaml-exo-tab-editor">
+        <div id="learnocaml-exo-editor-pane" class="pane"></div>
+        <div id="learnocaml-exo-editor-toolbar" class="buttons">
+        </div>
+      </div>
+      <div id="learnocaml-exo-tab-text"></div>
+      <div id="learnocaml-exo-tab-report"></div>
+    </div>
+  </body>
+</html>

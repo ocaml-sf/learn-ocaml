@@ -201,4 +201,4 @@ let parititon exo_name fun_name =
   Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length bad_type) fun_name;
   print_part map;
   let map = list_of_IntMap map in
-  {not_graded;bad_type;patition_by_grade=map}
+  {not_graded; bad_type; patition_by_grade=map}

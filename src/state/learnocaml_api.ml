@@ -337,6 +337,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         ( ["index.html"]
         | ["exercise.html"]
         | ["student-view.html"]
+        | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
           Static path |> k
