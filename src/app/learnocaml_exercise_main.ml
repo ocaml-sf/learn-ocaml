@@ -600,21 +600,15 @@ let prelude_pane =  find_component "learnocaml-exo-prelude" in
         Manip.SetCss.display prelude_container "" ;
         Manip.SetCss.top editor_pane "193px" ;
         Manip.SetCss.bottom editor_pane "40px" ;
-        Ace.set_contents ace ~reset_undo:true
-          (match solution with
-            | Some solution -> solution
-            | None -> Learnocaml_exercise.(access File.template exo)) ;
+        Ace.resize ace true;
         set_arg "prelude" "shown"
       end else begin
         Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
         Manip.SetCss.display prelude_container "none" ;
         Manip.SetCss.top editor_pane "43px" ;
         Manip.SetCss.bottom editor_pane "40px" ;
-        Ace.set_contents ace ~reset_undo:true
-          (match solution with
-            | Some solution -> solution
-            | None -> Learnocaml_exercise.(access File.template exo)) ;
-          set_arg "prelude" "hidden"
+        Ace.resize ace true;
+        set_arg "prelude" "hidden"
       end in
     update () ;
     Manip.Ev.onclick prelude_btn
