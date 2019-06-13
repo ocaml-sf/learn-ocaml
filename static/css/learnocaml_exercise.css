@@ -241,12 +241,12 @@ body {
 }
 #learnocaml-exo-prelude > pre.toplevel-code {
   flex: 0 1 auto;
-  max-height: 45%;
+  max-height: 150px;
   background: #666;
   margin: 0;
-  padding: 5px 10px 5px 10px;
   overflow: auto;
   width: 100%;
+  position: absolute;
 }
 #learnocaml-exo-prelude > h1::after {
   position: absolute;
@@ -262,12 +262,11 @@ body {
   color: white;
 }
 #learnocaml-exo-tab-editor > .pane {
-  position: relative;
-  left: 0; top: 0; bottom: 40px; width: 100%;
+  position: absolute;
+  left: 0; top: 43px; bottom: 40px; width: 100%;
   background: #666;
   color: #fff;
   z-index: 1002;
-  height: 100%;
 }
 #learnocaml-exo-tab-editor > .buttons {
   position: absolute;
@@ -512,7 +511,7 @@ body {
   position: absolute;
   background: #acf;
   opacity: 0.3;
-  z-index: 1010;p
+  z-index: 1010;
   left:0; right:0; bottom:0; top:0;
   content:"";
 }
