@@ -9,29 +9,10 @@ module IntMap = Map.Make(struct type t = int let compare = compare end)
 
 (* Return all the token in sync *)
 let get_all_token sync =
-  let rec aux acc f =
-    let dir = Sys.readdir f in
-    let dir_full = Array.map (fun s -> f ^ "/" ^ s) dir in
-    (* If there is a sub-directory which does not start by "." *)
-    if Array.exists (fun s -> Sys.is_directory s && not (String.contains s '.')) dir_full
-    then
-      Array.fold_left
-        (fun acc x ->
-          if Sys.is_directory x
-          then aux acc x
-          else acc
-        ) acc dir_full
-    else
-      let sync_len = String.length sync + 1 in
-      let string_token =
-        String.concat "-" @@
-          String.split_on_char '/' @@
-            String.sub f sync_len (String.length f - sync_len) in
-      if Token.check string_token
-      then Token.parse string_token :: acc
-      else acc
-  in
-  aux [] sync
+  let open Learnocaml_store in
+  sync_dir := sync;
+  Student.Index.get ()
+  >|= List.map (fun x -> x.Student.token)
 
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
@@ -65,11 +46,10 @@ let find_func f : Parsetree.structure_item list -> func_res option =
   get_with_pred pred
 
 (* Renvoie la liste des différents Answer.t associés à exo_name et fun_name *)
-let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list =
-  Lwt_main.run @@
-    Lwt_list.filter_map_s
-      (fun t ->
-        Learnocaml_store.Save.get t >|=
+let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list Lwt.t =
+  Lwt_list.filter_map_s
+    (fun t ->
+      Learnocaml_store.Save.get t >|=
         bindOption
           (fun x ->
             bindOption
@@ -77,11 +57,11 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list 
                 fmapOption
                   (fun r -> t,x,r)
                   (find_func fun_name (impl_of_string Answer.(x.solution)))
-                )
+              )
               (SMap.find_opt exo_name Save.(x.all_exercise_states))
           )
-      )
-      lst
+    )
+    lst
 
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
@@ -198,8 +178,8 @@ let print_part m =
 
 let main sync exo_name fun_name =
   Learnocaml_store.sync_dir := Filename.concat (Sys.getcwd ()) sync;
-  let lst = get_all_token sync in
-  let saves = get_exo_states exo_name fun_name lst in
+  let saves =
+    Lwt_main.run (get_all_token sync >>= get_exo_states exo_name fun_name) in
   Printf.printf "%d matching repositories found.\n" (List.length saves);
   let nonlst,lst = partition_WasGraded saves in
   let funexist,nonfunexist = partition_FunExist fun_name lst in
