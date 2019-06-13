@@ -166,9 +166,5 @@ let partition exo_name fun_name =
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
   let bad_type = List.map (fun (x,_,_) -> x) bad_type in
-  let map = partition_by_grade fun_name funexist in
-  let map = refine_with_hm map in
-  Printf.printf "%d codes were not graded.\n" (List.length not_graded);
-  Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length bad_type) fun_name;
-  let map = list_of_IntMap map in
+  let map = list_of_IntMap @@ refine_with_hm @@ partition_by_grade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}
