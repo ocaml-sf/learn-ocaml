@@ -551,7 +551,7 @@ let init ?(local=false) ?server ?token () =
   Printf.eprintf "Configuration written to %s\n%!" path;
   config
 
-let get_config ?local ?(save_back=false) server_opt token_opt =
+let get_config_option ?local ?(save_back=false) server_opt token_opt =
   match ConfigFile.path ?local () with
   | Some f ->
       ConfigFile.read f >>= fun c ->
@@ -573,7 +573,13 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
         else
           Lwt.return_unit
       )
-      >|= fun () -> c
+      >|= fun () -> Some c
+  | None -> Lwt.return_none
+
+let get_config ?local ?(save_back=false) server_opt token_opt =
+  get_config_option ?local ~save_back server_opt token_opt
+  >>= function
+  | Some c -> Lwt.return c
   | None -> init ?local ?server:server_opt ?token:token_opt ()
 
 let man p = [
@@ -756,7 +762,6 @@ module Fetch = struct
 end
 
 module Create_token = struct
-  open Args_global
   open Args_create_token
 
   let create_tok server_url co =
@@ -764,7 +769,13 @@ module Create_token = struct
     | None -> Lwt_io.print "You must provide a nickname\n"
               >|= fun () -> 2
     | Some nickname ->
-       let server = get_server server_url in
+       get_config_option server_url None
+       >>= fun config ->
+       let server =
+         match config with
+         | Some c -> c.ConfigFile.server
+         | None -> get_server server_url
+       in
        fetch server
          (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
        >>= fun tok ->
