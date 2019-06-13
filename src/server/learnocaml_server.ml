@@ -455,6 +455,10 @@ module Request_handler = struct
             status
           >>= respond_json cache
 
+      | Api.Partition (token, eid, fid) ->
+          with_verified_teacher_token token @@ fun () ->
+            respond_json cache (Partitions.Create.partition eid fid)
+
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 

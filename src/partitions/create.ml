@@ -158,7 +158,7 @@ let refine_with_hm =
 let list_of_IntMap m =
   IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
-let parititon exo_name fun_name =
+let partition exo_name fun_name =
   let saves =
     Lwt_main.run (get_all_token () >>= get_exo_states exo_name fun_name) in
   Printf.printf "%d matching repositories found.\n" (List.length saves);

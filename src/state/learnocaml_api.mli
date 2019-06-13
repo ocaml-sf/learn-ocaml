@@ -75,6 +75,9 @@ type _ request =
     (** The two Status.t correspond to the states before and after changes, used
         for three-way merge *)
 
+  | Partition:
+      teacher token * Exercise.id * string -> Partition.t request
+
   | Invalid_request:
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case

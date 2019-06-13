@@ -56,6 +56,9 @@ type _ request =
   | Set_exercise_status:
       teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
+  | Partition:
+      teacher token * Exercise.id * string -> Partition.t request
+
   | Invalid_request:
       string -> string request
 
@@ -124,7 +127,9 @@ module Conversions (Json: JSON_CODEC) = struct
       | Exercise_status _ ->
           json Exercise.Status.enc
       | Set_exercise_status _ ->
-          json J.unit
+         json J.unit
+
+      | Partition _ -> json Partition.enc
 
       | Invalid_request _ ->
           str
@@ -212,6 +217,10 @@ module Conversions (Json: JSON_CODEC) = struct
           (Json.encode
              (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
              status)
+
+    | Partition (token, eid, fid) ->
+        get ~token
+          ["partition"; eid; fid]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -315,7 +324,11 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials.json"], _ ->
           Tutorial_index () |> k
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
-          Tutorial (Filename.chop_suffix f ".json") |> k
+         Tutorial (Filename.chop_suffix f ".json") |> k
+
+      | `GET, ["partition"; eid; fid], Some token
+        when Token.is_teacher token ->
+          Partition (token, eid, fid) |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
