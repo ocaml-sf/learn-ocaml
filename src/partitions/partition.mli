@@ -8,8 +8,7 @@ type partition_result =
     bad_type : Token.t list;
     patition_by_grade :
       (int *
-         ((Token.t * Report.t * func_res) list *
-            Token.t list Clustering.tree list))
+         ((string * Token.t list) Clustering.tree list))
         list;
   }
 

@@ -138,40 +138,21 @@ let assoc_3 t lst =
   with
   | Found x -> x
 
-let print_hm assoc xs =
-  let string_of_bindings (r,xs)=
-    let pstr_desc = Parsetree.Pstr_value (r,xs) in
-    let pstr_loc = Location.none in
-    let str =
-      Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}] in
-    "----\n" ^ str ^ "\n----\n"
-  in
-  ignore @@
-    List.fold_right
-      (fun lst acc ->
-        Printf.printf "+ Class n° %d: \n" acc;
-        print_endline @@
-          Clustering.string_of_tree
-            (fun xs ->
-              Clustering.string_of_token_list xs ^ "\n"
-              ^ string_of_bindings (assoc_3 (List.hd xs) assoc)
-            )
-            lst;
-        acc+1
-      ) xs 1
+let string_of_bindings (r,xs)=
+  let pstr_desc = Parsetree.Pstr_value (r,xs) in
+  let pstr_loc = Location.none in
+  Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}]
 
 let refine_with_hm =
-  IntMap.map (fun x -> x, hm_part x)
+  let open Clustering in
+  IntMap.map  @@
+    fun x ->
+    List.map
+      (fold_tree
+         (fun f a b -> Node (f,a,b))
+         (fun xs -> Leaf (string_of_bindings (assoc_3 (List.hd xs) x), xs)))
+    (hm_part x)
 
-let print_part m =
-  Printf.printf "In the remaining, %d classes were found:\n" (IntMap.cardinal m);
-  IntMap.iter
-    (fun k (assoc, hmpart) ->
-      Printf.printf " %d pts: %d answers\n" k (List.length assoc);
-      Printf.printf "  HM CLASSES: %d\n\n" (List.length hmpart);
-      print_hm assoc hmpart
-    )
-    m
 
 type partition_result =
   {
@@ -179,8 +160,7 @@ type partition_result =
     bad_type : Token.t list;
     patition_by_grade :
       (int *
-         ((Token.t * Report.t * func_res) list *
-            Token.t list Clustering.tree list))
+         ((string * Token.t list) Clustering.tree list))
         list;
   }
 
@@ -199,6 +179,5 @@ let parititon exo_name fun_name =
   let map = refine_with_hm map in
   Printf.printf "%d codes were not graded.\n" (List.length not_graded);
   Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length bad_type) fun_name;
-  print_part map;
   let map = list_of_IntMap map in
   {not_graded; bad_type; patition_by_grade=map}

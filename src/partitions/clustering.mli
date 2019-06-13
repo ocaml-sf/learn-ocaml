@@ -4,6 +4,8 @@ type 'a tree =
   | Node of (float * 'a tree * 'a tree)
   | Leaf of 'a
 
+val fold_tree : (float -> 'b -> 'b -> 'b) -> ('a -> 'b) -> 'a tree -> 'b
+
 val string_of_tree : ('a -> string) -> 'a tree -> string
 
 val string_of_token_list : Token.t list -> string
