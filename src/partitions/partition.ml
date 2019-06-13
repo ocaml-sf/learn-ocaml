@@ -8,11 +8,8 @@ open Utils
 module IntMap = Map.Make(struct type t = int let compare = compare end)
 
 (* Return all the token in sync *)
-let get_all_token sync =
-  let open Learnocaml_store in
-  sync_dir := sync;
-  Student.Index.get ()
-  >|= List.map (fun x -> x.Student.token)
+let get_all_token () =
+  Learnocaml_store.Student.Index.get () >|= List.map (fun x -> x.Student.token)
 
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
@@ -176,10 +173,16 @@ let print_part m =
     )
     m
 
-let main sync exo_name fun_name =
-  Learnocaml_store.sync_dir := Filename.concat (Sys.getcwd ()) sync;
+type partition_result =
+  {
+    non_graded : Token.t list;
+    bad_type : Token.t list;
+    patition_by_grade : (int * (Token.t)) list;
+  }
+
+let parititon exo_name fun_name =
   let saves =
-    Lwt_main.run (get_all_token sync >>= get_exo_states exo_name fun_name) in
+    Lwt_main.run (get_all_token () >>= get_exo_states exo_name fun_name) in
   Printf.printf "%d matching repositories found.\n" (List.length saves);
   let nonlst,lst = partition_WasGraded saves in
   let funexist,nonfunexist = partition_FunExist fun_name lst in
@@ -189,13 +192,3 @@ let main sync exo_name fun_name =
   Printf.printf "When graded, %d codes didn't implemented %s with the right type.\n" (List.length nonfunexist) fun_name;
   print_part map;
   ()
-
-let () =
-  if Array.length Sys.argv - 1 < 3
-  then
-    begin
-      print_endline "You must provide 3 arguments: sync repo, exo name and fun name";
-      exit 1
-    end
-  else
-    main Sys.argv.(1) Sys.argv.(2) Sys.argv.(3)
