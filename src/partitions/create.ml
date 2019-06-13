@@ -159,9 +159,9 @@ let list_of_IntMap m =
   IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
 let partition exo_name fun_name =
-  let saves =
-    Lwt_main.run (get_all_token () >>= get_exo_states exo_name fun_name) in
-  Printf.printf "%d matching repositories found.\n" (List.length saves);
+  get_all_token ()
+  >>= get_exo_states exo_name fun_name
+  >|= fun saves ->
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
