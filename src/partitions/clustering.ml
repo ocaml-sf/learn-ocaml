@@ -1,11 +1,7 @@
 open Learnocaml_data
+open Learnocaml_data.Partition
 
 open Utils
-
-(* To represent a hierachical cluster *)
-type 'a tree =
-  | Node of (float * 'a tree * 'a tree)
-  | Leaf of 'a
 
 let string_of_tree printer =
   let rec aux i xs =

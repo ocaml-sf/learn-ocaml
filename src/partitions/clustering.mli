@@ -1,8 +1,5 @@
 open Learnocaml_data
-
-type 'a tree =
-  | Node of (float * 'a tree * 'a tree)
-  | Leaf of 'a
+open Learnocaml_data.Partition
 
 val fold_tree : (float -> 'b -> 'b -> 'b) -> ('a -> 'b) -> 'a tree -> 'b
 

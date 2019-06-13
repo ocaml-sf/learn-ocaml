@@ -1,4 +1,6 @@
 open Learnocaml_data
+open Learnocaml_data.Partition
+
 open Learnocaml_report
 
 open Lwt.Infix
@@ -152,17 +154,6 @@ let refine_with_hm =
          (fun f a b -> Node (f,a,b))
          (fun xs -> Leaf (string_of_bindings (assoc_3 (List.hd xs) x), xs)))
     (hm_part x)
-
-
-type partition_result =
-  {
-    not_graded : Token.t list;
-    bad_type : Token.t list;
-    patition_by_grade :
-      (int *
-         ((string * Token.t list) Clustering.tree list))
-        list;
-  }
 
 let list_of_IntMap m =
   IntMap.fold (fun k a acc -> (k,a)::acc) m []

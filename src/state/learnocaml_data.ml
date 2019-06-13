@@ -1180,3 +1180,21 @@ module Tutorial = struct
   end
 
 end
+
+module Partition = struct
+  type 'a tree =
+  | Node of (float * 'a tree * 'a tree)
+  | Leaf of 'a
+
+  type t =
+  {
+    not_graded : Token.t list;
+    bad_type   : Token.t list;
+    patition_by_grade :
+      (int *
+         ((string * Token.t list) tree list))
+        list;
+  }
+
+    (* val enc: t Json_encoding.encoding *)
+end
