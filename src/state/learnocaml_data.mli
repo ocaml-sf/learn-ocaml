@@ -397,5 +397,5 @@ module Partition : sig
         list;
   }
 
-    (* val enc: t Json_encoding.encoding *)
+  val enc: t Json_encoding.encoding
 end

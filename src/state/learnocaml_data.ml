@@ -1178,7 +1178,6 @@ module Tutorial = struct
       J.(obj1 (req "series" (assoc series_enc)))
 
   end
-
 end
 
 module Partition = struct
@@ -1196,5 +1195,34 @@ module Partition = struct
         list;
   }
 
-    (* val enc: t Json_encoding.encoding *)
+  let token_list = J.list Token.enc
+
+  let tree_enc leaf_enc =
+    J.mu "tree" @@ fun self ->
+       J.union
+          [ J.case (J.obj1 (J.req "leaf" leaf_enc))
+              (function Leaf x -> Some x | Node _ -> None)
+              (fun x -> Leaf x) ;
+            J.case (J.obj3 (J.req "coef" J.float) (J.req "left" self) (J.req "right" self))
+              (function Node (t,l,r) -> Some (t,l,r) | Leaf _ -> None)
+              (fun (t,l,r) -> Node (t,l,r)) ]
+
+  let leaf_enc =
+    J.tup2 J.string token_list
+
+  let innerlist = J.list (tree_enc leaf_enc)
+
+  let int_assoc =
+    J.tup2 J.int innerlist
+
+  let enc =
+    J.conv
+      (fun t ->
+        (t.not_graded, t.bad_type, t.patition_by_grade))
+      (fun (not_graded, bad_type, patition_by_grade) ->
+        {not_graded; bad_type; patition_by_grade}) @@
+      J.obj3
+        J.(req "not_graded" token_list)
+        J.(req "bad_type"   token_list)
+        J.(req "patition_by_grade" (J.list int_assoc))
 end
