@@ -764,7 +764,9 @@ module Fetch = struct
     | [] -> Lwt.return_unit
     | xs ->
        Lwt_list.iter_s
-         (fun id -> Lwt_io.printl ("Exercise " ^ id ^ " was not found on the server"))
+         (fun id ->
+           Lwt_io.printl
+             ("Warning: exercise " ^ id ^ " was not found on the server"))
          xs
 
   let fetch o lst =
