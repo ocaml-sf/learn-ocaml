@@ -154,6 +154,15 @@ module Args_exercises = struct
           $color_when $verbose )
 end
 
+module Args_fetch = struct
+  let id =
+    value & pos_all string [] & info [] ~docv:"EXERCISE_ID" ~doc:
+      "Exercise identifier. Can be repeated. \
+       If not present, all the exercises will be downloaded"
+
+  let term = Term.(const (fun x -> x) $ id)
+end
+
 module ConfigFile = struct
 
   type t = {
@@ -731,23 +740,38 @@ module Fetch = struct
            (Token.to_string token)
       | e -> Lwt.fail e
 
-  let write_save_files save =
-  Lwt_list.iter_s (fun (id, st) ->
+  let write_save_files lst save =
+    let pred x = match lst with
+      | [] -> true
+      | _ -> List.mem x lst
+    in
+    Lwt_list.fold_left_s (fun acc (id, st) ->
+      if not (pred id) then Lwt.return acc
+      else
       let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
-      if Sys.file_exists f then
+      (if Sys.file_exists f then
         (Printf.eprintf "File %s already exists, not overwriting.\n" f;
          Lwt.return_unit)
       else
         Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
         Lwt_io.write oc st.Answer.solution >|= fun () ->
         Printf.eprintf "Wrote file %s\n%!" f)
-    (SMap.bindings (save.Save.all_exercise_states))
+      >|= fun () -> id::acc )
+      []
+      (SMap.bindings (save.Save.all_exercise_states))
+    >>= fun actually_found ->
+    match List.filter (fun x -> not (List.mem x actually_found)) lst with
+    | [] -> Lwt.return_unit
+    | xs ->
+       Lwt_list.iter_s
+         (fun id -> Lwt_io.printl ("Exercise " ^ id ^ " was not found on the server"))
+         xs
 
-  let fetch o =
+  let fetch o lst =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
     fetch_save server token
-    >>= write_save_files
+    >>= write_save_files lst
     >|= fun () -> 0
 
   let man =
@@ -755,7 +779,9 @@ module Fetch = struct
       "Fetch the user's solutions on the server to the current directory"
 
   let cmd =
-    use_global fetch,
+    Term.(
+      const (fun o l -> Pervasives.exit (Lwt_main.run (fetch o l)))
+      $ Args_global.term $ Args_fetch.term),
     Term.info ~man
       ~doc:"Fetch the user's solutions"
       "fetch"
