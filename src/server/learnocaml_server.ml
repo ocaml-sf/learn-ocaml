@@ -179,14 +179,30 @@ module Request_handler = struct
   let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let alphanum_len = String.length alphanum
 
-  let nonce_req : (Ipaddr.t option, string) Hashtbl.t = Hashtbl.create 533
+  let nonce_req : (string, string) Hashtbl.t = Hashtbl.create 533
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let ipaddr_of_endp =
+  let rec string_of_endp =
     function
-    | `TCP (i,_) -> Some i
-    | _ -> None
+    | `TCP (i,_) -> Some (Ipaddr.to_string i)
+    | `Unix_domain_socket s -> Some s
+    | `Vchan_direct (i,_) -> Some (string_of_int i)
+    | `Vchan_domain_socket (u,v) -> Some (u ^ v)
+    | `TLS (s,e) ->
+       begin
+         match string_of_endp e with
+         | Some s' -> Some (s ^ s')
+         | None    -> None
+       end
+    | `Unknown _ -> None
+
+  let valid_string_of_endp e f =
+    match string_of_endp e with
+    | None ->
+       Lwt.return
+         (Status {code = `Forbidden; body = "No address information avaible"})
+    | Some s -> f s
 
   let callback_raw: type resp. Conduit.endp -> string option -> caching -> resp Api.request -> resp ret
     = fun conn secret cache -> function
@@ -195,21 +211,18 @@ module Request_handler = struct
       | Api.Static path ->
           respond_static cache path
       | Api.Nonce () ->
-         let conn = ipaddr_of_endp conn in
-         begin
+         valid_string_of_endp conn (fun conn ->
            match Hashtbl.find_opt nonce_req conn with
            | Some x -> respond_json cache x
            | None ->
               let nonce = String.init 20 (fun _ -> alphanum.[Random.int alphanum_len]) in
               Hashtbl.add nonce_req conn nonce;
-              respond_json cache nonce
-         end
+              respond_json cache nonce)
       | Api.Create_token (secret_candidate, None, nick) ->
-         let conn = ipaddr_of_endp conn in
-         begin
-           let forbid s = Status {code = `Forbidden; body = s} in
+         let forbid s = Lwt.return (Status {code = `Forbidden; body = s}) in
+         valid_string_of_endp conn (fun conn ->
            match Hashtbl.find_opt nonce_req conn with
-           | None -> Lwt.return (forbid "No registered token for your IP address")
+           | None -> forbid "No registered token for your address"
            | Some nonce ->
               Hashtbl.remove nonce_req conn;
               let know_secret =
@@ -217,14 +230,13 @@ module Request_handler = struct
                 | None -> true
                 | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
               if not know_secret
-              then Lwt.return (forbid "Bad secret")
+              then forbid "Bad secret"
               else
                 Token.create_student () >>= fun tok ->
                 (match nick with | None -> Lwt.return_unit
                                  | Some nickname ->
                                     Save.set tok Save.{empty with nickname})
-                >>= fun () -> respond_json cache tok
-         end
+                >>= fun () -> respond_json cache tok)
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
           Lwt.catch
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
