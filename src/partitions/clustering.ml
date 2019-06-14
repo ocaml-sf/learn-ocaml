@@ -14,19 +14,6 @@ let string_of_tree printer =
     | Leaf a -> first ^ "Leaf: " ^ printer a
   in aux 0
 
-let fold_tree n l =
-  let rec aux = function
-    | Node (f,a,b) -> n f (aux a) (aux b)
-    | Leaf a -> l a
-  in aux
-
-let weight_of_list_tree f t =
-  fold_tree (fun _ -> ( + )) f t
-
-let rec sum_leaf_size = function
-  | Leaf xs -> List.length xs
-  | Node (_,u,v) -> sum_leaf_size u + sum_leaf_size v
-
 (* Suppose that x and y are sorted *)
 let rec intersect x y =
   match x,y with
@@ -131,7 +118,8 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
     List.map (fun x -> Leaf x) @@
       Hashtbl.fold (fun x xs acc -> add_in_eq x (List.sort compare xs) acc) m []
   in
-  List.sort (fun x y -> compare (sum_leaf_size x) (sum_leaf_size y)) @@
+  List.sort
+    (fun x y -> - compare (weight_of_tree List.length x) (weight_of_tree List.length y)) @@
     List.map remove_hash_in_tree @@
       aux [] start
 

@@ -146,7 +146,6 @@ let string_of_bindings (r,xs)=
   Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}]
 
 let refine_with_hm =
-  let open Clustering in
   IntMap.map  @@
     fun x ->
     List.map
@@ -156,12 +155,7 @@ let refine_with_hm =
     (hm_part x)
 
 let list_of_IntMap m =
-  let compare_w x y =
-    let w (_,xs) = List.length xs in
-    - (compare
-         (Clustering.weight_of_list_tree w x)
-         (Clustering.weight_of_list_tree w y)) in
-  IntMap.fold (fun k a acc -> (k,List.sort compare_w a)::acc) m []
+  IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
 let partition exo_name fun_name =
   get_all_token ()

@@ -76,6 +76,8 @@ let tab_select_signal, select_tab =
     all;
   tab_select_signal, select_tab
 
+let selected_class_signal, set_selected_class = React.S.create None
+
 let mouseover_toggle_signal elt sigvalue setter =
   let rec hdl _ =
     Manip.Ev.onmouseout elt (fun _ ->
@@ -93,7 +95,10 @@ let string_of_token_list lst = String.concat ", " (List.map Token.to_string lst)
 let rec render_tree =
   let open Partition in
   function
-  | Leaf (_,xs) -> [H.p [H.pcdata (string_of_token_list xs)]]
+  | Leaf (code,xs) ->
+     [H.p ~a:[ H.a_onclick (fun _ ->
+                   set_selected_class (Some (code,xs)); true)]
+        [H.pcdata ("Leaf with " ^ string_of_int (List.length xs) ^ " student(s)")]]
   | Node (f,l,r) ->
      [
        H.p [ H.pcdata ("Node " ^ string_of_float f) ]
@@ -104,11 +109,14 @@ let rec render_tree =
      ]
 
 let render_trees xs =
+  let w (_,xs) = List.length xs in
   let aux (i,acc) t =
-    let str = "Class n°" ^ string_of_int i in
+    let str =
+      "Class n°" ^ string_of_int i
+      ^ " (" ^ string_of_int (Partition.weight_of_tree w t) ^ " students)" in
     i+1,
     H.li
-      (H.pcdata str
+      ( H.pcdata str
       :: render_tree t)
     :: acc
   in
@@ -138,7 +146,7 @@ let exercises_tab part =
   :: H.p [H.pcdata bad_type]
   :: render_classes part.patition_by_grade
 
-let update_answer_tab, clear_answer_tab =
+let update_stats_tab, clear_stats_tab =
   let ace = lazy (
     let editor =
       Ocaml_mode.create_ocaml_editor
@@ -150,13 +158,22 @@ let update_answer_tab, clear_answer_tab =
     ace
   ) in
   (fun ans ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans.Answer.solution),
+     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
   (fun () ->
     Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
 
+let _class_selection_updater =
+  selected_class_signal |> React.S.map @@ fun id ->
+  match id with
+  | None -> ()
+  | Some (repr,xs) ->
+     update_stats_tab repr;
+     Manip.replaceChildren El.Tabs.(stats.tab)
+       [H.p [H.pcdata (string_of_token_list xs)]]
+
 let clear_tabs () =
   Manip.replaceChildren El.Tabs.(text.tab) [];
-  clear_answer_tab ()
+  clear_stats_tab ()
 
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -177,7 +194,7 @@ let update_tabs meta exo ans =
   match ans with
   | None -> ()
   | Some ans ->
-      update_answer_tab ans
+      update_stats_tab ans
 
 let set_string_translations () =
   let translations = [
@@ -214,8 +231,12 @@ let () =
     (* No security here: it's client-side, and we don't check that the token is
        registered server-side *)
     failwith "The page you are trying to access is for teachers only";
-  let exercise_id = "3.2_listes_poly" in
-  let fun_id = "flatten" in
+  let exercise_id =
+    try (List.assoc "id" Url.Current.arguments)
+    with Not_found -> failwith "Exercise id is missing" in
+  let fun_id =
+    try (List.assoc "function" Url.Current.arguments)
+    with Not_found -> failwith "function name is missing" in
   hide_loading ~id:El.loading_id ();
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id))
   >>= fun part ->
