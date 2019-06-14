@@ -59,6 +59,11 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * Parsetree.struc
     )
     lst
 
+let rec last = function
+  | [] -> failwith "last"
+  | [x] -> x
+  | _::xs -> last xs
+
 let to_typed_tree (lst : Parsetree.structure) =
   Compmisc.init_path true;
   let init_env = Compmisc.initial_env () in
@@ -138,32 +143,30 @@ let partition_by_grade funname =
 let hm_part m =
   let hashtbl = Hashtbl.create 100 in
   List.iter
-    (fun (t,_,x) ->
+    (fun (t,_,(_,x)) ->
       let hash,lst = Lambda_utils.hash_lambda 50 x in
       Hashtbl.add hashtbl t (hash::lst)
     ) m;
   Clustering.cluster hashtbl
 
-exception Found of func_res
+exception Found of Parsetree.structure_item
 let assoc_3 t lst =
   try
-    List.iter (fun (t',_,x) -> if t = t' then raise (Found x) else ()) lst;
+    List.iter (fun (t',_,(x,_)) -> if t = t' then raise (Found x) else ()) lst;
     failwith "assoc_3"
   with
   | Found x -> x
 
-let string_of_bindings (r,xs)=
-  let pstr_desc = Parsetree.Pstr_value (r,xs) in
-  let pstr_loc = Location.none in
-  Pprintast.string_of_structure [Parsetree.{pstr_desc;pstr_loc}]
+let string_of_bindings x =
+  Pprintast.string_of_structure [x]
 
 let refine_with_hm =
-  IntMap.map  @@
+  IntMap.map @@
     fun x ->
     List.map
       (fold_tree
          (fun f a b -> Node (f,a,b))
-         (fun xs -> Leaf (""(* string_of_bindings (assoc_3 (List.hd xs) x) *), xs)))
+         (fun xs -> Leaf (string_of_bindings (assoc_3 (List.hd xs) x), xs)))
     (hm_part x)
 
 let list_of_IntMap m =
@@ -173,7 +176,7 @@ let partition exo_name fun_name =
   get_all_token ()
   >>= get_exo_states exo_name fun_name
   >|= fun saves ->
-  let saves = List.map (fun (a,b,c) -> a,b,to_lambda (to_typed_tree c)) saves in
+  let saves = List.map (fun (a,b,c) -> a,b,(last c,to_lambda (to_typed_tree c))) saves in
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
