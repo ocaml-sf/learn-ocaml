@@ -15,37 +15,34 @@ let get_all_token () =
 
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
-let get_with_pred p =
-  let rec aux =
-  function
+let rec take_until p = function
   | [] -> None
   | x::xs ->
-     match p x with
-     | None -> aux xs
-     | res -> res
-  in aux
+     if p x
+     then Some [x]
+     else
+       match take_until p xs with
+       | None -> None
+       | Some xs -> Some (x::xs)
 
 type func_res = Asttypes.rec_flag * Parsetree.value_binding list
 
-let find_func f : Parsetree.structure_item list -> func_res option =
+let find_func f : Parsetree.structure_item list -> Parsetree.structure option =
   let open Parsetree in
   let pred c =
     match c.pstr_desc with
-    | Pstr_value (r,(x::_ as body)) ->
+    | Pstr_value (_,(x::_)) ->
        begin
          match x.pvb_pat.ppat_desc with
-         | Ppat_var v ->
-            if Asttypes.(v.txt) = f
-            then Some (r,body)
-            else None
-         | _ -> None
+         | Ppat_var v -> Asttypes.(v.txt) = f
+         | _ -> false
        end
-    | _ -> None
+    | _ -> false
   in
-  get_with_pred pred
+  take_until pred
 
 (* Renvoie la liste des différents Answer.t associés à exo_name et fun_name *)
-let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list Lwt.t =
+let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * Parsetree.structure) list Lwt.t =
   Lwt_list.filter_map_s
     (fun t ->
       Learnocaml_store.Save.get t >|=
@@ -61,6 +58,21 @@ let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * func_res) list 
           )
     )
     lst
+
+let to_typed_tree (lst : Parsetree.structure) =
+  Compmisc.init_path true;
+  let init_env = Compmisc.initial_env () in
+  let s,_,_ = Typemod.type_structure init_env lst Location.none
+  in s
+
+let rec get_last_of_seq = function
+  | Lambda.Lsequence (_,u) -> get_last_of_seq u
+  | x -> x
+
+let to_lambda (lst : Typedtree.structure) =
+  get_last_of_seq @@
+    Simplif.simplify_lambda "" @@
+      Translmod.transl_toplevel_definition lst
 
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
@@ -127,7 +139,7 @@ let hm_part m =
   let hashtbl = Hashtbl.create 100 in
   List.iter
     (fun (t,_,x) ->
-      let hash,lst = Ast_utils.hash_of_bindings 50 x in
+      let hash,lst = Lambda_utils.hash_lambda 50 x in
       Hashtbl.add hashtbl t (hash::lst)
     ) m;
   Clustering.cluster hashtbl
@@ -151,7 +163,7 @@ let refine_with_hm =
     List.map
       (fold_tree
          (fun f a b -> Node (f,a,b))
-         (fun xs -> Leaf (string_of_bindings (assoc_3 (List.hd xs) x), xs)))
+         (fun xs -> Leaf (""(* string_of_bindings (assoc_3 (List.hd xs) x) *), xs)))
     (hm_part x)
 
 let list_of_IntMap m =
@@ -161,6 +173,7 @@ let partition exo_name fun_name =
   get_all_token ()
   >>= get_exo_states exo_name fun_name
   >|= fun saves ->
+  let saves = List.map (fun (a,b,c) -> a,b,to_lambda (to_typed_tree c)) saves in
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
