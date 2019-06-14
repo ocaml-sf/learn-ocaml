@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(* NB: exercises-tab -> where is displayed the partition *)
+
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -40,21 +42,15 @@ module El = struct
     }
     let stats = tid "stats"
     let list = tid "list"
-    let report = tid "report"
     let editor = tid "editor"
     let text = tid "text"
 
-    let all = [stats; list; report; editor; text]
+    let all = [stats; list; editor; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
 
   let token_id, token = id "learnocaml-token"
-
-  module Dyn = struct
-    let exercise_line_id id = "learnocaml-exercise-line-"^id
-  end
-
 end
 
 let tab_select_signal, select_tab =
@@ -80,171 +76,6 @@ let tab_select_signal, select_tab =
     all;
   tab_select_signal, select_tab
 
-let selected_exercise_signal, set_selected_exercise = React.S.create None
-
-let hl_prereq_signal, set_hl_prereq_signal = React.S.create None
-let hl_focus_signal, set_hl_focus_signal = React.S.create None
-
-let gather_assignments student_token index status =
-  let status_map =
-    List.fold_left (fun m ex -> SMap.add ex.Exercise.Status.id ex m)
-      SMap.empty status
-  in
-  let assignments =
-    get_assignments (Token.Set.singleton student_token) status_map
-    |> List.filter (fun (_, toks, _, _) ->
-        Token.Set.mem student_token toks)
-  in
-  let open_exercises =
-    let open Exercise.Status in
-    SMap.fold (fun id ex acc ->
-        match Token.Map.find_opt student_token ex.assignments.token_map with
-        | Some Open -> id::acc
-        | None when ex.assignments.default = Open -> id::acc
-        | _ -> acc)
-      status_map []
-  in
-  let assgs =
-    List.map (fun ((start, stop), _tok, _dft, ids) -> Some (start, stop), ids)
-      assignments @
-    match open_exercises with [] -> [] | l -> [None, SSet.of_list l]
-  in
-  List.map (fun (dates, ids) ->
-      (* Reorder the exercises in the index order *)
-      let index =
-        Exercise.Index.filter (fun id _ -> SSet.mem id ids) index
-      in
-      dates,
-      List.rev @@ Exercise.Index.fold_exercises (fun l id meta ->
-          if SSet.mem id ids then
-            let st = SMap.find_opt id status_map in
-            (id, meta,
-             (match st with None -> [] | Some st ->
-                 Exercise.Status.skills_prereq meta st),
-             (match st with None -> [] | Some st ->
-                 Exercise.Status.skills_focus meta st))
-            :: l
-          else l)
-        [] index)
-    assgs
-
-let exercises_tab assignments answers =
-  let grade_sty grade =
-    H.a_style ("background-color:"^grade_color grade)
-  in
-  let exercise_line (id, meta, _, _) ans =
-    let grade, mtime = match ans with
-      | None -> None, None
-      | Some Answer.{grade; mtime; _} -> grade, Some mtime
-    in
-    let line =
-      H.tr ~a:[ H.a_id (El.Dyn.exercise_line_id id);
-                H.a_class ["learnocaml-exercise-line"];
-                H.a_onclick (fun _ ->
-                    set_selected_exercise (Some id);
-                    true) ] [
-        H.td ~a:[ H.a_class ["exercise-id"] ] [ H.pcdata id ];
-        H.td ~a:[ H.a_class ["exercise-title"] ]
-          [ H.pcdata meta.Exercise.Meta.title ];
-        H.td ~a:[ H.a_class ["exercise-kind"] ] [
-          H.pcdata (string_of_exercise_kind meta.Exercise.Meta.kind);
-        ];
-        H.td ~a:[ H.a_class ["exercise-stars"] ]
-          [ stars_div meta.Exercise.Meta.stars ];
-        H.td ~a:[ H.a_class ["grade"]; grade_sty grade ] [
-          match grade with
-          | None -> H.pcdata ""
-          | Some g -> H.pcdata (Printf.sprintf "%d%%" g)
-        ];
-        H.td ~a:[ H.a_class ["last-updated"] ] [
-          match mtime with
-          | None -> H.pcdata ""
-          | Some t -> date ~time:true t
-        ];
-      ]
-    in
-    let cls = "exercise-highlight" in
-    let prereq_sigs =
-      React.S.map
-        (function
-          | Some sel when List.mem sel meta.Exercise.Meta.requirements ->
-              Manip.addClass line cls
-          | _ -> Manip.removeClass line cls)
-        hl_prereq_signal
-    in
-    let focus_sigs =
-      React.S.map
-        (function
-          | Some sel when List.mem sel meta.Exercise.Meta.focus ->
-              Manip.addClass line cls
-          | _ -> Manip.removeClass line cls)
-        hl_focus_signal
-    in
-    line, (prereq_sigs, focus_sigs)
-  in
-  let[@warning "-3"] assg_lines =
-    (* tyxml_js marks a_scope as deprecated in HTML5, which is wrong: it's
-       deprecated for <td> but not for <th>. *)
-    let now = gettimeofday () in
-    List.map (fun (assg, ids) ->
-        let states =
-          List.map (fun (id, _, _, _) -> SMap.find_opt id answers) ids
-        in
-        let avg_grade, mtime =
-          let tot, n, mtime =
-            List.fold_left (fun (tot, n, tm) -> function
-                | Some Answer.{grade = Some g; mtime; _} ->
-                    tot + g, n + 1, max mtime tm
-                | Some Answer.{mtime; _} -> tot, n+1, max mtime tm
-                | _ -> tot, n + 1, tm)
-              (0, 0, 0.) states
-          in
-          (if n = 0 then 0. else float_of_int tot /. float_of_int n),
-          (if mtime = 0. then None else Some mtime)
-        in
-        let lines, sighandlers =
-          List.split (List.map2 exercise_line ids states)
-        in
-        let text =
-          match assg with
-          | Some (start, _) when start > now ->
-              [H.pcdata [%i"Future assignment (starting "];
-               date start;
-               H.pcdata ")"]
-          | Some (_, stop) when stop < now ->
-              [H.pcdata [%i"Terminated assignment ("];
-               date stop;
-               H.pcdata ")"]
-          | Some (_, stop) ->
-              [H.pcdata [%i"Ongoing assignment (due "];
-               date stop;
-               H.pcdata ")"]
-          | None ->
-              [H.pcdata [%i"Open exercises"]];
-        in
-        H.tr ~a:[ H.a_class ["learnocaml-assignment-line"];
-                  grade_sty (Some (int_of_float avg_grade)) ] [
-          H.th ~a:[ H.a_scope `Rowgroup; H.a_colspan 4 ] text;
-          H.th ~a:[ H.a_scope `Rowgroup;
-                    H.a_class ["grade"] ] [
-            H.pcdata (Printf.sprintf "%01.1f%%" avg_grade)
-          ];
-          H.th ~a:[ H.a_scope `Rowgroup;
-                    H.a_class ["last-updated"] ] [
-            match mtime with Some t -> date ~time:true t | None -> H.pcdata "";
-          ];
-        ] ::
-        lines,
-        sighandlers
-      )
-      assignments
-  in
-  match assg_lines with
-  | [] -> Lwt.return (H.pcdata "No assigned or open exercises found", None)
-  | lines ->
-      let lines, sighandlers = List.split lines in
-      Lwt.return (H.table (List.concat lines), Some sighandlers)
-
 let mouseover_toggle_signal elt sigvalue setter =
   let rec hdl _ =
     Manip.Ev.onmouseout elt (fun _ ->
@@ -257,167 +88,55 @@ let mouseover_toggle_signal elt sigvalue setter =
   in
   Manip.Ev.onmouseover elt hdl
 
-let stats_tab assignments answers =
-  let smap_add n m key =
-    try
-      let tot, count = SMap.find key m in
-      SMap.add key (n + tot, count + 1) m
-    with Not_found ->
-      SMap.add key (n, 1) m
+let string_of_token_list lst = String.concat ", " (List.map Token.to_string lst)
+
+let rec render_tree =
+  let open Partition in
+  function
+  | Leaf (_,xs) -> [H.p [H.pcdata (string_of_token_list xs)]]
+  | Node (f,l,r) ->
+     [
+       H.p [ H.pcdata ("Node " ^ string_of_float f) ]
+     ;  H.ul [
+            H.li (render_tree l)
+          ; H.li (render_tree r)
+          ]
+     ]
+
+let render_trees xs =
+  let aux t (i,acc) =
+    let str = "Class n°" ^ string_of_int i in
+    i+1,
+    H.li
+      (H.pcdata str
+      :: render_tree t)
+    :: acc
   in
-  let total_grade, n_attempted, n_total, by_prereq, by_focus =
-    List.fold_left
-      (fun acc (_dates, exercises) ->
-         List.fold_left
-           (fun
-             (total_grade, n_attempted, n_total, by_prereq, by_focus)
-             (id, _meta, prereq, focus) ->
-             match SMap.find_opt id answers with
-             | None ->
-                 (total_grade, n_attempted, n_total + 1,
-                  List.fold_left (smap_add 0) by_prereq prereq,
-                  List.fold_left (smap_add 0) by_focus focus)
-             | Some a ->
-                 let g = match a.Answer.grade with None -> 0 | Some g -> g in
-                 total_grade + g,
-                 n_attempted + 1,
-                 n_total + 1,
-                 List.fold_left (smap_add g) by_prereq prereq,
-                 List.fold_left (smap_add g) by_focus focus)
-           acc exercises)
-      (0, 0, 0, SMap.empty, SMap.empty)
-      assignments
-  in
-  let item ?(indent=0) ?(fmt = H.pcdata) lbl title v =
-    H.tr ~a:[H.a_title title] [
-      H.td ~a:[H.a_class ["stats-label"];
-               H.a_style ("padding-left:"^string_of_int (indent * 8)^"px")]
-        [fmt lbl];
-      H.td v
+  snd (List.fold_right aux xs (0,[]))
+
+let render_classes xs =
+  let aux (grade,values) acc =
+    let str = string_of_int grade ^ "pts :" in
+    H.p [H.pcdata str] ::
+      H.ul (render_trees values) ::
+        acc
+  in List.fold_right aux xs []
+
+let exercises_tab part =
+  let open Partition in
+  let not_graded =
+    string_of_int (List.length part.not_graded)
+    ^ " codes were not graded: "
+    ^ string_of_token_list part.not_graded in
+  let bad_type =
+       string_of_int (List.length part.bad_type)
+    ^ " codes had the wrong type: "
+    ^ string_of_token_list part.bad_type in
+  H.ul
+    [ H.li [H.pcdata not_graded]
+    ; H.li [H.pcdata bad_type]
     ]
-  in
-  let pct x y =
-    let cls = H.a_class ["grade"; "stats-pct"] in
-    if y = 0 then
-      H.div ~a:[cls; H.a_style ("background-color:"^grade_color None)]
-        [H.pcdata "--%"]
-    else
-    let r = 100. *. float_of_int x /. float_of_int y in
-    let color = grade_color (Some (int_of_float r)) in
-    let background =
-      Printf.sprintf "background:linear-gradient(to right,\
-                      %s 0%%,%s %.0f%%,transparent %.0f%%)"
-        color color r r
-    in
-    H.div ~a:[H.a_class ["grade"; "stats-pct"];
-               H.a_style background]
-      [H.pcdata (Printf.sprintf "%02.1f%%" r)]
-  in [
-    H.h3 [H.pcdata [%i"Student stats"]];
-    H.table ~a:[H.a_class ["student-stats"]] begin
-      [
-        item [%i"completion"]
-          [%i"The average grade over all accessible exercises"]
-          [pct total_grade (100 * n_total)];
-        item [%i"attempted"]
-          [%i"The amount of accessible exercises that have been attempted"]
-          [pct n_attempted n_total];
-        item [%i"success"]
-          [%i"The average grade over attempted exercises"]
-          [pct total_grade (100 * n_attempted)];
-      ]
-      @
-      (if SMap.is_empty by_focus then [] else
-       H.tr [H.th ~a:[H.a_colspan 2]
-               [H.pcdata [%i"success over exercises training skills"]]] ::
-       List.map (fun (sk, (tot, count)) ->
-           let i =
-             item ~indent:1 ~fmt:tag_span sk
-               ([%i"Success over exercises training skill "]^sk)
-               [pct tot (100 * count)]
-           in
-           mouseover_toggle_signal i sk set_hl_focus_signal;
-           i
-         )
-         (SMap.bindings by_focus))
-      @
-      (if SMap.is_empty by_prereq then [] else
-       H.tr [H.th ~a:[H.a_colspan 2]
-               [H.pcdata [%i"success over exercises requiring skills"]]] ::
-       List.map (fun (sk, (tot, count)) ->
-           let i =
-             item ~indent:1 ~fmt:tag_span sk
-               ([%i"Success over exercises requiring skill "]^sk)
-               [pct tot (100 * count)]
-           in
-           mouseover_toggle_signal i sk set_hl_prereq_signal;
-           i
-         )
-         (SMap.bindings by_prereq))
-    end
-  ]
-
-let init_exercises_and_stats_tabs teacher_token student_token answers =
-  retrieve (Learnocaml_api.Exercise_index teacher_token)
-  >>= fun (index, _) ->
-  retrieve (Learnocaml_api.Exercise_status_index teacher_token)
-  >>= fun status ->
-  let assignments = gather_assignments student_token index status in
-  Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
-  exercises_tab assignments answers >|= fun (tbl, sighandlers) ->
-  Manip.replaceChildren El.Tabs.(list.tab) [tbl];
-  sighandlers
-
-let _exercise_selection_updater =
-  let previously_selected = ref None in
-  selected_exercise_signal |> React.S.map @@ fun id ->
-  let line id = find_component (El.Dyn.exercise_line_id id) in
-  (match !previously_selected with
-   | None -> ()
-   | Some id -> Manip.removeClass (line id) "selected");
-  previously_selected := id;
-  match id with
-  | None -> ()
-  | Some id ->
-      Manip.addClass (line id) "selected";
-      let selected_tab =  React.S.value tab_select_signal in
-      if selected_tab = El.Tabs.list || selected_tab = El.Tabs.stats then
-        select_tab El.Tabs.report
-
-let restore_report_button () =
-  let report_button = El.Tabs.(report.btn) in
-  Manip.removeClass report_button "success";
-  Manip.removeClass report_button "failure";
-  Manip.removeClass report_button "partial";
-  Manip.replaceChildren report_button
-    Tyxml_js.Html5.[ pcdata [%i"Report"] ]
-
-let display_report exo report =
-  let score, _failed = Report.result report in
-  let report_button = El.Tabs.(report.btn) in
-  restore_report_button ();
-  let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
-    if max = 0 then 999 else score * 100 / max
-  in
-  if grade >= 100 then begin
-    Manip.addClass report_button "success" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
-  end else if grade = 0 then begin
-    Manip.addClass report_button "failure" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
-  end else begin
-    Manip.addClass report_button "partial" ;
-    let pct = Format.asprintf "%2d%%" grade in
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ;
-                       span ~a: [ a_class [ "score" ] ] [ pcdata pct ]]
-  end ;
-  Manip.setInnerHtml El.Tabs.(report.tab)
-    (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
-  grade
+ :: render_classes part.patition_by_grade
 
 let update_answer_tab, clear_answer_tab =
   let ace = lazy (
@@ -433,13 +152,10 @@ let update_answer_tab, clear_answer_tab =
   (fun ans ->
      Ace.set_contents (Lazy.force ace) ~reset_undo:true ans.Answer.solution),
   (fun () ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
 
 let clear_tabs () =
-  restore_report_button ();
-  List.iter (fun t ->
-      Manip.replaceChildren El.Tabs.(t.tab) [])
-    El.Tabs.([report; text]);
+  Manip.replaceChildren El.Tabs.(text.tab) [];
   clear_answer_tab ()
 
 let update_text_tab meta exo =
@@ -456,26 +172,11 @@ let update_text_tab meta exo =
        d##write (Js.string (exercise_text meta exo));
        d##close)
 
-let update_report_tab exo ans =
-  match ans.Answer.report with
-  | Some report ->
-      let grade = display_report exo report in
-      (match ans.Answer.grade with
-       | Some g when g <> grade ->
-           Manip.appendChildFirst El.Tabs.(report.tab)
-             (H.div ~a:[H.a_class ["warning"]]
-                [H.pcdata [%i"GRADE DOESN'T MATCH: cheating suspected"]])
-       | _ -> ())
-  | None ->
-      Manip.replaceChildren El.Tabs.(report.tab)
-        [H.div [H.pcdata [%i"No report available"]]]
-
 let update_tabs meta exo ans =
   update_text_tab meta exo;
   match ans with
   | None -> ()
   | Some ans ->
-      update_report_tab exo ans;
       update_answer_tab ans
 
 let set_string_translations () =
@@ -483,7 +184,6 @@ let set_string_translations () =
     "txt_loading", [%i"Loading student data"];
     "learnocaml-exo-button-stats", [%i"Stats"];
     "learnocaml-exo-button-list", [%i"Exercises"];
-    "learnocaml-exo-button-report", [%i"Report"];
     "learnocaml-exo-button-text", [%i"Subject"];
     "learnocaml-exo-button-editor", [%i"Answer"];
   ] in
@@ -506,8 +206,6 @@ let () =
   end ;
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
-  (* set_string_translations (); *)
-  (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   set_string_translations ();
@@ -516,29 +214,10 @@ let () =
     (* No security here: it's client-side, and we don't check that the token is
        registered server-side *)
     failwith "The page you are trying to access is for teachers only";
-  let student_token =
-    try Token.parse (List.assoc "token" Url.Current.arguments)
-    with Not_found | Failure _ -> failwith "Student token missing or invalid"
-  in
-  Manip.setInnerText El.token
-    ([%i"Status of student: "] ^ Token.to_string student_token);
-  retrieve (Learnocaml_api.Fetch_save student_token)
-  >>= fun save ->
-  Manip.setInnerText El.nickname save.Save.nickname;
-  init_exercises_and_stats_tabs
-    teacher_token student_token save.Save.all_exercise_states
-  >>= fun _sighandlers ->
+  let exercise_id = "3.2_listes_poly" in
+  let fun_id = "flatten" in
   hide_loading ~id:El.loading_id ();
-  let _sig =
-    selected_exercise_signal |> React.S.map @@ function
-    | None -> ()
-    | Some ex_id ->
-        Lwt.async @@ fun () ->
-        retrieve (Learnocaml_api.Exercise (teacher_token, ex_id))
-        >>= fun (meta, exo, _) ->
-        clear_tabs ();
-        let ans = SMap.find_opt ex_id save.Save.all_exercise_states in
-        update_tabs meta exo ans;
-        Lwt.return_unit
-  in
+  retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id))
+  >>= fun part ->
+  Manip.replaceChildren El.Tabs.(list.tab) (exercises_tab part);
   Lwt.return_unit
