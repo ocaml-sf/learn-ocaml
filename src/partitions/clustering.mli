@@ -3,9 +3,9 @@ open Learnocaml_data.Partition
 
 val fold_tree : (float -> 'b -> 'b -> 'b) -> ('a -> 'b) -> 'a tree -> 'b
 
-val string_of_tree : ('a -> string) -> 'a tree -> string
+val weight_of_list_tree : ('a -> int) -> 'a tree -> int
 
-val string_of_token_list : Token.t list -> string
+val string_of_tree : ('a -> string) -> 'a tree -> string
 
 val cluster : (Token.t, (int * string) list) Hashtbl.t -> (Token.t list) tree list
 

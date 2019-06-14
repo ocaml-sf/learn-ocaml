@@ -156,7 +156,12 @@ let refine_with_hm =
     (hm_part x)
 
 let list_of_IntMap m =
-  IntMap.fold (fun k a acc -> (k,a)::acc) m []
+  let compare_w x y =
+    let w (_,xs) = List.length xs in
+    - (compare
+         (Clustering.weight_of_list_tree w x)
+         (Clustering.weight_of_list_tree w y)) in
+  IntMap.fold (fun k a acc -> (k,List.sort compare_w a)::acc) m []
 
 let partition exo_name fun_name =
   get_all_token ()

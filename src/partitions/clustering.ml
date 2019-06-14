@@ -14,13 +14,14 @@ let string_of_tree printer =
     | Leaf a -> first ^ "Leaf: " ^ printer a
   in aux 0
 
-let string_of_token_list xs = String.concat ", " @@ List.map Token.to_string xs
-
 let fold_tree n l =
   let rec aux = function
     | Node (f,a,b) -> n f (aux a) (aux b)
     | Leaf a -> l a
   in aux
+
+let weight_of_list_tree f t =
+  fold_tree (fun _ -> ( + )) f t
 
 let rec sum_leaf_size = function
   | Leaf xs -> List.length xs

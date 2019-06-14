@@ -104,7 +104,7 @@ let rec render_tree =
      ]
 
 let render_trees xs =
-  let aux t (i,acc) =
+  let aux (i,acc) t =
     let str = "Class n°" ^ string_of_int i in
     i+1,
     H.li
@@ -112,7 +112,9 @@ let render_trees xs =
       :: render_tree t)
     :: acc
   in
-  snd (List.fold_right aux xs (0,[]))
+  List.rev @@
+    snd @@
+      List.fold_left aux (1,[]) xs
 
 let render_classes xs =
   let aux (grade,values) acc =
@@ -132,11 +134,9 @@ let exercises_tab part =
        string_of_int (List.length part.bad_type)
     ^ " codes had the wrong type: "
     ^ string_of_token_list part.bad_type in
-  H.ul
-    [ H.li [H.pcdata not_graded]
-    ; H.li [H.pcdata bad_type]
-    ]
- :: render_classes part.patition_by_grade
+  H.p [H.pcdata not_graded]
+  :: H.p [H.pcdata bad_type]
+  :: render_classes part.patition_by_grade
 
 let update_answer_tab, clear_answer_tab =
   let ace = lazy (
