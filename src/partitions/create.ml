@@ -166,7 +166,7 @@ let refine_with_hm =
     List.map
       (fold_tree
          (fun f a b -> Node (f,a,b))
-         (fun xs -> Leaf (string_of_bindings (assoc_3 (List.hd xs) x), xs)))
+         (fun xs -> Leaf (List.map (fun u -> u,string_of_bindings (assoc_3 u x)) xs)))
     (hm_part x)
 
 let list_of_IntMap m =

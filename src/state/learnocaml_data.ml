@@ -1201,7 +1201,7 @@ module Partition = struct
     bad_type   : Token.t list;
     patition_by_grade :
       (int *
-         ((string * Token.t list) tree list))
+         (((Token.t * string) list) tree list))
         list;
   }
 
@@ -1218,7 +1218,7 @@ module Partition = struct
               (fun (t,l,r) -> Node (t,l,r)) ]
 
   let leaf_enc =
-    J.tup2 J.string token_list
+    J.list (J.tup2 Token.enc J.string)
 
   let innerlist = J.list (tree_enc leaf_enc)
 

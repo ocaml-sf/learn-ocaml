@@ -397,7 +397,7 @@ module Partition : sig
     bad_type   : Token.t list;
     patition_by_grade :
       (int *
-         ((string * Token.t list) tree list))
+         (((Token.t * string) list) tree list))
         list;
   }
 

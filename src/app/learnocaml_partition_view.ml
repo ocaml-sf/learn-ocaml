@@ -77,6 +77,7 @@ let tab_select_signal, select_tab =
   tab_select_signal, select_tab
 
 let selected_class_signal, set_selected_class = React.S.create None
+let (selected_repr_signal, set_selected_repr) = React.S.create None
 
 let mouseover_toggle_signal elt sigvalue setter =
   let rec hdl _ =
@@ -95,9 +96,9 @@ let string_of_token_list lst = String.concat ", " (List.map Token.to_string lst)
 let rec render_tree =
   let open Partition in
   function
-  | Leaf (code,xs) ->
+  | Leaf xs ->
      [H.p ~a:[ H.a_onclick (fun _ ->
-                   set_selected_class (Some (code,xs)); true)]
+                   set_selected_class (Some xs); true)]
         [H.pcdata ("Leaf with " ^ string_of_int (List.length xs) ^ " student(s)")]]
   | Node (f,l,r) ->
      [
@@ -109,11 +110,10 @@ let rec render_tree =
      ]
 
 let render_trees xs =
-  let w (_,xs) = List.length xs in
   let aux (i,acc) t =
     let str =
       "Class n°" ^ string_of_int i
-      ^ " (" ^ string_of_int (Partition.weight_of_tree w t) ^ " students)" in
+      ^ " (" ^ string_of_int (Partition.weight_of_tree List.length t) ^ " students)" in
     i+1,
     H.li
       ( H.pcdata str
@@ -163,13 +163,43 @@ let update_stats_tab, clear_stats_tab =
     Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
 
 let _class_selection_updater =
+  let previous = ref None in
+  let of_repr repr = [H.code [H.pcdata repr]] in
+  let onclick p repr =
+     H.a_onclick @@
+       fun _ ->
+       (match !previous with
+        | None -> ()
+        | Some prev -> Manip.replaceChildren prev []);
+       previous := Some p;
+       Manip.replaceChildren p (of_repr repr);
+       set_selected_repr (Some (repr));
+       true in
+  let to_li tok repr p =
+    H.li
+      ~a:[ onclick p repr ]
+      [H.pcdata (Token.to_string tok); p] in
+  let mkfirst (tok,repr) =
+    let p =  H.p (of_repr repr) in
+    previous := Some p;
+    to_li tok repr p in
+  let mkelem (tok,repr) =
+    to_li tok repr @@ H.p []
+  in
   selected_class_signal |> React.S.map @@ fun id ->
   match id with
   | None -> ()
-  | Some (repr,xs) ->
-     update_stats_tab repr;
+  | Some xs ->
+     update_stats_tab (snd (List.hd xs));
      Manip.replaceChildren El.Tabs.(stats.tab)
-       [H.p [H.pcdata (string_of_token_list xs)]]
+       [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
+
+let _repr_selection_updater =
+  selected_repr_signal |> React.S.map @@ fun id ->
+  match id with
+  | None -> ()
+  | Some repr ->
+     update_stats_tab repr
 
 let clear_tabs () =
   Manip.replaceChildren El.Tabs.(text.tab) [];
