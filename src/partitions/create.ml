@@ -172,6 +172,13 @@ let refine_with_hm prof =
 let list_of_IntMap m =
   IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
+let map_to_lambda bad_type =
+  List.fold_left
+    (fun (bad,good) (a,b,c) ->
+      try bad,(a,b,(last c,to_lambda (to_typed_tree c)))::good
+      with Typetexp.Error _ -> a::bad,good)
+    (bad_type,[])
+
 let partition exo_name fun_name prof =
   get_all_token ()
   >>= get_exo_states exo_name fun_name
@@ -180,7 +187,6 @@ let partition exo_name fun_name prof =
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
   let bad_type = List.map (fun (x,_,_) -> x) bad_type in
-  let funexist =
-    List.map (fun (a,b,c) -> a,b,(last c,to_lambda (to_typed_tree c))) funexist in
+  let bad_type,funexist = map_to_lambda bad_type funexist in
   let map = list_of_IntMap @@ refine_with_hm prof @@ partition_by_grade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}
