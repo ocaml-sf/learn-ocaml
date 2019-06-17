@@ -53,6 +53,25 @@ module El = struct
   let token_id, token = id "learnocaml-token"
 end
 
+let selected_class_signal, set_selected_class = React.S.create None
+let selected_repr_signal, set_selected_repr   = React.S.create None
+        
+let update_editor_tab, clear_editor_tab =
+  let ace = lazy (
+    let editor =
+      Ocaml_mode.create_ocaml_editor
+        (Tyxml_js.To_dom.of_div El.Tabs.(editor.tab))
+    in
+    let ace = Ocaml_mode.get_editor editor in
+    Ace.set_font_size ace 16;
+    Ace.set_readonly ace true;
+    ace
+  ) in
+  (fun ans ->
+     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
+  (fun () ->
+    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+
 let tab_select_signal, select_tab =
   let open El.Tabs in
   let current = ref stats in
@@ -75,9 +94,6 @@ let tab_select_signal, select_tab =
       Manip.Ev.onclick tab.btn (fun _ -> select_tab tab; true))
     all;
   tab_select_signal, select_tab
-
-let selected_class_signal, set_selected_class = React.S.create None
-let (selected_repr_signal, set_selected_repr) = React.S.create None
 
 let mouseover_toggle_signal elt sigvalue setter =
   let rec hdl _ =
@@ -146,26 +162,10 @@ let exercises_tab part =
   :: H.p [H.pcdata bad_type]
   :: render_classes part.patition_by_grade
 
-let update_stats_tab, clear_stats_tab =
-  let ace = lazy (
-    let editor =
-      Ocaml_mode.create_ocaml_editor
-        (Tyxml_js.To_dom.of_div El.Tabs.(editor.tab))
-    in
-    let ace = Ocaml_mode.get_editor editor in
-    Ace.set_font_size ace 16;
-    Ace.set_readonly ace true;
-    ace
-  ) in
-  (fun ans ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
-  (fun () ->
-    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
-
 let _class_selection_updater =
   let previous = ref None in
   let of_repr repr = [H.code [H.pcdata repr]] in
-  let onclick p repr =
+  let onclick p tok repr =
      H.a_onclick @@
        fun _ ->
        (match !previous with
@@ -173,11 +173,11 @@ let _class_selection_updater =
         | Some prev -> Manip.replaceChildren prev []);
        previous := Some p;
        Manip.replaceChildren p (of_repr repr);
-       set_selected_repr (Some (repr));
+       set_selected_repr (Some (tok,repr));
        true in
   let to_li tok repr p =
     H.li
-      ~a:[ onclick p repr ]
+      ~a:[ onclick p tok repr ]
       [H.pcdata (Token.to_string tok); p] in
   let mkfirst (tok,repr) =
     let p =  H.p (of_repr repr) in
@@ -190,20 +190,13 @@ let _class_selection_updater =
   match id with
   | None -> ()
   | Some xs ->
-     update_stats_tab (snd (List.hd xs));
+     set_selected_repr (Some (List.hd xs));
      Manip.replaceChildren El.Tabs.(stats.tab)
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
 
-let _repr_selection_updater =
-  selected_repr_signal |> React.S.map @@ fun id ->
-  match id with
-  | None -> ()
-  | Some repr ->
-     update_stats_tab repr
-
 let clear_tabs () =
   Manip.replaceChildren El.Tabs.(text.tab) [];
-  clear_stats_tab ()
+  clear_editor_tab ()
 
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -218,13 +211,6 @@ let update_text_tab meta exo =
        d##open_;
        d##write (Js.string (exercise_text meta exo));
        d##close)
-
-let update_tabs meta exo ans =
-  update_text_tab meta exo;
-  match ans with
-  | None -> ()
-  | Some ans ->
-      update_stats_tab ans
 
 let set_string_translations () =
   let translations = [
@@ -267,7 +253,24 @@ let () =
   let fun_id =
     try (List.assoc "function" Url.Current.arguments)
     with Not_found -> failwith "function name is missing" in
+
   hide_loading ~id:El.loading_id ();
+
+  Manip.Ev.onclick El.Tabs.editor.El.Tabs.btn
+    (fun _ ->
+      match React.S.value selected_repr_signal with
+      | None -> true
+      | Some (tok,_) ->
+         select_tab El.Tabs.editor;
+         Lwt.async (fun () ->
+           retrieve (Learnocaml_api.Fetch_save tok)
+           >|= fun save ->
+           match SMap.find_opt exercise_id save.Save.all_exercise_states with
+           | None -> ()
+           | Some x ->
+              update_editor_tab x.Answer.solution);
+         true );
+
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id))
   >>= fun part ->
   Manip.replaceChildren El.Tabs.(list.tab) (exercises_tab part);
