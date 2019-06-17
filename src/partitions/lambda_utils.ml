@@ -1,4 +1,5 @@
 open Lambda
+open Asttypes
 
 let h1 x = 1,[],x
 
@@ -27,6 +28,17 @@ let hash_option f =
   function
   | None -> h1 @@ Digest.string "None"
   | Some x -> f x
+
+let hash_direction x = h1 @@ Digest.string @@
+  match x with
+  | Upto -> "Upto"
+  | Downto -> "Downto"
+
+let hash_meth_kind x = h1 @@ Digest.string @@
+   match x with
+   | Self -> "Self"
+   | Public -> "Public"
+   | Cached -> "Cached"
 
 let rec hash_lambda = function
   | Lvar _ -> h1 "Lvar"
@@ -106,10 +118,20 @@ let rec hash_lambda = function
        [ hash_lambda l
        ; hash_lambda r
        ]
-  (*
-  | Lfor of Ident.t * lambda * lambda * direction_flag * lambda
-  | Lsend of meth_kind * lambda * lambda * lambda list * Location.t *)
-  | _ -> failwith "hash_lambda"
+  | Lfor (_,a,b,d,c) ->
+     hash_string_lst "Lfor"
+       [ hash_lambda a
+       ; hash_lambda b
+       ; hash_direction d
+       ; hash_lambda c
+       ]
+  | Lsend (m,a,b,xs,_) ->
+     hash_string_lst "Lsend"
+       [ hash_meth_kind m
+       ; hash_lambda a
+       ; hash_lambda b
+       ; hash_lst_anon hash_lambda xs
+       ]
 
 let sort_filter alpha x xs =
   let x = float_of_int x in
