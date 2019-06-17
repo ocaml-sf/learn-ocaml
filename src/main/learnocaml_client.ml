@@ -712,6 +712,23 @@ module Print_token = struct
       "print-token"
 end
 
+module Print_server = struct
+  let print_server o =
+    get_config_o o
+    >>= fun config ->
+    Lwt_io.printl (Uri.to_string config.ConfigFile.server)
+    >|= fun () -> 0
+                
+  let explanation = "Just print the configured server"
+                  
+  let man = man explanation
+          
+  let cmd =
+    use_global print_server,
+    Term.info ~man ~doc:explanation "print-server"
+    
+end
+                    
 module Set_options = struct
   let set_opts o =
     get_config_o ~save_back:true o
@@ -850,6 +867,7 @@ let () =
           ; Print_token.cmd
           ; Set_options.cmd
           ; Fetch.cmd
+          ; Print_server.cmd
           ; Template.cmd
           ; Create_token.cmd ]
   with
