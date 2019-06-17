@@ -455,9 +455,9 @@ module Request_handler = struct
             status
           >>= respond_json cache
 
-      | Api.Partition (token, eid, fid) ->
+      | Api.Partition (token, eid, fid, prof) ->
          with_verified_teacher_token token @@ fun () ->
-            Partitions.Create.partition eid fid
+            Partitions.Create.partition eid fid prof
             >>= respond_json cache
 
       | Api.Invalid_request body ->

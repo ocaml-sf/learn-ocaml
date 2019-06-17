@@ -140,11 +140,11 @@ let partition_by_grade funname =
   in
   List.fold_left aux IntMap.empty
 
-let hm_part m =
+let hm_part prof m =
   let hashtbl = Hashtbl.create 100 in
   List.iter
     (fun (t,_,(_,x)) ->
-      let hash,lst = Lambda_utils.hash_lambda 50 x in
+      let hash,lst = Lambda_utils.hash_lambda prof x in
       Hashtbl.add hashtbl t (hash::lst)
     ) m;
   Clustering.cluster hashtbl
@@ -160,19 +160,19 @@ let assoc_3 t lst =
 let string_of_bindings x =
   Pprintast.string_of_structure [x]
 
-let refine_with_hm =
+let refine_with_hm prof =
   IntMap.map @@
     fun x ->
     List.map
       (fold_tree
          (fun f a b -> Node (f,a,b))
          (fun xs -> Leaf (List.map (fun u -> u,string_of_bindings (assoc_3 u x)) xs)))
-    (hm_part x)
+    (hm_part prof x)
 
 let list_of_IntMap m =
   IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
-let partition exo_name fun_name =
+let partition exo_name fun_name prof =
   get_all_token ()
   >>= get_exo_states exo_name fun_name
   >|= fun saves ->
@@ -181,5 +181,5 @@ let partition exo_name fun_name =
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
   let bad_type = List.map (fun (x,_,_) -> x) bad_type in
-  let map = list_of_IntMap @@ refine_with_hm @@ partition_by_grade fun_name funexist in
+  let map = list_of_IntMap @@ refine_with_hm prof @@ partition_by_grade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}

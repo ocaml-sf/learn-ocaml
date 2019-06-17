@@ -76,7 +76,7 @@ type _ request =
         for three-way merge *)
 
   | Partition:
-      teacher token * Exercise.id * string -> Partition.t request
+      teacher token * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request
