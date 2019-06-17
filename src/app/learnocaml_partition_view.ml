@@ -40,12 +40,12 @@ module El = struct
       btn = snd (id ("learnocaml-exo-button-" ^ name));
       tab = snd (id ("learnocaml-exo-tab-" ^ name));
     }
-    let stats = tid "stats"
+    let details = tid "details"
     let list = tid "list"
     let editor = tid "editor"
     let text = tid "text"
 
-    let all = [stats; list; editor; text]
+    let all = [details; list; editor; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
@@ -74,7 +74,7 @@ let update_editor_tab, clear_editor_tab =
 
 let tab_select_signal, select_tab =
   let open El.Tabs in
-  let current = ref stats in
+  let current = ref details in
   let cls = "front-tab" in
   let tab_select_signal, tab_select_signal_set =
     React.S.create !current
@@ -204,7 +204,7 @@ let _class_selection_updater =
   | None -> ()
   | Some xs ->
      set_selected_repr (Some (List.hd xs));
-     Manip.replaceChildren El.Tabs.(stats.tab)
+     Manip.replaceChildren El.Tabs.(details.tab)
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
 
 let clear_tabs () =
@@ -228,7 +228,7 @@ let update_text_tab meta exo =
 let set_string_translations () =
   let translations = [
     "txt_loading", [%i"Loading student data"];
-    "learnocaml-exo-button-stats", [%i"Stats"];
+    "learnocaml-exo-button-details", [%i"Details"];
     "learnocaml-exo-button-list", [%i"Exercises"];
     "learnocaml-exo-button-text", [%i"Subject"];
     "learnocaml-exo-button-editor", [%i"Answer"];
