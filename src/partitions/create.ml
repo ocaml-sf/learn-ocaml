@@ -15,15 +15,17 @@ let get_all_token () =
 
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
-let rec take_until p = function
+let take_until_last p =
+  let rec aux = function
   | [] -> None
   | x::xs ->
-     if p x
-     then Some [x]
-     else
-       match take_until p xs with
-       | None -> None
-       | Some xs -> Some (x::xs)
+     match aux xs with
+     | None ->
+        if p x
+        then Some [x]
+        else None
+     | Some xs -> Some (x::xs)
+  in aux
 
 let find_func f : Parsetree.structure_item list -> Parsetree.structure option =
   let open Parsetree in
@@ -37,7 +39,7 @@ let find_func f : Parsetree.structure_item list -> Parsetree.structure option =
        end
     | _ -> false
   in
-  take_until pred
+  take_until_last pred
 
 (* Renvoie la liste des différents Answer.t associés à exo_name et fun_name *)
 let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * Parsetree.structure) list Lwt.t =
