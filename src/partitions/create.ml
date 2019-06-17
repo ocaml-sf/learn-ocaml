@@ -25,8 +25,6 @@ let rec take_until p = function
        | None -> None
        | Some xs -> Some (x::xs)
 
-type func_res = Asttypes.rec_flag * Parsetree.value_binding list
-
 let find_func f : Parsetree.structure_item list -> Parsetree.structure option =
   let open Parsetree in
   let pred c =
