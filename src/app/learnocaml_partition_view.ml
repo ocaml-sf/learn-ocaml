@@ -270,8 +270,6 @@ let () =
     try (int_of_string @@ List.assoc "prof" Url.Current.arguments)
     with Not_found | Failure _ -> failwith "prof is missing or malformed" in
 
-  hide_loading ~id:El.loading_id ();
-
   Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
     (fun _ ->
       match React.S.value selected_repr_signal with
@@ -289,5 +287,6 @@ let () =
 
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
   >>= fun part ->
+  hide_loading ~id:El.loading_id ();
   Manip.replaceChildren El.Tabs.(list.tab) (exercises_tab part);
   Lwt.return_unit
