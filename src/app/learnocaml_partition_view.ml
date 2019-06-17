@@ -42,10 +42,10 @@ module El = struct
     }
     let details = tid "details"
     let list = tid "list"
-    let editor = tid "editor"
+    let answer = tid "answer"
     let text = tid "text"
 
-    let all = [details; list; editor; text]
+    let all = [details; list; answer; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
@@ -56,13 +56,13 @@ end
 let selected_class_signal, set_selected_class = React.S.create None
 let selected_repr_signal, set_selected_repr   = React.S.create None
         
-let update_editor_tab, clear_editor_tab =
+let update_answer_tab, clear_answer_tab =
   let ace = lazy (
-    let editor =
+    let answer =
       Ocaml_mode.create_ocaml_editor
-        (Tyxml_js.To_dom.of_div El.Tabs.(editor.tab))
+        (Tyxml_js.To_dom.of_div El.Tabs.(answer.tab))
     in
-    let ace = Ocaml_mode.get_editor editor in
+    let ace = Ocaml_mode.get_editor answer in
     Ace.set_font_size ace 16;
     Ace.set_readonly ace true;
     ace
@@ -209,7 +209,7 @@ let _class_selection_updater =
 
 let clear_tabs () =
   Manip.replaceChildren El.Tabs.(text.tab) [];
-  clear_editor_tab ()
+  clear_answer_tab ()
 
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -231,7 +231,7 @@ let set_string_translations () =
     "learnocaml-exo-button-details", [%i"Details"];
     "learnocaml-exo-button-list", [%i"Exercises"];
     "learnocaml-exo-button-text", [%i"Subject"];
-    "learnocaml-exo-button-editor", [%i"Answer"];
+    "learnocaml-exo-button-answer", [%i"Answer"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -272,19 +272,19 @@ let () =
 
   hide_loading ~id:El.loading_id ();
 
-  Manip.Ev.onclick El.Tabs.editor.El.Tabs.btn
+  Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
     (fun _ ->
       match React.S.value selected_repr_signal with
       | None -> true
       | Some (tok,_) ->
-         select_tab El.Tabs.editor;
+         select_tab El.Tabs.answer;
          Lwt.async (fun () ->
            retrieve (Learnocaml_api.Fetch_save tok)
            >|= fun save ->
            match SMap.find_opt exercise_id save.Save.all_exercise_states with
            | None -> ()
            | Some x ->
-              update_editor_tab x.Answer.solution);
+              update_answer_tab x.Answer.solution);
          true );
 
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
