@@ -148,6 +148,8 @@ let render_classes xs =
         acc
   in List.fold_right aux xs []
 
+let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
+
 let exercises_tab part =
   let open Partition in
   let not_graded =
@@ -158,8 +160,19 @@ let exercises_tab part =
        string_of_int (List.length part.bad_type)
     ^ " codes had the wrong type: "
     ^ string_of_token_list part.bad_type in
+  let total_sum =
+    let s =
+      sum_with
+        (fun (_,x) ->
+          sum_with (fun x -> Partition.weight_of_tree List.length x)
+            x
+        )
+        part.patition_by_grade in
+    string_of_int s
+    ^ " codes implemented the function with the right type." in
   H.p [H.pcdata not_graded]
   :: H.p [H.pcdata bad_type]
+  :: H.p [H.pcdata total_sum]
   :: render_classes part.patition_by_grade
 
 let _class_selection_updater =
