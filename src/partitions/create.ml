@@ -174,10 +174,11 @@ let partition exo_name fun_name prof =
   get_all_token ()
   >>= get_exo_states exo_name fun_name
   >|= fun saves ->
-  let saves = List.map (fun (a,b,c) -> a,b,(last c,to_lambda (to_typed_tree c))) saves in
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let funexist,bad_type = partition_FunExist fun_name lst in
   let bad_type = List.map (fun (x,_,_) -> x) bad_type in
+  let funexist =
+    List.map (fun (a,b,c) -> a,b,(last c,to_lambda (to_typed_tree c))) funexist in
   let map = list_of_IntMap @@ refine_with_hm prof @@ partition_by_grade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}
