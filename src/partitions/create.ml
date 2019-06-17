@@ -77,7 +77,8 @@ let rec get_last_of_seq = function
 let to_lambda (lst : Typedtree.structure) =
   get_last_of_seq @@
     Simplif.simplify_lambda "" @@
-      Translmod.transl_toplevel_definition lst
+      Lambda_utils.inline_all @@
+        Translmod.transl_toplevel_definition lst
 
 (* Renvoie un couple où:
    - Le premier membre contient les réponses sans notes
