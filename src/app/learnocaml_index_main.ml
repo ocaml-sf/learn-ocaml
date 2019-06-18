@@ -680,6 +680,7 @@ class type learnocaml_config = object
   method enableLessons: bool Js.optdef_prop
   method enableExercises: bool Js.optdef_prop
   method enableToplevel: bool Js.optdef_prop
+  method enablePlayground: bool Js.optdef_prop
   method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
   method txtNickname: Js.js_string Js.t Js.optdef_prop
 end
@@ -763,6 +764,8 @@ let () =
        | _ -> []) @
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
+        (if get_opt config##.enablePlayground
+       then [ "playground", ([%i"Playground"], toplevel_tab) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
            [ "teacher", ([%i"Teach"], teacher_tab t) ]
