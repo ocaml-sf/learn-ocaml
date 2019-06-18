@@ -9,10 +9,6 @@ open Utils
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
 
-(* Return all the token in sync *)
-let get_all_token () =
-  Learnocaml_store.Student.Index.get () >|= List.map (fun x -> x.Student.token)
-
 let impl_of_string s = Parse.implementation (Lexing.from_string s)
 
 let take_until_last p =
@@ -42,22 +38,24 @@ let find_func f : Parsetree.structure_item list -> Parsetree.structure option =
   take_until_last pred
 
 (* Renvoie la liste des différents Answer.t associés à exo_name et fun_name *)
-let get_exo_states exo_name fun_name lst : (Token.t * Answer.t * Parsetree.structure) list Lwt.t =
-  Lwt_list.filter_map_s
-    (fun t ->
-      Learnocaml_store.Save.get t >|=
-        bindOption
-          (fun x ->
-            bindOption
-              (fun x ->
-                fmapOption
-                  (fun r -> t,x,r)
-                  (find_func fun_name (impl_of_string Answer.(x.solution)))
-              )
-              (SMap.find_opt exo_name Save.(x.all_exercise_states))
-          )
-    )
-    lst
+let get_all_saves exo_name fun_name =
+  Learnocaml_store.Student.Index.get () >>=
+    Lwt_list.fold_left_s (* filter_map_rev *)
+      (fun acc t ->
+        let t = t.Student.token in
+        Learnocaml_store.Save.get t >|= fun save ->
+          maybe acc (fun x -> x :: acc) @@
+          bindOption
+            (fun x ->
+              bindOption
+                (fun x ->
+                  fmapOption
+                    (fun r -> t,x,r)
+                    (find_func fun_name (impl_of_string Answer.(x.solution)))
+                )
+                (SMap.find_opt exo_name Save.(x.all_exercise_states))
+            ) save
+      ) []
 
 let rec last = function
   | [] -> failwith "last"
@@ -181,8 +179,7 @@ let map_to_lambda bad_type =
     (bad_type,[])
 
 let partition exo_name fun_name prof =
-  get_all_token ()
-  >>= get_exo_states exo_name fun_name
+  get_all_saves exo_name fun_name
   >|= fun saves ->
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
