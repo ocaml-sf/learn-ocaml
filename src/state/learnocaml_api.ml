@@ -298,8 +298,21 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
            | Some "" ->
                Static ["exercise.html"] |> k
            | _ ->
-               Static ("static"::path) |> k)
-
+              Static ("static"::path) |> k)
+      | `GET, ("lectures"::path), _token ->
+         begin
+           match last path with
+           | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
+               (match token with
+                | Some token ->
+                    let id = Filename.chop_suffix (String.concat "/" path) ".json" in
+                    Exercise (token, id) |> k
+                | None -> Invalid_request "Missing token" |> k)
+           | Some "" ->
+              Static ["exercise.html"] |> k
+           | _ ->
+              Static ("static"::path) |> k
+         end
       | `GET, ["lessons.json"], _ ->
           Lesson_index () |> k
       | `GET, ["lessons"; f], _ when Filename.check_suffix f ".json" ->
@@ -328,7 +341,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET,
         ( ["index.html"]
-        | ["exercise.html"]
+          | ["exercise.html"]
+        | ["lecture.html"]
         | ["student-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
