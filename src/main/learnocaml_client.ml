@@ -49,7 +49,7 @@ module Args_global = struct
   let token =
     value & opt (some token_conv) None & info ["token";"t"] ~docv:"TOKEN" ~doc:
       "Your token on the learn-ocaml server. This is required when submitting \
-       solutions or interracting whith the server."
+       solutions or interacting with the server."
       ~env:(Term.env_info "LEARNOCAML_TOKEN" ~doc:
               "Sets the learn-ocaml user token on the sever. Overridden by \
                $(b,--token).")
