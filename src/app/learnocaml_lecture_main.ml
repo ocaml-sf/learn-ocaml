@@ -98,7 +98,7 @@ let display_kind ex_meta =
 
 let exercise_link ?(cl = []) id content =
   let open Tyxml_js.Html5 in
-  a ~a:[ a_href ("/exercises/"^id^"/") ;
+  a ~a:[ a_href ("/lectures/"^id^"/") ;
          a_class cl ;
        ]
     content
@@ -210,107 +210,11 @@ let display_authors authors =
          ] in
   display_list @@ List.map author authors
 
-let display_meta token ex_meta id =
-  let open Learnocaml_data.Exercise in
-  let open Tyxml_js.Html5 in
-  let ident =
-    Format.asprintf "%s %s" [%i "Identifier:" ] id in
-  let opt l f = match l with [] -> None | l -> Some (f l) in
-  let authors =
-    opt ex_meta.Meta.author @@ fun author ->
-    let title = match author with [_] -> [%i"Author"] | _ -> [%i"Authors"] in
-    span [ pcdata title; pcdata " " ] ::
-    display_authors author
-  in
-  retrieve (Learnocaml_api.Exercise_index token)
-  >|= fun (index, _) ->
-  let req_map, focus_map =
-    Exercise.Index.fold_exercises (fun (req, focus) id meta ->
-        let add sk id map =
-          SMap.add sk
-            (SSet.add id (try SMap.find sk map with Not_found -> SSet.empty))
-            map
-        in
-        List.fold_left (fun acc sk -> add sk id acc) req
-          meta.Exercise.Meta.requirements,
-        List.fold_left (fun acc sk -> add sk id acc) focus
-          meta.Exercise.Meta.focus
-      ) (SMap.empty, SMap.empty) index
-  in
-  let focus =
-    opt ex_meta.Meta.focus @@ fun focus ->
-    [%i "Skills trained:"],
-    display_list ~sep:(pcdata "") @@
-    List.map (fun s ->
-        display_skill_link
-          (try SSet.elements (SMap.find s focus_map) with Not_found -> [])
-          "learnocaml-exo-focus-meta" (`Focus s))
-      focus in
-  let requirements =
-    opt ex_meta.Meta.requirements @@ fun requirements ->
-    [%i "Skills required:"],
-      display_list ~sep:(pcdata "") @@
-      List.map (fun s ->
-          display_skill_link
-            (try SSet.elements (SMap.find s req_map) with Not_found -> [])
-            "learnocaml-exo-requirements-meta" (`Requirements s))
-        requirements in
-  let backward =
-    let l =
-      List.fold_left (fun acc id ->
-          match Exercise.Index.find_opt index id with
-          | Some meta ->
-              display_exercise_link "learnocaml-exo-backward-meta" meta id
-              :: acc
-          | None -> acc)
-        []
-        (List.rev ex_meta.Meta.backward)
-    in
-    opt l @@ fun l ->
-    [%i"Previous exercises:"], display_list ~sep:(pcdata "") l
-  in
-  let forward =
-    let l =
-      List.fold_left (fun acc id ->
-          match Exercise.Index.find_opt index id with
-          | Some meta ->
-              display_exercise_link "learnocaml-exo-backward-meta" meta id
-              :: acc
-          | None -> acc)
-        []
-        (List.rev ex_meta.Meta.forward)
-    in
-    opt l @@ fun l ->
-    [%i"Next exercises:"], display_list ~sep:(pcdata "") l
-  in
-  let tab = find_component "learnocaml-exo-tab-meta" in
-  Manip.replaceChildren tab @@
-  Tyxml_js.Html5.([
-    h1 ~a:[ a_class [ "learnocaml-exo-meta-title" ] ]
-      [ pcdata [%i "Metadata" ] ] ;
-
-    div ~a:[ a_id "learnocaml-exo-content-meta" ]
-      (display_descr ex_meta ::
-       display_stars ex_meta ::
-       display_kind ex_meta ::
-       p [ pcdata ident ] ::
-       (match authors with Some a -> p a | None -> div []) ::
-       List.map (function
-           | Some (title, values) ->
-               div
-                 (h2 ~a:[ a_class [ "learnocaml-exo-meta-category-title" ] ]
-                    [ pcdata title ] ::
-                  values)
-           | None -> div [])
-         [ focus ; requirements ; backward ; forward ])
-  ])
-
 let set_string_translations () =
   let translations = [
-    "txt_preparing", [%i"Preparing the environment"];
     "learnocaml-exo-button-editor", [%i"Editor"];
     "learnocaml-exo-button-toplevel", [%i"Toplevel"];
-    "learnocaml-exo-button-text", [%i"Exercise"];
+    "learnocaml-exo-button-text", [%i"Lecture"];
     "learnocaml-exo-editor-pane", [%i"Editor"];
   ] in
   List.iter
@@ -441,9 +345,7 @@ let () =
        | Some elt -> countdown elt t ~ontimeout:make_readonly
        | None -> ());
   let solution =
-    try
-      Some (Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution)
-    with
+    try Some (Learnocaml_local_storage.(retrieve (exercise_state id))).Answer.solution with
     | Not_found -> None in
   (* ---- toplevel pane ------------------------------------------------- *)
   begin toplevel_button
@@ -469,6 +371,36 @@ let () =
   Manip.replaceChildren text_container
     Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
+  let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
+  if prelude <> "" then begin
+    let open Tyxml_js.Html5 in
+    let state = ref (match arg "prelude" with
+        | exception Not_found -> true
+        | "shown" -> true
+        | "hidden" -> false
+        | _ -> failwith "Bad format for argument prelude.") in
+    let prelude_btn = button [] in
+    let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
+                             prelude_btn ] in
+    let prelude_container =
+      pre ~a: [ a_class [ "toplevel-code" ] ]
+        (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+    let update () =
+      if !state then begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
+        Manip.SetCss.display prelude_container "" ;
+        set_arg "prelude" "shown"
+      end else begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
+        Manip.SetCss.display prelude_container "none" ;
+        set_arg "prelude" "hidden"
+      end in
+    update () ;
+    Manip.Ev.onclick prelude_btn
+      (fun _ -> state := not !state ; update () ; true) ;
+    Manip.appendChildren text_container
+      [ prelude_title ; prelude_container ]
+  end ;
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")

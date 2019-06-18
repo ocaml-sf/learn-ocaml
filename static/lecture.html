@@ -3,10 +3,9 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
-    <title>Learn OCaml by OCamlPro - Exercise</title>
+    <title>Learn OCaml by OCamlPro - Lecture</title>
     <link rel="stylesheet" href="/css/learnocaml_common.css">
     <link rel="stylesheet" href="/css/learnocaml_exercise.css">
-    <link rel="stylesheet" href="/css/learnocaml_report.css">
     <link rel="stylesheet" href="/css/learnocaml_tryocaml.css">
     <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
     <!-- var editor = ace.edit("learnocaml-exo-editor-pane"); -->
@@ -43,6 +42,12 @@
         <img src="/icons/logo_ocp.svg">
       </div>
       </a>
+      <!--
+      <button id="learnocaml-exo-button-grade">
+        <img src="/icons/icon_reload_light.svg">
+        <span class="label">Grade!</span>
+      </button>
+      -->
       <div id="learnocaml-nickname">
       </div>
       <div id="learnocaml-countdown">
@@ -53,8 +58,11 @@
       <!-- To select a tab, make it the only one whose
            button and tab have the class .front-tab.
            Don't set the editor to .front-tab initially. -->
-      <button id="learnocaml-exo-button-text">Exercise</button>
+      <button id="learnocaml-exo-button-text">Lecture</button>
       <button id="learnocaml-exo-button-toplevel" class="front-tab">Toplevel</button>
+      <!-- When graded, apply one of .partial, .success or .failure.
+           The score must be put in a span.score. -->
+      <!-- Any other button can be added. -->
     </div>
     <div id="learnocaml-exo-tabs">
       <!-- Same comment as above for the first two tabs. -->
@@ -108,25 +116,6 @@
           <!--   <img src="/icons/icon_download_dark.svg"> -->
           <!--   <span class="label">Download</span> -->
           <!-- </button> -->
-        </div>
-      </div>
-      <div id="learnocaml-exo-tab-report">
-        <!-- Using an iframe is the easiest way to isolate the CSSs. -->
-        <!-- <iframe src="/mockup_report.html"></iframe> -->
-        <img src="/icons/icon_reload_dark.svg"
-             style="position: absolute; top: 50%; left: 50%;
-                    margin: -100px 0 0 -100px; width: 200px;
-                    opacity: 0.2">
-        <span id="txt_grade_report"
-              style="position: absolute; top: 50%; margin: -12px 0 0 0;
-                     line-height: 24px; font-size: 24px; text-shadow: 0 0 5px #888;
-                     width: 100%; text-align: center;">
-          <!--Click the Grade button to get your report-->
-        </span>
-      </div>
-      <div id="learnocaml-exo-tab-meta">
-        <div id="learnocaml-exo-content-meta">
-          Please wait...
         </div>
       </div>
       <!-- Any tab can be added. -->
