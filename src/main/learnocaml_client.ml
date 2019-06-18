@@ -741,12 +741,12 @@ module Fetch = struct
       | e -> Lwt.fail e
 
   let write_save_files lst save =
-    let pred x = match lst with
+    let has_to_fetch x = match lst with
       | [] -> true
       | _ -> List.mem x lst
     in
     Lwt_list.fold_left_s (fun acc (id, st) ->
-      if not (pred id) then Lwt.return acc
+      if not (has_to_fetch id) then Lwt.return acc
       else
       let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
       (if Sys.file_exists f then
