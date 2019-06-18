@@ -197,6 +197,17 @@ let replace ident l =
   | Lsend (a,b,c,d,e) ->
      Lsend (a, aux b, aux c, List.map aux d, e)
   in aux
+
+let inlineable x f =
+  match x with
+  | Alias -> true
+  | Strict ->
+     begin
+       match f with
+       | Lvar _ | Lconst _ -> true
+       | _ -> false
+     end
+  | _  -> false
   
 let rec inline_all x =
   let insnd lst = List.map (fun (e,l) -> e,inline_all l) lst in
@@ -206,7 +217,7 @@ let rec inline_all x =
   match x with
   | Lvar _ | Lconst _ -> x
   | Llet (k,e,ident,l,r) ->
-     if k = Alias
+     if inlineable k l
      then
        inline_all (replace ident l r)
      else
