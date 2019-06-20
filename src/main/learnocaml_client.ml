@@ -795,14 +795,11 @@ module Fetch = struct
       []
       (SMap.bindings (save.Save.all_exercise_states))
     >>= fun actually_found ->
-    match List.filter (fun x -> not (List.mem x actually_found)) lst with
-    | [] -> Lwt.return_unit
-    | xs ->
-       Lwt_list.iter_s
-         (fun id ->
-           Lwt_io.printl
-             ("Warning: exercise " ^ id ^ " was not found on the server"))
-         xs
+    let not_found = List.filter (fun x -> not (List.mem x actually_found)) lst in
+    Lwt_list.iter_s
+      (Lwt_io.eprintf
+         ("Warning: exercise %s was not found on the server"))
+      not_found
 
   let fetch o lst =
     get_config_o o
