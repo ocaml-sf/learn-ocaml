@@ -599,17 +599,11 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
   | Some c -> Lwt.return c
   | None -> init ?local ?server:server_opt ?token:token_opt ()
 
-let man return_value desc =
-  let ret =
-    match return_value with
-    | None -> []
-    | Some x -> [`S "RETURN VALUES"; `P x] in
-  [
+let man p = [
     `S "DESCRIPTION";
-    `P desc ;
-    `S "OPTIONS"]
-  @ ret @
-  [ `S "AUTHORS";
+    `P p;
+    `S "OPTIONS";
+    `S "AUTHORS";
     `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
         Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
         the MIT License.";
@@ -693,7 +687,7 @@ module Grade = struct
          Lwt.return 0
 
   let man =
-    man None
+    man
       "Grades an OCaml exercise using a learn-ocaml server, and submits \
         solutions."
 
@@ -720,7 +714,7 @@ module Print_token = struct
 
   let explanation = "Just print the configured user token."
 
-  let man = man None explanation
+  let man = man explanation
 
   let cmd =
     use_global print_tok,
@@ -736,7 +730,7 @@ module Print_server = struct
                 
   let explanation = "Just print the configured server."
                   
-  let man = man None explanation
+  let man = man explanation
           
   let cmd =
     use_global print_server,
@@ -750,7 +744,7 @@ module Set_options = struct
     >|= fun _ -> 0
 
   let man =
-    man None
+    man
       "Overwrite the configuration file with the command-line options \
        ($(b,--server), $(b,--token))."
 
@@ -806,19 +800,18 @@ module Fetch = struct
     let not_found = List.filter (fun x -> not (List.mem x actually_found)) lst in
     Lwt_list.iter_s
       (Lwt_io.eprintf
-         ("Warning: exercise %s was not found on the server.\n"))
+         ("Warning: exercise %s was not found on the server."))
       not_found
-    >|= fun () ->
-    if List.length not_found = 0 then 0 else 1
 
   let fetch o lst =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
     fetch_save server token
     >>= write_save_files lst
+    >|= fun () -> 0
 
   let man =
-    man (Some "Returns 0 on success and 1 if some files were not found on the server.")
+    man
       "Fetch the user's solutions on the server to the current directory."
 
   let cmd =
@@ -851,9 +844,8 @@ module Create_token = struct
        Lwt_io.print (Token.to_string tok ^ "\n")
        >|= fun () -> 0
 
-  let man = man None
-              "Create a token on the server with the desired nickname.\
-               Prodiving a token will test if it exists on the server."
+  let man = man "Create a token on the server with the desired nickname.\
+                 Prodiving a token will test if it exists on the server."
 
   let cmd =
     Term.(
@@ -881,7 +873,7 @@ module Template = struct
          Learnocaml_exercise.(access File.template exercise)
        >|= fun () -> 0
 
-  let man = man None "Get the template of a given exercise"
+  let man = man "Get the template of a given exercise"
 
   let cmd =
     Term.(
@@ -894,7 +886,7 @@ end
 
 module Main = struct
   let man =
-    man None
+    man
       "Learn-ocaml-client, default command is grade."
 
   let cmd = fst Grade.cmd,
