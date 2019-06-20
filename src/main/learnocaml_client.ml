@@ -42,7 +42,7 @@ module Args_global = struct
   let server_url =
     value & opt (some url_conv) None &
     info ["s";"server"] ~docv:"URL" ~doc:
-      "The URL of the learn-ocaml server"
+      "The URL of the learn-ocaml server."
       ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
               "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
 
@@ -57,7 +57,7 @@ module Args_global = struct
   let local =
     value & flag & info ["local"] ~doc:
       "Use a configuration file local to the current directory, rather \
-       than user-wide"
+       than user-wide."
 
   let apply server_url token local =
     {server_url; token; local}
@@ -77,11 +77,11 @@ module Args_create_token = struct
 
   let nickname =
     value & pos 0 (some string) None & info [] ~docv:"NICKNAME" ~doc:
-      "The desired nickname"
+      "The desired nickname."
 
   let secret =
     value & pos 1 string "" & info [] ~docv:"SECRET" ~doc:
-      "The secret. If not provided, use \"\" as a secret"
+      "The secret. If not provided, use \"\" as a secret."
 
   let apply nickname secret = {nickname; secret}
 
@@ -91,7 +91,7 @@ end
 module Args_exercise_id = struct
   let id =
     value & pos 0 (some string) None & info [] ~docv:"ID" ~doc:
-      "The exercise identifier"
+      "The exercise identifier."
 
   let term = Term.(const (fun x -> x) $ id)
 end
@@ -108,38 +108,38 @@ module Args_exercises = struct
 
   let solution_file =
     value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
-      "The file containing the user's solution to the exercise"
+      "The file containing the user's solution to the exercise."
 
   let exercise_id =
     value & opt (some string) None & info ["id"] ~docv:"ID" ~doc:
       "The exercise identifier. If unspecified, this is inferred from the file \
-       name"
+       name."
 
   let output_format =
     value & vflag `Console & [
       `Console, info ["console"] ~doc:
-        "output the results to the console. This is the default";
+        "output the results to the console. This is the default.";
       `Json, info ["json"] ~doc:
-        "output the results as JSON, to stdout";
+        "output the results as JSON, to stdout.";
       `Html, info ["html"] ~doc:
-        "output the results as HTML, to the console";
+        "output the results as HTML, to the console.";
       `Raw, info ["raw"] ~doc:
-        "output the results as raw text";
+        "output the results as raw text.";
     ]
 
   let dont_submit =
     value & flag & info ["n";"dry-run"] ~doc:
-      "Perform the grading locally, but don't submit back to the server"
+      "Perform the grading locally, but don't submit back to the server."
 
   let color_when =
     let when_enum = ["always", Some true; "never", Some false; "auto", None] in
     value & opt (enum when_enum) None & info ["color"] ~docv:"WHEN" ~doc:
       ("Colorise the output, and also allows use of UTF-8 characters. $(docv) \
-        must be "^doc_alts_enum when_enum)
+        must be "^doc_alts_enum when_enum ^".")
 
   let verbose =
     value & flag_all & info ["v";"verbose"] ~doc:
-      "Be more verbose. Can be repeated"
+      "Be more verbose. Can be repeated."
 
   let apply solution_file exercise_id output_format dont_submit
         color_when verbose  =
@@ -166,7 +166,7 @@ module Args_fetch = struct
   let id =
     value & pos_all string [] & info [] ~docv:"EXERCISE_ID" ~doc:
       "Exercise identifier. Can be repeated. \
-       If not present, all the exercises will be downloaded"
+       If not present, all the exercises will be downloaded."
 
   let term = Term.(const (fun x -> x) $ id)
 end
@@ -696,7 +696,7 @@ module Grade = struct
       const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
       $ Args_global.term $ Args_exercises.term),
     Term.info ~man
-      ~doc:"Learn-ocaml grading client"
+      ~doc:"Learn-ocaml grading client."
       "grade"
 end
 
@@ -712,13 +712,13 @@ module Print_token = struct
     Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
     >|= fun () -> 0
 
-  let man = man "Just print the configured user token"
+  let explanation = "Just print the configured user token."
+
+  let man = man explanation
 
   let cmd =
     use_global print_tok,
-    Term.info ~man
-      ~doc:"Just print the configured user token"
-      "print-token"
+    Term.info ~man ~doc:explanation "print-token"
 end
 
 module Print_server = struct
@@ -728,7 +728,7 @@ module Print_server = struct
     Lwt_io.printl (Uri.to_string config.ConfigFile.server)
     >|= fun () -> 0
                 
-  let explanation = "Just print the configured server"
+  let explanation = "Just print the configured server."
                   
   let man = man explanation
           
@@ -746,12 +746,12 @@ module Set_options = struct
   let man =
     man
       "Overwrite the configuration file with the command-line options \
-       ($(b,--server), $(b,--token))"
+       ($(b,--server), $(b,--token))."
 
   let cmd =
     use_global set_opts,
     Term.info ~man
-      ~doc:"Set configuration"
+      ~doc:"Set configuration."
       "set-options"
 end
 
@@ -800,7 +800,7 @@ module Fetch = struct
     let not_found = List.filter (fun x -> not (List.mem x actually_found)) lst in
     Lwt_list.iter_s
       (Lwt_io.eprintf
-         ("Warning: exercise %s was not found on the server"))
+         ("Warning: exercise %s was not found on the server."))
       not_found
 
   let fetch o lst =
@@ -812,14 +812,14 @@ module Fetch = struct
 
   let man =
     man
-      "Fetch the user's solutions on the server to the current directory"
+      "Fetch the user's solutions on the server to the current directory."
 
   let cmd =
     Term.(
       const (fun o l -> Pervasives.exit (Lwt_main.run (fetch o l)))
       $ Args_global.term $ Args_fetch.term),
     Term.info ~man
-      ~doc:"Fetch the user's solutions"
+      ~doc:"Fetch the user's solutions."
       "fetch"
 end
 
@@ -845,14 +845,14 @@ module Create_token = struct
        >|= fun () -> 0
 
   let man = man "Create a token on the server with the desired nickname.\
-                 Prodiving a token will test if it exists on the server"
+                 Prodiving a token will test if it exists on the server."
 
   let cmd =
     Term.(
       const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
       $ Args_global.term_server $ Args_create_token.term),
     Term.info ~man
-      ~doc:"Create a token"
+      ~doc:"Create a token."
       "create-token"
 end
 
@@ -880,18 +880,18 @@ module Template = struct
       const (fun o id -> Pervasives.exit (Lwt_main.run (template o id)))
       $ Args_global.term $ Args_exercise_id.term),
     Term.info ~man
-      ~doc:"Get the template of a given exercise"
+      ~doc:"Get the template of a given exercise."
       "template"
 end
 
 module Main = struct
   let man =
     man
-      "Learn-ocaml-client, default command is grade"
+      "Learn-ocaml-client, default command is grade."
 
   let cmd = fst Grade.cmd,
     Term.info ~version ~man
-      ~doc:"Learn-ocaml grading client"
+      ~doc:"Learn-ocaml grading client."
       "learn-ocaml-client"
 end
 
