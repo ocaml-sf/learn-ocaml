@@ -776,7 +776,9 @@ module Fetch = struct
       | e -> Lwt.fail e
 
   let write_save_files lst save =
-    let has_to_fetch x = match lst with
+    let has_to_fetch x =
+      (* When no exercise identifier was specified, fetch everything *)
+      match lst with
       | [] -> true
       | _ -> List.mem x lst
     in
