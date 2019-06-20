@@ -782,12 +782,14 @@ module Fetch = struct
       | [] -> true
       | _ -> List.mem x lst
     in
+    let already_exists = ref 0 in
     Lwt_list.fold_left_s (fun acc (id, st) ->
       if not (has_to_fetch id) then Lwt.return acc
       else
       let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
       (if Sys.file_exists f then
-        (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+         (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+          already_exists := !already_exists + 1;
          Lwt.return_unit)
       else
         Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
@@ -800,25 +802,35 @@ module Fetch = struct
     let not_found = List.filter (fun x -> not (List.mem x actually_found)) lst in
     Lwt_list.iter_s
       (Lwt_io.eprintf
-         ("Warning: exercise %s was not found on the server."))
+         ("Warning: exercise %s was not found on the server.\n"))
       not_found
+    >|= fun () ->
+    let first = if !already_exists = 0 then 0 else 1 in
+    let second = if List.length not_found = 0 then 0 else 1 in
+    first + 2*second
 
   let fetch o lst =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
     fetch_save server token
     >>= write_save_files lst
-    >|= fun () -> 0
 
   let man =
     man
       "Fetch the user's solutions on the server to the current directory."
 
+  let exits =
+    let open Term in
+    [ exit_info ~doc:"Default exit." exit_status_success
+    ; exit_info ~doc:"There was a file already present on the local side." 1
+    ; exit_info ~doc:"A specified exercise was not found on the server." 2
+    ; exit_info ~doc:"Both of 1 and 2." 3 ]
+
   let cmd =
     Term.(
       const (fun o l -> Pervasives.exit (Lwt_main.run (fetch o l)))
       $ Args_global.term $ Args_fetch.term),
-    Term.info ~man
+    Term.info ~man ~exits
       ~doc:"Fetch the user's solutions."
       "fetch"
 end
