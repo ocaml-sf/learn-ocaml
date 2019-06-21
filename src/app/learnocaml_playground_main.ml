@@ -14,8 +14,8 @@ open Learnocaml_data
 module H = Tyxml_js.Html
 
 let init_tabs, select_tab =
-  let names = [ "text" ; "toplevel" ; "editor" ] in
-  let current = ref "text" in
+  let names = [ "toplevel" ; "editor" ] in
+  let current = ref "toplevel" in
   let select_tab name =
     set_arg "tab" name ;
     Manip.removeClass
@@ -38,8 +38,8 @@ let init_tabs, select_tab =
   let init_tabs () =
     current := begin try
         let requested = arg "tab" in
-        if List.mem requested names then requested else "text"
-      with Not_found -> "text"
+        if List.mem requested names then requested else "toplevel"
+      with Not_found -> "toplevel"
     end ;
     List.iter
       (fun name ->
@@ -60,15 +60,12 @@ let set_string_translations () =
   let translations = [
     "learnocaml-exo-button-editor", [%i"Editor"];
     "learnocaml-exo-button-toplevel", [%i"Toplevel"];
-    "learnocaml-exo-button-text", [%i"Lecture"];
     "learnocaml-exo-editor-pane", [%i"Editor"];
   ] in
   List.iter
     (fun (id, text) ->
        Manip.setInnerHtml (find_component id) text)
     translations
-
-let is_readonly = ref false
 
 let local_save ace id =
   let key = Learnocaml_local_storage.exercise_state id in
@@ -178,41 +175,6 @@ let () =
     Learnocaml_toplevel.execute top ;
     Lwt.return ()
   end ;
-  (* ---- text pane ----------------------------------------------------- *)
-  let text_container = find_component "learnocaml-exo-tab-text" in
-  (* Manip.replaceChildren text_container (* TODO meta *)
-    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
-                     Tyxml_js.Of_dom.of_iFrame text_iframe ] ; *)
-  let prelude = playground.Playground.prelude in
-  if prelude <> "" then begin
-    let open Tyxml_js.Html5 in
-    let state = ref (match arg "prelude" with
-        | exception Not_found -> true
-        | "shown" -> true
-        | "hidden" -> false
-        | _ -> failwith "Bad format for argument prelude.") in
-    let prelude_btn = button [] in
-    let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
-                             prelude_btn ] in
-    let prelude_container =
-      pre ~a: [ a_class [ "toplevel-code" ] ]
-        (Learnocaml_toplevel_output.format_ocaml_code prelude) in
-    let update () =
-      if !state then begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
-        Manip.SetCss.display prelude_container "" ;
-        set_arg "prelude" "shown"
-      end else begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
-        Manip.SetCss.display prelude_container "none" ;
-        set_arg "prelude" "hidden"
-      end in
-    update () ;
-    Manip.Ev.onclick prelude_btn
-      (fun _ -> state := not !state ; update () ; true) ;
-    Manip.appendChildren text_container
-      [ prelude_title ; prelude_container ]
-  end ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
@@ -270,9 +232,9 @@ let () =
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
   begin toolbar_button
-      ~icon: "list" [%i"Exercises"] @@ fun () ->
+      ~icon: "list" [%i"Playground"] @@ fun () ->
     Dom_html.window##.location##assign
-      (Js.string "/index.html#activity=exercises") ;
+      (Js.string "/index.html#activity=playground") ;
     Lwt.return ()
   end ;
   Window.onunload (fun _ev -> local_save ace id; true);

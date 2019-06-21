@@ -159,7 +159,7 @@ let playground_tab _ _ () =
       let title = id in
          let short_description = Some "TODO" in
          a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
-                a_cass [ "exercise" ] ] [
+                a_class [ "exercise" ] ] [
              div ~a:[ a_class [ "descr" ] ] (
                  h1 [ pcdata title ] ::
                    begin match short_description with
