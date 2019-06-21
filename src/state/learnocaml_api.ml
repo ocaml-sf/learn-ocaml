@@ -200,9 +200,9 @@ module Conversions (Json: JSON_CODEC) = struct
        get ["lessons"; id^".json"]
 
     | Playground_index () ->
-        get ["playground.json"]
+        get ["playgrounds.json"]
     | Playground id ->
-        get ["playground"; id^".json"]
+        get ["playgrounds"; id^".json"]
 
     | Tutorial_index () ->
         get ["tutorials.json"]

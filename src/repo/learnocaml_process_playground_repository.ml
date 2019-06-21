@@ -91,11 +91,17 @@ let write_structure dest_dir =
   let open Playground in
   Lwt_list.iter_s @@ fun x ->
     to_file enc (dest_dir / Learnocaml_index.playground_path x.id) x
+
+let write_index dest_dir =
+  to_file Playground.Index.enc (dest_dir / Learnocaml_index.playground_index_path)
               
 let catched exercises_index dest_dir =
   get_structure exercises_index
-  >>= fill_structure
+  >>= fun structure ->
+  fill_structure structure
   >>= write_structure dest_dir
+  >>= fun () ->
+  write_index dest_dir structure
   >|= fun () -> true
   
 let main dest_dir =

@@ -146,6 +146,32 @@ let exercises_tab token _ _ () =
     | l -> H.div ~a:[H.a_id El.Dyn.exercise_list_id] l
   in
     Manip.appendChild El.content list_div;
+    Lwt.return list_div
+
+let playground_tab _ _ () =
+  show_loading [%i"Loading playground"] @@ fun () ->
+  Lwt_js.sleep 0.5 >>= fun () ->
+  retrieve (Learnocaml_api.Playground_index ())
+  >>= fun index ->
+  let list_div =
+    let rec format_contents id =
+      let open Tyxml_js.Html5 in
+      let title = id in
+         let short_description = Some "TODO" in
+         a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
+                a_cass [ "exercise" ] ] [
+             div ~a:[ a_class [ "descr" ] ] (
+                 h1 [ pcdata title ] ::
+                   begin match short_description with
+                   | None -> []
+                   | Some text -> [ pcdata text ]
+                   end
+               );
+           ]
+    in
+    List.map format_contents index in
+  let list_div = H.div ~a:[H.a_id El.Dyn.exercise_list_id] list_div in
+  Manip.appendChild El.content list_div;
   Lwt.return list_div
 
 let lessons_tab select (arg, set_arg, _delete_arg) () =
@@ -765,7 +791,7 @@ let () =
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
-       then [ "playground", ([%i"Playground"], toplevel_tab) ] else []) @
+       then [ "playground", ([%i"Playground"], playground_tab) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
            [ "teacher", ([%i"Teach"], teacher_tab t) ]
