@@ -65,7 +65,7 @@
 )
 
 (executable
- (name learnocaml_lecture_main)
+ (name learnocaml_playground_main)
  (modes byte)
  (flags :standard -warn-error -9-27-33)
  (libraries ezjsonm
@@ -76,7 +76,7 @@
             learnocaml_toplevel
             js_of_ocaml.ppx
             ocplib_i18n)
- (modules Learnocaml_lecture_main)
+ (modules Learnocaml_playground_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml
   (flags :standard +cstruct/cstruct.js)
@@ -106,6 +106,6 @@
  (section share)
  (files (learnocaml_index_main.bc.js as www/js/learnocaml-main.js)
         (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
-	(learnocaml_lecture_main.bc.js as www/js/learnocaml-lecture.js)
+	(learnocaml_playground_main.bc.js as www/js/learnocaml-playground.js)
         (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js))
 )
