@@ -1221,9 +1221,9 @@ module Playground = struct
 
   module Index = struct
 
-    type nonrec t = t list
+    type t = id list
 
-    let enc = J.list enc
+    let enc = J.list J.string
 
   end
 end

@@ -405,7 +405,7 @@ module Playground : sig
 
   module Index: sig
 
-    type nonrec t = t list
+    type t = id list
 
     val enc: t Json_encoding.encoding
 
