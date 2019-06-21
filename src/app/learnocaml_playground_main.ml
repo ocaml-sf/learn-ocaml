@@ -70,12 +70,6 @@ let set_string_translations () =
 
 let is_readonly = ref false
 
-let make_readonly () =
-  is_readonly := true;
-  alert ~title:[%i"TIME'S UP"]
-    [%i"The deadline for this exercise has expired. Any changes you make \
-        from now on will remain local only."]
-
 let local_save ace id =
   let key = Learnocaml_local_storage.exercise_state id in
   let ans =
@@ -102,19 +96,6 @@ let () =
   Lwt.async @@ fun () ->
   set_string_translations ();
   Learnocaml_local_storage.init () ;
-  let token =
-    try
-      Learnocaml_local_storage.(retrieve sync_token) |>
-      Lwt.return
-    with Not_found ->
-      ask_string ~title:"Secret"
-        [H.pcdata [%i"Enter the secret"]]
-      >>= fun secret ->
-      retrieve (Learnocaml_api.Create_token (Sha.sha512 secret, None, None))
-      >|= fun token ->
-      Learnocaml_local_storage.(store sync_token) token;
-      token
-  in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
@@ -127,28 +108,22 @@ let () =
   let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = match Url.Current.path with
-    | "" :: "lectures" :: p | "lectures" :: p ->
+    | "" :: "playground" :: p | "playground" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
     | _ -> arg "id"
   in
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
-    token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id))
+    retrieve (Learnocaml_api.Playground id)
   in
   let after_init top =
-    exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    begin match Learnocaml_exercise.(decipher File.prelude exo) with
-      | "" -> Lwt.return true
-      | prelude ->
-          Learnocaml_toplevel.load ~print_outcome:true top
-            ~message: [%i"loading the prelude..."]
-            prelude
-    end >>= fun r1 ->
-    Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
-    if not r1 || not r2 then failwith [%i"error in prelude"] ;
+    exercise_fetch >>= fun playground ->
+    Learnocaml_toplevel.load ~print_outcome:true top
+      ~message: [%i"loading the prelude..."]
+      playground.Playground.prelude
+    >>= fun r1 ->
+    if not r1 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
   let timeout_prompt =
@@ -181,14 +156,7 @@ let () =
       ~history () in
   init_tabs () ;
   toplevel_launch >>= fun top ->
-  exercise_fetch >>= fun (ex_meta, exo, deadline) ->
-  (match deadline with
-   | None -> ()
-   | Some 0. -> make_readonly ()
-   | Some t ->
-       match Manip.by_id "learnocaml-countdown" with
-       | Some elt -> countdown elt t ~ontimeout:make_readonly
-       | None -> ());
+  exercise_fetch >>= fun playground ->
   let solution =
     try Some (Learnocaml_local_storage.(retrieve (exercise_state id))).Answer.solution with
     | Not_found -> None in
@@ -212,11 +180,10 @@ let () =
   end ;
   (* ---- text pane ----------------------------------------------------- *)
   let text_container = find_component "learnocaml-exo-tab-text" in
-  let text_iframe = Dom_html.createIframe Dom_html.document in
-  Manip.replaceChildren text_container
+  (* Manip.replaceChildren text_container (* TODO meta *)
     Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
-                     Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
-  let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
+                     Tyxml_js.Of_dom.of_iFrame text_iframe ] ; *)
+  let prelude = playground.Playground.prelude in
   if prelude <> "" then begin
     let open Tyxml_js.Html5 in
     let state = ref (match arg "prelude" with
@@ -246,13 +213,6 @@ let () =
     Manip.appendChildren text_container
       [ prelude_title ; prelude_container ]
   end ;
-  Js.Opt.case
-    (text_iframe##.contentDocument)
-    (fun () -> failwith "cannot edit iframe document")
-    (fun d ->
-       d##open_;
-       d##write (Js.string (exercise_text ex_meta exo));
-       d##close) ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
@@ -260,20 +220,15 @@ let () =
   Ace.set_contents ace ~reset_undo:true
     (match solution with
      | Some solution -> solution
-     | None -> Learnocaml_exercise.(access File.template exo)) ;
+     | None -> playground.Playground.template) ;
   Ace.set_font_size ace 18;
   begin editor_button
       ~icon: "cleanup" [%i"Reset"] @@ fun () ->
     confirm ~title:[%i"START FROM SCRATCH"]
       [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
       (fun () ->
-         Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)));
+         Ace.set_contents ace playground.Playground.template);
     Lwt.return ()
-  end ;
-  begin editor_button
-      ~icon: "sync" [%i"Sync"] @@ fun () ->
-    token >>= fun token ->
-    sync_exercise token id ~editor:(Ace.get_contents ace) >|= fun _save -> ()
   end ;
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->

@@ -313,17 +313,14 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
-      | `GET, ("lectures"::path), _token ->
+      | `GET, ("playground"::path), _token ->
          begin
            match last path with
            | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
-               (match token with
-                | Some token ->
-                    let id = Filename.chop_suffix (String.concat "/" path) ".json" in
-                    Exercise (token, id) |> k
-                | None -> Invalid_request "Missing token" |> k)
+              let id = Filename.chop_suffix (String.concat "/" path) ".json" in
+              Playground id |> k
            | Some "" ->
-              Static ["lecture.html"] |> k
+              Static ["playground.html"] |> k
            | _ ->
               Static ("static"::path) |> k
          end
@@ -337,9 +334,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
          Tutorial (Filename.chop_suffix f ".json") |> k
 
-      | `GET, ["playground.json"], _ ->
+      | `GET, ["playgrounds.json"], _ ->
           Playground_index () |> k
-      | `GET, ["playground"; f], _ when Filename.check_suffix f ".json" ->
+      | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
