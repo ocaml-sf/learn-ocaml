@@ -16,6 +16,8 @@ let playground_dir = "playground"
 
 let playground_path id = playground_dir ^ "/" ^ id ^ ".json"
 
+let playground_index_path = "playground.json"
+
 let lesson_index_path = "lessons.json"
 
 let lessons_dir = "lessons"

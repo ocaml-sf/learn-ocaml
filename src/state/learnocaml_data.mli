@@ -381,3 +381,34 @@ module Tutorial: sig
   end
 
 end
+
+module Playground : sig
+  type id = string
+
+  type t =
+  { id : id ;
+    prelude : string ;
+    template : string ;
+  }
+
+  val enc: t Json_encoding.encoding
+
+  module Meta : sig
+    type t =
+      {
+        title: string;
+        short_description: string option;
+      }
+
+    val enc: t Json_encoding.encoding
+  end
+
+  module Index: sig
+
+    type nonrec t = t list
+
+    val enc: t Json_encoding.encoding
+
+  end
+
+end
