@@ -15,19 +15,41 @@ let string_of_tree printer =
   in aux 0
 
 (* Suppose that x and y are sorted *)
-let rec intersect x y =
+let rec diff x y =
   match x,y with
-  | [],_ -> []
-  | _,[] -> []
+  | [],_ -> false,y
+  | _,[] -> false,x
   | xx::xs,yy::ys ->
      if xx < yy
-     then intersect xs y
+     then let b,ndiff = diff xs y in
+          b,xx::ndiff
      else
        if xx > yy
-       then intersect x ys
-       else xx::intersect xs ys
+       then let b,ndiff = diff x ys in
+          b,yy::ndiff
+       else let _,ndiff = diff xs ys in
+            true,ndiff
 
 let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
+
+(* Compute the distance between two clusters,
+   if there are Nodes, takes choose using f (max gives complete-linkage clustering)
+*)
+let dist f =
+  let rec aux x y =
+    match x,y with
+    | Leaf (x,_), Leaf (y,_) ->
+       let b,diff = diff x y in
+       if b
+       then Some (float_of_int  @@ sum_of_fst diff)
+       else None
+    | Node (_,u,v), Node (_,u',v') ->
+       f
+         (f (aux u u') (aux u v'))
+         (f (aux v u') (aux v v'))
+    | Node (_,u,v), l | l, Node (_,u,v) ->
+       f (aux u l) (aux v l)
+  in aux
 
 (* NB: None is the biggest number *)
 
@@ -47,26 +69,6 @@ let max_option x y =
   match compare_option x y with
   | True _ -> y
   | False ->  x
-
-(* Compute the distance between two clusters,
-   if there are Nodes, takes choose using f (max gives complete-linkage clustering)
-*)
-let dist f =
-  let rec aux x y =
-    match x,y with
-    | Leaf (x,_), Leaf (y,_) ->
-       begin
-         match intersect x y with
-         | [] -> None
-         | xs -> Some (1. /. (float_of_int (sum_of_fst xs)))
-       end
-    | Node (_,u,v), Node (_,u',v') ->
-       f
-         (f (aux u u') (aux u v'))
-         (f (aux v u') (aux v v'))
-    | Node (_,u,v), l | l, Node (_,u,v) ->
-       f (aux u l) (aux v l)
-  in aux
 
 (* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist xs =
