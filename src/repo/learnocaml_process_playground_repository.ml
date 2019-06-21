@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(* TODO exercises -> playground *)
+
 open Lwt.Infix
 
 open Learnocaml_data
@@ -76,11 +78,11 @@ let get_structure exercises_index =
 let fill_structure  =
   let open Playground in
   Lwt_list.map_s @@ fun id ->
-   from_file Json_encoding.string (id / "template.ml")
+   Lwt_io.(with_file ~mode:Input (!playground_dir / id / "template.ml") read)
    >>= fun template ->
-   let preludeml = id / "prelude.ml" in
+   let preludeml = !playground_dir / id / "prelude.ml" in
    (if Sys.file_exists preludeml
-    then from_file Json_encoding.string preludeml
+    then    Lwt_io.(with_file ~mode:Input preludeml read)
     else Lwt.return "")
     >|= fun prelude ->
    {id;template;prelude}
@@ -95,14 +97,6 @@ let catched exercises_index dest_dir =
   >>= fill_structure
   >>= write_structure dest_dir
   >|= fun () -> true
-
-let errored exn =
-  let print_unknown ppf = function
-    | Failure msg -> Format.fprintf ppf "Fatal: %s" msg
-    | exn -> Format.fprintf ppf "Fatal: %s"  (Printexc.to_string exn) in
-  Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
-  Format.eprintf "@." ;
-  Lwt.return false
   
 let main dest_dir =
   let (/) dir f =
@@ -111,7 +105,7 @@ let main dest_dir =
     match !playground_index with
     | Some exercises_index -> exercises_index
     | None -> !playground_dir / "index.json" in
-  let playground_dest_dir = dest_dir / Learnocaml_index.exercises_dir in
+  let playground_dest_dir = dest_dir / Learnocaml_index.playground_dir in
   Lwt_utils.mkdir_p playground_dest_dir >>= fun () ->
   Lwt.catch
     (fun () -> catched exercises_index dest_dir)
