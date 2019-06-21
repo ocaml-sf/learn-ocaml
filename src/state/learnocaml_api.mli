@@ -63,6 +63,11 @@ type _ request =
   | Tutorial:
       string -> Tutorial.t request
 
+  | Playground_index:
+      unit -> Playground.Index.t request
+  | Playground:
+      string -> Playground.t request
+
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
   | Exercise_status:

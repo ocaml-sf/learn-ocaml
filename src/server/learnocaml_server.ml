@@ -378,12 +378,17 @@ module Request_handler = struct
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json cache
       | Api.Lesson id ->
-          Lesson.get id >>= respond_json cache
+         Lesson.get id >>= respond_json cache
 
       | Api.Tutorial_index () ->
           Tutorial.Index.get () >>= respond_json cache
       | Api.Tutorial id ->
-          Tutorial.get id >>= respond_json cache
+         Tutorial.get id >>= respond_json cache
+
+      | Api.Playground_index () ->
+          Playground.Index.get () >>= respond_json cache
+      | Api.Playground id ->
+          Playground.get id >>= respond_json cache
 
       | Api.Exercise_status_index token ->
           with_verified_teacher_token token @@ fun () ->

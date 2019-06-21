@@ -47,6 +47,11 @@ type _ request =
   | Tutorial:
       string -> Tutorial.t request
 
+  | Playground_index:
+      unit -> Playground.Index.t request
+  | Playground:
+      string -> Playground.t request
+
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
   | Exercise_status:
@@ -114,7 +119,11 @@ module Conversions (Json: JSON_CODEC) = struct
       | Tutorial_index _ ->
           json Tutorial.Index.enc
       | Tutorial _ ->
-          json Tutorial.enc
+         json Tutorial.enc
+      | Playground_index _ ->
+          json Playground.Index.enc
+      | Playground _ ->
+          json Playground.enc
 
       | Exercise_status_index _ ->
           json (J.list Exercise.Status.enc)
@@ -188,7 +197,12 @@ module Conversions (Json: JSON_CODEC) = struct
     | Lesson_index () ->
         get ["lessons.json"]
     | Lesson id ->
-        get ["lessons"; id^".json"]
+       get ["lessons"; id^".json"]
+
+    | Playground_index () ->
+        get ["playground.json"]
+    | Playground id ->
+        get ["playground"; id^".json"]
 
     | Tutorial_index () ->
         get ["tutorials.json"]
@@ -321,7 +335,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials.json"], _ ->
           Tutorial_index () |> k
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
-          Tutorial (Filename.chop_suffix f ".json") |> k
+         Tutorial (Filename.chop_suffix f ".json") |> k
+
+      | `GET, ["playground.json"], _ ->
+          Playground_index () |> k
+      | `GET, ["playground"; f], _ when Filename.check_suffix f ".json" ->
+          Playground (Filename.chop_suffix f ".json") |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
