@@ -827,7 +827,7 @@ module Template = struct
 
   let template o exercise_id =
     match exercise_id with
-    | None -> Lwt_io.print "You must provide an exercise id\n"
+    | None -> Lwt.fail_with "You must provide an exercise id"
               >|= fun () -> 2
     | Some exercise_id ->
        get_config_o o
