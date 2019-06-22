@@ -53,10 +53,11 @@ let auto_index path =
           (String.length f - String.length !playground_dir - 1)
       in
       if Sys.file_exists (f / "template.ml") then
+        let elem = full_id, Playground.Meta.default full_id in
         match acc with
-        | None -> Some [full_id]
+        | None -> Some [elem]
         | Some xs ->
-           Some (full_id :: xs)
+           Some (elem :: xs)
       else acc)
     None
     entries
@@ -77,12 +78,12 @@ let get_structure exercises_index =
 
 let fill_structure  =
   let open Playground in
-  Lwt_list.map_s @@ fun id ->
+  Lwt_list.map_s @@ fun (id,_) ->
    Lwt_io.(with_file ~mode:Input (!playground_dir / id / "template.ml") read)
    >>= fun template ->
    let preludeml = !playground_dir / id / "prelude.ml" in
    (if Sys.file_exists preludeml
-    then    Lwt_io.(with_file ~mode:Input preludeml read)
+    then  Lwt_io.(with_file ~mode:Input preludeml read)
     else Lwt.return "")
     >|= fun prelude ->
    {id;template;prelude}
@@ -94,7 +95,7 @@ let write_structure dest_dir =
 
 let write_index dest_dir =
   to_file Playground.Index.enc (dest_dir / Learnocaml_index.playground_index_path)
-              
+
 let catched exercises_index dest_dir =
   get_structure exercises_index
   >>= fun structure ->
@@ -103,7 +104,7 @@ let catched exercises_index dest_dir =
   >>= fun () ->
   write_index dest_dir structure
   >|= fun () -> true
-  
+
 let main dest_dir =
   let (/) dir f =
     String.concat Filename.dir_sep [ dir ; f ] in

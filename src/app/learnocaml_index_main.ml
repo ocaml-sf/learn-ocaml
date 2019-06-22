@@ -154,20 +154,20 @@ let playground_tab _ _ () =
   retrieve (Learnocaml_api.Playground_index ())
   >>= fun index ->
   let list_div =
-    let rec format_contents id =
+    let format_contents (id, pmeta) =
       let open Tyxml_js.Html5 in
-      let title = id in
-         let short_description = Some "TODO" in
-         a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
-                a_class [ "exercise" ] ] [
-             div ~a:[ a_class [ "descr" ] ] (
-                 h1 [ pcdata title ] ::
-                   begin match short_description with
-                   | None -> []
-                   | Some text -> [ pcdata text ]
-                   end
-               );
-           ]
+      let title = pmeta.Playground.Meta.title in
+      let short_description = pmeta.Playground.Meta.short_description in
+      a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
+             a_class [ "exercise" ] ] [
+          div ~a:[ a_class [ "descr" ] ] (
+              h1 [ pcdata title ] ::
+                begin match short_description with
+                | None -> []
+                | Some text -> [ pcdata text ]
+                end
+            );
+        ]
     in
     List.map format_contents index in
   let list_div = H.div ~a:[H.a_id El.Dyn.exercise_list_id] list_div in

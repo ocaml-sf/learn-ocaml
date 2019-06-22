@@ -1208,6 +1208,8 @@ module Playground = struct
         short_description: string option;
       }
 
+    let default id = {title=id; short_description=None}
+
     let enc =
     J.conv
     (fun { title; short_description } ->
@@ -1221,9 +1223,9 @@ module Playground = struct
 
   module Index = struct
 
-    type t = id list
+    type t = (id * Meta.t) list
 
-    let enc = J.list J.string
+    let enc = J.list (J.tup2 J.string Meta.enc)
 
   end
 end

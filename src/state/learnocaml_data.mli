@@ -400,12 +400,14 @@ module Playground : sig
         short_description: string option;
       }
 
+    val default : string -> t
+
     val enc: t Json_encoding.encoding
   end
 
   module Index: sig
 
-    type t = id list
+    type t = (id * Meta.t) list
 
     val enc: t Json_encoding.encoding
 
