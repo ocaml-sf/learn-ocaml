@@ -6,11 +6,10 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(* TODO exercises -> playground *)
+open Learnocaml_process_common
+open Learnocaml_data
 
 open Lwt.Infix
-
-open Learnocaml_data
 
 let playground_dir = ref "./playground"
 let playground_index = ref None
@@ -22,26 +21,6 @@ let errored exn =
   Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
   Format.eprintf "@." ;
   Lwt.return false
-
-(* TODO from process_tutorial *)
-let from_file encoding fn =
-  Lwt_io.(with_file ~mode: Input) fn @@ fun chan ->
-  Lwt_io.read chan >>= fun str ->
-  let json = Ezjsonm.from_string str in
-  Lwt.return (Json_encoding.destruct encoding json)
-
-(* TODO from process_tutorial *)
-let to_file encoding fn value =
-  Lwt_io.(with_file ~mode: Output) fn @@ fun chan ->
-  let json = Json_encoding.construct encoding value in
-  let json = match json with
-    | `A _ | `O _ as d -> d
-    | v -> `A [ v ] in
-  let str = Ezjsonm.to_string ~minify:false (json :> Ezjsonm.t) in
-  Lwt_io.write chan str
-
-let (/) dir f =
-  String.concat Filename.dir_sep [ dir ; f ]
 
 let auto_index path =
   let entries = Sys.readdir path in
@@ -96,8 +75,8 @@ let write_structure dest_dir =
 let write_index dest_dir =
   to_file Playground.Index.enc (dest_dir / Learnocaml_index.playground_index_path)
 
-let catched exercises_index dest_dir =
-  get_structure exercises_index
+let catched playground_index dest_dir =
+  get_structure playground_index
   >>= fun structure ->
   fill_structure structure
   >>= write_structure dest_dir
@@ -106,14 +85,12 @@ let catched exercises_index dest_dir =
   >|= fun () -> true
 
 let main dest_dir =
-  let (/) dir f =
-    String.concat Filename.dir_sep [ dir ; f ] in
-  let exercises_index =
+  let playground_index =
     match !playground_index with
-    | Some exercises_index -> exercises_index
+    | Some playground_index -> playground_index
     | None -> !playground_dir / "index.json" in
   let playground_dest_dir = dest_dir / Learnocaml_index.playground_dir in
   Lwt_utils.mkdir_p playground_dest_dir >>= fun () ->
   Lwt.catch
-    (fun () -> catched exercises_index dest_dir)
+    (fun () -> catched playground_index dest_dir)
     errored
