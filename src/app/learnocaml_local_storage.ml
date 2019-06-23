@@ -212,6 +212,14 @@ let listed list_key item_prefix ?default enc =
       store ; retrieve ; delete ; listeners = []  } in
   list, item, assoc
 
+let index_list,
+    index_state,
+    all_index_states=
+  listed
+    [ "index-state-list" ]
+    [ "editor-state" ]
+    Learnocaml_exercise_state.index_state_enc
+    
 let exercise_list,
     exercise_state,
     all_exercise_states =
@@ -219,6 +227,15 @@ let exercise_list,
     [ "exercise-state-list" ]
     [ "exercise-state" ]
     Learnocaml_exercise_state.exercise_state_enc
+
+let editor_list,
+    editor_state,
+    all_editor_states=
+  listed
+    [ "editor-state-list" ]
+    [ "editor-state" ]
+   Learnocaml_exercise_state.editor_state_enc
+
 
 let toplevel_history_list,
     toplevel_history,

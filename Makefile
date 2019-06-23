@@ -22,7 +22,7 @@ build-deps:
 
 build:
 	@ocp-build init
-	@ocp-build
+	@ocp-build -scan
 
 process-repo: install
 	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
@@ -37,14 +37,27 @@ static:
 	@${MAKE} -C static
 
 install: static
-	@mkdir -p ${DEST_DIR}
+	@mkdir -p $(DEST_DIR)
+	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
+          -exercises-dir ${EXERCISES_DIR} \
+          -tutorials-dir ${TUTORIALS_DIR} \
+          -dest-dir ${DEST_DIR} \
+          -dump-outputs ${EXERCISES_DIR} \
+          -dump-reports ${EXERCISES_DIR}
 	cp -r static/* ${DEST_DIR}
 	cp ${LESSONS_DIR}/* ${DEST_DIR}
 	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
+	@cp _obuild/*/editor.js ${DEST_DIR}/js/
+	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-simple-server.byte .
+
+
+	@cp _obuild/*/editor.js ${DEST_DIR}/js/
+	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
+
 
 .PHONY: learn-ocaml.install travis
 learn-ocaml.install: static
@@ -91,6 +104,7 @@ clean:
                             ${EXERCISES_DIR}/%.*, \
                             ${wildcard ${EXERCISES_DIR}/*/meta.json}}
 	-find -name \*~ -delete
+	-find -name \#\*\# -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally
 	BUILDID="build-$$RANDOM";					\

@@ -22,3 +22,26 @@ type exercise_state =
     mtime : float }
 
 val exercise_state_enc : exercise_state Json_encoding.encoding
+
+type editor_state =
+  { id : string ;
+    titre : string;
+    prepare : string  ;
+    diff : float option;
+    solution : string ;
+    question : string ;
+    template : string ;
+    test : string ;
+    prelude : string ;    
+    mtime : float }
+
+val editor_state_enc : editor_state Json_encoding.encoding
+open Learnocaml_index
+type index_state =
+  {
+     exos : Learnocaml_index.exercise Map.Make(String).t;
+     mtime : float;
+  }
+  
+
+val index_state_enc : index_state Json_encoding.encoding

@@ -74,3 +74,7 @@ val lesson_path : string -> string
 val tutorial_index_path : string
 
 val tutorial_path : string -> string
+
+val map_enc :'a Json_encoding.encoding -> 'a Map.Make(String).t Json_encoding.encoding
+    
+val exercise_enc :exercise Json_encoding.encoding

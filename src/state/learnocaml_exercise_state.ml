@@ -42,3 +42,47 @@ let exercise_state_enc =
        (req "solution" string)
        (opt "report" Learnocaml_report.report_enc)
        (dft "mtime" float 0.))
+;;
+
+
+type editor_state =
+  { id : string ;
+    titre : string;
+    prepare :string;
+    diff : float option ;
+    solution : string ;
+    question : string ;
+    template : string ;
+    test : string ;
+    prelude : string;    
+    mtime : float }
+
+open Json_encoding
+
+let editor_state_enc =
+  
+  conv
+    (fun {id ; titre ; prepare; diff;solution ; question ;template ; test;prelude ; mtime } ->
+       (id , titre , prepare, diff, solution , question , template , test, prelude , mtime))
+    (fun (id , titre , prepare, diff, solution , question , template , test, prelude , mtime) ->
+       {id ; titre ; prepare; diff;solution ; question ;template ; test; prelude ; mtime })
+    (obj10
+       (req "id" string)
+       (req "titre" string)
+       (req "prepare" string)
+       (opt "diff" float )
+       (req "solution" string)
+       (req "question" string)
+       (req "template" string)
+       (req "test" string)
+       (req "prelude" string)
+       (dft "mtime" float 0.))
+
+open Learnocaml_index;;
+type index_state=
+  {
+    exos: exercise Map.Make (String).t ;
+        mtime :float
+        
+  }
+let index_state_enc = conv (fun {exos;mtime}->(exos,mtime) ) (fun (exos,mtime)->{exos;mtime}) (obj2 (req "exercises" (map_enc exercise_enc)) (dft "mtime" float 0.))

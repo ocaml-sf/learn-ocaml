@@ -22,6 +22,8 @@ type t
 (** An exercise field accessor *)
 type 'a field
 
+val empty : t
+
 (** Get was called on a missing undefaulted field *)
 exception Missing_field of string
 

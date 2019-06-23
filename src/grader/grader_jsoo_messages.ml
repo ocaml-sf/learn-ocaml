@@ -22,7 +22,22 @@ type from_worker =
   | Callback of string
   | Answer of Learnocaml_report.report * string * string * string
 
+type to_worker_edit =
+  { solution : string ;
+    solutionBis : string }
+
+
+
 open Json_encoding
+
+let to_worker_edit_enc =
+  conv
+    (fun { solution ; solutionBis } -> (solution, solutionBis))
+    (fun (solution, solutionBis) -> { solution ; solutionBis })
+    (obj2
+       (req "solution" string)
+       (req "solutionBis" string))
+
 
 let to_worker_enc =
   conv

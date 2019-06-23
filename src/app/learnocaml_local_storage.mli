@@ -29,6 +29,14 @@ val listener : 'a storage_key -> ('a option -> unit) option ref
 
 val cached_exercise : string -> Learnocaml_exercise.t storage_key
 
+val editor_state : string -> Learnocaml_exercise_state.editor_state storage_key
+
+val all_editor_states : Learnocaml_exercise_state.editor_state Map.Make (String).t storage_key
+
+val index_state :string->Learnocaml_exercise_state.index_state storage_key
+
+val all_index_states : Learnocaml_exercise_state.index_state Map.Make (String).t storage_key
+
 val exercise_state : string -> Learnocaml_exercise_state.exercise_state storage_key
 
 val all_exercise_states : Learnocaml_exercise_state.exercise_state Map.Make (String).t storage_key

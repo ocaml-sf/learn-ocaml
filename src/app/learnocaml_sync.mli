@@ -15,13 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+
 type save_file =
-  { all_exercise_states :
+  { all_index_states :
+      Learnocaml_exercise_state.index_state Map.Make(String).t;
+    all_editor_states :
+      Learnocaml_exercise_state.editor_state Map.Make (String).t  ;      
+    all_exercise_states :      
       Learnocaml_exercise_state.exercise_state Map.Make (String).t  ;
     all_toplevel_histories :
       Learnocaml_toplevel_history.snapshot Map.Make (String).t ;
     all_exercise_toplevel_histories :
       Learnocaml_toplevel_history.snapshot Map.Make (String).t }
+
 
 val save_file_enc : save_file Json_encoding.encoding
 

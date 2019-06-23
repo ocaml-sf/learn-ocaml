@@ -13,7 +13,7 @@ begin library "testing"
   files = [
     "introspection_intf.mli"
     "introspection.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
-    "test_lib.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ] )
+    "test_lib.ml" ( comp += [ "-ppx" %asm_exe( p = "ppx_metaquot") ])
   ]
 end
 

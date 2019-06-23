@@ -18,9 +18,16 @@
 type to_worker =
   { exercise : Learnocaml_exercise.t ;
     solution : string }
+
+type to_worker_edit =
+  { solution : string ;
+    solutionBis : string }
+
 type from_worker =
   | Callback of string
   | Answer of Learnocaml_report.report * string * string * string
 
 val to_worker_enc : to_worker Json_encoding.encoding
+val to_worker_edit_enc : to_worker_edit Json_encoding.encoding
+
 val from_worker_enc : from_worker Json_encoding.encoding

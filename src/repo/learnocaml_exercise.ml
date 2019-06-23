@@ -17,7 +17,7 @@
 
 module StringMap = Map.Make (String)
 type t = string StringMap.t
-
+let (empty :t)=StringMap.empty 
 type 'a field =
   { key : string ;
     ciphered : bool ;
@@ -190,3 +190,4 @@ let enc =
            Not_found -> None in
        read ~read_field ~id ~decipher: true ())
     (assoc string)
+

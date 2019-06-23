@@ -1,0 +1,5 @@
+{ "learnocaml_version": "1",
+  "groups":
+  { "demo":
+    { "title": "Demo editor pack",
+      "exercises": [] } } }
