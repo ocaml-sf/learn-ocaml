@@ -155,19 +155,26 @@ let parse_html_tutorial ~tutorial_name ~file_name =
     | `Elt ("br", _, _) :: rest ->
         parse_text acc rest
     | `Text text :: rest ->
-        let text = String.trim (Str.(global_replace (regexp "[ \t\n]+")) " " text) in
+       let text =
+         String.trim (Str.(global_replace (regexp "[ \t\n]+")) " " text) in
         parse_text (Text text :: acc) rest
     | `Elt (("code" | "quote"), [], children) :: rest ->
         parse_code [] children >>= fun code ->
-        let code = String.trim (Str.(global_replace (regexp "\\( *\n[ \t]*\\)+")) " " code) in
+        let code =
+          String.trim (Str.(global_replace
+                              (regexp "\\( *\n[ \t]*\\)+")) " " code) in
         parse_text (Code { code ; runnable = false } :: acc) rest
     | `Elt (("code" | "quote"), [ "data-math", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
-        let code = String.trim (Str.(global_replace (regexp "\\( *\n[ \t]*\\)+")) " " code) in
+        let code =
+          String.trim (Str.(global_replace
+                              (regexp "\\( *\n[ \t]*\\)+")) " " code) in
         parse_text (Math code :: acc) rest
     | `Elt (("code" | "quote"), [ "data-run", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
-        let code = String.trim (Str.(global_replace (regexp "\\( *\n[ \t]*\\)+")) " " code) in
+        let code =
+          String.trim (Str.(global_replace
+                              (regexp "\\( *\n[ \t]*\\)+")) " " code) in
         parse_text (Code { code ; runnable = true } :: acc) rest
     | `Elt (("code" | "quote"), _ , children) :: rest ->
         fail "the <code> markup expects either \
@@ -180,7 +187,8 @@ let parse_html_tutorial ~tutorial_name ~file_name =
   let rec parse_contents ?(require_p = true) acc = function
     | `Elt ("p", _, children) :: rest ->
         parse_text [] children >>= fun contents ->
-        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p
+          (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | `Elt ("ul" | "ol" as tag, _, children) :: rest ->
         let rec parse_items tag acc = function
           | [] -> Lwt.return (List.rev acc)
@@ -193,18 +201,21 @@ let parse_html_tutorial ~tutorial_name ~file_name =
     | `Elt ("pre", [], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = false } in
+        let code_block =
+          Learnocaml_tutorial.Code_block  { code ; runnable = false } in
         parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-run", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
-        let code_block = Learnocaml_tutorial.Code_block  { code ; runnable = true } in
+        let code_block =
+          Learnocaml_tutorial.Code_block  { code ; runnable = true } in
         parse_contents ~require_p (code_block :: acc) rest
     | `Elt ("pre", [ "data-math", _ ], children) :: rest ->
         parse_code [] children >>= fun code ->
         let code = reshape_code_block code in
         let contents = [ Math code ] in
-        parse_contents ~require_p (Learnocaml_tutorial.Paragraph contents :: acc) rest
+        parse_contents ~require_p
+          (Learnocaml_tutorial.Paragraph contents :: acc) rest
     | `Elt ("pre", _ , children) :: rest ->
         fail "the <pre> markup expects either \
               one data-math, one data-run or zero attribute"
@@ -244,7 +255,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
         parse_steps (acc, Some (step_title, elt :: sacc), rest) in
   match tree with
   | None -> fail "unparsable HTML file"
-  | Some tree -> match strip tree with
+  | Some tree -> (match strip tree with
     | `Elt ("html", _, [ `Elt ("head", _, _) ; `Elt ("body", _, contents) ])
     | `Elt ("html", _, [ `Elt ("body", _, contents) ]) ->
         begin match contents with
@@ -259,7 +270,7 @@ let parse_html_tutorial ~tutorial_name ~file_name =
                     at the beginning of the <body>"
         end
     | _ -> fail "wrong HTML structure, \
-                 expecting a standard <html> with a <body>"
+                 expecting a standard <html> with a <body>")
 
 let parse_md_tutorial ~tutorial_name ~file_name =
   let fail fmt =
@@ -388,7 +399,8 @@ let print_html_tutorial ~tutorial_name tutorial =
     | _ -> assert false in
   let rec pp_content ppf = function
     | Code_block { code ; runnable } ->
-       Format.fprintf ppf "@[<v 2><pre%s>@," (if runnable then " data-run" else "") ;
+       Format.fprintf ppf "@[<v 2><pre%s>@,"
+         (if runnable then " data-run" else "") ;
        let code = reshape_code_block code in
        Uutf.String.fold_utf_8 (fun () _ cp ->
            match cp with
@@ -449,12 +461,14 @@ let print_md_tutorial ~tutorial_name tutorial =
         pp_text ppf rest
     |  Code { code ; runnable = true} :: rest ->
         let code = drop_newlines code in
-        let code = Omd_backend.markdown_of_md [ Omd.Code ("", "| " ^ code ^ " |") ] in
+        let code = Omd_backend.markdown_of_md
+                     [ Omd.Code ("", "| " ^ code ^ " |") ] in
         Format.fprintf ppf "%s" code ;
         pp_text ppf rest
     |  Math code :: rest ->
         let code = drop_newlines code in
-        let code = Omd_backend.markdown_of_md [ Omd.Code ("", "$ " ^ code ^ " $") ] in
+        let code = Omd_backend.markdown_of_md
+                     [ Omd.Code ("", "$ " ^ code ^ " $") ] in
         Format.fprintf ppf "%s" code ;
         if rest <> [] then Format.fprintf ppf "@ " ;
         pp_text ppf rest

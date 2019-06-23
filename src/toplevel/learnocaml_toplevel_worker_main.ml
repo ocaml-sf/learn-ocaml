@@ -171,8 +171,10 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_code = map_option wrap_fd fd_code in
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then Js_utils.debug "Worker: -> Execute (%S)" code;
-      let result = Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
-      if !debug then Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
+      let result =
+        Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
+      if !debug then
+        Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
       iter_option close_fd fd_code;
       close_fd fd_answer;
       unwrap_result result
@@ -180,7 +182,8 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then
         Js_utils.debug "Worker: -> Use_string (%S)" code;
-      let result = Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
+      let result =
+        Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
       if !debug then
         Js_utils.debug "Worker: <- Use_string (%B)" (is_success result);
       close_fd fd_answer;
@@ -206,10 +209,13 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ty =
         let ast =
           let arg =
-            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "string")) []) in
+            Ast_helper.(Typ.constr (Location.mknoloc
+                                      (Longident.Lident "string")) []) in
           let ret =
-            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "unit")) []) in
-          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
+            Ast_helper.(Typ.constr (Location.mknoloc
+                                      (Longident.Lident "unit")) []) in
+          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow
+                                    (Asttypes.Nolabel, arg, ret) ;
             ptyp_loc = Location.none ;
             ptyp_attributes = [] } in
         Typetexp.transl_type_scheme !Toploop.toplevel_env ast in
@@ -257,9 +263,13 @@ let () =
         Lwt.return_unit
   in
   let path = "/worker_cmis" in
+  let root =
+    OCamlRes.Res.merge
+      Embedded_cmis.root
+      Embedded_grading_cmis.root in
   Sys_js.mount ~path
     (fun ~prefix ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
+       match OCamlRes.Res.find (OCamlRes.Path.of_string path) root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
            Some cmi

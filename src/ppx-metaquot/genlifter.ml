@@ -63,25 +63,30 @@ module Main : sig end = struct
         | Lapply _ -> assert false
       in
       Hashtbl.add printed ty ();
-      let sparams = List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params in
+      let sparams = List.mapi (fun i _ -> Printf.sprintf "f%i" i)
+                      td.type_params in
       let params = List.map mknoloc sparams in
       let env = List.map2 (fun s t -> t.id, evar s.txt) params td.type_params in
-      let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res")) in
+      let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel
+                                        (constr (lid ty) tyargs) (var "res")) in
       let make_t tyargs =
         List.fold_right
           (fun arg t ->
-             Typ.(arrow Asttypes.Nolabel (arrow Asttypes.Nolabel arg (var "res")) t))
+            Typ.(arrow Asttypes.Nolabel
+                   (arrow Asttypes.Nolabel arg (var "res")) t))
           tyargs (make_result_t tyargs)
       in
       let tyargs = List.map (fun t -> Typ.var t.txt) params in
       let t = Typ.poly params (make_t tyargs) in
       let concrete e =
-        let e = List.fold_right (fun x e -> lam x e) (List.map (fun x -> pvar x.txt) params) e in
+        let e = List.fold_right (fun x e -> lam x e)
+                  (List.map (fun x -> pvar x.txt) params) e in
         let tyargs = List.map (fun t -> Typ.constr (lid t.txt) []) params in
         let e = Exp.constraint_ e (make_t tyargs) in
         let e = List.fold_right (fun x e -> Exp.newtype x e) params e in
         let body = Exp.poly e (Some t) in
-        meths := Cf.(method_ (mknoloc (print_fun ty)) Public (concrete Fresh body)) :: !meths
+        meths := Cf.(method_ (mknoloc (print_fun ty)) Public
+                       (concrete Fresh body)) :: !meths
       in
       let field ld =
         let s = Ident.name ld.ld_id in
@@ -102,19 +107,21 @@ module Main : sig end = struct
             match cd.cd_args with
             | Cstr_tuple (tys) ->
                 let p, args = gentuple env tys in
-                pconstr qc p, selfcall "constr" [str ty; tuple[str c; list args]]
+                pconstr qc p, selfcall "constr"
+                                [str ty; tuple[str c; list args]]
             | Cstr_record (l) ->
                 let l = List.map field l in
                 pconstr qc [Pat.record (List.map fst l) Closed],
                 selfcall "constr" [str ty; tuple [str c;
-                                                  selfcall "record" [str (ty ^ "." ^ c); list (List.map snd l)]]]
-          in
+                  selfcall "record" [str (ty ^ "." ^ c);
+                  list (List.map snd l)]]] in
           concrete (func (List.map case l))
       | Type_abstract, Some t ->
           concrete (tyexpr_fun env t)
       | Type_abstract, None ->
           (* Generate an abstract method to lift abstract types *)
-          meths := Cf.(method_ (mknoloc (print_fun ty)) Public (virtual_ t)) :: !meths
+         meths := Cf.(method_ (mknoloc (print_fun ty))
+                        Public (virtual_ t)) :: !meths
       | Type_open, _ ->
           failwith "Open types are not yet supported."
 
@@ -191,7 +198,8 @@ module Main : sig end = struct
   let args =
     let open Arg in
     [
-      "-I", String (fun s -> Config.load_path := Misc.expand_directory Config.standard_library s :: !Config.load_path),
+      "-I", String (fun s -> Config.load_path := Misc.expand_directory
+                      Config.standard_library s :: !Config.load_path),
       "<dir> Add <dir> to the list of include directories";
     ]
 
@@ -218,7 +226,8 @@ module Main : sig end = struct
     let params = [Typ.var "res", Invariant] in
     let cl = Ci.mk ~virt:Virtual ~params (mknoloc "lifter") (Cl.structure cl) in
     let s = [Str.class_ [cl]] in
-    Format.printf "%a@." Pprintast.structure (simplify.Ast_mapper.structure simplify s)
+    Format.printf "%a@." Pprintast.structure
+      (simplify.Ast_mapper.structure simplify s)
 
   let () =
     try main ()

@@ -18,8 +18,10 @@
 type block =
   | Html of string * [ `Div ] Tyxml_js.Html5.elt
   | Std of (string * [ `Out | `Err ]) list ref * [ `Pre ] Tyxml_js.Html5.elt
-  | Code of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt * Nstream.snapshot option
-  | Answer of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt * Nstream.snapshot option
+  | Code of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt *
+              Nstream.snapshot option
+  | Answer of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt *
+                Nstream.snapshot option
   | Error of Toploop_results.error * [ `Pre ] Tyxml_js.Html5.elt
   | Warning of int * Toploop_results.warning * [ `Pre ] Tyxml_js.Html5.elt
   | Phrase of phrase * block list ref
@@ -112,7 +114,7 @@ let rec last_elt = function
   | Error (_, pre) :: _
   | Warning (_, _, pre) :: _ -> (pre :> [ `Div | `Pre ] Tyxml_js.Html5.elt)
   | Phrase (_, { contents }) :: rest ->
-      try last_elt contents with Not_found -> last_elt rest
+      (try last_elt contents with Not_found -> last_elt rest)
 
 let find_phrase output u =
   List.fold_left
@@ -130,16 +132,16 @@ let insert output ?phrase block elt =
       Js_utils.Manip.appendChild output.container elt ;
       scroll output
   | Some u ->
-      match find_phrase output u with
-      | Some l ->
+      (match find_phrase output u with
+       | Some l ->
           Js_utils.Manip.insertChildAfter output.container (last_elt !l) elt ;
           l := block :: !l ;
           scroll output
-      | None ->
+       | None ->
           output.blocks <- Phrase (u, ref [ block ]) :: output.blocks ;
           Js_utils.Manip.appendChild output.container hr ;
           Js_utils.Manip.appendChild output.container elt ;
-          scroll output
+          scroll output)
 
 let output_std ?phrase output (str, chan) =
   enforce_limit output ;
@@ -153,7 +155,8 @@ let output_std ?phrase output (str, chan) =
               let buf, pre =
                 ref [],
                 Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-output" ] ]) [] in
-              Js_utils.Manip.insertChildAfter output.container (last_elt !l) pre ;
+              Js_utils.Manip.insertChildAfter
+                output.container (last_elt !l) pre ;
               l := Std (buf, pre) :: !l ;
               Js_utils.Manip.appendChild output.container pre ;
               buf, pre in
@@ -192,9 +195,9 @@ let output_code ?phrase output code =
     let blocks = match phrase with
       | None -> output.blocks
       | Some u ->
-          match find_phrase output u with
-          | None -> []
-          | Some l -> !l in
+          (match find_phrase output u with
+           | None -> []
+           | Some l -> !l) in
     match blocks with
     | Code (_, _, _, snapshot) :: _ -> snapshot
     | [] | _ -> None in
@@ -210,9 +213,9 @@ let output_answer ?phrase output answer =
     let blocks = match phrase with
       | None -> output.blocks
       | Some u ->
-          match find_phrase output u with
-          | None -> []
-          | Some l -> !l in
+          (match find_phrase output u with
+           | None -> []
+           | Some l -> !l) in
     match blocks with
     | Answer (_, _, _, snapshot) :: _ -> snapshot
     | [] | _ -> None in
@@ -258,7 +261,8 @@ let hilight_pretty cls pretty ?num locs lbl =
               let acc = if p < i then tok p i @ acc else acc in
               loop (not was_inside) was_last i i acc pos
             else
-              loop was_inside (last pos loc) p (i + 1) acc (next pos (String.get s i)) in
+              loop was_inside (last pos loc) p (i + 1) acc
+                (next pos (String.get s i)) in
           let toks, pos = loop false false 0 0 [] pos in
           hilight_one rest pos (toks @ acc) in
     fst (hilight_one pretty (1, 0) []) in
@@ -340,3 +344,15 @@ let oldify output =
 
 let format_ocaml_code code =
   pretty_html (fst (prettify_ocaml code))
+
+let get_blocks output=
+  let type_string = output.blocks in
+  let rec last_block liste = match liste with
+    |[]-> ""
+    (*|(Html (s,_)) :: suite-> s^"html"^(last_block suite)
+    |(Code (s,_,_,_)) :: suite-> s^"code"^(last_block suite)*)
+    |(Answer (s,_,_,_)) :: suite-> s^(last_block suite)
+    (*|(Warning (s,_,_))::suite -> string_of_int s*)
+    |(Phrase (_,s))::suite -> (last_block (!s))^(last_block suite)
+    |b::suite->(last_block suite) in
+  last_block type_string

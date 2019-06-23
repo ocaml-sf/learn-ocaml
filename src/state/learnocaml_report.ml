@@ -62,7 +62,8 @@ and output_elt ppf = function
     Format.fprintf ppf "<script%a>//<!--\n%s\n//--></script>"
       output_attrs attrs text
   | E ("style", attrs, [ C text ]) ->
-    Format.fprintf ppf "<style%a>/*<!--*/\n.workaroundfunbug {}\n%s/*-->*/</style>"
+     Format.fprintf ppf
+       "<style%a>/*<!--*/\n.workaroundfunbug {}\n%s/*-->*/</style>"
       output_attrs attrs text
   | E (name, attrs, html) ->
     Format.fprintf ppf "<%s%a>%a</%s>"
@@ -208,9 +209,11 @@ let format_report items =
            [ E ("span", [ "class", "text" ],
                 match score with
                 | None -> format_text text
-                | Some score -> E ("span", [ "class", "score" ], [ T score ]) :: format_text text) ])
+                | Some score -> E ("span", [ "class", "score" ],
+                                   [ T score ]) :: format_text text) ])
     | Section (title, contents) ->
-        let (successes, failures) as result, formatted_report = format_report contents in
+       let (successes, failures) as result, formatted_report =
+         format_report contents in
         let result_class, score, folder = match result with
           | (0, false) ->
               "informative folded", [], unfolder
@@ -525,21 +528,31 @@ let print_report ppf items =
   let rec print_report ppf items =
     Format.pp_print_list format_item ppf items
   and format_item ppf = function
-    | Section (text, contents) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@]@,%a@]" print_text text print_report contents
-    | Message (text, Failure) -> Format.fprintf ppf [%if"@[<v 2>Failure: %a@]"] print_text text
-    | Message (text, Warning) -> Format.fprintf ppf [%if"@[<v 2>Warning: %a@]"] print_text text
-    | Message (text, Informative) -> Format.fprintf ppf "@[<v 2>%a@]" print_text text
-    | Message (text, Important) -> Format.fprintf ppf [%if"@[<v 2>Important: %a@]"] print_text text
-    | Message (text, Success n) -> Format.fprintf ppf [%if"@[<v 2>Success %d: %a@]"] n print_text text
+    | Section (text, contents) ->
+       Format.fprintf ppf "@[<v 2>@[<hv>%a@]@,%a@]"
+         print_text text print_report contents
+    | Message (text, Failure) ->
+       Format.fprintf ppf [%if"@[<v 2>Failure: %a@]"] print_text text
+    | Message (text, Warning) ->
+       Format.fprintf ppf [%if"@[<v 2>Warning: %a@]"] print_text text
+    | Message (text, Informative) ->
+       Format.fprintf ppf "@[<v 2>%a@]" print_text text
+    | Message (text, Important) ->
+       Format.fprintf ppf [%if"@[<v 2>Important: %a@]"] print_text text
+    | Message (text, Success n) ->
+       Format.fprintf ppf [%if"@[<v 2>Success %d: %a@]"] n print_text text
   and print_text ppf = function
-    | (Code wa | Output wa) :: Text wb :: rest when not (String.contains (String.trim wa) '\n') ->
+    | (Code wa | Output wa) :: Text wb :: rest
+         when not (String.contains (String.trim wa) '\n') ->
         print_text ppf (Text ("[" ^ String.trim wa ^ "] " ^ wb) :: rest)
-    | Text wa :: (Code wb | Output wb) :: rest when not (String.contains (String.trim wb) '\n') ->
+    | Text wa :: (Code wb | Output wb) :: rest
+         when not (String.contains (String.trim wb) '\n') ->
         print_text ppf (Text (wa ^ " [" ^ String.trim wb ^ "]") :: rest)
     | Text wa :: Text wb :: rest ->
         print_text ppf (Text (wa ^ " " ^ wb) :: rest)
     | Text w :: rest ->
-        Format.fprintf ppf "@[<hov>%a@]%a" Format.pp_print_text w print_text rest
+       Format.fprintf ppf "@[<hov>%a@]%a"
+         Format.pp_print_text w print_text rest
     | Break :: rest ->
         Format.fprintf ppf "%a" print_text rest
     | Code s :: rest ->

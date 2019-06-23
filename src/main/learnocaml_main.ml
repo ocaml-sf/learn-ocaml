@@ -58,7 +58,8 @@ module Args = struct
     let info = info ~docs:"GRADER OPTIONS"
 
     let exercises =
-      value & opt_all (list dir) [["."]] & info ["exercises";"e"] ~docv:"DIRS" ~doc:
+      value & opt_all (list dir) [["."]] & info ["exercises";"e"]
+                                             ~docv:"DIRS" ~doc:
         "Directories where to find the exercises to be graded \
          (comma-separated). Can be repeated."
 
@@ -83,11 +84,13 @@ module Args = struct
         "display the toplevel's standard outputs"
 
     let dump_outputs =
-      value & opt (some string) None & info ["dump-outputs"] ~docv:"PREFIX" ~doc:
+      value & opt (some string) None & info ["dump-outputs"]
+                                         ~docv:"PREFIX" ~doc:
         "save the outputs in files with the given prefix"
 
     let dump_reports =
-      value & opt (some string) None & info ["dump-reports"] ~docv:"PREFIX" ~doc:
+      value & opt (some string) None & info ["dump-reports"]
+                                         ~docv:"PREFIX" ~doc:
         "save the reports in files with the given prefix"
 
     let timeout =
@@ -128,7 +131,7 @@ module Args = struct
 
     let contents_dir =
       let default =
-        readlink (Filename.dirname (Filename.dirname (Sys.executable_name))
+        readlink (Filename.dirname (Filename.dirname Sys.executable_name)
                   /"share"/"learn-ocaml"/"www")
       in
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
@@ -142,7 +145,7 @@ module Args = struct
       let apply app_dir repo_dir contents_dir =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
-        Learnocaml_process_tutorial_repository.tutorials_dir := 
+        Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
         { contents_dir }
       in
@@ -216,43 +219,49 @@ open Args
 let main o =
   let grade () =
     if List.mem Grade o.commands then
-      (if List.mem Build o.commands || List.mem Serve o.commands then
-         failwith "The 'grade' command is incompatible with 'build' and \
-                   'serve'";
-       Lwt_list.fold_left_s (fun i ex ->
-           Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
-         0 o.grader.Grader.exercises
-       >|= fun i -> Some i)
+      begin
+        if List.mem Build o.commands || List.mem Serve o.commands then
+          failwith "The 'grade' command is incompatible with 'build' and \
+                    'serve'";
+        Lwt_list.fold_left_s (fun i ex ->
+          Grader_cli.grade ex o.grader.Grader.output_json >|= max i)
+          0 o.grader.Grader.exercises
+        >|= fun i -> Some i
+      end
     else Lwt.return None
   in
   let generate () =
     if List.mem Build o.commands then
-      (Printf.printf "Updating app at %s\n%!" o.app_dir;
-       Lwt.catch
-         (fun () -> copy_tree o.builder.Builder.contents_dir o.app_dir)
-         (function
+      begin
+        Printf.printf "Updating app at %s\n%!" o.app_dir;
+        Lwt.catch
+          (fun () -> copy_tree o.builder.Builder.contents_dir o.app_dir)
+          (function
            | Failure _ ->
-               Lwt.fail_with @@ Printf.sprintf
-                 "Failed to copy base app contents from %s"
-                 (readlink o.builder.Builder.contents_dir)
+              Lwt.fail_with @@ Printf.sprintf
+                "Failed to copy base app contents from %s"
+                (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
-       >>= fun () ->
-       Lwt.catch
-         (fun () -> copy_tree (o.repo_dir/"lessons") o.app_dir)
-         (function Failure _ -> Lwt.return_unit
-                 | e -> Lwt.fail e)
-       >>= fun () ->
-       Learnocaml_process_tutorial_repository.main o.app_dir >>= fun e_ret ->
-       Learnocaml_process_exercise_repository.main o.app_dir >>= fun t_ret ->
-       Lwt.return (e_ret && t_ret))
+        >>= fun () ->
+        Lwt.catch
+          (fun () -> copy_tree (o.repo_dir/"lessons") o.app_dir)
+          (function Failure _ -> Lwt.return_unit
+                  | e -> Lwt.fail e)
+        >>= fun () ->
+        Learnocaml_process_tutorial_repository.main o.app_dir >>= fun e_ret ->
+        Learnocaml_process_exercise_repository.main o.app_dir >>= fun t_ret ->
+        Lwt.return (e_ret && t_ret)
+      end
     else
       Lwt.return true
   in
   let run_server () =
     if List.mem Serve o.commands then
-      (Printf.printf "Starting server on port %d\n%!"
-         !Learnocaml_simple_server.port;
-       Learnocaml_simple_server.launch ())
+      begin
+        Printf.printf "Starting server on port %d\n%!"
+          !Learnocaml_simple_server.port;
+        Learnocaml_simple_server.launch ()
+      end
     else
       Lwt.return true
   in

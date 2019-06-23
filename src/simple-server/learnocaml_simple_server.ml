@@ -114,7 +114,8 @@ let create_token_file token =
     | [] -> assert false
     | [ file ] ->
         let fn = (Filename.concat acc file) in
-        Lwt_io.(with_file ~mode: Output fn (fun chan -> write chan "")) >>= fun () ->
+        Lwt_io.(with_file ~mode: Output fn (fun chan -> write chan ""))
+        >>= fun () ->
         Lwt.return_unit
     | dir :: path ->
         create (Filename.concat acc dir) path
@@ -134,7 +135,8 @@ let gimme () =
     let rand () = String.get alphabet (Random.int (String.length alphabet)) in
     let part () = String.init 3 (fun _ -> rand ()) in
     let token = [ part () ; part () ; part () ; part () ] in
-    if Sys.file_exists (String.concat Filename.dir_sep (!sync_dir :: token)) then
+    if Sys.file_exists
+         (String.concat Filename.dir_sep (!sync_dir :: token)) then
       next ()
     else
       create_token_file token >|= fun () -> String.concat "-" token
@@ -209,7 +211,8 @@ let launch () =
               store token body >>= fun () ->
               Server.respond_string ~status:`OK ~body: "Stored." ()
             else
-              Server.respond_string ~status:`Bad_request ~body: "Invalid save file" ()
+              Server.respond_string ~status:`Bad_request
+                ~body: "Invalid save file" ()
       end
     | `GET, path -> respond_static path
     | _ -> Server.respond_error ~status: `Bad_request ~body: "Bad request" () in

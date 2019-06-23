@@ -142,7 +142,8 @@ let set_mark editor ?loc ?(type_ = Message) msg =
   | None -> ()
   | Some range ->
     editor.marks <-
-      session##(addMarker range (Js.string type_) (Js.string "text") (Js._false)) ::
+      session##(addMarker range (Js.string type_)
+                  (Js.string "text") Js._false) ::
       editor.marks
 
 let set_background_color editor color =
@@ -191,7 +192,8 @@ let add_keybinding { editor }
   let command : _ command Js.t = Js.Unsafe.obj [||] in
   let binding : binding Js.t = Js.Unsafe.obj [||] in
   command##.name := Js.string name;
-  command##.exec := Js.wrap_callback (fun ed _args -> exec (fst ed##.customData));
+  command##.exec := Js.wrap_callback
+                      (fun ed _args -> exec (fst ed##.customData));
   iter_option (fun ro -> command##.readOnly := Js.bool ro) ro;
   iter_option
     (fun s -> command##.scrollIntoView := Js.string s)

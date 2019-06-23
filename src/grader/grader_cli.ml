@@ -99,7 +99,8 @@ let grade exercise_dir output_json =
          | Some path -> read_student_file exercise_dir path
          | None -> Lwt.return (Learnocaml_exercise.(get solution) exo) in
        let callback =
-         if !display_callback then Some (Printf.printf "[ %s ]\n%!") else None in
+         if !display_callback then Some (Printf.printf "[ %s ]\n%!")
+         else None in
        let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
        Grading_cli.get_grade ?callback ?timeout exo code
@@ -132,10 +133,12 @@ let grade exercise_dir output_json =
              | None -> ()
              | Some prefix ->
                  let oc = open_out (prefix ^ ".report.txt") in
-                 Learnocaml_report.print_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.print_report
+                   (Format.formatter_of_out_channel oc) report ;
                  close_out oc ;
                  let oc = open_out (prefix ^ ".report.html") in
-                 Learnocaml_report.output_html_of_report (Format.formatter_of_out_channel oc) report ;
+                 Learnocaml_report.output_html_of_report
+                   (Format.formatter_of_out_channel oc) report ;
                  close_out oc
            end ;
            if stderr_contents <> "" then begin
@@ -176,15 +179,18 @@ let grade exercise_dir output_json =
              Lwt.return 2
            end
            else begin
-             if !display_callback then Printf.printf "Success: %d points.\n%!" max ;
+               if !display_callback then
+                 Printf.printf "Success: %d points.\n%!" max ;
              match output_json with
              | None ->
                  Lwt.return 0
              | Some json_file ->
                  let exo = Learnocaml_exercise.(set max_score) max exo in
                  Learnocaml_exercise.write_lwt
-                   ~write_field: (fun f v acc -> Lwt.return ((f, `String v) :: acc))
-                   exo ~cipher:true [ "learnocaml_version", `String "1" ] >>= fun fields ->
+                   ~write_field: (fun f v acc ->
+                     Lwt.return ((f, `String v) :: acc))
+                   exo ~cipher:true [ "learnocaml_version", `String "1" ]
+                 >>= fun fields ->
                  Lwt_io.with_file ~mode: Lwt_io.Output json_file @@ fun chan ->
                  Lwt_io.write chan (Ezjsonm.to_string (`O fields)) >>= fun () ->
                  Lwt.return 0

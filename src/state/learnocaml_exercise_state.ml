@@ -15,13 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+
+open Json_encoding;;
+open Learnocaml_index;;
+
+
 type exercise_state =
   { solution : string ;
-    grade : int (* \in [0, 100] *) option ;
+    grade : int option ;
     report : Learnocaml_report.report option ;
     mtime : float }
-
-open Json_encoding
 
 let exercise_state_enc =
   let grade_enc =
@@ -41,48 +44,234 @@ let exercise_state_enc =
        (opt "grade" grade_enc)
        (req "solution" string)
        (opt "report" Learnocaml_report.report_enc)
-       (dft "mtime" float 0.))
-;;
+       (dft "mtime" float 0.));;
 
+
+type index_state =
+  {
+    exos: exercise Map.Make (String).t ;
+        mtime : float
+  }
+let index_state_enc = conv (fun {exos; mtime} -> (exos, mtime))
+  (fun (exos, mtime) -> {exos; mtime})
+  (obj2 (req "exercises" (map_enc exercise_enc)) (dft "mtime" float 0.));;
+type type_question= Suite | Solution | Spec ;;
+
+(* previous version of storing questions may be useful
+
+type type_question= Suite | Solution | Spec ;;
+
+type question_state =
+  {name:string;
+   ty :string;
+   type_question : type_question;
+   input :string;
+   output:string;
+   extra_alea:int;
+   datalist:string;
+  }
+
+let question_state_enc =
+  conv
+    (fun {name; ty; type_question; input; output; extra_alea; datalist}->
+       (name, ty, type_question, input, output, extra_alea, datalist)
+    )
+    (fun (name, ty, type_question, input, output, extra_alea, datalist)->
+       {name; ty; type_question; input; output; extra_alea; datalist}
+    )
+    (obj7
+       (req "name" string)
+       (req "ty" string)
+       (req "type_question"
+         ( string_enum ["suite",Suite;"spec",Spec;"solution",Solution] ) )
+       (req "input" string)
+       (req "output" string)
+       (req "extra_alea" int)
+       (req "datalist" string)
+    );;
+*)
+
+type test_qst_untyped =
+  | TestAgainstSol of
+      { name: string
+      ; ty: string
+      ; gen: int
+      ; suite: string
+      ; tester: string
+      ; sampler : string }
+  | TestAgainstSpec of
+      { name: string
+      ; ty: string
+      ; gen: int
+      ; suite: string
+      ; spec : string
+      ; tester: string
+      ; sampler: string }
+  | TestSuite of
+      { name: string;
+        ty: string;
+        suite: string;
+        tester :string };;
+type a_sol =
+  { name: string
+  ; ty: string
+  ; gen: int
+  ; suite: string
+  ; tester: string
+  ; sampler : string }
+let test_against_sol_enc =
+  conv
+    (fun {name; ty; gen; suite; tester; sampler} ->
+       (name, ty, gen, suite, tester, sampler)
+    )
+    (fun (name, ty, gen, suite, tester, sampler) ->
+       {name; ty; gen; suite; tester; sampler}
+    )
+    (obj6
+       (req "name" string)
+       (req "ty" string)
+       (req "gen" int )
+       (req "suite" string)
+       (req "tester" string)
+       (req "sampler" string)
+    );;
+type a_spec=
+  { name: string
+  ; ty: string
+  ; gen: int
+  ; suite: string
+  ; spec : string
+  ; tester: string
+  ; sampler : string}
+let test_against_spec_enc =
+  conv
+    (fun {name; ty; gen; suite;spec; tester; sampler}->
+       (name, ty, gen, suite,spec, tester, sampler)
+    )
+    (fun (name, ty, gen, suite, spec,tester, sampler)->
+       {name; ty; gen; suite; spec;tester; sampler}
+    )
+    (obj7
+       (req "name" string)
+       (req "ty" string)
+       (req "gen" int )
+       (req "suite" string)
+       (req "spec" string)
+       (req "tester" string)
+       (req "sampler" string)
+    );;
+type suite=
+  { name: string
+  ; ty: string
+  ; suite: string
+  ; tester: string }
+
+let test_suite_enc =
+  conv
+    (fun {name; ty; suite; tester}->
+       (name, ty,  suite, tester)
+    )
+    (fun (name, ty, suite, tester)->
+       {name; ty;  suite; tester}
+    )
+    (obj4
+       (req "name" string)
+       (req "ty" string)
+       (req "suite" string)
+       (req "tester" string)
+    );;
+
+let test_qst_untyped_enc =union [
+    case
+      test_against_sol_enc
+      (function TestAgainstSol {name; ty; gen; suite; tester; sampler} ->
+       Some {name; ty; gen; suite; tester; sampler} | _ -> None)
+      (fun {name; ty; gen; suite; tester; sampler} ->
+       TestAgainstSol {name; ty; gen; suite; tester; sampler});
+    case
+      test_against_spec_enc
+      (function TestAgainstSpec {name; ty; gen; suite;spec; tester; sampler} ->
+       Some {name; ty; gen; suite;spec; tester; sampler} | _ -> None)
+      (fun {name; ty; gen; suite;spec; tester; sampler} ->
+       TestAgainstSpec {name; ty; gen; suite;spec; tester; sampler} );
+    case
+      test_suite_enc
+      (function TestSuite {name; ty; suite; tester} ->
+       Some {name; ty; suite; tester} | _ -> None)
+      (fun {name; ty; suite; tester}  ->TestSuite {name; ty; suite; tester} );
+  ]
+;;
+type test_state = {testml : string;
+                   testhaut : test_qst_untyped Map.Make (String).t}
+
+
+let testhaut_enc = map_enc test_qst_untyped_enc
+
+let test_state_enc =conv
+    (fun {testml; testhaut} -> (testml, testhaut))
+    ( fun (testml, testhaut) -> {testml; testhaut})
+    (obj2
+       (req "testml" string)
+       (req "testhaut" testhaut_enc)
+    );;
+type metadata =
+  { id : string;
+    titre : string;
+    description : string;
+    diff : float;
+  }
+
+let metadata_enc = conv
+    (fun {id;titre;description;diff} -> (id,titre,description,diff))
+    ( fun (id,titre,description,diff) -> {id;titre;description;diff})
+    (obj4
+       (req "id" string)
+       (req "titre" string )
+       (req "description" string)
+       (req "diff" float )
+    )
+type checkbox=
+  { imperative : bool;
+    undesirable : bool}
+
+let checkbox_enc = conv
+    (fun {imperative;undesirable} -> (imperative,undesirable) )
+    (fun (imperative,undesirable) -> {imperative;undesirable} )
+    (obj2
+       (req "imperative" bool )
+       (req "undesirable" bool )
+    )
 
 type editor_state =
-  { id : string ;
-    titre : string;
-    prepare :string;
-    diff : float option ;
+  { metadata : metadata;
+    prepare : string;
     solution : string ;
     question : string ;
     template : string ;
-    test : string ;
-    prelude : string;    
+    test : test_state ;
+    prelude : string;
+    incipit : string ;
+    checkbox : checkbox;
     mtime : float }
 
-open Json_encoding
-
 let editor_state_enc =
-  
   conv
-    (fun {id ; titre ; prepare; diff;solution ; question ;template ; test;prelude ; mtime } ->
-       (id , titre , prepare, diff, solution , question , template , test, prelude , mtime))
-    (fun (id , titre , prepare, diff, solution , question , template , test, prelude , mtime) ->
-       {id ; titre ; prepare; diff;solution ; question ;template ; test; prelude ; mtime })
+    (fun {metadata; prepare; solution; question; template;
+          test; prelude; incipit; checkbox; mtime } ->
+      (metadata, prepare, solution, question, template,
+       test, prelude, incipit, checkbox, mtime))
+    (fun (metadata, prepare, solution, question, template,
+          test, prelude, incipit, checkbox, mtime) ->
+      {metadata; prepare; solution; question; template;
+       test; prelude; incipit; checkbox; mtime})
     (obj10
-       (req "id" string)
-       (req "titre" string)
+       (req "metadata" metadata_enc)
        (req "prepare" string)
-       (opt "diff" float )
        (req "solution" string)
        (req "question" string)
        (req "template" string)
-       (req "test" string)
+       (req "test" test_state_enc )
        (req "prelude" string)
+       (req "incipit" string)
+       (req "checkbox" checkbox_enc )
        (dft "mtime" float 0.))
-
-open Learnocaml_index;;
-type index_state=
-  {
-    exos: exercise Map.Make (String).t ;
-        mtime :float
-        
-  }
-let index_state_enc = conv (fun {exos;mtime}->(exos,mtime) ) (fun (exos,mtime)->{exos;mtime}) (obj2 (req "exercises" (map_enc exercise_enc)) (dft "mtime" float 0.))

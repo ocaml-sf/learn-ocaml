@@ -55,22 +55,28 @@ let main () =
                  let tutorial_name =
                    Filename.basename (Filename.chop_extension file_name) in
                  begin if Filename.check_suffix file_name ".html" then
-                     Learnocaml_tutorial_parser.parse_html_tutorial ~tutorial_name ~file_name
+                         Learnocaml_tutorial_parser.parse_html_tutorial
+                           ~tutorial_name ~file_name
                    else if Filename.check_suffix file_name ".md" then
-                     Learnocaml_tutorial_parser.parse_md_tutorial ~tutorial_name ~file_name
+                         Learnocaml_tutorial_parser.parse_md_tutorial
+                           ~tutorial_name ~file_name
                    else if Filename.check_suffix file_name ".json" then
-                     Lwt_io.with_file ~mode: Lwt_io.Input file_name @@ fun chan ->
+                         Lwt_io.with_file ~mode: Lwt_io.Input file_name @@
+                           fun chan ->
                      Lwt_io.read chan >>= fun text ->
                      let json =
                        Ezjsonm.from_string text in
                      let tutorial =
-                       Json_encoding.destruct Learnocaml_tutorial.tutorial_enc json in
+                       Json_encoding.destruct
+                         Learnocaml_tutorial.tutorial_enc json in
                      let tutorial_title =
                        tutorial.Learnocaml_tutorial.tutorial_title in
                      Lwt.return
-                       (Learnocaml_index.{ tutorial_name ; tutorial_title }, tutorial)
+                       (Learnocaml_index.{ tutorial_name ; tutorial_title },
+                        tutorial)
                    else
-                     Lwt.fail_with "unrecognized file extension, expecting .md, .html or .json"
+                     Lwt.fail_with "unrecognized file extension, \
+                                    expecting .md, .html or .json"
                  end >>= fun (_, tutorial) ->
                  Lwt.join
                    [ begin match !output_html with
@@ -79,7 +85,8 @@ let main () =
                            let text =
                              Learnocaml_tutorial_parser.print_html_tutorial
                                ~tutorial_name tutorial in
-                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
+                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
+                             fun chan ->
                            Lwt_io.write chan text
                      end ;
                      begin match !output_md with
@@ -88,17 +95,20 @@ let main () =
                            let text =
                              Learnocaml_tutorial_parser.print_md_tutorial
                                ~tutorial_name tutorial in
-                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
+                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
+                             fun chan ->
                            Lwt_io.write chan text
                      end ;
                      begin match !output_json with
                        | None -> Lwt.return ()
                        | Some file_name ->
                            let json =
-                             Json_encoding.construct Learnocaml_tutorial.tutorial_enc tutorial in
+                             Json_encoding.construct
+                               Learnocaml_tutorial.tutorial_enc tutorial in
                            match json with
                            | `O _ | `A _ as json ->
-                               Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
+                              Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
+                                fun chan ->
                                let text = Ezjsonm.to_string json in
                                Lwt_io.write chan text
                            | _ -> assert false
@@ -106,8 +116,10 @@ let main () =
                  Lwt.return 0)
           (fun exn ->
              let print_unknown ppf = function
-               | Failure msg -> Format.fprintf ppf "Cannot process tutorial: %s" msg
-               | exn -> Format.fprintf ppf "Cannot process tutorial: %s"  (Printexc.to_string exn) in
+               | Failure msg ->
+                  Format.fprintf ppf "Cannot process tutorial: %s" msg
+               | exn -> Format.fprintf ppf "Cannot process tutorial: %s"
+                          (Printexc.to_string exn) in
              Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
              Format.eprintf "@." ;
              Lwt.return 1)))

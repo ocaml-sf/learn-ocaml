@@ -168,6 +168,10 @@ val scroll: t -> unit
     This is equivalent to pressing [Enter] when the toplevel is focused. *)
 val execute: t -> unit
 
+open Learnocaml_toplevel_output
+                    
+val execute_test: t -> string
+                    
 (** Go backward in the input's history.
     This is equivalent to pressing [Up] when the toplevel is focused. *)
 val go_backward: t -> unit

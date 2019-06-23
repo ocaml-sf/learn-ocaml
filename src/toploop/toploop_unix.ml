@@ -63,7 +63,8 @@ let flush_redirected_channel { read_fd ; append ; channel } =
     loop () in
   flush channel ; try loop () with _ -> ()
 
-let stop_channel_redirection ({ target_fd ; read_fd ; backup_fd } as redirection) =
+let stop_channel_redirection
+      ({ target_fd ; read_fd ; backup_fd } as redirection) =
   let fail () = invalid_arg "Toploop_unix.stop_channel_redirection" in
   match List.assq target_fd !redirections with
   | exception Not_found -> fail ()

@@ -30,7 +30,8 @@ let () =
                 msg ; if_highlight = msg }
       | User_code_error error ->
           let msg =
-            Printf.sprintf [%if"Error in user code:\n\n%s\n%!"] error.Toploop_ext.msg in
+            Printf.sprintf [%if"Error in user code:\n\n%s\n%!"]
+              error.Toploop_ext.msg in
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
       | _ -> None)
@@ -110,7 +111,8 @@ let get_grade ?callback ?timeout ~divert exo code =
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
-      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code" code ;
+        Toploop_ext.use_mod_string ~print_outcome
+          ~ppf_answer ~modname:"Code" code ;
 
       set_progress [%i"Loading the solution."] ;
       handle_error (internal_error [%i"while loading the solution"]) @@
@@ -146,7 +148,8 @@ let get_grade ?callback ?timeout ~divert exo code =
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;
-      (* TODO: Also clear the object table, once the OCaml's Toploop allows to. *)
+      (* TODO: Also clear the object table,
+         once the OCaml's Toploop allows to. *)
       !flush_stderr () ;
       !flush_stdout () ;
       match get_result () with

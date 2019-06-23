@@ -41,7 +41,8 @@ type t = {
   worker: Learnocaml_toplevel_worker_caller.t;
   container: [ `Div ] Html5.elt;
   oldify: bool;
-  mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u) | `Execute of unit Lwt.t | `Idle ] ;
+  mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u)
+                  | `Execute of unit Lwt.t | `Idle ] ;
   mutable on_enable_input: t -> unit;
   mutable on_disable_input: t -> unit;
   mutable disabled : int;
@@ -121,7 +122,8 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker ()
+      >>= fun () ->
       t
   | `Execute task ->
       let t, u = Lwt.wait () in
@@ -131,7 +133,8 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker ()
+      >>= fun () ->
       t >>= fun () ->
       Lwt.cancel task ;
       Lwt.return ()
@@ -202,8 +205,13 @@ let execute_phrase top ?timeout content =
     warnings ;
   Lwt.return result
 
+
 let execute top =
   Learnocaml_toplevel_input.execute top.input
+
+let execute_test top =
+  Learnocaml_toplevel_output.get_blocks top.output
+
 
 let go_backward top =
   Learnocaml_toplevel_input.go_backward top.input
@@ -217,7 +225,8 @@ let check top code =
 
 let set_checking_environment top =
   protect_execution top @@ fun () ->
-  Learnocaml_toplevel_worker_caller.set_checking_environment top.worker >>= fun _ ->
+    Learnocaml_toplevel_worker_caller.set_checking_environment top.worker
+    >>= fun _ ->
   Lwt.return ()
 
 let execute_phrase top ?timeout content =
@@ -362,7 +371,8 @@ let wrap_flusher_to_prevent_flood top name hook real =
     let total = !flooded + String.length s in
     if total >= top.flood_limit then begin
       let buf = Buffer.create top.flood_limit in
-      hook := (fun s -> try flooded := !flooded + String.length s ; Buffer.add_string buf s with _ -> ()) ;
+      hook := (fun s -> try flooded := !flooded + String.length s ;
+                            Buffer.add_string buf s with _ -> ()) ;
       flooded := total ;
       Lwt.async @@ fun () ->
       Lwt.catch
@@ -503,7 +513,8 @@ let create
     | None -> Lwt.return_unit
     | Some f -> f top in
   after_init top >>= fun () ->
-  Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
+  Learnocaml_toplevel_worker_caller.set_after_init top.worker
+    (fun _ -> after_init top);
   Lwt.return top
 
 let print_string { output } = Learnocaml_toplevel_output.output_stdout output

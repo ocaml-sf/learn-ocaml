@@ -165,7 +165,8 @@ let transl_mapper _argv =
                get_lang_expr ~loc translations_expr
            | _ ->
                raise (Location.Error (
-                   Location.error ~loc "[%i] requires a constant string, e.g. [%i \"text\"]")))
+                   Location.error ~loc "[%i] requires a constant string, \
+                                        e.g. [%i \"text\"]")))
       | x -> default_mapper.expr mapper x;
   }
 

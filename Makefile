@@ -57,6 +57,7 @@ install: static
 
 	@cp _obuild/*/editor.js ${DEST_DIR}/js/
 	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
+	@cp _obuild/*/testhaut.js ${DEST_DIR}/js/
 
 
 .PHONY: learn-ocaml.install travis
@@ -105,6 +106,7 @@ clean:
                             ${wildcard ${EXERCISES_DIR}/*/meta.json}}
 	-find -name \*~ -delete
 	-find -name \#\*\# -delete
+	-find -name .\#\* -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally
 	BUILDID="build-$$RANDOM";					\

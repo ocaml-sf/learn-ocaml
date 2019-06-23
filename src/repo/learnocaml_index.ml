@@ -153,7 +153,8 @@ let text_enc =
           (fun content -> Emph content) ;
         case
           (obj2 (req "code" string) (dft "runnable" bool false))
-          (function Code { code ; runnable } -> Some (code, runnable) | _ -> None)
+          (function Code { code ; runnable } -> Some (code, runnable)
+                                                | _ -> None)
           (fun (code, runnable) -> Code { code ; runnable }) ;
         case
           (obj1 (req "math" string))

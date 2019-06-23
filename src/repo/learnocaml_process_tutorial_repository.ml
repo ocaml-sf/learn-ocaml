@@ -77,11 +77,14 @@ let main dest_dir =
           with
           | [] ->
               Format.eprintf "No index file, no .md or .html file.@." ;
-              Format.eprintf "This does not look like a LearnOCaml tutorial repository.@." ;
+              Format.eprintf "This does not look \
+                              like a LearnOCaml tutorial repository.@." ;
               Lwt.fail_with  "cannot continue"
           | files ->
-              Format.eprintf "Missing index file, using all .dm and .html files.@." ;
-              Lwt.return [ "tutorials", ("All tutorials", files) ]) >>= fun series ->
+              Format.eprintf "Missing index file, \
+                              using all .dm and .html files.@." ;
+              Lwt.return [ "tutorials", ("All tutorials", files) ])
+       >>= fun series ->
        let retrieve_tutorial tutorial_name =
          let base_name = !tutorials_dir / tutorial_name in
          let md_file = base_name ^ ".md" in
@@ -94,21 +97,26 @@ let main dest_dir =
              Learnocaml_tutorial_parser.parse_html_tutorial
                ~tutorial_name ~file_name: html_file
            else
-             Lwt.fail_with (Format.asprintf "missing file %s.{html|md}" base_name ) in
+             Lwt.fail_with
+               (Format.asprintf "missing file %s.{html|md}" base_name ) in
        List.fold_left
          (fun acc (name, (series_title, tutorials)) ->
             Lwt_list.map_p
               (fun name ->
-                 retrieve_tutorial name >>= fun (server_index_handle, tutorial) ->
+                retrieve_tutorial name
+                >>= fun (server_index_handle, tutorial) ->
                  let json_path = dest_dir / tutorial_path name in
-                 to_file Learnocaml_tutorial.tutorial_enc json_path tutorial >>= fun () ->
+                 to_file Learnocaml_tutorial.tutorial_enc json_path tutorial
+                 >>= fun () ->
                  Lwt.return server_index_handle)
               tutorials >>= fun series_tutorials ->
             acc >>= fun acc ->
-            Lwt.return (StringMap.add name { series_title ; series_tutorials } acc))
+            Lwt.return (StringMap.add name
+                          { series_title ; series_tutorials } acc))
          (Lwt.return StringMap.empty)
          series >>= fun index ->
-       to_file tutorial_index_enc (dest_dir / tutorial_index_path) index >>= fun () ->
+       to_file tutorial_index_enc (dest_dir / tutorial_index_path) index
+       >>= fun () ->
        Lwt.return true)
     (fun exn ->
        let print_unknown ppf = function

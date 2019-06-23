@@ -60,7 +60,7 @@ val set : input -> string -> unit
 val get : input -> string
 
 (** Simulates a hit on the [Enter] key *)
-val execute : input -> unit
+val execute : input -> unit                       
 
 (** Simulates a hit on the [Up] key *)
 val go_backward : input -> unit

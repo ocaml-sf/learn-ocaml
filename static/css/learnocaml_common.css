@@ -33,6 +33,16 @@ button[disabled] {
   cursor: not-allowed;
 }
 /* -------------------- buttons ----------------------------------- */
+#toolbar{
+	height : 30px;
+}
+#button_delete{
+	position: absolute;
+}
+#button_download{
+	position: absolute;
+	left: 45px;  
+}
 button::before,
 button::after {
   position: absolute;
@@ -69,8 +79,8 @@ button[disabled]::before {
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
-  src: url("../fonts/Fontin-Regular.woff") format("woff"),
-       url("../fonts/Fontin-Regular.ttf") format("truetype");
+  src: url("../fonts/InconsolataGo-Regular.woff") format("woff"),
+       url("../fonts/InconsolataGo-Regular.ttf") format("truetype");
 }
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
@@ -83,8 +93,8 @@ button[disabled]::before {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
   font-weight: bold;
-  src: url("../fonts/Fontin-Bold.woff") format("woff"),
-       url("../fonts/Fontin-Bold.ttf") format("truetype");
+  src: url("../fonts/InconsolataGo-Bold.woff") format("woff"),
+       url("../fonts/InconsolataGo-Bold.ttf") format("truetype");
 }
 @font-face {
   font-family: "Inconsolata";

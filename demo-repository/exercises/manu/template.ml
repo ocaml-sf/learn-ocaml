@@ -1,2 +1,2 @@
 
-let med = 
+let med =

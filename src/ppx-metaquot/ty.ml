@@ -20,7 +20,7 @@ type 'a ty = Ty of repr
 
 let obj (Ty ty) = ty
 
-let repr ty = Ty (ty)
+let repr ty = Ty ty
 
 let print (Ty ty) =
   Format.asprintf "%a%!" Pprintast.core_type ty

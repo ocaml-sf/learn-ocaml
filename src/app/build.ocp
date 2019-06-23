@@ -39,6 +39,8 @@ begin program "learnocaml-main"
     "learnocaml-toplevel"
     "js_of_ocaml.ppx"
     "ocplib_i18n"
+    "translate"
+    "editor_lib"
   ]
   files = [
     "learnocaml_index_main.ml" ( comp = [ ppx_js ppx_ocplib_i18n ])
@@ -69,6 +71,8 @@ begin program "learnocaml-exercise"
     "js_of_ocaml.ppx"
     "ocplib_i18n"
     "omd"
+    "editor_lib"
+    "translate"
   ]
   files = [
     "learnocaml_exercise_main.ml" ( comp = [ ppx_ocplib_i18n ppx_js ] )

@@ -51,7 +51,8 @@ let indent_ocaml_textarea textbox =
     else None in
   let f = match pos with
     | None -> (fun _ -> true)
-    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) -> (fun l -> l>=(line1+1) && l<=(line2+1)) in
+    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) ->
+       (fun l -> l>=(line1+1) && l<=(line2+1)) in
   let v = indent_caml (Js.to_string v) f in
   textbox##.value:=Js.string v;
   begin match pos with
@@ -110,8 +111,10 @@ let resize { textbox ; sizing ; on_resize } =
           if text##(charAt i) = Js.string "\n" then incr res
         done ;
         !res |> min max_lines |> max min_lines in
-      textbox##.style##.fontSize := (Js.string (string_of_int line_height ^ "px")) ;
-      textbox##.style##.height := Js.string (Printf.sprintf "%dpx" (line_height * lines))
+      textbox##.style##.fontSize :=
+        (Js.string (string_of_int line_height ^ "px")) ;
+      textbox##.style##.height :=
+        Js.string (Printf.sprintf "%dpx" (line_height * lines))
 
 let execute ({ history ; textbox ; execute } as input) =
   let code = Js.to_string textbox##.value in
@@ -176,11 +179,11 @@ let setup
     );
   textbox##.onfocus :=
     Dom_html.handler (fun _ ->
-        if not (input.disabled) then input.focused <- true ;
+        if not input.disabled then input.focused <- true ;
         Js._true);
   textbox##.onblur :=
     Dom_html.handler (fun _ ->
-        if not (input.disabled) then input.focused <- false ;
+        if not input.disabled then input.focused <- false ;
         Js._true);
   textbox##.onkeyup :=
     Dom_html.handler (fun _ -> resize input ; Js._true);

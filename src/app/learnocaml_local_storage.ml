@@ -219,7 +219,7 @@ let index_list,
     [ "index-state-list" ]
     [ "editor-state" ]
     Learnocaml_exercise_state.index_state_enc
-    
+
 let exercise_list,
     exercise_state,
     all_exercise_states =

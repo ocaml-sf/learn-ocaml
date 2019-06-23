@@ -37,13 +37,14 @@ let fake_download ~name ~contents =
     Js.Unsafe.global ##. _Blob in
   let blob = new%js blob (Js.array [| contents |]) in
   let url =
-    Js.Unsafe.meth_call (Js.Unsafe.global##._URL) "createObjectURL" [| Js.Unsafe.inject blob |] in
+    Js.Unsafe.meth_call (Js.Unsafe.global##._URL)
+      "createObjectURL" [| Js.Unsafe.inject blob |] in
   let link = Dom_html.createA Dom_html.document in
   link##.href := url ;
   Js.Unsafe.set link (Js.string "download") (Js.string name) ;
-  ignore (Dom_html.document##.body##(appendChild ((link :> Dom.node Js.t)))) ;
+  ignore (Dom_html.document##.body##(appendChild (link :> Dom.node Js.t))) ;
   ignore (Js.Unsafe.meth_call link "click" [||]) ;
-  ignore (Dom_html.document##.body##(removeChild ((link :> Dom.node Js.t))))
+  ignore (Dom_html.document##.body##(removeChild (link :> Dom.node Js.t)))
 
 let fake_upload () =
   let input_files_load =
@@ -57,12 +58,13 @@ let fake_upload () =
       Js.Opt.case (ev##.target) fail @@ fun target ->
       Js.Opt.case (Dom_html.CoerceTo.input target) fail @@ fun input ->
       Js.Optdef.case (input##.files) fail @@ fun files ->
-      Js.Opt.case (files##(item (0))) fail @@ fun file ->
+      Js.Opt.case (files##(item 0)) fail @@ fun file ->
       let name = Js.to_string file##.name in
       let fileReader = new%js File.fileReader in
       fileReader##.onload := Dom.handler (fun ev ->
           Js.Opt.case (ev##.target) fail @@ fun target ->
-          Js.Opt.case (File.CoerceTo.string (target##.result)) fail @@ fun result ->
+          Js.Opt.case (File.CoerceTo.string (target##.result)) fail @@
+          fun result ->
           Lwt.wakeup result_wakener (name, result) ;
           Js._true) ;
       fileReader##(readAsText file) ;
@@ -221,9 +223,43 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     Tyxml_js.Html.(button [
-        img ~alt:(lbl ^ " icon") ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+                   img ~alt:(lbl ^ " icon")
+                       ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
-        span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
+        span ~a:[ a_class [ "label" ] ] [ pcdata lbl ];
+      ]) in
+  Manip.Ev.onclick button
+    (fun _ ->
+       begin Lwt.async @@ fun () ->
+         Lwt_mutex.with_lock mutex @@ fun () ->
+         disabling_button_group group cb
+       end ;
+       true) ;
+  let dom_button =
+    (Tyxml_js.To_dom.of_button button
+     :> < disabled : bool Js.t Js.prop > Js.t) in
+  let self_disabled =
+    match state with
+    | None -> ref false
+    | Some (disabled, self) ->
+        self := Some (group, dom_button) ;
+        disabled in
+  others := (dom_button, self_disabled) :: !others ;
+  if !self_disabled || !cnt > 0 then
+    dom_button##.disabled := Js.bool true ;
+  Manip.appendChild container button
+
+let button2 ~container ~theme ?group ?state ~icon lbl cb =
+  let (others, mutex, cnt) as group =
+    match group with
+    | None -> button_group ()
+    | Some group -> group in
+  let button =
+    Tyxml_js.Html.(button ~a:[a_id "grade_id"] [
+                   img ~alt:(lbl ^ " icon")
+                       ~src:("icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        pcdata " " ;
+        span ~a:[ a_class [ "label" ] ] [ pcdata lbl ];
       ]) in
   Manip.Ev.onclick button
     (fun _ ->

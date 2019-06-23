@@ -42,3 +42,16 @@ begin library "xor"
   ]
 end
 
+
+begin library "translate"
+  files = [
+    "translate.ml" ( comp = ppx_js ppx_ocplib_i18n )
+  ]
+  requires = [
+    "lwt"
+    "js_of_ocaml.ppx"
+    "ocplib_i18n"
+    "jsutils"
+    "learnocaml-app-common"
+  ]
+end

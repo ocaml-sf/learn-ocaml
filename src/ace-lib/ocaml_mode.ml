@@ -279,7 +279,8 @@ let get_line_tokens line st row doc =
     | Some (tok, lex_ctxt, stream) ->
         let block = IndentBlock.update !config.indent st.block stream tok; in
         let tok, block, offset =
-          if not first || all_spaces line || IndentBlock.is_in_comment block then
+          if not first || all_spaces line ||
+               IndentBlock.is_in_comment block then
             tok, block, offset
           else if not !config.forced then
             (* Update ocp-indent context with current indentation. *)
@@ -303,7 +304,8 @@ let get_line_tokens line st row doc =
         let col = Nstream.(Region.start_column tok.region) in
         if IndentBlock.is_at_top block then
           mark_phrase doc (Ace.create_position row (col + offset));
-        if !debug_indent > 1 && tok.token <> EOL && tok.token <> ESCAPED_EOL then
+        if !debug_indent > 1 && tok.token <> EOL &&
+             tok.token <> ESCAPED_EOL then
           IndentBlock.dump block;
         let st = { block; lex_ctxt; } in
         match tok.token with

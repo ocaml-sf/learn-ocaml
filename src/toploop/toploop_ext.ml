@@ -69,8 +69,8 @@ end
 let warnings = ref []
 
 let convert_loc loc =
-  let _file1,line1,col1 = Location.get_pos_info (loc.Location.loc_start) in
-  let _file2,line2,col2 = Location.get_pos_info (loc.Location.loc_end) in
+  let _file1,line1,col1 = Location.get_pos_info loc.Location.loc_start in
+  let _file2,line2,col2 = Location.get_pos_info loc.Location.loc_end in
   { loc_start = (line1, col1) ; loc_end = (line2, col2) }
 
 let () =

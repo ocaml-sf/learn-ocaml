@@ -155,7 +155,8 @@ let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
     [onmessage] by calling [Lwt.wakeup]. They should never end with
     an exception, unless canceled. When canceled, the worker is
     killed and a new one is spawned. *)
-let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.t =
+let rec post : type a. t -> a host_msg ->
+                    a Toploop_results.toplevel_result Lwt.t =
   fun worker msg ->
     let msg_id = worker.counter in
     let msg_ty = ty_of_host_msg msg in
@@ -179,7 +180,7 @@ and do_reset_worker () =
         (* GRGR: Peut-on 'cancel' directement le Lwt.u ? *)
         (fun _ (U (_, _, t)) -> Lwt.cancel t)
         worker.wakeners;
-      worker.worker <- Worker.create (worker.js_file);
+      worker.worker <- Worker.create worker.js_file;
       worker.fds <-
         IntMap.empty |>
         IntMap.add 0 (IntMap.find 0 worker.fds) |>

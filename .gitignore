@@ -1,4 +1,6 @@
 *~
+\#*\#
+.\#*
 
 _obuild
 _opam
@@ -22,10 +24,10 @@ www/
 
 sync/
 
-static/*_black.svg
-static/*_dark.svg
-static/*_light.svg
-static/*_white.svg
+static/icons/*_black.svg
+static/icons/*_dark.svg
+static/icons/*_light.svg
+static/icons/*_white.svg
 static/Fontin*
 
 translations/*.pot

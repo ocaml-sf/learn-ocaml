@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
-val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
+val find_div_or_append_to_body : string -> [> Html_types.div] Tyxml_js.Html.elt
 
 val find_component : string -> 'a Tyxml_js.Html.elt
 
@@ -23,13 +23,13 @@ val gettimeofday : unit -> float
 
 val fake_download : name: string -> contents: Js.js_string Js.t -> unit
 
-val fake_upload : unit -> (string * Js.js_string Js.t ) Lwt.t
+val fake_upload : unit -> (string * Js.js_string Js.t) Lwt.t
 
 val fatal : string -> unit
 
 val hide_loading : ?id: string -> unit -> unit
 
-val show_loading : ?id: string -> [< Html_types.div_content_fun ] Tyxml_js.Html.elt list -> unit
+val show_loading : ?id: string -> [< Html_types.div_content_fun] Tyxml_js.Html.elt list -> unit
 
 val set_assoc : string -> 'a -> (string * 'a) list -> (string * 'a) list
 
@@ -74,6 +74,15 @@ val button :
   string -> (unit -> unit Lwt.t) ->
   unit
 
+val button2 :
+  container: 'a Tyxml_js.Html.elt ->
+  theme: string ->
+  ?group: button_group ->
+  ?state: button_state ->
+  icon:string ->
+  string -> (unit -> unit Lwt.t) ->
+  unit
+    
 val render_rich_text :
   ?on_runnable_clicked: (string -> unit) ->
   Learnocaml_index.text ->

@@ -30,22 +30,26 @@ let js_error obj = Firebug.console##(error obj)
 
 let log fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(log (Js.string (Format.flush_str_formatter ()))))
+    (fun s -> Firebug.console##(log
+                                  (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let debug fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(debug (Js.string (Format.flush_str_formatter ()))))
+    (fun s -> Firebug.console##(debug
+                                  (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let warn fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(warn (Js.string (Format.flush_str_formatter ()))))
+    (fun s -> Firebug.console##(warn
+                                  (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let error fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(error (Js.string (Format.flush_str_formatter ()))))
+    (fun s -> Firebug.console##(error
+                                  (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 
@@ -58,10 +62,10 @@ let get_lang () =
   match Js.Optdef. to_option (Dom_html.window##.navigator##.language) with
   | Some l -> Some (Js.to_string l)
   | None ->
-      match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
-      with
-      | Some l -> Some (Js.to_string l)
-      | None -> None
+      (match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
+       with
+       | Some l -> Some (Js.to_string l)
+       | None -> None)
 
 
 module Manip = struct
@@ -117,6 +121,10 @@ module Manip = struct
     let elt = get_elt "setInnerHtml" elt in
     elt##.innerHTML := Js.string s
 
+  let setTitle elt s =
+    let elt = get_elt "setTitle" elt in
+    elt##.title := Js.string s
+
   let addClass elt s =
     let elt = get_elt "addClass" elt in
     elt##.classList##(add (Js.string s))
@@ -137,7 +145,8 @@ module Manip = struct
       List.iter (fun elt2 -> ignore(node##(appendChild (get_node elt2)))) elts
     | Some elt3 ->
       let node3 = get_node elt3 in
-      List.iter (fun elt2 -> ignore(node##(insertBefore (get_node elt2) (Js.some node3)))) elts
+      List.iter (fun elt2 ->
+          ignore(node##(insertBefore (get_node elt2) (Js.some node3)))) elts
 
   let raw_insertChildAfter node1 node2 elt3 =
     Js.Opt.case
@@ -184,11 +193,13 @@ module Manip = struct
     Js.Opt.to_option res
 
   let by_id n =
-    let res = Js.Opt.bind (Dom_html.window##.document##(getElementById (Js.string n))) (fun node ->
-        Js.Opt.map (Dom.CoerceTo.element node) (fun node ->
-            Of_dom.of_element (Dom_html.element node)
-          )
-      ) in
+    let res = Js.Opt.bind
+                (Dom_html.window##.document##(getElementById (Js.string n)))
+                (fun node -> Js.Opt.map (Dom.CoerceTo.element node)
+                               (fun node -> Of_dom.of_element
+                                              (Dom_html.element node)
+                               )
+                ) in
     Js.Opt.to_option res
 
   let childLength elt =
@@ -402,9 +413,9 @@ module Manip = struct
       elt##.onscroll := (bool_cb f)
     let onreturn elt f =
       let f ev =
-	let key = ev##.keyCode in
-	if key = 13 then f ev;
-	true in
+        let key = ev##.keyCode in
+        if key = 13 then f ev;
+        true in
       onkeydown elt f
     let onchange elt f =
       let elt = get_elt_input "Ev.onchange" elt in
@@ -823,7 +834,8 @@ module Manip = struct
     let borderBottomWidth elt v =
       let elt = get_elt "SetCss.borderBottomWidth" elt in
       elt##.style##.borderBottomWidth := Js.bytestring v
-    let borderBottomWidthPx elt v = borderBottomWidth elt (Printf.sprintf "%dpx" v)
+    let borderBottomWidthPx elt v =
+      borderBottomWidth elt (Printf.sprintf "%dpx" v)
     let borderCollapse elt v =
       let elt = get_elt "SetCss.borderCollapse" elt in
       elt##.style##.borderCollapse := Js.bytestring v
@@ -855,7 +867,8 @@ module Manip = struct
     let borderRightWidth elt v =
       let elt = get_elt "SetCss.borderRightWidth" elt in
       elt##.style##.borderRightWidth := Js.bytestring v
-    let borderRightWidthPx elt v = borderRightWidth elt (Printf.sprintf "%dpx" v)
+    let borderRightWidthPx elt v =
+      borderRightWidth elt (Printf.sprintf "%dpx" v)
     let borderSpacing elt v =
       let elt = get_elt "SetCss.borderSpacing" elt in
       elt##.style##.borderSpacing := Js.bytestring v
@@ -1002,7 +1015,9 @@ module Manip = struct
     let minWidthPx elt v = minWidth elt (Printf.sprintf "%dpx" v)
     let opacity elt v =
       let elt = get_elt "SetCss.opacity" elt in
-      elt##.style##.opacity := match v with None -> Js.undefined | Some v -> Js.def (Js.bytestring v)
+      elt##.style##.opacity := match v with
+                               | None -> Js.undefined
+                               | Some v -> Js.def (Js.bytestring v)
     let outline elt v =
       let elt = get_elt "SetCss.outline" elt in
       elt##.style##.outline := Js.bytestring v

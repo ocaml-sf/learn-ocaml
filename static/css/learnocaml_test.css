@@ -1,0 +1,506 @@
+body{
+  background: #eee;
+}
+
+#txt_txt{
+  text-align: center;
+}
+
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* The actual popup */
+.popup .popuptext {
+    visibility: hidden;
+    background-color: #555;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 8px 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 0px;
+}
+
+/* Popup arrow */
+.popup .popuptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+
+/* Toggle this class - hide and show the popup */
+.popup .show {
+    visibility: visible;
+    -webkit-animation: fadeIn 1s;
+    animation: fadeIn 1s;
+}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;} 
+    to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:1 ;}
+}
+
+/* -------------- toolbar ---------------------------------------- */
+#learnocaml-main-toolbar {
+  position: fixed;
+  left: 0; top: 0;
+  color: #fff;
+  z-index: 1004;
+  border-bottom: 1px #eee solid;
+  display: flex;
+  background: #222;
+}
+#learnocaml-main-toolbar a {
+  text-decoration: none;
+  color: #fff;
+}
+#learnocaml-main-toolbar > button {
+  border-left: 1px #eee solid !important;
+  padding: 0 10px 0 10px;
+  margin: 0;
+  background: none;
+  border: none;
+  flex: 0;
+  position: relative;
+  display: block;
+}
+#learnocaml-main-toolbar > button > * {
+  padding: 5px;
+  color: #eee;
+  text-align: center;
+}
+#learnocaml-main-toolbar::before {
+  z-index: 1004;
+  position: fixed;
+  left: 0px; height: 5px; width: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+  content:"";
+}
+@media (max-width: 549px) {
+  #learnocaml-main-toolbar {
+    height: 40px;
+    width: 100%
+  }
+  .button {
+  	height: 40px;
+  	min-width: 40px;
+  }
+  #learnocaml-main-toolbar::before {
+    top: 41px;
+  }
+  #learnocaml-main-toolbar > button > .label {
+    display: none;
+  }
+}
+@media (min-width: 550px) {
+  #learnocaml-main-toolbar {
+    height: 60px;
+    width: 100%;
+  }
+  .button {
+  	height: 60px;
+  	min-width: 60px;
+  }
+  #learnocaml-main-toolbar::before {
+    top: 61px;
+  }
+}
+
+/* --------------- fixed elements -------------------------------- */
+
+#learnocaml-test {
+  position: absolute;
+  z-index: 998;
+  background: #eee;
+  padding: 0;
+  opacity: 1;
+  text-align: center;
+}
+#learnocaml-test {
+  left: 0px; top:110px; right: 50%; bottom: 55%;
+}
+
+#learnocaml-tab-name{
+  padding: 5px;text-align:center;
+}
+
+#learnocaml-tab-type{
+  padding: 5px;text-align:center;
+}
+
+#learnocaml-tab-choix{
+  padding: 5px;text-align:center;
+}
+
+/* ----------- tabs ---------------------------------------------- */
+
+#learnocaml-tabs {
+  position: absolute;
+  z-index: 997;
+  background: #eee;
+  padding: 0;
+  opacity: 1;
+}
+#learnocaml-tabs {
+  left: 0px; top:0px; right: 0px; bottom: 0px;
+}
+
+#learnocaml-tabs > * {
+  position: absolute;
+  z-index: 997;
+  background: #eee;
+  padding: 0;
+  opacity: 0;
+}
+#learnocaml-tabs > *.front-tab {
+  z-index: 998;
+  opacity: 1;
+}
+#learnocaml-tabs > * {
+  left: 0px; top: 15px; right: 0px; bottom: 0px;
+}
+
+/* ---------------- solution tab --------------------------------- */
+
+#learnocaml-tab-solution-input {
+	left: 0px; top: 48%; right: 0px; bottom: 0px;
+	position:absolute;
+	margin: 10px;
+	background : #666;
+	border : 3px solid #fff
+}
+#txt_input_sol {
+	left: 10px;	top:45%; right: 50%;
+	position: absolute;
+}
+
+#learnocaml-tab-solution-extra {
+	left: 50%; top: 15%; right: 0px; bottom: 0px;
+	position: absolute;
+	text-align:center;
+}
+#learnocaml-tab-solution-datalist{
+	position: absolute;
+	left: 50%;
+	text-align: center;
+	right: 0px;
+	top: 25%;
+}
+#sol-datalist{
+	width:80%;
+}
+#learnocaml-tab-solution-sampler{
+	position: absolute;
+	top: 35%;
+	right: 0px;
+	left: 50%;
+	text-align: center;
+}
+#sol-sampler{
+	width:80%;
+}
+
+/* ----------- specification tab --------------------------------- */
+
+#learnocaml-tab-spec-input {
+	left: 0px; top: 48%; right: 50%; bottom: 0px;
+	position: absolute;
+	margin: 10px;
+	background : #666;
+	border : 3px solid #fff
+}
+
+#txt_input_spec {
+	left: 10px; top: 45%;	right:50%;
+	position: absolute;
+	right: 50%;
+}
+
+#learnocaml-tab-spec-extra {
+	left: 50%; top: 15%; right: 0px; bottom: 0px;
+	position: absolute;
+	text-align:center;
+}
+#learnocaml-tab-spec-datalist{
+	position: absolute;
+	left: 50%;
+	text-align: center;
+	right: 0px;
+	top: 25%;
+}
+#spec-datalist{
+	width:80%;
+}
+#learnocaml-tab-spec-sampler{
+	position: absolute;
+	top: 35%;
+	right: 0px;
+	left: 50%;
+	text-align: center;
+}
+#spec-sampler{
+	width:80%;
+}
+#learnocaml-tab-spec-spec {
+	left: 50%; top: 48%; right: 0px; bottom: 0px;
+	position: absolute;
+	margin: 10px;
+	background : #666;
+	border : 3px solid #fff
+}
+
+#txt_spec_specification {
+	position: absolute;
+	left: 52%;
+	top: 45%;
+  right: 10px;
+}
+
+/* ------------------ suite tab ---------------------------------- */
+
+#learnocaml-tab-suite-input{
+  	left: 0%; top: 48%; right: 0px; bottom: 0px;
+	position: absolute;
+	margin: 10px;
+	background : #666;
+	border : 3px solid #fff
+}
+
+#txt_suite_input {
+	left: 10px;	top: 45%; right:50%;
+	position: absolute;
+}
+#learnocaml-tab-suite-datalist{
+	position: absolute;
+	left: 50%;
+	text-align: center;
+	right: 0px;
+	top: 20%;
+}
+#suite-datalist{
+	width:80%;
+}
+
+
+/* ------- aces -------------------------------------------------- */
+	/* ---- solution input -------------------------------- */
+
+#learnocaml-tab-solution-input {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-tab-solution-input .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-tab-solution-input .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-tab-solution-input .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-tab-solution-input .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-tab-solution-input .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-tab-solution-input .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-tab-solution-input .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-tab-solution-input .ace_constant { color: #acf; }
+#learnocaml-tab-solution-input .ace_string { color: #acf; }
+#learnocaml-tab-solution-input .ace_function { color: #fff; }
+#learnocaml-tab-solution-input .ace_type { color: #fff; }
+#learnocaml-tab-solution-input .ace_operator { color: #fff; }
+#learnocaml-tab-solution-input .ace_meta { color: #fff; }
+#learnocaml-tab-solution-input .ace_variable { color: #fff; }
+#learnocaml-tab-solution-input .ace_text { color: #fff; }
+#learnocaml-tab-solution-input .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-solution-input .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-solution-input .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-tab-solution-input .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-tab-solution-input .ace_selected-word { background: #e80; opacity: 0.2; }
+
+
+/* ---- spec input ------------------------------------ */
+
+#learnocaml-tab-spec-input {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-tab-spec-input .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-tab-spec-input .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-tab-spec-input .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-tab-spec-input .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-tab-spec-input .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-tab-spec-input .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-tab-spec-input .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-tab-spec-input .ace_constant { color: #acf; }
+#learnocaml-tab-spec-input .ace_string { color: #acf; }
+#learnocaml-tab-spec-input .ace_function { color: #fff; }
+#learnocaml-tab-spec-input .ace_type { color: #fff; }
+#learnocaml-tab-spec-input .ace_operator { color: #fff; }
+#learnocaml-tab-spec-input .ace_meta { color: #fff; }
+#learnocaml-tab-spec-input .ace_variable { color: #fff; }
+#learnocaml-tab-spec-input .ace_text { color: #fff; }
+#learnocaml-tab-spec-input .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-spec-input .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-spec-input .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-tab-spec-input .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-tab-spec-input .ace_selected-word { background: #e80; opacity: 0.2; }
+
+
+/* ---- spec spec ------------------------------------- */
+
+#learnocaml-tab-spec-spec {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-tab-spec-spec .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-tab-spec-spec .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-tab-spec-spec .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-tab-spec-spec .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-tab-spec-spec .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-tab-spec-spec .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-tab-spec-spec .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-tab-spec-spec .ace_constant { color: #acf; }
+#learnocaml-tab-spec-spec .ace_string { color: #acf; }
+#learnocaml-tab-spec-spec .ace_function { color: #fff; }
+#learnocaml-tab-spec-spec .ace_type { color: #fff; }
+#learnocaml-tab-spec-spec .ace_operator { color: #fff; }
+#learnocaml-tab-spec-spec .ace_meta { color: #fff; }
+#learnocaml-tab-spec-spec .ace_variable { color: #fff; }
+#learnocaml-tab-spec-spec .ace_text { color: #fff; }
+#learnocaml-tab-spec-spec .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-spec-spec .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-spec-spec .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-tab-spec-spec .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-tab-spec-spec .ace_selected-word { background: #e80; opacity: 0.2; }
+
+
+/* ---- suite input ----------------------------------- */
+
+#learnocaml-tab-suite-input {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-tab-suite-input .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-tab-suite-input .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-tab-suite-input .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-tab-suite-input .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-tab-suite-input .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-tab-suite-input .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-tab-suite-input .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-tab-suite-input .ace_constant { color: #acf; }
+#learnocaml-tab-suite-input .ace_string { color: #acf; }
+#learnocaml-tab-suite-input .ace_function { color: #fff; }
+#learnocaml-tab-suite-input .ace_type { color: #fff; }
+#learnocaml-tab-suite-input .ace_operator { color: #fff; }
+#learnocaml-tab-suite-input .ace_meta { color: #fff; }
+#learnocaml-tab-suite-input .ace_variable { color: #fff; }
+#learnocaml-tab-suite-input .ace_text { color: #fff; }
+#learnocaml-tab-suite-input .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-suite-input .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-tab-suite-input .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-tab-suite-input .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-tab-suite-input .ace_selected-word { background: #e80; opacity: 0.2; }
+
+
+/* --------------- check-answer -------------------------- */
+#check-anser {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#check-answer.loading,
+#check-anser.loaded {
+  background: rgba(200,200,200,0.9);
+}

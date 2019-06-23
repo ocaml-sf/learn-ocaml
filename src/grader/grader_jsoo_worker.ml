@@ -38,7 +38,9 @@ let get_grade ?callback exo solution =
 open Grader_jsoo_messages
 
 let () =
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
+  (match Js_utils.get_lang() with
+   | Some l -> Ocplib_i18n.set_lang l
+   | None -> ());
   Worker.set_onmessage @@ fun (json : Json_repr_browser.Repr.value) ->
   let { exercise ; solution } =
     Json_repr_browser.Json_encoding.destruct to_worker_enc json in

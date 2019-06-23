@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml by OCamlPro - Editor</title>
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
+    <!--[if IE]><link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico"     /><![endif]-->﻿
+    <link rel="stylesheet" href="css/learnocaml_common.css">
+    <link rel="stylesheet" href="css/learnocaml_test.css">
+    <link rel="stylesheet" href="css/learnocaml_report.css">
+    <link rel="stylesheet" href="css/learnocaml_tryocaml.css">
+    <script src="js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="js/testhaut.js" defer></script>
+  </head>
+  <body>
+    <style type="text/css"> 
+      a:link
+      {
+      text-decoration:none; 
+      }
+      input:invalid
+      {
+      box-shadow: 0 0 1px 1px red;
+      }
+      .error
+      {
+      color: darkred;
+      }
+    </style>
+    <div style="display:none">
+      <!-- preload -->
+      <img src="icons/tryocaml_loading_1.gif"><img src="icons/tryocaml_loading_2.gif">
+      <img src="icons/tryocaml_loading_3.gif"><img src="icons/tryocaml_loading_4.gif">
+      <img src="icons/tryocaml_loading_5.gif"><img src="icons/tryocaml_loading_6.gif">
+      <img src="icons/tryocaml_loading_7.gif"><img src="icons/tryocaml_loading_8.gif">
+    </div>
+    <div id="learnocaml-main-toolbar">
+      <div class="logo">
+        <img src="icons/logo_ocaml.svg">
+        <span>Learn OCaml</span>
+        <img src="icons/logo_ocp.svg">
+      </div>
+      <div>
+	  	<button id="check" type="button" class="button">Check</button>
+      	<button id="cancel" type="button" class="button">Cancel</button>
+    	<button id="save" type="submit" class="button">Save</button>
+      </div>
+      <!--<div id="learnocaml-test-toolbar" class="buttons"></div>-->
+    </div style="margin: 0 5%;">
+    <div id="learnocaml-test">
+      <!--form-->
+      <div id="learnocaml-tab-name">
+        <label id="txt_name" for="name">Function name: </label>
+        <input type="text" id="name" name="name" value=""
+               maxlength="250" size="25%" required autofocus />
+        <span id="name_error" class="error" aria-live="polite"></span>
+      </div>
+      <div id="learnocaml-tab-type">
+        <label id="txt_ty" for="ty">Type: </label>
+        <input type="text" id="ty" name="ty" value=""
+               size="25%" required />
+        <span id="type_error" class="error" aria-live="polite"></span>
+      </div>
+      <div id="learnocaml-tab-choix">
+	<input id="solution" type="radio" name="choix" value="solution">
+	<label id="txt_sol" for="solution">Solution</label>
+	<input id="spec" type="radio" name="choix" value="spec">
+	<label id="txt_spec" for="spec">Specification</label>
+	<input id="suite" type="radio" name="choix" value="suite">
+	<label id="txt_suite" for="suite">Tests suite</label>
+      </div>
+    </div>
+    <div id="learnocaml-tabs">
+      <div id="learnocaml-tab-solution">
+	<div id="txt_input_sol" class="popup">
+	  Arguments:<br>
+	  <span class="popuptext" id="popup-sol"/>
+	</div>
+	<div id="learnocaml-tab-solution-input">
+	</div>
+	<div id="learnocaml-tab-solution-extra">
+	  <label id="txt_gen_sol" for="sol-gen">Number of generate tests:<br></label>
+	  <input type="number" name="gen" id="sol-gen" value="0" step="1" min="0" max="20">
+	  </input>
+	</div>
+	<div id="learnocaml-tab-solution-datalist">
+	  <label id="txt_datalist_sol" for="sol-datalist">Tester:<br></label>
+	  <input list="datalist" id="sol-datalist" name="sol-datalist" />
+	  <datalist id="datalist">
+	    <option value="test_ignore">
+	    <option value="test">
+	    <option value="test_eq (*'a result -> 'a result -> bool*)">
+	    <option value="test_eq_ok (*'a -> 'a -> bool*)">
+	    <option value="test_eq_exn (*exn -> exn -> bool*)">
+	    <option value="test_canon (*'a result -> 'a result*)">
+	    <option value="test_canon_ok (*'a -> 'a*)">
+	    <option value="test_canon_error (*exn -> exn*)">
+	</div>
+	<div id="learnocaml-tab-solution-sampler">
+	  <label id="txt_sampler_sol" for="sol-sampler">Sampler:<br></label>
+	  <input type="text" value="" id="sol-sampler"></input>
+	</div>
+      </div>
+
+      <div id="learnocaml-tab-spec">
+	<div id="txt_input_spec" class="popup">
+	  Arguments:<br>
+	  <span class="popuptext" id="popup-spec-arg"/>
+	</div>
+	<div id="learnocaml-tab-spec-input">
+	</div>
+	<div id="learnocaml-tab-spec-extra">
+	  <label id="txt_gen_spec" for="spec-gen">Number of generate tests:<br></label>
+	  <input type="number" name="gen" id="spec-gen" value="0" step="1" min="0" max="20">
+	  </input>
+	</div>
+	<div id="learnocaml-tab-spec-datalist">
+	  <label id="txt_datalist_spec" for="spec-datalist">Tester:<br></label>
+	  <input list="datalist" id="spec-datalist" name="spec-datalist" />
+	  <datalist id="datalist">
+	    <option value="test_ignore">
+	    <option value="test">
+	    <option value="test_eq ...">
+	    <option value="test_eq_ok ...">
+	    <option value="test_eq_exn ...">
+	    <option value="test_canon ...">
+	    <option value="test_canon_ok ...">
+	    <option value="test_canon_error ...">
+	</div>
+	<div id="learnocaml-tab-spec-sampler">
+	  <label id="txt_sampler_spec" for="spec-sampler">Sampler:<br></label>
+	  <input type="text" value="" id="spec-sampler"></input>
+	</div>
+	<div id="txt_spec_specification" class="popup">
+	  Specification:<br>
+	  <span class="popuptext" id="popup-spec"/>
+	</div>
+	<div id="learnocaml-tab-spec-spec">
+	</div>
+      </div>
+
+      <div id="learnocaml-tab-suite">
+	<div id="txt_suite_input" class="popup">
+	  Arguments and results:<br>
+	  <span class="popuptext" id="popup-suite"/>
+	</div>
+	<div id="learnocaml-tab-suite-input">
+	</div>
+	<div id="learnocaml-tab-suite-datalist">
+	  <label id="txt_datalist_suite" for="suite-datalist">Tester:<br></label>
+	  <input list="datalist" id="suite-datalist" name="suite-datalist" />
+	  <datalist id="datalist">
+	    <option value="test_ignore">
+	    <option value="test">
+	    <option value="test_eq ...">
+	    <option value="test_eq_ok ...">
+	    <option value="test_eq_exn ...">
+	    <option value="test_canon ...">
+	    <option value="test_canon_ok ...">
+	    <option value="test_canon_error ...">
+	</div>
+      </div>
+    </div>
+    <div id="check-answer" class="loading-layer loaded" style="position: absolute;left:0%;right:0%;top:0%;bottom:0%"></div>
+    <!--/form-->
+  </body>
+</html>

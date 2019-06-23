@@ -24,7 +24,7 @@ type exercise =
   { exercise_kind : exercise_kind ;
     exercise_title : string ;
     exercise_short_description : string option ;
-    exercise_stars : float (* \in [0.,4.] *) }
+    exercise_stars : float (* in [0.,4.] *) }
 
 and group =
   { group_title : string ;

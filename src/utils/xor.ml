@@ -45,7 +45,7 @@ let xor ?prefix str =
   let str' = Bytes.create (String.length str) in
   for i = 0 to String.length str - 1 do
     let c = Char.code xor_key.[i mod (String.length xor_key)] in
-    Bytes.set str' (i) (Char.chr (c lxor (Char.code (String.get str i))))
+    Bytes.set str' i (Char.chr (c lxor (Char.code (String.get str i))))
   done;
   Bytes.to_string str'
 

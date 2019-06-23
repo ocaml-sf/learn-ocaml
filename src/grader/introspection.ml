@@ -97,9 +97,12 @@ let insert_mod_ast_in_env ~var_name impl_code =
                                                  Pmod_structure s } }}]
    | Ptop_def [ { pstr_desc =
                     Pstr_module { pmb_expr = { pmod_desc =
-                                                 Pmod_constraint ({ pmod_desc =
-                                                                      Pmod_structure s }, _) } }}] ->
-       let ty = Ty.repr (Ast_helper.(Typ.constr (Location.mknoloc (parse_lid "Parsetree.structure")) [])) in
+                                               Pmod_constraint ({ pmod_desc =
+                                               Pmod_structure s }, _) } }}] ->
+      let ty =
+        Ty.repr (Ast_helper.(Typ.constr
+                               (Location.mknoloc
+                                  (parse_lid "Parsetree.structure")) [])) in
        insert_in_env var_name (ty : Parsetree.structure Ty.ty) s
    | _ (* should not happen *) -> assert false)
 
@@ -115,9 +118,10 @@ let treat_lookup_errors fn = match fn () with
            (Typetexp.report_error !Toploop.toplevel_env)
            (Typetexp.Type_mismatch args))
   | exception exn ->
-      match Location.error_of_exn exn with
-      | None -> Incompatible (Format.asprintf "%a@." Toploop.print_untyped_exception (Obj.repr exn))
-      | Some { Location.msg } -> Incompatible msg
+      (match Location.error_of_exn exn with
+       | None -> Incompatible (Format.asprintf "%a@."
+                                 Toploop.print_untyped_exception (Obj.repr exn))
+       | Some { Location.msg } -> Incompatible msg)
 
 let compatible_type nexp ngot =
   treat_lookup_errors @@ fun () ->
@@ -125,8 +129,12 @@ let compatible_type nexp ngot =
   let decl_exp = Env.find_type path_exp !Toploop.toplevel_env in
   let path_got = Env.lookup_type ngot !Toploop.toplevel_env in
   let decl_got = Env.find_type path_got !Toploop.toplevel_env in
-  let texp = Ctype.newconstr path_exp (List.map (fun _ -> Ctype.newvar ()) decl_exp.Types.type_params) in
-  let tgot = Ctype.newconstr path_got (List.map (fun _ -> Ctype.newvar ()) decl_got.Types.type_params) in
+  let texp =
+    Ctype.newconstr path_exp
+      (List.map (fun _ -> Ctype.newvar ()) decl_exp.Types.type_params) in
+  let tgot =
+    Ctype.newconstr path_got
+      (List.map (fun _ -> Ctype.newvar ()) decl_got.Types.type_params) in
   Ctype.unify !Toploop.toplevel_env tgot texp ;
   Present ()
 
@@ -137,7 +145,8 @@ let get_value lid ty =
       begin match Env.lookup_module ~load:false lid !Toploop.toplevel_env with
         | exception Not_found -> Absent
         | path ->
-            let { Types.md_type ; md_loc } = Env.find_module path !Toploop.toplevel_env in
+           let { Types.md_type ; md_loc } =
+             Env.find_module path !Toploop.toplevel_env in
             let phrase =
               let open Ast_helper in
               with_default_loc md_loc @@ fun () ->
@@ -147,12 +156,15 @@ let get_value lid ty =
                   (Typ.package n rews) in
               Parsetree.Ptop_def
                 [Str.value Asttypes.Nonrecursive
-                   [Vb.mk (Pat.var (Location.mkloc "%fake%" md_loc)) pack_expr ]] in
+                   [Vb.mk (Pat.var
+                             (Location.mkloc "%fake%" md_loc)) pack_expr ]] in
             let buf = Buffer.create 300 in
             let ppf = Format.formatter_of_buffer buf in
             if Toploop.execute_phrase false ppf phrase then
-              let fake_path, _ = Env.lookup_value (Longident.Lident "%fake%") !Toploop.toplevel_env in
-              Present (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env fake_path)
+              let fake_path, _ = Env.lookup_value (Longident.Lident "%fake%")
+                                   !Toploop.toplevel_env in
+              Present (Obj.obj @@
+                         Toploop.eval_path !Toploop.toplevel_env fake_path)
             else
               let msg = Format.fprintf ppf "@." ; Buffer.contents buf in
               failwith msg
@@ -195,7 +207,8 @@ let print_value ppf v ty =
         Toploop.print_value !Toploop.toplevel_env (Obj.repr v) tmp_ppf ty ;
         Format.pp_print_flush tmp_ppf ()
       with Exit -> () end ;
-    match !state with `Start | `Decided false | `Undecided -> false | `Decided true -> true in
+    match !state with | `Start | `Decided false
+                      | `Undecided -> false | `Decided true -> true in
   if needs_parentheses then begin
     Format.fprintf ppf "@[<hv 1>(" ;
     Toploop.print_value !Toploop.toplevel_env (Obj.repr v) ppf ty ;
@@ -216,11 +229,14 @@ let sample_value ty =
     let open Ast_helper in
     let rec phrase ty = match ty.desc with
       | Tconstr (path, [], _) ->
-          let lid = (Location.mknoloc (Longident.Lident ("sample_" ^ Path.name path))) in
+         let lid = (Location.mknoloc
+                      (Longident.Lident ("sample_" ^ Path.name path))) in
           Exp.ident lid
       | Tconstr (path, tl, _) ->
-          let lid = (Location.mknoloc (Longident.Lident ("sample_" ^ Path.name path))) in
-          Exp.apply (Exp.ident lid) (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
+         let lid = (Location.mknoloc
+                      (Longident.Lident ("sample_" ^ Path.name path))) in
+         Exp.apply (Exp.ident lid)
+           (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
       | _ -> failwith "unsamplable type"
     in
     let lid = Location.mknoloc lid in
@@ -233,7 +249,8 @@ let sample_value ty =
   if Toploop.execute_phrase false ppf phrase then
     let path, { Types.val_type } =
       Env.lookup_value (Longident.Lident lid) !Toploop.toplevel_env in
-    let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
+    let gty = Types.{ty with desc =
+                     Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
     if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then
       (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
     else (failwith "sampler has the wrong type !")

@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
-
+type block
 (** Toplevel output console. *)
 
 (** A toplevel output console handle. *)
@@ -108,3 +108,5 @@ val output_warning : ?phrase: phrase -> output -> Toploop_results.warning -> uni
 
 (** Format OCaml code in the style of {!output_code}. *)
 val format_ocaml_code : string -> [> `Span | `PCDATA ] Tyxml_js.Html5.elt list
+
+val get_blocks : output -> string

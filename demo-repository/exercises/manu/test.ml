@@ -9,4 +9,4 @@ let () =
        test_function_1_against_solution
          [%ty : int list -> float ] "med" ~gen:20
         [] ) ;
-  ]         
+  ]

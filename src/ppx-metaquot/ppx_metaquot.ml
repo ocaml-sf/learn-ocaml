@@ -88,7 +88,8 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
 
   class pat_builder =
     object
-      method record ty x = precord ~closed:Closed (List.map (fun (l, e) -> prefix ty l, e) x)
+      method record ty x = precord ~closed:Closed
+                             (List.map (fun (l, e) -> prefix ty l, e) x)
       method constr ty (c, args) = pconstr (prefix ty c) args
       method list l = plist l
       method tuple l = ptuple l
@@ -220,7 +221,8 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
               Exp.constraint_
                 (Exp.apply
                    (Exp.ident obj_id)
-                   [Nolabel, (exp_lifter !loc this) # lift_Parsetree_core_type ty])
+                   [Nolabel, (exp_lifter !loc this) #
+                               lift_Parsetree_core_type ty])
                 (Typ.constr ty_id [ty])
 (* ------ </edited for learn-ocaml> ------ *)
            | _ ->

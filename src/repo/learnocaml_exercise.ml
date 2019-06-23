@@ -17,7 +17,7 @@
 
 module StringMap = Map.Make (String)
 type t = string StringMap.t
-let (empty :t)=StringMap.empty 
+let (empty :t)=StringMap.empty
 type 'a field =
   { key : string ;
     ciphered : bool ;
@@ -180,7 +180,8 @@ let enc =
            if List.assoc "learnocaml_version" l <> "1" then
              raise (Cannot_destruct ([], Failure "unknown version"))
          with
-           Not_found -> raise (Cannot_destruct ([], Missing_field "learnocaml_version"))
+           Not_found ->
+           raise (Cannot_destruct ([], Missing_field "learnocaml_version"))
        end ;
        let id =
          try List.assoc "id" l with
