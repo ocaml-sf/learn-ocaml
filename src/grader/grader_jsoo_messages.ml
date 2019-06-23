@@ -20,7 +20,7 @@ type to_worker =
     solution : string }
 type from_worker =
   | Callback of string
-  | Answer of Learnocaml_report.report * string * string * string
+  | Answer of Learnocaml_report.t * string * string * string
 
 type to_worker_edit =
   { solution : string ;

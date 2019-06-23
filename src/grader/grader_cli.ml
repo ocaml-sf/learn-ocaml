@@ -128,7 +128,7 @@ let grade exercise_dir output_json =
            dump_error Format.err_formatter ;
            Lwt.return 1
        | Ok report ->
-           let (max, failure) = Learnocaml_report.result_of_report report in
+           let (max, failure) = Learnocaml_report.result report in
            begin match !dump_reports with
              | None -> ()
              | Some prefix ->

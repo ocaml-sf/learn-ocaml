@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2018-07-12 20:42+0200\n"
+"PO-Revision-Date: 2018-07-13 11:05+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -534,7 +534,7 @@ msgstr "Tapez ici le code des jeux de tests"
 msgid "Generate here the tests code"
 msgstr "Générez ici le code des jeux de tests"
 
-#: src/editor/editor.ml:255,41--59 src/editor/testhaut.ml:428,30--48
+#: src/editor/editor.ml:255,41--59 src/editor/testhaut.ml:438,30--48
 msgid "unexpected error"
 msgstr "erreur inattendue"
 
@@ -609,6 +609,10 @@ msgstr ""
 #: src/editor/editor.ml:547,23--33
 msgid "Generate"
 msgstr "Générer"
+
+#: src/editor/editor.ml:661,43--53
+msgid "Checking"
+msgstr "Validation"
 
 #: src/editor/editor.ml:705,22--31 src/editor/editor.ml:937,64--73
 msgid "Compile"
@@ -739,15 +743,15 @@ msgstr ""
 "Dans cet exemple, on voudrait que la valeur de retour<br>soit supérieure au "
 "premier argument."
 
-#: src/editor/testhaut.ml:391,34--73
+#: src/editor/testhaut.ml:401,34--73
 msgid "Incorrect name: a name can't be empty"
 msgstr "Nom incorrect: un nom ne peut pas être vide"
 
-#: src/editor/testhaut.ml:395,34--73
+#: src/editor/testhaut.ml:405,34--73
 msgid "Incorrect type: a type can't be empty"
 msgstr "Type incorrect: un type ne peut pas être vide"
 
-#: src/editor/testhaut.ml:437,47--70
+#: src/editor/testhaut.ml:447,47--70
 msgid "Checking the question"
 msgstr "Validation de la question"
 

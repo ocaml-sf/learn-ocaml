@@ -18,7 +18,7 @@
 type exercise_state =
   { solution : string ;
     grade : int (* in [0, 100] *) option ;
-    report : Learnocaml_report.report option ;
+    report : Learnocaml_report.t option ;
     mtime : float }
 
 val exercise_state_enc : exercise_state Json_encoding.encoding

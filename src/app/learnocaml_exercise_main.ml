@@ -84,7 +84,7 @@ let display_report exo report =
   let score_maxi = if idEditor id then int_of_string (arg "score")
                    else (Learnocaml_exercise.(get max_score) exo) in
 
-  let score, failed = Learnocaml_report.result_of_report report in
+  let score, failed = Learnocaml_report.result report in
   let report_button = find_component "learnocaml-exo-button-report" in
   Manip.removeClass report_button "success" ;
   Manip.removeClass report_button "failure" ;

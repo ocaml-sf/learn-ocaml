@@ -40,7 +40,8 @@ type outcome =
   | Correct of string option
   | Wrong of string option
 
-(* TODO val get_test_qst : test_qst_untyped -> test_qst_typed *)
+(* Old code
+(* val get_test_qst : test_qst_untyped -> test_qst_typed *)
 
 type test_qst_typed =
   | TestAgainstSol :
@@ -68,6 +69,8 @@ type test_qst_typed =
 
 (** Notation for TestAgainstSpec *)
 let (~~) b = if b then Correct None else Wrong None
+
+This is now in test_lib:
 (** Notations for TestSuite *)
 let (==>) a b = (a, fun () -> b)
 (* let (=>) a b = (a, fun () -> Lazy.force b) (* needs module Lazy *) *)
@@ -79,6 +82,7 @@ let (@:!!) a b = a @: !! b
 let (@:) a l = a :: l
 let (!!) b = b :: []
 let (@:!!) a b = a @: !! b
+*)
 *)
 
 (* TODO missing: nth_arg *)
@@ -116,76 +120,6 @@ let example_constr_suite =
                true @:!! true ==> false]
     }
 *)
-
-
-let local_dummy : 'a sampler = fun () -> failwith "dummy sampler"
-(* à n'utiliser que si on passe l'argument ~gen:0 (pas d'alea) *)
-
-let test_question (t : test_qst_typed) =
-  match t with
-  | TestAgainstSol t ->
-     let tester = match t.tester with
-       | None -> test
-       | Some s -> s in
-     if t.gen = 0 then
-       begin
-         test_function_against
-         ~gen:t.gen ~sampler:local_dummy
-         ~test:tester (* could take into account exceptions/sorted lists/etc. *)
-         t.prot
-         (lookup_student (ty_of_prot t.prot) t.name)
-         (lookup_solution (ty_of_prot t.prot) t.name)
-         t.suite
-       end
-     else
-       begin
-         match t.sampler with
-         | None -> (test_function_against
-                   ~gen:t.gen
-                   ~test:tester
-                   (* could take into account exceptions/sorted lists/etc. *)
-                   t.prot
-                   (lookup_student (ty_of_prot t.prot) t.name)
-                   (lookup_solution (ty_of_prot t.prot) t.name)
-                   t.suite)
-         | Some s -> (test_function_against
-                     ~gen:t.gen ~sampler:s
-                     ~test:tester
-                     (* could take into account exceptions/sorted lists/etc. *)
-                     t.prot
-                     (lookup_student (ty_of_prot t.prot) t.name)
-                     (lookup_solution (ty_of_prot t.prot) t.name)
-                     t.suite)
-       end
-  | TestAgainstSpec t ->
-     let to_string ty v = Format.asprintf "%a" (typed_printer ty) v in
-     let stud = lookup_student (ty_of_prot t.prot) t.name in
-     test_value stud @@ fun uf ->
-     (* no sampler for the moment *)
-     let open Learnocaml_report in
-     List.flatten @@ List.map (fun args ->
-       let code =
-         Format.asprintf "@[<hv 2>%s,%a@]" t.name (print t.prot) args in
-       let ret_ty = get_ret_ty (ty_of_prot t.prot) args in
-       Message ([ Text "Checking spec for" ; Code code ], Informative) ::
-         let ret = apply uf args in
-         let value = to_string ret_ty ret in
-       let (text, note) = match t.spec uf args ret with
-         | Correct None -> ("Correct spec", Success 1)
-         | Correct (Some message) -> (message, Success 1)
-         | Wrong None -> ("Wrong spec", Failure)
-         | Wrong (Some message) -> (message, Failure) in
-       [Message ([Text "Got value"; Code value; Text (": " ^ text)], note)])
-     t.suite
-  | TestSuite t ->
-     let test = match t.tester with
-       | None -> test
-       | Some s -> s in
-     test_function
-       ~test:test (* could take into account exceptions/sorted lists/etc. *)
-       t.prot
-       (lookup_student (ty_of_prot t.prot) t.name)
-       t.suite
 end
 
 open Editor_lib
@@ -194,7 +128,9 @@ let rec to_string_aux char_list =match char_list with
   | []-> ""
   | c::l -> (string_of_char c) ^ ( to_string_aux l)
 
-let to_ty str = "(to_ty \""^str^"\" )"
+(* FIXME: it seems "str" always starts (and sometimes ends) with a space.
+   This should be fix so that the space comes from [to_ty] itself. *)
+let to_ty str = "[%ty:" ^ str ^ "]"
 
 let parse_type string =
   let char_list_ref = ref (List.rev (decompositionSol string 0)) in
@@ -245,25 +181,41 @@ let parse_type string =
   done;
   !acc;;
 
+(* The tester arg could take into account exceptions/sorted lists/etc. *)
 let question_typed question id_question =
   let open Learnocaml_exercise_state in
-  let name,ty,input,extra_alea,output,type_question,tester,sampler =
-    match question with
-    | TestAgainstSol a -> a.name, a.ty, a.suite, a.gen, "",
-                          Solution, a.tester, a.sampler
-    | TestAgainstSpec a -> a.name, a.ty, a.suite, a.gen, a.spec,
-                           Spec, a.tester, a.sampler
-    | TestSuite a -> a.name, a.ty, a.suite, 0, "", Suite, a.tester, "" in
-  let tester = match tester with
-    | "" -> "None"
-    | s -> "Some ("^s^")" in
-  let sampler = match sampler with
-    | "" -> "None"
-    | s -> "Some (fun () -> last ("^s^"()))" in
-  let acc=(match type_question with
-           | Suite -> "\nlet question"^id_question^" =  TestSuite {name=\""^name^"\"; prot="^(parse_type ty)^"; tester="^tester^"; suite="^input^"}"
-           | Solution -> "\nlet question"^id_question^" = TestAgainstSol {name=\""^name^"\"; prot="^(parse_type ty)^"; tester="^tester^"; sampler="^sampler^"; gen="^(string_of_int extra_alea)^"; suite="^input^"}"
-           | Spec -> "\nlet question"^id_question^" = TestAgainstSpec {name=\""^name^"\"; prot="^(parse_type ty)^"; tester="^tester^"; sampler="^sampler^"; gen="^(string_of_int extra_alea)^"; suite="^input^"; spec="^output^"}") in
-  acc
-;;
-
+  let opt_string param = function
+    | "" -> ""
+    | v -> Format.sprintf " ~%s:(%s)" param v
+  and sampler_args = function
+    | "" -> ""
+    | f -> Format.sprintf "fun () -> last ((%s) ())" f
+  in
+  match question with
+  | TestAgainstSpec a ->
+     (* FIXME *)
+     "(* Question #" ^ id_question ^ " about " ^ a.name ^ " was not translated\n"
+     ^ "(TestAgainstSpec not currently supported by the learn-ocaml runtime) *)"
+  | TestSuite a ->
+     let name, prot, tester, suite =
+       a.name, parse_type a.ty, opt_string "test" a.tester, a.suite in
+     Format.sprintf "let question%s =@.  \
+                     let prot = %s in@.  \
+                     test_function%s prot@.  \
+                     (lookup_student (ty_of_prot prot) %s)@.  \
+                     %s;;@."
+       id_question prot tester name suite
+  | TestAgainstSol a ->
+     let name = a.name
+     and prot = parse_type a.ty
+     and gen = a.gen
+     and sampler = opt_string "sampler" (sampler_args a.sampler)
+     and tester = opt_string "test" a.tester
+     and suite = a.suite
+     in
+     Format.sprintf "let question%s =@.  \
+                     let prot = %s in@.  \
+                     test_function_against_solution ~gen:(%d)%s%s prot@.  \
+                     \"%s\"@.  \
+                     %s;;@."
+     id_question prot gen sampler tester name suite

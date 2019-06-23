@@ -1,18 +1,15 @@
-Learn-OCaml
-===========
+Learn-OCaml Editor
+==================
 
-This is Learn OCaml, a Web platform for learning the OCaml language,
-featuring a Web toplevel, an exercise environment, and a directory of
-lessons and tutorials.
+[![Build Status](https://travis-ci.com/pfitaxel/learn-ocaml-editor.svg?branch=develop)](https://travis-ci.com/pfitaxel/learn-ocaml-editor)
+
+This is Learn-OCaml Editor, an online editor for teachers using the
+[Learn-OCaml](https://github.com/ocaml-sf/learn-ocaml) Web application
+for learning the OCaml language.
 
 This software is still under development, no public announcement has been made yet.
 
-A demo is available at: [http://try.ocamlpro.com/learn-ocaml-demo/].
-
-The exercises and lessons are in another github repository:
-[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository).
-
-![Build status logo](https://travis-ci.org/OCamlPro/learn-ocaml.svg)
+A demo is available at: <https://pfitaxel.github.io/pfitaxel-demo/>
 
 Howtos
 ------
@@ -29,7 +26,7 @@ Unless explicitly written below or in the files themselves, the source
 code for the app, images, static files, course content and exercises
 are placed under the GNU Affero General Public License version 3. This
 practically means that any instance of the app must provide its source
-code to its users.  See [http://www.gnu.org/licenses/agpl-3.0.html].
+code to its users.  See <https://www.gnu.org/licenses/agpl-3.0.html>.
 
 Lightly modified third party components ACE and ppx_metaquot are
 included, under their original licenses (respectively BSD and MIT).
@@ -38,19 +35,19 @@ The OCamlPro logo images are (c) OCamPro. Redistribution is permitted,
 alteration requires prior written authorization by OCamlPro.
 
 The OCaml / ocaml.org logo is released under the very liberal UNLICENSE.
-See [https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md].
+See <https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md>.
 
 The Inconsolata font is released under the Open Font License.
-See [http://www.levien.com/type/myfonts/inconsolata.html].
+See <http://www.levien.com/type/myfonts/inconsolata.html>.
 
 The Biolinum font is licensed under the GNU General Public License with
 a the 'Font-Exception'.
-See [http://www.linuxlibertine.org].
+See <http://www.linuxlibertine.org>.
 
 The public instance of Learn OCaml uses the Fontin font instead of
 Biolinum. This font is licensed under the exljbris Font Foundry Free
 Font License Agreement, which, to our understanding, does not allow us
-to redistribute it. See [http://www.exljbris.com/eula.html]. You will
+to redistribute it. See <http://www.exljbris.com/eula.html>. You will
 optionally have to procure the files by yourself while building the
 app. If not, the CSS provides a reasonable fallback font.
 
@@ -58,7 +55,7 @@ Contributions to this repository are placed under the BSD
 license. This means that we can merge them with the same license as
 the rest of the codebase, while you keep all the rights on your code.
 And we will not have to bother you with any future license update.
-See [https://opensource.org/licenses/BSD-3-Clause].
+See <https://opensource.org/licenses/BSD-3-Clause>.
 
 Authors and Acknowledgements
 ----------------------------

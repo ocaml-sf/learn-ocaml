@@ -15,7 +15,8 @@ opam install -y opam-devel
 sudo cp /home/travis/.opam/4.05.0/lib/opam-devel/* /usr/local/bin
 hash -r
 opam upgrade -y || true
-opam install . -y --deps
+opam install . -y --deps --locked
+opam install -y opam-installer
 make PROCESSING_JOBS=1
 make opaminstall
 fold_end check-build-system

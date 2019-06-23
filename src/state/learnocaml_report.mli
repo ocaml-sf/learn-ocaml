@@ -17,10 +17,10 @@
 
 (** {2 Formatted report output} *)
 
-type report = item list
+type t = item list
 
 and item =
-  | Section of text * report
+  | Section of text * t
   (** A titled block that groups subreports *)
   | Message of text * status
   (** Basic report block *)
@@ -41,21 +41,21 @@ and inline =
   | Output of string (** For output *)
 
 (** Gets the total successes of a report, and tells if a failure happened *)
-val result_of_report : report -> int * bool
+val result : t -> int * bool
 
 (** Gets a report as HTML in a string
     (if [not bare] add a container div and inline style) *)
-val html_of_report :  ?bare: bool -> report -> string
+val html_of_report :  ?bare: bool -> t -> string
 
 (** Outputs a report in text format *)
-val print_report : Format.formatter -> report -> unit
+val print_report : Format.formatter -> t -> unit
 
 (** Prints a report as HTML
     (if [not bare] add a container div and inline style) *)
-val output_html_of_report : ?bare: bool -> Format.formatter -> report -> unit
+val output_html_of_report : ?bare: bool -> Format.formatter -> t -> unit
 
 (** JSON serializer *)
-val report_enc : report Json_encoding.encoding
+val report_enc : t Json_encoding.encoding
 
 (** {2 Learnocaml_report building combinators} *)
 
@@ -64,4 +64,4 @@ val success : points:int -> message:string -> item
 val warning : message:string -> item
 val message : message:string -> item
 val info : message:string -> item
-val section : title:string -> report -> item
+val section : title:string -> t -> item

@@ -23,7 +23,7 @@ open Learnocaml_index;;
 type exercise_state =
   { solution : string ;
     grade : int option ;
-    report : Learnocaml_report.report option ;
+    report : Learnocaml_report.t option ;
     mtime : float }
 
 let exercise_state_enc =

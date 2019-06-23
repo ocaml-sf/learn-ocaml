@@ -79,10 +79,10 @@ and output_attrs ppf attrs =
 
 (* -- report format --------------------------------------------------------- *)
 
-type report = item list
+type t = item list
 
 and item =
-  | Section of text * report
+  | Section of text * t
   | Message of text * status
 
 and status =
@@ -97,7 +97,7 @@ and inline =
   | Code of string
   | Output of string
 
-let result_of_report items =
+let result items =
   let rec do_report items =
     List.fold_left (fun (successes, failures) item ->
         let (isuccesses, ifailures) = do_item item in

@@ -13,12 +13,12 @@ open Tyxml_js.Html5
 
 module StringMap = Map.Make (String);;
 
-show_loading ~id:"check-answer"
- Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading"] ] ] ] ;
-
-(* Internationalization *)
- Translate.set_lang ()
 let () =
+  show_loading ~id:"check-answer"
+    Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading"] ] ] ];
+  
+  Translate.set_lang ();
+  
   let translations = [
     "check", [%i"Check"];
     "cancel", [%i"Cancel"];
@@ -188,8 +188,10 @@ let save_suite () =
   let ty = Js.to_string ty##.value in
   let input = Ace.get_contents ace_input_suite in
   let datalist = Js.to_string datalistSuite##.value in
-  TestSuite {name; ty; suite=input; tester=datalist} 
-
+  if input = "" then
+    TestSuite {name; ty; suite = "[]"; tester = datalist}
+  else
+    TestSuite {name; ty; suite = input; tester = datalist}
 
 let save_solution () =
   let name = Js.to_string name##.value in
@@ -197,24 +199,32 @@ let save_solution () =
   let input = Ace.get_contents ace_input_sol in
   let extra_alea = int_of_string (Js.to_string extraAleaSol##.value) in
   let datalist = Js.to_string datalistSol##.value in
-  let sampler= Js.to_string samplerSol##.value in
-  TestAgainstSol {name; ty; suite = input; gen = extra_alea;
-                  tester = datalist; sampler}
+  let sampler = Js.to_string samplerSol##.value in
+  if input = "" then
+    TestAgainstSol {name; ty; suite = "[]"; gen = extra_alea;
+                    tester = datalist; sampler}
+  else
+    TestAgainstSol {name; ty; suite = input; gen = extra_alea;
+                    tester = datalist; sampler}
 
 let save_spec () =
   let name = Js.to_string name##.value in
   let ty = Js.to_string ty##.value in
   let input = Ace.get_contents ace_input_spec in
-  let output = Ace.get_contents ace_spec_spec in
+  let specification = Ace.get_contents ace_spec_spec in
   let extra_alea = int_of_string (Js.to_string extraAleaSpec##.value) in
   let datalist = Js.to_string datalistSpec##.value in
   let sampler = Js.to_string samplerSpec##.value in
-  TestAgainstSpec {name; ty; suite = input; spec = output;
-                   gen = extra_alea; tester = datalist; sampler}
+  if input = "" then
+    TestAgainstSpec {name; ty; suite = "[]"; spec = specification;
+                     gen = extra_alea; tester = datalist; sampler}
+  else
+    TestAgainstSpec {name; ty; suite = input; spec = specification;
+                     gen = extra_alea; tester = datalist; sampler}
 
 (* ---- restore fields if they are not empty ------------------------------- *)
 
-let testhaut=get_testhaut id
+let testhaut = get_testhaut id
     
 let _ = match arg "questionid" with
   | exception Not_found -> select_tab "suite"; suite##.checked := Js.bool true
@@ -420,26 +430,29 @@ let () = cancel##.onclick := handler (fun _ ->
 let check = getElementById "check" ;;
 let container_div = find_component "check-answer";; 
 
-
 let after_init top =
-  begin 
+  begin (* TODO: try to simplify this small hack *)
     Lwt.return true
   end >>= fun r1 ->
-  if not r1  then failwith [%i"unexpected error"];
+  if not r1 then failwith [%i"unexpected error"];
   Learnocaml_toplevel_worker_caller.set_checking_environment top >>= fun _ ->
-  Lwt.return () in
-    Learnocaml_toplevel_worker_caller.create ~after_init ()
-    >>= ( fun top->
-          hide_loading ~id:"check-answer" ();
-          check##.onclick := handler (fun _ ->
-           let _ = save_handler ( fun ()->() ) () in ();
-           show_loading ~id:"check-answer"
-          Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Checking the question"] ] ] ] ;
-        let str=with_test_lib_prepare
-            (test_prel^"\n"^
-               ( Test_spec.question_typed
-                   ( get_a_question id question_id ) question_id )) in
-        Learnocaml_toplevel_worker_caller.check top str >>= (fun res ->
-          typecheck_dialog_box "check-answer" res); Js._true);
-          Lwt.return () )
-  
+  Lwt.return_unit
+
+let () =
+  Lwt.async @@ fun () ->
+  Learnocaml_toplevel_worker_caller.create ~after_init ()
+  >>= fun top->
+  hide_loading ~id:"check-answer" ();
+  check##.onclick := handler (fun _ ->
+      let _ = save_handler ( fun ()->() ) () in ();
+      show_loading ~id:"check-answer"
+        Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Checking the question"] ] ] ] ;
+      let str=with_test_lib_prepare
+          (test_prel ^ (get_buffer id) ^ "\n" ^
+             (Test_spec.question_typed
+                (get_a_question id question_id) question_id)) in
+      Lwt.async (fun () ->
+          Learnocaml_toplevel_worker_caller.check top str >>= fun res ->
+          typecheck_dialog_box "check-answer" res);
+      Js._true);
+  Lwt.return_unit

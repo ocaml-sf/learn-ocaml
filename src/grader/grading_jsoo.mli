@@ -23,6 +23,6 @@ val get_grade :
   ?callback:(string -> unit) ->
   ?timeout: float ->
   Learnocaml_exercise.t -> string ->
-  (Learnocaml_report.report * string * string * string) Lwt.t
+  (Learnocaml_report.t * string * string * string) Lwt.t
 
 

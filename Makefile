@@ -20,9 +20,10 @@ TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
 build-deps:
 	sh scripts/install-opam-deps.sh
 
+.PHONY: build
 build:
 	@ocp-build init
-	@ocp-build -scan
+	@ocp-build
 
 process-repo: install
 	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
@@ -37,28 +38,18 @@ static:
 	@${MAKE} -C static
 
 install: static
-	@mkdir -p $(DEST_DIR)
-	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-          -exercises-dir ${EXERCISES_DIR} \
-          -tutorials-dir ${TUTORIALS_DIR} \
-          -dest-dir ${DEST_DIR} \
-          -dump-outputs ${EXERCISES_DIR} \
-          -dump-reports ${EXERCISES_DIR}
+	@mkdir -p ${DEST_DIR}
 	cp -r static/* ${DEST_DIR}
 	cp ${LESSONS_DIR}/* ${DEST_DIR}
 	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
-	@cp _obuild/*/editor.js ${DEST_DIR}/js/
-	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
 	@cp _obuild/*/learnocaml-simple-server.byte .
-
-
+	# EMD: the following files could be renamed learnocaml-*.js
 	@cp _obuild/*/editor.js ${DEST_DIR}/js/
 	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
 	@cp _obuild/*/testhaut.js ${DEST_DIR}/js/
-
 
 .PHONY: learn-ocaml.install travis
 learn-ocaml.install: static
@@ -69,6 +60,9 @@ learn-ocaml.install: static
 	@echo '  "scripts/complete.sh"' >>$@
 	@$(foreach mod,main exercise toplevel-worker grader-worker,\
 	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
+	# EMD: merge the previous/following lines once the files are renamed
+	@$(foreach mod,editor new_exercise testhaut,\
+	    echo '  "_obuild/$(mod)/$(mod).js" {"www/js/$(mod).js"}' >>$@;)
 	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
 	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
 	@echo ']' >>$@

@@ -55,9 +55,6 @@ val recovering_callback : (unit -> unit) ref
 (** Create the testhaut pane blindfolds *)
 val testhaut_init : [< Html_types.div ] Tyxml_js.Html5.elt -> string -> unit Lwt.t
 
-(** Remove extra_copies of a value in the list (each value of the list is unique now) *) 
-val redondance : 'a list -> 'a list
-
 (** Fragment of a test.ml code
   * @see definition *)
 val init : string
@@ -86,9 +83,10 @@ val get_questions : char list list -> (string * string) list -> (string * string
 (** Create the corresponding char list of a string (second parameter must be 0) *)
 val decompositionSol : string -> int -> char list
 
-(** Create a list of couple : type parameter associate with a base type
-  * for example : 'a,int ; 'b,float ... *)
-val polymorph_detector : ('a * string) list -> ('a * string) list
+(** Create a list of triples (key, alea, "monorphic type"):
+    polymorph_detector [("f", "'a -> 'b"); ("p", "int -> int")] =
+    [("f", 5, "int -> bool"); ("f", 5, "bool -> char"); ("p", 10, "int -> int")] *)
+val polymorph_detector : ('a * string) list -> ('a * int * string) list
 
 (** Create the template of the solution *)
 val genTemplate : string -> string

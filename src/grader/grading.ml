@@ -124,7 +124,7 @@ let get_grade ?callback ?timeout ~divert exo code =
       Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
       let get_result =
         Introspection.create_ref "results"
-          [%ty: Learnocaml_report.report option]
+          [%ty: Learnocaml_report.t option]
           None in
       Introspection.register_callback "set_progress"
         [%ty: string]
