@@ -784,7 +784,6 @@ let run_async_with_log f =
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async f
 
-
 let mk_tab_handlers default_tab other_tabs =
   let names = default_tab::other_tabs in
   let current = ref default_tab in
@@ -829,3 +828,43 @@ let mk_tab_handlers default_tab other_tabs =
       names ;
     select_tab !current in
   init_tabs, select_tab
+
+module type Editor_info = sig
+  val ace : Ocaml_mode.editor Ace.editor
+  val buttons_container : 'a Tyxml_js.Html5.elt
+end
+
+module Editor_button (E : Editor_info) = struct
+
+  let editor_button = button ~container:E.buttons_container ~theme:"light"
+
+  let cleanup template =
+  editor_button
+    ~icon: "cleanup" [%i"Reset"] @@ fun () ->
+    confirm ~title:[%i"START FROM SCRATCH"]
+      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      (fun () ->
+         Ace.set_contents E.ace template);
+    Lwt.return ()
+
+  let download id =
+    editor_button
+      ~icon: "download" [%i"Download"] @@ fun () ->
+      let name = id ^ ".ml" in
+      let contents = Js.string (Ace.get_contents E.ace) in
+      fake_download ~name ~contents ;
+      Lwt.return ()
+
+  let eval top select_tab =
+    editor_button
+      ~icon: "run" [%i"Eval code"] @@ fun () ->
+      Learnocaml_toplevel.execute_phrase top (Ace.get_contents E.ace) >>= fun _ ->
+      select_tab "toplevel";
+      Lwt.return_unit
+
+  let sync token id =
+    editor_button
+      ~icon: "sync" [%i"Sync"] @@ fun () ->
+      token >>= fun token ->
+      sync_exercise token id ~editor:(Ace.get_contents E.ace) >|= fun _save -> ()
+end

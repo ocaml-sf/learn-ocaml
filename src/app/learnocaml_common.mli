@@ -198,3 +198,15 @@ val init_toplevel_pane :
 val run_async_with_log : (unit -> 'a Lwt.t) -> unit
 
 val mk_tab_handlers : string -> string list -> (unit -> unit) * (string -> unit)
+
+module type Editor_info = sig
+  val ace : Ocaml_mode.editor Ace.editor
+  val buttons_container : 'a Tyxml_js.Html5.elt
+end
+
+module Editor_button (E : Editor_info) : sig
+  val cleanup : string -> unit
+  val download : string -> unit
+  val eval : Learnocaml_toplevel.t -> (string -> 'a) -> unit
+  val sync : Token.t Lwt.t -> Learnocaml_data.SMap.key -> unit
+end

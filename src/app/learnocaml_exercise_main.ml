@@ -337,7 +337,6 @@ let () =
    | exception Not_found -> ());
   let toplevel_button =
     button ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
-  let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
@@ -364,11 +363,7 @@ let () =
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
   let toplevel_launch =
-    toplevel_launch
-      after_init
-      select_tab
-      toplevel_buttons_group
-      id
+    toplevel_launch after_init select_tab toplevel_buttons_group id
   in
   init_tabs () ;
   toplevel_launch >>= fun top ->
@@ -453,33 +448,11 @@ let () =
      | Some solution -> solution
      | None -> Learnocaml_exercise.(access File.template exo)) ;
   Ace.set_font_size ace 18;
-  begin editor_button
-      ~icon: "cleanup" [%i"Reset"] @@ fun () ->
-    confirm ~title:[%i"START FROM SCRATCH"]
-      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
-      (fun () ->
-         Ace.set_contents ace (Learnocaml_exercise.(access File.template exo)));
-    Lwt.return ()
-  end ;
-  begin editor_button
-      ~icon: "sync" [%i"Sync"] @@ fun () ->
-    token >>= fun token ->
-    sync_exercise token id ~editor:(Ace.get_contents ace) >|= fun _save -> ()
-  end ;
-  begin editor_button
-      ~icon: "download" [%i"Download"] @@ fun () ->
-    let name = id ^ ".ml" in
-    let contents = Js.string (Ace.get_contents ace) in
-    Learnocaml_common.fake_download ~name ~contents ;
-    Lwt.return ()
-  end ;
-  begin editor_button
-      ~group: toplevel_buttons_group
-      ~icon: "run" [%i"Eval code"] @@ fun () ->
-    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
-    select_tab "toplevel";
-    Lwt.return_unit
-  end ;
+  let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
+  EB.cleanup (Learnocaml_exercise.(access File.template exo));
+  EB.sync token id;
+  EB.download id;
+  EB.eval top select_tab;
   let typecheck set_class =
     Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
     let error, warnings =

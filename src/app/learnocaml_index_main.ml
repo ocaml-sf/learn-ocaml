@@ -586,21 +586,8 @@ let toplevel_tab select _ () =
     ~container
     () >>= fun top ->
   Manip.appendChild El.content div ;
-  let button = button ~container: buttons_div ~theme: "dark" in
-  begin button
-      ~group: toplevel_buttons_group ~icon: "cleanup" [%i"Clear"] @@ fun () ->
-    Learnocaml_toplevel.clear top ;
-    Lwt.return ()
-  end ;
-  begin button
-      ~icon:"reload" [%i"Reset"] @@ fun () ->
-    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
-  end ;
-  begin button
-      ~group: toplevel_buttons_group ~icon: "run" [%i"Eval phrase"] @@ fun () ->
-    Learnocaml_toplevel.execute top ;
-    Lwt.return ()
-  end ;
+  let button = button ~container: buttons_div ~theme: "dark" ?group:None ?state:None in
+  init_toplevel_pane (Lwt.return top) top toplevel_buttons_group button ;
   Lwt.return div
 
 let teacher_tab token a b () =
