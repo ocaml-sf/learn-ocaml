@@ -122,10 +122,11 @@ end
 
 module Server : sig
   type config = {
-    secret : string option (* maybe a secret *)
+    secret : string option; (* maybe a secret *)
+    server_id : int (* random integer generated each building time *)
     }
 
-  val default : config
+  val default: ?secret:string -> unit -> config
 
   val enc: config Json_encoding.encoding
 end

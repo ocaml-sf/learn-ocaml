@@ -256,20 +256,20 @@ let main o =
                  (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
        >>= fun () ->
-       let server_config = o.repo_dir/"server_config.json" in
-       (if Sys.file_exists server_config
-        then
-          Learnocaml_store.Server.get_from_file server_config >>= fun pre_config ->
-          let sha_config =
-            Learnocaml_data.Server.({secret =
-                                       match pre_config.secret with
-                                       | None -> None
-                                       | Some x -> Some (Sha.sha512 x)})
-          in
-          Learnocaml_store.Server.write_to_file
-            sha_config
-            (o.app_dir/"server_config.json")
-        else Lwt.return ())
+       let server_config = o.repo_dir/"server_config.json"
+       and www_server_config = o.app_dir/"server_config.json" in
+       Lwt.catch
+         (fun () -> Learnocaml_store.Server.get_from_file server_config
+           >|= fun pre_config ->
+           match pre_config.Learnocaml_data.Server.secret with
+             | None -> None
+             | Some x -> Some (Sha.sha512 x))
+         (function 
+           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return None
+           | exn -> Lwt.fail exn) 
+       >>= fun secret ->
+         let json_config = Learnocaml_data.Server.default ?secret () in
+         Learnocaml_store.Server.write_to_file json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->

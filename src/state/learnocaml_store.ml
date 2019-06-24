@@ -129,7 +129,7 @@ module Server = struct
       (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
       (fun e ->
         match e with
-        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return Server.default
+        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return @@ Server.default ()
         | e -> raise e
       )
 
