@@ -750,11 +750,12 @@ let write_exercise_file id str =
   let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
   if Sys.file_exists f then
     (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-     Lwt.return_unit)
+     Lwt.return false)
   else
     Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
         Lwt_io.write oc str >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f
+        Printf.printf "Wrote file %s\n%!" f;
+        true
 
 module Fetch = struct
   let fetch_save server_url token =
@@ -767,16 +768,19 @@ module Fetch = struct
       | e -> Lwt.fail e
 
   let write_save_files save =
-  Lwt_list.iter_s (fun (id, st) ->
-      write_exercise_file id st.Answer.solution)
-    (SMap.bindings (save.Save.all_exercise_states))
+    Lwt_list.fold_left_s (fun acc (id, st) ->
+        write_exercise_file id st.Answer.solution >|= ( && ) acc)
+      true
+      (SMap.bindings (save.Save.all_exercise_states))
 
   let fetch o =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
     fetch_save server token
     >>= write_save_files
-    >|= fun () -> 0
+    >|= function
+    | true -> 0
+    | false -> 2
 
   let man =
     man
@@ -837,7 +841,9 @@ module Template = struct
        write_exercise_file
          exercise_id
          Learnocaml_exercise.(access File.template exercise)
-       >|= fun () -> 0
+       >|= function
+       | true -> 0
+       | false -> 3
 
   let man = man "Get the template of a given exercise"
 
