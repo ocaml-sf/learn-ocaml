@@ -783,3 +783,49 @@ let run_async_with_log f =
   end ;
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async f
+
+
+let mk_tab_handlers default_tab other_tabs =
+  let names = default_tab::other_tabs in
+  let current = ref default_tab in
+  let select_tab name =
+    set_arg "tab" name ;
+    Manip.removeClass
+      (find_component ("learnocaml-exo-button-" ^ !current))
+      "front-tab" ;
+    Manip.removeClass
+      (find_component ("learnocaml-exo-tab-" ^ !current))
+      "front-tab" ;
+    Manip.enable
+      (find_component ("learnocaml-exo-button-" ^ !current)) ;
+    Manip.addClass
+      (find_component ("learnocaml-exo-button-" ^ name))
+      "front-tab" ;
+    Manip.addClass
+      (find_component ("learnocaml-exo-tab-" ^ name))
+      "front-tab" ;
+    Manip.disable
+      (find_component ("learnocaml-exo-button-" ^ name)) ;
+    current := name in
+  let init_tabs () =
+    current :=
+      begin
+        try
+          let requested = arg "tab" in
+          if List.mem requested names then requested else default_tab
+        with Not_found -> default_tab
+      end ;
+    List.iter
+      (fun name ->
+        Manip.removeClass
+          (find_component ("learnocaml-exo-button-" ^ name))
+          "front-tab" ;
+        Manip.removeClass
+          (find_component ("learnocaml-exo-tab-" ^ name))
+          "front-tab" ;
+        Manip.Ev.onclick
+          (find_component ("learnocaml-exo-button-" ^ name))
+          (fun _ -> select_tab name ; true))
+      names ;
+    select_tab !current in
+  init_tabs, select_tab

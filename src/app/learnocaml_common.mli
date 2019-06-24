@@ -196,3 +196,5 @@ val init_toplevel_pane :
   unit
 
 val run_async_with_log : (unit -> 'a Lwt.t) -> unit
+
+val mk_tab_handlers : string -> string list -> (unit -> unit) * (string -> unit)

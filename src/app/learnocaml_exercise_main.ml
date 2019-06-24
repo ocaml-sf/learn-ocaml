@@ -14,54 +14,13 @@ open Learnocaml_data
 module H = Tyxml_js.Html
 
 let init_tabs, select_tab =
-  let names = [ "text" ; "toplevel" ; "report" ; "editor"; "meta" ] in
-  let current = ref "text" in
-  let select_tab name =
-    set_arg "tab" name ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-button-" ^ !current))
-      "front-tab" ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-tab-" ^ !current))
-      "front-tab" ;
-    Manip.enable
-      (find_component ("learnocaml-exo-button-" ^ !current)) ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-button-" ^ name))
-      "front-tab" ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-tab-" ^ name))
-      "front-tab" ;
-    Manip.disable
-      (find_component ("learnocaml-exo-button-" ^ name)) ;
-    current := name in
-  let init_tabs () =
-    current := begin try
-        let requested = arg "tab" in
-        if List.mem requested names then requested else "text"
-      with Not_found -> "text"
-    end ;
-    List.iter
-      (fun name ->
-         Manip.removeClass
-           (find_component ("learnocaml-exo-button-" ^ name))
-           "front-tab" ;
-         Manip.removeClass
-           (find_component ("learnocaml-exo-tab-" ^ name))
-           "front-tab" ;
-         Manip.Ev.onclick
-           (find_component ("learnocaml-exo-button-" ^ name))
-           (fun _ -> select_tab name ; true))
-      names ;
-    select_tab !current in
-  init_tabs, select_tab
+  mk_tab_handlers "text"  [ "toplevel" ; "report" ; "editor"; "meta" ]
 
 let get_grade =
   let get_worker = get_worker_code "learnocaml-grader-worker.js" in
   fun ?callback ?timeout exercise ->
     get_worker () >>= fun worker_js_file ->
     Grading_jsoo.get_grade ~worker_js_file ?callback ?timeout exercise
-
 
 let display_report exo report =
   let score, _failed = Report.result report in
