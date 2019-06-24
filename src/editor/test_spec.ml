@@ -6,6 +6,7 @@ module type TYPING = sig
   val ty_of : string -> 'a Ty.ty
 end
 
+(*
 module Make(Test_lib : Test_lib.S) (Typing : TYPING) = struct
 
 open Test_lib
@@ -121,6 +122,7 @@ let example_constr_suite =
     }
 *)
 end
+ *)
 
 open Editor_lib
 
@@ -194,12 +196,12 @@ let question_typed question id_question =
   match question with
   | TestAgainstSpec a ->
      (* FIXME *)
-     "(* Question #" ^ id_question ^ " about " ^ a.name ^ " was not translated\n"
+     "(* Question #" ^ string_of_int id_question ^ " about " ^ a.name ^ " was not translated\n"
      ^ "(TestAgainstSpec not currently supported by the learn-ocaml runtime) *)"
   | TestSuite a ->
      let name, prot, tester, suite =
        a.name, parse_type a.ty, opt_string "test" a.tester, a.suite in
-     Format.sprintf "let question%s =@.  \
+     Format.sprintf "let question%d =@.  \
                      let prot = %s in@.  \
                      test_function%s prot@.  \
                      (lookup_student (ty_of_prot prot) %s)@.  \
@@ -213,7 +215,7 @@ let question_typed question id_question =
      and tester = opt_string "test" a.tester
      and suite = a.suite
      in
-     Format.sprintf "let question%s =@.  \
+     Format.sprintf "let question%d =@.  \
                      let prot = %s in@.  \
                      test_function_against_solution ~gen:(%d)%s%s prot@.  \
                      \"%s\"@.  \

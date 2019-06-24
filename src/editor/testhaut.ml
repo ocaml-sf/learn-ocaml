@@ -11,8 +11,6 @@ open Editor_lib
 open Learnocaml_exercise_state
 open Tyxml_js.Html5
 
-module StringMap = Map.Make (String);;
-
 let () =
   show_loading ~id:"check-answer"
     Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Loading"] ] ] ];
@@ -226,14 +224,16 @@ let save_spec () =
 
 let testhaut = get_testhaut id
     
-let _ = match arg "questionid" with
+let () = match arg "questionid" with
   | exception Not_found -> select_tab "suite"; suite##.checked := Js.bool true
-  | qid ->  
+  | qid ->
+     try let qid = int_of_string qid in
+      begin
       let name_elt = name in
       let ty_elt = ty in
       let suite_elt = suite in
       let spec_elt = spec in
-          match StringMap.find qid testhaut with
+          match IntMap.find qid testhaut with
              | TestSuite {name;ty;suite;tester} ->
                 begin
                   Ace.set_contents ace_input_suite suite;
@@ -265,7 +265,11 @@ let _ = match arg "questionid" with
                   datalistSol##.value:=Js.string tester;
                   samplerSol##.value:=Js.string sampler;
                   select_tab "solution"
-                end;;
+                end
+      end with
+     | Failure _ ->
+        (* TODO: error message? *)
+        select_tab "suite"; suite##.checked := Js.bool true
 
 let () = solution##.onclick :=
            handler (fun _ -> select_tab "solution"; Js._true);;
@@ -390,7 +394,7 @@ let type_error = getElementById "type_error"
 (* ---- save button -------------------------------------------------------- *)
 let question_id =  match arg "questionid" with
   | exception Not_found -> compute_question_id testhaut
-  | qid -> qid ;;
+  | qid -> int_of_string qid (* TODO: may raise error *)
 
 let save_handler close = (fun _ ->
     let name = Js.to_string name##.value in
@@ -413,7 +417,7 @@ let save_handler close = (fun _ ->
         | "spec" -> save_spec ()
         | _ -> failwith "" in
       let testhaut = get_testhaut id in
-      let testhaut = StringMap.add question_id question testhaut in
+      let testhaut = IntMap.add question_id question testhaut in
       save_testhaut testhaut id ;
       close ();
     );

@@ -23,59 +23,116 @@ open Js_of_ocaml
 open Editor_lib
 open Dom_html
 
-module StringMap = Map.Make (String)
 
-let quality_function = "\nlet avoid_thentrue = let already = ref false in fun _ ->\n  if !already then [] else begin\n    already := true ;\n    Learnocaml_report.[ Message ([ Text \"* N'écrivez pas les motifs de code suivants:\";\n                                   Code \"[if ... then true else ...;\n if ... then false else ...;\n if ... then ... else true;\n if ... then ... else false]\"; Text \"\nUtilisez de préférence les opérateurs booléens (&&), (||), not.\"], Success ~-4) ]\n  end\n\nlet check_thentrue e =\n    Parsetree.(\n      match e with\n      | {pexp_desc = Pexp_ifthenelse (_, e1, (Some e2))} ->\n         begin\n           match e1 with\n           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident \"false\")}, None)}\n           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident \"true\")}, None)} ->\n              avoid_thentrue e1\n           | _ -> []\n         end @ begin\n           match e2 with\n           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident \"false\")}, None)}\n           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident \"true\")}, None)} ->\n             avoid_thentrue e2\n           | _ -> []\n          end\n      | _ -> [])\n\nlet avoid_list1app = let already = ref false in fun _ ->\n  if !already then [] else begin\n    already := true ;\n    Learnocaml_report.[ Message ([ Text \"* N'écrivez pas:\";\n                                   Code \"[x] @ l\";\n                                   Text \". Écrivez de préférence:\";\n                                   Code \"x :: l\";\n                                   Text \".\"], Success ~-4) ]\n  end\n\nlet check_list1app e =\n  Parsetree.(\n    match e.pexp_desc with\n    | Pexp_apply (app0, [(_, lst1); _]) ->\n       (match app0.pexp_desc, lst1.pexp_desc with\n        | Pexp_ident {Asttypes.txt = app0'},\n          Pexp_construct ({Asttypes.txt = (Longident.Lident \"::\")}, Some lst1')\n             when List.mem (Longident.flatten app0') [[\"List\"; \"append\"]; [\"@\"]] ->\n           (match lst1'.pexp_desc with\n            | Pexp_tuple [_; nil0] ->\n               (match nil0.pexp_desc with\n                | Pexp_construct ({Asttypes.txt = (Longident.Lident \"[]\")}, None) ->\n                   avoid_list1app e\n                | _ -> [])\n            | _ -> [])\n        | _ -> [])\n    | _ -> [])
+let quality_function = {|
+let avoid_thentrue = let already = ref false in fun _ ->
+  if !already then [] else begin
+    already := true ;
+    Learnocaml_report.[ Message ([ Text "* N'écrivez pas les motifs de code suivants:";
+                                   Code "[if ... then true else ...;
+ if ... then false else ...;
+ if ... then ... else true;
+ if ... then ... else false]"; Text "
+Utilisez de préférence les opérateurs booléens (&&), (||), not."], Success ~-4) ]
+  end
+
+let check_thentrue e =
+    Parsetree.(
+      match e with
+      | {pexp_desc = Pexp_ifthenelse (_, e1, (Some e2))} ->
+         begin
+           match e1 with
+           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident "false")}, None)}
+           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident "true")}, None)} ->
+              avoid_thentrue e1
+           | _ -> []
+         end @ begin
+           match e2 with
+           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident "false")}, None)}
+           | {pexp_desc = Pexp_construct ({Asttypes.txt = (Longident.Lident "true")}, None)} ->
+             avoid_thentrue e2
+           | _ -> []
+          end
+      | _ -> [])
+
+let avoid_list1app = let already = ref false in fun _ ->
+  if !already then [] else begin
+    already := true ;
+    Learnocaml_report.[ Message ([ Text "* N'écrivez pas:";
+                                   Code "[x] @ l";
+                                   Text ". Écrivez de préférence:";
+                                   Code "x :: l";
+                                   Text "."], Success ~-4) ]
+  end
+
+let check_list1app e =
+  Parsetree.(
+    match e.pexp_desc with
+    | Pexp_apply (app0, [(_, lst1); _]) ->
+       (match app0.pexp_desc, lst1.pexp_desc with
+        | Pexp_ident {Asttypes.txt = app0'},
+          Pexp_construct ({Asttypes.txt = (Longident.Lident "::")}, Some lst1')
+             when List.mem (Longident.flatten app0') [["List"; "append"]; ["@"]] ->
+           (match lst1'.pexp_desc with
+            | Pexp_tuple [_; nil0] ->
+               (match nil0.pexp_desc with
+                | Pexp_construct ({Asttypes.txt = (Longident.Lident "[]")}, None) ->
+                   avoid_list1app e
+                | _ -> [])
+            | _ -> [])
+        | _ -> [])
+    | _ -> [])
 
 let avoid_eqphy = let already = ref false in fun _ ->
   if !already then [] else begin
     already := true ;
-    Learnocaml_report.[ Message ([ Text \"* Pour PFITA, n'utilisez pas l'égalité physique\";
-                                   Code \"(==)\";
-                                   Text \". Utilisez de préférence l'égalité structurelle\";
-                                   Code \"(=)\";
-                                   Text \".\"], Success ~-1) ]
+    Learnocaml_report.[ Message ([ Text "* Pour PFITA, n'utilisez pas l'égalité physique";
+                                   Code "(==)";
+                                   Text ". Utilisez de préférence l'égalité structurelle";
+                                   Code "(=)";
+                                   Text "."], Success ~-1) ]
   end
 
 let avoid_neqphy = let already = ref false in fun _ ->
   if !already then [] else begin
     already := true ;
-    Learnocaml_report.[ Message ([ Text \"* Pour PFITA, n'utilisez pas l'inégalité physique\";
-                                   Code \"(!=)\";
-                                   Text \". Utilisez de préférence l'inégalité structurelle\";
-                                   Code \"(<>)\";
-                                   Text \".\"], Success ~-1) ]
+    Learnocaml_report.[ Message ([ Text "* Pour PFITA, n'utilisez pas l'inégalité physique";
+                                   Code "(!=)";
+                                   Text ". Utilisez de préférence l'inégalité structurelle";
+                                   Code "(<>)";
+                                   Text "."], Success ~-1) ]
   end
 
 let check_eqphy e =
   Parsetree.(
     match e.pexp_desc with
-    | Pexp_ident {Asttypes.txt = Longident.Lident \"==\"} -> avoid_eqphy e
+    | Pexp_ident {Asttypes.txt = Longident.Lident "=="} -> avoid_eqphy e
     | _ -> [])
 
 let check_neqphy e =
   Parsetree.(
     match e.pexp_desc with
-    | Pexp_ident {Asttypes.txt = Longident.Lident \"!=\"} -> avoid_neqphy e
-    | _ -> [])"
+    | Pexp_ident {Asttypes.txt = Longident.Lident "!="} -> avoid_neqphy e
+    | _ -> [])
+|}
 
-let imperative_function = "let ast_imperative_check ast =\n
-  let chk_expr e =\n
-    Parsetree.(\n
-      match e with\n
-      | {pexp_desc = Pexp_sequence _} -> forbid_syntax \";\" e\n
-      | {pexp_desc = Pexp_while _} -> forbid_syntax \"while\" e\n
-      | {pexp_desc = Pexp_for _} -> forbid_syntax \"for\" e\n
-      | {pexp_desc = Pexp_array _} -> forbid_syntax \"array\" e\n
-      | _ -> [] ) in\n
-  let imperative_report =\n
-    ast_check_structure\n
-      ~on_expression:chk_expr\n
-      ast |> List.sort_uniq compare in\n
-  if snd (Learnocaml_report.result imperative_report) then\n
-    imperative_report\n
-  else\n
-    []\n"
+let imperative_function = {|let ast_imperative_check ast =
+  let chk_expr e =
+    Parsetree.(
+      match e with
+      | {pexp_desc = Pexp_sequence _} -> forbid_syntax ";" e
+      | {pexp_desc = Pexp_while _} -> forbid_syntax "while" e
+      | {pexp_desc = Pexp_for _} -> forbid_syntax "for" e
+      | {pexp_desc = Pexp_array _} -> forbid_syntax "array" e
+      | _ -> [] ) in
+  let imperative_report =
+    ast_check_structure
+      ~on_expression:chk_expr
+      ast |> List.sort_uniq compare in
+  if snd (Learnocaml_report.result imperative_report) then
+    imperative_report
+  else
+    []|}
 
 
 let id = arg "id"
@@ -87,17 +144,16 @@ let id = arg "id"
 
 let rec save_questions listeQuestions id = match listeQuestions with
   | [] -> ()
-  | (nom, extra_alea, string_type) :: suite ->
-    let name = nom in
-    let ty = string_type in
-    let input = "[]" in
-    let question = TestAgainstSol
-                     {name; ty; suite = input; gen = extra_alea;
-                      tester = ""; sampler = ""} in
-    let testhaut =  get_testhaut id in
-    let question_id = compute_question_id testhaut in
-    let new_testhaut = StringMap.add question_id question testhaut in
-    let () = save_testhaut new_testhaut id in
+  | (name, list_mono) :: suite ->
+     let () = List.iter (fun (gen, ty) ->
+                  let question = TestAgainstSol
+                                   {name; ty; suite = "[]"; gen;
+                                    tester = ""; sampler = ""} in
+                  let testhaut =  get_testhaut id in (* FIXME: do this once *)
+                  let question_id = compute_question_id testhaut in
+                  let new_testhaut = IntMap.add question_id question testhaut in
+                  save_testhaut new_testhaut id)
+                list_mono in
     save_questions suite id
 
 (*----------------------------------------------------------------------*)
@@ -307,6 +363,55 @@ let () =
     Lwt.return ()
   end ;
 
+  (* ---- prelude pane --------------------------------------------------- *)
+
+  let editor_prelude = find_component "learnocaml-exo-prelude-pane" in
+  let editor_prel = Ocaml_mode.create_ocaml_editor
+                      (Tyxml_js.To_dom.of_div editor_prelude) in
+  let ace_prel = Ocaml_mode.get_editor editor_prel in
+  let contents=
+    let a = get_prelude id in
+    if a = "" then
+      [%i"(* Local definitions the student\n\
+          will be able to see *)\n"]
+    else
+      a in
+  Ace.set_contents ace_prel contents ;
+  Ace.set_font_size ace_prel 18;
+
+  let typecheck_prelude () =
+    Editor_lib.typecheck true ace_prel editor_prel top "" (Ace.get_contents ace_prel) in
+  begin prelude_button
+      ~group: toplevel_buttons_group
+      ~icon: "typecheck" [%i"Check"] @@ typecheck_prelude
+  end;
+
+  (* ---- prepare pane --------------------------------------------------- *)
+
+  let editor_prepare = find_component "learnocaml-exo-prepare-pane" in
+  let editor_prep = Ocaml_mode.create_ocaml_editor
+                      (Tyxml_js.To_dom.of_div editor_prepare) in
+  let ace_prep = Ocaml_mode.get_editor editor_prep in
+  let contents=
+    let a= get_prepare id in
+    if a = "" then
+      [%i"(* Local definitions the student\n\
+          won't be able to see *)\n"]
+    else
+      a in
+  Ace.set_contents ace_prep contents ;
+  Ace.set_font_size ace_prep 18;
+
+  let typecheck_prepare () =
+    let prel = Ace.get_contents ace_prel ^ "\n" in
+    Editor_lib.typecheck true ace_prep editor_prep top prel
+      ~onpasterr:(fun () -> select_tab "prelude"; typecheck_prelude ())
+      (Ace.get_contents ace_prep) in
+  begin prepare_button
+      ~group: toplevel_buttons_group
+      ~icon: "typecheck" [%i"Check"] @@ typecheck_prepare
+  end;
+
   (* ---- test pane --------------------------------------------------- *)
 
   let editor_test = find_component "learnocaml-exo-test-pane" in
@@ -324,11 +429,16 @@ let () =
   Ace.set_font_size ace_t 18;
 
 
+  let typecheck_testml () =
+    let prelprep = (Ace.get_contents ace_prel ^ "\n"
+                    ^ Ace.get_contents ace_prep ^ "\n") in
+    Editor_lib.typecheck true ace_t editor_t top prelprep ~mock:true
+      ~onpasterr:(fun () -> select_tab "prepare"; typecheck_prepare ())
+      (Ace.get_contents ace_t) in
   begin test_button
       ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck_spec true ace_t editor_t top
-  end ;
+      ~icon: "typecheck" [%i"Check"] @@ typecheck_testml
+  end;
 
   (*-------question pane  -------------------------------------------------*)
   let editor_question = find_component "learnocaml-exo-question-mark" in
@@ -403,53 +513,6 @@ let () =
         end in
    dyn_preview; () in
 
-  (* ---- prelude pane --------------------------------------------------- *)
-
-  let editor_prelude = find_component "learnocaml-exo-prelude-pane" in
-  let editor_prel = Ocaml_mode.create_ocaml_editor
-                      (Tyxml_js.To_dom.of_div editor_prelude) in
-  let ace_prel = Ocaml_mode.get_editor editor_prel in
-  let contents=
-    let a = get_prelude id in
-    if a = "" then
-      [%i"(* Local definitions the student\n\
-          will be able to see *)\n"]
-    else
-      a in
-  Ace.set_contents ace_prel contents ;
-  Ace.set_font_size ace_prel 18;
-
-  let typecheck set_class = typecheck set_class ace_prel editor_prel top in
-  begin prelude_button
-      ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck true
-  end;
-
-  (* ---- prepare pane --------------------------------------------------- *)
-
-  let editor_prepare = find_component "learnocaml-exo-prepare-pane" in
-  let editor_prep = Ocaml_mode.create_ocaml_editor
-                      (Tyxml_js.To_dom.of_div editor_prepare) in
-  let ace_prep = Ocaml_mode.get_editor editor_prep in
-  let contents=
-    let a= get_prepare id in
-    if a = "" then
-      [%i"(* Local definitions the student\n\
-          won't be able to see *)\n"]
-    else
-      a in
-  Ace.set_contents ace_prep contents ;
-  Ace.set_font_size ace_prep 18;
-
-  let typecheck set_class =
-    Editor_lib.typecheck set_class ace_prep editor_prep top in
-  begin prepare_button
-      ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck true
-  end ;
-
   (* ---- editor pane --------------------------------------------------- *)
 
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
@@ -515,13 +578,17 @@ let () =
       end;
     Lwt.return ()
   end ;
-  let typecheck set_class =
-    Editor_lib.typecheck set_class ace_temp editor_temp top in
+
+  let typecheck_template () =
+    let prelprep = (Ace.get_contents ace_prel ^ "\n"
+                    ^ Ace.get_contents ace_prep ^ "\n") in
+    Editor_lib.typecheck true ace_temp editor_temp top prelprep
+      ~onpasterr:(fun () -> select_tab "prepare"; typecheck_prepare ())
+      (Ace.get_contents ace_temp) in
   begin template_button
       ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck true
-  end ;
+      ~icon: "typecheck" [%i"Check"] @@ typecheck_template
+  end;
 
   (* ---- testhaut pane --------------------------------------------------- *)
 
@@ -552,10 +619,7 @@ let () =
         Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>=
           fun ok ->
           if ok then
-            let res_aux = decompositionSol (get_answer top) 0 in
-            (*Avec prise en compte des types polymorphes :*)
-            let res = polymorph_detector (get_questions
-                   (get_all_val (get_only_fct  res_aux []) []) [] ) in
+            let res = monomorph_generator (extract_functions (get_answer top)) in
             save_questions res id;
             Manip.removeChildren
               (find_component "learnocaml-exo-testhaut-pane");
@@ -593,31 +657,35 @@ let () =
     let fonction = fonction ^ "\n\nlet ast_quality ast =" in
     let fonction =
       if Js.to_bool(imperative##.checked) then
-        fonction ^ "let imperative_report = \n
-                    let tempReport = ast_imperative_check ast in \n
-                    if tempReport = [] then []\n
-                    else (Message\n
-                    ([ Text \"Des traits impératifs ont été détectés:\" ],\n
-                    Success ~-4)) :: tempReport\n"
+        fonction ^ {|
+let imperative_report =
+  let tempReport = ast_imperative_check ast in
+  if tempReport = [] then []
+  else (Message ([ Text "Des traits impératifs ont été détectés:" ],
+                 Success ~-4)) :: tempReport
+|}
       else
-        fonction ^ " let imperative_report = []\n" in
+        fonction ^ {|
+let imperative_report = []
+|} in
     let fonction =
       if Js.to_bool(quality##.checked) then
-        fonction ^ " and report =\n
-                    let tempReport = ast_check_structure\n
-                    ~on_expression:
-                    (check_thentrue @@@ check_list1app @@@\n
-                    check_eqphy @@@ check_neqphy)\n
-                    ast |> List.sort_uniq compare\n
-                    in\n
-                    if tempReport = [] then []\n
-                    else (Message\n
-                    ([Text \"Des motifs de code indésirables ont été détectés:\"],\n
-                    Failure)) :: tempReport\n"
-      else fonction ^ " and report = []\n" in
-    let fonction = fonction ^ "in if imperative_report = [] && report = [] then
-       [ Message ([ Text \"OK (pas de construction interdite détectée)\"], Success 0) ]
-                               else imperative_report @ report;;" in
+        fonction ^ {|
+and report =
+  let tempReport = ast_check_structure
+    ~on_expression:(check_thentrue @@@ check_list1app @@@
+      check_eqphy @@@ check_neqphy)
+    ast |> List.sort_uniq compare in
+  if tempReport = [] then []
+  else (Message ([Text "Des motifs de code indésirables ont été détectés:"],
+                 Failure)) :: tempReport
+|}
+      else fonction ^ " and report = []" in
+    let fonction = fonction ^ {|
+in if imperative_report = [] && report = []
+   then [ Message ([ Text "OK (pas de construction interdite détectée)"], Success 0) ]
+   else imperative_report @ report;;
+|} in
     fonction in
   let ast_code () =
     let quality =
@@ -630,7 +698,8 @@ let () =
       | Some s -> s in
     let fonction =
       if Js.to_bool(quality##.checked) || Js.to_bool(imperative##.checked) then
-        "Section ([Text \"Qualité de code:\" ], ast_quality code_ast)"
+        {|Section ([ Text "Qualité de code:" ], ast_quality code_ast);
+|}
       else
         "" in
     fonction in
@@ -638,20 +707,20 @@ let () =
     let tests=test_prel ^ (ast_fonction ()) in
     let tests=tests ^ "\n" ^ (get_buffer id) ^ "\n" in
     let tests=
-      StringMap.fold (fun qid -> fun quest -> fun str ->
+      IntMap.fold (fun qid -> fun quest -> fun str ->
                       str ^ (Test_spec.question_typed quest qid)^" \n")
         (get_testhaut id) tests in
-    let tests=tests^init^"[ \n " in
+    let tests=tests ^ init ^ "[\n" ^ ast_code () in
     let tests=
-      StringMap.fold (fun qid->fun quest-> fun str ->
+      IntMap.fold (fun qid->fun quest-> fun str ->
           let name=match quest with
             | TestAgainstSol a->a.name
             | TestAgainstSpec a ->a.name
             | TestSuite a -> a.name in
           (* refactor what it's up in editor_lib *)
-          str ^ (section name ("question" ^ qid ) ))
+          str ^ (section name ("question" ^ string_of_int qid ) ))
         (get_testhaut id) tests in
-    tests^ (ast_code ()) ^ " ]"
+    tests ^ " ]"
   in
   begin testhaut_button
       ~group: toplevel_buttons_group
@@ -660,8 +729,8 @@ let () =
       Tyxml_js.Html5.[ ul [ li [ pcdata [%i"Checking"] ] ] ] ;
     let str = with_test_lib_prepare (compile_aux () )
     in
-    Learnocaml_toplevel.check top str >>= fun res-> 
-    typecheck_dialog_box "learnocaml-exo-loading" res 
+    Learnocaml_toplevel.check ~ppx_meta:true top str >>= fun res->
+    typecheck_dialog_box "learnocaml-exo-loading" res
   end ;
 
   let recovering () =
@@ -730,7 +799,7 @@ let () =
           ~group: toplevel_buttons_group
           ~icon: "cleanup" [%i "Delete all"] @@ fun () ->
     let delete_all_questions () =
-      save_testhaut StringMap.empty id;
+      save_testhaut IntMap.empty id;
       Manip.removeChildren (find_component "learnocaml-exo-testhaut-pane");
       let _ = testhaut_init
                 (find_component "learnocaml-exo-testhaut-pane") id in () in
@@ -779,18 +848,24 @@ let () =
     Lwt.return ()
   end ;
 
-  let typecheck set_class = Editor_lib.typecheck set_class ace editor top in
+  let typecheck_editor () =
+    let prelprep = (Ace.get_contents ace_prel ^ "\n"
+                    ^ Ace.get_contents ace_prep ^ "\n") in
+    Editor_lib.typecheck true ace editor top prelprep
+      ~onpasterr:(fun () -> select_tab "prepare"; typecheck_prepare ())
+      (Ace.get_contents ace) in
   begin editor_button
       ~group: toplevel_buttons_group
-      ~icon: "typecheck" [%i"Check"] @@ fun () ->
-    typecheck true
-  end ;
+      ~icon: "typecheck" [%i"Check"] @@ typecheck_editor
+  end;
   begin toplevel_button
       ~group: toplevel_buttons_group
       ~icon: "run" [%i"Eval code"] @@ fun () ->
-    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
-    Lwt.return ()
-  end ;
+      let prelprep = (Ace.get_contents ace_prel ^ "\n"
+                      ^ Ace.get_contents ace_prep ^ "\n") in
+      Learnocaml_toplevel.execute_phrase top (prelprep ^ Ace.get_contents ace)
+      >>= fun _ -> Lwt.return ()
+  end;
 
   (* ---- main toolbar -------------------------------------------------- *)
 
@@ -895,8 +970,9 @@ let () =
       Tyxml_js.Html5.[ li [ pcdata [%i"Launching the grader"] ] ] ;
     show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ];
     Lwt_js.sleep 1. >>= fun () ->
+    let prelprep = (Ace.get_contents ace_prel ^ "\n" ^ Ace.get_contents ace_prep ^ "\n") in
     let solution = Ace.get_contents ace in
-    Learnocaml_toplevel.check top solution >>= fun res ->
+    Learnocaml_toplevel.check top (prelprep ^ solution) >>= fun res ->
     match res with
     | Toploop_results.Ok ((), _) ->
        let grading =
@@ -922,7 +998,7 @@ let () =
        select_tab "report" ;
        Lwt_js.yield () >>= fun () ->
        hide_loading ~id:"learnocaml-exo-loading" () ;
-       typecheck true in
+       typecheck_editor () in
   begin toolbar_button2
      ~icon: "reload" [%i"Grade!"] @@ fun () ->
      recovering ();

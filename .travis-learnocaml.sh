@@ -8,12 +8,12 @@ fold_start prepare-ocaml-environment "Preparing OCaml environment"
 fold_end prepare-ocaml-environment
 
 fold_start check-build-system "Checking LearnOCaml build system"
-sudo add-apt-repository -y ppa:ansible/bubblewrap
-sudo apt-get -y update
-sudo apt-get install -y bubblewrap
-opam install -y opam-devel
-sudo cp /home/travis/.opam/4.05.0/lib/opam-devel/* /usr/local/bin
-hash -r
+# sudo add-apt-repository -y ppa:ansible/bubblewrap
+# sudo apt-get -y update
+# sudo apt-get install -y bubblewrap
+# opam install -y opam-devel
+# sudo cp /home/travis/.opam/ocaml-base-compiler.4.05.0/lib/opam-devel/* /usr/local/bin
+# hash -r
 opam upgrade -y || true
 opam install . -y --deps --locked
 opam install -y opam-installer

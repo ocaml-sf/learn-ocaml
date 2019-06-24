@@ -6,8 +6,7 @@ open Js_utils
 open Tyxml_js.Html5
 open Dom_html
 
-module StringMap = Map.Make(String);;
-
+module StringMap = Map.Make(String)
 
 (* Internationalization *)
 let () = Translate.set_lang ()
@@ -40,45 +39,46 @@ let get_imperative id =
 let get_undesirable id =
   Learnocaml_local_storage.(retrieve (editor_state id)).checkbox.undesirable
 
-let get_a_question id idQuestion = let string_map = get_testhaut id in
-  StringMap.(find idQuestion string_map)
+let get_a_question id (idQuestion : int) =
+  let int_map = get_testhaut id in
+  IntMap.(find idQuestion int_map)
 
 (* TODO refactor the following getters with get_a_question *)
 
 let get_ty id idQuestion = let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSol a -> a.ty
   | TestAgainstSpec a -> a.ty
   | TestSuite a -> a.ty
 
 let get_name_question id idQuestion= let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSol a -> a.name
   | TestAgainstSpec a -> a.name
   | TestSuite a -> a.name
                     
 let get_type_question id idQuestion =
   let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSol _ -> Solution
   | TestAgainstSpec _ -> Spec
   | TestSuite _ -> Suite
 
 let get_extra_alea id idQuestion =  let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSol a -> a.gen
   | TestAgainstSpec a -> a.gen
   | _ -> failwith "?"
                     
 let get_input id idQuestion =
   let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSol a -> a.suite
   | TestAgainstSpec a -> a.suite
   | TestSuite a -> a.suite
 
 let get_spec id idQuestion = let test_list = get_testhaut id in
-  match StringMap.(find idQuestion test_list) with
+  match IntMap.(find idQuestion test_list) with
   | TestAgainstSpec a -> a.spec
   | _ -> failwith ""
 
@@ -86,14 +86,13 @@ let get_buffer id =
   Learnocaml_local_storage.(retrieve (editor_state id)).incipit
 
 let compute_question_id test_haut =
-  let key_list = List.map (fun (a,b) -> int_of_string a)
-                   (StringMap.bindings test_haut) in
+  let key_list = List.map fst (IntMap.bindings test_haut) in
   let mi neighbor_color =
     let rec aux c n=match c with
       | [] -> n
       | x :: l -> if x <> n then aux l n else aux neighbor_color (n + 1)
     in aux neighbor_color 1
-  in string_of_int (mi key_list)
+  in (mi key_list)
 
 let save_testhaut testhaut id =
   match Learnocaml_local_storage.(retrieve (editor_state id)) with
@@ -104,16 +103,6 @@ let save_testhaut testhaut id =
     let new_exo = {metadata;incipit;prepare;solution;question;
                    template;test;prelude;checkbox;mtime} in
     Learnocaml_local_storage.(store (editor_state id)) new_exo
-
-
-let fetch_test_index id =
-  let index = get_testhaut id in
-  let json =
-    Json_repr_browser.Json_encoding.construct
-      testhaut_enc index in
-  try Lwt.return (Json_repr_browser.Json_encoding.destruct testhaut_enc json)
-  with exn ->
-    Lwt.fail (failwith "")
 
 let testhaut_iframe = Dom_html.createIframe Dom_html.document
 let iframe_tyxml = Tyxml_js.Of_dom.of_iFrame testhaut_iframe
@@ -238,20 +227,47 @@ let checkbox_creator string cas id =
       Learnocaml_local_storage.(store (editor_state id) new_e); Js._true);
   Tyxml_js.Of_dom.of_input dom_chk
 
+let test_lib_prepare =
+{|module Wrapper (Introspection : Introspection_intf.INTROSPECTION) =
+  struct
+  module Mock = struct
+    let results = ref None
+    let set_progress _ = ()
+    let timeout = None
+    module Introspection = Introspection
+    end
+  module Test_lib = Test_lib.Make(Mock)
+  module Report = Learnocaml_report;;
+  open Mock
+  let code_ast = (failwith "WIP" : Parsetree.structure);;
+|}
 
-let with_test_lib_prepare string =
-  "module Dummy_Functor (Introspection :\n                        Introspection_intf.INTROSPECTION) = struct\n  module Dummy_Params = struct\n    let results = ref None\n    let set_progress _ = ()\n    let timeout = None\n    module Introspection = Introspection            \n  end\n  module Test_lib = Test_lib.Make(Dummy_Params)\n  module Report = Learnocaml_report;;\n  let code_ast = (failwith \"WIP\" : Parsetree.structure);;\n\n "
-  ^ string ^ " end";;
+let rec num_occs s i c num_acc =
+  if i > String.length s then num_acc
+  else match String.index_from_opt s (i + 1) c with
+       | None -> num_acc
+       | Some i -> num_occs s i c (num_acc + 1)
+let offset_test_lib_prepare =
+  num_occs test_lib_prepare (-1) '\n' 0
 
-let typecheck_spec_aux set_class ace_t editor_t top string=
-  Learnocaml_toplevel.check top
-      (with_test_lib_prepare string) >>= fun res ->
+let with_test_lib_prepare string = test_lib_prepare ^ string ^ " end";;
+
+let typecheck set_class ace_t editor_t top prelprep ?(mock = false) ?onpasterr string =
+  let offset_prelprep = num_occs prelprep (-1) '\n' 0 in
+  let code = prelprep ^ if mock then with_test_lib_prepare string
+                       else string
+  and ppx_meta = mock in
+  Learnocaml_toplevel.check ~ppx_meta top code >>= fun res ->
     let error, warnings =
       match res with
       | Toploop_results.Ok ((), warnings) -> None, warnings
       | Toploop_results.Error (err, warnings) -> Some err, warnings in
+    let shift_loc (l, c) =
+      (l - (if mock then offset_test_lib_prepare else 0)
+       - offset_prelprep, c) in
     let transl_loc { Toploop_results.loc_start ; loc_end } =
-      { Ocaml_mode.loc_start ; loc_end } in
+      { Ocaml_mode.loc_start = shift_loc loc_start ;
+        Ocaml_mode.loc_end = shift_loc loc_end } in
     let error = match error with
       | None -> None
       | Some { Toploop_results.locs ; msg ; if_highlight } ->
@@ -263,19 +279,26 @@ let typecheck_spec_aux set_class ace_t editor_t top string=
            { Ocaml_mode.loc = transl_loc (List.hd locs) ;
              msg = (if if_highlight <> "" then if_highlight else msg) })
         warnings in
-    Ocaml_mode.report_error ~set_class editor_t error warnings  >>= fun () ->
-    Ace.focus ace_t ;
-    Lwt.return () ;;
-
-let typecheck_spec set_class ace_t editor_t top =
-  typecheck_spec_aux set_class ace_t editor_t top (Ace.get_contents ace_t)
+    let pasterr =
+      match error with
+      | None -> false
+      | Some {Ocaml_mode.locs; _} ->
+         List.exists (fun { Ocaml_mode.loc_start = (m, _);
+                            Ocaml_mode.loc_end = (n, _) } -> (m <= 0 || n <= 0))
+           locs in
+    match onpasterr, pasterr with
+    | Some onpasterr, true -> onpasterr ()
+    | None, _ | _, false ->
+       Ocaml_mode.report_error ~set_class editor_t error warnings >>= fun () ->
+       Ace.focus ace_t;
+       Lwt.return ()
 
 let rec testhaut_init content_div id =
   let elt = find_div "learnocaml-loading" in
-    fetch_test_index id >>= fun index ->
+  let index = get_testhaut id in (* TODO: add validation? *)
   let format_question_list all_question_states =
     let  format_contents acc contents =
-          StringMap.fold
+          IntMap.fold
             (fun question_id quest acc ->
                let name,ty=match quest with
                  | TestAgainstSol a -> a.name,a.ty
@@ -283,46 +306,18 @@ let rec testhaut_init content_div id =
                  | TestSuite a -> a.name,a.ty in
                  div ~a:[a_id "toolbar"; a_class ["button"]] [
               (div ~a:[a_id "button_delete"] [
-                  let button = button ~a:[a_id question_id]
+                  let button = button ~a:[a_id (string_of_int question_id)]
                                  [img ~src:"icons/icon_cleanup_dark.svg"
                                     ~alt:"" () ; pcdata ""] in
                   Manip.Ev.onclick button
                     (fun _ ->
-                       begin
-                         let messages = Tyxml_js.Html5.ul [] in
-                         let aborted, abort_message =
-                           let t, u = Lwt.task () in
-                           let btn_no =
-                             Tyxml_js.Html5.(button [ pcdata [%i"No"] ]) in
-                           Manip.Ev.onclick btn_no ( fun _ ->
-                               hide_load "learnocaml-main-loading" ;
-                               true) ;
-                           let btn_yes =
-                             Tyxml_js.Html5.(button [ pcdata [%i"Yes"] ]) in
-                           Manip.Ev.onclick btn_yes (fun _ ->
                                let rmv = get_testhaut id in
                                let testhaut =
-                                 StringMap.remove question_id rmv in
+                                 IntMap.remove question_id rmv in
                                save_testhaut testhaut id ;
-                               hide_load "learnocaml-main-loading";
                                Manip.removeChildren content_div;
                                let _ = testhaut_init content_div id in
-                               () ; true) ;
-                           let div =
-                             Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                             [ pcdata [%i"Are you sure you want to delete \
-                                          this question?\n"] ;
-                               btn_yes ;
-                               pcdata " " ;
-                               btn_no ]) in
-                           Manip.SetCss.opacity div (Some "0") ;
-                           t, div in
-                         Manip.replaceChildren messages
-                           Tyxml_js.Html5.[ li [ pcdata "" ] ] ;
-                         show_load "learnocaml-main-loading" [ abort_message ] ;
-                         Manip.SetCss.opacity abort_message (Some "1") ;
-                       end ;
-                       true) ; button
+                               () ; true) ; button
               ] );
                     (div ~a:[a_id "up"] [
                      let buttonUp = button ~a:[]
@@ -333,16 +328,15 @@ let rec testhaut_init content_div id =
                          begin
                            let qid = question_id in
                            let testhaut = get_testhaut id in
-                            let question = StringMap.find qid testhaut in
-                            let suivant = string_of_int
-                                            ((int_of_string qid) + 1) in
+                            let question = IntMap.find qid testhaut in
+                            let suivant = qid + 1 in
                             let testhaut =
-                              match StringMap.find suivant testhaut with
+                              match IntMap.find suivant testhaut with
                               | exception Not_found -> testhaut
                               | qsuivante ->
                                  let map =
-                                   StringMap.add qid qsuivante testhaut in
-                                 StringMap.add suivant question map in
+                                   IntMap.add qid qsuivante testhaut in
+                                 IntMap.add suivant question map in
                             save_testhaut testhaut id;
                             Manip.removeChildren content_div;
                             let _ = testhaut_init content_div id in ()
@@ -359,16 +353,16 @@ let rec testhaut_init content_div id =
                          begin
                            let qid = question_id in
                            let testhaut = get_testhaut id in
-                           let question = StringMap.find qid testhaut in
-                           let intp = (int_of_string qid) -1 in
-                           let prec = string_of_int
-                                        (if intp = 0 then 1 else intp ) in
+                           let question = IntMap.find qid testhaut in
+                           let intp = qid - 1 in
+                           let prec = if intp = 0 then 1 else intp in
+                           (* TODO: further optimize *)
                            let testhaut =
-                             match StringMap.find prec testhaut with
+                             match IntMap.find prec testhaut with
                               | exception Not_found -> testhaut
                               | qprec ->
-                                 let map = StringMap.add qid qprec testhaut in
-                                 StringMap.add prec question map in
+                                 let map = IntMap.add qid qprec testhaut in
+                                 IntMap.add prec question map in
                             save_testhaut testhaut id;
                             Manip.removeChildren content_div;
                             let _ = testhaut_init content_div id in ()
@@ -385,10 +379,10 @@ let rec testhaut_init content_div id =
                            begin
                              let testhaut = get_testhaut id in
                              let question =
-                               StringMap.find question_id testhaut in
+                               IntMap.find question_id testhaut in
                              let qid = compute_question_id testhaut in
                              let testhaut =
-                               StringMap.add qid question testhaut in
+                               IntMap.add qid question testhaut in
                              save_testhaut testhaut id;
                              Manip.removeChildren content_div;
                              let _ = testhaut_init content_div id in ()
@@ -402,7 +396,7 @@ let rec testhaut_init content_div id =
                   Manip.replaceChildren elt [iframe_tyxml] ;
                   testhaut_iframe##.src :=
                     Js.string ("test.html#id=" ^ id ^ "&questionid=" ^
-                               question_id ^ "&action=open") ;
+                                 string_of_int question_id ^ "&action=open") ;
                   true) ;
                   a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] [
@@ -459,21 +453,80 @@ let init = "let () =
             set_result @@
             ast_sanity_check code_ast @@ fun () ->\n"
 
-let section name report = "Section
-  ([ Text \"Fonction:\" ; Code \""^name^"\" ], " ^ report ^ " );\n"
+let section name report = {|Section ([ Text "Fonction:" ; Code "|}
+                          ^ name ^ {|" ], |} ^ report ^ " );\n"
 
 
 (*_____________________Functions for the Generate button_____________________*)
 
-(* we get "val f : int -> int -> int = <fun>" *)
+(* Remove duplicates; keep the latest occurence *)
+let rec undup_assoc = function
+  | [] -> []
+  | (f, ty) :: l -> if List.mem_assoc f l then undup_assoc l
+                    else (f, ty) :: undup_assoc l
 
+(* Minor bug: if the file contains 2 definitions of a same identifier
+   and only one of them is a function, this function will be selected
+   even if it is defined before the non-function expression. *)
+let extract_functions s =
+  (* Remove module/module_types as their signature could contain val items *)
+  let s = Regexp.(global_replace (regexp "module type\\\s\\w+\\s=\\ssig\\s[^]+?\\send\\s*") s "") in
+  let s = Regexp.(global_replace (regexp "module type\\s\\w+\\s=\\s\\w+\\s*") s "") in
+  let s = Regexp.(global_replace (regexp "module\\s\\w+\\s:\\ssig\\s[^]+?\\send\\s*") s "") in
+  let s = Regexp.(global_replace (regexp "module\\s\\w+\\s:\\s\\w+\\s*") s "") in
+  let rec process i acci =
+    match Regexp.(search (regexp "val\\s(\\S+)\\s:\\s([^:]+?)\\s+=\\s+<fun>") s i) with
+    | None -> List.rev acci
+    | Some (i, result) ->
+       match Regexp.(matched_group result 1, matched_group result 2) with
+       | Some func, Some ty -> process (i + 1) ((func, ty) :: acci)
+       | _ -> process (i + 1) acci
+  in undup_assoc (process 0 [])
+
+let find_all r s =
+  let rec process i acci =
+    match Regexp.(search r s i) with
+    | None -> List.rev acci
+    | Some (i, result) ->
+       match Regexp.(matched_group result 0) with
+       | Some s -> process (i + 1) (s :: acci)
+       | _ -> Dom_html.window##alert (Js.string "Error in editor_lib.ml: this should not occur");
+              List.rev acci
+  in process 0 []
+
+let replace_all map s =
+  List.fold_left (fun res (e, by) ->
+      Regexp.(global_replace (regexp_string e) res by))
+  s map
+
+let base = ["int"; "bool"; "char"; "string"]
+let gen1 i = List.nth base (i mod 4)
+let gen2 i =
+  let q, r = (i / 4) mod 3, i mod 4 in
+  if q + 1 = r then List.nth base 0
+  else List.nth base (q + 1)
+
+let monomorph_generator l =
+  let f ty =
+    let vars =
+      List.sort_uniq compare
+      @@ find_all (Regexp.regexp "'[A-Za-z](?:\\w[A-Za-z0-9_']*)?") ty
+    in
+    if vars = [] then [(10, ty)]
+    else let t1 = replace_all (List.mapi (fun i e -> (e, gen1 i)) vars) ty
+         and t2 = replace_all (List.mapi (fun i e -> (e, gen2 i)) vars) ty
+         in [(5, t1); (5, t2)]
+  in
+  List.map (fun (func, ty) -> (func, f ty)) l
+
+(* TODO: Refactor and delete concatenation *)
 let string_of_char ch = String.make 1 ch
 
 let rec concatenation listech = match listech with
   | [] -> ""
   | c :: l -> (string_of_char c) ^ (concatenation l)
 
-
+(*
 let rec get_equal listeChar = match listeChar with
   | [] -> []
   | '=' :: l -> []
@@ -570,12 +623,14 @@ let rec polymorph_detector_aux listeType listeCouple val_next_mono =
                              else polymorph_detector_aux tail (first v) (val_next_mono)
                    in if res = [] then second v else second v @ ' ' :: res
   | ch::tail -> ch::(polymorph_detector_aux tail listeCouple val_next_mono)
+ *)
 
 let rec decompositionSol str n =
   if str = "" then []
   else if n + 1 = String.length str then [(str.[n])]
   else (str.[n])::(decompositionSol str (n+1))
 
+(*
 let extra_alea_poly = 5
 and extra_alea_mono = 10
 
@@ -610,6 +665,7 @@ in polymorph_detector_aux s [] (['s';'t';'r';'i';'n';'g']);;
 
 polymorph_detector
   [(), "'aa -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h"];;
+ *)
  *)
 
 (* ____Functions for generate template______________________________________ *)
@@ -688,32 +744,6 @@ let rec genLet listech =
 let rec genTemplate chaine =
   if chaine = "" then ""
   else concatenation (genLet (decompositionSol chaine 0))
-
-
-(*_________ Check _________________________________________*)
-
-let typecheck set_class ace editor top =
-    Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
-    let error, warnings =
-      match res with
-      | Toploop_results.Ok ((), warnings) -> None, warnings
-      | Toploop_results.Error (err, warnings) -> Some err, warnings in
-    let transl_loc { Toploop_results.loc_start ; loc_end } =
-      { Ocaml_mode.loc_start ; loc_end } in
-    let error = match error with
-      | None -> None
-      | Some { Toploop_results.locs ; msg ; if_highlight } ->
-          Some { Ocaml_mode.locs = List.map transl_loc locs ;
-                 msg = (if if_highlight <> "" then if_highlight else msg) } in
-    let warnings =
-      List.map
-        (fun { Toploop_results.locs ; msg ; if_highlight } ->
-           { Ocaml_mode.loc = transl_loc (List.hd locs) ;
-             msg = (if if_highlight <> "" then if_highlight else msg) })
-        warnings in
-    Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
-    Ace.focus ace ;
-    Lwt.return ()
 
 (* ---- create an exo ------------------------------------------------------- *)
 

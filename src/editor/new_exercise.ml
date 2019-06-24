@@ -1,4 +1,3 @@
-open Str
 open Js_of_ocaml
 open Dom_html
 open Js_utils
@@ -8,7 +7,6 @@ open Learnocaml_index
 open Editor_lib
 
 module StringMap = Map.Make (String)
-
 
 (* Internationalization *)
 let () = Translate.set_lang ()
@@ -51,7 +49,7 @@ let solution, question, template, test,
     previous_title, previous_diff, prelude, prepare =
   match Learnocaml_local_storage.(retrieve (editor_state previous_id)) with
   | exception Not_found ->
-     "", "", "", {testml = ""; testhaut = StringMap.empty}, "", 0., "", ""
+     "", "", "", {testml = ""; testhaut = IntMap.empty}, "", 0., "", ""
   | {Learnocaml_exercise_state.metadata;
      solution; question; template; test; mtime; prelude; prepare} ->
      solution, question, template, test,

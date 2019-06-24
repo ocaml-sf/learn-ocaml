@@ -47,8 +47,13 @@ type test_qst_untyped =
       ; suite: string
       ; tester: string } ;;
 
-type test_state = {testml : string;
-                   testhaut : test_qst_untyped Map.Make (String).t}
+module IntMap : Map.S with type key = int
+
+type test_state = { testml: string;
+                    testhaut: test_qst_untyped IntMap.t }
+
+val string_of_int_map : 'a IntMap.t -> 'a Map.Make(String).t
+val int_of_string_map : 'a Map.Make(String).t -> 'a IntMap.t
 
 val testhaut_enc : test_qst_untyped Map.Make (String).t Json_encoding.encoding
     

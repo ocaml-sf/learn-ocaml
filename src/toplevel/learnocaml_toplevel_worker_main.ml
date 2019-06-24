@@ -155,6 +155,8 @@ let iter_option f o = match o with | None -> () | Some o -> f o
 
 let checking_environment = ref !Toploop.toplevel_env
 
+let setup_ppx = lazy (Ast_mapper.register "ppx_metaquot" Ppx_metaquot.expander)
+
 let handler : type a. a host_msg -> a return Lwt.t = function
   | Set_checking_environment ->
       checking_environment := !Toploop.toplevel_env ;
@@ -230,9 +232,10 @@ let handler : type a. a host_msg -> a return Lwt.t = function
           !Toploop.toplevel_env ;
       Toploop.setvalue name (Obj.repr callback) ;
       return_unit_success
-  | Check code ->
+  | Check (code, ppx_meta) ->
       let saved = !Toploop.toplevel_env in
       Toploop.toplevel_env := !checking_environment ;
+      if ppx_meta then Lazy.force setup_ppx ;
       let result = Toploop_ext.check code in
       Toploop.toplevel_env := saved ;
       unwrap_result result

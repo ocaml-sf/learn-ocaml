@@ -201,19 +201,35 @@ let test_qst_untyped_enc =union [
       (fun {name; ty; suite; tester}  ->TestSuite {name; ty; suite; tester} );
   ]
 ;;
-type test_state = {testml : string;
-                   testhaut : test_qst_untyped Map.Make (String).t}
 
+module IntMap =
+  Map.Make(struct type t = int let compare (x:t) y = compare x y end)
+
+type test_state = { testml: string;
+                    testhaut: test_qst_untyped IntMap.t }
+
+(** Useful for serialization *)
+let string_of_int_map iv =
+  let module StringMap = Map.Make(String) in
+  IntMap.fold (fun i v sv -> StringMap.add (string_of_int i) v sv) iv StringMap.empty
+
+let int_of_string_map iv =
+  let module StringMap = Map.Make(String) in
+  StringMap.fold (fun s v iv -> IntMap.add (int_of_string s) v iv) iv IntMap.empty
 
 let testhaut_enc = map_enc test_qst_untyped_enc
 
-let test_state_enc =conv
-    (fun {testml; testhaut} -> (testml, testhaut))
-    ( fun (testml, testhaut) -> {testml; testhaut})
+let test_state_enc =
+  conv
+    (fun { testml; testhaut } -> (testml, string_of_int_map testhaut))
+    (fun (testml, testhautstr) ->
+      let testhaut = int_of_string_map testhautstr in
+      { testml; testhaut })
     (obj2
        (req "testml" string)
        (req "testhaut" testhaut_enc)
-    );;
+    )
+
 type metadata =
   { id : string;
     titre : string;

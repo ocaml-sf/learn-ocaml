@@ -52,11 +52,13 @@ val create:
 
 (** Parse and typecheck a given source code
 
+    @param ppx_meta should the checker toploop use ppx-metaquot ?
+
     @return [Success ()] in case of success and [Error err]
             where [err] contains the error message otherwise.
 
 *)
-val check: t -> string -> unit toplevel_result Lwt.t
+val check: ?ppx_meta:bool -> t -> string -> unit toplevel_result Lwt.t
 
 
 (** Execute a given source code. The evaluation stops after the first

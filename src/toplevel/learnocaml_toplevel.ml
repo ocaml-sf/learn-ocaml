@@ -219,9 +219,9 @@ let go_backward top =
 let go_forward top =
   Learnocaml_toplevel_input.go_forward top.input
 
-let check top code =
+let check ?ppx_meta top code =
   protect_execution top @@ fun () ->
-  Learnocaml_toplevel_worker_caller.check top.worker code
+  Learnocaml_toplevel_worker_caller.check ?ppx_meta top.worker code
 
 let set_checking_environment top =
   protect_execution top @@ fun () ->
