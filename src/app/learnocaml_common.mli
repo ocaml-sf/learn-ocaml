@@ -182,7 +182,11 @@ val set_string_translations_exercises : unit -> unit
 val local_save : 'a Ace.editor -> string -> unit
 
 val toplevel_launch :
-  (Learnocaml_toplevel.t -> unit Lwt.t) ->
+  ?after_init:(Learnocaml_toplevel.t -> unit Lwt.t) ->
+  [ `Div ] Tyxml_js.Html5.elt ->
+  (string ->
+   Learnocaml_toplevel_history.snapshot
+     Learnocaml_local_storage.storage_key) ->
   (string -> unit) ->
   button_group -> string -> Learnocaml_toplevel.t Lwt.t
 

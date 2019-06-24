@@ -556,35 +556,12 @@ let toplevel_tab select _ () =
     Tyxml_js.Html5.(div ~a: [ a_id El.Dyn.toplevel_id ])
       [ container ; buttons_div ] in
   show_loading [%i"Launching OCaml"] @@ fun () ->
-  let timeout_prompt =
-    Learnocaml_toplevel.make_timeout_popup
-      ~on_show: (fun () -> Lwt.async select)
-      () in
-  let flood_prompt =
-    Learnocaml_toplevel.make_flood_popup
-      ~on_show: (fun () -> Lwt.async select)
-      () in
-  let history =
-    let storage_key =
-      Learnocaml_local_storage.toplevel_history "toplevel" in
-    let on_update self =
-      Learnocaml_local_storage.store storage_key
-        (Learnocaml_toplevel_history.snapshot self) in
-    let snapshot =
-      Learnocaml_local_storage.retrieve storage_key in
-    Learnocaml_toplevel_history.create
-      ~gettimeofday
-      ~on_update
-      ~max_size: 99
-      ~snapshot () in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
-  create_toplevel
-    ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
-    ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
-    ~history ~timeout_prompt ~flood_prompt
-    ~container
-    () >>= fun top ->
+  toplevel_launch container
+    Learnocaml_local_storage.toplevel_history
+    (fun _ -> Lwt.async select) toplevel_buttons_group "toplevel"
+  >>= fun top ->
   Manip.appendChild El.content div ;
   let button = button ~container: buttons_div ~theme: "dark" ?group:None ?state:None in
   init_toplevel_pane (Lwt.return top) top toplevel_buttons_group button ;

@@ -723,7 +723,7 @@ let local_save ace id =
     { ans with Answer.solution = Ace.get_contents ace;
                mtime = gettimeofday () }
 
-let toplevel_launch after_init select_tab toplevel_buttons_group id =
+let toplevel_launch ?after_init container history select_tab toplevel_buttons_group id =
   let timeout_prompt =
     Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> select_tab "toplevel")
@@ -733,8 +733,7 @@ let toplevel_launch after_init select_tab toplevel_buttons_group id =
       ~on_show: (fun () -> select_tab "toplevel")
       () in
   let history =
-    let storage_key =
-      Learnocaml_local_storage.exercise_toplevel_history id in
+    let storage_key = history id in
     let on_update self =
       Learnocaml_local_storage.store storage_key
         (Learnocaml_toplevel_history.snapshot self) in
@@ -746,10 +745,10 @@ let toplevel_launch after_init select_tab toplevel_buttons_group id =
       ~max_size: 99
       ~snapshot () in
   create_toplevel
-    ~after_init ~timeout_prompt ~flood_prompt
+    ?after_init ~timeout_prompt ~flood_prompt
     ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
     ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
-    ~container:(find_component "learnocaml-exo-toplevel-pane")
+    ~container
     ~history ()
 
 let init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button =
