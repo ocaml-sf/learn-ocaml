@@ -342,22 +342,6 @@ let display_meta token ex_meta id =
          [ focus ; requirements ; backward ; forward ])
   ])
 
-let set_string_translations () =
-  let translations = [
-    "txt_preparing", [%i"Preparing the environment"];
-    "learnocaml-exo-button-editor", [%i"Editor"];
-    "learnocaml-exo-button-toplevel", [%i"Toplevel"];
-    "learnocaml-exo-button-report", [%i"Report"];
-    "learnocaml-exo-button-text", [%i"Exercise"];
-    "learnocaml-exo-button-meta", [%i"Details"];
-    "learnocaml-exo-editor-pane", [%i"Editor"];
-    "txt_grade_report", [%i"Click the Grade button to get your report"];
-  ] in
-  List.iter
-    (fun (id, text) ->
-       Manip.setInnerHtml (find_component id) text)
-    translations
-
 let is_readonly = ref false
 
 let make_readonly () =
@@ -366,32 +350,9 @@ let make_readonly () =
     [%i"The deadline for this exercise has expired. Any changes you make \
         from now on will remain local only."]
 
-let local_save ace id =
-  let key = Learnocaml_local_storage.exercise_state id in
-  let ans =
-    try Learnocaml_local_storage.retrieve key with Not_found ->
-      Answer.{solution = ""; mtime = 0.; report = None; grade = None}
-  in
-  Learnocaml_local_storage.store key
-    { ans with Answer.solution = Ace.get_contents ace;
-               mtime = gettimeofday () }
-
-
 let () =
-  Lwt.async_exception_hook := begin fun e ->
-    Firebug.console##log (Js.string
-                            (Printexc.to_string e ^
-                             if Printexc.backtrace_status () then
-                               Printexc.get_backtrace ()
-                             else ""));
-    match e with
-    | Failure message -> fatal message
-    | Server_caller.Cannot_fetch message -> fatal message
-    | exn -> fatal (Printexc.to_string exn)
-  end ;
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  Lwt.async @@ fun () ->
-  set_string_translations ();
+  run_async_with_log @@ fun () ->
+  set_string_translations_exercises ();
   Learnocaml_local_storage.init () ;
   let token =
     try
@@ -415,7 +376,8 @@ let () =
   (match Learnocaml_local_storage.(retrieve nickname) with
    | nickname -> Manip.setInnerText nickname_div nickname
    | exception Not_found -> ());
-  let toplevel_button = button ~container: toplevel_toolbar ~theme: "dark" in
+  let toplevel_button =
+    button ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
   let editor_button = button ~container: editor_toolbar ~theme: "light" in
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
@@ -442,34 +404,13 @@ let () =
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
-  let timeout_prompt =
-    Learnocaml_toplevel.make_timeout_popup
-      ~on_show: (fun () -> select_tab "toplevel")
-      () in
-  let flood_prompt =
-    Learnocaml_toplevel.make_flood_popup
-      ~on_show: (fun () -> select_tab "toplevel")
-      () in
-  let history =
-    let storage_key =
-      Learnocaml_local_storage.exercise_toplevel_history id in
-    let on_update self =
-      Learnocaml_local_storage.store storage_key
-        (Learnocaml_toplevel_history.snapshot self) in
-    let snapshot =
-      Learnocaml_local_storage.retrieve storage_key in
-    Learnocaml_toplevel_history.create
-      ~gettimeofday
-      ~on_update
-      ~max_size: 99
-      ~snapshot () in
   let toplevel_launch =
-    create_toplevel
-      ~after_init ~timeout_prompt ~flood_prompt
-      ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
-      ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
-      ~container:(find_component "learnocaml-exo-toplevel-pane")
-      ~history () in
+    toplevel_launch
+      after_init
+      select_tab
+      toplevel_buttons_group
+      id
+  in
   init_tabs () ;
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
@@ -500,23 +441,7 @@ let () =
         select_tab "meta";
         true);
   (* ---- toplevel pane ------------------------------------------------- *)
-  begin toplevel_button
-      ~group: toplevel_buttons_group
-      ~icon: "cleanup" [%i"Clear"] @@ fun () ->
-    Learnocaml_toplevel.clear top ;
-    Lwt.return ()
-  end ;
-  begin toplevel_button
-      ~icon: "reload" [%i"Reset"] @@ fun () ->
-    toplevel_launch >>= fun top ->
-    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
-  end ;
-  begin toplevel_button
-      ~group: toplevel_buttons_group
-      ~icon: "run" [%i"Eval phrase"] @@ fun () ->
-    Learnocaml_toplevel.execute top ;
-    Lwt.return ()
-  end ;
+  init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button ;
   (* ---- text pane ----------------------------------------------------- *)
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in

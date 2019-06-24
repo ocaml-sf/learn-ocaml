@@ -176,3 +176,23 @@ val create_toplevel:
   container:[`Div] Tyxml_js.Html5.elt ->
   unit ->
   Learnocaml_toplevel.t Lwt.t
+
+val set_string_translations_exercises : unit -> unit
+
+val local_save : 'a Ace.editor -> string -> unit
+
+val toplevel_launch :
+  (Learnocaml_toplevel.t -> unit Lwt.t) ->
+  (string -> unit) ->
+  button_group -> string -> Learnocaml_toplevel.t Lwt.t
+
+val init_toplevel_pane :
+  Learnocaml_toplevel.t Lwt.t ->
+  Learnocaml_toplevel.t ->
+  button_group ->
+  (icon:string ->
+   string -> (unit -> unit Lwt.t) ->
+   unit) ->
+  unit
+
+val run_async_with_log : (unit -> 'a Lwt.t) -> unit
