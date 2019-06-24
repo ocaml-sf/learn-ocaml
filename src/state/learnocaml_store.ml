@@ -120,9 +120,9 @@ end
 
 module Server = struct
 
-  let get_from_file p =
+  let get_from_file ?(enc = Server.enc) p =
     Lwt_io.(with_file ~mode: Input p read) >|=
-      Json_codec.decode Server.enc
+      Json_codec.decode enc
 
   let get () =
     Lwt.catch
@@ -133,9 +133,9 @@ module Server = struct
         | e -> raise e
       )
 
-  let write_to_file s p =
+  let write_to_file ?(enc = Server.enc) s p =
     let open Lwt_io in
-    let s = Json_codec.encode Server.enc s in
+    let s = Json_codec.encode enc s in
     with_file ~mode:output p @@ fun oc -> write oc s
 end
 

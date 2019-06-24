@@ -383,6 +383,11 @@ module Server = struct
     let server_id = Random.bits () in
     {secret; server_id}
 
+  let enc_init =
+    J.conv (fun c -> c.secret)
+           (fun secret -> default ?secret ()) @@
+      J.obj1 (J.opt "secret" J.string)
+
   let enc =
     J.conv (fun c -> (c.secret,c.server_id))
            (fun (secret,server_id) -> {secret; server_id}) @@

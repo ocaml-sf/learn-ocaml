@@ -128,6 +128,9 @@ module Server : sig
 
   val default: ?secret:string -> unit -> config
 
+  (* only used in the building case to generate a random server_id *)
+  val enc_init: config Json_encoding.encoding
+
   val enc: config Json_encoding.encoding
 end
 
