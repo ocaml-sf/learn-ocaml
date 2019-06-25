@@ -891,3 +891,42 @@ let set_nickname_div () =
   match Learnocaml_local_storage.(retrieve nickname) with
   | nickname -> Manip.setInnerText nickname_div nickname
   | exception Not_found -> ()
+
+let setup_prelude_pane ace prelude =
+  if prelude = "" then () else
+  let editor_pane = find_component "learnocaml-exo-editor-pane" in
+  let prelude_pane =  find_component "learnocaml-exo-prelude" in
+  let open Tyxml_js.Html5 in
+  let state =
+    ref (match arg "prelude" with
+         | exception Not_found -> true
+         | "shown" -> true
+         | "hidden" -> false
+         | _ -> failwith "Bad format for argument prelude.") in
+  let prelude_btn = button [] in
+  let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
+                           prelude_btn ] in
+  let prelude_container =
+    pre ~a: [ a_class [ "toplevel-code" ] ]
+      (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+  let update () =
+    if !state then begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
+        Manip.SetCss.display prelude_container "" ;
+        Manip.SetCss.top editor_pane "193px" ;
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "shown"
+      end else begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
+        Manip.SetCss.display prelude_container "none" ;
+        Manip.SetCss.top editor_pane "43px" ;
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "hidden"
+      end in
+  update () ;
+  Manip.Ev.onclick prelude_btn
+    (fun _ -> state := not !state ; update () ; true) ;
+  Manip.appendChildren prelude_pane
+    [ prelude_title ; prelude_container ]

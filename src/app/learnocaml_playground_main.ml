@@ -62,6 +62,7 @@ let main () =
   EB.cleanup playground.Playground.template;
   EB.download id;
   EB.eval top select_tab;
+  setup_prelude_pane ace playground.Playground.prelude;
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in

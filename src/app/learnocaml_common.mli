@@ -213,3 +213,5 @@ val typecheck :
   'a Ace.editor -> Ocaml_mode.editor -> bool -> unit Lwt.t
 
 val set_nickname_div : unit -> unit
+
+val setup_prelude_pane : 'a Ace.editor -> string -> unit

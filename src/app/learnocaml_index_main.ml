@@ -539,6 +539,9 @@ let init_token_dialog () =
        Lwt.return_none)
     else
       let secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
+      let secret = Sha.sha512 (nonce ^ secret) in
       (Learnocaml_local_storage.(store nickname) nickname;
        retrieve
          (Learnocaml_api.Create_token (secret, None, Some nickname))
