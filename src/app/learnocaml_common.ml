@@ -895,7 +895,7 @@ let set_nickname_div () =
 let setup_prelude_pane ace prelude =
   if prelude = "" then () else
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
-  let prelude_pane =  find_component "learnocaml-exo-prelude" in
+  let prelude_pane = find_component "learnocaml-exo-prelude" in
   let open Tyxml_js.Html5 in
   let state =
     ref (match arg "prelude" with
@@ -913,7 +913,7 @@ let setup_prelude_pane ace prelude =
     if !state then begin
         Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
         Manip.SetCss.display prelude_container "" ;
-        Manip.SetCss.top editor_pane "193px" ;
+        Manip.SetCss.top editor_pane "193px" ; (* 150 + 43 *)
         Manip.SetCss.bottom editor_pane "40px" ;
         Ace.resize ace true;
         set_arg "prelude" "shown"
