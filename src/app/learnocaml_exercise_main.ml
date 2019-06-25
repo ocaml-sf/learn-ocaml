@@ -56,6 +56,19 @@ let init_tabs, select_tab =
     select_tab !current in
   init_tabs, select_tab
 
+let check_if_need_refresh () =
+  let local_server_id = Learnocaml_local_storage.(retrieve server_id) in
+  retrieve @@ Learnocaml_api.Version ()
+  >|= fun (_, server_id) ->
+  if local_server_id <> server_id then
+    let title = [%i "WARNING: Grader has been updated"]
+    and ok_label = [%i "Refresh the page"]
+    and refresh = fun () -> Dom_html.window##.location##reload
+    and cancel_label = [%i "I will do it myself!"]
+    and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn OCaml (none of your work will be lost)."] in
+    let contents = [ H.p [H.pcdata (String.trim message) ] ] in
+  confirm ~title ~ok_label ~cancel_label contents refresh
+
 let get_grade =
   let get_worker = get_worker_code "learnocaml-grader-worker.js" in
   fun ?callback ?timeout exercise ->
@@ -392,7 +405,10 @@ let () =
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
   set_string_translations ();
-  Learnocaml_local_storage.init () ;
+  Learnocaml_local_storage.init ();
+  retrieve (Learnocaml_api.Version ())
+  >|= fun (_,server_id) ->
+    Learnocaml_local_storage.(store server_id) server_id;
   let token =
     try
       Learnocaml_local_storage.(retrieve sync_token) |>
@@ -639,6 +655,9 @@ let () =
   end;
   begin toolbar_button
       ~icon: "reload" [%i"Grade!"] @@ fun () ->
+    js_log "hello";
+    check_if_need_refresh ()
+    >>= fun () ->
     let aborted, abort_message =
       let t, u = Lwt.task () in
       let btn = Tyxml_js.Html5.(button [ pcdata [%i"abort"] ]) in
