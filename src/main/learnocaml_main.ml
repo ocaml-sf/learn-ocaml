@@ -263,8 +263,8 @@ let main o =
        Random.self_init ();
        Lwt.catch
          (fun () ->
-           let enc = Some ServerData.enc_init in
-           ServerStore.get_from_file ?enc server_config
+           let enc = ServerData.enc_init in
+           ServerStore.get_from_file ~enc server_config
            >|= fun pre_config ->
            match pre_config.ServerData.secret with
              | None -> None

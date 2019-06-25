@@ -79,7 +79,7 @@ type 'a response =
                 code: Cohttp.Code.status_code }
 
 let caching: type resp. resp Api.request -> caching = function
-  | Api.Version () -> Shortcache (Some ["version"])
+  | Api.Version () -> Shortcache (Some ["version"; "server_id"])
   | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
   | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
 
@@ -178,15 +178,17 @@ module Request_handler = struct
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. string option -> caching -> resp Api.request -> resp ret
-    = fun secret cache -> function
+  let callback_raw: type resp. Learnocaml_data.Server.config ->
+                               caching -> resp Api.request -> resp ret
+    = let module ServerData = Learnocaml_data.Server in
+      fun config cache -> function
       | Api.Version () ->
-          respond_json cache Api.version
+          respond_json cache (Api.version, config.ServerData.server_id)
       | Api.Static path ->
           respond_static cache path
       | Api.Create_token (secret_candidate, None, nick) ->
          let know_secret =
-           match secret with
+           match config.ServerData.secret with
            | None -> true
            | Some x -> secret_candidate = x in
          if not know_secret
@@ -403,10 +405,12 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           Lwt.return (Status {code = `Bad_request; body})
 
-  let callback: type resp. string option -> resp Api.request -> resp ret = fun secret req ->
+  let callback: type resp. Learnocaml_data.Server.config ->
+                           resp Api.request -> resp ret
+  = fun config req ->
     let cache = caching req in
     let respond () =
-      Lwt.catch (fun () -> callback_raw secret cache req)
+      Lwt.catch (fun () -> callback_raw config cache req)
         (function
           | Not_found ->
               Lwt.return (Status {code = `Not_found;
@@ -485,7 +489,6 @@ let compress ?(level = 4) data =
 
 let launch () =
   Learnocaml_store.Server.get () >>= fun config ->
-  let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
@@ -574,7 +577,7 @@ let launch () =
     >>= (function
         | Ok req ->
             log conn req;
-            Api_server.handler secret req
+            Api_server.handler config req
         | Error (code, body) -> Lwt.return (Status {code; body}))
     >>=
     respond

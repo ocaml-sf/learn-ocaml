@@ -132,6 +132,15 @@ let clear () =
     (Dom_html.window##.localStorage)
     (fun localStorage -> localStorage##clear)
 
+let server_id =
+  let key = mangle [ "server_id" ]
+  and enc = Json_encoding.(obj1 (req "server_id" int)) in
+  let store value = store_single key enc value
+  and retrieve () = retrieve_single key enc ()
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+
 let sync_token =
   let key = mangle [ "sync-token" ] in
   let enc = Json_encoding.(obj1 (req "token" string)) in
