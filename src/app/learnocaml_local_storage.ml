@@ -135,9 +135,9 @@ let clear () =
 let server_id =
   let key = mangle [ "server_id" ]
   and enc = Json_encoding.(obj1 (req "server_id" int)) in
-  let store value = store_single key enc value
-  and retrieve () = retrieve_single key enc ()
-  and delete () = delete_single key enc () in
+  let store = store_single key enc
+  and retrieve = retrieve_single key enc
+  and delete = delete_single key enc in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
 

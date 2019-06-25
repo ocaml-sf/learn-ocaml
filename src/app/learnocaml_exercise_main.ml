@@ -63,7 +63,7 @@ let check_if_need_refresh () =
   if local_server_id <> server_id then
     let title = [%i "WARNING: You have an older grader version than the server"]
     and ok_label = [%i "Refresh the page"]
-    and refresh = fun () -> Dom_html.window##.location##reload
+    and refresh () = Dom_html.window##.location##reload
     and cancel_label = [%i "I will do it myself!"]
     and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
     let contents = [ H.p [H.pcdata (String.trim message) ] ] in
@@ -666,7 +666,6 @@ let prelude_pane =  find_component "learnocaml-exo-prelude" in
   end;
   begin toolbar_button
       ~icon: "reload" [%i"Grade!"] @@ fun () ->
-    js_log "hello";
     check_if_need_refresh ()
     >>= fun () ->
     let aborted, abort_message =
