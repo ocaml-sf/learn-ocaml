@@ -474,27 +474,10 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
     load_tutorial !current_tutorial_name (!current_step_id + 1) ()
   end ;
   load_tutorial !current_tutorial_name !current_step_id () >>= fun () ->
-  begin button
-      ~container: buttons_div ~theme: "dark"
-      ~group: toplevel_buttons_group ~icon: "cleanup" [%i"Clear"] @@ fun () ->
-    toplevel_launch >>= fun top ->
-    Learnocaml_toplevel.clear top ;
-    Lwt.return ()
-  end ;
-  begin button
-      ~container: buttons_div ~theme: "dark"
-      ~icon:"reload" [%i"Reset"] @@ fun () ->
-    toplevel_launch >>= fun top ->
-    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
-  end ;
-  begin button
-      ~container: buttons_div ~theme: "dark"
-      ~group: toplevel_buttons_group ~icon: "run" [%i"Eval phrase"] @@ fun () ->
-    toplevel_launch >>= fun top ->
-    Learnocaml_toplevel.execute top ;
-    Lwt.return ()
-  end ;
-  toplevel_launch >>= fun _ ->
+  toplevel_launch >>= fun top ->
+  let toplevel_button =
+    button ~container: buttons_div ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
+  init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button ;
   Lwt.return tutorial_div
 
 let toplevel_tab select _ () =
