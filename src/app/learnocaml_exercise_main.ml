@@ -361,7 +361,7 @@ let () =
   let toplevel_launch =
     toplevel_launch ~after_init (find_component "learnocaml-exo-toplevel-pane")
       Learnocaml_local_storage.exercise_toplevel_history
-      select_tab toplevel_buttons_group id
+      (fun () -> select_tab "toplevel") toplevel_buttons_group id
   in
   init_tabs () ;
   set_nickname_div ();

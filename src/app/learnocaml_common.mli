@@ -165,29 +165,20 @@ val retrieve: ?ignore:'a -> 'a Learnocaml_api.request -> 'a Lwt.t
 
 val get_worker_code: string -> (unit -> string Lwt.t)
 
-val create_toplevel:
-  ?display_welcome: bool ->
-  ?on_disable_input:(Learnocaml_toplevel.t -> unit) ->
-  ?on_enable_input:(Learnocaml_toplevel.t -> unit) ->
-  ?history:Learnocaml_toplevel_history.history ->
-  ?after_init:(Learnocaml_toplevel.t -> unit Lwt.t) ->
-  timeout_prompt:(Learnocaml_toplevel.t -> unit Lwt.t) ->
-  flood_prompt: (Learnocaml_toplevel.t -> string -> (unit -> int) -> bool Lwt.t) ->
-  container:[`Div] Tyxml_js.Html5.elt ->
-  unit ->
-  Learnocaml_toplevel.t Lwt.t
-
 val set_string_translations_exercises : unit -> unit
 
 val local_save : 'a Ace.editor -> string -> unit
 
 val toplevel_launch :
+  ?display_welcome:bool ->
   ?after_init:(Learnocaml_toplevel.t -> unit Lwt.t) ->
+  ?on_disable:(unit -> unit) ->
+  ?on_enable:(unit -> unit) ->
   [ `Div ] Tyxml_js.Html5.elt ->
   (string ->
    Learnocaml_toplevel_history.snapshot
      Learnocaml_local_storage.storage_key) ->
-  (string -> unit) ->
+  (unit -> unit) ->
   button_group -> string -> Learnocaml_toplevel.t Lwt.t
 
 val init_toplevel_pane :

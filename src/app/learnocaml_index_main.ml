@@ -210,36 +210,12 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
     Manip.removeChildren main_div ;
     (if loading then show_loading [%i"Running OCaml examples"]
      else fun f -> f ()) @@ fun () ->
-    let timeout_prompt =
-      Learnocaml_toplevel.make_timeout_popup
-        ~on_show: (fun () -> Lwt.async select)
-        () in
-    let flood_prompt =
-      Learnocaml_toplevel.make_flood_popup
-        ~on_show: (fun () -> Lwt.async select)
-        () in
-    let history =
-      let storage_key =
-        Learnocaml_local_storage.toplevel_history ("lesson-" ^ id) in
-      let on_update self =
-        Learnocaml_local_storage.store storage_key
-          (Learnocaml_toplevel_history.snapshot self) in
-      let snapshot =
-        Learnocaml_local_storage.retrieve storage_key in
-      Learnocaml_toplevel_history.create
-        ~gettimeofday
-        ~on_update
-        ~max_size: 99
-        ~snapshot () in
     let toplevel_buttons_group = button_group () in
     disable_button_group toplevel_buttons_group (* enabled after init *) ;
-    create_toplevel
-      ~display_welcome: false
-      ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
-      ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
-      ~history ~timeout_prompt ~flood_prompt
-      ~container: main_div
-      () >>= fun top ->
+    toplevel_launch ~display_welcome:false main_div
+      Learnocaml_local_storage.toplevel_history
+      (fun () -> Lwt.async select) toplevel_buttons_group ("lesson-" ^ id)
+    >>= fun top ->
     Lwt_list.iter_s
       (fun { Lesson.step_title ; step_phrases } ->
          Learnocaml_toplevel.print_html top ("<h3>" ^ step_title ^ "</h3>") ;
@@ -337,40 +313,15 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let tutorial_div =
     Tyxml_js.Html5.(div ~a: [ a_id El.Dyn.tryocaml_id ])
       [ navigation_div ; step_div ; toplevel_div ; buttons_div ] in
-  let timeout_prompt =
-    Learnocaml_toplevel.make_timeout_popup
-      ~on_show: (fun () -> Lwt.async select)
-      () in
-  let flood_prompt =
-    Learnocaml_toplevel.make_flood_popup
-      ~on_show: (fun () -> Lwt.async select)
-      () in
-  let history =
-    let storage_key =
-      Learnocaml_local_storage.toplevel_history "tryocaml" in
-    let on_update self =
-      Learnocaml_local_storage.store storage_key
-        (Learnocaml_toplevel_history.snapshot self) in
-    let snapshot =
-      Learnocaml_local_storage.retrieve storage_key in
-    Learnocaml_toplevel_history.create
-      ~gettimeofday
-      ~on_update
-      ~max_size: 99
-      ~snapshot () in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_launch =
-    create_toplevel
-      ~on_disable_input: (fun _ ->
-          Manip.addClass step_div "disabled" ;
-          disable_button_group toplevel_buttons_group)
-      ~on_enable_input: (fun _ ->
-          Manip.removeClass step_div "disabled" ;
-          enable_button_group toplevel_buttons_group)
-      ~history ~timeout_prompt ~flood_prompt
-      ~container: toplevel_div
-      () in
+    let on_disable () = Manip.addClass step_div "disabled" in
+    let on_enable () = Manip.removeClass step_div "disabled" in
+    toplevel_launch ~on_disable ~on_enable toplevel_div
+      Learnocaml_local_storage.toplevel_history
+      (fun () -> Lwt.async select) toplevel_buttons_group "tryocaml"
+  in
   show_loading [%i"Loading tutorials"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
   Manip.appendChild El.content tutorial_div ;
@@ -545,7 +496,6 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   end ;
   toplevel_launch >>= fun _ ->
   Lwt.return tutorial_div
-
 
 let toplevel_tab select _ () =
   let container =
