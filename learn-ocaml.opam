@@ -27,7 +27,7 @@ depends: [
   "ipaddr" {= "2.8.0" }
   "ezjsonm"
   "js_of_ocaml" {>= "3.3.0"}
-  "js_of_ocaml-compiler"
+  "js_of_ocaml-compiler" {= "3.3.0"}
   "js_of_ocaml-lwt"
   "js_of_ocaml-ppx"
   "js_of_ocaml-toplevel"
