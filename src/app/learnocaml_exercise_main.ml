@@ -61,11 +61,11 @@ let check_if_need_refresh () =
   retrieve @@ Learnocaml_api.Version ()
   >|= fun (_, server_id) ->
   if local_server_id <> server_id then
-    let title = [%i "WARNING: Grader has been updated"]
+    let title = [%i "WARNING: You have an older grader version than the server"]
     and ok_label = [%i "Refresh the page"]
     and refresh = fun () -> Dom_html.window##.location##reload
     and cancel_label = [%i "I will do it myself!"]
-    and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn OCaml (none of your work will be lost)."] in
+    and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
     let contents = [ H.p [H.pcdata (String.trim message) ] ] in
   confirm ~title ~ok_label ~cancel_label contents refresh
 
