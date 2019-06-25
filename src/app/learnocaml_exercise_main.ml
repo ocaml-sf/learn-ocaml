@@ -331,10 +331,6 @@ let () =
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
-  let nickname_div = find_component "learnocaml-nickname" in
-  (match Learnocaml_local_storage.(retrieve nickname) with
-   | nickname -> Manip.setInnerText nickname_div nickname
-   | exception Not_found -> ());
   let toplevel_button =
     button ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
   let id = match Url.Current.path with
@@ -368,6 +364,7 @@ let () =
       select_tab toplevel_buttons_group id
   in
   init_tabs () ;
+  set_nickname_div ();
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
   (match deadline with
@@ -381,10 +378,10 @@ let () =
     match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.report = Some report ; solution ; _ } ->
         let _ : int = display_report exo report in
-        Some solution
+        solution
     | { Answer.report = None ; solution ; _ } ->
-        Some solution
-    | exception Not_found -> None in
+        solution
+    | exception Not_found -> Learnocaml_exercise.(access File.template exo) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -442,14 +439,7 @@ let () =
        d##write (Js.string (exercise_text ex_meta exo));
        d##close) ;
   (* ---- editor pane --------------------------------------------------- *)
-  let editor_pane = find_component "learnocaml-exo-editor-pane" in
-  let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
-  let ace = Ocaml_mode.get_editor editor in
-  Ace.set_contents ace ~reset_undo:true
-    (match solution with
-     | Some solution -> solution
-     | None -> Learnocaml_exercise.(access File.template exo)) ;
-  Ace.set_font_size ace 18;
+  let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   EB.cleanup (Learnocaml_exercise.(access File.template exo));
   EB.sync token id;

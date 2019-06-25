@@ -868,6 +868,14 @@ module Editor_button (E : Editor_info) = struct
       sync_exercise token id ~editor:(Ace.get_contents E.ace) >|= fun _save -> ()
 end
 
+let setup_editor solution =
+  let editor_pane = find_component "learnocaml-exo-editor-pane" in
+  let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
+  let ace = Ocaml_mode.get_editor editor in
+  Ace.set_contents ace ~reset_undo:true solution;
+  Ace.set_font_size ace 18;
+  editor, ace
+
 let typecheck top ace editor set_class =
   Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
   let error, warnings =
@@ -889,3 +897,9 @@ let typecheck top ace editor set_class =
       warnings in
   Ocaml_mode.report_error ~set_class editor error warnings >|= fun () ->
   Ace.focus ace
+
+let set_nickname_div () =
+  let nickname_div = find_component "learnocaml-nickname" in
+  match Learnocaml_local_storage.(retrieve nickname) with
+  | nickname -> Manip.setInnerText nickname_div nickname
+  | exception Not_found -> ()
