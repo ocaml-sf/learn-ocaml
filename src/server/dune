@@ -9,6 +9,7 @@
             lwt_utils
             cohttp.lwt
             magic-mime
+	    sha
             checkseum.c
             decompress
             learnocaml_report

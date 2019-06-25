@@ -398,10 +398,13 @@ let () =
       Learnocaml_local_storage.(retrieve sync_token) |>
       Lwt.return
     with Not_found ->
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
       ask_string ~title:"Secret"
         [H.pcdata [%i"Enter the secret"]]
       >>= fun secret ->
-      retrieve (Learnocaml_api.Create_token (Sha.sha512 secret, None, None))
+      retrieve
+        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       token

@@ -75,8 +75,8 @@ type 'a response =
                   content_type: string;
                   caching: caching }
   | Cached of cached_response
-  | Status of { body: string;
-                code: Cohttp.Code.status_code }
+
+type error = (Cohttp.Code.status_code * string)
 
 let caching: type resp. resp Api.request -> caching = function
   | Api.Version () -> Shortcache (Some ["version"])
@@ -92,28 +92,42 @@ let caching: type resp. resp Api.request -> caching = function
 
   | _ -> Nocache
 
+let lwt_ok r = Lwt.return (Ok r)
+let lwt_fail e = Lwt.return (Error e)
+
+let ( >?= ) x f =
+  x >>= function
+  | Ok x -> f x
+  | Error x -> lwt_fail x
+
+let lwt_catch_fail f e =
+  Lwt.catch f (fun exn -> lwt_fail @@ e exn)
+
+let lwt_option_fail x e f =
+  match x with
+  | Some x -> f x
+  | None -> lwt_fail e
 
 let respond_static caching path =
-  Lwt.catch
+  lwt_catch_fail
     (fun () ->
-       read_static_file path >|= fun contents ->
+       read_static_file path >>= fun contents ->
        let content_type =
          Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)
        in
-       Response { contents; content_type; caching })
-    (fun e ->
-       Lwt.return (Status { code = `Not_found; body = Printexc.to_string e }))
+       lwt_ok @@ Response { contents; content_type; caching })
+    (fun e -> (`Not_found, Printexc.to_string e))
 
 let respond_json caching contents =
-  Lwt.return @@
-  Response { contents;
-             content_type = "application/json";
-             caching }
+  lwt_ok @@
+    Response { contents;
+               content_type = "application/json";
+               caching }
 
-let with_verified_teacher_token token cont =
+let verify_teacher_token token =
   Token.check_teacher token >>= function
-  | true -> cont ()
-  | false -> Lwt.return (Status {code = `Forbidden; body = "Access restricted"})
+  | true -> lwt_ok ()
+  | false -> lwt_fail (`Forbidden,"Access restricted")
 
 let string_of_date ts =
   let open Unix in
@@ -169,57 +183,99 @@ end
 
 module Request_handler = struct
 
-  type 'a ret = 'a response Lwt.t
+  type 'a ret = ('a response, error) result Lwt.t
 
   let map_ret f r =
-    r >|= function
-    | Response ({contents; _} as r) -> Response {r with contents = f contents}
-    | (Cached _ | Status _) as r -> r
+    r >?= function
+    | Response ({contents; _} as r) -> lwt_ok @@ Response {r with contents = f contents}
+    | (Cached _) as r -> lwt_ok r
+
+  let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  let alphanum_len = String.length alphanum
+
+  let nonce_req : (string, string) Hashtbl.t = Hashtbl.create 533
 
   let token_save_mutex = Lwt_utils.gen_mutex_table ()
 
-  let callback_raw: type resp. string option -> caching -> resp Api.request -> resp ret
-    = fun secret cache -> function
+  let rec string_of_endp =
+    function
+    | `TCP (i,_) -> Some (Ipaddr.to_string i)
+    | `Unix_domain_socket s -> Some s
+    | `Vchan_direct (i,_) -> Some (string_of_int i)
+    | `Vchan_domain_socket (u,v) -> Some (u ^ v)
+    | `TLS (s,e) ->
+       begin
+         match string_of_endp e with
+         | Some s' -> Some (s ^ s')
+         | None    -> None
+       end
+    | `Unknown _ -> None
+
+  let valid_string_of_endp e =
+    lwt_option_fail
+      (string_of_endp e)
+      (`Forbidden, "No address information avaible")
+      lwt_ok
+
+  let callback_raw: type resp. Conduit.endp -> string option -> caching -> resp Api.request -> (resp response, error) result Lwt.t
+    = fun conn secret cache -> function
       | Api.Version () ->
-          respond_json cache Api.version
+         respond_json cache Api.version
       | Api.Static path ->
-          respond_static cache path
+         respond_static cache path
+      | Api.Nonce () ->
+         valid_string_of_endp conn
+         >?= fun conn ->
+         let nonce =
+           match Hashtbl.find_opt nonce_req conn with
+           | Some old -> old
+           | None ->
+              let nonce = String.init 20 (fun _ -> alphanum.[Random.int alphanum_len]) in
+              Hashtbl.add nonce_req conn nonce;
+              nonce
+         in respond_json cache nonce
       | Api.Create_token (secret_candidate, None, nick) ->
+         valid_string_of_endp conn
+         >?= fun conn ->
+         lwt_option_fail
+           (Hashtbl.find_opt nonce_req conn)
+           (`Forbidden, "No registered token for your address")
+         @@ fun nonce ->
+         Hashtbl.remove nonce_req conn;
          let know_secret =
            match secret with
            | None -> true
-           | Some x -> secret_candidate = x in
+           | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
          if not know_secret
-         then Lwt.return (Status {code = `Forbidden;
-                                  body = "Bad secret"})
+         then lwt_fail (`Forbidden, "Bad secret")
          else
-           Token.create_student () >>= fun tok ->
-           (match nick with None -> Lwt.return_unit | Some nickname ->
-             Save.set tok Save.{empty with nickname}) >>= fun () ->
-             respond_json cache tok
+           Token.create_student ()
+           >>= fun tok ->
+           (match nick with | None -> Lwt.return_unit
+                            | Some nickname ->
+                               Save.set tok Save.{empty with nickname})
+           >>= fun () -> respond_json cache tok
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
-          Lwt.catch
+         lwt_catch_fail
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
             (function
-              | Failure body -> Lwt.return (Status {code = `Bad_request; body})
-              | exn ->
-                  Lwt.return
-                    (Status {code = `Internal_server_error;
-                             body = Printexc.to_string exn}))
+             | Failure body -> (`Bad_request, body)
+             | exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Create_teacher_token token ->
-          with_verified_teacher_token token @@ fun () ->
-          Token.create_teacher () >>= respond_json cache
+         verify_teacher_token token
+         >?= fun () ->
+         Token.create_teacher ()
+         >>= respond_json cache
 
       | Api.Fetch_save token ->
-          Lwt.catch
-            (fun () -> Save.get token >>= function
-               | Some save -> respond_json cache save
-               | None -> Lwt.return (Status {code = `Not_found;
-                                             body = "token not found"}))
-          @@ fun exn ->
-          Lwt.return
-            (Status {code = `Internal_server_error;
-                     body = Printexc.to_string exn})
+         lwt_catch_fail
+           (fun () ->
+             Save.get token >>= fun tokopt ->
+             lwt_option_fail
+               tokopt
+               (`Not_found, "token not found")
+               (respond_json cache))
+         (fun exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -240,12 +296,10 @@ module Request_handler = struct
                   SMap.empty valid_exercise_states }
           in
           token_save_mutex.Lwt_utils.with_lock (token :> Token.t) (fun () ->
-              Save.get token >>= function
-              | None ->
-                  Lwt.return
-                    (Status {code = `Not_found;
-                             body = Token.to_string token})
-              | Some prev_save ->
+              Save.get token >>= fun x ->
+              lwt_option_fail x
+                (`Not_found, Token.to_string token)
+              @@ fun prev_save ->
                   let save = Save.sync prev_save save in
                   Save.set token save >>= fun () -> respond_json cache save)
       | Api.Git (token, path) ->
@@ -254,21 +308,21 @@ module Request_handler = struct
             !sync_dir / Token.to_path token / ".git"
           in
           let path = sanitise_path prefix path in
-          Lwt.catch (fun () ->
-              Lwt_io.(with_file ~mode:Input path read) >|= fun contents ->
-              Response { contents;
-                         content_type = "application/octet-stream";
-                         caching = Nocache })
-            (fun e ->
-               Lwt.return (Status { code = `Not_found;
-                                    body = Printexc.to_string e }))
+          lwt_catch_fail
+            (fun () ->
+              Lwt_io.(with_file ~mode:Input path read) >>= fun contents ->
+              lwt_ok @@
+                Response { contents;
+                           content_type = "application/octet-stream";
+                           caching = Nocache })
+            (fun e -> (`Not_found, Printexc.to_string e))
 
       | Api.Students_list token ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           Student.Index.get ()
           >>= respond_json cache
       | Api.Set_students_list (token, students) ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           Lwt_list.map_s
             (fun (ancestor, ours) ->
                let token = ancestor.Student.token in
@@ -282,7 +336,7 @@ module Request_handler = struct
           Student.Index.set
           >>= respond_json cache
       | Api.Students_csv (token, exercises, students) ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           (match students with
            | [] -> Token.Index.get () >|= List.filter Token.is_student
            | l -> Lwt.return l)
@@ -343,9 +397,11 @@ module Request_handler = struct
                   all_exercises
                 >|= line)
             tok_saves
-          >|= fun () -> Response {contents = Buffer.contents buf;
-                                  content_type = "text/csv";
-                                  caching = Nocache}
+          >>= fun () ->
+          lwt_ok @@
+            Response {contents = Buffer.contents buf;
+                      content_type = "text/csv";
+                      caching = Nocache}
 
       | Api.Exercise_index token ->
           Exercise.Index.get () >>= fun index ->
@@ -372,8 +428,7 @@ module Request_handler = struct
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
-              Lwt.return (Status {code = `Forbidden;
-                                  body = "Exercise closed"}))
+              lwt_fail (`Forbidden, "Exercise closed"))
 
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json cache
@@ -386,13 +441,13 @@ module Request_handler = struct
           Tutorial.get id >>= respond_json cache
 
       | Api.Exercise_status_index token ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           Exercise.Status.all () >>= respond_json cache
       | Api.Exercise_status (token, id) ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           Exercise.Status.get id >>= respond_json cache
       | Api.Set_exercise_status (token, status) ->
-          with_verified_teacher_token token @@ fun () ->
+          verify_teacher_token token >?= fun () ->
           Lwt_list.iter_s
             Exercise.Status.(fun (ancestor, ours) ->
                 get ancestor.id >>= fun theirs ->
@@ -401,23 +456,24 @@ module Request_handler = struct
           >>= respond_json cache
 
       | Api.Invalid_request body ->
-          Lwt.return (Status {code = `Bad_request; body})
+          lwt_fail (`Bad_request, body)
 
-  let callback: type resp. string option -> resp Api.request -> resp ret = fun secret req ->
+  let callback: type resp. Conduit.endp -> string option -> resp Api.request -> resp ret  =
+    fun conn secret req ->
     let cache = caching req in
     let respond () =
-      Lwt.catch (fun () -> callback_raw secret cache req)
+      Lwt.catch
+        (fun () -> callback_raw conn secret cache req)
         (function
           | Not_found ->
-              Lwt.return (Status {code = `Not_found;
-                                  body = "Component not found"})
+              lwt_fail (`Not_found, "Component not found")
           | e -> raise e)
     in
     match cache with
     | Nocache | Shortcache None -> respond ()
     | Longcache key | Shortcache (Some key) ->
         match Memory_cache.get key with
-        | Some c -> Lwt.return (Cached c)
+        | Some c -> lwt_ok (Cached c)
         | None -> respond ()
 
 end
@@ -484,6 +540,7 @@ let compress ?(level = 4) data =
   | Error _ -> Lwt.fail_with "Could not compress"
 
 let launch () =
+  Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
   let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
@@ -506,8 +563,6 @@ let launch () =
         (Cohttp.Header.get_acceptable_encodings req.Request.headers)
     in
     let respond = function
-      | Status {code; body} ->
-          Server.respond_error ~status:code ~body ()
       | Response {contents=body; content_type; caching; _}
       | Cached {body; content_type; caching; _} as resp ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
@@ -565,19 +620,22 @@ let launch () =
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> Lwt.return (Ok {Api.meth = `GET; path; args})
+     | `GET -> lwt_ok {Api.meth = `GET; path; args}
      | `POST ->
-         (string_of_stream (Cohttp_lwt.Body.to_stream body) >|= function
-           | Some s -> Ok {Api.meth = `POST s; path; args}
-           | None -> Error (`Bad_request, "Missing POST body"))
-     | _ -> Lwt.return (Error (`Bad_request, "Unsupported method")))
-    >>= (function
-        | Ok req ->
-            log conn req;
-            Api_server.handler secret req
-        | Error (code, body) -> Lwt.return (Status {code; body}))
-    >>=
-    respond
+        begin
+          string_of_stream (Cohttp_lwt.Body.to_stream body)
+          >>= function
+          | Some s -> lwt_ok {Api.meth = `POST s; path; args}
+          | None -> lwt_fail (`Bad_request, "Missing POST body")
+        end
+     | _ -> lwt_fail (`Bad_request, "Unsupported method"))
+    >?= (fun req ->
+      log conn req;
+      Api_server.handler (Conduit_lwt_unix.endp_of_flow (fst conn)) secret req )
+    >>= function
+    | Error (code,body) ->
+       Server.respond_error ~status:code ~body ()
+    | Ok response -> respond response
   in
   let mode =
     match !cert_key_files with
@@ -585,7 +643,6 @@ let launch () =
     | Some (crt, key) ->
         `TLS (`Crt_file_path crt, `Key_file_path key, `No_password, `Port !port)
   in
-  Random.self_init () ;
   init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
       Server.create
