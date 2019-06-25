@@ -136,9 +136,7 @@ let render_trees xs =
       :: render_tree t)
     :: acc
   in
-  List.rev @@
-    snd @@
-      List.fold_left aux (1,[]) xs
+  List.rev @@ snd @@ List.fold_left aux (1,[]) xs
 
 let render_classes xs =
   let aux (grade,values) acc =
