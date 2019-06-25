@@ -15,6 +15,8 @@ type _ request =
       string list -> string request
   | Version:
       unit -> (string * int) request
+  | Nonce:
+      unit -> string request
   | Create_token:
       string * student token option * string option -> student token request
   | Create_teacher_token:
@@ -86,6 +88,7 @@ module Conversions (Json: JSON_CODEC) = struct
       match req with
       | Static _ -> str
       | Version _ -> json J.(obj2 (req "version" string) (req "server_id" int))
+      | Nonce _ -> json J.(obj1 (req "nonce" string))
       | Create_token _ ->
           json J.(obj1 (req "token" string)) +>
           Token.(to_string, parse)
@@ -149,6 +152,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Version () ->
         get ["version"]
 
+    | Nonce () ->
+        get ["nonce"]
     | Create_token (secret_candiate, token, nick) ->
         get ?token (["sync"; "new"; secret_candiate] @
                     (match nick with None -> [] | Some n -> [n]))
@@ -217,7 +222,8 @@ module type REQUEST_HANDLER = sig
   type 'resp ret
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+  val callback: Conduit.endp ->
+                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -227,9 +233,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
   let rec last =
     function [f] -> Some f | [] -> None | _::r -> last r
 
-  let handler config request =
+  let handler conn config request =
       let k req =
-        Rh.callback config req |> Rh.map_ret (C.response_encode req)
+        Rh.callback conn config req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with
@@ -244,6 +250,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["version"], _ ->
           Version () |> k
 
+      | `GET, ["nonce"], _ ->
+          Nonce () |> k
       | `GET, ["sync"; "new"; secret_candidate], token ->
           Create_token (secret_candidate, token, None) |> k
       | `GET, ["sync"; "new"; secret_candidate; nick], token ->

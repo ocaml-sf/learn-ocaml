@@ -28,6 +28,8 @@ type _ request =
       string list -> string request
   | Version:
       unit -> (string * int) request
+  | Nonce:
+      unit -> string request
   | Create_token:
       string * student token option * string option -> student token request
   | Create_teacher_token:
@@ -94,14 +96,16 @@ module type REQUEST_HANDLER = sig
 
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+  val callback: Conduit.endp ->
+                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
 module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
 
   (** Helper to define a server: handles recognition of the incoming request, and
       encoding of the response. *)
-  val handler: Learnocaml_data.Server.config -> http_request -> string Rh.ret
+  val handler: Conduit.endp ->
+               Learnocaml_data.Server.config -> http_request -> string Rh.ret
 
 end
 
