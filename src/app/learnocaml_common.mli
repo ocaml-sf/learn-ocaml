@@ -214,3 +214,7 @@ module Editor_button (E : Editor_info) : sig
   val eval : Learnocaml_toplevel.t -> (string -> 'a) -> unit
   val sync : Token.t Lwt.t -> Learnocaml_data.SMap.key -> unit
 end
+
+val typecheck :
+  Learnocaml_toplevel.t ->
+  'a Ace.editor -> Ocaml_mode.editor -> bool -> unit Lwt.t

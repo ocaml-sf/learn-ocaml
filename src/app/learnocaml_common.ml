@@ -867,3 +867,25 @@ module Editor_button (E : Editor_info) = struct
       token >>= fun token ->
       sync_exercise token id ~editor:(Ace.get_contents E.ace) >|= fun _save -> ()
 end
+
+let typecheck top ace editor set_class =
+  Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
+  let error, warnings =
+    match res with
+    | Toploop_results.Ok ((), warnings) -> None, warnings
+    | Toploop_results.Error (err, warnings) -> Some err, warnings in
+  let transl_loc { Toploop_results.loc_start ; loc_end } =
+    { Ocaml_mode.loc_start ; loc_end } in
+  let error = match error with
+    | None -> None
+    | Some { Toploop_results.locs ; msg ; if_highlight } ->
+       Some { Ocaml_mode.locs = List.map transl_loc locs ;
+              msg = (if if_highlight <> "" then if_highlight else msg) } in
+  let warnings =
+    List.map
+      (fun { Toploop_results.locs ; msg ; if_highlight } ->
+        { Ocaml_mode.loc = transl_loc (List.hd locs) ;
+          msg = (if if_highlight <> "" then if_highlight else msg) })
+      warnings in
+  Ocaml_mode.report_error ~set_class editor error warnings >|= fun () ->
+  Ace.focus ace

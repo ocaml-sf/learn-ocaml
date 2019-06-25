@@ -84,9 +84,15 @@ let main () =
       (Js.string "/index.html#activity=playground") ;
     Lwt.return ()
   end ;
+  let typecheck = typecheck top ace editor in
+  begin toolbar_button
+      ~icon: "typecheck" [%i"Compile"] @@ fun () ->
+    typecheck true
+  end;
   Window.onunload (fun _ev -> local_save ace id; true);
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
+  typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()
 
