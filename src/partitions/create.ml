@@ -37,6 +37,22 @@ let to_typed_tree (lst : Parsetree.structure) : Typedtree.structure Err.t =
     in Err.ret s
   with Typetexp.Error _ -> Err.fail
 
+let get_env str : Env.t =
+  let open Err in
+  let env =
+      impl_of_string str
+      >>= fun lst ->
+      try
+        Compmisc.init_path true;
+        let init_env = Compmisc.initial_env () in
+        let _,_,e = Typemod.type_structure init_env lst Location.none
+        in Err.ret e
+      with Typetexp.Error _ -> Err.fail
+  in
+  match Err.run env with
+  | None -> failwith "bad prelude"
+  | Some e -> e
+
 (* Search if a pattern has the right name *)
 let has_name f x =
   let open Typedtree in
@@ -137,16 +153,16 @@ let partition_WasGraded =
   in
   List.fold_left aux ([], [])
 
-(* Test if two types are "equal". TODO -> prelude ? *)
-let eq_type t1 t2 =
-  let init_env = Compmisc.initial_env () in
-  try Ctype.unify init_env t1 t2; true with
+(* Test if two types are "equal" *)
+let eq_type env t1 t2 =
+  try Ctype.unify env t1 t2; true with
   | Ctype.Unify _ -> false
 
 (* Partition the codes between those who have the function with
    the right name and the right type, and the others *)
-let partition_FunExist sol_type fun_name =
+let partition_FunExist prelude_env sol_type fun_name =
   let open Err in
+  let eq_type = eq_type prelude_env in
   let pred lst =
     let tree =
       to_typed_tree lst
@@ -232,11 +248,12 @@ let partition exo_name fun_name prof =
   Learnocaml_store.Exercise.get exo_name
   >>= fun exo ->
   let prelude = Learnocaml_exercise.(access File.prelude exo) in
+  let prelude_env = get_env prelude in
   get_all_saves exo_name prelude fun_name
   >|= fun saves ->
   let sol_type = find_sol_type prelude exo fun_name in
   let not_graded,lst = partition_WasGraded saves in
   let not_graded = List.map (fun (x,_,_) -> x) not_graded in
-  let bad_type,funexist = partition_FunExist sol_type fun_name lst in
+  let bad_type,funexist = partition_FunExist prelude_env sol_type fun_name lst in
   let map = list_of_IntMap @@ refine_with_hm prof @@ partition_by_grade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}
