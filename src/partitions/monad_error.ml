@@ -8,6 +8,7 @@ module Err : sig
   val fail : 'a t
   val ret : 'a -> 'a t
 
+  val map : ('a -> 'b) -> 'a t -> 'b t
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
   val run : 'a t -> 'a option
@@ -17,6 +18,7 @@ end = struct
   let fail = None
   let ret x = Some x
 
+  let map f = maybe None (fun x -> Some (f x))
   let ( >>= ) x f = maybe None f x
 
   let run x = x

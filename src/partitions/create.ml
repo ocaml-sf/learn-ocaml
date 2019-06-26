@@ -29,25 +29,22 @@ let take_until_last p =
      | Some xs -> Some (x::xs)
   in aux
 
-let to_typed_tree (lst : Parsetree.structure) : Typedtree.structure Err.t =
+let type_with_init lst =
   try
     Compmisc.init_path true;
     let init_env = Compmisc.initial_env () in
-    let s,_,_ = Typemod.type_structure init_env lst Location.none
-    in Err.ret s
+    Err.ret (Typemod.type_structure init_env lst Location.none)
   with Typetexp.Error _ | Typecore.Error _ -> Err.fail
+
+let to_typed_tree (lst : Parsetree.structure) : Typedtree.structure Err.t =
+  Err.map (fun (s,_,_) -> s) (type_with_init lst)
 
 let get_env str : Env.t =
   let open Err in
   let env =
       impl_of_string str
       >>= fun lst ->
-      try
-        Compmisc.init_path true;
-        let init_env = Compmisc.initial_env () in
-        let _,_,e = Typemod.type_structure init_env lst Location.none
-        in Err.ret e
-      with Typetexp.Error _ -> Err.fail
+      Err.map (fun (_,_,e) -> e) (type_with_init lst)
   in
   match Err.run env with
   | None -> failwith "bad prelude"
