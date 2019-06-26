@@ -35,7 +35,7 @@ let to_typed_tree (lst : Parsetree.structure) : Typedtree.structure Err.t =
     let init_env = Compmisc.initial_env () in
     let s,_,_ = Typemod.type_structure init_env lst Location.none
     in Err.ret s
-  with Typetexp.Error _ -> Err.fail
+  with Typetexp.Error _ | Typecore.Error _ -> Err.fail
 
 let get_env str : Env.t =
   let open Err in
@@ -92,7 +92,6 @@ let find_func f xs : Parsetree.structure Err.t =
   Err.to_err (take_until_last pred xs)
 
 (* Return a list of all saves with their definition of the function *)
-(* TODO on fait quoi de ce qui ne type pas ?? *)
 let get_all_saves exo_name prelude fun_name =
   Learnocaml_store.Student.Index.get () >>=
     Lwt_list.fold_left_s (* filter_map_rev *)
@@ -135,7 +134,7 @@ let rec get_last_of_seq = function
   | Lambda.Lsequence (_,u) -> get_last_of_seq u
   | x -> x
 
-(* Convert a Typedtree.structure to a lambda expression*)
+(* Convert a Typedtree.structure to a lambda expression *)
 let to_lambda (lst : Typedtree.structure) =
   get_last_of_seq @@
     Simplif.simplify_lambda "" @@
