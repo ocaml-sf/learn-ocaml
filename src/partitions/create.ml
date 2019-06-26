@@ -248,6 +248,8 @@ let partition exo_name fun_name prof =
   Learnocaml_store.Exercise.get exo_name
   >>= fun exo ->
   let prelude = Learnocaml_exercise.(access File.prelude exo) in
+  let prepare = Learnocaml_exercise.(decipher File.prepare exo) in
+  let prelude = prelude ^ "\n" ^ prepare in
   let prelude_env = get_env prelude in
   get_all_saves exo_name prelude fun_name
   >|= fun saves ->
