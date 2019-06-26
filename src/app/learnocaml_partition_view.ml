@@ -268,20 +268,23 @@ let () =
     try (int_of_string @@ List.assoc "prof" Url.Current.arguments)
     with Not_found | Failure _ -> failwith "prof is missing or malformed" in
 
-  Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
-    (fun _ ->
-      match React.S.value selected_repr_signal with
-      | None -> true
-      | Some (tok,_) ->
-         select_tab El.Tabs.answer;
-         Lwt.async (fun () ->
+  let update_repr_code = function
+    | None -> true
+    | Some (tok,_) ->
+       select_tab El.Tabs.answer;
+       Lwt.async (fun () ->
            retrieve (Learnocaml_api.Fetch_save tok)
            >|= fun save ->
            match SMap.find_opt exercise_id save.Save.all_exercise_states with
            | None -> ()
            | Some x ->
               update_answer_tab x.Answer.solution);
-         true );
+       true in
+
+  let _repr_selection_updater = selected_repr_signal |> React.S.map update_repr_code in
+
+  Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
+    (fun _ -> update_repr_code (React.S.value selected_repr_signal));
 
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
   >>= fun part ->
