@@ -43,35 +43,15 @@ module El = struct
     let details = tid "details"
     let list = tid "list"
     let answer = tid "answer"
-    let text = tid "text"
 
-    let all = [details; list; answer; text]
+    let all = [details; list; answer]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
 
   let token_id, token = id "learnocaml-token"
 end
-
-let selected_class_signal, set_selected_class = React.S.create None
-let selected_repr_signal, set_selected_repr   = React.S.create None
         
-let update_answer_tab, clear_answer_tab =
-  let ace = lazy (
-    let answer =
-      Ocaml_mode.create_ocaml_editor
-        (Tyxml_js.To_dom.of_div El.Tabs.(answer.tab))
-    in
-    let ace = Ocaml_mode.get_editor answer in
-    Ace.set_font_size ace 16;
-    Ace.set_readonly ace true;
-    ace
-  ) in
-  (fun ans ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
-  (fun () ->
-    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
-
 let tab_select_signal, select_tab =
   let open El.Tabs in
   let current = ref details in
@@ -106,6 +86,25 @@ let mouseover_toggle_signal elt sigvalue setter =
     true
   in
   Manip.Ev.onmouseover elt hdl
+
+let update_answer_tab, clear_answer_tab =
+  let ace = lazy (
+    let answer =
+      Ocaml_mode.create_ocaml_editor
+        (Tyxml_js.To_dom.of_div El.Tabs.(answer.tab))
+    in
+    let ace = Ocaml_mode.get_editor answer in
+    Ace.set_font_size ace 16;
+    Ace.set_readonly ace true;
+    ace
+  ) in
+  (fun ans ->
+     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
+  (fun () ->
+    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+
+let selected_class_signal, set_selected_class = React.S.create None
+let selected_repr_signal, set_selected_repr   = React.S.create None
 
 let string_of_token_list lst = String.concat ", " (List.map Token.to_string lst)
 
@@ -205,30 +204,13 @@ let _class_selection_updater =
      Manip.replaceChildren El.Tabs.(details.tab)
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
 
-let clear_tabs () =
-  Manip.replaceChildren El.Tabs.(text.tab) [];
-  clear_answer_tab ()
-
-let update_text_tab meta exo =
-  let text_iframe = Dom_html.createIframe Dom_html.document in
-  Manip.replaceChildren El.Tabs.(text.tab) [
-    H.h1 [H.pcdata meta.Exercise.Meta.title];
-    Tyxml_js.Of_dom.of_iFrame text_iframe
-  ];
-  Js.Opt.case
-    (text_iframe##.contentDocument)
-    (fun () -> failwith "cannot edit iframe document")
-    (fun d ->
-       d##open_;
-       d##write (Js.string (exercise_text meta exo));
-       d##close)
+let clear_tabs () = clear_answer_tab ()
 
 let set_string_translations () =
   let translations = [
     "txt_loading", [%i"Loading student data"];
     "learnocaml-exo-button-details", [%i"Details"];
     "learnocaml-exo-button-list", [%i"Exercises"];
-    "learnocaml-exo-button-text", [%i"Subject"];
     "learnocaml-exo-button-answer", [%i"Answer"];
   ] in
   List.iter
@@ -281,7 +263,12 @@ let () =
               update_answer_tab x.Answer.solution);
        true in
 
-  let _repr_selection_updater = selected_repr_signal |> React.S.map update_repr_code in
+  let _repr_selection_updater =
+    selected_repr_signal |> React.S.map @@ fun id ->
+      let tab = React.S.value tab_select_signal in
+      if tab = El.Tabs.answer
+      then update_repr_code id
+      else true in
 
   Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
     (fun _ -> update_repr_code (React.S.value selected_repr_signal));
@@ -290,4 +277,5 @@ let () =
   >>= fun part ->
   hide_loading ~id:El.loading_id ();
   Manip.replaceChildren El.Tabs.(list.tab) (exercises_tab part);
+  select_tab El.Tabs.details;
   Lwt.return_unit
