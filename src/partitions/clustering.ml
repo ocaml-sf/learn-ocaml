@@ -16,19 +16,19 @@ let string_of_tree printer =
 
 (* Return the disjoint union of two _sorted_ lists *)
 (* Return also if the intersection was empty *)
-let rec disjoint_union x y =
+let rec symmetric_difference x y =
   match x,y with
   | [],_ -> false,y
   | _,[] -> false,x
   | xx::xs,yy::ys ->
      if xx < yy
-     then let b,ndiff = disjoint_union xs y in
+     then let b,ndiff = symmetric_difference xs y in
           b,xx::ndiff
      else
        if xx > yy
-       then let b,ndiff = disjoint_union x ys in
+       then let b,ndiff = symmetric_difference x ys in
           b,yy::ndiff
-       else let _,ndiff = disjoint_union xs ys in
+       else let _,ndiff = symmetric_difference xs ys in
             true,ndiff
 
 let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
@@ -40,7 +40,7 @@ let dist f =
   let rec aux x y =
     match x,y with
     | Leaf (x,_), Leaf (y,_) ->
-       let b,diff = disjoint_union x y in
+       let b,diff = symmetric_difference x y in
        if b
        then Some (float_of_int  @@ sum_of_fst diff)
        else None
