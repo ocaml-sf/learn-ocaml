@@ -1,8 +1,6 @@
 open Learnocaml_data
 open Learnocaml_data.Partition
 
-open Utils
-
 let string_of_tree printer =
   let rec aux i xs =
     let first = String.make i ' ' in
@@ -73,6 +71,9 @@ let max_option x y =
 
 (* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist xs =
+  let fmapfst = function
+    | None -> None
+    | Some (x,_) -> Some x in
   let min = ref None in
   List.iter
     (fun x ->
@@ -80,7 +81,7 @@ let get_min_dist xs =
           if x != y
           then
             let d = dist max_option x y in
-            match compare_option d (fmapOption fst !min) with
+            match compare_option d (fmapfst !min) with
             | True d -> min := Some (d,(x,y))
             | False -> ();
         )
