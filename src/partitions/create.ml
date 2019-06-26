@@ -86,7 +86,7 @@ let get_all_saves exo_name prelude fun_name =
         let open Err in
         maybe acc (fun x -> x :: acc) @@ run @@
           begin
-          (to_err save)
+          to_err save
           >>= fun x ->
           to_err (SMap.find_opt exo_name Save.(x.all_exercise_states))
           >>= fun x ->
@@ -101,7 +101,7 @@ let rec last = function
   | [x] -> x
   | _::xs -> last xs
 
-(* TODO *)
+(* Find the type of fun_name in the solution of the exercise *)
 let find_sol_type prelude exo fun_name =
   let str = prelude ^ "\n"^Learnocaml_exercise.(decipher File.solution exo) in
   let open Err in
@@ -114,20 +114,21 @@ let find_sol_type prelude exo fun_name =
   | None -> failwith "not_implemted"
   | Some x -> x
 
+(* Get the last element of a list of lambda expression *)
 let rec get_last_of_seq = function
   | Lambda.Lsequence (_,u) -> get_last_of_seq u
   | x -> x
 
+(* Convert a Typedtree.structure to a lambda expression*)
 let to_lambda (lst : Typedtree.structure) =
   get_last_of_seq @@
     Simplif.simplify_lambda "" @@
       Lambda_utils.inline_all @@
         Translmod.transl_toplevel_definition lst
 
-(* Renvoie un couple où:
-   - Le premier membre contient les réponses sans notes
-   - Le second contient les report des réponses notées
-*)
+(* Return a tuple where
+   - The first element contains answer without a grade
+   - The second the others *)
 let partition_WasGraded =
   let aux (nonlst,acc) ((a,x,b) as e) =
     match Answer.(x.report) with
@@ -136,11 +137,14 @@ let partition_WasGraded =
   in
   List.fold_left aux ([], [])
 
+(* Test if two types are "equal". TODO -> prelude ? *)
 let eq_type t1 t2 =
   let init_env = Compmisc.initial_env () in
   try Ctype.unify init_env t1 t2; true with
   | Ctype.Unify _ -> false
 
+(* Partition the codes between those who have the function with
+   the right name and the right type, and the others *)
 let partition_FunExist sol_type fun_name =
   let open Err in
   let pred lst =
@@ -210,10 +214,9 @@ let assoc_3 t lst =
   with
   | Found x -> x
 
-let string_of_bindings x =
-  Pprintast.string_of_structure [x]
-
 let refine_with_hm prof =
+  let string_of_bindings x =
+    Pprintast.string_of_structure [x] in
   IntMap.map @@
     fun x ->
     List.map
