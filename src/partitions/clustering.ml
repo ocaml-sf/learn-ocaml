@@ -1,18 +1,7 @@
 open Learnocaml_data
 open Learnocaml_data.Partition
 
-let string_of_tree printer =
-  let rec aux i xs =
-    let first = String.make i ' ' in
-    match xs with
-    | Node (p,u,v) ->
-       first ^ "Node " ^ string_of_float p  ^ ":\n"
-       ^ aux (i+1) u ^ "\n"
-       ^ aux (i+1) v
-    | Leaf a -> first ^ "Leaf: " ^ printer a
-  in aux 0
-
-(* Return the disjoint union of two _sorted_ lists *)
+(* Return the symmetric difference of two _sorted_ lists *)
 (* Return also if the intersection was empty *)
 let rec symmetric_difference x y =
   match x,y with
