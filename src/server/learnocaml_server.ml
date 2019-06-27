@@ -459,7 +459,7 @@ module Request_handler = struct
          lwt_catch_fail (fun () ->
            verify_teacher_token token
            >?= fun () ->
-           Partitions.Create.partition eid fid prof
+           Partitioner.Create.partition eid fid prof
            >>= respond_json cache
            )
            (fun exn -> (`Not_found, Printexc.to_string exn))

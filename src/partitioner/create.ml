@@ -190,8 +190,8 @@ let partition_ByGrade funname =
     | (Message _)::xs -> get_relative_section xs
     | (Section (t,res))::xs ->
        match t with
-       | Text func::Code  fn::_ ->
-          if func = "Function:" && fn = funname
+       | Text _::Code  fn::_ ->
+          if fn = funname
           then res
           else get_relative_section xs
        | _ -> get_relative_section xs

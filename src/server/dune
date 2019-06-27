@@ -5,7 +5,7 @@
  (modules Learnocaml_server)
  (libraries ocplib-json-typed
             ezjsonm
-	    partitions
+	    partitioner
             lwt.unix
             lwt_utils
             cohttp.lwt
