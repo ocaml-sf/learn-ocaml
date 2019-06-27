@@ -6,8 +6,6 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(* NB: exercises-tab -> where is displayed the partition *)
-
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -106,7 +104,14 @@ let update_answer_tab, clear_answer_tab =
 let selected_class_signal, set_selected_class = React.S.create None
 let selected_repr_signal, set_selected_repr   = React.S.create None
 
-let string_of_token_list lst = String.concat ", " (List.map Token.to_string lst)
+let open_tok tok =
+  let _win = window_open ("/student-view.html?token="^tok) "_blank" in
+  false
+
+let list_of_tok =
+  List.map @@ fun x ->
+    let tok = Token.to_string x in
+    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.pcdata (tok ^ " ")]
 
 let rec render_tree =
   let open Partition in
@@ -151,12 +156,10 @@ let exercises_tab part =
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
-    ^ " codes were not graded: "
-    ^ string_of_token_list part.not_graded in
+    ^ " codes were not graded: " in
   let bad_type =
        string_of_int (List.length part.bad_type)
-    ^ " codes had the wrong type: "
-    ^ string_of_token_list part.bad_type in
+    ^ " codes had the wrong type: " in
   let total_sum =
     let s =
       sum_with
@@ -167,8 +170,8 @@ let exercises_tab part =
         part.patition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p [H.pcdata not_graded]
-  :: H.p [H.pcdata bad_type]
+  H.p (H.pcdata not_graded :: list_of_tok part.not_graded)
+  :: H.p ( H.pcdata bad_type :: list_of_tok part.bad_type)
   :: H.p [H.pcdata total_sum]
   :: render_classes part.patition_by_grade
 
@@ -186,9 +189,10 @@ let _class_selection_updater =
        set_selected_repr (Some (tok,repr));
        true in
   let to_li tok repr p =
+    let strtok = Token.to_string tok in
     H.li
-      ~a:[ onclick p tok repr ]
-      [H.pcdata (Token.to_string tok); p] in
+      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
+      [H.pcdata strtok; p] in
   let mkfirst (tok,repr) =
     let p =  H.p (of_repr repr) in
     previous := Some p;
@@ -203,8 +207,6 @@ let _class_selection_updater =
      set_selected_repr (Some (List.hd xs));
      Manip.replaceChildren El.Tabs.(details.tab)
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
-
-let clear_tabs () = clear_answer_tab ()
 
 let set_string_translations () =
   let translations = [
