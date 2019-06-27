@@ -29,6 +29,7 @@ let take_until_last p =
      | Some xs -> Some (x::xs)
   in aux
 
+(* Type a structure with the initial environment *)
 let type_with_init lst =
   try
     Compmisc.init_path true;
@@ -36,9 +37,11 @@ let type_with_init lst =
     Err.ret (Typemod.type_structure init_env lst Location.none)
   with Typetexp.Error _ | Typecore.Error _ -> Err.fail
 
+(* Convert a Parsetree to a Typedtree *)
 let to_typed_tree (lst : Parsetree.structure) : Typedtree.structure Err.t =
   Err.map (fun (s,_,_) -> s) (type_with_init lst)
 
+(* Get the environment after the typing of an OCaml fragment *)
 let get_env str : Env.t =
   let open Err in
   let env =
@@ -47,7 +50,7 @@ let get_env str : Env.t =
       Err.map (fun (_,_,e) -> e) (type_with_init lst)
   in
   match Err.run env with
-  | None -> failwith "bad prelude"
+  | None -> failwith "Bad prelude"
   | Some e -> e
 
 (* Search if a pattern has the right name *)
@@ -123,7 +126,7 @@ let find_sol_type prelude exo fun_name =
     >>= to_typed_tree
     >>= get_type_of_f_in_last fun_name in
   match run found_type with
-  | None -> failwith "not_implemted"
+  | None -> failwith "Required function not implemented in solution"
   | Some x -> x
 
 (* Get the last element of a list of lambda expression *)
