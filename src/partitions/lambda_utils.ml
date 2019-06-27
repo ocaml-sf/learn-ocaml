@@ -50,8 +50,8 @@ let rec hash_lambda = function
        ]
   | Lfunction x ->
      hash_string_lst "Lfunction"
-       [ hash_lambda x.body ] (* TODO *)
-  | Llet (_,_,_,l,r) -> (* TODO *)
+       [ hash_lambda x.body ]
+  | Llet (_,_,_,l,r) ->
      hash_string_lst "Llet"
        [ hash_lambda l
        ; hash_lambda r]
@@ -104,11 +104,11 @@ let rec hash_lambda = function
      hash_string_lst "Lassign"
        [ hash_lambda l
        ]
-  | Levent (l,_) -> (* TODO *)
+  | Levent (l,_) ->
      hash_string_lst "Levent"
        [ hash_lambda l
        ]
-  | Lstaticcatch (l,_,r) -> (* TODO *)
+  | Lstaticcatch (l,_,r) ->
      hash_string_lst "Lstaticcatch"
        [ hash_lambda l
        ; hash_lambda r
@@ -143,6 +143,7 @@ let hash_lambda alpha l =
   in
   (poids,h), sort_filter alpha poids ss_arbres
 
+(* Replace every occurence of ident by its body *)
 let replace ident body =
   let rec aux expr =
     let insnd lst = List.map (fun (e,x) -> e, aux x) lst in
@@ -198,6 +199,7 @@ let replace ident body =
      Lsend (a, aux b, aux c, List.map aux d, e)
   in aux
 
+(* Is the definition inlineable ? *)
 let inlineable x f =
   match x with
   | Alias -> true
@@ -208,7 +210,8 @@ let inlineable x f =
        | _ -> false
      end
   | _  -> false
-  
+
+(* Inline all possible "let definition" (that is, "let definition" without a side effet) *)
 let rec inline_all x =
   let insnd lst = List.map (fun (e,l) -> e,inline_all l) lst in
   let inopt = function
