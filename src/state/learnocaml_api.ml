@@ -127,9 +127,10 @@ module Conversions (Json: JSON_CODEC) = struct
       | Exercise_status _ ->
           json Exercise.Status.enc
       | Set_exercise_status _ ->
-         json J.unit
+          json J.unit
 
-      | Partition _ -> json Partition.enc
+      | Partition _ ->
+          json Partition.enc
 
       | Invalid_request _ ->
           str
@@ -324,7 +325,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials.json"], _ ->
           Tutorial_index () |> k
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
-         Tutorial (Filename.chop_suffix f ".json") |> k
+          Tutorial (Filename.chop_suffix f ".json") |> k
 
       | `GET, ["partition"; eid; fid; prof], Some token
         when Token.is_teacher token ->
