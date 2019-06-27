@@ -145,9 +145,9 @@ let to_lambda (lst : Typedtree.structure) =
    - The first element contains answer without a grade
    - The second the others *)
 let partition_WasGraded =
-  let aux (nonlst,acc) ((a,x,b) as e) =
+  let aux (nonlst,acc) (a,x,b) =
     match Answer.(x.report) with
-    | None -> e::nonlst,acc
+    | None -> a::nonlst,acc
     | Some g -> nonlst,(a,g,b)::acc
   in
   List.fold_left aux ([], [])
@@ -178,7 +178,7 @@ let partition_FunExist prelude_env sol_type fun_name =
     | Some x -> (bad, (n,u,x)::good)
   in List.fold_left aux ([],[])
 
-let partition_by_grade funname =
+let partition_ByGrade funname =
   let rec get_relative_section = function
     | [] -> []
     | (Message _)::xs -> get_relative_section xs
@@ -221,13 +221,8 @@ let hm_part prof m =
     ) m;
   Clustering.cluster hashtbl
 
-exception Found of Parsetree.structure_item
 let assoc_3 t lst =
-  try
-    List.iter (fun (t',_,(x,_)) -> if t = t' then raise (Found x) else ()) lst;
-    failwith "assoc_3"
-  with
-  | Found x -> x
+  let (_,_,(x,_)) = List.find (fun (t',_,_) -> t = t') lst in x
 
 let refine_with_hm prof =
   let string_of_bindings x =
@@ -240,8 +235,7 @@ let refine_with_hm prof =
          (fun f a b -> Node (f,a,b)))
     (hm_part prof x)
 
-let list_of_IntMap m =
-  IntMap.fold (fun k a acc -> (k,a)::acc) m []
+let list_of_IntMap m = IntMap.fold (fun k a acc -> (k,a)::acc) m []
 
 let partition exo_name fun_name prof =
   Learnocaml_store.Exercise.get exo_name
@@ -254,7 +248,6 @@ let partition exo_name fun_name prof =
   >|= fun saves ->
   let sol_type = find_sol_type prelude exo fun_name in
   let not_graded,lst = partition_WasGraded saves in
-  let not_graded = List.map (fun (x,_,_) -> x) not_graded in
   let bad_type,funexist = partition_FunExist prelude_env sol_type fun_name lst in
-  let map = list_of_IntMap @@ refine_with_hm prof @@ partition_by_grade fun_name funexist in
+  let map = list_of_IntMap @@ refine_with_hm prof @@ partition_ByGrade fun_name funexist in
   {not_graded; bad_type; patition_by_grade=map}

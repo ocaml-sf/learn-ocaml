@@ -206,7 +206,6 @@ let () =
     | Server_caller.Cannot_fetch message -> fatal message
     | exn -> fatal (Printexc.to_string exn)
   end ;
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
