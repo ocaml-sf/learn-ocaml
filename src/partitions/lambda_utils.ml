@@ -1,7 +1,7 @@
 open Lambda
 open Asttypes
 
-let h1 x = 1,[],x
+let h1 x = 1,[],Digest.string x
 
 let hash_string_lst x xs =
   let p,lst, xs =
@@ -26,15 +26,15 @@ let hash_case g f (i,x) =
 
 let hash_option f =
   function
-  | None -> h1 @@ Digest.string "None"
+  | None -> h1 "None"
   | Some x -> f x
 
-let hash_direction x = h1 @@ Digest.string @@
+let hash_direction x = h1 @@
   match x with
   | Upto -> "Upto"
   | Downto -> "Downto"
 
-let hash_meth_kind x = h1 @@ Digest.string @@
+let hash_meth_kind x = h1 @@
    match x with
    | Self -> "Self"
    | Public -> "Public"
