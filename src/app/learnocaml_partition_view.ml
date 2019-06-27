@@ -73,33 +73,7 @@ let tab_select_signal, select_tab =
     all;
   tab_select_signal, select_tab
 
-let mouseover_toggle_signal elt sigvalue setter =
-  let rec hdl _ =
-    Manip.Ev.onmouseout elt (fun _ ->
-        setter None;
-        Manip.Ev.onmouseover elt hdl;
-        true
-      );
-    setter (Some sigvalue);
-    true
-  in
-  Manip.Ev.onmouseover elt hdl
-
-let update_answer_tab, clear_answer_tab =
-  let ace = lazy (
-    let answer =
-      Ocaml_mode.create_ocaml_editor
-        (Tyxml_js.To_dom.of_div El.Tabs.(answer.tab))
-    in
-    let ace = Ocaml_mode.get_editor answer in
-    Ace.set_font_size ace 16;
-    Ace.set_readonly ace true;
-    ace
-  ) in
-  (fun ans ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
-  (fun () ->
-    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(answer.tab)
 
 let selected_class_signal, set_selected_class = React.S.create None
 let selected_repr_signal, set_selected_repr   = React.S.create None

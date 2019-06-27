@@ -693,3 +693,31 @@ let create_toplevel =
     Learnocaml_toplevel.create ~worker_js_file
       ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
       ~timeout_prompt ~flood_prompt ~container ()
+
+let mouseover_toggle_signal elt sigvalue setter =
+  let rec hdl _ =
+    Manip.Ev.onmouseout elt (fun _ ->
+        setter None;
+        Manip.Ev.onmouseover elt hdl;
+        true
+      );
+    setter (Some sigvalue);
+    true
+  in
+  Manip.Ev.onmouseover elt hdl
+
+let ace_display tab =
+  let ace = lazy (
+    let answer =
+      Ocaml_mode.create_ocaml_editor
+        (Tyxml_js.To_dom.of_div tab)
+    in
+    let ace = Ocaml_mode.get_editor answer in
+    Ace.set_font_size ace 16;
+    Ace.set_readonly ace true;
+    ace
+  ) in
+  (fun ans ->
+     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
+  (fun () ->
+    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")

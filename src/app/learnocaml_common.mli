@@ -176,3 +176,8 @@ val create_toplevel:
   container:[`Div] Tyxml_js.Html5.elt ->
   unit ->
   Learnocaml_toplevel.t Lwt.t
+
+val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> 'c) -> unit
+
+val ace_display :
+  [< Html_types.div ] Tyxml_js.To_dom.elt -> (string -> unit) * (unit -> unit)
