@@ -12,7 +12,13 @@ module IntMap = Map.Make(struct type t = int let compare = compare end)
 (* Get the parsetree of an OCaml expression *)
 let impl_of_string (s : string) : Parsetree.structure Err.t =
   let open Err in
-  try ret (Parse.implementation (Lexing.from_string s))
+  try
+    let without_directives =
+      String.concat ";;" @@
+        List.filter
+          (fun x -> let x = String.trim x in String.length x > 0 && x.[0] != '#') @@
+          Str.split (Str.regexp_string ";;") s in
+    ret (Parse.implementation (Lexing.from_string without_directives))
   with
   | Lexer.Error _ | Syntaxerr.Error _ -> fail
 

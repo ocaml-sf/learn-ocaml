@@ -1,4 +1,4 @@
 (library
  (name partitions)
- (libraries compiler-libs.common lwt learnocaml_store learnocaml_data)
+ (libraries str compiler-libs.common lwt learnocaml_store learnocaml_data)
  )
