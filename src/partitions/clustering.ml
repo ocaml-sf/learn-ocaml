@@ -5,8 +5,7 @@ open Learnocaml_data.Partition
 (* Return also if the intersection was empty *)
 let rec symmetric_difference x y =
   match x,y with
-  | [],_ -> false,y
-  | _,[] -> false,x
+  | [],z|z,[] -> false,z
   | xx::xs,yy::ys ->
      if xx < yy
      then let b,ndiff = symmetric_difference xs y in
@@ -20,43 +19,36 @@ let rec symmetric_difference x y =
 
 let sum_of_fst = List.fold_left (fun acc (a,_) -> acc + a) 0
 
+(* NB: None is the biggest number *)
+
 (* Compute the distance between two clusters,
-   if there are Nodes, takes choose using f (max gives complete-linkage clustering)
-*)
+   if there are Nodes, choose using f (max gives complete-linkage clustering) *)
 let dist f =
   let rec aux x y =
     match x,y with
     | Leaf (x,_), Leaf (y,_) ->
        let b,diff = symmetric_difference x y in
        if b
-       then Some (float_of_int  @@ sum_of_fst diff)
+       then Some (float_of_int @@ sum_of_fst diff)
        else None
-    | Node (_,u,v), Node (_,u',v') ->
-       f
-         (f (aux u u') (aux u v'))
-         (f (aux v u') (aux v v'))
     | Node (_,u,v), l | l, Node (_,u,v) ->
        f (aux u l) (aux v l)
   in aux
 
-(* NB: None is the biggest number *)
-
-type 'a compare_option = True of 'a | False
-
 let compare_option x y =
   match x with
-  | None -> False
+  | None -> None
   | Some x' ->
      match y with
-     | None -> True x'
+     | None -> Some x'
      | Some y' ->
         if x' < y'
-        then True x' else False
+        then Some x' else None
 
 let max_option x y =
   match compare_option x y with
-  | True _ -> y
-  | False ->  x
+  | Some _ -> y
+  | None ->  x
 
 (* O(n^2) algorithm to get the two closeset elements *)
 let get_min_dist xs =
@@ -71,8 +63,8 @@ let get_min_dist xs =
           then
             let d = dist max_option x y in
             match compare_option d (fmapfst !min) with
-            | True d -> min := Some (d,(x,y))
-            | False -> ();
+            | Some d -> min := Some (d,(x,y))
+            | None -> ();
         )
      xs
     )
@@ -84,7 +76,8 @@ let merge p u v xs =
   let xs = List.filter (fun x -> x != u && x != v) xs in
   (Node (p,u,v))::xs
 
-let add_in_eq x xs =
+(* Add x in his cluster, identified by his hash list xs *)
+let add_in_cluster x xs =
   let rec go = function
     | [] -> [(xs,[x])]
     | ((us,ys) as e)::zs ->
@@ -93,9 +86,10 @@ let add_in_eq x xs =
        else e::go zs
   in go
 
-let rec remove_hash_in_tree = function
-  | Leaf (_,x) -> Leaf x
-  | Node (p,u,v) -> Node (p,remove_hash_in_tree u, remove_hash_in_tree v)
+let remove_fst_in_tree =
+  fold_tree
+    (fun (_,x) -> Leaf x)
+    (fun p u v -> Node (p, u, v))
 
 (* Compute a hierarchical cluster from data *)
 let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
@@ -109,17 +103,9 @@ let cluster (m : (Token.t, (int * string) list) Hashtbl.t) =
   in
   let start =
     List.map (fun x -> Leaf x) @@
-      Hashtbl.fold (fun x xs acc -> add_in_eq x (List.sort compare xs) acc) m []
+      Hashtbl.fold (fun x xs -> add_in_cluster x (List.sort compare xs)) m []
   in
   List.sort
     (fun x y -> - compare (weight_of_tree List.length x) (weight_of_tree List.length y)) @@
-    List.map remove_hash_in_tree @@
+    List.map remove_fst_in_tree @@
       aux [] start
-
-let rec flatten = function
-  | Leaf x -> [x]
-  | Node (_,u,v) -> List.rev_append (flatten u) (flatten v)
-
-(* Compute a hierarchical cluster from data *)
-(* Flatten the obtained trees *)
-let cluster_flatten m = List.map flatten (cluster m)

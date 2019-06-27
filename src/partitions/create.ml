@@ -134,8 +134,8 @@ let rec get_last_of_seq = function
 (* Convert a Typedtree.structure to a lambda expression *)
 let to_lambda (lst : Typedtree.structure) =
   get_last_of_seq @@
-    Simplif.simplify_lambda "" @@
-      Lambda_utils.inline_all @@
+    Lambda_utils.inline_all @@
+      Simplif.simplify_lambda "" @@
         Translmod.transl_toplevel_definition lst
 
 (* Return a tuple where
@@ -233,8 +233,8 @@ let refine_with_hm prof =
     fun x ->
     List.map
       (fold_tree
-         (fun f a b -> Node (f,a,b))
-         (fun xs -> Leaf (List.map (fun u -> u,string_of_bindings (assoc_3 u x)) xs)))
+         (fun xs -> Leaf (List.map (fun u -> u,string_of_bindings (assoc_3 u x)) xs))
+         (fun f a b -> Node (f,a,b)))
     (hm_part prof x)
 
 let list_of_IntMap m =

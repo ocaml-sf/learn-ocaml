@@ -387,7 +387,7 @@ module Partition : sig
   | Node of (float * 'a tree * 'a tree)
   | Leaf of 'a
 
-  val fold_tree : (float -> 'b -> 'b -> 'b) -> ('a -> 'b) -> 'a tree -> 'b
+  val fold_tree : ('a -> 'b) -> (float -> 'b -> 'b -> 'b) -> 'a tree -> 'b
 
   val weight_of_tree : ('a -> int) -> 'a tree -> int
 

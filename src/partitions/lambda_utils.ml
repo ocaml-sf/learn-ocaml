@@ -143,18 +143,18 @@ let hash_lambda alpha l =
   in
   (poids,h), sort_filter alpha poids ss_arbres
 
-let replace ident l =
-  let rec aux r =
+let replace ident body =
+  let rec aux expr =
     let insnd lst = List.map (fun (e,x) -> e, aux x) lst in
     let inopt = function
     | None -> None
     | Some x -> Some (aux x) in
-    match r with
+    match expr with
     | Lvar x ->
        if x = ident
-       then l
-       else r
-    | Lconst _ -> r
+       then body
+       else expr
+    | Lconst _ -> expr
     | Llet (k,e,ident,l,r) ->
        Llet (k, e, ident, aux l, aux r)
   | Lapply x ->
