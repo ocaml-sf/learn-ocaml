@@ -219,7 +219,8 @@ let inlineable x f =
      end
   | _  -> false
 
-(* Inline all possible "let definition" (that is, "let definition" without a side effet) *)
+(* Inline all possible "let definitions"
+   (that is, all "let definitions" without a side effet) *)
 let rec inline_all x =
   let insnd lst = List.map (fun (e,l) -> e,inline_all l) lst in
   let inopt = function
