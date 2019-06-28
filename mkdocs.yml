@@ -1,4 +1,9 @@
 site_name: learn-ocaml
+
+repo_url: https://github.com/mkdocs/mkdocs/
+edit_uri: ""
+
+
 nav:
     - Home: index.md
     - Tutorials: 
@@ -18,5 +23,6 @@ nav:
     - Submit an exercise: howto-submit-an-exercise.md
     - Write an exercise: howto-write-exercises.md
 
-edit_uri: repo_url
+
+
 theme: readthedocs
