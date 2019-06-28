@@ -17,5 +17,6 @@ nav:
     - Setup: howto-setup-exercise-development-environment.md
     - Submit an exercise: howto-submit-an-exercise.md
     - Write an exercise: howto-write-exercises.md
-    
+
+edit_uri: repo_url
 theme: readthedocs
