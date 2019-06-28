@@ -227,10 +227,18 @@ module type S = sig
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
+  (* TODO *)
+  type 'a postcond =
+    'a Ty.ty -> 'a result -> Learnocaml_report.t
+
   (** Functions of type [io_tester] are used to compare student
      standard out or standard error channels with solution ones. *)
   type io_tester =
     string -> string -> Learnocaml_report.t
+
+  (* TODO *)
+  type io_postcond =
+    string -> Learnocaml_report.t
 
   (** The exception [Timeout limit] is raised by [run_timeout]. Thus, the
       functions [exec] and [result] can return [Error (Timeout limit)].
@@ -663,6 +671,17 @@ module type S = sig
                 -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
+
+    (* TODO *)
+    val test_function_1_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> unit) ->
+      ?before_user : ('a -> unit) ->
+      ?after : ('a -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a) ->
+      'b postcond -> ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
     (** {3 Binary functions }*)
 
