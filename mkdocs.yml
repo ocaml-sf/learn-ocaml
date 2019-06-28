@@ -1,0 +1,21 @@
+site_name: learn-ocaml
+nav:
+    - Home: index.md
+    - Tutorials: 
+        - 'Step 0': tutorials/step-0.md
+        - 'Step 1': tutorials/step-1.md
+        - 'Step 2': tutorials/step-2.md
+        - 'Step 3': tutorials/step-3.md
+        - 'Step 4': tutorials/step-4.md
+        - 'Step 5': tutorials/step-5.md
+        - 'Step 6': tutorials/step-6.md
+        - 'Step 7': tutorials/step-7.md
+    - Format: exercises_format.md
+    - Tests: exercises_tests.md
+    - Deploy: howto-deploy-a-learn-ocaml-instance.md
+    - Practice: howto-practice-ocaml.md
+    - Setup: howto-setup-exercise-development-environment.md
+    - Submit an exercise: howto-submit-an-exercise.md
+    - Write an exercise: howto-write-exercises.md
+    
+theme: readthedocs

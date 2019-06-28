@@ -55,10 +55,3 @@ learn-ocaml build; learn-ocaml serve
 
 At this point, you should see the exercise in the instance opened
 on `http://localhost:8080`. Click on grade to get your point!
-
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-0.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md)
