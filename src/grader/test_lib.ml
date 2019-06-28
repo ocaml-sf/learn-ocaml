@@ -1157,26 +1157,9 @@ module Make
       | Error exn -> Error exn
 
 
-  (*----------------------------------------------------------------------------*)
+    (*----------------------------------------------------------------------------*)
 
-    let expect
-          ?(test = test) ?(test_stdout = io_test_ignore) ?(test_stderr = io_test_ignore)
-          ?(pre = (fun _ -> ())) ?(post = (fun _ _ -> [])) ty va vb  =
-      let vb = exec vb in
-      let va = pre () ; exec va in
-      match va, vb with
-      | Ok (va, outa, erra), Ok (vb, outb, errb) ->
-         let post_report = post (va, outa, erra) (vb, outb, errb) in
-         let report = test ty (Ok va) (Ok vb) in
-         let stdout_report = test_stdout outa outb in
-         let stderr_report = test_stderr erra errb in
-         report @ stdout_report @ stderr_report @ post_report
-      | Ok (va, _, _), Error exnb ->
-         test ty (Ok va) (Error exnb)
-      | Error exna, Ok (vb, _, _) ->
-         test ty (Error exna) (Ok vb)
-      | Error exna, Error exnb ->
-         test ty (Error exna) (Error exnb)
+    let flip f y x = f x y
 
     let verify
           ?(test_stdout = fun _ -> []) ?(test_stderr = fun _ -> [])
@@ -1190,6 +1173,21 @@ module Make
          let stderr_report = test_stderr err in
          report @ stdout_report @ stderr_report @ post_report
       | Error exn -> test ty (Error exn)
+
+    let expect
+          ?(test = test) ?(test_stdout = io_test_ignore) ?(test_stderr = io_test_ignore)
+          ?pre ?(post = (fun _ _ -> [])) ty va vb  =
+      match exec vb with
+      | Ok (vb, outb, errb) ->
+         let post = flip post (vb, outb, errb) in
+         let test_stdout = flip test_stdout outb in
+         let test_stderr = flip test_stderr errb in
+         let test ty = flip (test ty) (Ok vb) in
+         verify ?pre
+           ~post ~test_stdout ~test_stderr test ty va
+      | Error exnb ->
+         let test ty va = test ty va (Error exnb) in
+         verify ?pre test ty va
 
     (*----------------------------------------------------------------------------*)
 
