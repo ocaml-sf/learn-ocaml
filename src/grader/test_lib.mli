@@ -223,11 +223,12 @@ module type S = sig
 
   (** Functions of type [tester] are used to compare student result
      with solution result. The first {!S.result} is the student
-     output and the second one is the solution output.  *)
+     output and the second one is the solution output. *)
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
-  (* TODO *)
+  (** Functions of type [postcond] are used to verify that student result
+     satisfies a postcondition. *)
   type 'a postcond =
     'a Ty.ty -> 'a result -> Learnocaml_report.t
 
@@ -236,7 +237,8 @@ module type S = sig
   type io_tester =
     string -> string -> Learnocaml_report.t
 
-  (* TODO *)
+  (** Functions of type [io_postcond] are used to verify that student
+     standard out or standard error channels satisfy a postcondition. *)
   type io_postcond =
     string -> Learnocaml_report.t
 
@@ -672,7 +674,11 @@ module type S = sig
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
-    (* TODO *)
+    (** [test_function_1_against_postcond postcond ty name tests] tests that
+       the function named [name] statisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_1_against_postcond :
       ?gen: int ->
       ?test_stdout: io_postcond ->
@@ -767,7 +773,11 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b) ->
                  ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
-    (* TODO *)
+    (** [test_function_2_against_postcond postcond ty name tests] tests that
+       the function named [name] statisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_2_against_postcond :
       ?gen: int ->
       ?test_stdout: io_postcond ->
@@ -865,7 +875,11 @@ module type S = sig
       -> string -> ('a * 'b * 'c) list
       -> Learnocaml_report.t
 
-    (* TODO *)
+    (** [test_function_3_against_postcond postcond ty name tests] tests that
+       the function named [name] statisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_3_against_postcond :
       ?gen: int ->
       ?test_stdout: io_postcond ->
@@ -962,7 +976,11 @@ module type S = sig
       -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
       -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
-    (* TODO *)
+    (** [test_function_4_against_postcond postcond ty name tests] tests that
+       the function named [name] statisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
     val test_function_4_against_postcond :
       ?gen: int ->
       ?test_stdout: io_postcond ->
