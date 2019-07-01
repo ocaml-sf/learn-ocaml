@@ -1365,39 +1365,38 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    let test_function_generic
-          ?test ?test_stdout ?test_stderr
-          ?(before = (fun _ -> ()))  ?(after = (fun _ _ _ -> []))
-          prot uf tests =
-      test_value uf @@ fun ruf ->
+    let run_test
+          ?(before = (fun _ -> ())) ~after name prot tests for_case =
       let before args () = before args in
       let ty = ty_of_prot prot in
-      List.flatten @@ List.map (fun case ->
-          let args, ret = case () in
-          let code = Format.asprintf "@[<hv 2>%s%a@]" (name uf) (print prot) args in
-          let ret_ty = get_ret_ty ty args in
-          Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
-          expect
+      let for_casel case =
+        let args, ret = case () in
+        let code = Format.asprintf "@[<hv 2>%s%a@]" name (print prot) args in
+        let ret_ty = get_ret_ty ty args in
+        Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
+          for_case (before args) (after args) args ret_ty ret
+      in List.flatten @@ List.map for_casel tests
+
+    let test_function_generic
+          ?test ?test_stdout ?test_stderr
+          ?before ?(after = (fun _ _ _ -> []))
+          prot uf tests =
+      test_value uf @@ fun ruf ->
+      let for_case pre post args ret_ty =
+          expect ~pre ~post
             ?test ?test_stdout ?test_stderr
-            ~pre: (before args) ~post: (after args) ret_ty (fun () -> apply ruf args) ret)
-       tests
+             ret_ty (fun () -> apply ruf args)
+      in run_test ?before ~after (name uf) prot tests for_case
 
     let test_function_generic_postcond
           ?test_stdout ?test_stderr
-          ?(before = (fun _ -> ()))  ?(after = (fun _ _ -> []))
+          ?before ?(after = (fun _ _ -> []))
           test name prot tests =
-      let before args () = before args in
-      let ty = ty_of_prot prot in
-      List.flatten @@ List.map (fun case ->
-          let args, ret = case () in
-          let code = Format.asprintf "@[<hv 2>%s%a@]" name (print prot) args in
-          let ret_ty = get_ret_ty ty args in
-          Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
-          verify
+      let for_case pre post _ =
+          verify ~pre ~post
             ?test_stdout ?test_stderr
-            ~pre: (before args) ~post: (after args)
-            test ret_ty ret)
-       tests
+            test
+       in run_test ?before ~after name prot tests for_case
 
     let test_function
           ?test ?test_stdout ?test_stderr
