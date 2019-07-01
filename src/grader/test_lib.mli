@@ -765,7 +765,18 @@ module type S = sig
                 -> ('c * string * string)
                 -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
+                 ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
+
+    (* TODO *)
+    val test_function_2_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> unit) ->
+      ?before_user : ('a -> 'b -> unit) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b) ->
+      'c postcond -> ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (** {3 Three-arguments functions }*)
 
@@ -854,6 +865,17 @@ module type S = sig
       -> string -> ('a * 'b * 'c) list
       -> Learnocaml_report.t
 
+    (* TODO *)
+    val test_function_3_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c) ->
+      'd postcond -> ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
+
     (** {3 Four-arguments functions }*)
 
     (** [test_function_4 ty name tests] tests the function named
@@ -939,6 +961,17 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c * 'd)
       -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
       -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+
+    (* TODO *)
+    val test_function_4_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      'e postcond -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
