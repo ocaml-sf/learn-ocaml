@@ -1498,7 +1498,7 @@ module Make
   module Test_functions_function = struct
     open Test_functions_generic
 
-    let function_1_adapter sampler ty =
+    let function_1_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
         | Some pre -> (function Last x -> pre x) in
@@ -1509,12 +1509,12 @@ module Make
       let prot = last_ty arg_ty @@ ret_ty in
       pre, sampler, prot
 
-    let function_1_adapter_2 after sampler ty =
+    let function_1_adapter after sampler ty =
       let after = match after with
         | None -> fun _ _ _ -> []
         | Some after -> (function Last x -> after x)
       in
-      let pre, sampler, prot = function_1_adapter sampler ty in
+      let pre, sampler, prot = function_1_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_1
@@ -1523,7 +1523,7 @@ module Make
       let tests = List.map (fun (x, r, out, err) ->
           (last x, (fun () -> output_string stdout out ; output_string stderr err ; r)))
                     tests in
-      let after, pre, _, prot = function_1_adapter_2 after None ty in
+      let after, pre, _, prot = function_1_adapter after None ty in
       test_function
         ?test ?test_stdout ?test_stderr
         ~before:(pre before)
@@ -1533,7 +1533,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name rf tests =
       let tests = List.map (fun x -> last x) tests in
-      let after, pre, sampler, prot = function_1_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_1_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1544,7 +1544,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
       let tests = List.map (fun x -> last x) tests in
-      let after, pre, sampler, prot = function_1_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_1_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1559,7 +1559,7 @@ module Make
         | None -> fun _ _ -> []
         | Some after -> (function Last x -> after x)
       in
-      let pre, sampler, prot = function_1_adapter sampler ty in
+      let pre, sampler, prot = function_1_adapter_pre sampler ty in
       test_function_against_generic_postcond ?gen
         ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1568,7 +1568,7 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    let function_2_adapter sampler ty =
+    let function_2_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
         | Some pre -> (function | Arg (x, Last y) -> pre x y) in
@@ -1581,11 +1581,11 @@ module Make
       let prot = arg_ty arg1_ty @@ last_ty arg2_ty @@ ret_ty in
       pre, sampler, prot
 
-    let function_2_adapter_2 after sampler ty =
+    let function_2_adapter after sampler ty =
       let after = match after with
         | None -> (fun _ _ _ -> [])
         | Some after -> (function | Arg (x, Last y) -> after x y) in
-      let pre, sampler, prot = function_2_adapter sampler ty in
+      let pre, sampler, prot = function_2_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_2
@@ -1594,7 +1594,7 @@ module Make
       let tests = List.map (fun (x, y, r, out, err) ->
         (arg x @@ last y, (fun () ->  output_string stdout out ; output_string stderr err ; r)))
         tests in
-      let after, pre, _, prot = function_2_adapter_2 after None ty in
+      let after, pre, _, prot = function_2_adapter after None ty in
       test_function
         ?test ?test_stdout ?test_stderr
         ~before:(pre before)
@@ -1604,7 +1604,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name rf tests =
       let tests = List.map (fun (x, y) -> arg x @@ last y) tests in
-      let after, pre, sampler, prot = function_2_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_2_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1615,7 +1615,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
       let tests = List.map (fun (x, y) -> arg x @@ last y) tests in
-      let after, pre, sampler, prot = function_2_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_2_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1629,7 +1629,7 @@ module Make
       let after = match after with
         | None -> (fun _ _ -> [])
         | Some after -> (function | Arg (x, Last y) -> after x y) in
-      let pre, sampler, prot = function_2_adapter sampler ty in
+      let pre, sampler, prot = function_2_adapter_pre sampler ty in
       test_function_against_generic_postcond ?gen
         ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1638,7 +1638,7 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    let function_3_adapter sampler ty =
+    let function_3_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
         | Some pre -> (function Arg (w, Arg (x, Last y)) -> pre w x y) in
@@ -1655,20 +1655,20 @@ module Make
       let prot = arg_ty arg1_ty @@ arg_ty arg2_ty @@ last_ty arg3_ty @@ ret_ty in
       pre, sampler, prot
 
-    let function_3_adapter_2 after sampler ty =
+    let function_3_adapter after sampler ty =
       let after = match after with
         | None -> (fun _ _ _-> [])
         | Some after -> (function Arg (w, Arg (x, Last y)) -> after w x y) in
-      let pre, sampler, prot = function_3_adapter sampler ty in
+      let pre, sampler, prot = function_3_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_3
           ?test ?test_stdout ?test_stderr
           ?before ?after ty name tests =
       let tests = List.map (fun (w, x, y, r, out, err) ->
-       (arg w @@ arg x @@ last y, (fun () ->  output_string stdout out ; output_string stderr err ; r)))
+       (arg w @@ arg x @@ last y, (fun () -> output_string stdout out ; output_string stderr err ; r)))
        tests in
-      let after, pre, _, prot = function_3_adapter_2 after None ty in
+      let after, pre, _, prot = function_3_adapter after None ty in
       test_function
         ?test ?test_stdout ?test_stderr
         ~before:(pre before)
@@ -1678,7 +1678,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name rf tests =
       let tests = List.map (fun (w, x, y) -> arg w @@ arg x @@ last y) tests in
-      let after, pre, sampler, prot = function_3_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_3_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1689,7 +1689,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
       let tests = List.map (fun (w, x, y) -> arg w @@ arg x @@ last y) tests in
-      let after, pre, sampler, prot = function_3_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_3_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1703,7 +1703,7 @@ module Make
       let after = match after with
         | None -> (fun _ _ -> [])
         | Some after -> (function Arg (w, Arg (x, Last y)) -> after w x y) in
-      let pre, sampler, prot = function_3_adapter sampler ty in
+      let pre, sampler, prot = function_3_adapter_pre sampler ty in
       test_function_against_generic_postcond ?gen
         ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1712,7 +1712,7 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    let function_4_adapter sampler ty =
+    let function_4_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
         | Some pre ->
@@ -1732,12 +1732,12 @@ module Make
         arg_ty arg1_ty @@ arg_ty arg2_ty @@ arg_ty arg3_ty @@ last_ty arg4_ty @@ ret_ty in
       pre, sampler, prot
 
-    let function_4_adapter_2 after sampler ty =
+    let function_4_adapter after sampler ty =
       let after = match after with
         | None -> (fun _ _ _-> [])
         | Some after ->
            (function Arg (w, Arg (x, Arg (y, Last z))) -> after w x y z) in
-      let pre, sampler, prot = function_4_adapter sampler ty in
+      let pre, sampler, prot = function_4_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_4
@@ -1747,7 +1747,7 @@ module Make
        (arg w @@ arg x @@ arg y @@ last z, (fun () ->
         output_string stdout out ; output_string stderr err ; r)))
         tests in
-      let after, pre, _, prot = function_4_adapter_2 after None ty in
+      let after, pre, _, prot = function_4_adapter after None ty in
       test_function
         ?test ?test_stdout ?test_stderr
         ~before:(pre before)
@@ -1757,7 +1757,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name rf tests =
       let tests = List.map (fun (w, x, y, z) -> arg w @@ arg x @@ arg y @@ last z) tests in
-      let after, pre, sampler, prot = function_4_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_4_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1768,7 +1768,7 @@ module Make
           ?test ?test_stdout ?test_stderr
           ?before_reference ?before_user ?after ?sampler ty name tests =
       let tests = List.map (fun (w, x, y, z) -> arg w @@ arg x @@ arg y @@ last z) tests in
-      let after, pre, sampler, prot = function_4_adapter_2 after sampler ty in
+      let after, pre, sampler, prot = function_4_adapter after sampler ty in
       test_function_against ?gen
         ?test ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
@@ -1783,7 +1783,7 @@ module Make
         | None -> (fun _ _ -> [])
         | Some after ->
            (function Arg (w, Arg (x, Arg (y, Last z))) -> after w x y z) in
-      let pre, sampler, prot = function_4_adapter sampler ty in
+      let pre, sampler, prot = function_4_adapter_pre sampler ty in
       test_function_against_generic_postcond ?gen
         ?test_stdout ?test_stderr
         ~before_reference:(pre before_reference)
