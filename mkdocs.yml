@@ -1,8 +1,8 @@
-site_name: learn-ocaml
+site_name: "learn-ocaml"
 
-repo_url: https://github.com/mkdocs/mkdocs/
-edit_uri: ""
-
+repo_name: GitHub
+repo_url: https://github.com/beobillly/learn-ocaml
+edit_uri: blob/mkdocs/docs/
 
 nav:
     - Home: index.md
@@ -15,11 +15,11 @@ nav:
         - 'Step 5': tutorials/step-5.md
         - 'Step 6': tutorials/step-6.md
         - 'Step 7': tutorials/step-7.md
-    - Format: exercises_format.md
-    - Tests: exercises_tests.md
-    - Deploy: howto-deploy-a-learn-ocaml-instance.md
-    - Practice: howto-practice-ocaml.md
-    - Setup: howto-setup-exercise-development-environment.md
+    - Exercises Format: exercises_format.md
+    - Exercises Tests: exercises_tests.md
+    - Deploy an instance: howto-deploy-a-learn-ocaml-instance.md
+    - Practice OCaml: howto-practice-ocaml.md
+    - Setup your development environment: howto-setup-exercise-development-environment.md
     - Submit an exercise: howto-submit-an-exercise.md
     - Write an exercise: howto-write-exercises.md
 
