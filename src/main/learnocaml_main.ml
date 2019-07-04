@@ -263,20 +263,25 @@ let main o =
                  (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
        >>= fun () ->
-       let server_config = o.repo_dir/"server_config.json" in
-       (if Sys.file_exists server_config
-        then
-          Learnocaml_store.Server.get_from_file server_config >>= fun pre_config ->
-          let sha_config =
-            Learnocaml_data.Server.({secret =
-                                       match pre_config.secret with
-                                       | None -> None
-                                       | Some x -> Some (Sha.sha512 x)})
-          in
-          Learnocaml_store.Server.write_to_file
-            sha_config
-            (o.app_dir/"server_config.json")
-        else Lwt.return ())
+       let server_config = o.repo_dir/"server_config.json"
+       and www_server_config = o.app_dir/"server_config.json" in
+       let module ServerData = Learnocaml_data.Server in
+       let module ServerStore = Learnocaml_store.Server in
+       Random.self_init ();
+       Lwt.catch
+         (fun () ->
+           let enc = ServerData.enc_init in
+           ServerStore.get_from_file ~enc server_config
+           >|= fun pre_config ->
+           match pre_config.ServerData.secret with
+             | None -> None
+             | Some x -> Some (Sha.sha512 x))
+         (function 
+           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return None
+           | exn -> Lwt.fail exn) 
+       >>= fun secret ->
+         let json_config = ServerData.default ?secret () in
+         ServerStore.write_to_file json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->

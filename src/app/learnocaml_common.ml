@@ -727,7 +727,7 @@ let init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_butto
     Lwt.return ()
   end
 
-  let set_string_translations_exercises () =
+let set_string_translations_exercises () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
     "learnocaml-exo-button-editor", [%i"Editor"];
