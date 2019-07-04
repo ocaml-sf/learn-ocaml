@@ -87,7 +87,8 @@
  (name learnocaml_partition_view)
  (modes byte)
  (flags :standard -warn-error -9-27-33)
- (libraries ezjsonm
+ (libraries asak
+	    ezjsonm
             grading_jsoo
             ace
             learnocaml_repository

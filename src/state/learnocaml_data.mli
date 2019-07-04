@@ -383,21 +383,13 @@ module Tutorial: sig
 end
 
 module Partition : sig
-  type 'a tree =
-  | Node of (float * 'a tree * 'a tree)
-  | Leaf of 'a
-
-  val fold_tree : ('a -> 'b) -> (float -> 'b -> 'b -> 'b) -> 'a tree -> 'b
-
-  val weight_of_tree : ('a -> int) -> 'a tree -> int
-
   type t =
   {
     not_graded : Token.t list;
     bad_type   : Token.t list;
-    patition_by_grade :
+    partition_by_grade :
       (int *
-         (((Token.t * string) list) tree list))
+         (((Token.t * string) list) Asak.Wtree.wtree list))
         list;
   }
 

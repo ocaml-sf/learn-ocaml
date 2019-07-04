@@ -88,7 +88,7 @@ let list_of_tok =
     H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.pcdata (tok ^ " ")]
 
 let rec render_tree =
-  let open Partition in
+  let open Asak.Wtree in
   function
   | Leaf xs ->
      [H.p ~a:[ H.a_onclick (fun _ ->
@@ -103,11 +103,14 @@ let rec render_tree =
           ]
      ]
 
+let weight_of_tree t =
+  Asak.Wtree.fold_tree (fun _ -> ( + )) t
+
 let render_trees xs =
   let aux (i,acc) t =
     let str =
       "Class n°" ^ string_of_int i
-      ^ " (" ^ string_of_int (Partition.weight_of_tree List.length t) ^ " students)" in
+      ^ " (" ^ string_of_int (weight_of_tree List.length t) ^ " students)" in
     i+1,
     H.li
       ( H.pcdata str
@@ -138,16 +141,16 @@ let exercises_tab part =
     let s =
       sum_with
         (fun (_,x) ->
-          sum_with (fun x -> Partition.weight_of_tree List.length x)
+          sum_with (fun x -> weight_of_tree List.length x)
             x
         )
-        part.patition_by_grade in
+        part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
   H.p (H.pcdata not_graded :: list_of_tok part.not_graded)
   :: H.p ( H.pcdata bad_type :: list_of_tok part.bad_type)
   :: H.p [H.pcdata total_sum]
-  :: render_classes part.patition_by_grade
+  :: render_classes part.partition_by_grade
 
 let _class_selection_updater =
   let previous = ref None in
