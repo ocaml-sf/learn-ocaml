@@ -32,15 +32,15 @@ to get the files for step 1, and replace `step-1` by `step-2` to
 get the files for the second step, and so on and so forth.
 
 ## The tutorials
-[Step 0 : Preliminaries](../tutorials/step-0)
+[Step 0 : Preliminaries](../tutorials/step-0.md)
 	
 - Structure of an exercise
 	
 - Purpose of each file
 	
-[Step 1: Create a trivial exercise](../tutorials/step-1)
+[Step 1: Create a trivial exercise](../tutorials/step-1.md)
       
-[Step 2: Basic grading by comparison with your solution](../tutorials/step-2)
+[Step 2: Basic grading by comparison with your solution](../tutorials/step-2.md)
 
 - Simple example to grade by comparison with a solution
 
@@ -48,21 +48,21 @@ get the files for the second step, and so on and so forth.
 
 - With multiple arguments functions
 
-[Step 3: Grading with generators for Ocaml built-in types](../tutorials/step-3)
+[Step 3: Grading with generators for Ocaml built-in types](../tutorials/step-3.md)
 
 - Generate tests by using the pre-construct samplers 
 
 - Generate tests by defining its own sampler 
 
-[Step 4: Grading with generators for user-defined types](../tutorials/step-4)
+[Step 4: Grading with generators for user-defined types](../tutorials/step-4.md)
 
 - Generate tests for non-parametric user-defined types 
 	
 - Generate tests for parametric user-defined types 
 
-[Step 5 : More test functions](../tutorials/step-5)
+[Step 5 : More test functions](../tutorials/step-5.md)
 	
-[Step 6 : Grading functions for variables](../tutorials/step-6)
+[Step 6 : Grading functions for variables](../tutorials/step-6.md)
 	
-[Step 7 : Introspection of students code](../tutorials/step-7)
+[Step 7 : Introspection of students code](../tutorials/step-7.md)
     
