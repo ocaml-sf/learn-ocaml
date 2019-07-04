@@ -223,7 +223,7 @@ module type S = sig
 
   (** Functions of type [tester] are used to compare student result
      with solution result. The first {!S.result} is the student
-     output and the second one is the solution output.  *)
+     output and the second one is the solution output. *)
   type 'a tester =
     'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
@@ -231,6 +231,11 @@ module type S = sig
      standard out or standard error channels with solution ones. *)
   type io_tester =
     string -> string -> Learnocaml_report.t
+
+  (** Functions of type [io_postcond] are used to verify that student
+     standard out or standard error channels satisfy a postcondition. *)
+  type io_postcond =
+    string -> Learnocaml_report.t
 
   (** The exception [Timeout limit] is raised by [run_timeout]. Thus, the
       functions [exec] and [result] can return [Error (Timeout limit)].
@@ -664,6 +669,22 @@ module type S = sig
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
+    (** [test_function_1_against_postcond postcond ty name tests] tests that
+       the function named [name] satisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_1_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> unit) ->
+      ?before_user : ('a -> unit) ->
+      ?after : ('a -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a) ->
+      ('a -> 'b Ty.ty -> 'b result -> Learnocaml_report.t) ->
+      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
+
     (** {3 Binary functions }*)
 
     (** [test_function_2 ty name tests] tests the function named
@@ -746,6 +767,22 @@ module type S = sig
                 -> ('c * string * string)
                 -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
+                 ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
+
+    (** [test_function_2_against_postcond postcond ty name tests] tests that
+       the function named [name] satisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_2_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> unit) ->
+      ?before_user : ('a -> 'b -> unit) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b) ->
+      ('a -> 'b -> 'c Ty.ty -> 'c result -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (** {3 Three-arguments functions }*)
@@ -835,6 +872,22 @@ module type S = sig
       -> string -> ('a * 'b * 'c) list
       -> Learnocaml_report.t
 
+    (** [test_function_3_against_postcond postcond ty name tests] tests that
+       the function named [name] satisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_3_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c) ->
+      ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
+
     (** {3 Four-arguments functions }*)
 
     (** [test_function_4 ty name tests] tests the function named
@@ -920,6 +973,22 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c * 'd)
       -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
       -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+
+    (** [test_function_4_against_postcond postcond ty name tests] tests that
+       the function named [name] satisfies the postcondition [postcond].
+
+     See {{!optional_arguments_sec} this section} for information
+       about optional arguments. *)
+    val test_function_4_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      ('a -> 'b -> 'c -> 'd -> 'e Ty.ty -> 'e result -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
