@@ -12,11 +12,10 @@ A demo is available at: [http://learn-ocaml.hackojo.org/](http://learn-ocaml.hac
 Howtos
 ------
 
-* [How to set up an environment to develop exercises?](../howto-setup-exercise-development-environment)
-* [How to write exercises?](../howto-write-exercises)
-* [How to submit an exercise to the global corpus?](../howto-submit-an-exercise)
-* [How to deploy an instance of Learn OCaml?](../howto-deploy-a-learn-ocaml-instance)
-* [How to deploy an instance of Learn OCaml?](../howto-deploy-a-learn-ocaml-instance)
+* [How to set up an environment to develop exercises?](./howto-setup-exercise-development-environment)
+* [How to write exercises?](/howto-write-exercises)
+* [How to submit an exercise to the global corpus?](howto-submit-an-exercise)
+* [How to deploy an instance of Learn OCaml?](/howto-deploy-a-learn-ocaml-instance)
 
 Contacts
 --------
