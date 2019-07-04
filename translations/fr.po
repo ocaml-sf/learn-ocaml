@@ -206,6 +206,10 @@ msgstr "Erreur dans le code."
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 
+#: src/grader/learnocaml_report.ml
+msgid "(minimum mark)"
+msgstr "(note minimale)"
+
 #: src/grader/learnocaml_report.ml:220,44--63
 msgid "Completed, %d pts"
 msgstr "Terminé, %d pts"
@@ -254,6 +258,10 @@ msgstr "@[<v 2>Important: %a@]"
 #: src/grader/learnocaml_report.ml:533,58--83
 msgid "@[<v 2>Success %d: %a@]"
 msgstr "@[<v 2>Réussite %d: %a@]"
+
+#: src/grader/learnocaml_report.ml
+msgid "@[<v 2>Penalty %d: %a@]"
+msgstr "@[<v 2>Pénalité %d: %a@]"
 
 #: src/app/learnocaml_common.ml:76,21--37
 msgid "INTERNAL ERROR"
