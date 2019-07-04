@@ -14,7 +14,7 @@ type _ request =
   | Static:
       string list -> string request
   | Version:
-      unit -> string request
+      unit -> (string * int) request
   | Nonce:
       unit -> string request
   | Create_token:
@@ -87,7 +87,7 @@ module Conversions (Json: JSON_CODEC) = struct
       in
       match req with
       | Static _ -> str
-      | Version _ -> json J.(obj1 (req "version" string))
+      | Version _ -> json J.(obj2 (req "version" string) (req "server_id" int))
       | Nonce _ -> json J.(obj1 (req "nonce" string))
       | Create_token _ ->
           json J.(obj1 (req "token" string)) +>
@@ -222,7 +222,8 @@ module type REQUEST_HANDLER = sig
   type 'resp ret
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: Conduit.endp -> string option -> 'resp request -> 'resp ret
+  val callback: Conduit.endp ->
+                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -232,9 +233,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
   let rec last =
     function [f] -> Some f | [] -> None | _::r -> last r
 
-  let handler conn secret request =
+  let handler conn config request =
       let k req =
-        Rh.callback conn secret req |> Rh.map_ret (C.response_encode req)
+        Rh.callback conn config req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with

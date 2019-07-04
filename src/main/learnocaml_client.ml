@@ -491,7 +491,7 @@ let upload_report server token ex solution report =
 
 let check_server_version server =
   Lwt.catch (fun () ->
-      fetch server (Api.Version ()) >|= fun server_version ->
+      fetch server (Api.Version ()) >|= fun (server_version,_) ->
       if server_version <> Api.version then
         (Printf.eprintf "API version mismatch: client v.%s and server v.%s\n"
            Api.version server_version;
