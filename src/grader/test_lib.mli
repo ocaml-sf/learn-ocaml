@@ -670,7 +670,7 @@ module type S = sig
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
     (** [test_function_1_against_postcond postcond ty name tests] tests that
-       the function named [name] statisfies the postcondition [postcond].
+       the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
@@ -770,7 +770,7 @@ module type S = sig
                  ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (** [test_function_2_against_postcond postcond ty name tests] tests that
-       the function named [name] statisfies the postcondition [postcond].
+       the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
@@ -873,7 +873,7 @@ module type S = sig
       -> Learnocaml_report.t
 
     (** [test_function_3_against_postcond postcond ty name tests] tests that
-       the function named [name] statisfies the postcondition [postcond].
+       the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
@@ -975,7 +975,7 @@ module type S = sig
       -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** [test_function_4_against_postcond postcond ty name tests] tests that
-       the function named [name] statisfies the postcondition [postcond].
+       the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
