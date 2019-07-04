@@ -900,7 +900,35 @@ module Template = struct
       ~doc:"Get the template of a given exercise."
       "template"
 end
+                
+module Exercise_list = struct
+  let doc= "Get a structured json containing a list of the exercises of the server"
 
+  let exercise_list o  =
+    get_config_o o
+    >>= fun {ConfigFile.server;token} ->
+    fetch server (Learnocaml_api.Exercise_index (token))
+    >>= (fun index->
+    let open Json_encoding in
+    let ezjsonm = (Json_encoding.construct
+                  (tup2 Exercise.Index.enc (assoc float))
+                  index)
+    in
+    let json =
+           match ezjsonm with
+           | `O _ | `A _ as json -> json 
+           | _ -> assert false
+    in
+    Ezjsonm.to_channel ~minify:false stdout json;
+    Lwt.return 0;)
+
+  let man = man doc
+          
+  let cmd =
+    use_global exercise_list,
+    Term.info ~man ~doc:doc "exercise-list"
+end
+                
 module Main = struct
   let man =
     man
@@ -920,7 +948,8 @@ let () =
           ; Fetch.cmd
           ; Print_server.cmd
           ; Template.cmd
-          ; Create_token.cmd ]
+          ; Create_token.cmd
+          ; Exercise_list.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
