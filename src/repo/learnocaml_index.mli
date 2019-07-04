@@ -14,6 +14,12 @@ val exercises_dir : string
 
 val exercise_path : string -> string
 
+val playground_dir : string
+
+val playground_index_path : string
+
+val playground_path : string -> string
+
 val lesson_index_path : string
 
 val lessons_dir : string
