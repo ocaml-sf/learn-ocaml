@@ -1189,3 +1189,52 @@ module Tutorial = struct
   end
 
 end
+
+module Playground = struct
+  type id = string
+
+  type t =
+  { id : id ;
+    prelude : string ;
+    template : string ;
+  }
+
+  let enc =
+    J.conv
+    (fun { id; prelude; template } ->
+       id, prelude, template)
+    (fun (id, prelude, template) ->
+       { id ; prelude ; template })
+    (J.obj3
+       (J.req "id" J.string)
+       (J.req "prelude" J.string)
+       (J.req "template" J.string))
+
+  module Meta = struct
+    type t =
+      {
+        title: string;
+        short_description: string option;
+      }
+
+    let default id = {title=id; short_description=None}
+
+    let enc =
+    J.conv
+    (fun { title; short_description } ->
+       title, short_description)
+    (fun (title, short_description) ->
+       { title; short_description })
+    (J.obj2
+       (J.req "title" J.string)
+       (J.req "short_description" (J.option J.string)))
+  end
+
+  module Index = struct
+
+    type t = (id * Meta.t) list
+
+    let enc = J.list (J.tup2 J.string Meta.enc)
+
+  end
+end

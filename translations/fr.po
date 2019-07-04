@@ -88,6 +88,12 @@ msgstr "Toplevel"
 msgid "Exercise"
 msgstr "Exercice"
 
+msgid "Playground"
+msgstr "Bac-à-sable"
+
+msgid "Loading playground"
+msgstr "Chargement du bac-à-sable"
+
 #: src/app/learnocaml_exercise_main.ml:361,37--46
 msgid "Details"
 msgstr "Détails"

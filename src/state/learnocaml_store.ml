@@ -118,6 +118,25 @@ module Lesson = struct
 
 end
 
+module Playground = struct
+
+  module Index = struct
+
+    include Playground.Index
+
+    let get () =
+      read_static_file Learnocaml_index.playground_index_path enc
+
+  end
+
+  include (Playground: module type of struct include Playground end
+           with module Index := Index)
+
+  let get id =
+    read_static_file (Learnocaml_index.playground_path id) enc
+
+end
+
 module Server = struct
 
   let get_from_file ?(enc = Server.enc) p =

@@ -493,19 +493,7 @@ let set_string_translations () =
     translations
 
 let () =
-  Lwt.async_exception_hook := begin fun e ->
-    Firebug.console##log (Js.string
-                            (Printexc.to_string e ^
-                             if Printexc.backtrace_status () then
-                               Printexc.get_backtrace ()
-                             else ""));
-    match e with
-    | Failure message -> fatal message
-    | Server_caller.Cannot_fetch message -> fatal message
-    | exn -> fatal (Printexc.to_string exn)
-  end ;
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  Lwt.async @@ fun () ->
+  run_async_with_log @@ fun () ->
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();

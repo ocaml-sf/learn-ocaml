@@ -49,6 +49,11 @@ type _ request =
   | Tutorial:
       string -> Tutorial.t request
 
+  | Playground_index:
+      unit -> Playground.Index.t request
+  | Playground:
+      string -> Playground.t request
+
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
   | Exercise_status:
@@ -117,7 +122,11 @@ module Conversions (Json: JSON_CODEC) = struct
       | Tutorial_index _ ->
           json Tutorial.Index.enc
       | Tutorial _ ->
-          json Tutorial.enc
+         json Tutorial.enc
+      | Playground_index _ ->
+          json Playground.Index.enc
+      | Playground _ ->
+          json Playground.enc
 
       | Exercise_status_index _ ->
           json (J.list Exercise.Status.enc)
@@ -193,7 +202,12 @@ module Conversions (Json: JSON_CODEC) = struct
     | Lesson_index () ->
         get ["lessons.json"]
     | Lesson id ->
-        get ["lessons"; id^".json"]
+       get ["lessons"; id^".json"]
+
+    | Playground_index () ->
+        get ["playgrounds.json"]
+    | Playground id ->
+        get ["playgrounds"; id^".json"]
 
     | Tutorial_index () ->
         get ["tutorials.json"]
@@ -306,8 +320,18 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
            | Some "" ->
                Static ["exercise.html"] |> k
            | _ ->
-               Static ("static"::path) |> k)
-
+              Static ("static"::path) |> k)
+      | `GET, ("playground"::path), _token ->
+         begin
+           match last path with
+           | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
+              let id = Filename.chop_suffix (String.concat "/" path) ".json" in
+              Playground id |> k
+           | Some "" ->
+              Static ["playground.html"] |> k
+           | _ ->
+              Static ("static"::path) |> k
+         end
       | `GET, ["lessons.json"], _ ->
           Lesson_index () |> k
       | `GET, ["lessons"; f], _ when Filename.check_suffix f ".json" ->
@@ -316,7 +340,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials.json"], _ ->
           Tutorial_index () |> k
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
-          Tutorial (Filename.chop_suffix f ".json") |> k
+         Tutorial (Filename.chop_suffix f ".json") |> k
+
+      | `GET, ["playgrounds.json"], _ ->
+          Playground_index () |> k
+      | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
+          Playground (Filename.chop_suffix f ".json") |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
@@ -336,7 +365,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET,
         ( ["index.html"]
-        | ["exercise.html"]
+          | ["exercise.html"]
+        | ["playground.html"]
         | ["student-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->

@@ -684,12 +684,249 @@ let get_worker_code name =
         let url = js_code_url js in worker_url := Some url; url
     | Some url -> Lwt.return url
 
-let create_toplevel =
-  let get_worker = get_worker_code "learnocaml-toplevel-worker.js" in
-  fun
-    ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
-    ~timeout_prompt ~flood_prompt ~container () ->
-    get_worker () >>= fun worker_js_file ->
-    Learnocaml_toplevel.create ~worker_js_file
-      ?display_welcome ?on_disable_input ?on_enable_input ?history ?after_init
-      ~timeout_prompt ~flood_prompt ~container ()
+let toplevel_launch ?display_welcome ?after_init ?(on_disable=fun () -> ()) ?(on_enable=fun () -> ())
+      container history on_show toplevel_buttons_group id =
+  let timeout_prompt =
+    Learnocaml_toplevel.make_timeout_popup ~on_show () in
+  let flood_prompt =
+    Learnocaml_toplevel.make_flood_popup ~on_show () in
+  let history =
+    let storage_key = history id in
+    let on_update self =
+      Learnocaml_local_storage.store storage_key
+        (Learnocaml_toplevel_history.snapshot self) in
+    let snapshot =
+      Learnocaml_local_storage.retrieve storage_key in
+    Learnocaml_toplevel_history.create
+      ~gettimeofday
+      ~on_update
+      ~max_size: 99
+      ~snapshot () in
+  get_worker_code "learnocaml-toplevel-worker.js" () >>= fun worker_js_file ->
+  Learnocaml_toplevel.create ~worker_js_file
+    ?display_welcome ?after_init ~timeout_prompt ~flood_prompt
+    ~on_disable_input: (fun _ -> on_disable (); disable_button_group toplevel_buttons_group)
+    ~on_enable_input: (fun _ -> on_enable (); enable_button_group toplevel_buttons_group)
+    ~container
+    ~history ()
+
+let init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button =
+  begin toplevel_button
+      ~icon: "cleanup" [%i"Clear"] @@ fun () ->
+    Learnocaml_toplevel.clear top ;
+    Lwt.return ()
+  end ;
+  begin toplevel_button
+      ~icon: "reload" [%i"Reset"] @@ fun () ->
+    toplevel_launch >>= fun top ->
+    disabling_button_group toplevel_buttons_group (fun () -> Learnocaml_toplevel.reset top)
+  end ;
+  begin toplevel_button
+      ~icon: "run" [%i"Eval phrase"] @@ fun () ->
+    Learnocaml_toplevel.execute top ;
+    Lwt.return ()
+  end
+
+let set_string_translations_exercises () =
+  let translations = [
+    "txt_preparing", [%i"Preparing the environment"];
+    "learnocaml-exo-button-editor", [%i"Editor"];
+    "learnocaml-exo-button-toplevel", [%i"Toplevel"];
+    "learnocaml-exo-button-report", [%i"Report"];
+    "learnocaml-exo-button-text", [%i"Exercise"];
+    "learnocaml-exo-button-meta", [%i"Details"];
+    "learnocaml-exo-editor-pane", [%i"Editor"];
+    "txt_grade_report", [%i"Click the Grade button to get your report"];
+  ] in
+  List.iter
+    (fun (id, text) ->
+      match Js_utils.Manip.by_id id with
+      | None -> ()
+      | Some component ->
+         Manip.setInnerHtml component text)
+    translations
+
+let local_save ace id =
+  let key = Learnocaml_local_storage.exercise_state id in
+  let ans =
+    try Learnocaml_local_storage.retrieve key with Not_found ->
+      Answer.{solution = ""; mtime = 0.; report = None; grade = None}
+  in
+  Learnocaml_local_storage.store key
+    { ans with Answer.solution = Ace.get_contents ace;
+               mtime = gettimeofday () }
+
+let run_async_with_log f =
+  Lwt.async_exception_hook := begin fun e ->
+    Firebug.console##log (Js.string
+                            (Printexc.to_string e ^
+                               if Printexc.backtrace_status () then
+                                 Printexc.get_backtrace ()
+                               else ""));
+    match e with
+    | Failure message -> fatal message
+    | Server_caller.Cannot_fetch message -> fatal message
+    | exn -> fatal (Printexc.to_string exn)
+  end ;
+  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
+  Lwt.async f
+
+let mk_tab_handlers default_tab other_tabs =
+  let names = default_tab::other_tabs in
+  let current = ref default_tab in
+  let select_tab name =
+    set_arg "tab" name ;
+    Manip.removeClass
+      (find_component ("learnocaml-exo-button-" ^ !current))
+      "front-tab" ;
+    Manip.removeClass
+      (find_component ("learnocaml-exo-tab-" ^ !current))
+      "front-tab" ;
+    Manip.enable
+      (find_component ("learnocaml-exo-button-" ^ !current)) ;
+    Manip.addClass
+      (find_component ("learnocaml-exo-button-" ^ name))
+      "front-tab" ;
+    Manip.addClass
+      (find_component ("learnocaml-exo-tab-" ^ name))
+      "front-tab" ;
+    Manip.disable
+      (find_component ("learnocaml-exo-button-" ^ name)) ;
+    current := name in
+  let init_tabs () =
+    current :=
+      begin
+        try
+          let requested = arg "tab" in
+          if List.mem requested names then requested else default_tab
+        with Not_found -> default_tab
+      end ;
+    List.iter
+      (fun name ->
+        Manip.removeClass
+          (find_component ("learnocaml-exo-button-" ^ name))
+          "front-tab" ;
+        Manip.removeClass
+          (find_component ("learnocaml-exo-tab-" ^ name))
+          "front-tab" ;
+        Manip.Ev.onclick
+          (find_component ("learnocaml-exo-button-" ^ name))
+          (fun _ -> select_tab name ; true))
+      names ;
+    select_tab !current in
+  init_tabs, select_tab
+
+module type Editor_info = sig
+  val ace : Ocaml_mode.editor Ace.editor
+  val buttons_container : 'a Tyxml_js.Html5.elt
+end
+
+module Editor_button (E : Editor_info) = struct
+
+  let editor_button = button ~container:E.buttons_container ~theme:"light"
+
+  let cleanup template =
+  editor_button
+    ~icon: "cleanup" [%i"Reset"] @@ fun () ->
+    confirm ~title:[%i"START FROM SCRATCH"]
+      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      (fun () ->
+         Ace.set_contents E.ace template);
+    Lwt.return ()
+
+  let download id =
+    editor_button
+      ~icon: "download" [%i"Download"] @@ fun () ->
+      let name = id ^ ".ml" in
+      let contents = Js.string (Ace.get_contents E.ace) in
+      fake_download ~name ~contents ;
+      Lwt.return ()
+
+  let eval top select_tab =
+    editor_button
+      ~icon: "run" [%i"Eval code"] @@ fun () ->
+      Learnocaml_toplevel.execute_phrase top (Ace.get_contents E.ace) >>= fun _ ->
+      select_tab "toplevel";
+      Lwt.return_unit
+
+  let sync token id =
+    editor_button
+      ~icon: "sync" [%i"Sync"] @@ fun () ->
+      token >>= fun token ->
+      sync_exercise token id ~editor:(Ace.get_contents E.ace) >|= fun _save -> ()
+end
+
+let setup_editor solution =
+  let editor_pane = find_component "learnocaml-exo-editor-pane" in
+  let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
+  let ace = Ocaml_mode.get_editor editor in
+  Ace.set_contents ace ~reset_undo:true solution;
+  Ace.set_font_size ace 18;
+  editor, ace
+
+let typecheck top ace editor set_class =
+  Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
+  let error, warnings =
+    match res with
+    | Toploop_results.Ok ((), warnings) -> None, warnings
+    | Toploop_results.Error (err, warnings) -> Some err, warnings in
+  let transl_loc { Toploop_results.loc_start ; loc_end } =
+    { Ocaml_mode.loc_start ; loc_end } in
+  let error = match error with
+    | None -> None
+    | Some { Toploop_results.locs ; msg ; if_highlight } ->
+       Some { Ocaml_mode.locs = List.map transl_loc locs ;
+              msg = (if if_highlight <> "" then if_highlight else msg) } in
+  let warnings =
+    List.map
+      (fun { Toploop_results.locs ; msg ; if_highlight } ->
+        { Ocaml_mode.loc = transl_loc (List.hd locs) ;
+          msg = (if if_highlight <> "" then if_highlight else msg) })
+      warnings in
+  Ocaml_mode.report_error ~set_class editor error warnings >|= fun () ->
+  Ace.focus ace
+
+let set_nickname_div () =
+  let nickname_div = find_component "learnocaml-nickname" in
+  match Learnocaml_local_storage.(retrieve nickname) with
+  | nickname -> Manip.setInnerText nickname_div nickname
+  | exception Not_found -> ()
+
+let setup_prelude_pane ace prelude =
+  if prelude = "" then () else
+  let editor_pane = find_component "learnocaml-exo-editor-pane" in
+  let prelude_pane = find_component "learnocaml-exo-prelude" in
+  let open Tyxml_js.Html5 in
+  let state =
+    ref (match arg "prelude" with
+         | exception Not_found -> true
+         | "shown" -> true
+         | "hidden" -> false
+         | _ -> failwith "Bad format for argument prelude.") in
+  let prelude_btn = button [] in
+  let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
+                           prelude_btn ] in
+  let prelude_container =
+    pre ~a: [ a_class [ "toplevel-code" ] ]
+      (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+  let update () =
+    if !state then begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
+        Manip.SetCss.display prelude_container "" ;
+        Manip.SetCss.top editor_pane "193px" ; (* 150 + 43 *)
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "shown"
+      end else begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
+        Manip.SetCss.display prelude_container "none" ;
+        Manip.SetCss.top editor_pane "43px" ;
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "hidden"
+      end in
+  update () ;
+  Manip.Ev.onclick prelude_btn
+    (fun _ -> state := not !state ; update () ; true) ;
+  Manip.appendChildren prelude_pane
+    [ prelude_title ; prelude_container ]

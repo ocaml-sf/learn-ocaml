@@ -241,6 +241,7 @@ body {
 }
 #learnocaml-exo-prelude > pre.toplevel-code {
   flex: 0 1 auto;
+  height: 150px;
   max-height: 150px;
   background: #666;
   margin: 0;
@@ -263,7 +264,7 @@ body {
 }
 #learnocaml-exo-tab-editor > .pane {
   position: absolute;
-  left: 0; top: 43px; bottom: 40px; width: 100%;
+  left: 0; top: 0px; bottom: 40px; width: 100%;
   background: #666;
   color: #fff;
   z-index: 1002;
