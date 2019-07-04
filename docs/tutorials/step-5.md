@@ -98,16 +98,16 @@ ones:
 ## Optional arguments of grading functions
 
 * `gen`: number of automatically generated tests. See
-  [step-3](../tutorials/step-3.md)
+  [step-3](../tutorials/step-3)
   and
-  [step-4](../tutorials/step-4.md)
+  [step-4](../tutorials/step-4)
   for more information.
 
 * `sampler`: used to define sampler for automatically generating
   inputs for tests. See
-  [step-3](../tutorials/step-3.md)
+  [step-3](../tutorials/step-3)
   and
-  [step-4](../tutorials/step-4.md)
+  [step-4](../tutorials/step-4)
   for more information.
 
 * `test`: is used to redefine the function which compare the output of

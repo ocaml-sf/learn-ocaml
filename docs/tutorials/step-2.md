@@ -83,7 +83,7 @@ corresponding report. For a function called `my_function`, it will be
 The next steps will bring you progressively to understand most of the
 possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
-5](../tutorials/step-5.md)
+5](../tutorials/step-5)
 where you will:
 * find the signature of `grade_function_1_against_solution`
 * learn a new grading function for functions

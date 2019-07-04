@@ -27,7 +27,7 @@ specific shape, illustrated by the following ascii art:
 ```
 
 The complete format specification for exercise description is given in
-[docs/exercises_format.md](../../exercises_format.md).
+[docs/exercises_format.md](../../exercises_format).
 
 - The directory `exercises` must contain the descriptions of the
   exercises. Each exercise description is stored in a dedicated
