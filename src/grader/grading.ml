@@ -84,10 +84,9 @@ let get_grade
           !flush_stderr () ;
           !flush_stdout () ;
           let msg =
-            Buffer.contents stderr_buffer ^
-            "\n" ^
-            Buffer.contents stdout_buffer in
-          fail { Toploop_ext.msg ; locs = [] ; if_highlight = msg }
+            String.concat "\n"
+              (List.map Buffer.contents [stderr_buffer; stdout_buffer; outcomes_buffer])
+          in fail { Toploop_ext.msg ; locs = [] ; if_highlight = msg }
         end
     | Toploop_ext.Error (err, w) ->
         warn w ;

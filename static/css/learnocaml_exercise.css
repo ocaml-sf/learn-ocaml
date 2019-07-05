@@ -162,7 +162,7 @@ body {
     left: 0; right: 0px; bottom: 0px;
   }
   #learnocaml-exo-tab-editor > .pane {
-    margin-top: 5px;
+    margin-top: 0;
   }
   #learnocaml-exo-tab-editor::after {
     position: absolute;
@@ -189,6 +189,74 @@ body {
     top: 80px;
   }
 }
+
+/* -------------------- Prelude -------------------------------- */
+
+#learnocaml-exo-prelude {
+  overflow: hidden;
+  left: 0;
+  top: 61px;
+  z-index: 1002;
+  border-bottom: thin solid #eee;
+  width: 100%;
+}
+#learnocaml-exo-prelude > h1 {
+  position: relative;
+  flex: 0 0 auto;
+  background: #222;
+  color: #eee;
+  font-size: 20px;
+  line-height: 22px;
+  margin: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  display: block;
+  font-weight: normal;
+  z-index: 1005;
+  width: 100%;
+  text-align: center;
+}
+#learnocaml-exo-prelude > h1:first-child {
+  margin-top: 0;
+}
+#learnocaml-exo-prelude > h1 > button {
+  float: right;
+  border: none;
+  border-left: 1px #eee solid;
+  color: #eee;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-top: -10px;
+  margin-bottom: -10px;
+  font-size: 20px;
+  line-height: 22px;
+  z-index: 1006;
+  width: 20%;
+  background: #222; 
+}
+#learnocaml-exo-prelude > iframe {
+  border: none;
+  overflow: auto;
+  flex: 1 3 auto ;
+}
+#learnocaml-exo-prelude > pre.toplevel-code {
+  flex: 0 1 auto;
+  height: 150px;
+  max-height: 150px;
+  background: #666;
+  margin: 0;
+  overflow: auto;
+  width: 100%;
+  position: absolute;
+}
+#learnocaml-exo-prelude > h1::after {
+  position: absolute;
+  left: 0px; bottom: -5px; width: 100%;
+  content:"";
+  height:5px; background: pink;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
+}
+
 /* -------------------- editor tab -------------------------------- */
 #learnocaml-exo-tab-buttons > #learnocaml-exo-button-editor {
   background: #444;
@@ -196,7 +264,7 @@ body {
 }
 #learnocaml-exo-tab-editor > .pane {
   position: absolute;
-  left: 0; top: 0; bottom: 40px; width: 100%;
+  left: 0; top: 0px; bottom: 40px; width: 100%;
   background: #666;
   color: #fff;
   z-index: 1002;
@@ -238,7 +306,7 @@ body {
 /* -------------------- toplevel tab ------------------------------ */
 #learnocaml-exo-tab-toplevel > .toplevel-pane {
   position: absolute;
-  left: 0; top: 0; bottom: 40px; width: 100%;
+  left: 0; top: 0; bottom: 0px; width: 100%;
   z-index: 1002;
   margin: 5px 0 0 0;
 }
@@ -250,7 +318,7 @@ body {
 }
 #learnocaml-exo-tab-toplevel > .buttons {
   position: absolute;
-  left: 0; bottom: 0px; width: 100%; height: 40px;
+  right: 1%; top: 5px; width: 49%; height: 40px;
   background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
   color: #fff;
   line-height: 40px;
@@ -444,7 +512,7 @@ body {
   position: absolute;
   background: #acf;
   opacity: 0.3;
-  z-index: 1010;p
+  z-index: 1010;
   left:0; right:0; bottom:0; top:0;
   content:"";
 }

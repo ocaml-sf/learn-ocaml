@@ -8,10 +8,12 @@
 
 val mkdir_p: ?perm:int -> string -> unit Lwt.t
 
+(** [copy_tree src dst] copies the file [src] into file [dst] *)
+val copy_file: string -> string -> unit Lwt.t
+
 (** [copy_tree src dst] copies the contents of directory [src] into directory
     [dst] *)
 val copy_tree: string -> string -> unit Lwt.t
-
 
 type 'a with_lock = { with_lock: 'b. 'a -> (unit -> 'b Lwt.t) -> 'b Lwt.t }
 

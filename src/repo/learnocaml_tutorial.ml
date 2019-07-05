@@ -18,4 +18,3 @@ and phrase =
   | Code_block of Learnocaml_index.code
 
 open Json_encoding
-

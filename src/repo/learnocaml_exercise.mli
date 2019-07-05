@@ -48,13 +48,13 @@ module File : sig
   (** Maximum score for the exercise *)
   val max_score: int file
 
-  (** Returns the (private, already decyphered) [prepare.ml] *)
+  (** Returns the (private, already deciphered) [prepare.ml] *)
   val prepare: string file
 
-  (** Returns the (private, already decyphered) [solution.ml] *)
+  (** Returns the (private, already deciphered) [solution.ml] *)
   val solution: string file
 
-  (** Returns the (private, already decyphered) [test.ml] *)
+  (** Returns the (private, already deciphered) [test.ml] *)
   val test: string file
 
   (** Returns the (public) [prelude.ml] *)

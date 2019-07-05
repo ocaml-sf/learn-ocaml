@@ -14,9 +14,11 @@ type _ request =
   | Static:
       string list -> string request
   | Version:
+      unit -> (string * int) request
+  | Nonce:
       unit -> string request
   | Create_token:
-      student token option * string option -> student token request
+      string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
   | Fetch_save:
@@ -48,6 +50,11 @@ type _ request =
       unit -> Tutorial.Index.t request
   | Tutorial:
       string -> Tutorial.t request
+
+  | Playground_index:
+      unit -> Playground.Index.t request
+  | Playground:
+      string -> Playground.t request
 
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
@@ -87,7 +94,8 @@ module Conversions (Json: JSON_CODEC) = struct
       in
       match req with
       | Static _ -> str
-      | Version _ -> json J.(obj1 (req "version" string))
+      | Version _ -> json J.(obj2 (req "version" string) (req "server_id" int))
+      | Nonce _ -> json J.(obj1 (req "nonce" string))
       | Create_token _ ->
           json J.(obj1 (req "token" string)) +>
           Token.(to_string, parse)
@@ -118,7 +126,11 @@ module Conversions (Json: JSON_CODEC) = struct
       | Tutorial_index _ ->
           json Tutorial.Index.enc
       | Tutorial _ ->
-          json Tutorial.enc
+         json Tutorial.enc
+      | Playground_index _ ->
+          json Playground.Index.enc
+      | Playground _ ->
+          json Playground.enc
 
       | Exercise_status_index _ ->
           json (J.list Exercise.Status.enc)
@@ -153,8 +165,10 @@ module Conversions (Json: JSON_CODEC) = struct
     | Version () ->
         get ["version"]
 
-    | Create_token (token, nick) ->
-        get ?token (["sync"; "new"] @
+    | Nonce () ->
+        get ["nonce"]
+    | Create_token (secret_candiate, token, nick) ->
+        get ?token (["sync"; "new"; secret_candiate] @
                     (match nick with None -> [] | Some n -> [n]))
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
@@ -194,7 +208,12 @@ module Conversions (Json: JSON_CODEC) = struct
     | Lesson_index () ->
         get ["lessons.json"]
     | Lesson id ->
-        get ["lessons"; id^".json"]
+       get ["lessons"; id^".json"]
+
+    | Playground_index () ->
+        get ["playgrounds.json"]
+    | Playground id ->
+        get ["playgrounds"; id^".json"]
 
     | Tutorial_index () ->
         get ["tutorials.json"]
@@ -223,7 +242,8 @@ module type REQUEST_HANDLER = sig
   type 'resp ret
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: 'resp request -> 'resp ret
+  val callback: Conduit.endp ->
+                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -233,9 +253,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
   let rec last =
     function [f] -> Some f | [] -> None | _::r -> last r
 
-  let handler request =
+  let handler conn config request =
       let k req =
-        Rh.callback req |> Rh.map_ret (C.response_encode req)
+        Rh.callback conn config req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with
@@ -250,10 +270,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["version"], _ ->
           Version () |> k
 
-      | `GET, ["sync"; "new"], token ->
-          Create_token (token, None) |> k
-      | `GET, ["sync"; "new"; nick], token ->
-          Create_token (token, Some nick) |> k
+      | `GET, ["nonce"], _ ->
+          Nonce () |> k
+      | `GET, ["sync"; "new"; secret_candidate], token ->
+          Create_token (secret_candidate, token, None) |> k
+      | `GET, ["sync"; "new"; secret_candidate; nick], token ->
+          Create_token (secret_candidate, token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
 
@@ -306,8 +328,18 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
            | Some "" ->
                Static ["exercise.html"] |> k
            | _ ->
-               Static ("static"::path) |> k)
-
+              Static ("static"::path) |> k)
+      | `GET, ("playground"::path), _token ->
+         begin
+           match last path with
+           | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
+              let id = Filename.chop_suffix (String.concat "/" path) ".json" in
+              Playground id |> k
+           | Some "" ->
+              Static ["playground.html"] |> k
+           | _ ->
+              Static ("static"::path) |> k
+         end
       | `GET, ["lessons.json"], _ ->
           Lesson_index () |> k
       | `GET, ["lessons"; f], _ when Filename.check_suffix f ".json" ->
@@ -316,7 +348,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["tutorials.json"], _ ->
           Tutorial_index () |> k
       | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
-          Tutorial (Filename.chop_suffix f ".json") |> k
+         Tutorial (Filename.chop_suffix f ".json") |> k
+
+      | `GET, ["playgrounds.json"], _ ->
+          Playground_index () |> k
+      | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
+          Playground (Filename.chop_suffix f ".json") |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
@@ -336,7 +373,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET,
         ( ["index.html"]
-        | ["exercise.html"]
+          | ["exercise.html"]
+        | ["playground.html"]
         | ["student-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->

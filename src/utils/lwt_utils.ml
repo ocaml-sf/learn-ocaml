@@ -20,6 +20,16 @@ let rec mkdir_p ?(perm=0o755) dir =
       mkdir_p (Filename.dirname dir) >>= fun () ->
       Lwt_unix.mkdir dir perm
 
+let copy_file src dst =
+  Lwt.catch (fun () ->
+      let cmd = [|"cp";src;dst|]in
+      Lwt_process.exec ("", cmd) >>= fun r ->
+      if r <> Unix.WEXITED 0 then Lwt.fail_with "copy_file"
+      else Lwt.return_unit)
+    (function
+     | Sys_error _ | Unix.Unix_error _ -> Lwt.fail_with "copy_file"
+     | e -> raise e)
+
 let copy_tree src dst =
   let files = Sys.readdir src in
   if Array.length files = 0 then Lwt.return_unit

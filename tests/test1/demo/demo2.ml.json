@@ -1,0 +1,402 @@
+[
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "plus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "plus",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 1 1",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "2",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 2 2",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "4",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "plus 10 -10",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "0",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "minus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "minus",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "minus 1 1",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "0",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "minus 4 -2",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "6",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "minus 0 10",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "-10",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "times",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "times",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "times 1 3",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "3",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "times 2 4",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "8",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "times 3 0",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "0",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "divide",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "divide",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "divide 12 4",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "3",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "divide 12 5",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "2",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "divide 3 0",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct exception"
+          },
+          {
+            "text": "Division_by_zero",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  }
+]
