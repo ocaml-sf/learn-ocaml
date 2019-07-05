@@ -849,15 +849,10 @@ let () =
     Lwt.return ()
   in
   let download_all () =
-    let token = get_stored_token ()
-    and name = "archive.zip" in
-    Server_caller.request (Learnocaml_api.Archive_zip token) >|= function
-      | Ok zip ->
-          let contents = Js.string zip in
-          Learnocaml_common.fake_download ~name ~contents
-      | Error e -> 
-        alert ~title:[%i"Failed to download archive. Please try again later!"]
-          (Server_caller.string_of_error e)
+    let token = get_stored_token () |> Token.to_string in
+    Dom_html.window##.location##assign
+    (Js.string @@ "/archive.zip?token=" ^ token);
+    Lwt.return_unit
   in
   let logout_dialog () =
     Server_caller.request
