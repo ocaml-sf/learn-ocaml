@@ -25,7 +25,7 @@ let get_all_saves exo_name prelude =
         let open ErrS in
         let t = t.Student.token in
         Learnocaml_store.Save.get t >|= fun save ->
-        either (fun _ -> acc) (fun x -> x :: acc) @@ run @@
+        either  (fun x -> x :: acc) (fun _ -> acc) @@ run @@
           begin
             err_of_option "" save
             >>= fun x ->

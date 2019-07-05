@@ -1200,7 +1200,7 @@ module Partition = struct
           [ J.case (J.obj1 (J.req "leaf" leaf_enc))
               (function Leaf x -> Some x | Node _ -> None)
               (fun x -> Leaf x) ;
-            J.case (J.obj3 (J.req "coef" J.float) (J.req "left" self) (J.req "right" self))
+            J.case (J.obj3 (J.req "coef" J.int) (J.req "left" self) (J.req "right" self))
               (function Node (t,l,r) -> Some (t,l,r) | Leaf _ -> None)
               (fun (t,l,r) -> Node (t,l,r)) ]
 

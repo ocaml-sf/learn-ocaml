@@ -96,7 +96,7 @@ let rec render_tree =
         [H.pcdata ("Leaf with " ^ string_of_int (List.length xs) ^ " student(s)")]]
   | Node (f,l,r) ->
      [
-       H.p [ H.pcdata ("Node " ^ string_of_float f) ]
+       H.p [ H.pcdata ("Node " ^ string_of_int f) ]
      ;  H.ul [
             H.li (render_tree l)
           ; H.li (render_tree r)
