@@ -855,8 +855,10 @@ module Create_token = struct
          | Some c -> c.ConfigFile.server
          | None -> get_server server_url
        in
+       let secret = Sha.sha512 co.secret in
+       fetch server (Api.Nonce ()) >>= fun nonce ->
        fetch server
-         (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
+         (Api.Create_token (Sha.sha512 (nonce ^ secret), None, Some nickname))
        >>= fun tok ->
        Lwt_io.print (Token.to_string tok ^ "\n")
        >|= fun () -> 0
