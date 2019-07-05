@@ -56,6 +56,19 @@ let init_tabs, select_tab =
     select_tab !current in
   init_tabs, select_tab
 
+let check_if_need_refresh () =
+  let local_server_id = Learnocaml_local_storage.(retrieve server_id) in
+  retrieve @@ Learnocaml_api.Version ()
+  >|= fun (_, server_id) ->
+  if local_server_id <> server_id then
+    let title = [%i "WARNING: You have an older grader version than the server"]
+    and ok_label = [%i "Refresh the page"]
+    and refresh () = Dom_html.window##.location##reload
+    and cancel_label = [%i "I will do it myself!"]
+    and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
+    let contents = [ H.p [H.pcdata (String.trim message) ] ] in
+  confirm ~title ~ok_label ~cancel_label contents refresh
+
 let get_grade =
   let get_worker = get_worker_code "learnocaml-grader-worker.js" in
   fun ?callback ?timeout exercise ->
@@ -392,16 +405,22 @@ let () =
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Lwt.async @@ fun () ->
   set_string_translations ();
-  Learnocaml_local_storage.init () ;
+  Learnocaml_local_storage.init ();
+  retrieve (Learnocaml_api.Version ())
+  >|= fun (_,server_id) ->
+    Learnocaml_local_storage.(store server_id) server_id;
   let token =
     try
       Learnocaml_local_storage.(retrieve sync_token) |>
       Lwt.return
     with Not_found ->
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
       ask_string ~title:"Secret"
         [H.pcdata [%i"Enter the secret"]]
       >>= fun secret ->
-      retrieve (Learnocaml_api.Create_token (Sha.sha512 secret, None, None))
+      retrieve
+        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       token
@@ -518,48 +537,11 @@ let () =
     Lwt.return ()
   end ;
   (* ---- text pane ----------------------------------------------------- *)
-  let text_container = find_component "learnocaml-exo-tab-text" in
-  let text_iframe = Dom_html.createIframe Dom_html.document in
-  Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
-                     Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
-  let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
-  if prelude <> "" then begin
-    let open Tyxml_js.Html5 in
-    let state = ref (match arg "prelude" with
-        | exception Not_found -> true
-        | "shown" -> true
-        | "hidden" -> false
-        | _ -> failwith "Bad format for argument prelude.") in
-    let prelude_btn = button [] in
-    let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
-                             prelude_btn ] in
-    let prelude_container =
-      pre ~a: [ a_class [ "toplevel-code" ] ]
-        (Learnocaml_toplevel_output.format_ocaml_code prelude) in
-    let update () =
-      if !state then begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
-        Manip.SetCss.display prelude_container "" ;
-        set_arg "prelude" "shown"
-      end else begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
-        Manip.SetCss.display prelude_container "none" ;
-        set_arg "prelude" "hidden"
-      end in
-    update () ;
-    Manip.Ev.onclick prelude_btn
-      (fun _ -> state := not !state ; update () ; true) ;
-    Manip.appendChildren text_container
-      [ prelude_title ; prelude_container ]
-  end ;
-  Js.Opt.case
-    (text_iframe##.contentDocument)
-    (fun () -> failwith "cannot edit iframe document")
-    (fun d ->
-       d##open_;
-       d##write (Js.string (exercise_text ex_meta exo));
-       d##close) ;
+    let text_container = find_component "learnocaml-exo-tab-text" in
+    let text_iframe = Dom_html.createIframe Dom_html.document in
+    Manip.replaceChildren text_container
+      Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
+                       Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
@@ -618,6 +600,51 @@ let () =
     Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
     Ace.focus ace ;
     Lwt.return () in
+(*------------- prelude -----------------*)
+let prelude_pane =  find_component "learnocaml-exo-prelude" in
+  let prelude = Learnocaml_exercise.(decipher File.prelude exo) in
+  if prelude <> "" then begin
+    let open Tyxml_js.Html5 in
+    let state = ref (match arg "prelude" with
+        | exception Not_found -> true
+        | "shown" -> true
+        | "hidden" -> false
+        | _ -> failwith "Bad format for argument prelude.") in
+    let prelude_btn = button [] in
+    let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
+                             prelude_btn ] in
+    let prelude_container =
+      pre ~a: [ a_class [ "toplevel-code" ] ]
+        (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+    let update () =
+      if !state then begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
+        Manip.SetCss.display prelude_container "" ;
+        Manip.SetCss.top editor_pane "193px" ;
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "shown"
+      end else begin
+        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
+        Manip.SetCss.display prelude_container "none" ;
+        Manip.SetCss.top editor_pane "43px" ;
+        Manip.SetCss.bottom editor_pane "40px" ;
+        Ace.resize ace true;
+        set_arg "prelude" "hidden"
+      end in
+    update () ;
+    Manip.Ev.onclick prelude_btn
+      (fun _ -> state := not !state ; update () ; true) ;
+    Manip.appendChildren prelude_pane
+      [ prelude_title ; prelude_container ]
+  end ;
+  Js.Opt.case
+    (text_iframe##.contentDocument)
+    (fun () -> failwith "cannot edit iframe document")
+    (fun d ->
+       d##open_;
+       d##write (Js.string (exercise_text ex_meta exo));
+       d##close) ;
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
@@ -639,6 +666,8 @@ let () =
   end;
   begin toolbar_button
       ~icon: "reload" [%i"Grade!"] @@ fun () ->
+    check_if_need_refresh ()
+    >>= fun () ->
     let aborted, abort_message =
       let t, u = Lwt.task () in
       let btn = Tyxml_js.Html5.(button [ pcdata [%i"abort"] ]) in
