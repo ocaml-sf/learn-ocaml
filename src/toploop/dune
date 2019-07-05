@@ -1,0 +1,32 @@
+(library
+ (name toploop_results)
+ (wrapped false)
+ (modules Toploop_results)
+)
+
+(library
+ (name toploop)
+ (wrapped false)
+ (modes byte)
+ (modules Toploop_ext)
+ (libraries compiler-libs.toplevel
+            toploop_results)
+)
+
+(library
+ (name toploop_jsoo)
+ (wrapped false)
+ (modes byte)
+ (flags :standard -warn-error A-4-42-44-45-48-9-58)
+ (libraries js_of_ocaml.compiler toploop)
+ (modules Toploop_jsoo)
+ (preprocess (pps js_of_ocaml.ppx))
+)
+
+(library
+ (name toploop_unix)
+ (wrapped false)
+ (modes byte)
+ (libraries lwt.unix toploop)
+ (modules Toploop_unix)
+)

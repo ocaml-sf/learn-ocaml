@@ -18,7 +18,7 @@
 
 let doc = Dom_html.document
 let window = Dom_html.window
-let loc = Js.Unsafe.variable "location"
+(* let loc = Js.Unsafe.variable "location" *)
 
 let alert s = window##(alert (Js.string s))
 let confirm s = Js.to_bool (window##(confirm (Js.string s)))
@@ -30,31 +30,24 @@ let js_error obj = Firebug.console##(error obj)
 
 let log fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(log
-                                  (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(log (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let debug fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(debug
-                                  (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(debug (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let warn fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(warn
-                                  (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(warn (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
 let error fmt =
   Format.kfprintf
-    (fun s -> Firebug.console##(error
-                                  (Js.string (Format.flush_str_formatter ()))))
+    (fun _ -> Firebug.console##(error (Js.string (Format.flush_str_formatter ()))))
     Format.str_formatter
     fmt
-
-let is_hidden div =
-  div##.style##.display = Js.string "none"
 
 let reload () = window##.location##reload
 
@@ -62,10 +55,10 @@ let get_lang () =
   match Js.Optdef. to_option (Dom_html.window##.navigator##.language) with
   | Some l -> Some (Js.to_string l)
   | None ->
-      (match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
-       with
-       | Some l -> Some (Js.to_string l)
-       | None -> None)
+      match Js.Optdef.to_option (Dom_html.window##.navigator##.userLanguage)
+      with
+      | Some l -> Some (Js.to_string l)
+      | None -> None
 
 
 module Manip = struct
@@ -121,16 +114,25 @@ module Manip = struct
     let elt = get_elt "setInnerHtml" elt in
     elt##.innerHTML := Js.string s
 
-  let setTitle elt s =
-    let elt = get_elt "setTitle" elt in
-    elt##.title := Js.string s
+  let setInnerText elt s =
+    let elt = get_elt "setInnerText" elt in
+    elt##.textContent := Js.some (Js.string s)
 
+  let hasClass elt s =
+    let elt = get_elt "addClass" elt in
+    Js.to_bool
+      elt##.classList##(contains (Js.string s))
   let addClass elt s =
     let elt = get_elt "addClass" elt in
     elt##.classList##(add (Js.string s))
   let removeClass elt s =
     let elt = get_elt "removeClass" elt in
     elt##.classList##(remove (Js.string s))
+  let toggleClass elt s =
+    let elt = get_elt "toggleClass" elt in
+    Js.to_bool
+      elt##.classList##(toggle (Js.string s))
+
 
   let raw_appendChild ?before node elt2 =
     match before with
@@ -145,8 +147,7 @@ module Manip = struct
       List.iter (fun elt2 -> ignore(node##(appendChild (get_node elt2)))) elts
     | Some elt3 ->
       let node3 = get_node elt3 in
-      List.iter (fun elt2 ->
-          ignore(node##(insertBefore (get_node elt2) (Js.some node3)))) elts
+      List.iter (fun elt2 -> ignore(node##(insertBefore (get_node elt2) (Js.some node3)))) elts
 
   let raw_insertChildAfter node1 node2 elt3 =
     Js.Opt.case
@@ -173,7 +174,7 @@ module Manip = struct
 
   let raw_replaceChild node1 elt2 elt3 =
     let node2 = get_node elt2 in
-    ignore(node1##(replaceChild node2 (get_node elt3)))
+    ignore(node1##replaceChild node2 (get_node elt3))
 
   let raw_removeChildren node =
     let childrens = Dom.list_of_nodeList (node##.childNodes) in
@@ -193,14 +194,28 @@ module Manip = struct
     Js.Opt.to_option res
 
   let by_id n =
-    let res = Js.Opt.bind
-                (Dom_html.window##.document##(getElementById (Js.string n)))
-                (fun node -> Js.Opt.map (Dom.CoerceTo.element node)
-                               (fun node -> Of_dom.of_element
-                                              (Dom_html.element node)
-                               )
-                ) in
+    let res = Js.Opt.bind (Dom_html.window##.document##(getElementById (Js.string n))) (fun node ->
+        Js.Opt.map (Dom.CoerceTo.element node) (fun node ->
+            Of_dom.of_element (Dom_html.element node)
+          )
+      ) in
     Js.Opt.to_option res
+
+  let by_classname n =
+    Dom.list_of_nodeList
+      (Dom_html.window##.document##(getElementsByClassName (Js.string n)))
+    |> List.map (fun n -> Of_dom.of_element (Dom_html.element n))
+    (* let rec tolist acc n =
+     *   if n < 0 then acc
+     *   else
+     *   let acc =
+     *     Js.Opt.case (nodelist##item n)
+     *       (fun () -> acc)
+     *       (fun node -> Of_dom.of_element (Dom_html.element node) :: acc)
+     *   in
+     *   tolist acc (n-1)
+     * in
+     * tolist [] nodelist##.length *)
 
   let childLength elt =
     let node = get_node elt in
@@ -245,6 +260,10 @@ module Manip = struct
     let node1 = get_node elt1 in
     raw_replaceChild node1 elt2 elt3
 
+  let replaceSelf elt1 elt2 =
+    Js.Opt.iter (get_node elt1)##.parentNode @@ fun parent ->
+    raw_replaceChild parent elt2 elt1
+
   let removeChildren elt =
     let node = get_node elt in
     raw_removeChildren node
@@ -253,19 +272,6 @@ module Manip = struct
     let node = get_node elt in
     raw_replaceChildren node elts
 
-  let rec filterElements nodes = match nodes with
-    | [] -> []
-    | node :: nodes ->
-      let elts = filterElements nodes in
-      Js.Opt.case
-        (Dom.CoerceTo.element node)
-        (fun () -> elts)
-        (fun elt -> elt :: elts)
-
-  let childElements elt =
-    let node = get_node elt in
-    filterElements (Dom.list_of_nodeList (node##.childNodes))
-
   let children elt =
     let node = get_node elt in
     List.map Html5.tot (Dom.list_of_nodeList (node##.childNodes))
@@ -273,6 +279,10 @@ module Manip = struct
   let appendToBody ?before elt2 =
     let body = (Of_dom.of_body Dom_html.window##.document##.body) in
     appendChild ?before body elt2
+
+  let appendToHead ?before elt2 =
+    let head = (Of_dom.of_head Dom_html.window##.document##.head) in
+    appendChild ?before head elt2
 
   let get_elt_input name elt : Dom_html.inputElement Js.t =
     Js.Opt.case
@@ -413,9 +423,9 @@ module Manip = struct
       elt##.onscroll := (bool_cb f)
     let onreturn elt f =
       let f ev =
-        let key = ev##.keyCode in
-        if key = 13 then f ev;
-        true in
+	let key = ev##.keyCode in
+	if key = 13 then f ev;
+	true in
       onkeydown elt f
     let onchange elt f =
       let elt = get_elt_input "Ev.onchange" elt in
@@ -423,6 +433,9 @@ module Manip = struct
     let onchange_select elt f =
       let elt = get_elt_select "Ev.onchange_select" elt in
       elt##.onchange := (bool_cb f)
+    let oninput elt f =
+      let elt = get_elt_input "Ev.oninput" elt in
+      elt##.oninput := (bool_cb f)
   end
 
   module Attr = struct
@@ -834,8 +847,7 @@ module Manip = struct
     let borderBottomWidth elt v =
       let elt = get_elt "SetCss.borderBottomWidth" elt in
       elt##.style##.borderBottomWidth := Js.bytestring v
-    let borderBottomWidthPx elt v =
-      borderBottomWidth elt (Printf.sprintf "%dpx" v)
+    let borderBottomWidthPx elt v = borderBottomWidth elt (Printf.sprintf "%dpx" v)
     let borderCollapse elt v =
       let elt = get_elt "SetCss.borderCollapse" elt in
       elt##.style##.borderCollapse := Js.bytestring v
@@ -867,8 +879,7 @@ module Manip = struct
     let borderRightWidth elt v =
       let elt = get_elt "SetCss.borderRightWidth" elt in
       elt##.style##.borderRightWidth := Js.bytestring v
-    let borderRightWidthPx elt v =
-      borderRightWidth elt (Printf.sprintf "%dpx" v)
+    let borderRightWidthPx elt v = borderRightWidth elt (Printf.sprintf "%dpx" v)
     let borderSpacing elt v =
       let elt = get_elt "SetCss.borderSpacing" elt in
       elt##.style##.borderSpacing := Js.bytestring v
@@ -1015,9 +1026,7 @@ module Manip = struct
     let minWidthPx elt v = minWidth elt (Printf.sprintf "%dpx" v)
     let opacity elt v =
       let elt = get_elt "SetCss.opacity" elt in
-      elt##.style##.opacity := match v with
-                               | None -> Js.undefined
-                               | Some v -> Js.def (Js.bytestring v)
+      elt##.style##.opacity := match v with None -> Js.undefined | Some v -> Js.def (Js.bytestring v)
     let outline elt v =
       let elt = get_elt "SetCss.outline" elt in
       elt##.style##.outline := Js.bytestring v
@@ -1190,7 +1199,7 @@ module MakeLocal(V: sig type t val name: string end) = struct
 
   let name = Js.string V.name
 
-  let get () =
+  let get (): V.t option =
     try
       let s = get_storage () in
       match Js.Opt.to_option (s##(getItem name)) with
@@ -1198,7 +1207,7 @@ module MakeLocal(V: sig type t val name: string end) = struct
       | Some s -> Some (Json.unsafe_input s)
     with Not_found -> None
 
-  let set v =
+  let set: V.t -> unit = fun v ->
     try
       let s = get_storage () in
       let str = Json.output v in
@@ -1206,3 +1215,17 @@ module MakeLocal(V: sig type t val name: string end) = struct
     with Not_found -> ()
 
 end
+
+let js_code_url code =
+  let blob = File.blob_from_string ~contentType:"application/javascript" code in
+  let url = Dom_html.window##._URL##createObjectURL blob in
+  Js.to_string url
+
+let worker_with_code code =
+  let blob = File.blob_from_string ~contentType:"application/javascript" code in
+  let url = Dom_html.window##._URL##createObjectURL blob in
+  Worker.create (Js.to_string url)
+
+let worker url =
+  let open Lwt.Infix in
+  Lwt_request.get ?headers:None ~url ~args:[] >|= worker_with_code

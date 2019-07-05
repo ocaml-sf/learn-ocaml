@@ -6,36 +6,36 @@
     <title>Learn OCaml by OCamlPro - Editor</title>
         <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
     <!--[if IE]><link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico"     /><![endif]-->﻿
-    <link rel="stylesheet" href="css/learnocaml_common.css">
-    <link rel="stylesheet" href="css/learnocaml_editor.css">
-    <link rel="stylesheet" href="css/learnocaml_report.css">
-    <link rel="stylesheet" href="css/learnocaml_tryocaml.css">
-    <link rel="stylesheet" href="css/learnocaml_main.css">
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_editor.css">
+    <link rel="stylesheet" href="/css/learnocaml_report.css">
+    <link rel="stylesheet" href="/css/learnocaml_tryocaml.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
 
-    <script src="js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
     <!-- var editor = ace.edit("learnocaml-exo-editor-pane"); -->
     <!-- editor.setOptions({ fontFamily: 'Inconsolata', fontSize: "18px" }); -->
-    <script language="JavaScript" src="js/editor.js" defer></script>
+    <script language="JavaScript" src="/js/editor.js" defer></script>
   </head>
   <body>
     <!-- Should be kept untouched. -->
     <div style="display:none">
       <!-- (Weakly) preload images. -->
-      <img src="icons/tryocaml_loading_1.gif"><img src="icons/tryocaml_loading_2.gif">
-      <img src="icons/tryocaml_loading_3.gif"><img src="icons/tryocaml_loading_4.gif">
-      <img src="icons/tryocaml_loading_5.gif"><img src="icons/tryocaml_loading_6.gif">
-      <img src="icons/tryocaml_loading_7.gif"><img src="icons/tryocaml_loading_8.gif">
+      <img src="/icons/tryocaml_loading_1.gif"><img src="/icons/tryocaml_loading_2.gif">
+      <img src="/icons/tryocaml_loading_3.gif"><img src="/icons/tryocaml_loading_4.gif">
+      <img src="/icons/tryocaml_loading_5.gif"><img src="/icons/tryocaml_loading_6.gif">
+      <img src="/icons/tryocaml_loading_7.gif"><img src="/icons/tryocaml_loading_8.gif">
     </div>
     <!-- Three states: .initial, .loading and .loaded.
          Set to .loaded when initial loading finished.
          Set to .loading while loading, then to .loaded. -->
     <div id="learnocaml-exo-loading" class="loading-layer initial">
-      <div id="chamo"><img id="chamo-img" src="icons/tryocaml_loading_5.gif"></div>
+      <div id="chamo"><img id="chamo-img" src="/icons/tryocaml_loading_5.gif"></div>
       <div class="messages"><ul><li id="txt_preparing">Preparing the environment</li></ul></div>
     </div>
     <script language="JavaScript">
       var n = Math.floor (Math.random () * 9) + 1;
-      document.getElementById('chamo-img').src = 'icons/tryocaml_loading_' + n + '.gif';
+      document.getElementById('chamo-img').src = '/icons/tryocaml_loading_' + n + '.gif';
     </script>
     <div id="learnocaml-loading" class="loading-layer loaded">
     </div>
@@ -43,9 +43,9 @@
     <div id="learnocaml-exo-toolbar">
       <a href="./">
       <div class ="logo">
-        <img src="icons/logo_ocaml.svg">
+        <img src="/icons/logo_ocaml.svg">
         <span>Learn OCaml</span>
-        <img src="icons/logo_ocp.svg">
+        <img src="/icons/logo_ocp.svg">
       </div>
       </a>
       <!--
@@ -82,11 +82,8 @@
       <button id="learnocaml-exo-button-question"
       title="Type here the wording of the exercise in Markdown">Question</button>
 
-      <button id="learnocaml-exo-button-testhaut" class="front-tab"
-      title="Generate here the tests code">Test</button>
-
       <button id="learnocaml-exo-button-test" class="front-tab"
-      title="Type here the tests code">Test.ml</button>
+      title="Type here the tests code">Test</button>
 
       <button id="learnocaml-exo-button-report">Report</button>
 
@@ -146,7 +143,7 @@
       <div id="learnocaml-exo-tab-report">
         <!-- Using an iframe is the easiest way to isolate the CSSs. -->
         <!-- <iframe src="mockup_report.html"></iframe> -->
-        <img src="icons/icon_reload_dark.svg"
+        <img src="/icons/icon_reload_dark.svg"
              style="position: absolute; top: 50%; left: 50%;
                     margin: -100px 0 0 -100px; width: 200px;
                     opacity: 0.2">

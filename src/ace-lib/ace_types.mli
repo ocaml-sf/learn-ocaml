@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 class type token = object
   method value : Js.js_string Js.t Js.prop
@@ -54,6 +45,11 @@ class type document = object
   method getLength : int Js.meth
 end
 
+class type undoManager = object
+  method undo : bool Js.t -> range Js.t Js.meth
+  method redo : bool Js.t -> unit Js.meth
+  method reset : unit Js.meth
+end
 
 class type editSession = object
   method getDocument : document Js.t Js.meth
@@ -72,6 +68,7 @@ class type editSession = object
     bool Js.t -> int Js.js_array Js.t Js.meth
   method removeMarker : int -> unit Js.meth
   method getState : 'a. int -> (< .. > as 'a) Js.t Js.meth
+  method getUndoManager : undoManager Js.t Js.meth
 end
 
 class type selection = object

@@ -1,0 +1,93 @@
+(library
+ (name learnocaml_app_common)
+ (wrapped false)
+ (flags :standard -warn-error -9-27-32)
+ (modules Learnocaml_local_storage
+          Server_caller
+          Learnocaml_common)
+ (preprocess
+  (per_module ((pps js_of_ocaml.ppx)
+               Learnocaml_local_storage
+               Server_caller)
+              ((pps ppx_ocplib_i18n js_of_ocaml.ppx)
+               Learnocaml_common)))
+ (libraries
+    ocplib-json-typed.browser
+    js_of_ocaml
+    js_of_ocaml.ppx
+    js_of_ocaml.tyxml
+    jsutils
+    learnocaml_toplevel
+    learnocaml_repository
+    learnocaml_data
+    learnocaml_api
+    ocplib_i18n)
+)
+
+(executable
+ (name learnocaml_index_main)
+ (modes byte)
+ (flags :standard -warn-error -6-9-27-33-39)
+ (libraries ezjsonm
+            ace
+	    sha
+            learnocaml_repository
+            learnocaml_app_common
+            learnocaml_toplevel
+            js_of_ocaml.ppx
+            ocplib_i18n
+	    learnocaml_editor_tab)
+ (modules Learnocaml_teacher_tab
+          Learnocaml_index_main)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+ (js_of_ocaml
+  (flags :standard +cstruct/cstruct.js)
+  (javascript_files ../ace-lib/ace_bindings.js))
+)
+
+(executable
+ (name learnocaml_exercise_main)
+ (modes byte)
+ (flags :standard -warn-error -9-27-33)
+ (libraries ezjsonm
+            grading_jsoo
+            ace
+	    sha
+            learnocaml_repository
+            learnocaml_app_common
+            learnocaml_toplevel
+            js_of_ocaml.ppx
+            ocplib_i18n)
+ (modules Learnocaml_exercise_main)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+ (js_of_ocaml
+  (flags :standard +cstruct/cstruct.js)
+  (javascript_files ../ace-lib/ace_bindings.js))
+)
+
+(executable
+ (name learnocaml_student_view)
+ (modes byte)
+ (flags :standard -warn-error -9-27-33)
+ (libraries ezjsonm
+            grading_jsoo
+            ace
+            learnocaml_repository
+            learnocaml_app_common
+            lwt_react
+            js_of_ocaml.ppx
+            ocplib_i18n)
+ (modules Learnocaml_student_view)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+ (js_of_ocaml
+  (flags :standard +cstruct/cstruct.js)
+  (javascript_files ../ace-lib/ace_bindings.js))
+)
+
+
+(install
+ (section share)
+ (files (learnocaml_index_main.bc.js as www/js/learnocaml-main.js)
+        (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
+        (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js))
+)

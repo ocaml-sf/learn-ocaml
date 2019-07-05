@@ -1,78 +1,42 @@
-all: build
+all: static build
 
-# config variables ------------------------------------------------------------
-
-# parallelism when processing the repository
-PROCESSING_JOBS ?= 4
-
-# where the result Web site will be put
-DEST_DIR ?= ${CURDIR}/www
-
-# the exercise repository to use
-REPO_DIR ?= ${CURDIR}/demo-repository
-
-# end of config variables -----------------------------------------------------
-
-EXERCISES_DIR ?= ${REPO_DIR}/exercises
-LESSONS_DIR ?= ${REPO_DIR}/lessons
-TUTORIALS_DIR ?= ${REPO_DIR}/tutorials
+DUNE = dune
+DUNE_ARGS = --profile=release
 
 build-deps:
-	sh scripts/install-opam-deps.sh
+	opam install . --deps-only --locked
 
 .PHONY: build
 build:
-	@ocp-build init
-	@ocp-build
-
-process-repo: install
-	_obuild/*/learnocaml-process-repository.byte -j ${PROCESSING_JOBS} \
-          -exercises-dir ${EXERCISES_DIR} \
-          -tutorials-dir ${TUTORIALS_DIR} \
-          -dest-dir ${DEST_DIR} \
-          -dump-outputs ${EXERCISES_DIR} \
-          -dump-reports ${EXERCISES_DIR}
+	@${DUNE} build ${DUNE_ARGS}
 
 .PHONY: static
 static:
 	@${MAKE} -C static
 
-install: static
-	@mkdir -p ${DEST_DIR}
-	cp -r static/* ${DEST_DIR}
-	cp ${LESSONS_DIR}/* ${DEST_DIR}
-	@cp _obuild/*/learnocaml-main.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-exercise.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-toplevel-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-grader-worker.js ${DEST_DIR}/js/
-	@cp _obuild/*/learnocaml-simple-server.byte .
-	# EMD: the following files could be renamed learnocaml-*.js
-	@cp _obuild/*/editor.js ${DEST_DIR}/js/
-	@cp _obuild/*/new_exercise.js ${DEST_DIR}/js/
-	@cp _obuild/*/testhaut.js ${DEST_DIR}/js/
+.PHONY: doc
+doc:
+	@${DUNE} build ${DUNE_ARGS} @doc
 
-.PHONY: learn-ocaml.install travis
-learn-ocaml.install: static
-	@echo 'bin: [' >$@
-	@echo '  "_obuild/learnocaml/learnocaml.byte" {"learn-ocaml"}' >>$@
-	@echo ']' >>$@
-	@echo 'share: [' >>$@
-	@echo '  "scripts/complete.sh"' >>$@
-	@$(foreach mod,main exercise toplevel-worker grader-worker,\
-	    echo '  "_obuild/learnocaml-$(mod)/learnocaml-$(mod).js" {"www/js/learnocaml-$(mod).js"}' >>$@;)
-	# EMD: merge the previous/following lines once the files are renamed
-	@$(foreach mod,editor new_exercise testhaut,\
-	    echo '  "_obuild/$(mod)/$(mod).js" {"www/js/$(mod).js"}' >>$@;)
-	@$(foreach f,$(wildcard static/js/ace/*.js static/*.html static/icons/*.svg static/fonts/*.woff static/css/*.css static/icons/*.gif),\
-	    echo '  "$(f)" {"www/${f:static/%=%}"}' >>$@;)
-	@echo ']' >>$@
+.PHONY: install
+install: static doc
+	@${DUNE} install ${DUNE_ARGS}
+
+uninstall:
+	@${DUNE} uninstall
+
+static/dune:
+	@${MAKE} -C static dune
+
+.PHONY: travis docker-images publish-docker-images
 
 # Generates up-to-date translation template for lang % from the sources
 LANGS = $(patsubst translations/%.po,%,$(wildcard translations/*.po))
 translations/$(LANGS:=.pot):
 	@for f in $(LANGS); do echo >> translations/$$f.po; done
 	@rm -f translations/*.pot
-	@DUMP_POT=1 ocp-build -j 1
+	@${DUNE} clean ${DUNE_ARGS}
+	@DUMP_POT=1 ${DUNE} build ${DUNE_ARGS} -j 1
 	@for f in $(LANGS); do \
 	  mv translations/$$f.pot translations/$$f.pot.bak; \
 	  msguniq translations/$$f.pot.bak > translations/$$f.pot; \
@@ -84,23 +48,42 @@ update-%-translation: translations/%.pot
 	@msgmerge -U translations/$*.po translations/$*.pot
 	@rm -f translations/$*.pot
 
-opaminstall: build learn-ocaml.install
-	@opam-installer --prefix `opam var prefix` learn-ocaml.install
+opaminstall: install
+
+REPO ?= demo-repository
+
+testrun: build install
+	rm -rf www/css
+	learn-ocaml build --repo $(REPO) -j1
+	rm -rf www/css
+	ln -s ../static/css www
+	learn-ocaml serve
+
+docker-images: Dockerfile learn-ocaml.opam
+	@rm -rf docker
+	@git clone . docker
+	@cp Dockerfile docker
+	@docker build -t learn-ocaml-compilation --target compilation docker
+	@docker build -t learn-ocaml --target program docker
+	@docker build -t learn-ocaml-client --target client docker
+	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
+
+VERSION = $(shell opam show ./learn-ocaml.opam -f version)
+
+publish-docker-images: docker-images
+	docker tag learn-ocaml ocamlsf/learn-ocaml:$(VERSION)
+	docker tag learn-ocaml ocamlsf/learn-ocaml:dev
+	docker tag learn-ocaml ocamlsf/learn-ocaml:latest
+	docker image push ocamlsf/learn-ocaml:$(VERSION)
+	docker image push ocamlsf/learn-ocaml:dev
+	docker image push ocamlsf/learn-ocaml:latest
 
 clean:
-	@ocp-build clean
+	@${DUNE} clean
 	-rm -f translations/$*.pot
-	@${MAKE} -C  static clean
-	-rm -rf ${DEST_DIR}
-	-rm -f src/grader/embedded_cmis.ml
-	-rm -f src/grader/embedded_grading_cmis.ml
-	-rm -f src/ppx-metaquot/ast_lifter.ml
-	-rm -f ${patsubst ${EXERCISES_DIR}/%/meta.json, \
-                            ${EXERCISES_DIR}/%.*, \
-                            ${wildcard ${EXERCISES_DIR}/*/meta.json}}
-	-find -name \*~ -delete
-	-find -name \#\*\# -delete
-	-find -name .\#\* -delete
+	@${MAKE} -C static clean
+	-rm -rf www
+	-find . -name "*~" -delete
 
 travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci-locally
 	BUILDID="build-$$RANDOM";					\

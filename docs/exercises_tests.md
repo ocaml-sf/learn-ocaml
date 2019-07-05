@@ -36,7 +36,7 @@ let () =
 
 The values `exercise_x` are values of type `Learnocaml_report.report`, which is
 a representation of the report given by the grader. In this example, each of
-these values are refering to a specific question from the exercise. Their
+these values are referring to a specific question from the exercise. Their
 content is detailed in the next section. These reports are then given to the
 function `ast_sanity_check`, which ensures that some modules are never used
 (`Obj`, `Marshall`, all the modules from `compiler-libs` or the library that

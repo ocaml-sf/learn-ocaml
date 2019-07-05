@@ -1,0 +1,381 @@
+/* -------------------- toolbar ----------------------------------- */
+#learnocaml-exo-toolbar {
+  position: absolute;
+  left: 0; top: 0;
+  color: #fff;
+  z-index: 1004;
+  border-bottom: 1px #eee solid;
+  display: flex;
+  background: #222;
+}
+#learnocaml-exo-toolbar a {
+  text-decoration: none;
+  color: #fff;
+}
+#learnocaml-exo-toolbar > button {
+  border-left: 1px #eee solid !important;
+  padding: 0 10px 0 10px;
+  margin: 0;
+  background: none;
+  border: none;
+  flex: 0;
+  position: relative;
+  display: block;
+}
+#learnocaml-exo-toolbar > button > * {
+  padding: 5px;
+  color: #eee;
+  text-align: center;
+}
+#learnocaml-exo-toolbar::before {
+  z-index: 1004;
+  position: absolute;
+  left: 0px; height: 5px; width: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+  content:"";
+}
+#learnocaml-exo-toolbar > #learnocaml-student-nickname {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+}
+#learnocaml-exo-toolbar > #learnocaml-token {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    font-family: 'Inconsolata', monospace;
+}
+@media (max-width: 549px) {
+  #learnocaml-exo-toolbar {
+    height: 40px;
+  }
+  #learnocaml-exo-toolbar::before {
+    top: 41px;
+  }
+  #learnocaml-exo-toolbar > button > .label {
+    display: none;
+  }
+}
+@media (min-width: 550px) {
+  #learnocaml-exo-toolbar {
+    height: 60px;
+  }
+  #learnocaml-exo-toolbar::before {
+    top: 61px;
+  }
+}
+
+/* -------------------- loading splash screen --------------------- */
+#learnocaml-exo-loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#learnocaml-exo-loading.loading,
+#learnocaml-exo-loading.loaded {
+  background: rgba(200,200,200,0.9);
+}
+
+/* -------------------- tabs and tab buttons ---------------------- */
+#learnocaml-exo-tab-buttons {
+  position: absolute;
+  z-index: 999;
+  display: flex;
+  height: 40px;
+}
+#learnocaml-exo-tab-buttons > button {
+  flex: 1;
+  padding: 0;
+  border: none;
+  color: #333;
+  background: #eee;
+  position: relative;
+  z-index: 1000;
+}
+#learnocaml-exo-tab-buttons > button:not(:first-child) {
+  border-left: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled]) {
+  border-bottom: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button[disabled]::before {
+  display: none;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled])::after {
+  position: absolute;
+  left:0; right:0; bottom:0; top:0;
+  content:"";
+  z-index: 1009;
+  background: linear-gradient(to top, rgba(0,0,0,0.4) 0, transparent 5px);
+}
+#learnocaml-exo-tabs > * {
+  position: absolute;
+  z-index: 997;
+  background: #eee;
+  padding: 0;
+  opacity: 0;
+}
+#learnocaml-exo-tabs > *.front-tab {
+  z-index: 998;
+  opacity: 1;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.success {
+  background: #0a0;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.failure {
+  background: #b00;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-report.partial {
+  background: #e80;
+  color: white;
+}
+#learnocaml-exo-button-report > .score {
+  padding: 0 5px;
+  float: right;
+}
+#learnocaml-exo-tab-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#learnocaml-exo-tab-text > h1 {
+  flex: 0 0 auto;
+  background: #222;
+  color: #eee;
+  font-size: 20px;
+  line-height: 22px;
+  margin: 0;
+  padding: 10px;
+  display: block;
+  font-weight: normal;
+  position: relative;
+}
+#learnocaml-exo-tab-text > iframe {
+  border: none;
+  overflow: auto;
+  flex: 1 3 auto ;
+}
+#learnocaml-exo-tab-text > pre.toplevel-code {
+  flex: 0 1 auto;
+  max-height: 45%;
+  background: #666;
+  margin: 0;
+  padding: 5px 10px 5px 10px;
+  overflow: auto;
+}
+#learnocaml-exo-tab-text > iframe {
+  border: none;
+  overflow: auto;
+  flex: 1 3 auto ;
+}
+#learnocaml-exo-tab-text > h1::after {
+  position: absolute;
+  left: 0px; bottom: -5px; width: 100%;
+  content:"";
+  height:5px; background: pink;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
+}
+
+/* -------------------- two columns mode -------------------------- */
+@media (min-width: 1200px) {
+  #learnocaml-exo-toolbar {
+    width: 800px;
+  }
+  #learnocaml-exo-tab-list::after {
+    position: absolute;
+    left: 800px; top: -61px; bottom: 0; width: 10px;
+    background: linear-gradient(to right, #fff 0px, #fff 1px, rgba(0,0,0,0.6) 1px, rgba(0,0,0,0) 10px);
+    content:"";
+  }
+  #learnocaml-exo-button-list {
+    display: none;
+  }
+  #learnocaml-exo-tab-buttons {
+    left: 800px; right: 0px; top: 0px;
+  }
+  #learnocaml-exo-tabs > * {
+    left: 800px; top: 40px; right: 0px; bottom: 0px;
+  }
+  #learnocaml-exo-tabs > #learnocaml-exo-tab-list {
+    width: 800px; left: 0; bottom: 0; top: 61px;
+    z-index: 1000;
+    opacity: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+/* -------------------- one column mode --------------------------- */
+@media (max-width: 1199px) {
+  #learnocaml-exo-toolbar {
+    right: 0px;
+  }
+  #learnocaml-exo-tab-buttons {
+    left: 0; right: 0px;
+  }
+  #learnocaml-exo-tabs > * {
+    position: absolute;
+    left: 0; right: 0px; bottom: 0px;
+  }
+  #learnocaml-exo-tab-editor > .pane {
+    margin-top: 5px;
+  }
+  #learnocaml-exo-tab-editor::after {
+    position: absolute;
+    z-index: 1005;
+    left: 0; top: 0; height: 10px; width: 100%;
+    content: "";
+    background: linear-gradient(to bottom, #444 0, #444 5px,
+      rgba(0,0,0,0.5) 5px, transparent 10px) ;
+  }
+}
+@media (min-width: 550px) and (max-width: 1199px) {
+  #learnocaml-exo-tab-buttons {
+    top: 60px;
+  }
+  #learnocaml-exo-tabs > * {
+    top: 100px;
+  }
+}
+@media (max-width: 549px) {
+  #learnocaml-exo-tab-buttons {
+    top: 40px;
+  }
+  #learnocaml-exo-tabs > * {
+    top: 80px;
+  }
+}
+/* -------------------- stats pane ------------------------------ */
+#learnocaml-exo-tab-stats {
+  padding: 5px;
+}
+table.student-stats {
+  margin: auto;
+  min-width: 40%;
+  border: 1px solid white;
+}
+table.student-stats tr:hover {
+  background-color: #fff;
+}
+table.student-stats th {
+  text-align: left;
+  font-size:  initial;
+  border-top: 1px solid #aaa;
+  margin-top: 5px;
+}
+.tag {
+    color: black;
+    padding: 1px;
+    margin: 0 3px;
+    border-radius: 4px;
+    font-family: Inconsolata;
+}
+.stats-pct {
+  text-align: right;
+  font-family: 'Inconsolata', monospace;
+  font-size: 80%;
+  font-weight: bold;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+}
+
+/* -------------------- exercise list --------------------------- */
+#learnocaml-exo-tab-list table {
+  border-collapse: collapse;
+  width: 100%;
+}
+#learnocaml-exo-tab-list tr.learnocaml-assignment-line {
+  border-top: 8px solid white;
+}
+#learnocaml-exo-tab-list .last-updated {
+  font-weight: initial;
+  font-size: initial;
+}
+#learnocaml-exo-tab-list td {
+  border-top: 2px solid white;
+}
+#learnocaml-exo-tab-list .exercise-id {
+  font-family: 'Inconsolata', monospace;
+  width: -moz-fit-content;
+}
+#learnocaml-exo-tab-list td {
+  font-size: 90%;
+}
+#learnocaml-exo-tab-list td.exercise-title {
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#learnocaml-exo-tab-list .stars > img {
+    width: 40px;
+}
+#learnocaml-exo-tab-list .grade {
+  font-family: 'Inconsolata', monospace;
+  text-align: right;
+}
+#learnocaml-exo-tab-list time {
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-exo-tab-list tr:not(.selected) {
+  cursor: pointer;
+}
+#learnocaml-exo-tab-list tr.selected {
+  background-color: #9bd;
+}
+#learnocaml-exo-tab-list td.last-updated {
+  font-weight: normal;
+  text-align: center;
+}
+#learnocaml-exo-tab-list tr:not(.selected):hover {
+    background-color: #fff;
+}
+tr.exercise-highlight {
+    background-color: #ed2;
+}
+
+/* -------------------- ACE overriding ---------------------------- */
+#learnocaml-exo-editor-pane {
+  font-size: 16px;
+  font-family: 'Inconsolata', monospace;
+}
+#learnocaml-exo-editor-pane .ace_gutter {
+  background: linear-gradient(to left, transparent 0, #444 8px, #ccc 8px, #ccc 9px, #444 9px) ;
+  color: #ccc;
+}
+#learnocaml-exo-editor-pane .ace_gutter-active-line {
+  background: linear-gradient(to left, #777 0, #456 8px, #ccc 8px, #ccc 9px, #678 9px) ;
+  color: #888;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell {
+  padding: 0 14px 0 0;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_warning {
+  background: linear-gradient(to right, #980 0, #980 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_gutter-cell.ace_error {
+  background: linear-gradient(to right, #900 0, #900 4px, transparent 80%) ;
+}
+#learnocaml-exo-editor-pane .ace_comment { color: #aaa; font-style: italic; }
+#learnocaml-exo-editor-pane .ace_keyword { color: #e80; font-weight:bold; }
+#learnocaml-exo-editor-pane .ace_constant { color: #acf; }
+#learnocaml-exo-editor-pane .ace_string { color: #acf; }
+#learnocaml-exo-editor-pane .ace_function { color: #fff; }
+#learnocaml-exo-editor-pane .ace_type { color: #fff; }
+#learnocaml-exo-editor-pane .ace_operator { color: #fff; }
+#learnocaml-exo-editor-pane .ace_meta { color: #fff; }
+#learnocaml-exo-editor-pane .ace_variable { color: #fff; }
+#learnocaml-exo-editor-pane .ace_text { color: #fff; }
+#learnocaml-exo-editor-pane .error {
+  border-bottom: 2px #b00 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .warning {
+  border-bottom: 2px #ca0 solid;
+  position: absolute;
+}
+
+#learnocaml-exo-editor-pane .ace_selection { background: #e80; opacity: 0.4; }
+#learnocaml-exo-editor-pane .ace_active-line { background: #acf; opacity: 0.2; }
+#learnocaml-exo-editor-pane .ace_selected-word { background: #e80; opacity: 0.2; }

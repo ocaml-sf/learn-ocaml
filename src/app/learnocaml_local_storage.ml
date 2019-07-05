@@ -1,19 +1,13 @@
+
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
+open Learnocaml_data
 
 type 'a storage_key =
   { key : string option ;
@@ -73,14 +67,14 @@ let init () =
               Js._true)))
     Js._true |> ignore
 
-let store { store ; key } v =
+let store { store ; key ; _ } v =
   store v ;
   notify key
 
-let retrieve { retrieve } =
+let retrieve { retrieve ; _ } =
   retrieve ()
 
-let delete { delete ; key } =
+let delete { delete ; key ; _ } =
   delete () ;
   notify key
 
@@ -127,22 +121,46 @@ let retrieve_single ?default name enc () =
               raise (Json_encoding.Cannot_destruct
                        ([ `Field "localStorage" ; `Field name ], exn))))
 
-let delete_single name enc () =
+let delete_single name _enc () =
   Js.Optdef.case
     (Dom_html.window##.localStorage)
     (fun () -> failwith "local storage support required")
     (fun localStorage ->
        localStorage##(removeItem (Js.string name)))
 
+let clear () =
+  Js.Optdef.iter
+    (Dom_html.window##.localStorage)
+    (fun localStorage -> localStorage##clear)
+
+let server_id =
+  let key = mangle [ "server_id" ]
+  and enc = Json_encoding.(obj1 (req "server_id" int)) in
+  let store = store_single key enc
+  and retrieve = retrieve_single key enc
+  and delete = delete_single key enc in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+
 let sync_token =
   let key = mangle [ "sync-token" ] in
   let enc = Json_encoding.(obj1 (req "token" string)) in
-  let store value = store_single key enc value
-  and retrieve () = retrieve_single key enc ()
+  let store value = store_single key enc (Token.to_string value)
+  and retrieve () = retrieve_single key enc () |> Token.parse
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
 
+let nickname =
+  let key = mangle [ "nickname" ] in
+  let enc = Json_encoding.(obj1 (req "nickname" string)) in
+  let store value = store_single key enc value
+  and retrieve () =
+    try retrieve_single key enc () with Not_found -> ""
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+  
 let cached_exercise name =
   let key = mangle [ "cached-exercise" ; name ] in
   let enc = Learnocaml_exercise.enc in
@@ -151,8 +169,6 @@ let cached_exercise name =
   and delete () = delete_single key enc () in
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = []  }
-
-module StringMap = Map.Make (String)
 
 let listed list_key item_prefix ?default enc =
   let list =
@@ -183,9 +199,9 @@ let listed list_key item_prefix ?default enc =
     let retrieve () =
       try
         List.fold_left
-          (fun acc name -> StringMap.add name (retrieve (item name)) acc)
-          StringMap.empty (retrieve list)
-      with Not_found -> StringMap.empty
+          (fun acc name -> SMap.add name (retrieve (item name)) acc)
+          SMap.empty (retrieve list)
+      with Not_found -> SMap.empty
     and delete () =
       let all = retrieve list in
       List.iter (fun name -> delete (item name)) all ;
@@ -193,7 +209,7 @@ let listed list_key item_prefix ?default enc =
     let store index =
       delete () ;
       let all =
-        StringMap.fold
+        SMap.fold
           (fun name state acc ->
              store (item name) state ;
              name :: acc)
@@ -212,30 +228,13 @@ let listed list_key item_prefix ?default enc =
       store ; retrieve ; delete ; listeners = []  } in
   list, item, assoc
 
-let index_list,
-    index_state,
-    all_index_states=
-  listed
-    [ "index-state-list" ]
-    [ "editor-state" ]
-    Learnocaml_exercise_state.index_state_enc
-
 let exercise_list,
     exercise_state,
     all_exercise_states =
   listed
     [ "exercise-state-list" ]
     [ "exercise-state" ]
-    Learnocaml_exercise_state.exercise_state_enc
-
-let editor_list,
-    editor_state,
-    all_editor_states=
-  listed
-    [ "editor-state-list" ]
-    [ "editor-state" ]
-   Learnocaml_exercise_state.editor_state_enc
-
+    Answer.enc
 
 let toplevel_history_list,
     toplevel_history,
@@ -254,3 +253,15 @@ let exercise_toplevel_history_list,
     [ "exercise-toplevel-history" ]
     ~default: Learnocaml_toplevel_history.empty_snapshot
     Learnocaml_toplevel_history.snapshot_enc
+
+(* Editor storage *) 
+let editor_index=
+  let key = mangle [ "editor-index" ] in
+  let enc = SMap.enc Editor.editor_state_enc in
+  let store value = store_single key enc value
+  and retrieve () =
+    try retrieve_single key enc () with Not_found -> SMap.empty
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+  

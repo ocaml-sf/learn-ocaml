@@ -1,0 +1,110 @@
+[
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "plus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "plus",
+            "display": "code"
+          },
+          {
+            "text": "with unexpected type:"
+          },
+          {},
+          {
+            "text": "Wrong type int -> int -> int -> int.",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "minus",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "minus",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "times",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "times",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  },
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "divide",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Cannot find "
+          },
+          {
+            "text": "divide",
+            "display": "code"
+          }
+        ],
+        "result": "failure"
+      }
+    ]
+  }
+]

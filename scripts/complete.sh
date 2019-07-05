@@ -2,7 +2,7 @@ _learn_ocaml_add_f()
 {
   local cmd
   cmd=$1; shift
-  _learn_ocaml_add "$($cmd "$@" 2>/dev/null)"
+  IFS=$'\n' _learn_ocaml_reply+=("$($cmd "$@" 2>/dev/null)")
 }
 
 _learn_ocaml_flags()

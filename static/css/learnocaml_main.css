@@ -11,7 +11,6 @@ body {
   -khtml-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  cursor: default;
   flex: 0 0 auto;
   text-align: center;
   vertical-align: middle;
@@ -47,23 +46,27 @@ body {
   top: 50%;
   content: "";
 }
+#learnocaml-main-panel > h3 {
+  text-align: center;
+  margin-top: 0;
+}
+#learnocaml-main-panel > #learnocaml-id-div {
+  margin-top: 20px;
+}
 #learnocaml-main-panel > div#learnocaml-sync-buttons {
   display: flex;
-  flex-direction: row;
-  margin: 10px;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: stretch;
 }
 #learnocaml-sync-buttons > button {
-  flex: 1;
-  display: block;
   border: 1px #fff solid;
-  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  background: linear-gradient(to bottom, #bbb 0%, #888 100%);
   color: #fff;
   border-radius: 5px;
   padding: 5px;
-  margin-right: 10px;
-  font-size: 18px;
-  line-height: 22px;
-  font-weight: bold;
+  width: calc(33% - 6.67px);
+  margin-top: 10px;
   box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
   text-align: center;
 }
@@ -71,12 +74,10 @@ body {
 #learnocaml-sync-buttons > button::after {
   border-radius: 5px;
 }
-#learnocaml-sync-buttons > button:last-child {
-  margin-right: 0;
-}
 #learnocaml-sync-buttons > button > img {
   height: 32px;
   margin: auto;
+  margin-top: 10px;
 }
 #learnocaml-sync-buttons > button > * {
   padding: 5px;
@@ -84,20 +85,20 @@ body {
   display: block;
   text-align: center;
 }
-#learnocaml-save-token-field {
-  display: block;
+#learnocaml-nickname {
+//  display: block;
+  font-weight: bold;
   margin: 10px auto 10px auto;
-  flex: 0 0 auto;
+//  flex: 0 0 auto;
   border: 1px #fff solid;
-  background: #ccc;
-  color: #444;
+  background: transparent;
+  color: white;
   border-radius: 5px;
-  padding: 5px;
-  font-size: 24px;
-  line-height: 30px;
-  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  padding: 5px 10px;
+//  font-size: 18px;
+//  line-height: 24px;
+//  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
   text-align: center;
-  font-family: 'Inconsolata';
 }
 #learnocaml-main-panel > div.tabs {
   margin: 10px 0 5px 0;
@@ -130,11 +131,47 @@ body {
 #learnocaml-main-panel > div.tabs > button::after {
   border-radius: 5px;
 }
+#learnocaml-main-panel > .footer {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+#learnocaml-version {
+  float: left;
+  color: black;
+  font-size: small;
+}
+
+#learnocaml-hide-panel, #learnocaml-show-panel {
+  border: 1px solid white;
+  background-color: #eee;
+  width: 14px;
+  height: 14px;
+  color: black;
+  padding: 10px;
+  cursor: pointer;
+}
+#learnocaml-hide-panel {
+  border-radius: 10px 0 0 0;
+  position: fixed;
+  left: 324px;
+  bottom: 0;
+}
+#learnocaml-show-panel {
+  border-radius: 0 10px 0 0;
+  box-shadow: 0 0 5px #888;
+  z-index: 3000;
+  display: none;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+}
+
 /* Large screen: two columns w/ menu in the left column */
 @media (min-width: 1000px) {
   #learnocaml-main-toolbar {
     position: absolute;
-    left: 0; top: 0; height: 60px; width: 400px;
+    left: 0; top: 0; height: 60px; width: 360px;
     background: #222;
     color: #fff;
     z-index: 1020;
@@ -153,7 +190,7 @@ body {
   }
   #learnocaml-main-panel {
     position: absolute;
-    left: 0; top: 60px; bottom: 0; width: 380px;
+    left: 0; top: 60px; bottom: 0; width: 340px;
     margin: 0; padding: 0 10px 10px 10px;
     z-index: 1003;
     overflow-y: auto;
@@ -167,13 +204,13 @@ body {
   }
   #learnocaml-main-content {
     position: absolute;
-    left: 401px; top: 0; right: 0; bottom: 0;
+    left: 361px; top: 0; right: 0; bottom: 0;
     overflow-x: hidden;
     overflow-y: auto;
   }
   #learnocaml-main-loading {
     position: absolute;
-    top: 0; left: 400; right: 0; bottom: 0;
+    top: 0; left: 360; right: 0; bottom: 0;
   }
 }
 /* Medium screen: one column w/ popup menu */
@@ -225,6 +262,9 @@ body {
     overflow-x: hidden;
   }
   #learnocaml-main-panel.hidden {
+    display: none;
+  }
+  #learnocaml-show-panel, #learnocaml-hide-panel {
     display: none;
   }
 }
@@ -295,11 +335,11 @@ body {
 }
 #learnocaml-main-toplevel > .toplevel-pane {
   position: absolute;
-  left: 0px; top: 0; right: 0; bottom: 40px;
+  left: 0px; top: 0; right: 0; bottom: 0px;
 }
 #learnocaml-main-toplevel > .buttons {
   position: absolute;
-  left: 0; bottom: 0px; width: 100%; height: 40px;
+  top: 13px; right: 1%; bottom: 5px; width: 49%; height: 40px;
   background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
   color: #fff;
   line-height: 40px;
@@ -864,4 +904,160 @@ body {
   #learnocaml-main-tryocaml > .navigation > button {
     min-width: 40px;
   }
+}
+
+/* -- Overlays ---------------------------------------------------------- */
+
+#login-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    z-index: 22220;
+    overflow: auto;
+}
+div#login-overlay > h1 {
+    text-align: center;
+    margin-bottom: 50px;
+}
+#login-new, #login-returning {
+    margin: 30px auto;
+    background-color: #666;
+    border-radius: 3px;
+    box-shadow: 10px 10px 4px 2px rgba(0,0,0,0.2);
+    padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+@media (min-width: 1000px) {
+    #login-new, #login-returning {
+        width: 30vw;
+    }
+}
+.filler_h {
+  flex: auto;
+}
+#login-overlay h4 {
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+    background-color: #bbb;
+    color: black;
+    border-radius: 3px 3px 0 0;
+}
+#login-new > div, #login-returning > div {
+    padding: 20px;
+    display: flex;
+    flex-direction: row;
+}
+#login-new > div > div, #login-returning > div > div {
+  line-height: 30px;
+}
+div#login-overlay input {
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  font-size: 16px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  font-family: 'Inconsolata';
+  text-align: center;
+  max-height: 30px;
+}
+div#login-overlay button {
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 15px auto;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
+  min-width: 10em;
+}
+
+#logout-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    z-index: 22220;
+    overflow: auto;
+}
+#logout-div {
+    margin: 30px auto;
+    background-color: #666;
+    border-radius: 3px;
+    box-shadow: 10px 10px 4px 2px rgba(0,0,0,0.2);
+    padding-bottom: 10px;
+}
+@media (min-width: 1000px) {
+    #logout-div {
+        width: 30vw;
+    }
+}
+#logout-overlay h4 {
+    text-align: center;
+    margin: 0;
+    padding: 5px;
+    background-color: #bbb;
+    color: black;
+    border-radius: 3px 3px 0 0;
+}
+#logout-div > div {
+    padding: 20px;
+}
+#logout-div > div > div {
+    padding: 20px;
+    display: block;
+    float: left;
+    vertical-align: middle;
+}
+div#logout-overlay input {
+  display: block;
+  float: right;
+  border: 1px #fff solid;
+  background: #ccc;
+  color: #444;
+  border-radius: 5px;
+  font-size: 16px;
+  line-height: 30px;
+  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
+  font-family: 'Inconsolata';
+  text-align: center;
+  vertical-align: middle;
+}
+div#logout-overlay button {
+  display: block;
+  clear: both;
+  border: 1px #fff solid;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 15px auto;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: bold;
+  box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+  text-align: center;
+  min-width: 10em;
+}
+#logout-div-buttons {
+  display: flex;
+}
+#logout-token {
+  display: flex;
+  align-items: center;
+}
+.learnocaml_token {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-family: 'Inconsolata';
 }

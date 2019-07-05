@@ -1,0 +1,19 @@
+(library
+ (name learnocaml_server_lib)
+ (wrapped false)
+ (flags :standard -warn-error +8)
+ (modules Learnocaml_server)
+ (libraries ocplib-json-typed
+            ezjsonm
+            lwt.unix
+            lwt_utils
+            cohttp.lwt
+            magic-mime
+	    sha
+            checkseum.c
+            decompress
+            learnocaml_report
+            learnocaml_data
+            learnocaml_api
+            learnocaml_store)
+)

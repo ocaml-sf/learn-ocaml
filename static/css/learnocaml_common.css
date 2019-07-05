@@ -1,6 +1,6 @@
 body {
   font-family: 'Fontin', 'Linux Biolinum', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 18px;
 }
 button, select {
@@ -33,16 +33,6 @@ button[disabled] {
   cursor: not-allowed;
 }
 /* -------------------- buttons ----------------------------------- */
-#toolbar{
-	height : 30px;
-}
-#button_delete{
-	position: absolute;
-}
-#button_download{
-	position: absolute;
-	left: 45px;  
-}
 button::before,
 button::after {
   position: absolute;
@@ -79,8 +69,8 @@ button[disabled]::before {
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
-  src: url("../fonts/InconsolataGo-Regular.woff") format("woff"),
-       url("../fonts/InconsolataGo-Regular.ttf") format("truetype");
+  src: url("../fonts/Fontin-Regular.woff") format("woff"),
+       url("../fonts/Fontin-Regular.ttf") format("truetype");
 }
 @font-face {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
@@ -93,8 +83,8 @@ button[disabled]::before {
   /* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
   font-family: "Fontin";
   font-weight: bold;
-  src: url("../fonts/InconsolataGo-Bold.woff") format("woff"),
-       url("../fonts/InconsolataGo-Bold.ttf") format("truetype");
+  src: url("../fonts/Fontin-Bold.woff") format("woff"),
+       url("../fonts/Fontin-Bold.ttf") format("truetype");
 }
 @font-face {
   font-family: "Inconsolata";
@@ -242,4 +232,59 @@ button[disabled]::before {
   .logo > img {
     vertical-align: -10px;
   }
+}
+
+/* -------------------- overlay dialog boxes ----------------------- */
+div.learnocaml-dialog-overlay {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  z-index: 22221;
+}
+div.learnocaml-dialog-overlay > div::before,
+div.learnocaml-dialog-overlay > div::after {
+  content: "";
+  flex: 1;
+}
+div.learnocaml-dialog-overlay > div {
+  border: 3px white double;
+  font-family: 'Inconsolata', monospace;
+  flex: 0 0 auto;
+  background: black;
+  margin: auto;
+  max-width: 50%;
+}
+div.learnocaml-dialog-overlay > div > h3 {
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+}
+div.learnocaml-dialog-overlay > div > h3 + div {
+  margin: 0;
+  border-top: 1px solid white;
+  padding: 20px;
+}
+div.learnocaml-dialog-overlay > div > div.buttons {
+  display: flex;
+  flex-direction: row;
+}
+div.learnocaml-dialog-overlay > div > div.buttons > button {
+  display: block;
+  margin: 10px auto;
+  padding: 5px 10px;
+  border: none;
+  background-color: white;
+  color: black;
+  text-align: center;
+}
+div.learnocaml-dialog-overlay > div code {
+  display: block;
+  margin: auto;
+  background-color: #444;
+  font-size: 80%;
+  padding: 4px;
+  border: 1px solid #666;
 }

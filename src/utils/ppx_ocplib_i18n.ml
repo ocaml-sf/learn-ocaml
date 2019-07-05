@@ -10,6 +10,9 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software. *)
 
+open Migrate_parsetree
+open OCaml_405.Ast
+
 open Ast_mapper
 open Ast_helper
 open Asttypes
@@ -57,7 +60,7 @@ let read_translations f =
     close_in ic;
     t
 
-let translations_dir = "./translations"
+let translations_dir = "../../translations"
 let transl_file_suffix = ".po"
 let dump_pot_file = Sys.getenv_opt "DUMP_POT" <> None
 
@@ -127,25 +130,29 @@ let get_lang_expr ~loc transl_expr =
     (Exp.ident { txt = Ldot (Lident "Ocplib_i18n", "s_"); loc })
     [Nolabel, transl_expr]
 
-let transl_mapper _argv =
+let transl_mapper _config _cookies =
   { default_mapper with
     expr = fun mapper expr ->
       match expr with
       | { pexp_desc =
-            Pexp_extension ({ txt = "lang_ids_array"; loc }, _)} ->
+            Pexp_extension ({ txt = "lang_ids_array"; loc }, _);
+          _ } ->
           Exp.array ~loc
             (List.map (fun (lang, _) ->
                  Exp.constant ~loc (Pconst_string (lang,None)))
                 translations)
       | { pexp_desc =
-            Pexp_extension ({ txt = ("i"|"if" as tag); loc }, pstr)} ->
+            Pexp_extension ({ txt = ("i"|"if" as tag); loc }, pstr);
+          _ } ->
           (match pstr with
            | PStr [{
                pstr_desc =
                  Pstr_eval ({
                      pexp_loc  = loc;
-                     pexp_desc = Pexp_constant (Pconst_string (s, _))
-                   }, _)
+                     pexp_desc = Pexp_constant (Pconst_string (s, _));
+                     _
+                   }, _);
+               _
              }] ->
                let is_format = tag = "if" in
                let translations =
@@ -165,11 +172,10 @@ let transl_mapper _argv =
                get_lang_expr ~loc translations_expr
            | _ ->
                raise (Location.Error (
-                   Location.error ~loc "[%i] requires a constant string, \
-                                        e.g. [%i \"text\"]")))
+                   Location.error ~loc "[%i] requires a constant string, e.g. [%i \"text\"]")))
       | x -> default_mapper.expr mapper x;
   }
 
-let () = register "i18n" transl_mapper
+let () = Driver.register ~name:"i18n" (module OCaml_405) transl_mapper
 let () =
   if Sys.getenv_opt "DUMP_POT" <> None then at_exit dump_pot

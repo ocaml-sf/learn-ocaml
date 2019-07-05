@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Learnocaml_toplevel_worker_messages
 
@@ -46,21 +37,12 @@ module IntMap = Map.Make(struct
     let compare (x:int) (y:int) = Pervasives.compare x y
   end)
 
-let record_ref, get_ref =
-  let ref_map = ref IntMap.empty in
-  let record_ref (f : unit -> Js.js_string Js.t) =
-    let id = IntMap.cardinal !ref_map in
-    ref_map := IntMap.add id f !ref_map;
-    id
-  and get_ref id = IntMap.find id !ref_map () in
-  record_ref, get_ref
-
 (* Limit the frequency of sent messages to one per ms, using an active
    loop (yuck) because, well, there is no other concurrency primitive
    and we do not want to fill a memory buffer but really "pause" the
    program.
 
-   The problem arises with debug off and developper tools off only.
+   The problem arises with debug off and developer tools off only.
    In this case, with a program that does a lot of writes (print or
    callbacks), the messages queue fills up super quickly and kills the
    browser / tab.
@@ -156,7 +138,7 @@ let iter_option f o = match o with | None -> () | Some o -> f o
 let checking_environment = ref !Toploop.toplevel_env
 
 let setup_ppx = lazy (Ast_mapper.register "ppx_metaquot" Ppx_metaquot.expander)
-
+                         
 let handler : type a. a host_msg -> a return Lwt.t = function
   | Set_checking_environment ->
       checking_environment := !Toploop.toplevel_env ;
@@ -173,10 +155,8 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_code = map_option wrap_fd fd_code in
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then Js_utils.debug "Worker: -> Execute (%S)" code;
-      let result =
-        Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
-      if !debug then
-        Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
+      let result = Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
+      if !debug then Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
       iter_option close_fd fd_code;
       close_fd fd_answer;
       unwrap_result result
@@ -184,8 +164,7 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then
         Js_utils.debug "Worker: -> Use_string (%S)" code;
-      let result =
-        Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
+      let result = Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
       if !debug then
         Js_utils.debug "Worker: <- Use_string (%B)" (is_success result);
       close_fd fd_answer;
@@ -211,13 +190,10 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ty =
         let ast =
           let arg =
-            Ast_helper.(Typ.constr (Location.mknoloc
-                                      (Longident.Lident "string")) []) in
+            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "string")) []) in
           let ret =
-            Ast_helper.(Typ.constr (Location.mknoloc
-                                      (Longident.Lident "unit")) []) in
-          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow
-                                    (Asttypes.Nolabel, arg, ret) ;
+            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "unit")) []) in
+          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
             ptyp_loc = Location.none ;
             ptyp_attributes = [] } in
         Typetexp.transl_type_scheme !Toploop.toplevel_env ast in
@@ -233,13 +209,13 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       Toploop.setvalue name (Obj.repr callback) ;
       return_unit_success
   | Check (code, ppx_meta) ->
-      let saved = !Toploop.toplevel_env in
-      Toploop.toplevel_env := !checking_environment ;
-      if ppx_meta then Lazy.force setup_ppx ;
-      let result = Toploop_ext.check code in
-      Toploop.toplevel_env := saved ;
-      unwrap_result result
-
+     let saved = !Toploop.toplevel_env in
+     Toploop.toplevel_env := !checking_environment ;
+     if ppx_meta then Lazy.force setup_ppx ;
+     let result = Toploop_ext.check code in
+     Toploop.toplevel_env := saved ;
+     unwrap_result result
+     
 let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
   | Init -> Unit
   | Reset -> Unit
@@ -266,13 +242,9 @@ let () =
         Lwt.return_unit
   in
   let path = "/worker_cmis" in
-  let root =
-    OCamlRes.Res.merge
-      Embedded_cmis.root
-      Embedded_grading_cmis.root in
   Sys_js.mount ~path
-    (fun ~prefix ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) root with
+    (fun ~prefix:_ ~path ->
+       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
            Some cmi

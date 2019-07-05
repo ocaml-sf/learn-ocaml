@@ -1,21 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
-
-open Lwt
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 let map_opt f = function
   | None -> None
@@ -54,7 +43,7 @@ let redirect_channel ?tee name channel append =
     (target_fd, redirected_channel :: stack) :: !redirections ;
   redirected_channel
 
-let flush_redirected_channel { read_fd ; append ; channel } =
+let flush_redirected_channel { read_fd ; append ; channel ; _ } =
   let buf = Bytes.create 503 in
   let rec loop () =
     let len = Unix.read read_fd buf 0 (Bytes.length buf) in
@@ -63,8 +52,7 @@ let flush_redirected_channel { read_fd ; append ; channel } =
     loop () in
   flush channel ; try loop () with _ -> ()
 
-let stop_channel_redirection
-      ({ target_fd ; read_fd ; backup_fd } as redirection) =
+let stop_channel_redirection ({ target_fd ; read_fd ; backup_fd ; _ } as redirection) =
   let fail () = invalid_arg "Toploop_unix.stop_channel_redirection" in
   match List.assq target_fd !redirections with
   | exception Not_found -> fail ()

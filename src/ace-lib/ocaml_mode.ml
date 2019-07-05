@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Js_utils
 
@@ -275,12 +266,11 @@ let get_line_tokens line st row doc =
     let open Approx_tokens in
     let open Nstream in
     match Nstream.next_full stream with
-    | None | Some ({token = EOF }, _, _) -> assert false
+    | None | Some ({token = EOF ; _}, _, _) -> st, List.rev tokens
     | Some (tok, lex_ctxt, stream) ->
         let block = IndentBlock.update !config.indent st.block stream tok; in
         let tok, block, offset =
-          if not first || all_spaces line ||
-               IndentBlock.is_in_comment block then
+          if not first || all_spaces line || IndentBlock.is_in_comment block then
             tok, block, offset
           else if not !config.forced then
             (* Update ocp-indent context with current indentation. *)
@@ -304,8 +294,7 @@ let get_line_tokens line st row doc =
         let col = Nstream.(Region.start_column tok.region) in
         if IndentBlock.is_at_top block then
           mark_phrase doc (Ace.create_position row (col + offset));
-        if !debug_indent > 1 && tok.token <> EOL &&
-             tok.token <> ESCAPED_EOL then
+        if !debug_indent > 1 && tok.token <> EOL && tok.token <> ESCAPED_EOL then
           IndentBlock.dump block;
         let st = { block; lex_ctxt; } in
         match tok.token with
@@ -351,9 +340,9 @@ type editor = {
   mutable current_warnings: warning list;
 }
 
-let get_editor { ace } = ace
-let get_current_error { current_error } = current_error
-let get_current_warnings { current_warnings } = current_warnings
+let get_editor { ace; _ } = ace
+let get_current_error { current_error; _ } = current_error
+let get_current_warnings { current_warnings; _ } = current_warnings
 
 let reset_error editor =
   editor.current_error <- None;
@@ -410,7 +399,7 @@ let get_indent state line =
   debug "Indent!";
   IndentBlock.dump state.block;
   match Nstream.(next (of_string ~st:state.lex_ctxt line)) with
-  | None | Some ({ Nstream.token = Approx_tokens.EOF } , _) ->
+  | None | Some ({ Nstream.token = Approx_tokens.EOF; _ } , _) ->
       IndentBlock.guess_indent state.block
   | Some _ when IndentBlock.is_in_comment state.block ->
       IndentBlock.guess_indent state.block
@@ -422,7 +411,7 @@ let get_indent state line =
       IndentBlock.indent block
 
 let do_indent ace_editor =
-  let ((row, col), _) =
+  let ((row, _col), _) =
     (* TODO when multiple line are selected... *)
     Ace.read_range (Ace.get_selection_range ace_editor) in
   let state = get_state ace_editor (row - 1) in
@@ -463,7 +452,7 @@ let remove_trailing_spaces line =
     line
 
 let may_reset_indent ace_editor =
-  let (_, (row, col)) =
+  let (_, (row, _col)) =
     Ace.read_range (Ace.get_selection_range ace_editor) in
   let line = Ace.get_line ace_editor row in
   if all_spaces line 0 (String.length line) then begin

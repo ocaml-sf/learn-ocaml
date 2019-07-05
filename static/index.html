@@ -3,76 +3,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
     <title>Learn OCaml by OCamlPro</title>
-    <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
-    <!--[if IE]><link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico"     /><![endif]-->﻿
-    <link rel="stylesheet" href="css/learnocaml_common.css">
-    <link rel="stylesheet" href="css/learnocaml_tryocaml.css">
-    <link rel="stylesheet" href="css/learnocaml_main.css">
-    <script src="js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
-    <script language="JavaScript" src="js/learnocaml-main.js" defer></script>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_tryocaml.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <link rel="stylesheet" href="/css/learnocaml_teacher_tab.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+    <script language="JavaScript" src="/js/learnocaml-main.js" defer></script>
   </head>
   <body>
     <div style="display:none">
       <!-- preload -->
-      <img src="icons/tryocaml_loading_1.gif"><img src="icons/tryocaml_loading_2.gif">
-      <img src="icons/tryocaml_loading_3.gif"><img src="icons/tryocaml_loading_4.gif">
-      <img src="icons/tryocaml_loading_5.gif"><img src="icons/tryocaml_loading_6.gif">
-      <img src="icons/tryocaml_loading_7.gif"><img src="icons/tryocaml_loading_8.gif">
+      <img src="/icons/tryocaml_loading_1.gif"><img src="/icons/tryocaml_loading_2.gif">
+      <img src="/icons/tryocaml_loading_3.gif"><img src="/icons/tryocaml_loading_4.gif">
+      <img src="/icons/tryocaml_loading_5.gif"><img src="/icons/tryocaml_loading_6.gif">
+      <img src="/icons/tryocaml_loading_7.gif"><img src="/icons/tryocaml_loading_8.gif">
+      <img src="/icons/tryocaml_loading_9.gif">
     </div>
-    
     <div id="learnocaml-main-toolbar">
       <div class="logo">
-        <img src="icons/logo_ocaml.svg">
+        <img src="/icons/logo_ocaml.svg">
         <span>Learn OCaml</span>
-        <img src="icons/logo_ocp.svg">
+        <img src="/icons/logo_ocp.svg">
       </div>
     </div>
     <div id="learnocaml-main-panel" class="hidden">
-      <hr class="glue">
-      <div id="txt_welcome">Welcome to <emph>LearnOCaml</emph> by OCamlPro.</div>
-      <div id="txt_construction"><!--This App is still under construction.--></div>
+      <div id="learnocaml-id-div">
+        <span id="txt_connected_as">Connected as</span>
+        <input type="text" value="" placeholder="Nickname" size="16" id="learnocaml-nickname">
+      </div>
+      <div id="learnocaml-sync-buttons"></div>
       <hr class="line">
-      <div id="txt_choose_activity"><!--Choose your activity below.--></div>
+
+      <h3 id="txt_choose_activity">Activities</h3>
       <div id="learnocaml-tab-buttons-container" class="tabs">
         <!-- Keep in sync with learnocaml_main.ml -->
+<!--
         <button>Exercises</button>
         <button>Lessons</button>
         <button>Toplevel</button>
-        <button>Editor</button>
+-->
       </div>
       <hr class="line">
-      <div id="txt_token_doc"><!--Your storage token on OCamlPro's servers:--></div>
-      <input type="text" value="XXX-XXX-XXX-XXX" size="17"
-             pattern="[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
-             id="learnocaml-save-token-field">
-      <div id="txt_token_share"><!--You can share it between devices.--></div>
-      <hr class="line">
-      <div id="txt_progression_local"><!--Progression is saved locally in the browser.--></div>
-      <div id="learnocaml-sync-buttons">
-        <button disabled>
-          <img src="icons/icon_download_white.svg" alt="download icon">
-          <span class="label">Save</span>
-        </button>
-        <button disabled>
-          <img src="icons/icon_upload_white.svg" alt="upload icon">
-          <span class="label">Restore</span>
-        </button>
-        <button disabled>
-          <img src="icons/icon_sync_white.svg" alt="sync icon">
-          <span class="label">Sync</span>
-        </button>
-      </div>
-      <div id="txt_save_doc"><!--Save it to a file using the
-        <img src="icons/icon_download_white.svg" class="icon"  alt="save">
-        button above.--></div>
-      <div id="txt_restore_doc"><!--Restore it from a file using the
-        <img src="icons/icon_upload_white.svg" class="icon" alt="restore">
-        button above.--></div>
-      <div id="txt_sync_doc"><!--Save online using the
-        <img src="icons/icon_sync_white.svg" class="icon"  alt="sync">
-        button above.--></div>
       <hr class="glue">
+      <div class="footer">
+        <div id="learnocaml-version"></div>
+        <div id="learnocaml-hide-panel">&lt;&lt;</div>
+      </div>
     </div>
+    <div id="learnocaml-show-panel">&gt;&gt;</div>
     <div id="learnocaml-main-content">
       <!-- <h1 class="pack">A separator</h1> -->
       <!-- <div class="exercise"> -->
@@ -81,11 +60,43 @@
       <!--     <p>Short description of the exercise.</p> -->
       <!--   </div> -->
       <!--   <div class="stats failure"|partial|success> -->
-      <!--     <div class="stars"><img src="icons/stars_00|05|10|15|20|25|30|35|40.svg"></div> -->
+      <!--     <div class="stars"><img src="/icons/stars_00|05|10|15|20|25|30|35|40.svg"></div> -->
       <!--     <div class="length">Exercise kind</div> -->
       <!--     <div class="score">42%</div> -->
       <!--   </div> -->
       <!-- </div> -->
     </div>
+    <div id="login-overlay">
+      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h3>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <div class="filler_h"></div>
+          <input id="login-nickname-input" type="text" placeholder="Nickname"
+                 minlength="2" autocomplete="off"></input>
+        </div>
+	<div>
+	  <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="login-secret-input" type="text" placeholder="Secret"
+                 minlength="1" autocomplete="off"></input>
+        </div>
+        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+      </div>
+      <div id="login-returning">
+        <h4 id="txt_returning"><!-- Returning user --></h4>
+        <div>
+          <div id="txt_returning_dialog"><!-- Enter your token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 autocomplete="off">
+        </div>
+        <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+      </div>
+    </div>
+    <div id="learnocaml-main-loading" class="loaded"></div>
   </body>
 </html>

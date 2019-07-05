@@ -53,6 +53,7 @@
       	<h1 id="txt_new_exo">New Exercise</h1>
       </div>
       <!--form-->
+      <div >
         <p>
           <label id="txt_id" for="identifier">Unique identifier:<br></label>
           <input type="text" id="identifier" name="identifier" value=""
@@ -65,6 +66,26 @@
           size="40" required pattern="[^ \t]|([^ \t].*[^ \t])" />
           <span id="title_error" class="error" aria-live="polite"></span>
         </p>
+        <p>
+          <label id="txt_authors" for="authors">Authors : <br> </label>
+          <input type="text" id="authors" name="title" placeholder="Name12 Name12,Firstname11, Firstname12;Name21 Name22,Firstname21, Firstname22; ... "
+          size="40"  />
+        </p>
+        <div class=splitted>
+          <div>  
+            <label id="txt_requiered" for="authors">Required skills : <br></label>
+            <input type="text" id="required" name="title" placeholder="Skill1 Skill2 ... "
+            size="40" style="display: inline"  />
+          </div>
+          <div style="width: 20px"></div>
+          <div>  
+            <label id="txt_requiered" for="focus">Trained skills :  </label>
+            <br>
+            <input type="text" id="focus" name="title" placeholder="Skill1 Skill2 ... "
+            size="40" style="display: inline" />
+          </div>
+      
+        </div>
         <p>
           <label id="txt_descr" for="description">Description of the exercise:<br></label>
           <textarea id="description" name="description" cols="80" rows="12"></textarea>
@@ -83,7 +104,21 @@
             <option value="4.">4</option>
           </select>
         </p>
+        <div class="splitted">
+          <div>  
+            <label id="txt_backward" for="backward">Exercises to do before (Ids) : <br> </label>
+              <input type="text" id="backward" name="title" placeholder="id1 id2 ... "
+              size="40"  />
+          </div>
+          <div style="width: 20px"></div>
+          <div>  
+            <label id="txt_forward" for="forkward">Exercises to do after (Ids) : <br> </label>
+              <input type="text" id="forward" name="title" placeholder="id1 id2 ... "
+              size="40"  />
+          </div>
+        </div>  
       <!--/form-->
     </div>
+
   </body>
 </html>

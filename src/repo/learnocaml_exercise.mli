@@ -1,67 +1,89 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
-(** The exercise parts required by the exercise page and the grader.
-    Not the metadata from the repository. *)
+(** Internal representation of the exercises files, including the metadata from
+    the repository. *)
+
 type t
 
-(** An exercise field accessor *)
-type 'a field
+type id = string
 
-val empty : t
+(* JSON encoding of the exercise representation. Includes cipher and decipher at
+   at encoding and decoding. *)
+val encoding: t Json_encoding.encoding
 
-(** Get was called on a missing undefaulted field *)
-exception Missing_field of string
+(** Intermediate representation of files, resulting of reading the exercise directory *)
+module File : sig
 
-(** Access a field in an exercise, may raise [Missing_field] *)
-val get: 'a field -> t -> 'a
+  (** The exercise parts required by the exercise page and the grader.
+      Not the metadata from the repository. *)
+  type files
 
-(** Check the existence of a field in an exercise *)
-val has: 'a field -> t -> bool
+  (** An exercise file accessor *)
+  type 'a file
 
-(** Access a field in an exercise *)
-val set: 'a field -> 'a -> t -> t
+  (** Get was called on a missing undefaulted field *)
+  exception Missing_file of string
 
-(** Learnocaml_exercise id accessor *)
-val id: string field
+  (** Access a field in an exercise, may raise [Missing_field] *)
+  val get: 'a file -> files -> 'a
 
-(** Learnocaml_exercise title / name accessor *)
-val title: string field
+  (** Check the existence of a field in an exercise *)
+  val has: 'a file -> files -> bool
 
-(** Maximum score for the exercise *)
-val max_score: int field
+  (** Access a field in an exercise *)
+  val set: 'a file -> 'a -> files -> files
 
-(** Returns the (private, already decyphered) [prepare.ml] *)
-val prepare: string field
+  (** Learnocaml_exercise id accessor *)
+  val id: id file
 
-(** Returns the (private, already decyphered) [solution.ml] *)
-val solution: string field
+  (* (\** Learnocaml_exercise title / name accessor *\)
+   * val title: string file *)
 
-(** Returns the (private, already decyphered) [test.ml] *)
-val test: string field
+  (** Maximum score for the exercise *)
+  val max_score: int file
 
-(** Returns the (public) [prelude.ml] *)
-val prelude: string field
+  (** Returns the (private, already deciphered) [prepare.ml] *)
+  val prepare: string file
 
-(** Returns the (public) [template.ml] *)
-val template: string field
+  (** Returns the (private, already deciphered) [solution.ml] *)
+  val solution: string file
 
-(** Returns the (public) [descr.html] *)
-val descr: string field
+  (** Returns the (private, already deciphered) [test.ml] *)
+  val test: string file
+
+  (** Returns the (public) [prelude.ml] *)
+  val prelude: string file
+
+  (** Returns the (public) [template.ml] *)
+  val template: string file
+
+  (** Returns the (public) [descr.html] *)
+  val descr: (string * string) list file
+
+end
+
+(** Access a field from the exercise, using the [t] representation, without **
+    deciphering it. May raise [Missing_file] if the field is optional and set to
+    [None]. *)
+val access: 'a File.file -> t -> 'a
+
+(** Access a string field from the exercise, using the [t] representation, and
+    deciphers if necessary. May raise [Missing_file] if the field is optional and
+    set to [None]. *)
+val decipher: string File.file -> t -> string
+
+(** Updates the value of a field of the exercise in its [t] representation. *)
+val update: 'a File.file -> 'a -> t -> t
+
+(** Updates the value of a field of the exercise in its [t] representation, and
+    ciphers it. *)
+val cipher: string File.file -> string -> t -> t
 
 (** Reader and decipherer *)
 val read:
@@ -87,5 +109,5 @@ val write_lwt:
   t -> ?cipher:bool -> 'a ->
   'a Lwt.t
 
-(** JSON serializer, with {!id} field included *)
+(** JSON serializer, with {!id} file included *)
 val enc : t Json_encoding.encoding

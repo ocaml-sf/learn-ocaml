@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Lwt
 
@@ -28,16 +19,23 @@ and remove dir name =
     if Sys.is_directory file then remove_dir file else Lwt_unix.unlink file
 
 let with_temp_dir f =
-  let dir =
-    Filename.concat
-      (Filename.get_temp_dir_name ())
-      (Printf.sprintf "grader_%6X" (Random.int 0xFFFFFF)) in
-  Lwt_unix.mkdir dir 0o700 >>= fun () ->
+  let rec get_dir () =
+    let d =
+      Filename.concat
+        (Filename.get_temp_dir_name ())
+        (Printf.sprintf "grader_%6X" (Random.int 0xFFFFFF))
+    in
+    Lwt.catch (fun () -> Lwt_unix.mkdir d 0o700 >>= fun () -> Lwt.return d)
+    @@ function
+    | Unix.Unix_error(Unix.EEXIST, _, _) -> get_dir ()
+    | e -> raise e
+  in
+  get_dir () >>= fun dir ->
   Lwt.catch
     (fun () -> f dir >>= fun res -> remove_dir dir >>= fun () -> Lwt.return res)
     (fun e -> remove_dir dir >>= fun () -> Lwt.fail e)
 
-let get_grade ?callback ?timeout exo solution =
+let get_grade ?callback ?timeout ?dirname exo solution =
   with_temp_dir @@ fun cmis_dir ->
   let module ResDump =
     OCamlResFormats.Files (OCamlResSubFormats.Raw) in
@@ -50,5 +48,5 @@ let get_grade ?callback ?timeout exo solution =
   let divert name chan cb =
     let redirection = Toploop_unix.redirect_channel name chan cb in
     fun () -> Toploop_unix.stop_channel_redirection redirection in
-  Lwt.return
-    (Grading.get_grade ?callback ?timeout ~divert exo solution)
+  Lwt.wrap @@ fun () ->
+  Grading.get_grade ?callback ?timeout ?dirname ~divert exo solution

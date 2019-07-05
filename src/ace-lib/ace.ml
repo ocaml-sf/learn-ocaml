@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Ace_types
 
@@ -63,9 +54,10 @@ let get_contents ?range {editor} =
   | Some r ->
       Js.to_string @@ document##(getTextRange r)
 
-let set_contents {editor} code =
-  let document = (editor##getSession)##getDocument in
-  document##(setValue (Js.string code))
+let set_contents ?(reset_undo=false) {editor} code =
+  let session = editor##getSession in
+  session##getDocument##setValue (Js.string code);
+  if reset_undo then session##getUndoManager##reset
 
 let get_selection_range {editor} = editor##getSelectionRange
 
@@ -101,7 +93,7 @@ let set_mode {editor} name =
 
 type mark_type = Error | Warning | Message
 
-let string_of_make_type = function
+let string_of_make_type: mark_type -> string = function
   | Error -> "error"
   | Warning -> "warning"
   | Message -> "message"
@@ -142,8 +134,7 @@ let set_mark editor ?loc ?(type_ = Message) msg =
   | None -> ()
   | Some range ->
     editor.marks <-
-      session##(addMarker range (Js.string type_)
-                  (Js.string "text") Js._false) ::
+      session##(addMarker range (Js.string type_) (Js.string "text") (Js._false)) ::
       editor.marks
 
 let set_background_color editor color =
@@ -174,7 +165,7 @@ let get_keybinding_menu e =
     Js.Optdef.case
       ext
       (fun () -> None)
-      (fun ext ->
+      (fun _ext ->
          e.keybinding_menu <- true;
          Some (Obj.magic e.editor : keybinding_menu Js.t))
 
@@ -192,8 +183,7 @@ let add_keybinding { editor }
   let command : _ command Js.t = Js.Unsafe.obj [||] in
   let binding : binding Js.t = Js.Unsafe.obj [||] in
   command##.name := Js.string name;
-  command##.exec := Js.wrap_callback
-                      (fun ed _args -> exec (fst ed##.customData));
+  command##.exec := Js.wrap_callback (fun ed _args -> exec (fst ed##.customData));
   iter_option (fun ro -> command##.readOnly := Js.bool ro) ro;
   iter_option
     (fun s -> command##.scrollIntoView := Js.string s)
@@ -266,6 +256,9 @@ let set_font_size {editor} sz =
 let set_tab_size {editor} sz =
   editor##getSession##(setTabSize sz)
 
+let set_readonly {editor} t =
+  editor##setReadOnly (Js.bool t)
+
 let get_state { editor } row =
   editor##getSession##(getState row)
 
@@ -285,4 +278,4 @@ let delete doc range =
   doc##(replace range (Js.string ""))
 
 let remove { editor } dir =
-  editor##(remove (Js.string "left"))
+  editor##(remove (Js.string dir))

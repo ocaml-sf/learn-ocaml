@@ -1,34 +1,23 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 open Js_utils
 open Tyxml_js
 
-module H = Learnocaml_toplevel_history
-
 let (>>=) = Lwt.(>>=)
-let (>|=) = Lwt.(>|=)
-
-let map_option f = function
-  | None -> None
-  | Some o -> Some (f o)
-let iter_option f o = match o with | None -> () | Some o -> f o
-
-type 'a result = Success of 'a | Timeout of float
+(* let (>|=) = Lwt.(>|=)
+ * 
+ * let map_option f = function
+ *   | None -> None
+ *   | Some o -> Some (f o)
+ * let iter_option f o = match o with | None -> () | Some o -> f o
+ * 
+ * type 'a result = Success of 'a | Timeout of float *)
 
 type t = {
   timeout_delay: float;
@@ -41,8 +30,7 @@ type t = {
   worker: Learnocaml_toplevel_worker_caller.t;
   container: [ `Div ] Html5.elt;
   oldify: bool;
-  mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u)
-                  | `Execute of unit Lwt.t | `Idle ] ;
+  mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u) | `Execute of unit Lwt.t | `Idle ] ;
   mutable on_enable_input: t -> unit;
   mutable on_disable_input: t -> unit;
   mutable disabled : int;
@@ -50,21 +38,21 @@ type t = {
   input: Learnocaml_toplevel_input.input;
 }
 
-let set_timeout_prompt t f = t.timeout_prompt <- f
-let set_flood_prompt t f = t.flood_prompt <- f
-let set_on_enable_input t f = t.on_enable_input <- f
-let set_on_disable_input t f = t.on_disable_input <- f
+(* let set_timeout_prompt t f = t.timeout_prompt <- f
+ * let set_flood_prompt t f = t.flood_prompt <- f
+ * let set_on_enable_input t f = t.on_enable_input <- f
+ * let set_on_disable_input t f = t.on_disable_input <- f *)
 
-let trim s =
-  let ws c = c = ' ' || c = '\t' || c = '\n' in
-  let len = String.length s in
-  let start = ref 0 in
-  let stop = ref (len - 1) in
-  while !start < len && (ws s.[!start])
-  do incr start done;
-  while !stop > !start && (ws s.[!stop])
-  do decr stop done;
-  String.sub s !start (!stop - !start + 1)
+(* let trim s =
+ *   let ws c = c = ' ' || c = '\t' || c = '\n' in
+ *   let len = String.length s in
+ *   let start = ref 0 in
+ *   let stop = ref (len - 1) in
+ *   while !start < len && (ws s.[!start])
+ *   do incr start done;
+ *   while !stop > !start && (ws s.[!stop])
+ *   do decr stop done;
+ *   String.sub s !start (!stop - !start + 1) *)
 
 let disable_input top =
   top.disabled <- top.disabled + 1 ;
@@ -80,17 +68,17 @@ let enable_input top =
     Learnocaml_toplevel_input.enable top.input
   end
 
-let scroll { output } =
+let scroll { output; _ } =
   Learnocaml_toplevel_output.scroll output
 
-let clear { output } =
+let clear { output; _ } =
   Learnocaml_toplevel_output.clear output ;
   Learnocaml_toplevel_output.output_stdout output
-    "The toplevel has been cleared.\n"
+    [%i"The toplevel has been cleared.\n"]
 
-let never_ending =
-  let t = fst (Lwt.wait ()) in
-  fun _ -> t
+(* let never_ending =
+ *   let t = fst (Lwt.wait ()) in
+ *   fun _ -> t *)
 
 let wait_for_prompts top =
   Lwt.join
@@ -101,7 +89,7 @@ let wait_for_prompts top =
         (fun () -> top.current_flood_prompt)
         Lwt.(function Canceled -> return () | exn -> fail exn) ]
 
-let start_timeout top name timeout =
+let start_timeout top _name timeout =
   Lwt.cancel top.current_timeout_prompt ;
   match timeout with
   | Some timeout -> timeout top
@@ -111,7 +99,11 @@ let start_timeout top name timeout =
       top.current_timeout_prompt <- top.timeout_prompt top ;
       top.current_timeout_prompt
 
+let input_focus top f =
+  f () >>= fun r -> Learnocaml_toplevel_input.focus top.input; Lwt.return r
+
 let reset_with_timeout top ?timeout () =
+  input_focus top @@ fun () ->
   match top.status with
   | `Reset (t, _) -> t
   | `Idle ->
@@ -122,8 +114,7 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker ()
-      >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
       t
   | `Execute task ->
       let t, u = Lwt.wait () in
@@ -133,8 +124,7 @@ let reset_with_timeout top ?timeout () =
       top.status <- `Reset (t, u) ;
       let timeout () = start_timeout top "reset" timeout in
       disable_input top;
-      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker ()
-      >>= fun () ->
+      Learnocaml_toplevel_worker_caller.reset ~timeout top.worker () >>= fun () ->
       t >>= fun () ->
       Lwt.cancel task ;
       Lwt.return ()
@@ -144,6 +134,7 @@ let reset top =
   reset_with_timeout top ~timeout ()
 
 let protect_execution top exec =
+  input_focus top @@ fun () ->
   wait_for_prompts top >>= fun () ->
   match top.status with
   | `Reset _ | `Execute _ ->
@@ -166,7 +157,7 @@ let protect_execution top exec =
                  Lwt.return res
              | `Idle | `Reset _ ->
                  (* The task successfully ended between a reset order
-                    and its ack, we fake its cancelation. *)
+                    and its ack, we fake its cancellation. *)
                  Lwt.fail Lwt.Canceled)
           (function
             | Lwt.Canceled ->
@@ -182,6 +173,7 @@ let protect_execution top exec =
       thread
 
 let execute_phrase top ?timeout content =
+  input_focus top @@ fun () ->
   let phrase = Learnocaml_toplevel_output.phrase () in
   let pp_code = Learnocaml_toplevel_output.output_code ~phrase top.output in
   let pp_answer = Learnocaml_toplevel_output.output_answer ~phrase top.output in
@@ -205,14 +197,13 @@ let execute_phrase top ?timeout content =
     warnings ;
   Lwt.return result
 
-
 let execute top =
   Learnocaml_toplevel_input.execute top.input
 
+
 let execute_test top =
   Learnocaml_toplevel_output.get_blocks top.output
-
-
+  
 let go_backward top =
   Learnocaml_toplevel_input.go_backward top.input
 
@@ -225,8 +216,7 @@ let check ?ppx_meta top code =
 
 let set_checking_environment top =
   protect_execution top @@ fun () ->
-    Learnocaml_toplevel_worker_caller.set_checking_environment top.worker
-    >>= fun _ ->
+  Learnocaml_toplevel_worker_caller.set_checking_environment top.worker >>= fun _ ->
   Lwt.return ()
 
 let execute_phrase top ?timeout content =
@@ -270,15 +260,15 @@ let make_timeout_popup
     ?(countdown = 10)
     ?(refill_step = 10)
     ?(on_show = (fun () -> ()))
-    () { container } =
+    () { container; _ } =
   let open Tyxml_js.Html5 in
   let t0 = Sys.time () in
   let countdown = ref countdown in
   let btn_continue =
-    let label = Format.asprintf "%d seconds!" refill_step in
+    let label = Format.asprintf [%if"%d seconds!"] refill_step in
     button [ pcdata label ] in
   let btn_stop =
-    button [ pcdata "Kill it!" ] in
+    button [ pcdata [%i"Kill it!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> countdown := !countdown + refill_step ; true) ;
   Manip.Ev.onclick btn_stop
@@ -288,15 +278,15 @@ let make_timeout_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata "Infinite loop?" ] ;
+          [ h1 [ pcdata [%i"Infinite loop?"] ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata "The toplevel has not been responding for " ;
+              [ pcdata [%i"The toplevel has not been responding for "] ;
                 clock_span ;
-                pcdata " seconds." ;
+                pcdata [%i" seconds."] ;
                 br () ;
-                pcdata "It will be killed in " ;
+                pcdata [%i"It will be killed in "] ;
                 countdown_span ;
-                pcdata " seconds." ] ;
+                pcdata [%i" seconds."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Lwt.catch
@@ -321,13 +311,13 @@ let make_timeout_popup
 
 let make_flood_popup
     ?(on_show = (fun () -> ()))
-    () { container } name amount =
+    () { container; _ } name amount =
   let open Tyxml_js.Html5 in
   let answer = ref None in
   let btn_continue =
-    button [ pcdata "Show anyway!" ] in
+    button [ pcdata [%i"Show anyway!"] ] in
   let btn_stop =
-    button [ pcdata "Hide output!" ] in
+    button [ pcdata [%i"Hide output!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> answer := Some false ; true) ;
   Manip.Ev.onclick btn_stop
@@ -336,15 +326,14 @@ let make_flood_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata "Flooded output!" ] ;
+          [ h1 [ pcdata [%i"Flooded output!"] ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata "Your code is flooding the " ;
-                pcdata name ;
-                pcdata " channel. " ;
+              [ pcdata (Printf.sprintf
+                          [%if"Your code is flooding the %s channel."] name) ;
                 br ();
-                pcdata "It has already printed " ;
+                pcdata [%i"It has already printed "] ;
                 qty_span ;
-                pcdata " bytes." ] ;
+                pcdata [%i" bytes."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Manip.appendChild container dialog ;
@@ -371,8 +360,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
     let total = !flooded + String.length s in
     if total >= top.flood_limit then begin
       let buf = Buffer.create top.flood_limit in
-      hook := (fun s -> try flooded := !flooded + String.length s ;
-                            Buffer.add_string buf s with _ -> ()) ;
+      hook := (fun s -> try flooded := !flooded + String.length s ; Buffer.add_string buf s with _ -> ()) ;
       flooded := total ;
       Lwt.async @@ fun () ->
       Lwt.catch
@@ -381,7 +369,7 @@ let wrap_flusher_to_prevent_flood top name hook real =
            top.current_flood_prompt <-
              (top.flood_prompt top name (fun () -> !flooded) >>= function
                | true ->
-                   real ("\nInterrupted output channel " ^ name ^ ".\n") ;
+                   real (Printf.sprintf [%if"\nInterrupted output channel %s.\n"] name) ;
                    hook := ignore ;
                    Lwt.return ()
                | false ->
@@ -389,19 +377,21 @@ let wrap_flusher_to_prevent_flood top name hook real =
                    hook := real ;
                    Lwt.return ()) ;
            top.current_flood_prompt)
-        (fun exn ->
+        (fun _exn ->
            hook := ignore ;
            Lwt.return ())
     end else begin
       flooded := total
     end
 
-let welcome_phrase =
-  "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version) ;\
-   print_endline \" - type your OCaml phrase in the box below and press [Enter]\" ;\
-   print_endline \" - use [Shift-Enter] to break lines without triggering execution\" ;\
-   print_endline \" - use [Ctrl-↑] once to reuse the previous entry\" ;\
-   print_endline \" - use [Ctrl-↑] / [Ctrl-↓] to navigate through history\" ;;"
+let welcome_phrase () =
+  [%i"Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
+      print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
+      print_endline \" - use [Shift-Enter] to break lines without triggering execution\";\n\
+      print_endline \" - use [Ctrl-\\xe2\\x86\\x91] once to reuse the previous entry\";\n\
+      print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] \
+      to navigate through history\" ;;"]
+  (* U+2191 upwards arrow, U+2193 downwards arrow*)
 
 let create
     ?worker_js_file
@@ -420,6 +410,7 @@ let create
     ?(oldify = true)
     ?(display_welcome = true)
     ~container () =
+  (match get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   let output_div = Html5.div [] in
   let input_div = Html5.div [] in
   Manip.appendChild container output_div;
@@ -497,14 +488,14 @@ let create
         Learnocaml_toplevel_worker_caller.execute
           ~pp_answer: (fun _ -> ())
           ~print_outcome: false
-          worker welcome_phrase >>= fun _ ->
+          worker (welcome_phrase ()) >>= fun _ ->
         Lwt.return ()
       else Lwt.return ()
     end >>= fun _ ->
     if not !first_time then
       let phrase = Learnocaml_toplevel_output.phrase () in
       Learnocaml_toplevel_output.output_stdout output ~phrase
-        "The toplevel has been reset.\n"
+        [%i"The toplevel has been reset.\n"]
     else
       first_time := false ;
     Learnocaml_toplevel_worker_caller.register_callback worker "print_html"
@@ -513,12 +504,11 @@ let create
     | None -> Lwt.return_unit
     | Some f -> f top in
   after_init top >>= fun () ->
-  Learnocaml_toplevel_worker_caller.set_after_init top.worker
-    (fun _ -> after_init top);
+  Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
 
-let print_string { output } = Learnocaml_toplevel_output.output_stdout output
+let print_string { output; _ } = Learnocaml_toplevel_output.output_stdout output
 
-let prerr_string { output } = Learnocaml_toplevel_output.output_stderr output
+let prerr_string { output; _ } = Learnocaml_toplevel_output.output_stderr output
 
-let print_html { output } = Learnocaml_toplevel_output.output_html output
+let print_html { output; _ } = Learnocaml_toplevel_output.output_html output

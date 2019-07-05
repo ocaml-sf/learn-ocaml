@@ -14,7 +14,7 @@ body{
   border-bottom: 1px #eee solid;
   display: flex;
   background: #222;
-}
+} 
 #learnocaml-main-toolbar a {
   text-decoration: none;
   color: #fff;
@@ -84,4 +84,15 @@ body{
 }
 #learnocaml-tabs > * {
   left: 0px; top: 15px; right: 0px; bottom: 0px;
+}
+
+
+.splitted {
+  display: flex;
+  justify-content: start
+  
+}
+
+.splitted:first-child{
+  margin-right: 50px;
 }

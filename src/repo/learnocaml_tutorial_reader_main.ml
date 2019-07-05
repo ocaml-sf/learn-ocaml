@@ -1,19 +1,12 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
+open Learnocaml_data
 
 (* If and where to export the tutorial as JSON. *)
 let output_json = ref None
@@ -55,28 +48,21 @@ let main () =
                  let tutorial_name =
                    Filename.basename (Filename.chop_extension file_name) in
                  begin if Filename.check_suffix file_name ".html" then
-                         Learnocaml_tutorial_parser.parse_html_tutorial
-                           ~tutorial_name ~file_name
+                     Learnocaml_tutorial_parser.parse_html_tutorial ~tutorial_name ~file_name
                    else if Filename.check_suffix file_name ".md" then
-                         Learnocaml_tutorial_parser.parse_md_tutorial
-                           ~tutorial_name ~file_name
+                     Learnocaml_tutorial_parser.parse_md_tutorial ~tutorial_name ~file_name
                    else if Filename.check_suffix file_name ".json" then
-                         Lwt_io.with_file ~mode: Lwt_io.Input file_name @@
-                           fun chan ->
+                     Lwt_io.with_file ~mode: Lwt_io.Input file_name @@ fun chan ->
                      Lwt_io.read chan >>= fun text ->
                      let json =
                        Ezjsonm.from_string text in
                      let tutorial =
-                       Json_encoding.destruct
-                         Learnocaml_tutorial.tutorial_enc json in
-                     let tutorial_title =
-                       tutorial.Learnocaml_tutorial.tutorial_title in
+                       Json_encoding.destruct Tutorial.enc json in
+                     let title = tutorial.Tutorial.title in
                      Lwt.return
-                       (Learnocaml_index.{ tutorial_name ; tutorial_title },
-                        tutorial)
+                       (Tutorial.Index.{ name = tutorial_name ; title }, tutorial)
                    else
-                     Lwt.fail_with "unrecognized file extension, \
-                                    expecting .md, .html or .json"
+                     Lwt.fail_with "unrecognized file extension, expecting .md, .html or .json"
                  end >>= fun (_, tutorial) ->
                  Lwt.join
                    [ begin match !output_html with
@@ -85,30 +71,24 @@ let main () =
                            let text =
                              Learnocaml_tutorial_parser.print_html_tutorial
                                ~tutorial_name tutorial in
-                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
-                             fun chan ->
+                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
                            Lwt_io.write chan text
                      end ;
                      begin match !output_md with
                        | None -> Lwt.return ()
                        | Some file_name ->
-                           let text =
-                             Learnocaml_tutorial_parser.print_md_tutorial
-                               ~tutorial_name tutorial in
-                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
-                             fun chan ->
+                           let text = Learnocaml_tutorial_parser.print_md_tutorial tutorial in
+                           Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
                            Lwt_io.write chan text
                      end ;
                      begin match !output_json with
                        | None -> Lwt.return ()
                        | Some file_name ->
                            let json =
-                             Json_encoding.construct
-                               Learnocaml_tutorial.tutorial_enc tutorial in
+                             Json_encoding.construct Tutorial.enc tutorial in
                            match json with
                            | `O _ | `A _ as json ->
-                              Lwt_io.with_file ~mode: Lwt_io.Output file_name @@
-                                fun chan ->
+                               Lwt_io.with_file ~mode: Lwt_io.Output file_name @@ fun chan ->
                                let text = Ezjsonm.to_string json in
                                Lwt_io.write chan text
                            | _ -> assert false
@@ -116,10 +96,8 @@ let main () =
                  Lwt.return 0)
           (fun exn ->
              let print_unknown ppf = function
-               | Failure msg ->
-                  Format.fprintf ppf "Cannot process tutorial: %s" msg
-               | exn -> Format.fprintf ppf "Cannot process tutorial: %s"
-                          (Printexc.to_string exn) in
+               | Failure msg -> Format.fprintf ppf "Cannot process tutorial: %s" msg
+               | exn -> Format.fprintf ppf "Cannot process tutorial: %s"  (Printexc.to_string exn) in
              Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
              Format.eprintf "@." ;
              Lwt.return 1)))

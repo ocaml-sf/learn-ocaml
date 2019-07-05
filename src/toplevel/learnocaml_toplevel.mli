@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 (** An OCaml toplevel whose input and output will be in a given HTML [div]. *)
 
@@ -31,7 +22,7 @@ type t
    @param timeout_prompt
      A function called when an operation has taken more than
      [timeout_delay] to execute. The resulting thread triggers the
-     cancelation of this operation when it terminate, and is conversely
+     cancellation of this operation when it terminate, and is conversely
      canceled if the operation terminates before.
      It is the default value for the optional parameter of the
      {!val:execute}, {!val:load} and {!val:reset} functions.
@@ -134,12 +125,8 @@ val load:
   ?message: string ->
   string -> bool Lwt.t
 
-(** Parse and typecheck a given source code.
-
-    @param ppx_meta should the checker toploop use ppx-metaquot ?
-*)
-val check: ?ppx_meta:bool -> t -> string -> unit Toploop_results.toplevel_result Lwt.t
-
+(** Parse and typecheck a given source code. *)
+ val check: ?ppx_meta:bool -> t -> string -> unit Toploop_results.toplevel_result Lwt.t
 (** Freezes the environment for future calls to {!check}. *)
 val set_checking_environment: t -> unit Lwt.t
 
@@ -170,11 +157,9 @@ val scroll: t -> unit
 (** Execute the content of the input [textarea].
     This is equivalent to pressing [Enter] when the toplevel is focused. *)
 val execute: t -> unit
-
-open Learnocaml_toplevel_output
                     
 val execute_test: t -> string
-                    
+  
 (** Go backward in the input's history.
     This is equivalent to pressing [Up] when the toplevel is focused. *)
 val go_backward: t -> unit

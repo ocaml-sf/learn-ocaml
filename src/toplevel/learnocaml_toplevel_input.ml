@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 let indent_caml s in_lines =
   let output = {
@@ -38,7 +29,7 @@ let indent_ocaml_textarea textbox =
     match l with
     | [] -> assert false
     | (i,(lo,up))::_ when up >= c -> c,i,lo,up
-    | (_,(lo,up))::rem -> find rem c in
+    | _::rem -> find rem c in
   let v = textbox##.value in
   let pos =
     let c1 = (Obj.magic textbox)##.selectionStart
@@ -51,12 +42,11 @@ let indent_ocaml_textarea textbox =
     else None in
   let f = match pos with
     | None -> (fun _ -> true)
-    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) ->
-       (fun l -> l>=(line1+1) && l<=(line2+1)) in
+    | Some ((_,line1,_,_),(_,line2,_,_)) -> (fun l -> l>=(line1+1) && l<=(line2+1)) in
   let v = indent_caml (Js.to_string v) f in
   textbox##.value:=Js.string v;
   begin match pos with
-    | Some ((c1,line1,lo1,up1),(c2,line2,lo2,up2)) ->
+    | Some ((c1,line1,_,up1),(c2,line2,_,up2)) ->
       let l = loop v [] (0,0) in
       let (lo1'',up1'') = List.assoc line1 l in
       let (lo2'',up2'') = List.assoc line2 l in
@@ -111,10 +101,8 @@ let resize { textbox ; sizing ; on_resize } =
           if text##(charAt i) = Js.string "\n" then incr res
         done ;
         !res |> min max_lines |> max min_lines in
-      textbox##.style##.fontSize :=
-        (Js.string (string_of_int line_height ^ "px")) ;
-      textbox##.style##.height :=
-        Js.string (Printf.sprintf "%dpx" (line_height * lines))
+      textbox##.style##.fontSize := (Js.string (string_of_int line_height ^ "px")) ;
+      textbox##.style##.height := Js.string (Printf.sprintf "%dpx" (line_height * lines))
 
 let execute ({ history ; textbox ; execute } as input) =
   let code = Js.to_string textbox##.value in
@@ -135,6 +123,8 @@ let go_forward ({ history ; textbox } as input) =
     Learnocaml_toplevel_history.go_forward history ;
     textbox##.value := Js.string (Learnocaml_toplevel_history.current history) ;
     resize input
+
+let focus input = input.textbox##focus
 
 let setup
     ?sizing ?history
@@ -179,11 +169,11 @@ let setup
     );
   textbox##.onfocus :=
     Dom_html.handler (fun _ ->
-        if not input.disabled then input.focused <- true ;
+        if not (input.disabled) then input.focused <- true ;
         Js._true);
   textbox##.onblur :=
     Dom_html.handler (fun _ ->
-        if not input.disabled then input.focused <- false ;
+        if not (input.disabled) then input.focused <- false ;
         Js._true);
   textbox##.onkeyup :=
     Dom_html.handler (fun _ -> resize input ; Js._true);

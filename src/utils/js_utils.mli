@@ -43,10 +43,11 @@ module Manip : sig
   val window: 'a elt -> Dom_html.window Js.t
 
   val setInnerHtml: 'a elt -> string -> unit
-  val setTitle: 'a elt -> string -> unit
+  val setInnerText: 'a elt -> string -> unit
   val clone: ?deep:bool -> 'a elt -> 'a elt
 
   val appendChild: ?before:'a elt -> 'b elt ->  'c elt -> unit
+  val appendToHead: ?before:'a elt -> 'c elt -> unit
   val appendToBody: ?before:'a elt -> 'c elt -> unit
   val appendChildren: ?before:'a elt -> 'b elt ->  'c elt list -> unit
   val appendChildFirst: 'b elt ->  'c elt -> unit
@@ -59,17 +60,25 @@ module Manip : sig
   val replaceChildren: 'a elt -> 'b elt list -> unit
   val removeChildren: 'a elt -> unit
   val removeSelf: 'a elt -> unit
+  val replaceSelf: 'a elt -> 'a elt -> unit
 
   val children: 'a elt -> 'b elt list
   val by_id: string -> 'b elt option
+  val by_classname: string -> 'b elt list
 
   val disable: 'a elt -> unit
   val enable: 'a elt -> unit
 
   val value: 'a elt -> string
 
+  val hasClass: 'a elt -> string -> bool
   val addClass: 'a elt -> string -> unit
   val removeClass: 'a elt -> string -> unit
+
+  val scrollIntoView: ?bottom:bool -> 'a elt -> unit
+
+  (* Returns [true] if the class has been set, [false] if it was unset *)
+  val toggleClass: 'a elt -> string -> bool
 
   val focus: 'a elt -> unit
   val blur: 'a elt -> unit
@@ -101,6 +110,7 @@ module Manip : sig
     val onreturn: ('a,Dom_html.keyboardEvent) ev_unit
     val onchange: ('a,Dom_html.event) ev
     val onchange_select: ('a,Dom_html.event) ev
+    val oninput: ('a,Dom_html.event) ev
   end
 
   module Attr : sig
@@ -146,6 +156,7 @@ module Manip : sig
     val borderTopWidth: 'a elt -> string
     val borderTopWidthPx: 'a elt -> int
     val borderWidth: 'a elt -> string
+    val borderWidthPx: 'a elt -> int
     val bottom: 'a elt -> string
     val captionSide: 'a elt -> string
     val clear: 'a elt -> string
@@ -388,3 +399,13 @@ module MakeLocal(V: sig type t val name: string end) : sig
   val get: unit -> V.t option
   val set: V.t -> unit
 end
+
+(** Returns an URL that can be passed to [Worker.create] from a string
+    containing the code *)
+val js_code_url: string -> string
+
+(* (\** Wrapper for [Worker.create] that uses JS code as a string instead of a URL*\)
+ * val worker_with_code: string -> ('a, 'b) Worker.worker Js.t
+ * 
+ * (\** Similar to [Worker.create], but retrieves the js file manually *\)
+ * val worker: string -> ('a, 'b) Worker.worker Js.t Lwt.t *)

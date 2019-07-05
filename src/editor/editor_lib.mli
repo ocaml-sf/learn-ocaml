@@ -1,7 +1,10 @@
-open Learnocaml_exercise_state
+open Learnocaml_data
+open Editor
+val update_index : Editor.editor_state -> unit
 
 (** Getters of an editor exercise
-  * @param the id *)
+ * @param the id *)
+val get_editor_state : string -> Editor.editor_state
 val get_titre : string -> string
 val get_description : string -> string
 val get_diff : string -> float
@@ -9,30 +12,8 @@ val get_solution : string -> string
 val get_question : string -> string
 val get_template : string -> string
 val get_testml : string -> string
-val get_testhaut : string -> Learnocaml_exercise_state.test_qst_untyped IntMap.t
 val get_prelude : string -> string
 val get_prepare : string -> string
-val get_imperative : string -> bool
-val get_undesirable : string -> bool
-val get_buffer : string -> string
-(** Getters of a question of an editor exercise
- * @param exercise_id question_id *)
-val get_a_question : string -> int -> Learnocaml_exercise_state.test_qst_untyped
-val get_ty : string -> int -> string
-val get_name_question : string -> IntMap.key -> string
-val get_type_question : string -> IntMap.key -> Learnocaml_exercise_state.type_question
-val get_extra_alea : string -> IntMap.key -> int
-val get_input : string -> IntMap.key -> string
-val get_spec : string -> IntMap.key -> string
-
-(** Question ids are integers stored in strings *)
-
-(** Compute the smallest integer not used yet *)
-val compute_question_id : 'a IntMap.t -> int
-
-(** Setter of testhaut
-  * @param new_StringMap exercise_id *)
-val save_testhaut : Learnocaml_exercise_state.test_qst_untyped IntMap.t -> string -> unit
 
 val with_test_lib_prepare :string->string
 
@@ -44,18 +25,10 @@ val idUnique : string -> bool
 (** @return a bool depending on whether the title is already used or not *)
 val titleUnique : string -> bool
 
-(** Store an exercise in the dynamic index of editor exercises *)
-val store_in_index : Learnocaml_exercise_state.metadata -> unit
-
+val new_state : Exercise.Meta.t -> editor_state  
 (** arguments Dom element , string *)
 val setInnerHtml : < innerHTML : < set : Js.js_string Js.t -> unit; .. >
                    Js_of_ocaml.Js.gen_prop; .. > Js_of_ocaml.Js.t -> string -> unit
-
-(** Trick to call the recovering function outside of it definition enveroniment *)
-val recovering_callback : (unit -> unit) ref
-
-(** Create the testhaut pane blindfolds *)
-val testhaut_init : [< Html_types.div ] Tyxml_js.Html5.elt -> string -> unit Lwt.t
 
 (** Fragment of a test.ml code
   * @see definition *)
@@ -116,7 +89,6 @@ val exo_creator : string -> Learnocaml_exercise.t
 (** @return the output of toplevel buffer *) 
 val get_answer : Learnocaml_toplevel.t -> string
 val typecheck_dialog_box : string-> 'a Toploop_results.toplevel_result -> unit Lwt.t
-val test_prel :string 
 
 
 (** Extract the function definitions from a toplevel output
@@ -125,4 +97,8 @@ val extract_functions : string -> (string * string) list
 
 (** Generate monomorphic test specifications
     @return a list of ("function_name", [(alea, "monomorphic type")]) *)
-val monomorph_generator : (string * string) list -> (string * (int * string) list) list
+val monomorph_generator : (string * string) list -> Editor.test_qst_untyped list
+
+val show_load : Html_types.text Tyxml_js.Html.wrap ->
+[< Html_types.div_content_fun ] Tyxml_js.Html.elt Tyxml_js.Html.list_wrap ->
+unit                                                      

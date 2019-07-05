@@ -1,0 +1,55 @@
+(library
+ (name learnocaml_repository)
+ (wrapped false)
+ (modules Learnocaml_index
+          Learnocaml_exercise)
+ (libraries ocplib-json-typed
+            learnocaml_xor
+	    omd
+            lwt
+            ezjsonm)
+)
+
+(library
+ (name learnocaml_tutorial_parser)
+ (wrapped false)
+ (modules Learnocaml_tutorial_parser)
+ (libraries learnocaml_repository
+            learnocaml_data
+            markup
+            omd)
+)
+
+(executable
+ (name learnocaml_tutorial_reader_main)
+ (modes byte)
+ (modules Learnocaml_tutorial_reader_main)
+ (libraries ezjsonm
+            str
+            lwt.unix
+            omd
+            markup
+            grading_cli
+            learnocaml_repository
+            learnocaml_data
+            learnocaml_tutorial_parser)
+)
+
+(library
+ (name learnocaml_process_repository_lib)
+ (wrapped false)
+ (modules Learnocaml_process_common
+          Learnocaml_process_exercise_repository
+          Learnocaml_process_tutorial_repository
+	  Learnocaml_process_playground_repository)
+ (libraries ezjsonm
+            str
+            lwt.unix
+            lwt_utils
+            omd
+            markup
+            grading_cli
+            learnocaml_repository
+            learnocaml_data
+            learnocaml_tutorial_parser)
+)

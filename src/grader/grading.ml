@@ -1,40 +1,37 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 exception Internal_error of string * Toploop_ext.error
 exception User_code_error of Toploop_ext.error
 exception Invalid_grader
 
+let string_of_exn = function
+  | Internal_error (msg, error) ->
+      let msg =
+        Printf.sprintf [%if"Exercise definition error %s:\n%s\n%!"]
+          msg error.Toploop_ext.msg
+      in
+      Some  msg
+  | User_code_error error ->
+      let msg =
+        Printf.sprintf [%if"Error in user code:\n\n%s\n%!"]
+          error.Toploop_ext.msg
+      in
+      Some msg
+  | _ -> None
+
 let () =
-  Location.register_error_of_exn
-    (function
-      | Internal_error (msg, error) ->
-          let msg =
-            Printf.sprintf [%if"Internal error %s:\n\n%s\n%!"]
-              msg error.Toploop_ext.msg in
+  Location.register_error_of_exn (fun exn ->
+      match string_of_exn exn with
+      | Some msg ->
           Some {Location.loc = Location.none ; sub = [] ;
                 msg ; if_highlight = msg }
-      | User_code_error error ->
-          let msg =
-            Printf.sprintf [%if"Error in user code:\n\n%s\n%!"]
-              error.Toploop_ext.msg in
-          Some {Location.loc = Location.none ; sub = [] ;
-                msg ; if_highlight = msg }
-      | _ -> None)
+      | None -> None)
 
 
 let internal_error name err =
@@ -43,7 +40,11 @@ let internal_error name err =
 let user_code_error err =
   raise (User_code_error err)
 
-let get_grade ?callback ?timeout ~divert exo code =
+let get_grade
+    ?callback ?timeout ?(dirname="") ~divert
+    (exo : Learnocaml_exercise.t) code =
+
+  let file f = String.concat Filename.dir_sep [dirname; f] in
 
   let print_outcome = true in
   let outcomes_buffer = Buffer.create 503 in
@@ -83,10 +84,9 @@ let get_grade ?callback ?timeout ~divert exo code =
           !flush_stderr () ;
           !flush_stdout () ;
           let msg =
-            Buffer.contents stderr_buffer ^
-            "\n" ^
-            Buffer.contents stdout_buffer in
-          fail { Toploop_ext.msg ; locs = [] ; if_highlight = msg }
+            String.concat "\n"
+              (List.map Buffer.contents [stderr_buffer; stdout_buffer; outcomes_buffer])
+          in fail { Toploop_ext.msg ; locs = [] ; if_highlight = msg }
         end
     | Toploop_ext.Error (err, w) ->
         warn w ;
@@ -101,23 +101,23 @@ let get_grade ?callback ?timeout ~divert exo code =
 
       set_progress [%i"Loading the prelude."] ;
       handle_error (internal_error [%i"while loading the prelude"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prelude.ml"
-        (Learnocaml_exercise.(get prelude) exo) ;
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prelude.ml")
+        (Learnocaml_exercise.(decipher File.prelude exo)) ;
 
       set_progress [%i"Preparing the test environment."] ;
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"prepare.ml"
-        (Learnocaml_exercise.(get prepare) exo) ;
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prepare.ml")
+        (Learnocaml_exercise.(decipher File.prepare exo)) ;
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
-        Toploop_ext.use_mod_string ~print_outcome
-          ~ppf_answer ~modname:"Code" code ;
+      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code"
+        ~filename:(file "solution.ml") code ;
 
       set_progress [%i"Loading the solution."] ;
       handle_error (internal_error [%i"while loading the solution"]) @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-        (Learnocaml_exercise.(get solution) exo) ;
+        (Learnocaml_exercise.(decipher File.solution exo)) ;
 
       set_progress [%i"Preparing to launch the tests."] ;
       Introspection.allow_introspection ~divert ;
@@ -143,13 +143,12 @@ let get_grade ?callback ?timeout ~divert exo code =
         "module Report = Learnocaml_report" ;
       set_progress [%i"Launching the test bench."] ;
       handle_error (internal_error [%i"while testing your solution"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:"test.ml"
-        (Learnocaml_exercise.(get test) exo) ;
+      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
+        (Learnocaml_exercise.(decipher File.test exo)) ;
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;
-      (* TODO: Also clear the object table,
-         once the OCaml's Toploop allows to. *)
+      (* TODO: Also clear the object table, once the OCaml's Toploop allows to. *)
       !flush_stderr () ;
       !flush_stdout () ;
       match get_result () with

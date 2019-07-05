@@ -1,0 +1,64 @@
+(library
+ (name learnocaml_toplevel_worker_messages)
+ (wrapped false)
+ (modes byte)
+ (modules Learnocaml_toplevel_worker_messages)
+ (modules_without_implementation Learnocaml_toplevel_worker_messages)
+ (libraries js_of_ocaml
+            toploop_results)
+)
+
+(executable
+ (name learnocaml_toplevel_worker_main)
+ (modes byte)
+ (flags :standard -w -41 -warn-error -4-42-44-45-48-32-27)
+ (link_flags :standard -linkall)
+ (libraries jsutils
+            js_of_ocaml
+            js_of_ocaml.ppx
+            toploop_jsoo
+            toploop_results
+            ocplib-ocamlres.runtime
+            embedded_cmis
+	    grading
+	    learnocaml_ppx_metaquot_lib
+            learnocaml_toplevel_worker_messages)
+ (modules Learnocaml_toplevel_worker_main)
+ (preprocess (pps js_of_ocaml.ppx))
+ (js_of_ocaml (flags :standard +dynlink.js +toplevel.js
+                     --toplevel --nocmis))
+)
+
+(library
+ (name learnocaml_toplevel_history)
+ (wrapped false)
+ (libraries ocplib-json-typed)
+ (modules Learnocaml_toplevel_history)
+)
+
+(library
+ (name learnocaml_toplevel)
+ (wrapped false)
+ (modes byte)
+ (flags :standard -w -9-41 -warn-error -27)
+ (libraries toploop_results
+            jsutils
+            js_of_ocaml
+            js_of_ocaml.ppx
+            ocp-indent-nlfork.lib
+            ace
+            ocplib-json-typed
+            learnocaml_toplevel_history
+            learnocaml_toplevel_worker_messages
+            ocplib_i18n)
+ (modules Learnocaml_toplevel_worker_caller
+          Learnocaml_toplevel_output
+          Learnocaml_toplevel_input
+          Learnocaml_toplevel)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+)
+
+(install
+ (section share)
+ (files (learnocaml_toplevel_worker_main.bc.js as www/js/learnocaml-toplevel-worker.js))
+)

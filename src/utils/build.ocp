@@ -31,6 +31,16 @@ begin library "ocplib_i18n"
   ]
 end
 
+begin library "lwt_utils"
+  has_asm = true
+  has_byte = true
+  requires = [
+    "lwt.unix"
+  ]
+  files = [
+    "lwt_utils.ml"
+  ]
+end
 
 begin library "xor"
   has_asm = true
@@ -39,19 +49,5 @@ begin library "xor"
   ]
   requires = [
     "base64"
-  ]
-end
-
-
-begin library "translate"
-  files = [
-    "translate.ml" ( comp = ppx_js ppx_ocplib_i18n )
-  ]
-  requires = [
-    "lwt"
-    "js_of_ocaml.ppx"
-    "ocplib_i18n"
-    "jsutils"
-    "learnocaml-app-common"
   ]
 end

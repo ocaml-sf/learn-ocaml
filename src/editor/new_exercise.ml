@@ -2,12 +2,13 @@ open Js_of_ocaml
 open Dom_html
 open Js_utils
 open Learnocaml_common
-open Learnocaml_exercise_state
-open Learnocaml_index
 open Editor_lib
+open Learnocaml_data
+open Learnocaml_data.Editor   
+open Learnocaml_data.Exercise.Meta 
 
 module StringMap = Map.Make (String)
-
+(*
 (* Internationalization *)
 let () = Translate.set_lang ()
 let () =
@@ -21,98 +22,166 @@ let () =
     "save", [%i"Save"];
   ] in
   Translate.set_string_translations translations
+ *)
+ 
 
-
-
-let getString = function
-  | None -> failwith "incorrect_input"
-  | Some input -> Js.to_string input##.value
+let getString element= Js.to_string element##.value
 let getStringOpt = function
   | None -> None
   | Some input -> Some (Js.to_string input##.value)
-let getFloatOpt = function
-  | None -> None
-  | Some input -> float_of_string_opt (Js.to_string input##.value)
+     
+let getFloat element= float_of_string (Js.to_string element##.value)
 
+let get = function
+    None -> failwith "Element not found"
+  | Some s -> s 
 
-let previous_id = match (arg "id") with
-  | exception Not_found -> ""
-  | s -> s
-let save = getElementById "save"
-let identifier = getElementById_coerce "identifier" CoerceTo.input
-let title = getElementById_coerce "title" CoerceTo.input
-let description = getElementById_coerce "description" CoerceTo.textarea
-let difficulty = getElementById_coerce "difficulty" CoerceTo.select
-let incipit = ""
-let checkbox = {undesirable = false; imperative = false}
-let solution, question, template, test,
-    previous_title, previous_diff, prelude, prepare =
-  match Learnocaml_local_storage.(retrieve (editor_state previous_id)) with
-  | exception Not_found ->
-     "", "", "", {testml = ""; testhaut = IntMap.empty}, "", 0., "", ""
-  | {Learnocaml_exercise_state.metadata;
-     solution; question; template; test; mtime; prelude; prepare} ->
-     solution, question, template, test,
-     metadata.titre, metadata.diff, prelude, prepare
-
-
-let () = match identifier with
-  | None -> ()
-  | Some input -> input##.value := Js.string previous_id
-let () = match title with
-  | None -> ()
-  | Some input -> input##.value := Js.string previous_title
-let previous_descr =
-  let exos = Learnocaml_local_storage.(retrieve (index_state "index")).exos in
-  let exo =
-    match (StringMap.find_opt previous_id exos) with
-    | None -> {exercise_kind = Learnocaml_exercise; exercise_title = "";
-               exercise_short_description = None; exercise_stars = 0.}
-    | Some s -> s
-  in exo.exercise_short_description
-let () = match previous_descr with
-  | Some d -> setInnerHtml (getElementById "description") d
-  | None -> ()
-let () = match difficulty with
-  | None -> ()
-  | Some select -> select##.value := Js.string (string_of_float previous_diff)
-
+let string_with_spaces list=
+  let s =
+    List.fold_left
+      (fun acc elt ->acc^" "^elt)
+      ""
+      list
+  in
+  String.sub s 1 (String.length s - 1 )
 
 let resultOptionToBool = function
   | None -> false
   | Some _ -> true
+  
+
 let isIdCorrect s =
   resultOptionToBool (Regexp.string_match (Regexp.regexp "^[a-z0-9_-]+$") s 0)
+
 let isTitleCorrect s =
   (resultOptionToBool (Regexp.string_match (Regexp.regexp "^[^ \t]") s 0)) &&
     (resultOptionToBool (Regexp.string_match (Regexp.regexp ".*[^ \t]$") s 0))
 
+  
+module H = Tyxml_js.Html
+open Lwt.Infix
 
-let store id titre description diff =
-  let metadata = {id; titre; description; diff} in
-  if previous_id <> "" then
-    Learnocaml_local_storage.(delete (editor_state previous_id));
-  Learnocaml_local_storage.(store (editor_state id))
-    {Learnocaml_exercise_state.metadata; solution; incipit; question; template;
-     test; prelude; prepare; checkbox; mtime = gettimeofday ()};
-  store_in_index metadata;;
+(*getting html elements*)   
+let previous_id = match (arg "id") with
+  | exception Not_found -> ""
+  | s -> s
+let save_element = getElementById "save"
+let identifier_input =
+  get (getElementById_coerce "identifier" CoerceTo.input)
+let title_input =
+  get (getElementById_coerce "title" CoerceTo.input)
+let authors_input =
+  get (getElementById_coerce "authors" CoerceTo.input)
+let required_input =
+  get (getElementById_coerce "required" CoerceTo.input) 
+let trained_input =
+  get (getElementById_coerce "focus" CoerceTo.input) 
+let description_textarea =
+  get (getElementById_coerce "description" CoerceTo.textarea)
+let difficulty_select = 
+  get (getElementById_coerce "difficulty" CoerceTo.select)
+   
+let backward_input =get (getElementById_coerce "backward" CoerceTo.input)                      
+let forward_input = get (getElementById_coerce "forward" CoerceTo.input)
+let  previous_state =
+  match get_editor_state previous_id with
+  | exception Not_found -> None    
+  | state->Some state
 
+(*filling the form eventualy *)
+let _ = match previous_state with
+  | None -> ()
+  | Some state -> identifier_input##.value := Js.string previous_id;
+                  
+                  title_input##.value := Js.string state.metadata.title;
+                  
+                  let s = (List.fold_left
+                             (fun acc (a,b) ->acc^a^", "^b^"; ")
+                             ""
+                             state.metadata.author)
+                  in
+                  authors_input##.value :=                      
+                            Js.string (String.sub s 0 (String.length s - 2));
+                  
+                  required_input##.value := Js.string
+                                              (string_with_spaces
+                                                 state.metadata.requirements);
+                  trained_input##.value := Js.string
+                                             (string_with_spaces
+                                                state.metadata.focus);
+                  setInnerHtml
+                    description_textarea
+                    (match state.metadata.short_description with
+                       None -> ""
+                      |Some s -> s);
+                  
+                  difficulty_select##.value := Js.string (string_of_float state.metadata.stars);
+                  
+                  backward_input##.value := Js.string
+                                              (string_with_spaces
+                                                 state.metadata.backward);
+                  
+                  forward_input##.value := Js.string
+                                             (string_with_spaces
+                                                state.metadata.forward)
+                  
+
+(* handling the save of metadata *)                  
+let store metadata =
+  let state =
+    match get_editor_state previous_id with
+    | exception Not_found -> new_state metadata
+    | e ->
+       {exercise=e.exercise ;metadata}
+  in
+  update_index state
 
 let id_error = getElementById "id_error"
 let title_error = getElementById "title_error"
 
-
-let () = save##.onclick := handler (fun _ ->
-  let id = getString identifier
-  and titre = getString title
-  and description = getString description
-  and diff = match getFloatOpt difficulty with
-    | None -> 0.
-    | Some x -> x in
-  let id_correct = isIdCorrect id
-  and id_unique = idUnique id
-  and title_correct = isTitleCorrect titre
-  and title_unique = titleUnique titre in
+let _ = 
+  save_element##.onclick := handler (fun _ ->
+  let id = getString identifier_input
+  and title = getString title_input
+  and short_description = Some (getString description_textarea)
+  and stars = getFloat difficulty_select
+  and string_parser string = Regexp.split
+                   (Regexp.regexp " ")
+                    string
+  in
+ 
+    let requirements= string_parser (Js.to_string required_input##.value)
+    and  focus= string_parser (Js.to_string trained_input##.value)
+    and  backward = string_parser (Js.to_string backward_input##.value)
+    and forward = string_parser (Js.to_string forward_input##.value)
+    and authors=
+      Regexp.split
+        (Regexp.regexp ";")
+        (Js.to_string authors_input##.value)
+      |> List.map @@
+           fun s ->
+           match List.map String.trim @@ Regexp.split
+                   (Regexp.regexp ",")
+                   s
+                    with
+                      a::b::[]->(a,b)
+                    | _ ->
+                       Dom_html.window##alert (Js.string "Syntax error");
+                       failwith "bad syntax"
+      
+  in
+  let metadata={requirements;focus;backward;forward;
+                kind= Exercise;title; id=Some id;
+                author=authors;short_description;stars}
+  and id_correct = isIdCorrect id 
+  and id_unique = idUnique id || (previous_id = id)
+  and title_correct = isTitleCorrect title
+  and previous_title = match previous_state with
+      None -> None
+    | Some state ->
+       Some state.metadata.title
+  in
+  let title_unique = titleUnique title || previous_title = (Some title) in
   (if not id_correct then
     setInnerHtml id_error [%i"Incorrect identifier: an identifier \
                               can't be empty, \
@@ -133,9 +202,9 @@ let () = save##.onclick := handler (fun _ ->
     setInnerHtml title_error "");
   if id_correct && title_correct && id_unique && title_unique then
     begin
-      store id titre description diff;
+      store metadata;
       Dom_html.window##.location##assign
-        (Js.string ("editor.html#id=" ^ id ^ "&action=open"));
+        (Js.string ("editor.html#id=" ^ id));
+ 
     end;
-  Js._true
-)
+  Js._true);

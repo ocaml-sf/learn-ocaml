@@ -1,15 +1,14 @@
 *~
-\#*\#
-.\#*
 
 _obuild
+_build
 _opam
 .opam-switch
 Makefile.local
-
+docker/
 src/ppx-metaquot/ast_lifter.ml
 
-learnocaml-simple-server.byte
+learnocaml-server.byte
 learn-ocaml.install
 
 src/grader/embedded_cmis.ml
@@ -28,6 +27,9 @@ static/icons/*_black.svg
 static/icons/*_dark.svg
 static/icons/*_light.svg
 static/icons/*_white.svg
-static/Fontin*
+static/fonts/Fontin*
+static/file-list
+static/dune
 
 translations/*.pot
+**/.merlin

@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 let debug = ref false
 
@@ -155,8 +146,7 @@ let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
     [onmessage] by calling [Lwt.wakeup]. They should never end with
     an exception, unless canceled. When canceled, the worker is
     killed and a new one is spawned. *)
-let rec post : type a. t -> a host_msg ->
-                    a Toploop_results.toplevel_result Lwt.t =
+let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.t =
   fun worker msg ->
     let msg_id = worker.counter in
     let msg_ty = ty_of_host_msg msg in
@@ -180,7 +170,7 @@ and do_reset_worker () =
         (* GRGR: Peut-on 'cancel' directement le Lwt.u ? *)
         (fun _ (U (_, _, t)) -> Lwt.cancel t)
         worker.wakeners;
-      worker.worker <- Worker.create worker.js_file;
+      worker.worker <- Worker.create (worker.js_file);
       worker.fds <-
         IntMap.empty |>
         IntMap.add 0 (IntMap.find 0 worker.fds) |>
@@ -198,7 +188,7 @@ and do_reset_worker () =
       Lwt.return_unit
 
 let create
-    ?(js_file = "js/learnocaml-toplevel-worker.js")
+    ?(js_file = "/js/learnocaml-toplevel-worker.js")
     ?(after_init = fun _ -> Lwt.return_unit)
     ?(pp_stdout = (fun text -> Firebug.console##(log (Js.string text))))
     ?(pp_stderr = (fun text -> Firebug.console##(log (Js.string text))))
@@ -226,7 +216,7 @@ let create_fd worker pp =
   fd
 
 let close_fd worker fd =
-  worker.fds <- IntMap.remove worker.fd_counter worker.fds
+  worker.fds <- IntMap.remove fd worker.fds
 
 let reset worker ?(timeout = fun () -> never_ending) () =
   if !debug then Js_utils.debug "Host: reset";
@@ -247,7 +237,7 @@ let reset worker ?(timeout = fun () -> never_ending) () =
       worker.reset_worker worker
 
 let check ?(ppx_meta = false) worker code =
-  post worker @@ Check (code, ppx_meta)
+  post worker @@ Check (code,ppx_meta)
 
 let set_checking_environment worker =
   post worker @@ Set_checking_environment

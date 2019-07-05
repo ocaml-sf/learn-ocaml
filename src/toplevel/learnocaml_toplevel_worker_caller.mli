@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 (** An unified interface for OCaml toplevels running in a Web Worker
     or not. This module signature is very simalar to the signature of
@@ -31,7 +22,7 @@ type t
 (** Create a toplevel instance.
 
     @param after_init a function that will be called whenever the
-           toplevel is initialized or reseted.
+           toplevel is initialized or reset.
 
     @param pp_stdout a function to be called when the toplevel standard
            output is flushed (default: flush to the browser's console).
@@ -41,7 +32,7 @@ type t
            console).
 
     @param js_file the web worker [.js] file.
-           (default: ["js/learnocaml-toplevel-worker.js"]). *)
+           (default: ["/js/learnocaml-toplevel-worker.js"]). *)
 val create:
   ?js_file: string ->
   ?after_init:(t -> unit Lwt.t) ->
@@ -52,14 +43,11 @@ val create:
 
 (** Parse and typecheck a given source code
 
-    @param ppx_meta should the checker toploop use ppx-metaquot ?
-
     @return [Success ()] in case of success and [Error err]
             where [err] contains the error message otherwise.
 
 *)
-val check: ?ppx_meta:bool -> t -> string -> unit toplevel_result Lwt.t
-
+ val check: ?ppx_meta:bool -> t -> string -> unit toplevel_result Lwt.t
 
 (** Execute a given source code. The evaluation stops after the first
     toplevel phrase (as terminated by ";;") that fails to compile or
@@ -94,7 +82,7 @@ val set_checking_environment:
   t -> unit toplevel_result Lwt.t
 
 (** Execute a given source code. The code is parsed and
-    typechecked all at once before to start the evalution.
+    typechecked all at once before to start the evaluation.
 
     @param pp_answer see {!val:execute}.
 

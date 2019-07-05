@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 type history =
   { mutable storage : string array ;
@@ -43,7 +34,7 @@ let snapshot_enc =
         (function { phrases ; mtime } -> Some (phrases, mtime))
         (fun (phrases, mtime) -> { phrases ; mtime }) ]
 
-let snapshot { storage ; first ; stored ; mtime } =
+let snapshot { storage ; first ; stored ; mtime ; _} =
   let rec to_list acc i n =
     if n = 0 then
       List.rev acc
@@ -88,21 +79,21 @@ let create ~gettimeofday ?on_update ?(max_size = 0) ?snapshot () =
 
 let current history =
   match history with
-  | { current = `Floating ; floating } -> floating
-  | { current = `Index i ; updated } -> updated.(i)
+  | { current = `Floating ; floating ; _ } -> floating
+  | { current = `Index i ; updated ; _ } -> updated.(i)
 
 let update history text =
   match history with
-  | { current = `Floating } ->
+  | { current = `Floating ; _ } ->
       history.floating <- text
-  | { current = `Index i ; updated } ->
+  | { current = `Index i ; updated ; _ } ->
       updated.(i) <- text ;
       call_on_update history
 
 let go_forward history =
   match history with
-  | { current = `Floating } -> ()
-  | { current = `Index i } ->
+  | { current = `Floating ; _ } -> ()
+  | { current = `Index i ; _ } ->
       let size = Array.length history.storage in
       let last = (history.first + history.stored - 1) mod size in
       if i = last then
@@ -112,13 +103,13 @@ let go_forward history =
 
 let go_backward history =
   match history with
-  | { current = `Floating } ->
+  | { current = `Floating ; _ } ->
       if history.stored > 0 then begin
         let size = Array.length history.storage in
         let last = (history.first + history.stored - 1) mod size in
         history.current <- `Index last
       end
-  | { current = `Index i ; first } ->
+  | { current = `Index i ; first ; _ } ->
       let size = Array.length history.storage in
       if i <> first then
         history.current <- `Index ((i + size - 1) mod size)
@@ -126,8 +117,8 @@ let go_backward history =
 let push history =
   let text =
     match history with
-    | { current = `Floating } -> history.floating
-    | { current = `Index i } ->
+    | { current = `Floating ; _ } -> history.floating
+    | { current = `Index i ; _ } ->
         let updated = history.updated.(i) in
         history.updated.(i) <- history.storage.(i) ;
         updated in
@@ -153,9 +144,9 @@ let push history =
 
 let discard history =
   match history with
-  | { current = `Floating } ->
+  | { current = `Floating ; _ } ->
       history.floating <- "" ;
       history.current <- `Floating
-  | { current = `Index i } ->
+  | { current = `Index i ; _ } ->
       history.updated.(i) <- history.storage.(i) ;
       history.current <- `Floating

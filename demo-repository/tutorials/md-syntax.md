@@ -80,7 +80,7 @@ not part of the syntax).
     `    | this text`
     `    |   is clickable`
 
-Whish is displayed as follows:
+Wish is displayed as follows:
 
     | this text
     |   is clickable

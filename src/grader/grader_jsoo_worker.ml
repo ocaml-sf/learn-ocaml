@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 let get_grade ?callback exo solution =
   let path = "/grading_cmis" in
@@ -22,7 +13,7 @@ let get_grade ?callback exo solution =
       Embedded_cmis.root
       Embedded_grading_cmis.root in
   Sys_js.mount ~path
-    (fun ~prefix ~path ->
+    (fun ~prefix:_ ~path ->
        match OCamlRes.Res.find (OCamlRes.Path.of_string path) root with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
@@ -38,9 +29,7 @@ let get_grade ?callback exo solution =
 open Grader_jsoo_messages
 
 let () =
-  (match Js_utils.get_lang() with
-   | Some l -> Ocplib_i18n.set_lang l
-   | None -> ());
+  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   Worker.set_onmessage @@ fun (json : Json_repr_browser.Repr.value) ->
   let { exercise ; solution } =
     Json_repr_browser.Json_encoding.destruct to_worker_enc json in
@@ -56,14 +45,14 @@ let () =
         Answer (report, stdout, stderr, outcomes)
     | Error exn ->
         let msg = match exn with
-          | Grading.User_code_error { Toploop_results.msg } ->
-              "Error in your solution:\n" ^ msg
-          | Grading.Internal_error (step, { Toploop_results.msg }) ->
-              "Internal error " ^ step ^ "\n" ^ msg
+          | Grading.User_code_error { Toploop_results.msg ; _ } ->
+              [%i"Error in your solution:\n"] ^ msg
+          | Grading.Internal_error (step, { Toploop_results.msg ; _ }) ->
+              [%i"Error in the exercise "] ^ step ^ "\n" ^ msg
           | Grading.Invalid_grader ->
-              "Internal error:\nThe grader did not return a report."
+              [%i"Internal error:\nThe grader did not return a report."]
           | exn ->
-              "Unexpected error:\n" ^ Printexc.to_string exn in
+              [%i"Unexpected error:\n"] ^ Printexc.to_string exn in
         let report = Learnocaml_report.[ Message ([ Code msg ], Failure) ] in
         Answer (report, stdout, stderr, outcomes) in
   let json = Json_repr_browser.Json_encoding.construct from_worker_enc ans in

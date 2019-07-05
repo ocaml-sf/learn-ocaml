@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 type 'a toplevel_result = 'a Toploop_results.toplevel_result =
   (* ('a * warning list, error * warning list) result = *)
@@ -69,8 +60,8 @@ end
 let warnings = ref []
 
 let convert_loc loc =
-  let _file1,line1,col1 = Location.get_pos_info loc.Location.loc_start in
-  let _file2,line2,col2 = Location.get_pos_info loc.Location.loc_end in
+  let _file1,line1,col1 = Location.get_pos_info (loc.Location.loc_start) in
+  let _file2,line2,col2 = Location.get_pos_info (loc.Location.loc_end) in
   { loc_start = (line1, col1) ; loc_end = (line2, col2) }
 
 let () =
@@ -89,8 +80,8 @@ let () =
          warnings := { msg; locs = [loc]; if_highlight } :: !warnings
        end)
 
-let return_success e = Ok (e, !warnings)
-let return_error e = Error (e, !warnings)
+let return_success (e: 'a) : 'a toplevel_result = Ok (e, !warnings)
+let return_error e : 'a toplevel_result  = Error (e, !warnings)
 (* let return_unit_success = return_success () *)
 
 (** Error handling *)
@@ -131,7 +122,10 @@ let report_error err =
 let error_of_exn exn =
   match Location.error_of_exn exn with
   | None ->
-      let msg = Printexc.to_string exn in
+      let msg = match exn with
+        | Failure msg -> msg
+        | exn -> Printexc.to_string exn
+      in
       { msg; locs = []; if_highlight = msg }
   | Some error -> report_error error
 
@@ -231,12 +225,15 @@ let use_string
       flush_all ();
       return_error (error_of_exn exn)
 
-let parse_mod_string modname sig_code impl_code =
+let parse_mod_string ?filename modname sig_code impl_code =
   let open Parsetree in
   let open Ast_helper in
   let str =
     let impl_lb = Lexing.from_string impl_code in
-    init_loc impl_lb (String.uncapitalize_ascii modname ^ ".ml");
+    init_loc impl_lb
+      (match filename with
+       | None -> String.uncapitalize_ascii modname ^ ".ml"
+       | Some f -> f);
     Parse.implementation impl_lb in
   let m =
     match sig_code with
@@ -249,7 +246,9 @@ let parse_mod_string modname sig_code impl_code =
   Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ]
 
 let use_mod_string
-    ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code impl_code =
+    ?filename
+    ?(print_outcome  = true) ~ppf_answer ~modname ?sig_code
+    impl_code =
   if String.capitalize_ascii modname <> modname then
     invalid_arg
       "Learnocaml_toplevel_toploop.use_mod_string: \
@@ -258,7 +257,7 @@ let use_mod_string
   try
     let phr =
       Ppx.preprocess_phrase @@
-      parse_mod_string modname sig_code impl_code in
+      parse_mod_string ?filename modname sig_code impl_code in
     let res = Toploop.execute_phrase print_outcome ppf_answer phr in
     Format.pp_print_flush ppf_answer ();
     flush_all ();

@@ -3,10 +3,9 @@ body {
   margin: 5px 10px;
   background: #eee;
 }
-code, pre {
+p > code, pre {
   padding: 0px 4px;
   background: #ddd;
-  border: 1px #fff solid;
   border-radius: 4px;
 }
 h2 {

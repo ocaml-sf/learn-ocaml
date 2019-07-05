@@ -8,7 +8,6 @@ begin program "learnocaml-toplevel-worker"
     "toploop_results"
     "ocplib-ocamlres.runtime"
     "embedded_cmis"
-    "grading"
   ]
   files = [
     "learnocaml_toplevel_worker_messages.mli"

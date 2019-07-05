@@ -4,137 +4,67 @@ How to deploy a learn-ocaml instance
 This section explains how to deploy an instance of the learn-ocaml
 platform on a server.
 
-## Software requirements
+## Using pre-built docker images
 
-Please make sure that the following tools are available on your machine:
-- git    (>= 2.00)
-- docker (>= 18)
+Assuming your exercise repository is in directory REPOSITORY, you can either:
 
-## Cloning the git repository
+- build and serve it directly on port 80 (REPOSITORY needs to be an absolute
+  path) using
 
-Clone the git repository:
+      docker run --rm -v REPOSITORY:/repository:ro -v learn-ocaml-sync:/sync -p 80:8080 --name learn-ocaml-server ocamlsf/learn-ocaml:dev
 
-```
-git clone git@github.com:ocaml-sf/learn-ocaml.git
-```
+NB: Do not forget to escape `:` if it appears in `REPOSITORY` to avoid a parsing error of the command line arguments.
 
-## Building the docker image
+- or generate a new docker image that includes your repository:
 
-Assuming that ``$EXERCISE_DIRECTORY`` contains the exercises
-definitions, the following command generates a docker image for this
-specific set of exercises:
+      cd REPOSITORY
+      wget https://raw.githubusercontent.com/ocaml-sf/learn-ocaml/master/Dockerfile.app
+      docker build -t learn-ocaml-app -f Dockerfile.app .
 
-```
-bash scripts/build-docker-image.sh -repo-dir $EXERCISE_DIRECTORY
-```
+  and then deploy that image:
 
-The execution of this command generates an image named
-```learnocaml-docker```. This is the default identifier, but it can be
-renamed using the option ``-image-name <my_image>``.
+      docker run --rm -p 80:8080 -v learn-ocaml-sync:/sync --name learn-ocaml-server learn-ocaml-app
 
-## Initialize and launch a fresh instance
+  The user data will persist between runs within the Docker "Volume" called
+  `learn-ocaml-sync`. You can find out where it stores its data using:
 
-A container is initialized from the image by doing:
+      docker volume inspect learn-ocaml-sync -f '{{.Mountpoint}}'
 
-```
-bash scripts/docker-server.sh init
-```
+  This method can allow you to distribute the Docker image, which doesn't
+  contain the exercise solutions in plaintext.
 
-This command creates a fresh container and runs it.
-
-## Control the instance
-
-An initialized instance can be stopped using:
-
-```
-bash scripts/docker-server.sh stop
-```
-
-A stopped instance can be started using:
-
-```
-bash scripts/docker-server.sh start
-```
-
-A running instance can be restarted using:
-
-```
-bash scripts/docker-server.sh restart
-```
-
-An instance can be removed using:
-
-```
-bash scripts/docker-server.sh remove archive.tar
-```
-
-Be aware that the `remove` command destroys the container from the
-docker system. As such, it will remove every saved sessions from the
-`sync` directory, __i.e.__ every saved users' code. For this reason,
-this command also needs a filename argument that will contain a backup
-of these files using the `tar` format.
-
-## Remark about security
-
-As a reminder, the Docker deamon's socket is owned by default by
-`root`. Hence, these scripts cannot work without `sudo` or adding your
-current user to the group `docker`. For more information, see [post
-installation steps for
-Linux](https://docs.docker.com/install/linux/linux-postinstall/) from
-the documentation. In any case, be advised there exists security flaws
-in the Docker daemon (see
-[documentation](https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface)).
+> **A remark about security**
+>
+> As a reminder, the Docker deamon's socket is owned by default by `root`.
+> Hence, these scripts cannot work without `sudo` or adding your current user to
+> the group `docker`. For more information, see
+> [post installation steps for Linux](https://docs.docker.com/install/linux/linux-postinstall/)
+> from the documentation. In any case, be advised there exists security flaws in
+> the Docker daemon (see
+> [documentation](https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface)).
 
 ## Manual compilation
 
-Note: you need a working ```opam``` environment with OCaml ```4.05.0```.
+Note: you need a working ```opam``` environment (at least `2.0.0~rc2`).
 
 * Install the dependencies using:
-  - if you have opam >=2.0 available:
 ``
-opam switch create . --deps && opam install opam-installer && eval $(opam env)
+opam switch create . --deps-only && opam install opam-installer && eval $(opam env)
 ``
-  - otherwise:
-``
-make build-deps
-``
-(You may want to first read the script `install-opam-deps.sh` to know what it does.)
 
-* Compile the app using:
+* Compile the learn-ocaml management tool using:
 ```
-make
+make && make opaminstall
 ```
 
-You can customise the exercise repository and output directory using
-make variables ```REPO_DIR``` and ```DEST_DIR```. By default, the
-repository used is an included demo repository. The user contributed
-exercises of the public platform is in the github
-[learn-ocaml-repository](https://github.com/OCamlPro/learn-ocaml-repository)
-repository. An example configuration is
+* Build the app for your given exercise repository. This will put it into a
+  `www/` directory:
+  ```
+  learn-ocaml build --repo DIR
+  ```
+  (depending on your opam configuration, you might need to run the command from the `learn-ocaml` directory or to specify the absolute path to the command: `.../learn-ocaml/_opam/bin/learn-ocaml`)
 
+* Run the learn-ocaml web server
 ```
-make REPO_DIR=../learn-ocaml-repository DEST_DIR=$HOME/public_html/learn-ocaml
+learn-ocaml serve --port 8080
 ```
-
-* Then either put the resulting directory ```www/``` behind a Web server.
-
-Either this step or the next is mandatory. Indeed, if you try to open
-the ```index.html``` file directly from the local file system, it will
-fail for security restrictions enforced by modern Web browsers. Hence,
-you need a local web server.
-
-* If you do not have a Web server configured, you can probably use some
-  other tool that is already present on your machine. For instance,
-  running ```python3 -m http.server 9090``` or ```php -S
-  localhost:9090``` in the ```www``` directory and pointing you browser
-  to ```http://localhost:9090/``` should do the job.
-
-* Or alternatively, use the provided minimal server, that also does the job,
-  and includes a minimal server-side synchronization mechanism.
-
-You can launch it via
-
-```
-./learnocaml-simple-server.byte
-```
-

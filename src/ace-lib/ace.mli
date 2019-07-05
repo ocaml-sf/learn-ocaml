@@ -1,19 +1,10 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2016 OCamlPro.
+ * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
  *
- * Learn-OCaml is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * Learn-OCaml is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
 
 (** Editor *)
 
@@ -38,7 +29,7 @@ val greater_position:
 
 val get_contents: ?range:Ace_types.range Js.t -> 'a editor -> string
 val get_line: 'a editor -> int -> string
-val set_contents: 'a editor -> string -> unit
+val set_contents: ?reset_undo:bool -> 'a editor -> string -> unit
 
 val get_selection_range: 'a editor -> Ace_types.range Js.t
 val get_selection: 'a editor -> string
@@ -68,6 +59,7 @@ val add_keybinding:
 
 val set_font_size: 'a editor -> int -> unit
 val set_tab_size: 'a editor -> int -> unit
+val set_readonly: 'a editor -> bool -> unit
 val get_state: 'a editor -> int -> < .. > Js.t
 
 val get_last: 'a editor -> Ace_types.position Js.t
