@@ -533,6 +533,13 @@ let get_server =
      in
      Console.input ~default:default_server uri
 
+let get_nonce_and_create_token server nickname secret_candidate =
+  let secret_candidate = Sha.sha512 secret_candidate in
+  fetch server (Api.Nonce ())
+  >>= fun nonce ->
+  fetch server
+    (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
+
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
   let server = get_server server in
@@ -540,12 +547,7 @@ let init ?(local=false) ?server ?token () =
     Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
     | Some secret_candidate ->
-       let secret_candidate = Sha.sha512 secret_candidate in
-       fetch server (Api.Nonce ())
-       >>= fun nonce ->
-       fetch
-         server
-         (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
+       get_nonce_and_create_token server nickname secret_candidate
     | None -> failwith "Please provide a secret"
   in
   let get_token () =
@@ -855,8 +857,7 @@ module Create_token = struct
          | Some c -> c.ConfigFile.server
          | None -> get_server server_url
        in
-       fetch server
-         (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
+       get_nonce_and_create_token server (Some nickname) co.secret
        >>= fun tok ->
        Lwt_io.print (Token.to_string tok ^ "\n")
        >|= fun () -> 0
