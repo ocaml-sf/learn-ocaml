@@ -14,66 +14,16 @@ open Learnocaml_common
 module H = Tyxml_js.Html5
 module React = Lwt_react
 
-module El = struct
-  (** Defines the static elements that should be present from index.html *)
+let find_tab name = (find_component ("learnocaml-exo-tab-" ^ name))
 
-  let id s = s, find_component s
-
-  let loading_id, loading = id "learnocaml-exo-loading"
-
-  let toolbar_id, toolbar = id "learnocaml-exo-toolbar"
-
-  let buttons_id, buttons = id "learnocaml-exo-tab-buttons"
-
-  let tabs_id, tabs = id "learnocaml-exo-tabs"
-
-  module Tabs = struct
-    type t = {
-      name: string;
-      btn: Html_types.div H.elt;
-      tab: Html_types.div H.elt;
-    }
-    let tid name = {
-      name;
-      btn = snd (id ("learnocaml-exo-button-" ^ name));
-      tab = snd (id ("learnocaml-exo-tab-" ^ name));
-    }
-    let details = tid "details"
-    let list = tid "list"
-    let answer = tid "answer"
-
-    let all = [details; list; answer]
-  end
-
-  let nickname_id, nickname = id "learnocaml-student-nickname"
-
-  let token_id, token = id "learnocaml-token"
-end
-        
-let tab_select_signal, select_tab =
-  let open El.Tabs in
-  let current = ref details in
-  let cls = "front-tab" in
+let tab_select_signal, init_tab, select_tab =
+  let init_tab, select_tab = mk_tab_handlers "details" ["list"; "answer"] in
   let tab_select_signal, tab_select_signal_set =
-    React.S.create !current
-  in
-  let select_tab el =
-    let prev = !current in
-    current := el;
-    Manip.removeClass prev.btn cls;
-    Manip.removeClass prev.tab cls;
-    Manip.enable prev.btn;
-    Manip.addClass el.btn cls;
-    Manip.addClass el.tab cls;
-    Manip.disable el.btn;
-    tab_select_signal_set el
-  in
-  List.iter (fun tab ->
-      Manip.Ev.onclick tab.btn (fun _ -> select_tab tab; true))
-    all;
-  tab_select_signal, select_tab
+    React.S.create "details" in
+  let select_tab str = tab_select_signal_set str; select_tab str in
+  tab_select_signal, init_tab, select_tab
 
-let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(answer.tab)
+let update_answer_tab, clear_answer_tab = ace_display (find_tab "answer")
 
 let selected_class_signal, set_selected_class = React.S.create None
 let selected_repr_signal, set_selected_repr   = React.S.create None
@@ -103,8 +53,7 @@ let rec render_tree =
           ]
      ]
 
-let weight_of_tree t =
-  Asak.Wtree.fold_tree (fun _ -> ( + )) t
+let weight_of_tree t = Asak.Wtree.fold_tree (fun _ -> ( + )) t
 
 let render_trees xs =
   let aux (i,acc) t =
@@ -182,37 +131,13 @@ let _class_selection_updater =
   | None -> ()
   | Some xs ->
      set_selected_repr (Some (List.hd xs));
-     Manip.replaceChildren El.Tabs.(details.tab)
+     Manip.replaceChildren (find_tab "details")
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
 
-let set_string_translations () =
-  let translations = [
-    "txt_loading", [%i"Loading student data"];
-    "learnocaml-exo-button-details", [%i"Details"];
-    "learnocaml-exo-button-list", [%i"Exercises"];
-    "learnocaml-exo-button-answer", [%i"Answer"];
-  ] in
-  List.iter
-    (fun (id, text) ->
-       Manip.setInnerHtml (find_component id) text)
-    translations
-
-let () =
-  Lwt.async_exception_hook := begin fun e ->
-    Firebug.console##log (Js.string
-                            (Printexc.to_string e ^
-                             if Printexc.backtrace_status () then
-                               Printexc.get_backtrace ()
-                             else ""));
-    match e with
-    | Failure message -> fatal message
-    | Server_caller.Cannot_fetch message -> fatal message
-    | exn -> fatal (Printexc.to_string exn)
-  end ;
-  Lwt.async @@ fun () ->
+let main () =
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  set_string_translations ();
+  set_string_translations_view ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then
     (* No security here: it's client-side, and we don't check that the token is
@@ -231,7 +156,6 @@ let () =
   let update_repr_code = function
     | None -> true
     | Some (tok,_) ->
-       select_tab El.Tabs.answer;
        Lwt.async (fun () ->
            retrieve (Learnocaml_api.Fetch_save tok)
            >|= fun save ->
@@ -244,16 +168,17 @@ let () =
   let _repr_selection_updater =
     selected_repr_signal |> React.S.map @@ fun id ->
       let tab = React.S.value tab_select_signal in
-      if tab = El.Tabs.answer
+      if tab = "answer"
       then update_repr_code id
       else true in
 
-  Manip.Ev.onclick El.Tabs.answer.El.Tabs.btn
-    (fun _ -> update_repr_code (React.S.value selected_repr_signal));
-
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
   >>= fun part ->
-  hide_loading ~id:El.loading_id ();
-  Manip.replaceChildren El.Tabs.(list.tab) (exercises_tab part);
-  select_tab El.Tabs.details;
+  hide_loading ~id:"learnocaml-exo-loading" ();
+  Manip.replaceChildren (find_tab "list") (exercises_tab part);
+  init_tab ();
+  Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
+    (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Lwt.return_unit
+
+let () = run_async_with_log  main

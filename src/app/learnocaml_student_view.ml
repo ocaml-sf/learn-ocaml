@@ -452,27 +452,13 @@ let update_tabs meta exo ans =
       update_report_tab exo ans;
       update_answer_tab ans.Answer.solution
 
-let set_string_translations () =
-  let translations = [
-    "txt_loading", [%i"Loading student data"];
-    "learnocaml-exo-button-stats", [%i"Stats"];
-    "learnocaml-exo-button-list", [%i"Exercises"];
-    "learnocaml-exo-button-report", [%i"Report"];
-    "learnocaml-exo-button-text", [%i"Subject"];
-    "learnocaml-exo-button-editor", [%i"Answer"];
-  ] in
-  List.iter
-    (fun (id, text) ->
-       Manip.setInnerHtml (find_component id) text)
-    translations
-
 let () =
   run_async_with_log @@ fun () ->
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  set_string_translations ();
+  set_string_translations_view ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then
     (* No security here: it's client-side, and we don't check that the token is

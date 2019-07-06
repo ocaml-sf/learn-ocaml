@@ -166,6 +166,7 @@ val retrieve: ?ignore:'a -> 'a Learnocaml_api.request -> 'a Lwt.t
 val get_worker_code: string -> (unit -> string Lwt.t)
 
 val set_string_translations_exercises : unit -> unit
+val set_string_translations_view : unit -> unit
 
 val local_save : 'a Ace.editor -> string -> unit
 
