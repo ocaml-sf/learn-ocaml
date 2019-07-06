@@ -1,4 +1,0 @@
-(library
- (name partitioner)
- (libraries asak lwt learnocaml_store learnocaml_data)
- )

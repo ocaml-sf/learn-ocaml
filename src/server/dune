@@ -5,7 +5,6 @@
  (modules Learnocaml_server)
  (libraries ocplib-json-typed
             ezjsonm
-	    partitioner
             lwt.unix
             lwt_utils
             cohttp.lwt
@@ -16,5 +15,6 @@
             learnocaml_report
             learnocaml_data
             learnocaml_api
-            learnocaml_store)
+            learnocaml_store
+	    learnocaml_partition_create)
 )
