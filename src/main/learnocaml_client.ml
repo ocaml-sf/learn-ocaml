@@ -42,7 +42,7 @@ module Args_global = struct
   let server_url =
     value & opt (some url_conv) None &
     info ["s";"server"] ~docv:"URL" ~doc:
-      "The URL of the learn-ocaml server"
+      "The URL of the learn-ocaml server."
       ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
               "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
 
@@ -57,7 +57,7 @@ module Args_global = struct
   let local =
     value & flag & info ["local"] ~doc:
       "Use a configuration file local to the current directory, rather \
-       than user-wide"
+       than user-wide."
 
   let apply server_url token local =
     {server_url; token; local}
@@ -77,11 +77,11 @@ module Args_create_token = struct
 
   let nickname =
     value & pos 0 (some string) None & info [] ~docv:"NICKNAME" ~doc:
-      "The desired nickname"
+      "The desired nickname."
 
   let secret =
     value & pos 1 string "" & info [] ~docv:"SECRET" ~doc:
-      "The secret. If not provided, use \"\" as a secret"
+      "The secret. If not provided, use \"\" as a secret."
 
   let apply nickname secret = {nickname; secret}
 
@@ -91,7 +91,7 @@ end
 module Args_exercise_id = struct
   let id =
     value & pos 0 (some string) None & info [] ~docv:"ID" ~doc:
-      "The exercise identifier"
+      "The exercise identifier."
 
   let term = Term.(const (fun x -> x) $ id)
 end
@@ -108,38 +108,38 @@ module Args_exercises = struct
 
   let solution_file =
     value & pos 0 (some file) None & info [] ~docv:"FILE" ~doc:
-      "The file containing the user's solution to the exercise"
+      "The file containing the user's solution to the exercise."
 
   let exercise_id =
     value & opt (some string) None & info ["id"] ~docv:"ID" ~doc:
       "The exercise identifier. If unspecified, this is inferred from the file \
-       name"
+       name."
 
   let output_format =
     value & vflag `Console & [
       `Console, info ["console"] ~doc:
-        "output the results to the console. This is the default";
+        "output the results to the console. This is the default.";
       `Json, info ["json"] ~doc:
-        "output the results as JSON, to stdout";
+        "output the results as JSON, to stdout.";
       `Html, info ["html"] ~doc:
-        "output the results as HTML, to the console";
+        "output the results as HTML, to the console.";
       `Raw, info ["raw"] ~doc:
-        "output the results as raw text";
+        "output the results as raw text.";
     ]
 
   let dont_submit =
     value & flag & info ["n";"dry-run"] ~doc:
-      "Perform the grading locally, but don't submit back to the server"
+      "Perform the grading locally, but don't submit back to the server."
 
   let color_when =
     let when_enum = ["always", Some true; "never", Some false; "auto", None] in
     value & opt (enum when_enum) None & info ["color"] ~docv:"WHEN" ~doc:
       ("Colorise the output, and also allows use of UTF-8 characters. $(docv) \
-        must be "^doc_alts_enum when_enum)
+        must be "^doc_alts_enum when_enum ^".")
 
   let verbose =
     value & flag_all & info ["v";"verbose"] ~doc:
-      "Be more verbose. Can be repeated"
+      "Be more verbose. Can be repeated."
 
   let apply solution_file exercise_id output_format dont_submit
         color_when verbose  =
@@ -160,6 +160,15 @@ module Args_exercises = struct
     Term.(const apply
           $solution_file $exercise_id $output_format $dont_submit
           $color_when $verbose )
+end
+
+module Args_fetch = struct
+  let id =
+    value & pos_all string [] & info [] ~docv:"EXERCISE_ID" ~doc:
+      "Exercise identifier. Can be repeated. \
+       If not present, all the exercises will be downloaded."
+
+  let term = Term.(const (fun x -> x) $ id)
 end
 
 module ConfigFile = struct
@@ -491,7 +500,7 @@ let upload_report server token ex solution report =
 
 let check_server_version server =
   Lwt.catch (fun () ->
-      fetch server (Api.Version ()) >|= fun server_version ->
+      fetch server (Api.Version ()) >|= fun (server_version,_) ->
       if server_version <> Api.version then
         (Printf.eprintf "API version mismatch: client v.%s and server v.%s\n"
            Api.version server_version;
@@ -524,6 +533,13 @@ let get_server =
      in
      Console.input ~default:default_server uri
 
+let get_nonce_and_create_token server nickname secret_candidate =
+  let secret_candidate = Sha.sha512 secret_candidate in
+  fetch server (Api.Nonce ())
+  >>= fun nonce ->
+  fetch server
+    (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
+
 let init ?(local=false) ?server ?token () =
   let path = if local then ConfigFile.local_path else ConfigFile.user_path in
   let server = get_server server in
@@ -531,12 +547,7 @@ let init ?(local=false) ?server ?token () =
     Printf.printf "Please provide the secret: ";
     match Console.input ~default:None (fun s -> Some s) with
     | Some secret_candidate ->
-       let secret_candidate = Sha.sha512 secret_candidate in
-       fetch server (Api.Nonce ())
-       >>= fun nonce ->
-       fetch
-         server
-         (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
+       get_nonce_and_create_token server nickname secret_candidate
     | None -> failwith "Please provide a secret"
   in
   let get_token () =
@@ -692,7 +703,7 @@ module Grade = struct
       const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
       $ Args_global.term $ Args_exercises.term),
     Term.info ~man
-      ~doc:"Learn-ocaml grading client"
+      ~doc:"Learn-ocaml grading client."
       "grade"
 end
 
@@ -708,13 +719,13 @@ module Print_token = struct
     Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
     >|= fun () -> 0
 
-  let man = man "Just print the configured user token"
+  let explanation = "Just print the configured user token."
+
+  let man = man explanation
 
   let cmd =
     use_global print_tok,
-    Term.info ~man
-      ~doc:"Just print the configured user token"
-      "print-token"
+    Term.info ~man ~doc:explanation "print-token"
 end
 
 module Print_server = struct
@@ -724,7 +735,7 @@ module Print_server = struct
     Lwt_io.printl (Uri.to_string config.ConfigFile.server)
     >|= fun () -> 0
                 
-  let explanation = "Just print the configured server"
+  let explanation = "Just print the configured server."
                   
   let man = man explanation
           
@@ -742,12 +753,12 @@ module Set_options = struct
   let man =
     man
       "Overwrite the configuration file with the command-line options \
-       ($(b,--server), $(b,--token))"
+       ($(b,--server), $(b,--token))."
 
   let cmd =
     use_global set_opts,
     Term.info ~man
-      ~doc:"Set configuration"
+      ~doc:"Set configuration."
       "set-options"
 end
 
@@ -771,26 +782,63 @@ module Fetch = struct
            (Token.to_string token)
       | e -> Lwt.fail e
 
-  let write_save_files save =
-  Lwt_list.iter_s (fun (id, st) ->
-      write_exercise_file id st.Answer.solution)
-    (SMap.bindings (save.Save.all_exercise_states))
+  let write_save_files lst save =
+    let has_to_fetch x =
+      (* When no exercise identifier was specified, fetch everything *)
+      match lst with
+      | [] -> true
+      | _ -> List.mem x lst
+    in
+    let already_exists = ref 0 in
+    Lwt_list.fold_left_s (fun acc (id, st) ->
+      if not (has_to_fetch id) then Lwt.return acc
+      else
+      let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
+      (if Sys.file_exists f then
+         (Printf.eprintf "File %s already exists, not overwriting.\n" f;
+          already_exists := !already_exists + 1;
+         Lwt.return_unit)
+      else
+        Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
+        Lwt_io.write oc st.Answer.solution >|= fun () ->
+        Printf.eprintf "Wrote file %s\n%!" f)
+      >|= fun () -> id::acc )
+      []
+      (SMap.bindings (save.Save.all_exercise_states))
+    >>= fun actually_found ->
+    let not_found = List.filter (fun x -> not (List.mem x actually_found)) lst in
+    Lwt_list.iter_s
+      (Lwt_io.eprintf
+         ("Warning: exercise %s was not found on the server.\n"))
+      not_found
+    >|= fun () ->
+    let first = if !already_exists = 0 then 0 else 1 in
+    let second = if List.length not_found = 0 then 0 else 1 in
+    first + 2*second
 
-  let fetch o =
+  let fetch o lst =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
     fetch_save server token
-    >>= write_save_files
-    >|= fun () -> 0
+    >>= write_save_files lst
 
   let man =
     man
-      "Fetch the user's solutions on the server to the current directory"
+      "Fetch the user's solutions on the server to the current directory."
+
+  let exits =
+    let open Term in
+    [ exit_info ~doc:"Default exit." exit_status_success
+    ; exit_info ~doc:"There was a file already present on the local side." 1
+    ; exit_info ~doc:"A specified exercise was not found on the server." 2
+    ; exit_info ~doc:"Both of 1 and 2." 3 ]
 
   let cmd =
-    use_global fetch,
-    Term.info ~man
-      ~doc:"Fetch the user's solutions"
+    Term.(
+      const (fun o l -> Pervasives.exit (Lwt_main.run (fetch o l)))
+      $ Args_global.term $ Args_fetch.term),
+    Term.info ~man ~exits
+      ~doc:"Fetch the user's solutions."
       "fetch"
 end
 
@@ -809,21 +857,20 @@ module Create_token = struct
          | Some c -> c.ConfigFile.server
          | None -> get_server server_url
        in
-       fetch server
-         (Api.Create_token (Sha.sha512 co.secret, None, Some nickname))
+       get_nonce_and_create_token server (Some nickname) co.secret
        >>= fun tok ->
        Lwt_io.print (Token.to_string tok ^ "\n")
        >|= fun () -> 0
 
   let man = man "Create a token on the server with the desired nickname.\
-                 Prodiving a token will test if it exists on the server"
+                 Prodiving a token will test if it exists on the server."
 
   let cmd =
     Term.(
       const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
       $ Args_global.term_server $ Args_create_token.term),
     Term.info ~man
-      ~doc:"Create a token"
+      ~doc:"Create a token."
       "create-token"
 end
 
@@ -851,18 +898,46 @@ module Template = struct
       const (fun o id -> Pervasives.exit (Lwt_main.run (template o id)))
       $ Args_global.term $ Args_exercise_id.term),
     Term.info ~man
-      ~doc:"Get the template of a given exercise"
+      ~doc:"Get the template of a given exercise."
       "template"
 end
+                
+module Exercise_list = struct
+  let doc= "Get a structured json containing a list of the exercises of the server"
 
+  let exercise_list o  =
+    get_config_o o
+    >>= fun {ConfigFile.server;token} ->
+    fetch server (Learnocaml_api.Exercise_index (token))
+    >>= (fun index->
+    let open Json_encoding in
+    let ezjsonm = (Json_encoding.construct
+                  (tup2 Exercise.Index.enc (assoc float))
+                  index)
+    in
+    let json =
+           match ezjsonm with
+           | `O _ | `A _ as json -> json 
+           | _ -> assert false
+    in
+    Ezjsonm.to_channel ~minify:false stdout json;
+    Lwt.return 0;)
+
+  let man = man doc
+          
+  let cmd =
+    use_global exercise_list,
+    Term.info ~man ~doc:doc "exercise-list"
+end
+                
 module Main = struct
   let man =
     man
-      "Learn-ocaml-client, default command is grade"
+      "Learn-ocaml-client, default command is grade."
 
   let cmd = fst Grade.cmd,
     Term.info ~version ~man
-      ~doc:"Learn-ocaml grading client"
+      ~doc:"Learn-ocaml grading client."
       "learn-ocaml-client"
 end
 
@@ -874,7 +949,8 @@ let () =
           ; Fetch.cmd
           ; Print_server.cmd
           ; Template.cmd
-          ; Create_token.cmd ]
+          ; Create_token.cmd
+          ; Exercise_list.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;

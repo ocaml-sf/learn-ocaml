@@ -38,8 +38,10 @@
 (library
  (name learnocaml_process_repository_lib)
  (wrapped false)
- (modules Learnocaml_process_exercise_repository
-          Learnocaml_process_tutorial_repository)
+ (modules Learnocaml_process_common
+          Learnocaml_process_exercise_repository
+          Learnocaml_process_tutorial_repository
+	  Learnocaml_process_playground_repository)
  (libraries ezjsonm
             str
             lwt.unix

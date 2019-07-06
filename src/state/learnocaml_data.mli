@@ -122,10 +122,14 @@ end
 
 module Server : sig
   type config = {
-    secret : string option (* maybe a secret *)
+    secret : string option; (* maybe a secret *)
+    server_id : int (* random integer generated each building time *)
     }
 
-  val default : config
+  val default: ?secret:string -> unit -> config
+
+  (* only used in the building case to generate a random server_id *)
+  val enc_init: config Json_encoding.encoding
 
   val enc: config Json_encoding.encoding
 end
@@ -394,4 +398,36 @@ module Partition : sig
   }
 
   val enc: t Json_encoding.encoding
+end
+
+module Playground : sig
+  type id = string
+
+  type t =
+  { id : id ;
+    prelude : string ;
+    template : string ;
+  }
+
+  val enc: t Json_encoding.encoding
+
+  module Meta : sig
+    type t =
+      {
+        title: string;
+        short_description: string option;
+      }
+
+    val default : string -> t
+
+    val enc: t Json_encoding.encoding
+  end
+
+  module Index: sig
+
+    type t = (id * Meta.t) list
+
+    val enc: t Json_encoding.encoding
+
+  end
 end

@@ -149,6 +149,10 @@ module Args = struct
         "the 'TryOCaml' tab (enabled by default if the repository contains a \
          $(i,tutorials) directory)"
 
+    let playground = enable "playground"
+        "the 'Playground' tab (enabled by default if the repository contains a \
+         $(i,playground) directory)"
+
     let lessons = enable "lessons"
         "the 'Lessons' tab (enabled by default if the repository contains a \
          $(i,lessons) directory)"
@@ -174,23 +178,26 @@ module Args = struct
       try_ocaml: bool option;
       lessons: bool option;
       exercises: bool option;
+      playground: bool option;
       toplevel: bool option;
     }
 
     let term =
       let apply repo_dir contents_dir
-          try_ocaml lessons exercises toplevel exercises_filtered jobs =
+          try_ocaml lessons playground exercises toplevel exercises_filtered jobs =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_exercise_repository.exercises_filtered :=
           Learnocaml_data.SSet.of_list (List.flatten exercises_filtered);
         Learnocaml_process_tutorial_repository.tutorials_dir :=
           repo_dir/"tutorials";
+        Learnocaml_process_playground_repository.playground_dir :=
+          repo_dir/"playground";
         Learnocaml_process_exercise_repository.n_processes := jobs;
-        { contents_dir; try_ocaml; lessons; exercises; toplevel }
+        { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
       in
       Term.(const apply $repo_dir $contents_dir
-            $try_ocaml $lessons $exercises $toplevel $exercises_filtered $jobs)
+            $try_ocaml $lessons $playground $exercises $toplevel $exercises_filtered $jobs)
 
   end
 
@@ -256,20 +263,25 @@ let main o =
                  (readlink o.builder.Builder.contents_dir)
            | e -> Lwt.fail e)
        >>= fun () ->
-       let server_config = o.repo_dir/"server_config.json" in
-       (if Sys.file_exists server_config
-        then
-          Learnocaml_store.Server.get_from_file server_config >>= fun pre_config ->
-          let sha_config =
-            Learnocaml_data.Server.({secret =
-                                       match pre_config.secret with
-                                       | None -> None
-                                       | Some x -> Some (Sha.sha512 x)})
-          in
-          Learnocaml_store.Server.write_to_file
-            sha_config
-            (o.app_dir/"server_config.json")
-        else Lwt.return ())
+       let server_config = o.repo_dir/"server_config.json"
+       and www_server_config = o.app_dir/"server_config.json" in
+       let module ServerData = Learnocaml_data.Server in
+       let module ServerStore = Learnocaml_store.Server in
+       Random.self_init ();
+       Lwt.catch
+         (fun () ->
+           let enc = ServerData.enc_init in
+           ServerStore.get_from_file ~enc server_config
+           >|= fun pre_config ->
+           match pre_config.ServerData.secret with
+             | None -> None
+             | Some x -> Some (Sha.sha512 x))
+         (function 
+           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return None
+           | exn -> Lwt.fail exn) 
+       >>= fun secret ->
+         let json_config = ServerData.default ?secret () in
+         ServerStore.write_to_file json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
@@ -290,6 +302,9 @@ let main o =
        if_enabled o.builder.Builder.try_ocaml (o.repo_dir/"tutorials")
          (fun _ -> Learnocaml_process_tutorial_repository.main (o.app_dir))
        >>= fun tutorials_ret ->
+       if_enabled o.builder.Builder.playground (o.repo_dir/"playground")
+         (fun _ -> Learnocaml_process_playground_repository.main (o.app_dir))
+       >>= fun playground_ret ->
        if_enabled o.builder.Builder.exercises (o.repo_dir/"exercises")
          (fun _ -> Learnocaml_process_exercise_repository.main (o.app_dir))
        >>= fun exercises_ret ->
@@ -298,11 +313,13 @@ let main o =
             Lwt_io.fprintf oc
               "var learnocaml_config = {\n\
               \  enableTryocaml: %b,\n\
+              \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
               \  enableToplevel: %b\n\
                }\n"
               (tutorials_ret <> None)
+              (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
               (o.builder.Builder.toplevel <> Some false) >>= fun () ->
@@ -352,7 +369,7 @@ let man = [
       command is specified, '$(b,build) $(b,serve)' is assumed.";
   `I ("$(b,grade)", "Runs the automatic grader on exercise solutions.");
   `I ("$(b,build)", "Generates the application based on a repository \
-                     containing the lessons, tutorials and exercises (see \
+                     containing the lessons, tutorials, playground and exercises (see \
                      $(b,REPOSITORY FORMAT)).");
   `I ("$(b,serve)", "Run a web-server providing access to the learn-ocaml app, \
                      as well as user file synchronisation.");
@@ -362,7 +379,7 @@ let man = [
   `S "SERVER OPTIONS";
   `S "REPOSITORY FORMAT";
   `P "The repository specified by $(b,--repo) is expected to contain \
-      sub-directories $(b,lessons), $(b,tutorials) and $(b,exercises).";
+      sub-directories $(b,lessons), $(b,tutorials), $(b,playground) and $(b,exercises).";
   `S "AUTHORS";
   `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
       Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \

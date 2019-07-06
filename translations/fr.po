@@ -88,6 +88,12 @@ msgstr "Toplevel"
 msgid "Exercise"
 msgstr "Exercice"
 
+msgid "Playground"
+msgstr "Bac-à-sable"
+
+msgid "Loading playground"
+msgstr "Chargement du bac-à-sable"
+
 #: src/app/learnocaml_exercise_main.ml:361,37--46
 msgid "Details"
 msgstr "Détails"
@@ -205,6 +211,22 @@ msgstr "Erreur dans le code."
 #: src/app/learnocaml_exercise_main.ml:705,27--85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "WARNING: You have an older grader version than the server"
+msgstr "ATTENTION: La version locale du grader est plus ancienne que celle du serveur"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "Refresh the page"
+msgstr "Actualiser la page"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "I will do it myself!"
+msgstr "Je sais le faire moi-même!"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."
+msgstr "Le serveur a été mis à jour, veuillez actualiser la page pour être sûr d'utiliser la dernière version du serveur Learn-OCaml (votre travail ne sera pas perdu)."
 
 #: src/grader/learnocaml_report.ml:220,44--63
 msgid "Completed, %d pts"

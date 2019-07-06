@@ -118,24 +118,43 @@ module Lesson = struct
 
 end
 
+module Playground = struct
+
+  module Index = struct
+
+    include Playground.Index
+
+    let get () =
+      read_static_file Learnocaml_index.playground_index_path enc
+
+  end
+
+  include (Playground: module type of struct include Playground end
+           with module Index := Index)
+
+  let get id =
+    read_static_file (Learnocaml_index.playground_path id) enc
+
+end
+
 module Server = struct
 
-  let get_from_file p =
+  let get_from_file ?(enc = Server.enc) p =
     Lwt_io.(with_file ~mode: Input p read) >|=
-      Json_codec.decode Server.enc
+      Json_codec.decode enc
 
   let get () =
     Lwt.catch
       (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
       (fun e ->
         match e with
-        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return Server.default
+        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return @@ Server.default ()
         | e -> raise e
       )
 
-  let write_to_file s p =
+  let write_to_file ?(enc = Server.enc) s p =
     let open Lwt_io in
-    let s = Json_codec.encode Server.enc s in
+    let s = Json_codec.encode enc s in
     with_file ~mode:output p @@ fun oc -> write oc s
 end
 

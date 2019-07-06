@@ -79,7 +79,7 @@ type 'a response =
 type error = (Cohttp.Code.status_code * string)
 
 let caching: type resp. resp Api.request -> caching = function
-  | Api.Version () -> Shortcache (Some ["version"])
+  | Api.Version () -> Shortcache (Some ["version"; "server_id"])
   | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
   | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
 
@@ -217,10 +217,13 @@ module Request_handler = struct
       (`Forbidden, "No address information avaible")
       lwt_ok
 
-  let callback_raw: type resp. Conduit.endp -> string option -> caching -> resp Api.request -> (resp response, error) result Lwt.t
-    = fun conn secret cache -> function
+  let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
+                    caching -> resp Api.request ->
+                    (resp response, error) result Lwt.t
+    = let module ServerData = Learnocaml_data.Server in
+      fun conn config cache -> function
       | Api.Version () ->
-         respond_json cache Api.version
+         respond_json cache (Api.version, config.ServerData.server_id)
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->
@@ -243,7 +246,7 @@ module Request_handler = struct
          @@ fun nonce ->
          Hashtbl.remove nonce_req conn;
          let know_secret =
-           match secret with
+           match config.ServerData.secret with
            | None -> true
            | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
          if not know_secret
@@ -433,12 +436,17 @@ module Request_handler = struct
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json cache
       | Api.Lesson id ->
-          Lesson.get id >>= respond_json cache
+         Lesson.get id >>= respond_json cache
 
       | Api.Tutorial_index () ->
           Tutorial.Index.get () >>= respond_json cache
       | Api.Tutorial id ->
-          Tutorial.get id >>= respond_json cache
+         Tutorial.get id >>= respond_json cache
+
+      | Api.Playground_index () ->
+          Playground.Index.get () >>= respond_json cache
+      | Api.Playground id ->
+          Playground.get id >>= respond_json cache
 
       | Api.Exercise_status_index token ->
           verify_teacher_token token >?= fun () ->
@@ -467,12 +475,14 @@ module Request_handler = struct
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 
-  let callback: type resp. Conduit.endp -> string option -> resp Api.request -> resp ret  =
-    fun conn secret req ->
+  let callback: type resp. Conduit.endp ->
+                           Learnocaml_data.Server.config ->
+                           resp Api.request -> resp ret
+  = fun conn config req ->
     let cache = caching req in
     let respond () =
       Lwt.catch
-        (fun () -> callback_raw conn secret cache req)
+        (fun () -> callback_raw conn config cache req)
         (function
           | Not_found ->
               lwt_fail (`Not_found, "Component not found")
@@ -551,7 +561,6 @@ let compress ?(level = 4) data =
 let launch () =
   Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
-  let secret = Learnocaml_data.Server.(config.secret) in
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
@@ -640,7 +649,7 @@ let launch () =
      | _ -> lwt_fail (`Bad_request, "Unsupported method"))
     >?= (fun req ->
       log conn req;
-      Api_server.handler (Conduit_lwt_unix.endp_of_flow (fst conn)) secret req )
+      Api_server.handler (Conduit_lwt_unix.endp_of_flow (fst conn)) config req)
     >>= function
     | Error (code,body) ->
        Server.respond_error ~status:code ~body ()
