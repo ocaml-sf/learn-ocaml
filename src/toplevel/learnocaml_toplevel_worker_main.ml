@@ -9,6 +9,7 @@
 open Learnocaml_toplevel_worker_messages
 
 let debug = ref false
+let grading = ref false
 
 let (>>=) = Lwt.bind
 
@@ -138,7 +139,7 @@ let iter_option f o = match o with | None -> () | Some o -> f o
 let checking_environment = ref !Toploop.toplevel_env
 
 let setup_ppx = lazy (Ast_mapper.register "ppx_metaquot" Ppx_metaquot.expander)
-                         
+
 let handler : type a. a host_msg -> a return Lwt.t = function
   | Set_checking_environment ->
       checking_environment := !Toploop.toplevel_env ;
@@ -208,10 +209,10 @@ let handler : type a. a host_msg -> a return Lwt.t = function
           !Toploop.toplevel_env ;
       Toploop.setvalue name (Obj.repr callback) ;
       return_unit_success
-  | Check (code, ppx_meta) ->
+  | Check (code, grading_cmi_and_ppx_meta) ->
      let saved = !Toploop.toplevel_env in
      Toploop.toplevel_env := !checking_environment ;
-     if ppx_meta then Lazy.force setup_ppx ;
+     if grading_cmi_and_ppx_meta then (grading := true; Lazy.force setup_ppx) ;
      let result = Toploop_ext.check code in
      Toploop.toplevel_env := saved ;
      unwrap_result result
@@ -242,13 +243,25 @@ let () =
         Lwt.return_unit
   in
   let path = "/worker_cmis" in
+  (* we don't use
+     [OCamlRes.Res.merge Embedded_cmis.root Embedded_grading_cmis.root]
+     because we don't want to unconditionally load [Embedded_grading_cmis] *)
+  let root1 = Embedded_cmis.root in
+  let root2 = Embedded_grading_cmis.root in
   Sys_js.mount ~path
     (fun ~prefix:_ ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
+       match OCamlRes.Res.find (OCamlRes.Path.of_string path) root1 with
        | cmi ->
            Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
            Some cmi
-       | exception Not_found -> None) ;
+       | exception Not_found ->
+          if !grading then
+            match OCamlRes.Res.find (OCamlRes.Path.of_string path) root2 with
+            | cmi ->
+               Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
+               Some cmi
+            | exception Not_found -> None
+          else None) ;
   Config.load_path := [ path ] ;
   Toploop_jsoo.initialize ();
   Hashtbl.add Toploop.directive_table

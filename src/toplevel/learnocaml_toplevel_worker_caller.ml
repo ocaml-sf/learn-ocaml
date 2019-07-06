@@ -236,8 +236,8 @@ let reset worker ?(timeout = fun () -> never_ending) () =
       (* Not canceling the Reset thread, but manually resetting. *)
       worker.reset_worker worker
 
-let check ?(ppx_meta = false) worker code =
-  post worker @@ Check (code,ppx_meta)
+let check ?(grading = false) worker code =
+  post worker @@ Check (code, grading)
 
 let set_checking_environment worker =
   post worker @@ Set_checking_environment

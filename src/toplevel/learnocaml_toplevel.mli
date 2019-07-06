@@ -125,8 +125,12 @@ val load:
   ?message: string ->
   string -> bool Lwt.t
 
-(** Parse and typecheck a given source code. *)
- val check: ?ppx_meta:bool -> t -> string -> unit Toploop_results.toplevel_result Lwt.t
+(** Parse and typecheck a given source code.
+
+    @param grading
+      Load [Embedded_grading_cmis] and ppx-metaquot in the checker toploop. *)
+val check: ?grading:bool -> t -> string -> unit Toploop_results.toplevel_result Lwt.t
+
 (** Freezes the environment for future calls to {!check}. *)
 val set_checking_environment: t -> unit Lwt.t
 

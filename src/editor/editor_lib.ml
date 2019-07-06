@@ -119,8 +119,8 @@ let typecheck set_class ace_t editor_t top prelprep ?(mock = false) ?onpasterr s
   let offset_prelprep = num_occs prelprep (-1) '\n' 0 in
   let code = prelprep ^ if mock then with_test_lib_prepare string
                         else string
-  and ppx_meta = mock in
-  Learnocaml_toplevel.check ~ppx_meta top code >>= fun res ->
+  and grading = mock in
+  Learnocaml_toplevel.check ~grading top code >>= fun res ->
   let error, warnings =
     match res with
     | Toploop_results.Ok ((), warnings) -> None, warnings
