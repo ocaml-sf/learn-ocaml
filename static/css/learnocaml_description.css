@@ -1,0 +1,54 @@
+html,
+body {
+    box-sizing: content-box;
+    height: 99%;
+    width: 99%;
+}
+
+body {
+    background: #eee;
+}
+
+#learnocaml-main-toolbar {
+    width: 100%;
+    color: #fff;
+    z-index: 1004;
+    display: flex;
+    background: #222;
+}
+
+#learnocaml-exo-tab-meta {
+    text-align: center;
+    flex-grow: 1
+}
+
+#learnocaml-exo-tab-text {
+    text-align: center;
+    flex-grow: 2;
+}
+
+#learnocaml-exo-tab-text>h1:first-child {
+    margin-top: 0px;
+}
+
+#split {
+    display: flex;
+}
+
+@media (max-width: 549px) {
+    #split {
+        height: calc(100% - 41px);
+    }
+    #learnocaml-exo-toolbar::before {
+        top: 41px;
+    }
+    #learnocaml-exo-toolbar>button>.label {
+        display: none;
+    }
+}
+
+@media (min-width: 550px) {
+    #split {
+        height: calc(100% - 61px);
+    }
+}
