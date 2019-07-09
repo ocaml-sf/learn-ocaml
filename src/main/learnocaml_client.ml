@@ -766,11 +766,12 @@ let write_exercise_file id str =
   let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
   if Sys.file_exists f then
     (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-     Lwt.return_unit)
+     Lwt.return false)
   else
     Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
         Lwt_io.write oc str >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f
+        Printf.printf "Wrote file %s\n%!" f;
+        true
 
 module Fetch = struct
   let fetch_save server_url token =
@@ -889,7 +890,9 @@ module Template = struct
        write_exercise_file
          exercise_id
          Learnocaml_exercise.(access File.template exercise)
-       >|= fun () -> 0
+       >|= function
+       | true -> 0
+       | false -> 3
 
   let man = man "Get the template of a given exercise"
 
