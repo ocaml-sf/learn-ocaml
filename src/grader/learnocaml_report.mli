@@ -11,13 +11,13 @@
 type t = item list
 
 and item =
-  | Section of text * t
-  (** A titled block that groups subreports *)
-  | Message of text * status
-  (** Basic report block *)
+  | Section of text * t (** A titled block that groups subreports *)
+  | SectionMin of text * t * int (** A section with a minimum score *)
+  | Message of text * status (** Basic report block *)
 
 and status =
   | Success of int (** With given points *)
+  | Penalty of int (** With taken points *)
   | Failure (** With missed points *)
   | Warning (** A student error without influence on the grade *)
   | Informative (** A message for the student *)

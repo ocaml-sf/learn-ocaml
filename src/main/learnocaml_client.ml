@@ -340,8 +340,10 @@ let get_score =
   let rec get_score report =
     List.fold_left (fun acc -> function
         | Section (_text, report) -> get_score acc report
+        | SectionMin (_text, report, min) -> get_score acc report |> max min
         | Message (_text, status) -> match status with
           | Success i -> acc + i
+          | Penalty i -> acc - i
           | _ -> acc)
       report
   in
@@ -386,13 +388,14 @@ let console_report ?(verbose=false) ex report =
   in
   let rec all_good report =
     (List.for_all @@ function
-      | Section (_, report) -> all_good report
-      | Message (_, (Success _ | Informative | Warning | Important)) -> true
+      | Section (_, report) | SectionMin (_, report, _) -> all_good report
+      | Message (_, (Success _ | Penalty _
+                   | Informative | Warning | Important)) -> true
       | Message (_, Failure) -> false)
       report
   in
   let rec format_item = function
-    | Section (text, report) ->
+    | Section (text, report) | SectionMin (text, report, _) ->
         let good = all_good report in
         let score = get_score report in
         let title =
@@ -408,6 +411,8 @@ let console_report ?(verbose=false) ex report =
             (String.concat "\n" @@ List.map format_item report)
     | Message (text, Success i) ->
         print_score i ^ "   " ^ format_text text
+    | Message (text, Penalty i) ->
+        print_score (-i) ^ "   " ^ format_text text
     | Message (text, Failure) ->
         print_score 0 ^ "   " ^ format_text text
     | Message (text, Warning) ->
