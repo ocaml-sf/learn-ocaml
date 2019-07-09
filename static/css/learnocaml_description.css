@@ -1,8 +1,8 @@
 html,
 body {
     box-sizing: content-box;
-    height: 99%;
-    width: 99%;
+    height: 100%;
+    width: 100%;
 }
 
 body {
@@ -19,12 +19,17 @@ body {
 
 #learnocaml-exo-tab-meta {
     text-align: center;
-    flex-grow: 1
+    flex-grow: 1;
+}
+
+#learnocaml-exo-tab-meta:first-child {
+    margin: 0 2px;
 }
 
 #learnocaml-exo-tab-text {
     text-align: center;
-    flex-grow: 2;
+    flex-grow: 5;
+    border-left: #222 2px solid;
 }
 
 #learnocaml-exo-tab-text>h1:first-child {
@@ -38,6 +43,7 @@ body {
 @media (max-width: 549px) {
     #split {
         height: calc(100% - 41px);
+        flex-direction: column
     }
     #learnocaml-exo-toolbar::before {
         top: 41px;
