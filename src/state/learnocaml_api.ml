@@ -23,6 +23,8 @@ type _ request =
       teacher token -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
+  | Archive_zip:
+      'a token -> string request
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git: 'a token * string list -> string request
@@ -102,6 +104,8 @@ module Conversions (Json: JSON_CODEC) = struct
           Token.(to_string, parse)
       | Fetch_save _ ->
           json Save.enc
+      | Archive_zip _ ->
+          str
       | Update_save _ ->
           json Save.enc
       | Git _ -> str
@@ -172,6 +176,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Fetch_save token ->
         get ~token ["save.json"]
+    | Archive_zip token ->
+        get ~token ["archive.zip"]
     | Update_save (token, save) ->
         post ~token ["sync"] (Json.encode Save.enc save)
     | Git _ ->
@@ -275,6 +281,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
+      | `GET, ["archive.zip"], Some token ->
+          Archive_zip token |> k
       | `POST body, ["sync"], Some token ->
           (match Json.decode Save.enc body with
            | save -> Update_save (token, save) |> k

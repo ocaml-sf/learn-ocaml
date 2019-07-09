@@ -591,6 +591,10 @@ msgstr "Cours"
 msgid "Teach"
 msgstr "Enseignement"
 
+#: src/app/learnocaml_index_main.ml
+msgid "Failed to download archive. Please try again later!"
+msgstr "Le téléchargement de l'archive a échoué. Veuillez réessayer ulterieurement!"
+
 #: src/app/learnocaml_index_main.ml:866,15--69
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token:"
@@ -625,6 +629,10 @@ msgstr "Exporter vers un fichier"
 #: src/app/learnocaml_index_main.ml:892,9--17
 msgid "Import"
 msgstr "Importer"
+
+#: src/app/learnocaml_index_main.ml:893
+msgid "Download all source files"
+msgstr "Télécharger tous les fichiers sources"
 
 #: src/app/learnocaml_index_main.ml:898,38--44
 msgid "Menu"

@@ -780,6 +780,12 @@ let () =
     no_tab_selected ();
     Lwt.return ()
   in
+  let download_all () =
+    let token = get_stored_token () |> Token.to_string in
+    Dom_html.window##.location##assign
+    (Js.string @@ "/archive.zip?token=" ^ token);
+    Lwt.return_unit
+  in
   let logout_dialog () =
     Server_caller.request
       (Learnocaml_api.Update_save
@@ -813,6 +819,7 @@ let () =
           sync () >>= fun _ -> Lwt.return_unit);
       [%i"Export to file"], "download", download_save;
       [%i"Import"], "upload", import_save;
+      [%i"Download all source files"], "download", download_all;
       [%i"Logout"], "logout",
       (fun () -> Lwt.async logout_dialog; Lwt.return_unit);
     ];
