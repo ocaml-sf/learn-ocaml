@@ -20,8 +20,7 @@ module Display = Display_exercise(Exercise_link)
 open Display
        
 let _ =
-  Lwt.async
-  @@ fun () ->
+  run_async_with_log @@ fun () ->
      let id = arg "id" in 
      Learnocaml_local_storage.init () ;
      let token = Learnocaml_data.Token.parse (arg "token") in  
