@@ -3,11 +3,14 @@ open Learnocaml_common
 module H = Tyxml_js.Html
 open Js_utils
 open Learnocaml_data.Exercise.Meta
+
+let token = Learnocaml_data.Token.parse (arg "token") 
 module Exercise_link =
   struct
     let exercise_link ?(cl = []) id content =
       let open Tyxml_js.Html5 in
-      a ~a:[ a_href ("/description.html#id="^id) ;
+      a ~a:[ a_href ("/description.html#id="^id^"&token="^
+                     (Learnocaml_data.Token.to_string token)) ;
              a_class cl ;
         ]
         content
