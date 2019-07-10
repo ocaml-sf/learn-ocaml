@@ -88,6 +88,12 @@ msgstr "Toplevel"
 msgid "Exercise"
 msgstr "Exercice"
 
+msgid "Playground"
+msgstr "Bac-à-sable"
+
+msgid "Loading playground"
+msgstr "Chargement du bac-à-sable"
+
 #: src/app/learnocaml_exercise_main.ml:361,37--46
 msgid "Details"
 msgstr "Détails"
@@ -206,6 +212,26 @@ msgstr "Erreur dans le code."
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 
+#: src/grader/learnocaml_report.ml
+msgid "(minimum mark)"
+msgstr "(note minimale)"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "WARNING: You have an older grader version than the server"
+msgstr "ATTENTION: La version locale du grader est plus ancienne que celle du serveur"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "Refresh the page"
+msgstr "Actualiser la page"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "I will do it myself!"
+msgstr "Je sais le faire moi-même!"
+
+#: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
+msgid "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."
+msgstr "Le serveur a été mis à jour, veuillez actualiser la page pour être sûr d'utiliser la dernière version du serveur Learn-OCaml (votre travail ne sera pas perdu)."
+
 #: src/grader/learnocaml_report.ml:220,44--63
 msgid "Completed, %d pts"
 msgstr "Terminé, %d pts"
@@ -254,6 +280,10 @@ msgstr "@[<v 2>Important: %a@]"
 #: src/grader/learnocaml_report.ml:533,58--83
 msgid "@[<v 2>Success %d: %a@]"
 msgstr "@[<v 2>Réussite %d: %a@]"
+
+#: src/grader/learnocaml_report.ml
+msgid "@[<v 2>Penalty %d: %a@]"
+msgstr "@[<v 2>Pénalité %d: %a@]"
 
 #: src/app/learnocaml_common.ml:76,21--37
 msgid "INTERNAL ERROR"
@@ -547,6 +577,12 @@ msgstr "Se connecter"
 msgid "Nickname"
 msgstr "Pseudonyme"
 
+msgid "Secret"
+msgstr "Secret"
+
+msgid "Enter the secret"
+msgstr "Entrez le secret"
+
 #: src/app/learnocaml_index_main.ml:755,41--62
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."
@@ -562,6 +598,10 @@ msgstr "Cours"
 #: src/app/learnocaml_index_main.ml:774,28--35
 msgid "Teach"
 msgstr "Enseignement"
+
+#: src/app/learnocaml_index_main.ml
+msgid "Failed to download archive. Please try again later!"
+msgstr "Le téléchargement de l'archive a échoué. Veuillez réessayer ulterieurement!"
 
 #: src/app/learnocaml_index_main.ml:866,15--69
 msgid "Be sure to write down your token before logging out:"
@@ -597,6 +637,10 @@ msgstr "Exporter vers un fichier"
 #: src/app/learnocaml_index_main.ml:892,9--17
 msgid "Import"
 msgstr "Importer"
+
+#: src/app/learnocaml_index_main.ml:893
+msgid "Download all source files"
+msgstr "Télécharger tous les fichiers sources"
 
 #: src/app/learnocaml_index_main.ml:898,38--44
 msgid "Menu"

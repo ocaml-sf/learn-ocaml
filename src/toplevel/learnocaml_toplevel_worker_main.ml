@@ -42,7 +42,7 @@ module IntMap = Map.Make(struct
    and we do not want to fill a memory buffer but really "pause" the
    program.
 
-   The problem arises with debug off and developper tools off only.
+   The problem arises with debug off and developer tools off only.
    In this case, with a program that does a lot of writes (print or
    callbacks), the messages queue fills up super quickly and kills the
    browser / tab.

@@ -73,10 +73,11 @@ type t = item list
 
 and item =
   | Section of text * t
+  | SectionMin of text * t * int
   | Message of text * status
 
 and status =
-  | Success of int | Failure
+  | Success of int | Penalty of int | Failure
   | Warning | Informative | Important
 
 and text = inline list
@@ -97,11 +98,16 @@ let result items =
     | Message (_text, status) ->
         begin match status with
           | Success n -> (n, false)
+          | Penalty n -> (-n, true)
           | Failure -> (0, true)
           | Warning | Informative | Important -> (0, false) end
     | Section (_title, contents) ->
-        do_report contents in
-  do_report items
+        do_report contents
+    | SectionMin (_title, contents, min) ->
+        let (n, b) = do_report contents in
+        (max n min, b) in
+  let (n, b) = do_report items in
+  (max n 0, b)
 
 let enc =
   let open Json_encoding in
@@ -132,34 +138,39 @@ let enc =
     union
       [ case
           int
-          (function Success n -> Some n | _ -> None)
-          (fun n -> Success n) ;
+          (function Success n -> Some n | Penalty n -> Some (-n) | _ -> None)
+          (fun n -> if n > 0 then Success n else if n < 0 then Penalty (-n)
+                                            else Failure) ;
         case
           (string_enum [ "failure", Failure ;
                          "warning", Warning ;
                          "informative", Informative ;
                          "important", Important ])
-          (function Success _ -> None | v -> Some v)
+          (function Success _ | Penalty _ -> None | v -> Some v)
           (function v -> v)
       ]
   in
   let item_enc = mu "reportItem" @@ fun item_enc ->
     union
       [ case
-          (obj2
+          (obj3
              (req "section" text_enc)
-             (req "contents" (list item_enc)))
+             (req "contents" (list item_enc))
+             (opt "minscore" int))
           (function
-            | Section (text, report) -> Some (text, report)
+            | Section (text, report) -> Some (text, report, None)
+            | SectionMin (text, report, min) -> Some (text, report, Some min)
             | Message _ -> None)
-          (fun (text, report) -> Section (text, report)) ;
+          (function
+            | (text, report, None) -> Section (text, report)
+            | (text, report, Some min) -> SectionMin (text, report, min)) ;
         case
           (obj2
              (req "message" text_enc)
              (req "result" status_enc))
           (function
             | Message (text, status) -> Some (text, status)
-            | Section _ -> None)
+            | Section _ | SectionMin _ -> None)
           (fun (text, status) -> Message (text, status)) ]
   in
   list item_enc
@@ -190,6 +201,9 @@ let format items =
         let result, result_class, score = match status with
           | Success 1 -> (1, false), "success", Some "1 pt"
           | Success n -> (n, false), "success", Some (string_of_int n ^ " pts")
+          | Penalty 1 -> (-1, true), "failure", Some "-1 pt"
+          | Penalty n ->
+              (-n, true), "warning", Some ("-" ^ string_of_int n ^ " pts")
           | Failure -> (0, true), "failure", Some "0 pt"
           | Warning -> (0, false), "warning", None
           | Informative -> (0, false), "informative", None
@@ -201,33 +215,44 @@ let format items =
                 | None -> format_text text
                 | Some score -> E ("span", [ "class", "score" ], [ T score ]) :: format_text text) ])
     | Section (title, contents) ->
-        let result, formatted_report = format_report contents in
-        let result_class, score, folder =
-          (* Hack: never fold the style report *)
-          if title = [Text "Style report"] then ("informative", [], unfolder)
-          else match result with
-          | (0, false) ->
-              "informative folded", [], unfolder
-          | (n, false) ->
-              "success folded",
-              [ E ("span", [ "class", "score" ],
-                   [ T (Format.asprintf [%if"Completed, %d pts"] n) ]) ],
-              unfolder
-          | (0, true) ->
-              "failure",
-              [ E ("span", [ "class", "score" ],
-                   [ T [%i"Failed"] ]) ],
-              folder
-          | (s, true) ->
-              "warning",
-              [ E ("span", [ "class", "score" ],
-                   [ T (Format.asprintf [%if"Incomplete, %d pts"] s) ]) ],
-              folder in
-        result,
-        E ("div", [ "class", "section " ^ result_class ],
-           [ E ("span", [ "class", "title" ],
-                folder :: format_text title @ score) ;
-             E ("div", [ "class", "report" ], formatted_report) ])
+        format_section title (format_report contents)
+    | SectionMin (title, contents, min) ->
+        let (n, b), formatted_report = format_report contents in
+        format_section ~min title ((max n min, b), formatted_report)
+  and format_section ?min title (result, formatted_report) =
+    let result_class, score, folder =
+      let min_str = match min with
+        | Some m when m = fst result -> " " ^ [%i "(minimum mark)"]
+        | _ -> "" in
+      let format_section_html result_str =
+        [ E ("span", [ "class", "score" ],
+             [ T (result_str ^ min_str)])] in
+      (* Hack: never fold the style report *)
+      if title = [Text "Style report"] then ("informative", [], unfolder)
+      else match result with
+        | (0, false) ->
+            "informative folded", [], unfolder
+        | (n, false) ->
+            "success folded",
+            format_section_html @@ Format.asprintf [%if"Completed, %d pts"] n,
+            unfolder
+        | (0, true) ->
+            "failure",
+            format_section_html @@ [%i"Failed"],
+            folder
+        | (s, true) when s < 0 || min_str <> "" ->
+            "failure",
+            format_section_html @@ Format.asprintf "%s, %d pts" [%i"Failed"] s,
+            folder
+        | (s, true) ->
+            "warning",
+            format_section_html @@ Format.asprintf [%if"Incomplete, %d pts"] s,
+            folder in
+    result,
+    E ("div", [ "class", "section " ^ result_class ],
+       [ E ("span", [ "class", "title" ],
+            folder :: format_text title @ score) ;
+         E ("div", [ "class", "report" ], formatted_report) ])
   and format_text text =
     let format = function
       | Text w ->
@@ -241,7 +266,8 @@ let format items =
       | Code s ->
           E ("code", [ "class", "code" ], [ T s ]) in
     List.map format text in
-  let result, report = format_report items in
+  let (n, b), report = format_report items in
+  let result = (max n 0, b) in
   let result_class, score = match result with
     | (0, false) -> "informative", []
     | (0, true) ->
@@ -520,11 +546,13 @@ let print ppf items =
     Format.pp_print_list format_item ppf items
   and format_item ppf = function
     | Section (text, contents) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@]@,%a@]" print_text text print_report contents
+    | SectionMin (text, contents, min) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@ %a@]@,%a@]" print_text text print_min min print_report contents
     | Message (text, Failure) -> Format.fprintf ppf [%if"@[<v 2>Failure: %a@]"] print_text text
     | Message (text, Warning) -> Format.fprintf ppf [%if"@[<v 2>Warning: %a@]"] print_text text
     | Message (text, Informative) -> Format.fprintf ppf "@[<v 2>%a@]" print_text text
     | Message (text, Important) -> Format.fprintf ppf [%if"@[<v 2>Important: %a@]"] print_text text
     | Message (text, Success n) -> Format.fprintf ppf [%if"@[<v 2>Success %d: %a@]"] n print_text text
+    | Message (text, Penalty n) -> Format.fprintf ppf [%if"@[<v 2>Penalty %d: %a@]"] (-n) print_text text
   and print_text ppf = function
     | (Code wa | Output wa) :: Text wb :: rest when not (String.contains (String.trim wa) '\n') ->
         print_text ppf (Text ("[" ^ String.trim wa ^ "] " ^ wb) :: rest)
@@ -549,7 +577,10 @@ let print ppf items =
       | '\n' -> Format.fprintf ppf "@, | "
       | c -> Format.fprintf ppf "%c" c
     done ;
-    Format.fprintf ppf "@]" in
+    Format.fprintf ppf "@]"
+  and print_min ppf min =
+    Format.fprintf ppf "%a@ %a" Format.pp_print_string [%i "(minimum mark)"]
+                                Format.pp_print_int min in
   Format.fprintf ppf "@[<v>%a@]@." print_report items
 
 (* -- report building combinators ------------------------------------------- *)

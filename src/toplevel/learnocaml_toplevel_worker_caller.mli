@@ -22,7 +22,7 @@ type t
 (** Create a toplevel instance.
 
     @param after_init a function that will be called whenever the
-           toplevel is initialized or reseted.
+           toplevel is initialized or reset.
 
     @param pp_stdout a function to be called when the toplevel standard
            output is flushed (default: flush to the browser's console).
@@ -83,7 +83,7 @@ val set_checking_environment:
   t -> unit toplevel_result Lwt.t
 
 (** Execute a given source code. The code is parsed and
-    typechecked all at once before to start the evalution.
+    typechecked all at once before to start the evaluation.
 
     @param pp_answer see {!val:execute}.
 

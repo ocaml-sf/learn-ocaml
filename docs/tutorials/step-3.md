@@ -12,8 +12,8 @@ generated and the grader will use predefined sampler.
 ## Which types have a predefined sampler ?
 
 Before beginning, we should make an important warning : there is no
-default sampler for functional types, tupples (or type composed of
-tupple) for example. Here is a list of the signatures of predefined
+default sampler for functional types, tuples (or type composed of
+tuple) for example. Here is a list of the signatures of predefined
 samplers :
 
 ```ocaml
@@ -95,7 +95,7 @@ let exercise_1 =
 		~gen:5
 		[]
 ```
-* tupple
+* tuple
 ```ocaml
 let exercise_2 =
 	grade_function_1_against_solution

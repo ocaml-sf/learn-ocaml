@@ -6,10 +6,10 @@
 There are 2 main grading functions:
 
 * `grade_function_<nb_args>_againt_solution`: the usual. Test the
-  student code againt a given solution written in the `solution.ml`
+  student code against a given solution written in the `solution.ml`
   file.
 
-* `grade_function_<nb_args>`: compare the student code to a serie of
+* `grade_function_<nb_args>`: compare the student code to a series of
   tests where both inputs and expected outputs are given. Note that
   you still need to write a solution in `solution.ml` to build your
   exercise session since `learn-ocaml build` tests your grader with
@@ -24,14 +24,14 @@ ones:
   outputs. The function `~test` is used to build this report. By
   default, `~test` uses the structural equality to compare outputs.
 
-- report resulting of comparison between student and solution standart
+- report resulting of comparison between student and solution standard
   outputs. The function `~test_stdout` is used to build this
-  report. By default, `~test_stdout` is set to ignore standart output
+  report. By default, `~test_stdout` is set to ignore standard output
   and returns an empty report.
 
-- report resulting of comparison between student and solution standart
+- report resulting of comparison between student and solution standard
   errors. The function `~test_stderr` is used to build this report.
-  By default, `~test_stderr` is set to ignore standart error and
+  By default, `~test_stderr` is set to ignore standard error and
   returns an empty report.
   
 - report resulting of the result of function `~after` and returns an
@@ -88,12 +88,12 @@ ones:
 * `name`: name of the tested function in the student code and in
   `solution.ml`
 
-* `(in, out, stderr, stdout) :: _` as `tests`: list of tupples where
+* `(in, out, stderr, stdout) :: _` as `tests`: list of tuples where
   the first element `in` is the argument passed to the tested function
   (for a three-arguments functions `tests` will instead matched `(in1,
   in2, in3, out, stderr, stdout)`). The second element `out` is the
   expected output. `stderr` and `stdout` are the expected strings in
-  standart output and error output respectively.
+  standard output and error output respectively.
 
 ## Optional arguments of grading functions
 
@@ -115,11 +115,11 @@ ones:
   more information.
 
 * `test_stdout`: is used to redefine the function which compare the
-  standart output channel of the student function and the one of the
+  standard output channel of the student function and the one of the
   solution. See WIP for more information.
 
 * `test_stderr`: is used to redefine the function which compare the
-  standart error channel of the student function and the one of the
+  standard error channel of the student function and the one of the
   solution. See WIP for more information.
 
 * `after`: is used to redefine a function which is called with the
@@ -171,7 +171,7 @@ let exercise_2 =
 		42, 42, "", ""]  (* List of tests *)
 ```
 
-Note that since the default comparison function for standart output
+Note that since the default comparison function for standard output
 and error actually ignore them, we could put anything as expected outputs in
 the tests list.
 
@@ -179,8 +179,8 @@ the tests list.
 ### Hello world
 
 `Hello world` is also very classical, however grading this function is
-a little more tricky since by default standart output and error output
-are ignored (meaning the student standart/error output can be
+a little more tricky since by default standard output and error output
+are ignored (meaning the student standard/error output can be
 different from the solution ones without causing a failure).
 
 
@@ -207,7 +207,7 @@ let exercise_4 =
 
 The function `test_ignore` for optional argument `test` enables to
 ignore the student and solution output. On the contrary,
-`io_test_equals` for `test_stdout` enables to compare standart outputs
+`io_test_equals` for `test_stdout` enables to compare standard outputs
 with the structural equality.
 
 --- 

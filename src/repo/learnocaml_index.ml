@@ -12,6 +12,12 @@ let exercises_dir = "exercises"
 
 let exercise_path id = exercises_dir ^ "/" ^ id ^ ".json"
 
+let playground_dir = "playground"
+
+let playground_path id = playground_dir ^ "/" ^ id ^ ".json"
+
+let playground_index_path = "playground.json"
+
 let lesson_index_path = "lessons.json"
 
 let lessons_dir = "lessons"
@@ -27,3 +33,5 @@ let tutorial_path id = tutorials_dir ^ "/" ^ id ^ ".json"
 let focus_path = "focus.json"
 
 let requirements_path = "requirements.json"
+
+let server_config_path = "server_config.json"

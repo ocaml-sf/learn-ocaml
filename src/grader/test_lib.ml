@@ -54,6 +54,9 @@ module type S = sig
   type io_tester =
     string -> string -> Learnocaml_report.t
 
+  type io_postcond =
+    string -> Learnocaml_report.t
+
   exception Timeout of int
 
   (*----------------------------------------------------------------------------*)
@@ -190,6 +193,17 @@ module type S = sig
       ?sampler : (unit -> 'a) ->
       ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
+    val test_function_1_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> unit) ->
+      ?before_user : ('a -> unit) ->
+      ?after : ('a -> ('b * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a) ->
+      ('a -> 'b Ty.ty -> 'b result -> Learnocaml_report.t) ->
+      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
+
     (*----------------------------------------------------------------------------*)
 
     val test_function_2 :
@@ -220,6 +234,17 @@ module type S = sig
       ?before_user : ('a -> 'b -> unit) ->
       ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b) ->
+      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
+
+    val test_function_2_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> unit) ->
+      ?before_user : ('a -> 'b -> unit) ->
+      ?after : ('a -> 'b -> ('c * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b) ->
+      ('a -> 'b -> 'c Ty.ty -> 'c result -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (*----------------------------------------------------------------------------*)
@@ -254,6 +279,17 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
 
+    val test_function_3_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> unit) ->
+      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c) ->
+      ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t) ->
+      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
+      
     (*----------------------------------------------------------------------------*)
 
     val test_function_4 :
@@ -285,6 +321,17 @@ module type S = sig
       ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
       ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
       ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
+
+    val test_function_4_against_postcond :
+      ?gen: int ->
+      ?test_stdout: io_postcond ->
+      ?test_stderr: io_postcond ->
+      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
+      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> Learnocaml_report.t) ->
+      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
+      ('a -> 'b -> 'c -> 'd -> 'e Ty.ty -> 'e result -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
   end
@@ -859,6 +906,9 @@ module Make
   type io_tester =
     string -> string -> Learnocaml_report.t
 
+  type io_postcond =
+    string -> Learnocaml_report.t
+
   let typed_printer ty ppf v =
     Introspection.print_value ppf v ty
 
@@ -1135,7 +1185,20 @@ module Make
       | Error exn -> Error exn
 
 
-  (*----------------------------------------------------------------------------*)
+    (*----------------------------------------------------------------------------*)
+
+    let verify
+          ?(test_stdout = fun _ -> []) ?(test_stderr = fun _ -> [])
+          ?(pre = (fun _ -> ())) ?(post = (fun _ -> [])) test ty v =
+      let v = pre (); exec v in
+      match v with
+      | Ok (v, out, err) ->
+         let post_report = post (v, out, err) in
+         let report = test ty (Ok v) in
+         let stdout_report = test_stdout out in
+         let stderr_report = test_stderr err in
+         report @ stdout_report @ stderr_report @ post_report
+      | Error exn -> test ty (Error exn)
 
     let expect
           ?(test = test) ?(test_stdout = io_test_ignore) ?(test_stderr = io_test_ignore)
@@ -1300,22 +1363,38 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
-    let test_function_generic
-          ?test ?test_stdout ?test_stderr
-          ?(before = (fun _ -> ()))  ?(after = (fun _ _ _ -> []))
-          prot uf tests =
-      test_value uf @@ fun ruf ->
+    let run_test
+          ?(before = (fun _ -> ())) ~after name prot tests for_case =
       let before args () = before args in
       let ty = ty_of_prot prot in
-      List.flatten @@ List.map (fun case ->
-          let args, ret = case () in
-          let code = Format.asprintf "@[<hv 2>%s%a@]" (name uf) (print prot) args in
-          let ret_ty = get_ret_ty ty args in
-          Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
-          expect
+      let for_casel case =
+        let args, ret = case () in
+        let code = Format.asprintf "@[<hv 2>%s%a@]" name (print prot) args in
+        let ret_ty = get_ret_ty ty args in
+        Learnocaml_report.(Message ([ Text "Computing" ; Code code ], Informative)) ::
+          for_case (before args) (after args) args ret_ty ret
+      in List.flatten @@ List.map for_casel tests
+
+    let test_function_generic
+          ?test ?test_stdout ?test_stderr
+          ?before ?(after = (fun _ _ _ -> []))
+          prot uf tests =
+      test_value uf @@ fun ruf ->
+      let for_case pre post args ret_ty =
+          expect ~pre ~post
             ?test ?test_stdout ?test_stderr
-            ~pre: (before args) ~post: (after args) ret_ty (fun () -> apply ruf args) ret)
-       tests
+             ret_ty (fun () -> apply ruf args)
+      in run_test ?before ~after (name uf) prot tests for_case
+
+    let test_function_generic_postcond
+          ?test_stdout ?test_stderr
+          ?before ?(after = (fun _ _ -> []))
+          test name prot tests =
+      let for_case pre post args =
+          verify ~pre ~post
+            ?test_stdout ?test_stderr
+            (test args)
+       in run_test ?before ~after name prot tests for_case
 
     let test_function
           ?test ?test_stdout ?test_stderr
@@ -1323,15 +1402,11 @@ module Make
           prot uf tests =
       test_function_generic
         ?test ?test_stdout ?test_stderr
-        ?before  ?after
+        ?before ?after
         prot uf
         (List.map (fun x () -> x) tests)
 
-    let test_function_against_generic ?gen
-          ?test ?test_stdout ?test_stderr
-          ?(before_reference = fun _ -> ()) ?before_user ?after ?sampler
-          prot uf rf tests =
-      test_value rf @@ fun rf ->
+    let make_tests ?gen ?sampler ?(before_reference = fun _ -> ()) prot rf tests =
       let gen = match gen with
         | Some n -> n
         | None -> max 5 (10 - List.length tests) in
@@ -1345,10 +1420,29 @@ module Make
            let rec make i =
              if i <= 0 then [] else sampler :: make (i - 1) in
            List.map (fun x () -> x) tests @ make gen in
-      let tests = List.map (fun a () -> let a = a () in (a, (fun () -> before_reference a ; apply rf a))) tests in
+      List.map
+        (fun a () -> let a = a () in (a, (fun () -> before_reference a ; apply rf a)))
+        tests
+
+    let test_function_against_generic ?gen
+          ?test ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler
+          prot uf rf tests =
+      test_value rf @@ fun rf ->
+      let tests = make_tests ?gen ?sampler ?before_reference prot rf tests in
       test_function_generic
         ?test ?test_stdout ?test_stderr
         ?before:before_user ?after prot uf tests
+
+    let test_function_against_generic_postcond ?gen
+          ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler
+          test name prot rf tests =
+      test_value rf @@ fun rf ->
+      let tests = make_tests ?gen ?sampler ?before_reference prot rf tests in
+      test_function_generic_postcond
+        ?test_stdout ?test_stderr
+        ?before:before_user ?after test name prot tests
 
     let test_function_against ?gen
           ?test ?test_stdout ?test_stderr
@@ -1403,18 +1497,25 @@ module Make
   module Test_functions_function = struct
     open Test_functions_generic
 
-    let function_1_adapter after sampler ty =
-      let after = match after with
-        | None -> (fun _ _ _ -> [])
-        | Some after -> (function Last x -> after x) in
+    let apply_args_1 f = function Last x -> f x
+
+    let function_1_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
-        | Some pre -> (function Last x -> pre x) in
+        | Some pre -> apply_args_1 pre in
       let sampler = match sampler with
         | None -> None
         | Some sampler -> Some (fun () -> Last (sampler ())) in
       let arg_ty, ret_ty = Ty.domains ty in
       let prot = last_ty arg_ty @@ ret_ty in
+      pre, sampler, prot
+
+    let function_1_adapter after sampler ty =
+      let after = match after with
+        | None -> fun _ _ _ -> []
+        | Some after -> apply_args_1 after
+      in
+      let pre, sampler, prot = function_1_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_1
@@ -1451,15 +1552,29 @@ module Make
         ~before_user:(pre before_user)
         ~after ?sampler prot (lookup_student ty name) (lookup_solution ty name) tests
 
+    let test_function_1_against_postcond ?gen
+          ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler test ty name tests =
+      let tests = List.map (fun x -> last x) tests in
+      let after = match after with
+        | None -> fun _ _ -> []
+        | Some after -> apply_args_1 after
+      in
+      let pre, sampler, prot = function_1_adapter_pre sampler ty in
+      test_function_against_generic_postcond ?gen
+        ?test_stdout ?test_stderr
+        ~before_reference:(pre before_reference)
+        ~before_user:(pre before_user)
+        ~after ?sampler (apply_args_1 test) name prot (lookup_student ty name) tests
+
     (*----------------------------------------------------------------------------*)
 
-    let function_2_adapter after sampler ty =
-      let after = match after with
-        | None -> (fun _ _ _ -> [])
-        | Some after -> (function | Arg (x, Last y) -> after x y) in
+    let apply_args_2 f = function | Arg (x, Last y) -> f x y
+
+    let function_2_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
-        | Some pre -> (function | Arg (x, Last y) -> pre x y) in
+        | Some pre -> apply_args_2 pre in
       let sampler = match sampler with
         | None -> None
         | Some sampler ->
@@ -1467,6 +1582,13 @@ module Make
       let arg1_ty, ret_ty = Ty.domains ty in
       let arg2_ty, ret_ty = Ty.domains ret_ty in
       let prot = arg_ty arg1_ty @@ last_ty arg2_ty @@ ret_ty in
+      pre, sampler, prot
+
+    let function_2_adapter after sampler ty =
+      let after = match after with
+        | None -> (fun _ _ _ -> [])
+        | Some after -> apply_args_2 after in
+      let pre, sampler, prot = function_2_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_2
@@ -1503,15 +1625,28 @@ module Make
         ~before_user:(pre before_user)
         ~after ?sampler prot (lookup_student ty name) (lookup_solution ty name) tests
 
+    let test_function_2_against_postcond ?gen
+          ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler test ty name tests =
+      let tests = List.map (fun (x, y) -> arg x @@ last y) tests in
+      let after = match after with
+        | None -> (fun _ _ -> [])
+        | Some after -> apply_args_2 after in
+      let pre, sampler, prot = function_2_adapter_pre sampler ty in
+      test_function_against_generic_postcond ?gen
+        ?test_stdout ?test_stderr
+        ~before_reference:(pre before_reference)
+        ~before_user:(pre before_user)
+        ~after ?sampler (apply_args_2 test) name prot (lookup_student ty name) tests
+
     (*----------------------------------------------------------------------------*)
 
-    let function_3_adapter after sampler ty =
-      let after = match after with
-        | None -> (fun _ _ _-> [])
-        | Some after -> (function Arg (w, Arg (x, Last y)) -> after w x y) in
+    let apply_args_3 f = function Arg (w, Arg (x, Last y)) -> f w x y
+
+    let function_3_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
-        | Some pre -> (function Arg (w, Arg (x, Last y)) -> pre w x y) in
+        | Some pre -> apply_args_3 pre in
       let sampler = match sampler with
         | None -> None
         | Some sampler ->
@@ -1523,13 +1658,20 @@ module Make
       let arg2_ty, ret_ty = Ty.domains ret_ty in
       let arg3_ty, ret_ty = Ty.domains ret_ty in
       let prot = arg_ty arg1_ty @@ arg_ty arg2_ty @@ last_ty arg3_ty @@ ret_ty in
+      pre, sampler, prot
+
+    let function_3_adapter after sampler ty =
+      let after = match after with
+        | None -> (fun _ _ _-> [])
+        | Some after -> apply_args_3 after in
+      let pre, sampler, prot = function_3_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_3
           ?test ?test_stdout ?test_stderr
           ?before ?after ty name tests =
       let tests = List.map (fun (w, x, y, r, out, err) ->
-       (arg w @@ arg x @@ last y, (fun () ->  output_string stdout out ; output_string stderr err ; r)))
+       (arg w @@ arg x @@ last y, (fun () -> output_string stdout out ; output_string stderr err ; r)))
        tests in
       let after, pre, _, prot = function_3_adapter after None ty in
       test_function
@@ -1559,17 +1701,29 @@ module Make
         ~before_user:(pre before_user)
         ~after ?sampler prot (lookup_student ty name) (lookup_solution ty name) tests
 
+    let test_function_3_against_postcond ?gen
+          ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler test ty name tests =
+      let tests = List.map (fun (w, x, y) -> arg w @@ arg x @@ last y) tests in
+      let after = match after with
+        | None -> (fun _ _ -> [])
+        | Some after -> apply_args_3 after in
+      let pre, sampler, prot = function_3_adapter_pre sampler ty in
+      test_function_against_generic_postcond ?gen
+        ?test_stdout ?test_stderr
+        ~before_reference:(pre before_reference)
+        ~before_user:(pre before_user)
+        ~after ?sampler (apply_args_3 test) name prot (lookup_student ty name) tests
+
     (*----------------------------------------------------------------------------*)
 
-    let function_4_adapter after sampler ty =
-      let after = match after with
-        | None -> (fun _ _ _-> [])
-        | Some after ->
-           (function Arg (w, Arg (x, Arg (y, Last z))) -> after w x y z) in
+    let apply_args_4 f =
+      function Arg (w, Arg (x, Arg (y, Last z))) -> f w x y z
+
+    let function_4_adapter_pre sampler ty =
       let pre = function
         | None -> (fun _ -> ())
-        | Some pre ->
-           (function Arg (w, Arg (x, Arg (y, Last z))) -> pre w x y z) in
+        | Some pre -> apply_args_4 pre in
       let sampler = match sampler with
         | None -> None
         | Some sampler ->
@@ -1583,6 +1737,13 @@ module Make
       let arg4_ty, ret_ty = Ty.domains ret_ty in
       let prot =
         arg_ty arg1_ty @@ arg_ty arg2_ty @@ arg_ty arg3_ty @@ last_ty arg4_ty @@ ret_ty in
+      pre, sampler, prot
+
+    let function_4_adapter after sampler ty =
+      let after = match after with
+        | None -> (fun _ _ _-> [])
+        | Some after -> apply_args_4 after in
+      let pre, sampler, prot = function_4_adapter_pre sampler ty in
       after, pre, sampler, prot
 
     let test_function_4
@@ -1619,6 +1780,20 @@ module Make
         ~before_reference:(pre before_reference)
         ~before_user:(pre before_user)
         ~after ?sampler prot (lookup_student ty name) (lookup_solution ty name) tests
+
+    let test_function_4_against_postcond ?gen
+          ?test_stdout ?test_stderr
+          ?before_reference ?before_user ?after ?sampler test ty name tests =
+      let tests = List.map (fun (w, x, y, z) -> arg w @@ arg x @@ arg y @@ last z) tests in
+      let after = match after with
+        | None -> (fun _ _ -> [])
+        | Some after -> apply_args_4 after in
+      let pre, sampler, prot = function_4_adapter_pre sampler ty in
+      test_function_against_generic_postcond ?gen
+        ?test_stdout ?test_stderr
+        ~before_reference:(pre before_reference)
+        ~before_user:(pre before_user)
+        ~after ?sampler (apply_args_4 test) name prot (lookup_student ty name) tests
 
   end
 

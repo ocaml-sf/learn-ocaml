@@ -27,13 +27,17 @@ type _ request =
   | Static:
       string list -> string request
   | Version:
+      unit -> (string * int) request
+  | Nonce:
       unit -> string request
   | Create_token:
-      student token option * string option -> student token request
+      string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
+  | Archive_zip:
+      'a token -> string request
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git:
@@ -62,6 +66,11 @@ type _ request =
       unit -> Tutorial.Index.t request
   | Tutorial:
       string -> Tutorial.t request
+
+  | Playground_index:
+      unit -> Playground.Index.t request
+  | Playground:
+      string -> Playground.t request
 
   | Exercise_status_index:
       teacher token -> Exercise.Status.t list request
@@ -94,14 +103,16 @@ module type REQUEST_HANDLER = sig
 
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: 'resp request -> 'resp ret
+  val callback: Conduit.endp ->
+                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
 module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
 
   (** Helper to define a server: handles recognition of the incoming request, and
       encoding of the response. *)
-  val handler: http_request -> string Rh.ret
+  val handler: Conduit.endp ->
+               Learnocaml_data.Server.config -> http_request -> string Rh.ret
 
 end
 
