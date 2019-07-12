@@ -1243,6 +1243,22 @@ module type S = sig
      -> ('a -> Learnocaml_report.t)
      -> ('a -> Learnocaml_report.t)
 
+   (** [r1 @@> f] returns [r1] if [r1] is a failure report,
+       otherwise returns the result of report generator
+       [f ()]. *)
+   val (@@>) :
+     Learnocaml_report.t
+     -> (unit -> Learnocaml_report.t)
+     -> Learnocaml_report.t
+
+   (** [r1 @@= f] returns [r1] if [r1] is a failure report,
+       otherwise concatenates [r1] to the result of report
+       generator [f ()]. *)
+   val (@@=) :
+     Learnocaml_report.t
+     -> (unit -> Learnocaml_report.t)
+     -> Learnocaml_report.t
+
    (**/**)
    include (module type of Ast_checker)
    include (module type of Tester)

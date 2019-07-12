@@ -461,6 +461,8 @@ module type S = sig
   end
 
   val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
+  val (@@>) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
+  val (@@=) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
 
   (**/**)
   include (module type of Ast_checker)
@@ -1883,6 +1885,9 @@ module Make
   end
 
   let (@@@) f g = fun x -> f x @ g x
+  let (@@>) r1 f = if snd (Learnocaml_report.result r1) then r1 else f ()
+  let (@@=) r1 f = if snd (Learnocaml_report.result r1) then r1 else r1 @ f ()
+
   (**/**)
   include Ast_checker
   include Tester
