@@ -215,3 +215,14 @@ val typecheck :
 val set_nickname_div : unit -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
+
+module Grade_exercise : sig
+  val get_grade :
+    ?callback:(string -> unit) ->
+    ?timeout:float ->
+    Learnocaml_exercise.t ->
+    (string -> (Learnocaml_report.t * string * string * string) Lwt.t) Lwt.t
+  val display_report :
+    Learnocaml_exercise.t -> Learnocaml_data.Report.t -> int
+end
+  

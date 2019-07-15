@@ -21,6 +21,7 @@
     learnocaml_repository
     learnocaml_data
     learnocaml_api
+    grading_jsoo
     ocplib_i18n)
 )
 

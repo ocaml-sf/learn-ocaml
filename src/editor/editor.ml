@@ -18,95 +18,19 @@
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
+open Grade_exercise
 open Learnocaml_data
 open Js_of_ocaml
 open Editor_lib
 open Dom_html
 open Test_spec
-
-let display_report exo report =
-  let score, _failed = Report.result report in
-  let report_button = find_component "learnocaml-exo-button-report" in
-  Manip.removeClass report_button "success" ;
-  Manip.removeClass report_button "failure" ;
-  Manip.removeClass report_button "partial" ;
-  let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
-    if max = 0 then 999 else score * 100 / max
-  in
-  if grade >= 100 then begin
-    Manip.addClass report_button "success" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
-  end else if grade = 0 then begin
-    Manip.addClass report_button "failure" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
-  end else begin
-    Manip.addClass report_button "partial" ;
-    let pct = Format.asprintf "%2d%%" grade in
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ;
-                       span ~a: [ a_class [ "score" ] ] [ pcdata pct ]]
-  end ;
-  let report_container = find_component "learnocaml-exo-tab-report" in
-  Manip.setInnerHtml report_container
-    (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
-  grade
-
-
-let get_grade =
-  let get_worker = get_worker_code "learnocaml-grader-worker.js" in
-  fun ?callback ?timeout exercise ->
-    get_worker () >>= fun worker_js_file ->
-    Grading_jsoo.get_grade ~worker_js_file ?callback ?timeout exercise
-
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
-  let names = [ "toplevel" ; "report" ; "editor" ; "template" ; "test" ;
-                "question" ; "prelude" ; "prepare" ] in
-  let current = ref "question" in
-  let select_tab name =
-    set_arg "tab" name ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-button-" ^ !current))
-      "front-tab" ;
-    Manip.removeClass
-      (find_component ("learnocaml-exo-tab-" ^ !current))
-      "front-tab" ;
-    Manip.enable
-      (find_component ("learnocaml-exo-button-" ^ !current)) ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-button-" ^ name))
-      "front-tab" ;
-    Manip.addClass
-      (find_component ("learnocaml-exo-tab-" ^ name))
-      "front-tab" ;
-    Manip.disable
-      (find_component ("learnocaml-exo-button-" ^ name)) ;
-    current := name in
-  let init_tabs () =
-    current := begin try
-        let requested = arg "tab" in
-        if List.mem requested names then requested else "question"
-      with Not_found -> "question"
-               end ;
-    List.iter
-      (fun name ->
-         Manip.removeClass
-           (find_component ("learnocaml-exo-button-" ^ name))
-           "front-tab" ;
-         Manip.removeClass
-           (find_component ("learnocaml-exo-tab-" ^ name))
-           "front-tab" ;
-         Manip.Ev.onclick
-           (find_component ("learnocaml-exo-button-" ^ name))
-           (fun _ -> select_tab name ; true))
-      names ;
-    select_tab !current in
-  init_tabs, select_tab
-
+  mk_tab_handlers "question" [ "toplevel" ; "report" ; "editor" ; "template" ; "test" ;
+                 "prelude" ; "prepare" ] 
+    
+              
 let set_string_translations () =
   let translations = [
       "txt_preparing", [%i"Preparing the environment"];
@@ -142,13 +66,7 @@ let set_string_translations () =
     translations
 
 let () =
-  Lwt.async_exception_hook := begin function
-    | Failure message -> fatal message
-    | Server_caller.Cannot_fetch message -> fatal message
-    | exn -> fatal (Printexc.to_string exn)
-  end ;
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  Lwt.async @@ fun () ->
+  run_async_with_log @@ fun () ->
                (*set_string_translations ();*)
   Learnocaml_local_storage.init () ;
 
@@ -600,6 +518,9 @@ let () =
     Lwt.return_unit
   end;
  *)
+
+  (* TODO : factorize somehow this with 
+ src/app/learnocaml_exercise_main grade to learnocaml_common *)
   let messages = Tyxml_js.Html5.ul [] in
   let callback text =
     Manip.appendChild messages Tyxml_js.Html5.(li [ pcdata text ]) in
