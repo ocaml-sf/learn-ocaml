@@ -119,6 +119,7 @@ module type S = sig
     val sample_bool : bool sampler
     val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
     val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
+    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
     val sample_alternatively : 'a sampler list -> 'a sampler
     val sample_cases : 'a list -> 'a sampler
     val sample_option : 'a sampler -> 'a option sampler
@@ -1861,6 +1862,9 @@ module Make
 
     let sample_list ?min_size ?max_size ?dups ?sorted sample () =
       Array.to_list (sample_array ?min_size ?max_size ?dups ?sorted sample ())
+
+    let sample_pair sample1 sample2 () =
+      (sample1 (), sample2 ())
 
     let printable_funs = ref []
 
