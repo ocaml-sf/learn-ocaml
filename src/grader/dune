@@ -27,7 +27,8 @@
             learnocaml_repository)
  (modules Introspection_intf
           Introspection
-          Test_lib)
+          Test_lib
+          Mutation_test)
  (modules_without_implementation Introspection_intf)
  (preprocess (pps learnocaml_ppx_metaquot))
 )
@@ -106,7 +107,8 @@
         ../ppx-metaquot/.ty.objs/ty.cmi
         .testing.objs/introspection_intf.cmi
         .learnocaml_report.objs/learnocaml_report.cmi
-        .testing.objs/test_lib.cmi))
+        .testing.objs/test_lib.cmi
+        .testing.objs/mutation_test.cmi))
  (action (with-stdout-to %{targets}
            (run ocp-ocamlres -format ocamlres %{compiler-cmis} %{generated-cmis})))
 )
