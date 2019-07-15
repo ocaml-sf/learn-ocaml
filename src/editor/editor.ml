@@ -481,43 +481,16 @@ let () =
     Manip.SetCss.opacity abort_message (Some "1") ;
     Lwt.return ()
   end ;
-(*
-  begin toolbar_button
-      ~icon: "upload" [%i"Experiment"] @@ fun ()->
-                                         (* recovering ();*)
 
-  let aborted, abort_message =
-     let t, u = Lwt.task () in
-     let btn = Tyxml_js.Html5.(button [ pcdata [%i"abort"] ]) in
-     Manip.Ev.onclick btn (fun _ -> Lwt.wakeup u () ; true) ;
-     let div =
-        Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                          [ pcdata [%i"Grading is taking a lot of time, "] ;
-                            btn ;
-                            pcdata "?" ]) in
-     Manip.SetCss.opacity div (Some "0") ;
-     t, div in
-  let worker = ref (Grading_jsoo.get_grade (exo_creator id)) in
-  let correction =
-    Learnocaml_exercise.get Learnocaml_exercise.solution (exo_creator id) in
-    let grading =
-      !worker correction >>= fun (report, _, _, _) ->
-      Lwt.return report in
-    let abortion =
-      Lwt_js.sleep 5. >>= fun () ->
-      Manip.SetCss.opacity abort_message (Some "1") ;
-      aborted >>= fun () ->
-      Lwt.return Learnocaml_report.[ Message
-           ([ Text [%i"Grading aborted by user."] ], Failure) ] in
-    Lwt.pick [ grading ; abortion ] >>= fun report_correction ->
-    let score_maxi, failed2 =
-      Learnocaml_report.result report_correction in
-    Dom_html.window##.location##assign
-      (Js.string ("exercise.html#id=." ^ id ^ "&score=" ^
-                    (string_of_int score_maxi) ^ "&action=open"));
-    Lwt.return_unit
+  begin toolbar_button
+          ~icon: "upload" [%i"Experiment"] @@
+          fun ()->
+          recovering ();
+          Dom_html.window##.location##assign
+            (Js.string ("exercise.html#id=." ^ id));
+          Lwt.return_unit
   end;
- *)
+ 
 
   (* TODO : factorize somehow this with 
  src/app/learnocaml_exercise_main grade to learnocaml_common *)
@@ -583,6 +556,7 @@ let () =
                                      recovering ();
                                      grade ()
   end ;
+  Window.onunload (fun _ev -> recovering (); true);
   (* ---- return -------------------------------------------------------- *)
   (* toplevel_launch >>= fun _ -> should be unnecessary? *)
   (* typecheck false >>= fun () -> *)

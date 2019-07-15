@@ -286,6 +286,14 @@ let make_readonly () =
     [%i"The deadline for this exercise has expired. Any changes you make \
         from now on will remain local only."]
 
+(* experiment button of editor.html redirects to the html associated to this ml
+   to know if we are in this page because of that we decide
+   to put a '.' before the id
+   therefore idEditor looks for a '.' before the id *)
+
+let idEditor s =  not ((Regexp.string_match (Regexp.regexp "^[.]+") s 0) = None) 
+
+  
 let () =
   run_async_with_log @@ fun () ->
   set_string_translations_exercises ();
@@ -323,10 +331,20 @@ let () =
   in
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
-  let exercise_fetch =
-    token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id))
+
+  (* if we came from a true exercise we search in the server.
+   In the other case we get the exercise information from the Local storage *)
+  let exercise_fetch = match idEditor id with
+    | false -> token >>= fun token ->
+               retrieve (Learnocaml_api.Exercise (token, id))
+               
+    | true -> let proper_id = String.sub id 1 ((String.length id)-1) in
+              Lwt.return ((Editor_lib.get_editor_state proper_id).Editor.metadata,
+                          (Editor_lib.exo_creator proper_id ),
+                          None)
   in
+  
+ 
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
@@ -404,6 +422,18 @@ let () =
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
+  let () =
+    if idEditor id then
+      begin
+        let id = String.sub id 1 ((String.length id)-1) in
+        begin toolbar_button
+       ~icon: "upload" [%i"Edit"] @@ fun ()->
+       Dom_html.window##.location##assign
+       (Js.string ("editor.html#id=" ^ id ^ "&action=open"));
+       Lwt.return_unit
+        end;
+      end
+  in
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
     Dom_html.window##.location##assign
@@ -416,6 +446,7 @@ let () =
   let worker =
     ref (get_grade ~callback exo)
   in
+  
   begin toolbar_button
       ~icon: "typecheck" [%i"Compile"] @@ fun () ->
     typecheck true

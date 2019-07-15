@@ -58,7 +58,8 @@
             learnocaml_app_common
             learnocaml_toplevel
             js_of_ocaml.ppx
-            ocplib_i18n)
+	    editor_lib
+	    ocplib_i18n)
  (modules Learnocaml_exercise_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml

@@ -341,7 +341,7 @@ let exo_creator proper_id =
       | "id"-> Some exercise.id
       | "prelude.ml" -> Some exercise.prelude
       | "template.ml" -> Some exercise.template
-      | "descr.html" -> Some exercise.descr
+      | "descr.md" -> Some exercise.descr
       | "prepare.ml" -> Some exercise.prepare
       | "test.ml" -> Some exercise.test
       | "solution.ml" -> Some exercise.solution
