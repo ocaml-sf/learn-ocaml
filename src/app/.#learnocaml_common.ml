@@ -1,1 +1,0 @@
-manu@manu-Lenovo-ideapad-330-15ICH.10343:1563255518

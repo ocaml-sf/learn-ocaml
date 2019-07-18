@@ -1,5 +1,5 @@
 (* This file is part of Learn-OCaml.
- *
+*
  * Copyright (C) 2019 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
@@ -35,8 +35,8 @@ let delete_button_handler exercise_id =
   (fun _ ->
      begin
        let messages = Tyxml_js.Html5.ul [] in
-       let aborted, abort_message =
-         let t, u = Lwt.task () in
+       let _aborted, abort_message =
+         let t, _u = Lwt.task () in
          let btn_no = Tyxml_js.Html5.(button [ pcdata [%i"No"] ]) in
          Manip.Ev.onclick btn_no ( fun _ ->
              hide_loading ~id:"learnocaml-main-loading" () ; true) ;
@@ -58,9 +58,11 @@ let delete_button_handler exercise_id =
        show_load "learnocaml-main-loading" [ abort_message ] ;
        Manip.SetCss.opacity abort_message (Some "1") ;
      end ;
-  true) ;;
- 
-             
+     true) ;;
+
+  
+
+  
 let rec editor_tab token _ _ () =
 
 
@@ -79,33 +81,16 @@ let rec editor_tab token _ _ () =
       SMap.fold
         (fun exercise_id editor_sate acc ->
           div ~a:[a_id "toolbar"; a_class ["button"]] [
-              (
-                   let button = button ~a:[a_id exercise_id]
-                                  [img ~src:"icons/icon_cleanup_dark.svg"
-                                     ~alt:"" () ; pcdata "" ] in
-                   Manip.Ev.onclick button
-                     (delete_button_handler exercise_id) ;button
-               );
-              (
-                let button = button ~a:[a_id exercise_id]
-                               [img ~src:"icons/icon_download_dark.svg"
-                                  ~alt:"" () ; pcdata "" ] in
-                Manip.Ev.onclick button
-                  (fun _ ->
-                    let name = exercise_id ^ ".json" in
-                    let content =
-                      SMap.find
-                        exercise_id
-                        Learnocaml_local_storage.(retrieve editor_index)
-                    in
-                    let json =
-                      Json_repr_browser.Json_encoding.construct
-                        Editor.editor_state_enc
-                        content in
-                       let contents =
-                         (Js._JSON##stringify json) in
-                       Learnocaml_common.fake_download ~name ~contents;
-                       true) ;button
+              (let button = button ~a:[a_id exercise_id]
+                              [img ~src:"icons/icon_cleanup_dark.svg"
+                                 ~alt:"" () ; pcdata "" ] in
+               Manip.Ev.onclick button
+                 (delete_button_handler exercise_id); button);
+              (let download_button = button ~a:[a_id exercise_id]
+                              [img ~src:"icons/icon_download_dark.svg"
+                                 ~alt:"" () ; pcdata "" ] in
+               Manip.Ev.onclick download_button
+                 (fun _ ->  Editor_io.download exercise_id; true) ;download_button
          )] ::
         a ~a:[ a_href ("editor.html#id="^exercise_id) ;
                a_class [ "exercise" ] ]
@@ -138,54 +123,8 @@ let rec editor_tab token _ _ () =
     let open Tyxml_js.Html5 in
     let open Learnocaml_exercise in
     let open Exercise.Meta in
-    let restore_bar = a ~a:[ a_onclick (fun _ ->
-         let _ = begin
-             Learnocaml_common.fake_upload () >>= fun (_, contents) ->
-             let save_file =
-               Json_repr_browser.Json_encoding.destruct 
-                 editor_state_enc
-                 (Js._JSON##(parse contents)) in
-             let messages = Tyxml_js.Html5.ul [] in
-             
-             let id = match save_file.metadata.id with
-                 None -> ""
-               | Some id -> id
-             in
-             if idUnique id &&
-                  titleUnique save_file.metadata.title then
-               begin
-                 let old_index=
-                   Learnocaml_local_storage.(retrieve editor_index) in
-                 let new_index=SMap.add id save_file old_index in
-                 Learnocaml_local_storage.(store
-                                             (editor_index) new_index);
-                Dom_html.window##.location##reload;
-               
-               end
-             else
-               begin
-                 let aborted, abort_message =
-                   let t, u = Lwt.task () in
-                   let btn_ok = Tyxml_js.Html5.(button [ pcdata [%i"OK"] ]) in
-                   Manip.Ev.onclick btn_ok (fun _ -> hide_loading
-                                                       ~id:"learnocaml-main-loading" () ;
-                                            true) ;
-                   
-                   let div =
-                     Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                                       [ pcdata [%i"Identifier and/or title \
-                                                    not unique\n"] ;
-                                         btn_ok
-                     ]) in
-                   Manip.SetCss.opacity div (Some "0") ;
-                   t, div in
-                 Manip.replaceChildren messages
-                   Tyxml_js.Html5.[ li [ pcdata "" ] ] ;
-                 show_load "learnocaml-main-loading" [ abort_message ] ;
-                 Manip.SetCss.opacity abort_message (Some "1");
-               end;
-             Lwt.return ();
-           end in ();
+    let restore_bar = a ~a:[ a_onclick (fun _ ->          
+             Editor_io.upload ();
             true); a_class [ "exercise"] ]
                      [ div ~a:[ a_class [ "descr" ] ] [
                            h1 [ pcdata [%i"Import an exercise"] ];

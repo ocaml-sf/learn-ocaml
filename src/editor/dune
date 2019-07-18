@@ -121,7 +121,7 @@
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml (flags :standard --toplevel --nocmis
                    +cstruct/cstruct.js +dynlink.js +toplevel.js)
- (javascript_files ../ace-lib/ace_bindings.js ../../static/js/jszip/learnocaml_jszip_wrapper.js ))
+ (javascript_files ../ace-lib/ace_bindings.js))
 )
 
 

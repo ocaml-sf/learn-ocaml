@@ -405,30 +405,7 @@ let () =
   begin editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
      recovering () ;
-    let name = id ^ ".zip" in
-    let content =(get_editor_state id) in
-    let json =
-      Json_repr_browser.Json_encoding.construct
-        Editor.editor_state_enc
-        content in
-    let contents =
-      Js._JSON##stringify json in
-    let editor_download:Js.js_string Js.t -> (File.blob Js.t -> unit Js.meth) Js.meth
-      = Js.Unsafe.eval_string "editor_download" in
-    let _ = Js.Unsafe.fun_call editor_download
-      [|Js.Unsafe.inject contents;
-        Js.Unsafe.inject (Js.wrap_callback
-          (fun blob ->
-                 let url =
-                   Js.Unsafe.meth_call (Js.Unsafe.global##._URL) "createObjectURL" [| Js.Unsafe.inject blob |] in
-                 let link = Dom_html.createA Dom_html.document in
-                 link##.href := url ;
-                 Js.Unsafe.set link (Js.string "download") (Js.string name) ;
-                 ignore (Dom_html.document##.body##(appendChild ((link :> Dom.node Js.t)))) ;
-                 ignore (Js.Unsafe.meth_call link "click" [||]) ;
-                 ignore (Dom_html.document##.body##(removeChild ((link :> Dom.node Js.t))))))|];
-    in ();
-    
+    Editor_io.download id;
     Lwt.return () 
   end ;
   

@@ -1296,7 +1296,7 @@ type exercise =
        (req "prepare" string)
        (req "test" string)
        (req "solution" string)
-       (req "max-score" int))
+       (req "max_score" int))
 
 
 

@@ -393,3 +393,93 @@ let typecheck_dialog_box div_id res =
       Dom_html.window##alert (Js.string result);
       Lwt.return ();
     end
+
+
+let put_exercise_id id (old_state:editor_state)  =
+  {
+    exercise = {old_state.exercise with id} ;
+    metadata = {old_state.metadata with id =Some id}
+  }
+ ;;   
+
+module Editor_io = struct
+
+  let download_file name contents =
+    let url =
+      Js.Unsafe.meth_call (Js.Unsafe.global##._URL) "createObjectURL" [| Js.Unsafe.inject contents |] in
+    let link = Dom_html.createA Dom_html.document in
+    link##.href := url ;
+    Js.Unsafe.set link (Js.string "download") (Js.string name) ;
+    ignore (Dom_html.document##.body##(appendChild ((link :> Dom.node Js.t)))) ;
+    ignore (Js.Unsafe.meth_call link "click" [||]) ;
+    ignore (Dom_html.document##.body##(removeChild ((link :> Dom.node Js.t))))
+        
+  let download id =
+    let name = id ^ ".zip" in
+    let json = (get_editor_state id) 
+               |>  Json_repr_browser.Json_encoding.construct
+                     Editor.editor_state_enc
+    in
+    let contents =  Js._JSON##(stringify json) in
+    let editor_download = Js.Unsafe.eval_string "editor_download" in
+    let callback = download_file name in 
+    let _ =
+      Js.Unsafe.fun_call editor_download
+      [|Js.Unsafe.inject contents;
+        Js.Unsafe.inject (Js.wrap_callback callback) |] in ()
+
+  let upload_file () =
+    let input_files_load =
+      Dom_html.createInput ~_type: (Js.string "file") Dom_html.document in
+    let result_t, result_wakener = Lwt.wait () in
+    let fail () =
+      Lwt.wakeup_exn result_wakener
+        (Failure "file loading not implemented for this browser") ;
+      Js._true
+    in
+    input_files_load##.onchange :=
+      Dom.handler
+        (fun ev ->
+          Js.Opt.case (ev##.target) fail @@
+            fun target ->
+            Js.Opt.case (Dom_html.CoerceTo.input target) fail @@
+              fun input ->
+              Js.Optdef.case (input##.files) fail @@
+                fun files ->
+                Js.Opt.case (files##(item (0))) fail @@
+                  fun file ->
+                  Lwt.wakeup result_wakener file; Js._true);
+    ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
+    result_t
+
+  let upload_new_exercise id text =
+    let save_file =
+      Json_repr_browser.Json_encoding.destruct 
+        editor_state_enc
+        (Js._JSON##(parse text))
+      |> put_exercise_id id
+    in
+    let open Exercise.Meta in
+    let result= idUnique id && titleUnique save_file.metadata.title in
+    if result then
+      update_index save_file;
+   result        
+              
+  let upload () =
+    run_async_with_log
+      (fun () ->
+        upload_file () >>=
+          fun file ->
+          let id = Filename.chop_extension (Js.to_string file##.name) in 
+          let f = Js.Unsafe.eval_string "editor_import" in 
+          let callback =
+            (fun text ->
+              if upload_new_exercise id text  then
+                Dom_html.window##.location##reload 
+              else
+                Learnocaml_common.alert [%i"Identifier and/or title not unique\n"]);
+          in
+          Js.Unsafe.fun_call f [| Js.Unsafe.inject file ;
+                            Js.Unsafe.inject callback|])          
+                                                             
+end

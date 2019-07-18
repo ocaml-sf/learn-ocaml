@@ -102,3 +102,8 @@ val monomorph_generator : (string * string) list -> Editor.test_qst_untyped list
 val show_load : Html_types.text Tyxml_js.Html.wrap ->
 [< Html_types.div_content_fun ] Tyxml_js.Html.elt Tyxml_js.Html.list_wrap ->
 unit                                                      
+
+module Editor_io : sig
+  val download : Learnocaml_data.SMap.key -> unit
+  val upload : unit -> unit
+end 
