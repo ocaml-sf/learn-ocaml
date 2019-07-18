@@ -12,7 +12,7 @@ open Learnocaml_data
 open Learnocaml_common
 open Editor
 open Editor_lib   
-module H = Tyxml_js.Html5
+open Tyxml_js.Html5
 
 
 let fetch_editor_index ()=
@@ -60,7 +60,27 @@ let delete_button_handler exercise_id =
      end ;
      true) ;;
 
+let import_bar =
+  a ~a:[ a_onclick (fun _ -> Editor_io.upload ();true);
+         a_class [ "exercise"] ]
+    [ div ~a:[ a_class [ "descr" ] ] [
+          h1 [ pcdata [%i"Import"] ];
+          p [pcdata [%i"Import from a zip file"]]]]
   
+let export_all_bar =
+  a ~a:[ a_onclick (fun _ -> Editor_io.download_all ();true);
+         a_class [ "exercise"] ]
+    [ div ~a:[ a_class [ "descr" ] ] [
+          h1 [ pcdata [%i"Export all"] ];
+          p [pcdata [%i"Export all exercises to a zip file"]]]]
+  
+let new_exercise_bar =
+  a ~a:[ a_href  "new_exercise.html";
+         a_class [ "exercise" ] ] [
+      div ~a:[ a_class [ "descr" ] ] [
+          h1 [ pcdata [%i"New exercise"] ];
+          p [pcdata [%i"Create \
+                        a new exercise"]]]]  
 
   
 let rec editor_tab token _ _ () =
@@ -120,27 +140,11 @@ let rec editor_tab token _ _ () =
           ] ::
           acc) index contents
     in
-    let open Tyxml_js.Html5 in
-    let open Learnocaml_exercise in
-    let open Exercise.Meta in
-    let restore_bar = a ~a:[ a_onclick (fun _ ->          
-             Editor_io.upload ();
-            true); a_class [ "exercise"] ]
-                     [ div ~a:[ a_class [ "descr" ] ] [
-                           h1 [ pcdata [%i"Import an exercise"] ];
-                           p [pcdata [%i"Import a new exercise \
-                                         from a json file"]]]]
-    in
     let c= List.rev
              (format_exercise_list 
-                ( [a ~a:[
-                       a_href (Printf.sprintf "new_exercise.html?token=%s" (Token.to_string token));
-                       a_class [ "exercise" ] ] [
-                       div ~a:[ a_class [ "descr" ] ] [
-                           h1 [ pcdata [%i"New exercise"] ];
-                           p [pcdata [%i"Create \
-                                         a new exercise"]]]];
-                   restore_bar]) )
+                [ new_exercise_bar;
+                  export_all_bar;
+                   import_bar] )
     in
     let list_div =
       Tyxml_js.Html5.(div ~a:

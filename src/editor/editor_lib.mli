@@ -106,4 +106,5 @@ unit
 module Editor_io : sig
   val download : Learnocaml_data.SMap.key -> unit
   val upload : unit -> unit
+  val download_all : unit -> unit
 end 

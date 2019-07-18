@@ -428,6 +428,30 @@ module Editor_io = struct
       [|Js.Unsafe.inject contents;
         Js.Unsafe.inject (Js.wrap_callback callback) |] in ()
 
+  let download_all () =
+    let name = "exercises.zip" in
+    let editor_index= Learnocaml_local_storage.(retrieve editor_index) in
+    let json =  Json_repr_browser.Json_encoding.construct
+                  (SMap.enc editor_state_enc)
+                  editor_index
+    in
+    let exercises =  Js._JSON##(stringify json) in
+    let index = SMap.fold
+                  (fun k editor_state acc ->
+                    (k, Some editor_state.metadata ) :: acc) editor_index []
+    in
+    let index = Learnocaml_data.Exercise.Index.Exercises index
+                |> Json_repr_browser.Json_encoding.construct
+                     Exercise.Index.enc
+    in             
+    let editor_download = Js.Unsafe.eval_string "editor_download_all" in
+    let callback = download_file name in 
+    let _ =
+      Js.Unsafe.fun_call editor_download
+        [|Js.Unsafe.inject exercises;
+          Js.Unsafe.inject index;
+        Js.Unsafe.inject (Js.wrap_callback callback) |] in ()
+                                                   
   let upload_file () =
     let input_files_load =
       Dom_html.createInput ~_type: (Js.string "file") Dom_html.document in

@@ -1,14 +1,18 @@
 //keep in sync with editor export datatype
+function editor_create_exercise(zip, data, prefix) {
+    zip.file(prefix + "descr.md", data.exercise.descr);
+    zip.file(prefix + "meta.json", JSON.stringify(data.metadata, null, 2));
+    zip.file(prefix + "prelude.ml", data.exercise.prelude);
+    zip.file(prefix + "prepare.ml", data.exercise.prepare);
+    zip.file(prefix + "template.ml", data.exercise.template);
+    zip.file(prefix + "test.ml", data.exercise.test);
+    zip.file(prefix + "solution.ml", data.exercise.solution);
+}
+
 function editor_download(brut_data, callback) {
     var zip = new JSZip();
     var data = JSON.parse(brut_data);
-    zip.file("descr.md", data.exercise.descr);
-    zip.file("meta.json", JSON.stringify(data.metadata, null, 2));
-    zip.file("prelude.ml", data.exercise.prelude);
-    zip.file("prepare.ml", data.exercise.prepare);
-    zip.file("template.ml", data.exercise.template);
-    zip.file("test.ml", data.exercise.test);
-    zip.file("solution.ml", data.exercise.solution);
+    editor_create_exercise(zip, data, "")
     zip.generateAsync({
         type: "blob",
         compression: "DEFLATE",
@@ -18,6 +22,23 @@ function editor_download(brut_data, callback) {
     }).then(function(blob) { callback(blob) });
 }
 
+function editor_download_all(brut_exercises, brut_index, callback) {
+    var zip = new JSZip();
+    var all_data = JSON.parse(brut_exercises);
+    Object.keys(all_data).forEach(function(k) {
+        zip.folder(k);
+        let prefix = k + "/";
+        editor_create_exercise(zip, all_data[k], prefix)
+    });
+    zip.file("index.json", brut_index);
+    zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: {
+            level: 9
+        }
+    }).then(function(blob) { callback(blob) });
+}
 
 //also to keep in sync
 function editor_import(brut_data, callback) {
