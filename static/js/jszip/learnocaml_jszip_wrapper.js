@@ -27,10 +27,11 @@ function editor_download_all(brut_exercises, brut_index, callback) {
     var all_data = JSON.parse(brut_exercises);
     Object.keys(all_data).forEach(function(k) {
         zip.folder(k);
-        let prefix = k + "/";
+        var prefix = k + "/";
         editor_create_exercise(zip, all_data[k], prefix)
     });
-    zip.file("index.json", brut_index);
+    var index = JSON.stringify(JSON.parse(brut_index), null, 2);
+    zip.file("index.json", index);
     zip.generateAsync({
         type: "blob",
         compression: "DEFLATE",

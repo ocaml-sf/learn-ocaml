@@ -528,11 +528,8 @@ let () =
          Lwt.return Learnocaml_report.[ Message
              ([ Text [%i"Grading aborted by user."] ], Failure) ] in
        Lwt.pick [ grading ; abortion ] >>= fun report ->
-       let grade =  display_report (exo_creator id) report in
+       let _grade =  display_report (exo_creator id) report in
        (worker() ) := Grading_jsoo.get_grade ~callback (exo_creator id) ;
-       Learnocaml_local_storage.(store (exercise_state id))
-         { Answer.grade = Some grade;
-           solution; report = Some report ; mtime = gettimeofday () } ;
        select_tab "report" ;
        Lwt_js.yield () >>= fun () ->
        hide_loading ~id:"learnocaml-exo-loading" () ;

@@ -443,7 +443,8 @@ module Editor_io = struct
     let index = Learnocaml_data.Exercise.Index.Exercises index
                 |> Json_repr_browser.Json_encoding.construct
                      Exercise.Index.enc
-    in             
+    in
+    let index = Js._JSON##(stringify index) in
     let editor_download = Js.Unsafe.eval_string "editor_download_all" in
     let callback = download_file name in 
     let _ =
