@@ -477,17 +477,13 @@ module Editor_io = struct
     ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
     result_t
 
-  let upload_new_exercise id text =
-    let save_file =
-      Json_repr_browser.Json_encoding.destruct 
-        editor_state_enc
-        (Js._JSON##(parse text))
-      |> put_exercise_id id
+  let upload_new_exercise id to_save =
+    let to_save = put_exercise_id id to_save
     in
     let open Exercise.Meta in
-    let result= idUnique id && titleUnique save_file.metadata.title in
+    let result= idUnique id && titleUnique to_save.metadata.title in
     if result then
-      update_index save_file;
+      update_index to_save;
    result        
               
   let upload () =
@@ -495,14 +491,17 @@ module Editor_io = struct
       (fun () ->
         upload_file () >>=
           fun file ->
-          let id = Filename.chop_extension (Js.to_string file##.name) in 
           let f = Js.Unsafe.eval_string "editor_import" in 
           let callback =
             (fun text ->
-              if upload_new_exercise id text  then
-                Dom_html.window##.location##reload 
-              else
-                Learnocaml_common.alert [%i"Identifier and/or title not unique\n"]);
+              SMap.iter
+                (fun id editor_state ->
+                  if not (upload_new_exercise id editor_state)  then
+                    Learnocaml_common.alert [%i"Identifier and/or title not unique\n"])
+                (Json_repr_browser.Json_encoding.destruct 
+                   (SMap.enc editor_state_enc)
+                   (Js._JSON##(parse text)));
+              Dom_html.window##.location##reload)
           in
           Js.Unsafe.fun_call f [| Js.Unsafe.inject file ;
                             Js.Unsafe.inject callback|])          
