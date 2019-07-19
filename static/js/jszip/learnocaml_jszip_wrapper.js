@@ -43,7 +43,7 @@ function editor_download_all(brut_exercises, brut_index, callback) {
     }).then(function(blob) { callback(blob) });
 }
 
-function editor_read_exercise(loaded_zip, path) {
+function editor_read_exercise(loaded_zip, path, id) {
     return new Promise(function(resolve, reject) {
         var descr = loaded_zip.file(path + "descr.md").async("string");
         var meta = loaded_zip.file(path + "meta.json").async("string");
@@ -54,8 +54,9 @@ function editor_read_exercise(loaded_zip, path) {
         var solution = loaded_zip.file(path + "solution.ml").async("string");
         Promise.all([descr, meta, prelude, prepare, template, test, solution])
             .then(function(values) {
+                var result = { exercise: {}, metadata: {} };
                 result.exercise.max_score = 0;
-                result.exercise.id = "";
+                result.exercise.id = id;
                 result.exercise.descr = values[0];
                 var brut_meta = values[1];
                 var meta = brut_meta.replace(/\r?\n|\r/g, " ");
@@ -69,27 +70,26 @@ function editor_read_exercise(loaded_zip, path) {
             })
     })
 }
-/*
+
 //also to keep in sync
 function editor_import(brut_data, callback) {
     var zip = new JSZip();
     zip.loadAsync(brut_data)
         .then(function(loaded_zip) {
-                if (loaded_zip.file("index.json")) {
-                    loaded_zip.forEach(function(relative_path, file) {
-                            if (file.dir) {
-                                new Promise(function(resolve, reject) {
-                                    editor_read_exercise(loaded_zip, relative_path)
-                                        .then(function(result) {
+            var promises = [];
+            loaded_zip.forEach(function(relative_path, file) {
+                if (file.dir) {
+                    var promise = editor_read_exercise(loaded_zip, relative_path, file.name.replace(/\//, ""));
+                    promises.push(promise);
+                }
+            })
+            Promise.all(promises).then(function(values) {
+                var result = values.reduce(function(acc, elt) {
+                    acc[elt.exercise.id] = elt;
+                    return acc;
+                }, {})
+                callback(JSON.stringify(result));
+            })
 
-                                        })
-                                })
-                            }
-                        }
-                    }
-                    var result = { exercise: {}, metadata: {} };
-
-                    callback(JSON.stringify(result));
-                });
         });
-}*/
+}

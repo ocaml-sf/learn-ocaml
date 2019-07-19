@@ -491,7 +491,8 @@ module Editor_io = struct
       (fun () ->
         upload_file () >>=
           fun file ->
-          let f = Js.Unsafe.eval_string "editor_import" in 
+          Firebug.console##(log file);
+          let (f:Js.js_string Js.t ->(Js.js_string Js.t -> unit)->unit) = Js.Unsafe.eval_string "editor_import" in 
           let callback =
             (fun text ->
               SMap.iter
@@ -503,7 +504,10 @@ module Editor_io = struct
                    (Js._JSON##(parse text)));
               Dom_html.window##.location##reload)
           in
-          Js.Unsafe.fun_call f [| Js.Unsafe.inject file ;
-                            Js.Unsafe.inject callback|])          
+          let _ =
+            Js.Unsafe.fun_call f
+              [| Js.Unsafe.inject file ;
+                 Js.Unsafe.inject callback|]
+          in Lwt.return_unit)          
                                                              
 end
