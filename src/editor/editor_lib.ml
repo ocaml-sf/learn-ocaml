@@ -491,14 +491,15 @@ module Editor_io = struct
       (fun () ->
         upload_file () >>=
           fun file ->
-          Firebug.console##(log file);
           let (f:Js.js_string Js.t ->(Js.js_string Js.t -> unit)->unit) = Js.Unsafe.eval_string "editor_import" in 
           let callback =
             (fun text ->
+              
               SMap.iter
                 (fun id editor_state ->
                   if not (upload_new_exercise id editor_state)  then
-                    Learnocaml_common.alert [%i"Identifier and/or title not unique\n"])
+                    alert ([%i"Identifier and/or title not unique\n"] ^
+                "id:" ^ id ^ [%i" title:"] ^ editor_state.metadata.title))
                 (Json_repr_browser.Json_encoding.destruct 
                    (SMap.enc editor_state_enc)
                    (Js._JSON##(parse text)));

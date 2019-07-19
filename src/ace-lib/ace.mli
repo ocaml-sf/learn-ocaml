@@ -18,6 +18,7 @@ type loc = {
 val create_editor: Dom_html.divElement Js.t -> 'a editor
 
 val set_mode: 'a editor -> string -> unit
+val on: 'b editor -> string -> (Dom_html.event Js.t -> unit) -> unit
 
 val read_range: Ace_types.range Js.t -> (int * int) * (int * int)
 val create_range:

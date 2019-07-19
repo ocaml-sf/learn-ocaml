@@ -24,6 +24,8 @@ open Js_of_ocaml
 open Editor_lib
 open Dom_html
 open Test_spec
+
+
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -65,6 +67,22 @@ let set_string_translations () =
       Manip.setInnerHtml (find_component id) text)
     translations
 
+let activate_before_unload () :unit =
+  Js.Unsafe.js_expr
+    "window.onbeforeunload = function() {return 'You have unsaved changes!';}"
+
+let unable_before_unload () :unit =
+  Js.Unsafe.js_expr "window.onbeforeunload = null"
+  
+let onchange ace_list =
+  let add_change_listener ace =
+    Ace.on
+      ace
+      "change"
+      (fun _ -> activate_before_unload ();) in
+  List.iter (fun ace -> add_change_listener ace) ace_list 
+
+          
 let () =
   run_async_with_log @@ fun () ->
                (*set_string_translations ();*)
@@ -157,7 +175,6 @@ let () =
                       (Tyxml_js.To_dom.of_div editor_prelude) in
   let ace_prel = Ocaml_mode.get_editor editor_prel in
   let contents= get_prelude id in
-
   Ace.set_contents ace_prel contents ;
   Ace.set_font_size ace_prel 18;
 
@@ -384,6 +401,7 @@ let () =
   end;
 
   let recovering () =
+    unable_before_unload ();
     let solution = Ace.get_contents ace in
     let descr = Ace.get_contents ace_quest in
     let template = Ace.get_contents ace_temp in
@@ -435,41 +453,14 @@ let () =
   (*let toolbar_button2 = button2 ~container: exo_toolbar ~theme: "light" in*)
   begin toolbar_button
       ~icon: "left" [%i"Metadata"] @@ fun () ->
-                                      recovering (); 
       Dom_html.window##.location##assign
         (Js.string ("new_exercise.html#id=" ^ id ^ "&action=open"));
     Lwt.return ()
   end;
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
-    let _aborted, abort_message =
-      let t, _u = Lwt.task () in
-      let btn_cancel = Tyxml_js.Html5.(button [ pcdata [%i"Cancel"] ]) in
-      Manip.Ev.onclick btn_cancel ( fun _ ->
-        hide_loading ~id:"learnocaml-exo-loading" () ; true) ;
-      let btn_yes = Tyxml_js.Html5.(button [ pcdata [%i"Yes"] ]) in
-      Manip.Ev.onclick btn_yes (fun _ ->
-          recovering ();
       Dom_html.window##.location##assign
-        (Js.string "index.html#activity=editor") ; true) ;
-      let btn_no = Tyxml_js.Html5.(button [ pcdata [%i"No"] ]) in
-      Manip.Ev.onclick btn_no (fun _ ->
-      Dom_html.window##.location##assign
-        (Js.string "index.html#activity=editor") ; true);
-      let div =
-        Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                          [ pcdata [%i"Do you want to save before closing?\n"] ;
-                            btn_yes ;
-                            pcdata " " ;
-                            btn_no ;
-                            pcdata " " ;
-                            btn_cancel ]) in
-      Manip.SetCss.opacity div (Some "0") ;
-      t, div in
-    Manip.replaceChildren messages
-      Tyxml_js.Html5.[ li [ pcdata "" ] ] ;
-    show_load "learnocaml-exo-loading" [ abort_message ] ;
-    Manip.SetCss.opacity abort_message (Some "1") ;
+        (Js.string "index.html#activity=editor"); 
     Lwt.return ()
   end ;
 
@@ -544,7 +535,7 @@ let () =
                                      recovering ();
                                      grade ()
   end ;
-  Window.onunload (fun _ev -> recovering (); true);
+  onchange [ace_temp; ace_t; ace_prep; ace_prel; ace_quest; ace ];
   (* ---- return -------------------------------------------------------- *)
   (* toplevel_launch >>= fun _ -> should be unnecessary? *)
   (* typecheck false >>= fun () -> *)

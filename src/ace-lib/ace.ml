@@ -91,6 +91,9 @@ let set_custom_data { editor } data =
 let set_mode {editor} name =
   editor##getSession##(setMode (Js.string name))
 
+let on {editor} event callback =
+  editor##getSession##(on (Js.string event) (Js.Unsafe.meth_callback callback))
+
 type mark_type = Error | Warning | Message
 
 let string_of_make_type: mark_type -> string = function
