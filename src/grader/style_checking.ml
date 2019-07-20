@@ -1,4 +1,45 @@
 module type S = sig
+  module Checkers: sig
+    type report_severity = Suggestion | Warning
+    val non_rewrite_report:
+      Location.t -> report_severity -> string ->
+      (Location.t * Learnocaml_report.item) list
+    val rewrite_report:
+      ?details: string option ->
+      string -> Location.t -> string -> string -> report_severity ->
+      (Location.t * Learnocaml_report.item) list
+    val rewrite_report_expr:
+      ?details: string option ->
+      Typed_ast.expression -> Typed_ast.expression -> report_severity ->
+      (Location.t * Learnocaml_report.item) list
+    val rewrite_report_vb:
+      ?details: string option ->
+      Asttypes.rec_flag -> Typed_ast.pattern ->
+      Typed_ast.expression -> Typed_ast.expression -> report_severity ->
+      (Location.t * Learnocaml_report.item) list
+
+    module Helpers: sig
+      val not_shadowed: string -> string -> Typed_ast.expression -> bool
+      val list_hd: Typed_ast.expression -> Typed_ast.expression
+      val list_tl: Typed_ast.expression -> Typed_ast.expression
+      val pervasives_not: Typed_ast.expression -> Typed_ast.expression
+      val pervasives_or:
+        Typed_ast.expression -> Typed_ast.expression -> Typed_ast.expression
+      val pervasives_and:
+        Typed_ast.expression -> Typed_ast.expression -> Typed_ast.expression
+      val is_equals: Typed_ast.expression -> bool
+      val is_append: Typed_ast.expression -> bool
+      val is_empty_list: Typed_ast.expression -> bool
+      val is_true: Typed_ast.expression -> bool
+      val is_false: Typed_ast.expression -> bool
+      val empty_list_pat: Typed_ast.pattern
+      val fresh: string -> Typed_ast_lib.StringSet.t -> string
+      val make_fresh_var:
+        string -> Typed_ast_lib.StringSet.t ->
+        Typed_ast.expression * Typed_ast.pattern
+    end
+  end
+
   val ast_style_check_structure:
     Typed_ast_lib.checker list -> Typed_ast.structure -> Learnocaml_report.t
   val all_checkers:
@@ -19,18 +60,148 @@ module Make () : S = struct
   open Typed_ast
   open Typed_ast_lib
 
+  module Checkers = struct
+
+    type report_severity =
+      | Suggestion
+      | Warning
+
+    let line_number loc =
+      let ln = loc.Location.loc_start.Lexing.pos_lnum in
+      string_of_int ln
+
+    let non_rewrite_report loc sev msg =
+      let open Learnocaml_report in
+      let status = match sev with
+        | Suggestion -> Informative
+        | Warning -> Warning
+      in
+      let line = line_number loc in
+      [
+        loc,
+        Message (
+          [Text ("On line " ^ line ^ ",");
+           Text msg],
+          status)
+      ]
+
+    let rewrite_report ?(details = None) kind loc orig rewritten sev =
+      let open Learnocaml_report in
+      let status, text = match sev with
+        | Suggestion -> Informative, "could also be written"
+        | Warning -> Warning, "should instead be written"
+      in
+      let line = line_number loc in
+      let text =
+        [Text ("On line " ^ line ^ ", the " ^ kind);
+         Code orig;
+         Text (text ^ " as the following:");
+         Break;
+         Code rewritten]
+      in
+      let text =
+        match details with
+        | None -> text
+        | Some details ->
+            text @ [Break; Text "Explanation:"; Text details]
+      in
+      [
+        loc,
+        Message (text, status)
+      ]
+
+    let rewrite_report_expr ?(details = None) orig rewritten =
+      rewrite_report
+        ~details
+        "expression"
+        orig.sexp_loc
+        (string_of_tast_expression orig)
+        (string_of_tast_expression rewritten)
+
+    let rewrite_report_vb ?(details = None) rf pat orig rewritten =
+      let old_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = orig}]) in
+      let new_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = rewritten}]) in
+      let old_str = structure_of_item old_item in
+      let new_str = structure_of_item new_item in
+      rewrite_report
+        ~details
+        "binding"
+        orig.sexp_loc
+        (string_of_tast_structure old_str)
+        (string_of_tast_structure new_str)
+
+    module Helpers = struct
+
+      let not_shadowed qualified_name name expr =
+        let expected = path_of_id qualified_name in
+        let actual = lookup_in_expr_env expr name in
+        Path.same expected actual
+
+      let list_hd =
+        let hd = tast_of_parsetree_expression [%expr List.hd] in
+        fun x -> apply_expr hd [x]
+
+      let list_tl =
+        let tl = tast_of_parsetree_expression [%expr List.tl] in
+        fun x -> apply_expr tl [x]
+
+      let pervasives_not =
+        let not_ = tast_of_parsetree_expression [%expr not] in
+        fun x -> apply_expr not_ [x]
+
+      let pervasives_or =
+        let or_ = tast_of_parsetree_expression [%expr (||)] in
+        fun x y -> apply_expr or_ [x; y]
+
+      let pervasives_and =
+        let and_ = tast_of_parsetree_expression [%expr (&&)] in
+        fun x y -> apply_expr and_ [x; y]
+
+      (* Comparisons with some common expressions *)
+
+      let is_equals =
+        same_expr (tast_of_parsetree_expression [%expr (=)])
+
+      let is_append =
+        same_expr (tast_of_parsetree_expression [%expr (@)])
+
+      let is_empty_list =
+        same_expr (tast_of_parsetree_expression [%expr []])
+
+      let is_true = same_expr (tast_of_parsetree_expression [%expr true])
+      let is_false = same_expr (tast_of_parsetree_expression [%expr false])
+
+      (* Commonly-used patterns for comparison and AST building purposes *)
+
+      let empty_list_pat = tast_of_parsetree_pattern [%pat? []]
+
+      (* Generating new variable names *)
+
+      let fresh base vars =
+        if not (StringSet.mem base vars) then
+          base
+        else
+          let rec loop i =
+            let base_i = base ^ "_" ^ (string_of_int i) in
+            if not (StringSet.mem base_i vars) then
+              base_i
+            else loop (i + 1)
+          in
+          loop 0
+
+      let make_fresh_var str var_names =
+        let fresh_var_name = fresh str var_names in
+        let fresh_ident = Ident.create fresh_var_name in
+        let exp = tast_expr_of_ident fresh_ident in
+        let pat = tast_pat_of_ident fresh_ident in
+        (exp, pat)
+    end
+  end
+  open Checkers
+  open Helpers
+
   let map_loc f {Asttypes.txt; loc} = {Asttypes.txt = f txt; loc}
   let append_map f = List.fold_left (fun acc x -> acc @ (f x)) []
-  let sexp_of_desc sexp_desc =
-    {sexp_desc;
-     sexp_env = Env.empty;
-     sexp_type = Predef.type_unit;
-     sexp_loc = Location.none;
-     sexp_attrs = []}
-  let structure_of_item item =
-    {sstr_items = [item];
-     sstr_type = [];
-     sstr_env = Env.empty}
 
   (* Not the greatest comparison, but it works for our purposes. *)
   let compare_loc =
@@ -77,152 +248,24 @@ module Make () : S = struct
     in
     [Section ([Text "Style report"], final_report)]
 
-  type report_severity =
-    | Suggestion
-    | Warning
+  (* BUILT-IN STYLE CHECKERS *)
 
-  let line_number loc =
-    let ln = loc.Location.loc_start.Lexing.pos_lnum in
-    string_of_int ln
-
-  let non_rewrite_report loc sev msg =
-    let open Learnocaml_report in
-    let status = match sev with
-      | Suggestion -> Informative
-      | Warning -> Warning
-    in
-    let line = line_number loc in
-    [
-      loc,
-      Message (
-        [Text ("On line " ^ line ^ ",");
-         Text msg],
-        status)
-    ]
-
-  let rewrite_report ?(details = None) kind to_str loc orig rewritten sev =
-    let open Learnocaml_report in
-    let status, text = match sev with
-      | Suggestion -> Informative, "could also be written"
-      | Warning -> Warning, "should instead be written"
-    in
-    let line = line_number loc in
-    let text =
-      [Text ("On line " ^ line ^ ", the " ^ kind);
-       Code (to_str orig);
-       Text (text ^ " as the following:");
-       Break;
-       Code (to_str rewritten)]
-    in
-    let text =
-      match details with
-      | None -> text
-      | Some details ->
-          text @ [Break; Text "Explanation:"; Text details]
-    in
-    [
-      loc,
-      Message (text, status)
-    ]
-
-  let rewrite_report_expr ?(details = None) orig =
-    rewrite_report
-      ~details
-      "expression"
-      string_of_tast_expression
-      orig.sexp_loc
-      orig
-
-  let rewrite_report_vb ?(details = None) rf pat orig rewritten =
-    let old_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = orig}]) in
-    let new_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = rewritten}]) in
-    let old_str = structure_of_item old_item in
-    let new_str = structure_of_item new_item in
-    rewrite_report
-      ~details
-      "binding"
-      string_of_tast_structure
-      orig.sexp_loc
-      old_str
-      new_str
-
-  let is_equals =
-    same_expr (tast_of_parsetree_expression [%expr (=)])
-
-  let is_empty_list =
-    same_expr (tast_of_parsetree_expression [%expr []])
-
-  let is_true = same_expr (tast_of_parsetree_expression [%expr true])
-  let is_false = same_expr (tast_of_parsetree_expression [%expr false])
-
-  let empty_list_pat = tast_of_parsetree_pattern [%pat? []]
-
-  let equals_empty_list expr = match expr.sexp_desc with
-    | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
-        if is_empty_list v1 then Some v2
-        else if is_empty_list v2 then Some v1
-        else None
-    | _ -> None
-
+  (* Comparison to bool checker *)
   type equals_tf_result =
     | Equals_true of Typed_ast.expression
     | Equals_false of Typed_ast.expression
     | None
 
-  let equals_true_or_false expr = match expr.sexp_desc with
-    | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
-        if is_true v1 then Equals_true v2
-        else if is_true v2 then Equals_true v1
-        else if is_false v1 then Equals_false v2
-        else if is_false v2 then Equals_false v1
-        else None
-    | _ -> None
-
-  let fresh base vars =
-    if not (StringSet.mem base vars) then
-      base
-    else
-      let rec loop i =
-        let base_i = base ^ "_" ^ (string_of_int i) in
-        if not (StringSet.mem base_i vars) then
-          base_i
-        else loop (i + 1)
-      in
-      loop 0
-
-  let list_hd =
-    let hd = tast_of_parsetree_expression [%expr List.hd] in
-    fun x -> apply_expr hd [x]
-
-  let list_tl =
-    let tl = tast_of_parsetree_expression [%expr List.tl] in
-    fun x -> apply_expr tl [x]
-
-  let pervasives_not =
-    let not_ = tast_of_parsetree_expression [%expr not] in
-    fun x -> apply_expr not_ [x]
-
-  let pervasives_or =
-    let or_ = tast_of_parsetree_expression [%expr (||)] in
-    fun x y -> apply_expr or_ [x; y]
-
-  let pervasives_and =
-    let and_ = tast_of_parsetree_expression [%expr (&&)] in
-    fun x y -> apply_expr and_ [x; y]
-
-  let not_shadowed qualified_name name expr =
-    let expected = path_of_id qualified_name in
-    let actual = lookup_in_expr_env expr name in
-    Path.same expected actual
-
-  let make_fresh_var str var_names =
-    let fresh_var_name = fresh str var_names in
-    let fresh_ident = Ident.create fresh_var_name in
-    let exp = tast_expr_of_ident fresh_ident in
-    let pat = tast_pat_of_ident fresh_ident in
-    (exp, pat)
-
   let comparison_to_bool =
+    let equals_true_or_false expr = match expr.sexp_desc with
+      | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
+          if is_true v1 then Equals_true v2
+          else if is_true v2 then Equals_true v1
+          else if is_false v1 then Equals_false v2
+          else if is_false v2 then Equals_false v1
+          else None
+      | _ -> None
+    in
     let expression sub expr =
       match equals_true_or_false expr with
       | Equals_true expr' -> rewrite_report_expr expr expr' Warning
@@ -235,6 +278,7 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* If returning bool checker *)
   let if_returning_bool =
     let expression sub expr =
       match expr.sexp_desc with
@@ -264,7 +308,15 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* List selectors to match checker *)
   let list_selectors_to_match =
+    let equals_empty_list expr = match expr.sexp_desc with
+      | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
+          if is_empty_list v1 then Some v2
+          else if is_empty_list v2 then Some v1
+          else None
+      | _ -> None
+    in
     let expression sub expr = match expr.sexp_desc with
       | Sexp_ifthenelse (e1, e2, Some e3) ->
           begin
@@ -298,6 +350,7 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* Eta reduction checker *)
   let eta_reduction =
     (* Abort when faced with a situation we can't handle yet *)
     let exception Abort in
@@ -321,7 +374,7 @@ module Make () : S = struct
         (* For now, only handle pattern variables *)
         | _ -> raise Abort
       in
-      sexp_of_desc desc
+      tast_of_desc desc
     in
     (* We need to check if the function's parameter list and
        the list of arguments to the function call in its body
@@ -385,7 +438,7 @@ module Make () : S = struct
       List.fold_right
         (fun param body ->
            let desc = Sexp_fun (Asttypes.Nolabel, None, param, body) in
-           sexp_of_desc desc)
+           tast_of_desc desc)
         params
         body
       in
@@ -514,6 +567,7 @@ module Make () : S = struct
     in
     {default_checker with expression; value_binding}
 
+  (* Match with a single clause to let checker *)
   let single_match_to_let =
     let details =
       Some ("A match-expression with a single clause "
@@ -523,7 +577,7 @@ module Make () : S = struct
       match expr.sexp_desc with
       | Sexp_match (exp, [{sc_lhs; sc_guard = None; sc_rhs} as c]) ->
           let vb = {svb_pat = sc_lhs; svb_expr = exp} in
-          let expr' = sexp_of_desc
+          let expr' = tast_of_desc
               (Sexp_let (Asttypes.Nonrecursive, [vb], sc_rhs))
           in
           rewrite_report_expr ~details expr expr' Warning
@@ -535,10 +589,8 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* Unnecessary append checker *)
   let unnecessary_append =
-    let is_append =
-      same_expr (tast_of_parsetree_expression [%expr (@)])
-    in
     let is_append_expr expr =
       match expr.sexp_desc with
       | Sexp_apply (f, [_; _]) -> is_append f
@@ -594,6 +646,7 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* Max number of match clauses checker *)
   let limit_match_clauses n =
     let expression sub expr =
       match expr.sexp_desc with
@@ -609,6 +662,7 @@ module Make () : S = struct
     in
     {default_checker with expression}
 
+  (* Max number of if cases checker *)
   let limit_if_cases n =
     (* Note: For a conditional expression with n cases,
        this returns n - 1 *)
@@ -682,6 +736,5 @@ module Make () : S = struct
       limit_match_clauses max_match_clauses;
       limit_if_cases max_if_cases;
     ]
-
 
 end

@@ -1120,12 +1120,17 @@ end
 module Typed_ast_fragments = struct
   open Typed_ast
 
-  let sexp_of_desc sexp_desc =
+  let tast_of_desc sexp_desc =
     {sexp_desc;
      sexp_env = Env.empty;
      sexp_type = Predef.type_unit;
      sexp_loc = Location.none;
      sexp_attrs = []}
+
+  let structure_of_item item =
+    {sstr_items = [item];
+     sstr_type = [];
+     sstr_env = Env.empty}
 
   let path_of_id id =
     let open PtoS in
@@ -1133,7 +1138,7 @@ module Typed_ast_fragments = struct
     lookup_lid (Longident.parse id)
 
   let tast_expr_of_ident id =
-    sexp_of_desc @@
+    tast_of_desc @@
     Sexp_ident (Path.Pident id,
                 loc (Longident.Lident (Ident.name id)))
 
@@ -1157,26 +1162,26 @@ module Typed_ast_fragments = struct
 
   let list_expr =
     to_list
-      (fun (lid, expo) -> sexp_of_desc (Sexp_construct (lid, expo)))
-      (fun exps -> sexp_of_desc (Sexp_tuple exps))
+      (fun (lid, expo) -> tast_of_desc (Sexp_construct (lid, expo)))
+      (fun exps -> tast_of_desc (Sexp_tuple exps))
 
   let cons_pat p1 p2 =
     Spat_construct (cons_lid,
                     Some (Spat_tuple [p1; p2]))
 
   let cons_expr e1 e2 =
-    sexp_of_desc @@
+    tast_of_desc @@
     Sexp_construct (
       cons_lid,
-      Some (sexp_of_desc (Sexp_tuple [e1; e2])))
+      Some (tast_of_desc (Sexp_tuple [e1; e2])))
 
   let apply_expr f args =
-    sexp_of_desc @@
+    tast_of_desc @@
        Sexp_apply (f,
                    List.map (fun arg -> (Asttypes.Nolabel, arg)) args)
 
   let match_expr expr cases =
-    sexp_of_desc (Sexp_match (expr, cases))
+    tast_of_desc (Sexp_match (expr, cases))
 
 end
 
@@ -1595,6 +1600,8 @@ let lookup_in_expr_env =
     fst @@ Env.lookup_value (Longident.parse id) sexp_env
 
 (* Helpers for constructing Typed_ast fragments *)
+let tast_of_desc = Typed_ast_fragments.tast_of_desc
+let structure_of_item = Typed_ast_fragments.structure_of_item
 
 let path_of_id = Typed_ast_fragments.path_of_id
 

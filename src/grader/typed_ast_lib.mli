@@ -84,12 +84,18 @@ val lookup_in_expr_env: Typed_ast.expression -> string -> Path.t
 val same_expr: Typed_ast.expression -> Typed_ast.expression -> bool
 val same_pattern : Typed_ast.pattern -> Typed_ast.pattern -> bool
 
-(* Helpers for constructing Typed_ast fragments *)
+(* Helpers for constructing Typed_ast fragments.
+   The fields of these fragments are completely uninitialized:
+   empty typing environment, type unit, no location or attributes, etc.
+*)
+
+val tast_of_desc: Typed_ast.expression_desc -> Typed_ast.expression
+val structure_of_item: Typed_ast.structure_item -> Typed_ast.structure
 
 (* Retrieving the path for a predefined identifier (including identifiers from
    the prelude). Useful for building Typed_ast fragments.
    Raises Not_found if the identifier is not predefined.
- *)
+*)
 val path_of_id: string -> Path.t
 
 val tast_expr_of_ident: Ident.t -> Typed_ast.expression
