@@ -100,37 +100,46 @@ module Make () : S = struct
         status)
     ]
 
-  let rewrite_report kind to_str loc orig rewritten sev =
+  let rewrite_report ?(details = None) kind to_str loc orig rewritten sev =
     let open Learnocaml_report in
     let status, text = match sev with
       | Suggestion -> Informative, "could also be written"
       | Warning -> Warning, "should instead be written"
     in
     let line = line_number loc in
+    let text =
+      [Text ("On line " ^ line ^ ", the " ^ kind);
+       Code (to_str orig);
+       Text (text ^ " as the following:");
+       Break;
+       Code (to_str rewritten)]
+    in
+    let text =
+      match details with
+      | None -> text
+      | Some details ->
+          text @ [Break; Text "Explanation:"; Text details]
+    in
     [
       loc,
-      Message (
-        [Text ("On line " ^ line ^ ", the " ^ kind);
-         Code (to_str orig);
-         Text (text ^ " as the following:");
-         Break;
-         Code (to_str rewritten)],
-        status)
+      Message (text, status)
     ]
 
-  let rewrite_report_expr orig =
+  let rewrite_report_expr ?(details = None) orig =
     rewrite_report
+      ~details
       "expression"
       string_of_tast_expression
       orig.sexp_loc
       orig
 
-  let rewrite_report_vb rf pat orig rewritten =
+  let rewrite_report_vb ?(details = None) rf pat orig rewritten =
     let old_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = orig}]) in
     let new_item = Sstr_value (rf, [{svb_pat = pat; svb_expr = rewritten}]) in
     let old_str = structure_of_item old_item in
     let new_str = structure_of_item new_item in
     rewrite_report
+      ~details
       "binding"
       string_of_tast_structure
       orig.sexp_loc
@@ -506,6 +515,10 @@ module Make () : S = struct
     {default_checker with expression; value_binding}
 
   let single_match_to_let =
+    let details =
+      Some ("A match-expression with a single clause "
+            ^ "can be rewritten as a let-binding.")
+    in
     let expression sub expr =
       match expr.sexp_desc with
       | Sexp_match (exp, [{sc_lhs; sc_guard = None; sc_rhs} as c]) ->
@@ -513,7 +526,7 @@ module Make () : S = struct
           let expr' = sexp_of_desc
               (Sexp_let (Asttypes.Nonrecursive, [vb], sc_rhs))
           in
-          rewrite_report_expr expr expr' Warning
+          rewrite_report_expr ~details expr expr' Warning
           @
           sub.expression sub exp
           @
