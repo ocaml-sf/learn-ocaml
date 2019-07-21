@@ -36,6 +36,56 @@ module type S = sig
     *)
     type report_severity = Suggestion | Warning
 
+    (* For creating simple style checkers that can work on an expression
+       independent of its context.
+       The functions ~on_expression, ~on_pattern, and ~on_structure_item
+       are called on each expression, pattern, and structure item respectively
+       in the student's code AST. The results of all these are put together
+       to form a style report. These functions do not need to handle
+       recursion into sub-ASTs.
+
+       An example of a style check where using the stateless style checker
+       would *not* be appropriate is the checker which flags conditionals
+       with too many branches; since these are formed by nested
+       if-expressions. For example, if this checker was configured to flag
+       conditionals more than 4 branches, upon encountering
+       a conditional with 6 branches, it would raise two flags: one for
+       the outer if-expression with 5 nested ifs, and one for the inner
+       if-expression with 4 nested ifs.
+
+       Another example of a check where this would not be appropriate is
+       the check for unnecessary usage of append, which flags usages of
+       append starting with a singleton list *unless* this happens within
+       a chain of append-expressions. Since this check needs information
+       about context, it cannot be implemented using stateless_style_checker.
+
+       A simple stateless style checker can be created using this function
+       and one of the report generators detailed below. Here is an example:
+
+       let my_checker =
+         let on_expression expr =
+           match expr.sexp_desc with
+           | Sexp_constant (Pconst_integer ("42", None)) ->
+               non_rewrite_report
+                 expr.sexp_loc
+                 Warning
+                 "found a usage of the constant 42"
+           | _ -> []
+         in
+         stateless_style_checker ~on_expression ()
+
+       This creates a style checker that produces a warning every time the
+       integer literal 42 is encountered in the student's code.
+
+       See the ast_style_check_structure function for information on
+       running these style checkers.
+    *)
+    val stateless_style_checker:
+      ?on_expression: (Typed_ast.expression -> Typed_ast_lib.checker_result list) ->
+      ?on_pattern: (Typed_ast.pattern -> Typed_ast_lib.checker_result list) ->
+      ?on_structure_item: (Typed_ast.structure_item -> Typed_ast_lib.checker_result list) ->
+      unit -> Typed_ast_lib.checker
+
     (* Generating a style error report without a suggested rewriting.
        For example, this is used for the checker that reports an
        error when a submission has an excessive amount of match
@@ -47,7 +97,7 @@ module type S = sig
     *)
     val non_rewrite_report:
       Location.t -> report_severity -> string ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
 
     (* Generating a style error report with a suggested rewriting.
        This is used to implement most of the built-in style checkers.
@@ -72,7 +122,7 @@ module type S = sig
       string ->
       string ->
       report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
 
     (* rewrite_report_expr ~details orig rewritten sev
        generates a report flagging the expression orig as containing
@@ -84,7 +134,7 @@ module type S = sig
     val rewrite_report_expr:
       ?details: string option ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
 
     (* Generates a report flagging the expression position of a
        value binding as containing a style error.
@@ -101,7 +151,7 @@ module type S = sig
       ?details: string option ->
       Asttypes.rec_flag -> Typed_ast.pattern ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
 
     (* Helper functions for creating style checkers *)
     module Helpers : sig

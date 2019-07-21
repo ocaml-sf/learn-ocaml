@@ -1,22 +1,29 @@
 module type S = sig
   module Checkers: sig
     type report_severity = Suggestion | Warning
+
+    val stateless_style_checker:
+      ?on_expression: (Typed_ast.expression -> Typed_ast_lib.checker_result list) ->
+      ?on_pattern: (Typed_ast.pattern -> Typed_ast_lib.checker_result list) ->
+      ?on_structure_item: (Typed_ast.structure_item -> Typed_ast_lib.checker_result list) ->
+      unit -> Typed_ast_lib.checker
+
     val non_rewrite_report:
       Location.t -> report_severity -> string ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
     val rewrite_report:
       ?details: string option ->
       string -> Location.t -> string -> string -> report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
     val rewrite_report_expr:
       ?details: string option ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
     val rewrite_report_vb:
       ?details: string option ->
       Asttypes.rec_flag -> Typed_ast.pattern ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      (Location.t * Learnocaml_report.item) list
+      Typed_ast_lib.checker_result list
 
     module Helpers: sig
       val not_shadowed: string -> string -> Typed_ast.expression -> bool
@@ -65,6 +72,22 @@ module Make () : S = struct
     type report_severity =
       | Suggestion
       | Warning
+
+    let stateless_style_checker
+        ?(on_expression = fun _ -> [])
+        ?(on_pattern = fun _ -> [])
+        ?(on_structure_item = fun _ -> [])
+        () =
+      let expression sub expr =
+        (on_expression expr) @ default_checker.expression sub expr
+      in
+      let pattern sub pat =
+        (on_pattern pat) @ default_checker.pattern sub pat
+      in
+      let structure_item sub item =
+        (on_structure_item item) @ default_checker.structure_item sub item
+      in
+      {default_checker with expression; pattern; structure_item}
 
     let line_number loc =
       let ln = loc.Location.loc_start.Lexing.pos_lnum in
@@ -266,21 +289,21 @@ module Make () : S = struct
           else None
       | _ -> None
     in
-    let expression sub expr =
+    let on_expression expr =
       match equals_true_or_false expr with
       | Equals_true expr' -> rewrite_report_expr expr expr' Warning
       | Equals_false expr' ->
           if not_shadowed "Pervasives.not" "not" expr then
             rewrite_report_expr expr (pervasives_not expr') Warning
           else
-            default_checker.expression sub expr
-      | None -> default_checker.expression sub expr
+            []
+      | None -> []
     in
-    {default_checker with expression}
+    stateless_style_checker ~on_expression ()
 
   (* If returning bool checker *)
   let if_returning_bool =
-    let expression sub expr =
+    let on_expression expr =
       match expr.sexp_desc with
       | Sexp_ifthenelse (e1, e2, Some e3) ->
           if is_true e2 then
@@ -290,7 +313,7 @@ module Make () : S = struct
             if not_shadowed "Pervasives.||" "||" expr then
               rewrite_report_expr expr (pervasives_or e1 e3) Suggestion
             else
-              default_checker.expression sub expr
+              []
 
           else if
             is_false e2
@@ -302,11 +325,11 @@ module Make () : S = struct
           else if is_false e3 && not_shadowed "Pervasives.&&" "&&" expr then
             rewrite_report_expr expr (pervasives_and e1 e2) Suggestion
 
-          else default_checker.expression sub expr
+          else []
 
-      | _ -> default_checker.expression sub expr
+      | _ -> []
     in
-    {default_checker with expression}
+    stateless_style_checker ~on_expression ()
 
   (* List selectors to match checker *)
   let list_selectors_to_match =
@@ -317,7 +340,8 @@ module Make () : S = struct
           else None
       | _ -> None
     in
-    let expression sub expr = match expr.sexp_desc with
+    let on_expression expr =
+      match expr.sexp_desc with
       | Sexp_ifthenelse (e1, e2, Some e3) ->
           begin
             match equals_empty_list e1 with
@@ -344,9 +368,157 @@ module Make () : S = struct
                   in
                   let expr' = match_expr other [empty_case; other_case] in
                   rewrite_report_expr expr expr' Warning
-            | None -> default_checker.expression sub expr
+            | None -> []
           end
-      | _ -> default_checker.expression sub expr
+      | _ -> []
+    in
+    stateless_style_checker ~on_expression ()
+
+  (* Match with a single clause to let checker *)
+  let single_match_to_let =
+    let details =
+      Some ("A match-expression with a single clause "
+            ^ "can be rewritten as a let-binding.")
+    in
+    let on_expression expr =
+      match expr.sexp_desc with
+      | Sexp_match (exp, [{sc_lhs; sc_guard = None; sc_rhs}]) ->
+          let vb = {svb_pat = sc_lhs; svb_expr = exp} in
+          let expr' = tast_of_desc
+              (Sexp_let (Asttypes.Nonrecursive, [vb], sc_rhs))
+          in
+          rewrite_report_expr ~details expr expr' Warning
+      | _ -> []
+    in
+    stateless_style_checker ~on_expression ()
+
+  (* Unnecessary append checker *)
+  let unnecessary_append =
+    let is_append_expr expr =
+      match expr.sexp_desc with
+      | Sexp_apply (f, [_; _]) -> is_append f
+      | _ -> false
+    in
+    let is_singleton_list_opt expr =
+      match expr.sexp_desc with
+      | Sexp_construct
+          ({Asttypes.txt = Longident.Lident "::"; _},
+           Some ({sexp_desc = Sexp_tuple [x; l]; _})) ->
+          if is_empty_list l then
+            Some x
+          else
+            None
+      | _ -> None
+    in
+    let rec expression ?(inside_append_chain = false) sub expr =
+      match expr.sexp_desc with
+      | Sexp_apply (f, [(_, l1); (_, l2)]) when is_append f ->
+          if is_empty_list l1 then
+            rewrite_report_expr expr l2 Warning
+            @
+            expression ~inside_append_chain: true sub l2
+          else if is_empty_list l2 then
+            rewrite_report_expr expr l1 Warning
+            @
+            expression ~inside_append_chain: true sub l1
+          else begin
+            match is_singleton_list_opt l1 with
+            | Some x ->
+                if inside_append_chain || is_append_expr l2 then
+                  let expression = expression ~inside_append_chain: true in
+                  let sub = {default_checker with expression} in
+                  default_checker.expression sub expr
+                else
+                  let expr' = cons_expr x l2 in
+                  rewrite_report_expr expr expr' Suggestion
+                  @
+                  expression ~inside_append_chain sub x
+                  @
+                  expression ~inside_append_chain sub l2
+
+            | None ->
+                let expression = expression ~inside_append_chain in
+                let sub = {default_checker with expression} in
+                default_checker.expression sub expr
+          end
+
+      (* This resets inside_append_chain to false *)
+      | _ ->
+          let sub = {default_checker with expression} in
+          default_checker.expression sub expr
+    in
+    {default_checker with expression}
+
+  (* Max number of match clauses checker *)
+  let limit_match_clauses n =
+    let on_expression expr =
+      match expr.sexp_desc with
+      | Sexp_match (_, cases) when List.length cases > n ->
+          non_rewrite_report
+            expr.sexp_loc
+            Warning
+            ("your match expression has too many clauses"
+             ^ " (more than " ^ (string_of_int n) ^ ")")
+      | _ -> []
+    in
+    stateless_style_checker ~on_expression ()
+
+  (* Max number of if cases checker *)
+  let limit_if_cases n =
+    (* Note: For a conditional expression with n cases,
+       this returns n - 1 *)
+    let depth_of_nested_if =
+      let rec aux expr acc =
+        match expr.sexp_desc with
+        | Sexp_ifthenelse (_, _, exp) ->
+            begin
+              match exp with
+              | None -> acc + 1
+              | Some exp -> aux exp (acc + 1)
+            end
+        | _ -> acc
+      in
+      fun expr -> aux expr 0
+    in
+    let rec expression ?(inside_else=false) sub expr =
+      match expr.sexp_desc with
+      | Sexp_ifthenelse (b, exp1, Some exp2) ->
+          (* If we're inside the else branch of an if, then the
+             depth of this if-expression has already been counted.
+             However, we still need to recurse into the
+             sub-expressions to look for other conditional expressions
+             that aren't direct sub-expressions of the else. *)
+          if inside_else then
+            let sub1 = {default_checker with expression} in
+            expression sub1 b
+            @
+            expression sub1 exp1
+            @
+            expression ~inside_else: true sub1 exp2
+          else
+            let report =
+              let cases = depth_of_nested_if expr in
+              if cases >= n then
+                non_rewrite_report
+                  expr.sexp_loc
+                  Warning
+                  ("your conditional expression has too many cases"
+                   ^ " (more than " ^ (string_of_int n) ^ ")")
+              else
+                []
+            in
+            report
+            @
+            expression sub b
+            @
+            expression sub exp1
+            @
+            expression ~inside_else: true sub exp2
+
+      (* This resets inside_else to false *)
+      | _ ->
+          let sub = {default_checker with expression} in
+          default_checker.expression sub expr
     in
     {default_checker with expression}
 
@@ -566,161 +738,6 @@ module Make () : S = struct
       | _ -> default_checker.value_binding sub rf vb
     in
     {default_checker with expression; value_binding}
-
-  (* Match with a single clause to let checker *)
-  let single_match_to_let =
-    let details =
-      Some ("A match-expression with a single clause "
-            ^ "can be rewritten as a let-binding.")
-    in
-    let expression sub expr =
-      match expr.sexp_desc with
-      | Sexp_match (exp, [{sc_lhs; sc_guard = None; sc_rhs} as c]) ->
-          let vb = {svb_pat = sc_lhs; svb_expr = exp} in
-          let expr' = tast_of_desc
-              (Sexp_let (Asttypes.Nonrecursive, [vb], sc_rhs))
-          in
-          rewrite_report_expr ~details expr expr' Warning
-          @
-          sub.expression sub exp
-          @
-          sub.case sub c
-      | _ -> default_checker.expression sub expr
-    in
-    {default_checker with expression}
-
-  (* Unnecessary append checker *)
-  let unnecessary_append =
-    let is_append_expr expr =
-      match expr.sexp_desc with
-      | Sexp_apply (f, [_; _]) -> is_append f
-      | _ -> false
-    in
-    let is_singleton_list_opt expr =
-      match expr.sexp_desc with
-      | Sexp_construct
-          ({Asttypes.txt = Longident.Lident "::"; _},
-           Some ({sexp_desc = Sexp_tuple [x; l]; _})) ->
-          if is_empty_list l then
-            Some x
-          else
-            None
-      | _ -> None
-    in
-    let rec expression ?(inside_append_chain = false) sub expr =
-      match expr.sexp_desc with
-      | Sexp_apply (f, [(_, l1); (_, l2)]) when is_append f ->
-          if is_empty_list l1 then
-            rewrite_report_expr expr l2 Warning
-            @
-            expression ~inside_append_chain: true sub l2
-          else if is_empty_list l2 then
-            rewrite_report_expr expr l1 Warning
-            @
-            expression ~inside_append_chain: true sub l1
-          else begin
-            match is_singleton_list_opt l1 with
-            | Some x ->
-                if inside_append_chain || is_append_expr l2 then
-                  let expression = expression ~inside_append_chain: true in
-                  let sub = {default_checker with expression} in
-                  default_checker.expression sub expr
-                else
-                  let expr' = cons_expr x l2 in
-                  rewrite_report_expr expr expr' Suggestion
-                  @
-                  expression ~inside_append_chain sub x
-                  @
-                  expression ~inside_append_chain sub l2
-
-            | None ->
-                let expression = expression ~inside_append_chain in
-                let sub = {default_checker with expression} in
-                default_checker.expression sub expr
-          end
-
-      (* This resets inside_append_chain to false *)
-      | _ ->
-          let sub = {default_checker with expression} in
-          default_checker.expression sub expr
-    in
-    {default_checker with expression}
-
-  (* Max number of match clauses checker *)
-  let limit_match_clauses n =
-    let expression sub expr =
-      match expr.sexp_desc with
-      | Sexp_match (exp, cases) when List.length cases > n ->
-          non_rewrite_report
-            expr.sexp_loc
-            Warning
-            ("your match expression has too many clauses"
-             ^ " (more than " ^ (string_of_int n) ^ ")")
-          @
-          sub.expression sub exp
-        | _ -> default_checker.expression sub expr
-    in
-    {default_checker with expression}
-
-  (* Max number of if cases checker *)
-  let limit_if_cases n =
-    (* Note: For a conditional expression with n cases,
-       this returns n - 1 *)
-    let depth_of_nested_if =
-      let rec aux expr acc =
-        match expr.sexp_desc with
-        | Sexp_ifthenelse (_, _, exp) ->
-            begin
-              match exp with
-              | None -> acc + 1
-              | Some exp -> aux exp (acc + 1)
-            end
-        | _ -> acc
-      in
-      fun expr -> aux expr 0
-    in
-    let rec expression ?(inside_else=false) sub expr =
-      match expr.sexp_desc with
-      | Sexp_ifthenelse (b, exp1, Some exp2) ->
-          (* If we're inside the else branch of an if, then the
-             depth of this if-expression has already been counted.
-             However, we still need to recurse into the
-             sub-expressions to look for other conditional expressions
-             that aren't direct sub-expressions of the else. *)
-          if inside_else then
-            let sub1 = {default_checker with expression} in
-            expression sub1 b
-            @
-            expression sub1 exp1
-            @
-            expression ~inside_else: true sub1 exp2
-          else
-            let report =
-              let cases = depth_of_nested_if expr in
-              if cases >= n then
-                non_rewrite_report
-                  expr.sexp_loc
-                  Warning
-                  ("your conditional expression has too many cases"
-                   ^ " (more than " ^ (string_of_int n) ^ ")")
-              else
-                []
-            in
-            report
-            @
-            expression sub b
-            @
-            expression sub exp1
-            @
-            expression ~inside_else: true sub exp2
-
-        (* This resets inside_else to false *)
-        | _ ->
-            let sub = {default_checker with expression} in
-            default_checker.expression sub expr
-    in
-    {default_checker with expression}
-
 
   let all_checkers
       ?(max_match_clauses = 10)
