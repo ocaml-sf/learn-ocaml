@@ -29,6 +29,186 @@
 *)
 
 module type S = sig
+  (* Utilities for creating custom style checkers *)
+  module Checkers : sig
+    (* Report severities - this affects the status used for
+       the style errors in the grading report.
+    *)
+    type report_severity = Suggestion | Warning
+
+    (* For creating simple style checkers that can work on an expression
+       independent of its context.
+       The functions ~on_expression, ~on_pattern, and ~on_structure_item
+       are called on each expression, pattern, and structure item respectively
+       in the student's code AST. The results of all these are put together
+       to form a style report. These functions do not need to handle
+       recursion into sub-ASTs.
+
+       An example of a style check where using the stateless style checker
+       would *not* be appropriate is the checker which flags conditionals
+       with too many branches; since these are formed by nested
+       if-expressions. For example, if this checker was configured to flag
+       conditionals more than 4 branches, upon encountering
+       a conditional with 6 branches, it would raise two flags: one for
+       the outer if-expression with 5 nested ifs, and one for the inner
+       if-expression with 4 nested ifs.
+
+       Another example of a check where this would not be appropriate is
+       the check for unnecessary usage of append, which flags usages of
+       append starting with a singleton list *unless* this happens within
+       a chain of append-expressions. Since this check needs information
+       about context, it cannot be implemented using stateless_style_checker.
+
+       A simple stateless style checker can be created using this function
+       and one of the report generators detailed below. Here is an example:
+
+       let my_checker =
+         let on_expression expr =
+           match expr.sexp_desc with
+           | Sexp_constant (Pconst_integer ("42", None)) ->
+               non_rewrite_report
+                 expr.sexp_loc
+                 Warning
+                 "found a usage of the constant 42"
+           | _ -> []
+         in
+         stateless_style_checker ~on_expression ()
+
+       This creates a style checker that produces a warning every time the
+       integer literal 42 is encountered in the student's code.
+
+       See the ast_style_check_structure function for information on
+       running these style checkers.
+    *)
+    val stateless_style_checker:
+      ?on_expression: (Typed_ast.expression -> Typed_ast_lib.checker_result list) ->
+      ?on_pattern: (Typed_ast.pattern -> Typed_ast_lib.checker_result list) ->
+      ?on_structure_item: (Typed_ast.structure_item -> Typed_ast_lib.checker_result list) ->
+      unit -> Typed_ast_lib.checker
+
+    (* Generating a style error report without a suggested rewriting.
+       For example, this is used for the checker that reports an
+       error when a submission has an excessive amount of match
+       clauses.
+
+       non_rewrite_report loc sev msg
+       generates a report flagging a style error at location loc,
+       with severity sev, displaying the error message msg.
+    *)
+    val non_rewrite_report:
+      Location.t -> report_severity -> string ->
+      Typed_ast_lib.checker_result list
+
+    (* Generating a style error report with a suggested rewriting.
+       This is used to implement most of the built-in style checkers.
+
+       The functions rewrite_report_expr and rewrite_report_vb, listed
+       below, should suffice for the vast majority of use cases and are
+       preferred over the lower-level rewrite_report function.
+
+       rewrite_report ~details kind loc orig rewritten sev
+       generates a report flagging a style error at location loc,
+       with severity sev, where orig is a string containing the
+       faulty code and rewritten is the suggested rewriting of that
+       code. kind designates the class of the code being flagged,
+       e.g. "expression", "pattern", or "binding". If details is not
+       None, it contains some extra explanation that is added to the
+       end of the error message.
+    *)
+    val rewrite_report:
+      ?details: string option ->
+      string ->
+      Location.t ->
+      string ->
+      string ->
+      report_severity ->
+      Typed_ast_lib.checker_result list
+
+    (* rewrite_report_expr ~details orig rewritten sev
+       generates a report flagging the expression orig as containing
+       a style error, with the suggested rewriting rewritten, of
+       severity sev. The optional argument details can contain
+       some extra explanation that is added to the end of the error
+       message.
+    *)
+    val rewrite_report_expr:
+      ?details: string option ->
+      Typed_ast.expression -> Typed_ast.expression -> report_severity ->
+      Typed_ast_lib.checker_result list
+
+    (* Generates a report flagging the expression position of a
+       value binding as containing a style error.
+
+       rewrite_report_vb ~details rf pat orig rewritten sev
+       is used to flag a value binding with the given rec flag
+       binding pattern pat with expression orig, and suggest
+       that orig be rewritten as the expressoin rewritten,
+       with severity sev. The optional argument details can contain
+       some extra explanation that is added to the end of the error
+       message.
+    *)
+    val rewrite_report_vb:
+      ?details: string option ->
+      Asttypes.rec_flag -> Typed_ast.pattern ->
+      Typed_ast.expression -> Typed_ast.expression -> report_severity ->
+      Typed_ast_lib.checker_result list
+
+    (* Helper functions for creating style checkers *)
+    module Helpers : sig
+
+      (* Returns true if the identifier given by qualified_name can be
+         referred to by simply name in the scope of the expression expr.
+         Example usage:
+           not_shadowed "Pervasives.not" "not" expr
+           returns true if the identifier "not" refers to the same thing
+           as "Pervasives.not" in the scope of expr.
+         This is useful for writing style checkers that suggest introducing
+         the usage of an identifier, to make sure that identifier is still
+         in scope as expected.
+      *)
+      val not_shadowed: string -> string -> Typed_ast.expression -> bool
+
+      (* Helpers for generating some commonly-used function calls, for
+         comparison and AST building purposes.
+         Example usage:
+           list_hd expr
+           returns a Typed_ast fragment representing the function call
+           List.hd <expr>.
+      *)
+      val list_hd: Typed_ast.expression -> Typed_ast.expression
+      val list_tl: Typed_ast.expression -> Typed_ast.expression
+      val pervasives_not: Typed_ast.expression -> Typed_ast.expression
+      val pervasives_or:
+        Typed_ast.expression -> Typed_ast.expression -> Typed_ast.expression
+      val pervasives_and:
+        Typed_ast.expression -> Typed_ast.expression -> Typed_ast.expression
+
+      (* Helpers for AST comparison with some commonly-used expressions. *)
+      val is_equals: Typed_ast.expression -> bool
+      val is_append: Typed_ast.expression -> bool
+      val is_empty_list: Typed_ast.expression -> bool
+      val is_true: Typed_ast.expression -> bool
+      val is_false: Typed_ast.expression -> bool
+
+      (* Commonly-used patterns for comparison and AST building purposes. *)
+      val empty_list_pat: Typed_ast.pattern
+
+      (* Generates a new variable name by adding a numeric suffix to
+         base. This new variable name is guaranteed unequal to any
+         variable in vars.
+      *)
+      val fresh: string -> Typed_ast_lib.StringSet.t -> string
+
+      (* Generates a new variable name based on str that is not
+         present in var_names. Returns two Typed_ast fragments for the
+         new variable in expression form and pattern form, respectively.
+      *)
+      val make_fresh_var:
+        string -> Typed_ast_lib.StringSet.t ->
+        Typed_ast.expression * Typed_ast.pattern
+    end
+  end
+
   (* Runs all of the checkers in the list on the given Typed_ast and
      outputs a final report.
 

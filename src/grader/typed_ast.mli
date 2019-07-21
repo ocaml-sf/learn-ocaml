@@ -9,6 +9,7 @@ type expression = {
   sexp_env: Env.t;
   sexp_type: Types.type_expr;
   sexp_loc: Location.t;
+  sexp_attrs: Parsetree.attributes;
 }
 
 and expression_desc =

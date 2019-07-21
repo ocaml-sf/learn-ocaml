@@ -69,7 +69,8 @@ module PtoS = struct
     {sc_lhs; sc_guard; sc_rhs}
 
   and expr_aux expr texpr =
-    let {pexp_desc = desc; pexp_loc = loc; _} = expr in
+    let {pexp_desc = desc; pexp_loc = loc; pexp_attributes = attrs; _} = expr
+    in
     let {exp_desc = tdesc; exp_type = typ; exp_env; _} = texpr in
     let sexp_desc = match desc, tdesc with
       | Pexp_ident _, Texp_ident (path, lid, _) ->
@@ -179,7 +180,11 @@ module PtoS = struct
       | _ ->
           raise (UnimplementedConstruct "expression")
     in
-    {sexp_desc; sexp_env = exp_env; sexp_type = typ; sexp_loc = loc}
+    {sexp_desc;
+     sexp_env = exp_env;
+     sexp_type = typ;
+     sexp_loc = loc;
+     sexp_attrs = attrs;}
 
   and pattern pat tpat =
     match pat.ppat_desc, tpat.pat_desc with
@@ -690,6 +695,7 @@ module Typed_ast_mapper = struct
     let sexp_type = expr.sexp_type in
     let sexp_env = expr.sexp_env in
     let sexp_loc = expr.sexp_loc in
+    let sexp_attrs = expr.sexp_attrs in
     let sexp_desc = match expr.sexp_desc with
     | Sexp_ident _
     | Sexp_constant _ as expr -> expr
@@ -739,7 +745,7 @@ module Typed_ast_mapper = struct
     | Sexp_open (ovf, lid, exp) ->
         Sexp_open (ovf, lid, sub.expression sub exp)
     in
-    {sexp_desc; sexp_env; sexp_type; sexp_loc}
+    {sexp_desc; sexp_env; sexp_type; sexp_loc; sexp_attrs}
 
   let pattern sub = function
     | Spat_any
@@ -1114,11 +1120,17 @@ end
 module Typed_ast_fragments = struct
   open Typed_ast
 
-  let sexp_of_desc sexp_desc =
+  let tast_of_desc sexp_desc =
     {sexp_desc;
      sexp_env = Env.empty;
      sexp_type = Predef.type_unit;
-     sexp_loc = Location.none}
+     sexp_loc = Location.none;
+     sexp_attrs = []}
+
+  let structure_of_item item =
+    {sstr_items = [item];
+     sstr_type = [];
+     sstr_env = Env.empty}
 
   let path_of_id id =
     let open PtoS in
@@ -1126,7 +1138,7 @@ module Typed_ast_fragments = struct
     lookup_lid (Longident.parse id)
 
   let tast_expr_of_ident id =
-    sexp_of_desc @@
+    tast_of_desc @@
     Sexp_ident (Path.Pident id,
                 loc (Longident.Lident (Ident.name id)))
 
@@ -1150,26 +1162,26 @@ module Typed_ast_fragments = struct
 
   let list_expr =
     to_list
-      (fun (lid, expo) -> sexp_of_desc (Sexp_construct (lid, expo)))
-      (fun exps -> sexp_of_desc (Sexp_tuple exps))
+      (fun (lid, expo) -> tast_of_desc (Sexp_construct (lid, expo)))
+      (fun exps -> tast_of_desc (Sexp_tuple exps))
 
   let cons_pat p1 p2 =
     Spat_construct (cons_lid,
                     Some (Spat_tuple [p1; p2]))
 
   let cons_expr e1 e2 =
-    sexp_of_desc @@
+    tast_of_desc @@
     Sexp_construct (
       cons_lid,
-      Some (sexp_of_desc (Sexp_tuple [e1; e2])))
+      Some (tast_of_desc (Sexp_tuple [e1; e2])))
 
   let apply_expr f args =
-    sexp_of_desc @@
+    tast_of_desc @@
        Sexp_apply (f,
                    List.map (fun arg -> (Asttypes.Nolabel, arg)) args)
 
   let match_expr expr cases =
-    sexp_of_desc (Sexp_match (expr, cases))
+    tast_of_desc (Sexp_match (expr, cases))
 
 end
 
@@ -1335,12 +1347,15 @@ let variables_bound_by_pattern pat =
     !vars
   end
 
-let bound_variables expr =
+let check_bound_vars fn ast =
   let (vars, checker) = bound_variable_checker () in
   begin
-    ignore (checker.expression checker expr);
+    ignore ((fn checker) checker ast);
     !vars
   end
+
+let bound_variables =
+  check_bound_vars (fun checker -> checker.expression)
 
 let free_variables expr =
   VarSet.diff (variables expr) (bound_variables expr)
@@ -1371,7 +1386,7 @@ let find_binding sstr name f =
           | [] -> find_let tl
           | {svb_pat = Spat_var (id, {Asttypes.txt; _}); svb_expr} :: _
             when txt = name ->
-              found_binding name :: f rf id svb_expr
+              found_binding name :: f rf (Path.Pident id) svb_expr
           | _ :: tl -> find_var tl
         in
         find_var vbs
@@ -1408,14 +1423,14 @@ let line_number loc =
   let ln = loc.Location.loc_start.Lexing.pos_lnum in
   string_of_int ln
 
-let check_tailcalls id =
+let check_tailcalls var =
   let open Typed_ast in
   let is_id_call expr =
     match expr.sexp_desc with
     | Sexp_apply (f, _) ->
         begin
           match f.sexp_desc with
-          | Sexp_ident (Path.Pident id', _) -> Ident.same id id'
+          | Sexp_ident (var', _) -> Path.same var var'
           | _ -> false
         end
     | _ -> false
@@ -1549,7 +1564,7 @@ let check_tailcalls id =
     | None ->
         [Message (
             [Text "All calls to";
-             Code (Ident.name id);
+             Code (Path.name var);
              Text "are tail calls"
             ],
             Success points)]
@@ -1571,7 +1586,7 @@ let check_tailcalls id =
         [Message (
             [Text ("On line " ^ line ^ ", ");
              Text "found a call to";
-             Code (Ident.name id);
+             Code (Path.name var);
              Text "that is not in tail position"]
             @ suffix,
             Failure)]
@@ -1585,6 +1600,8 @@ let lookup_in_expr_env =
     fst @@ Env.lookup_value (Longident.parse id) sexp_env
 
 (* Helpers for constructing Typed_ast fragments *)
+let tast_of_desc = Typed_ast_fragments.tast_of_desc
+let structure_of_item = Typed_ast_fragments.structure_of_item
 
 let path_of_id = Typed_ast_fragments.path_of_id
 

@@ -60,7 +60,7 @@ val ast_check_structure: checker -> Typed_ast.structure -> checker_result list
 val find_binding:
   Typed_ast.structure
   -> string
-  -> (Asttypes.rec_flag -> Ident.t -> Typed_ast.expression -> Learnocaml_report.t)
+  -> (Asttypes.rec_flag -> Path.t -> Typed_ast.expression -> Learnocaml_report.t)
   -> Learnocaml_report.t
 
 (* check_tailcalls id ~points expr checks that all calls to id in
@@ -72,7 +72,7 @@ val find_binding:
    The default value for points is 1.
 *)
 val check_tailcalls:
-  Ident.t -> ?points: int -> Typed_ast.expression -> Learnocaml_report.t
+  Path.t -> ?points: int -> Typed_ast.expression -> Learnocaml_report.t
 
 (* Looking up identifiers in the environment an expression was typed in.
    Raises Not_found if the identifier is not found in the environment.
@@ -84,12 +84,18 @@ val lookup_in_expr_env: Typed_ast.expression -> string -> Path.t
 val same_expr: Typed_ast.expression -> Typed_ast.expression -> bool
 val same_pattern : Typed_ast.pattern -> Typed_ast.pattern -> bool
 
-(* Helpers for constructing Typed_ast fragments *)
+(* Helpers for constructing Typed_ast fragments.
+   The fields of these fragments are completely uninitialized:
+   empty typing environment, type unit, no location or attributes, etc.
+*)
+
+val tast_of_desc: Typed_ast.expression_desc -> Typed_ast.expression
+val structure_of_item: Typed_ast.structure_item -> Typed_ast.structure
 
 (* Retrieving the path for a predefined identifier (including identifiers from
    the prelude). Useful for building Typed_ast fragments.
    Raises Not_found if the identifier is not predefined.
- *)
+*)
 val path_of_id: string -> Path.t
 
 val tast_expr_of_ident: Ident.t -> Typed_ast.expression
