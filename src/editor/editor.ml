@@ -62,12 +62,21 @@ let set_string_translations () =
       Manip.setInnerHtml (find_component id) text)
     translations
 
+let changed = ref false
+            
 let activate_before_unload () :unit =
-  Js.Unsafe.js_expr
-    "window.onbeforeunload = function() {return 'You have unsaved changes!';}"
-
+  if not !changed then
+    begin
+      changed := true;
+      Js.Unsafe.js_expr
+        "window.onbeforeunload = function() {return 'You have unsaved changes!';}"
+    end
 let unable_before_unload () :unit =
-  Js.Unsafe.js_expr "window.onbeforeunload = null"
+  if !changed then
+    begin
+      changed := false;
+      Js.Unsafe.js_expr "window.onbeforeunload = null"
+    end
   
 let onchange ace_list =
   let add_change_listener ace =
@@ -400,7 +409,7 @@ let () =
     Lwt.return ()
   end ;
   begin editor_button
-      ~icon: "download" [%i"Download"] @@ fun () ->
+      ~icon: "download" [%i"Save & Download"] @@ fun () ->
      recovering () ;
     Editor_io.download id;
     Lwt.return () 
@@ -446,7 +455,6 @@ let () =
   begin toolbar_button
           ~icon: "upload" [%i"Experiment"] @@
           fun ()->
-          recovering ();
           Dom_html.window##.location##assign
             (Js.string ("exercise.html#id=." ^ id));
           Lwt.return_unit
@@ -511,10 +519,10 @@ let () =
        typecheck_editor () in
   begin toolbar_button
      ~icon: "reload" [%i"Grade!"] @@ fun () ->
-                                     recovering ();
                                      grade ()
   end ;
   onchange [ace_temp; ace_t; ace_prep; ace_prel; ace_quest; ace ];
+
   (* ---- return -------------------------------------------------------- *)
   (* toplevel_launch >>= fun _ -> should be unnecessary? *)
   (* typecheck false >>= fun () -> *)
@@ -525,3 +533,12 @@ let () =
        Lwt.return () in
 
   Lwt.return ();;
+
+(* Temporary workaround; could be done without the sleep *) 
+let () = Lwt.async @@
+          fun () ->
+          Lwt_js.sleep 5. >>=
+            fun () ->
+            changed:=true;
+            unable_before_unload ();
+            Lwt.return ();
