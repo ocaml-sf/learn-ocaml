@@ -318,9 +318,7 @@ let () =
   begin test_button
           ~group: toplevel_buttons_group
           ~icon: "sync" [%i"Generate"] @@ fun () ->
-   let sol = genTemplate (Ace.get_contents ace) in
-    if sol<>"" then
-      begin
+    
         disabling_button_group toplevel_buttons_group
           (fun () -> Learnocaml_toplevel.reset top) >>= fun () ->
         Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>=
@@ -334,8 +332,6 @@ let () =
               Lwt.return_unit
             end
           else (select_tab "toplevel" ; Lwt.return ())
-      end
-    else Lwt.return ();
   end;
 
   let typecheck_testml () =
@@ -518,8 +514,9 @@ let () =
        hide_loading ~id:"learnocaml-exo-loading" () ;
        typecheck_editor () in
   begin toolbar_button
-     ~icon: "reload" [%i"Grade!"] @@ fun () ->
-                                     grade ()
+          ~icon: "reload" [%i"Save & Grade!"] @@ fun () ->
+                                     recovering ();            
+                                     grade ();
   end ;
   onchange [ace_temp; ace_t; ace_prep; ace_prel; ace_quest; ace ];
 
