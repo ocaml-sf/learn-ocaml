@@ -108,6 +108,8 @@ let editor_tab  _ _ () =
                    | None -> pcdata [%i"No description available."]
                        | Some text -> pcdata text ] ;
              ] ;
+           div ~a:[ a_class [ "time-left" ] ] [pcdata ("id: " ^ editor_sate.exercise.id ) ];
+
            div ~a:[a_class["stats"]] [
                div ~a:[ a_class [ "stars" ] ] [
                    let num = 5 * int_of_float (editor_sate.metadata.stars*. 2.) in
