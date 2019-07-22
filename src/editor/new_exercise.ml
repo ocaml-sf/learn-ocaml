@@ -111,8 +111,10 @@ let _ = match previous_state with
                              ""
                              state.metadata.author)
                   in
-                  authors_input##.value :=                      
-                            Js.string (String.sub s 0 (String.length s - 2));
+                  authors_input##.value :=
+                    if s="" then Js.string ""
+                    else
+                      Js.string (String.sub s 0 (String.length s - 2));
                   
                   required_input##.value := Js.string
                                               (string_with_spaces
@@ -166,6 +168,9 @@ let _ =
     and  backward = string_parser (Js.to_string backward_input##.value)
     and forward = string_parser (Js.to_string forward_input##.value)
     and authors=
+      if String.trim (Js.to_string authors_input##.value) = "" then
+        []
+      else
       Regexp.split
         (Regexp.regexp ";")
         (Js.to_string authors_input##.value)
@@ -177,7 +182,7 @@ let _ =
                     with
                       a::b::[]->(a,b)
                     | _ ->
-                       Dom_html.window##alert (Js.string "Syntax error");
+                       Dom_html.window##alert (Js.string "Incorrect value for the authors field");
                        failwith "bad syntax"
       
   in

@@ -514,7 +514,7 @@ let () =
        hide_loading ~id:"learnocaml-exo-loading" () ;
        typecheck_editor () in
   begin toolbar_button
-          ~icon: "reload" [%i"Save & Grade!"] @@ fun () ->
+          ~icon: "reload" [%i"Save&Grade!"] @@ fun () ->
                                      recovering ();            
                                      grade ();
   end ;
