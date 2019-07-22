@@ -26,8 +26,7 @@ module H = Tyxml_js.Html
 let init_tabs, select_tab =
   mk_tab_handlers "question" [ "toplevel" ; "report" ; "editor" ; "template" ; "test" ;
                  "prelude" ; "prepare" ] 
-    
-              
+
 let set_string_translations () =
   let translations = [
       "txt_preparing", [%i"Preparing the environment"];
@@ -318,7 +317,6 @@ let () =
   begin test_button
           ~group: toplevel_buttons_group
           ~icon: "sync" [%i"Generate"] @@ fun () ->
-    
         disabling_button_group toplevel_buttons_group
           (fun () -> Learnocaml_toplevel.reset top) >>= fun () ->
         Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>=
@@ -355,24 +353,25 @@ let () =
   Ace.set_contents ace_temp contents ;
   Ace.set_font_size ace_temp 18;
 
+  let set_temp_tab () =
+    genTemplate top ~on_err:(fun () -> select_tab "toplevel")
+      (Ace.get_contents ace) >>= fun template ->
+    (Ace.set_contents ace_temp template; Lwt.return ()) in
   begin template_button
       ~icon: "sync" [%i"Gen. template"] @@ fun () ->
     if (Ace.get_contents ace_temp) = "" then
-        Ace.set_contents ace_temp (genTemplate (Ace.get_contents ace) )
+      set_temp_tab ()
     else
       begin
         Learnocaml_common.confirm
           ~title:"Confirmation"
           ~ok_label:"Yes"
           [ H.p [H.pcdata "Do you want to crush the template?\n"] ]
-          (fun () ->
-            Ace.set_contents ace_temp
-              (genTemplate (Ace.get_contents ace));
-            hide_loading ~id:"learnocaml-exo-loading" ());
-      end ;
-    Lwt.return();
+          (fun () -> Lwt.async set_temp_tab);
+        Lwt.return ()
+      end;
   end;
-  
+
   let typecheck_template () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
                     ^ Ace.get_contents ace_prep ^ "\n") in
