@@ -36,7 +36,7 @@ val idUnique : string -> bool
 (** @return a bool depending on whether the title is already used or not *)
 val titleUnique : string -> bool
 
-val new_state : Exercise.Meta.t -> editor_state  
+val new_state : Exercise.Meta.t -> editor_state
 (** arguments Dom element , string *)
 val setInnerHtml : < innerHTML : < set : Js.js_string Js.t -> unit; .. >
                    Js_of_ocaml.Js.gen_prop; .. > Js_of_ocaml.Js.t -> string -> unit
@@ -48,8 +48,6 @@ val init : string
 (** Create the code of a section
   * @param name_of_the_function associated_report *)
 val section : string -> string -> string
-
-val string_of_char : char -> string
 
 (* TODO: Remove commented code
 (** @param content_of_the_toplevel [[]]
@@ -68,9 +66,6 @@ val get_only_fct : char list -> char list -> char list
 val get_questions : char list list -> (string * string) list -> (string * string) list
  *)
 
-(** Create the corresponding char list of a string (second parameter must be 0) *)
-val decompositionSol : string -> int -> char list
-
 (*
 (** Create a list of triples (key, alea, "monorphic type"):
     polymorph_detector [("f", "'a -> 'b"); ("p", "int -> int")] =
@@ -78,8 +73,12 @@ val decompositionSol : string -> int -> char list
 val polymorph_detector : ('a * string) list -> ('a * int * string) list
  *)
 
-(** Create the template of the solution *)
-val genTemplate : string -> string
+(** [genTemplate top ?(on_err=fun()->()) sol]:
+    evaluate the solution [sol] using the toplevel [top],
+    generate then return a template string.
+    Run also [on_err] if there is a typecheck error. *)
+val genTemplate :
+  Learnocaml_toplevel.t -> ?on_err:(unit -> unit) -> string -> string Lwt.t
 
 (** [typecheck set_class ace editor top prelprep ?(mock=false) ?onpasterr code]:
     check if [code] (taken from buffer [ace, editor], with [prelprep]
@@ -112,10 +111,10 @@ val monomorph_generator : (string * string) list -> Editor.test_qst_untyped list
 
 val show_load : Html_types.text Tyxml_js.Html.wrap ->
 [< Html_types.div_content_fun ] Tyxml_js.Html.elt Tyxml_js.Html.list_wrap ->
-unit                                                      
+unit
 
 module Editor_io : sig
   val download : Learnocaml_data.SMap.key -> unit
   val upload : unit -> unit
   val download_all : unit -> unit
-end 
+end

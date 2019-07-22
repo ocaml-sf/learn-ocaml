@@ -254,95 +254,23 @@ let monomorph_generator l =
            list_mono)
   |> List.flatten
 
-(* ____Functions for generate template______________________________________ *)
+(* ____Functions for "GenTemplate" feature__________________________________ *)
 
-(* TODO: Refactor and delete concatenation that involves type (char list) *)
+let get_answer top =
+  Learnocaml_toplevel.execute_test top
 
-let string_of_char ch = String.make 1 ch
-
-let rec concatenation listech = match listech with
-  | [] -> ""
-  | c :: l -> (string_of_char c) ^ (concatenation l)
-
-let rec decompositionSol str n =
-  if str = "" then []
-  else if n + 1 = String.length str then [(str.[n])]
-  else (str.[n])::(decompositionSol str (n+1))
-
-let failchar =
-  decompositionSol {|
-                    "Change this string for you code."
-
-                    |} 0
-
-let tail l = match l with
-  | [] -> []
-  | e :: l -> l
-
-let rec commentaire listech cpt = match listech with
-  | [] -> []
-  | '*'::')'::l -> if cpt = 0 then l else commentaire l (cpt - 1)
-  | '('::'*'::l -> commentaire l (cpt + 1)
-  | c::l -> commentaire l cpt
-
-let rec premierLet listech = match listech with
-  | [] -> []
-  | '('::'*'::l -> premierLet (commentaire l 0)
-  | c::'l'::'e'::'t'::' '::l ->
-     if c = '\n' || c = ' ' then ('l'::'e'::'t'::' '::l) else premierLet l
-  | 'l'::'e'::'t'::' '::l -> 'l'::'e'::'t'::' '::l
-  | ' '::l -> premierLet l
-  | '\n'::l -> premierLet l
-  | _ -> []
-
-let rec validationLet listech = match listech with
-  | [] -> false
-  | ' '::l -> validationLet l
-  | '\n'::l -> validationLet l
-  | '('::l -> validationLet l
-  | 'l'::'e'::'t'::l -> false
-  | _ -> true
-
-let rec rechercheEgal listech = match listech with
-  | [] -> 0
-  | '='::l -> 1
-  | ' '::'l'::'e'::'t'::' '::l -> 2
-  | '\n'::'l'::'e'::'t'::' '::l -> 2
-  | c::l -> rechercheEgal l
-
-let rec rechercheLet listech b = match listech with
-  | [] -> []
-  | '('::'*'::l -> rechercheLet (commentaire l 0) b
-  | ';'::';'::l -> rechercheLet l true
-  | '='::l -> rechercheLet l (validationLet l)
-  | _::'t'::'h'::'e'::'n'::_::l -> rechercheLet l (validationLet l)
-  | _::'e'::'l'::'s'::'e'::_::l -> rechercheLet l (validationLet l)
-  | _::'i'::'n'::_::l -> rechercheLet l (validationLet l)
-  | '-'::'>'::l -> rechercheLet l (validationLet l)
-  | 'l'::'e'::'t'::' '::l ->
-     if b && (rechercheEgal l) = 1 then 'l'::'e'::'t'::' '::l
-     else if (rechercheEgal l) = 0 then rechercheLet l false
-     else rechercheLet l true
-  | c::suite -> rechercheLet suite b
-
-let rec decomposition2 listech = match listech with
-  | [] -> []
-  | '='::l -> ['=']
-  | c::l -> c :: (decomposition2 l)
-
-let decompoFirst listech = match listech with
-  | []-> []
-  | _ -> (decomposition2 listech) @ failchar
-
-let rec genLet listech =
-  let liste = rechercheLet listech true in
-  match liste with
-  | [] -> []
-  | _ -> (decomposition2 liste) @ failchar @ (genLet (tail liste))
-
-let genTemplate chaine =
-  if chaine = "" then ""
-  else concatenation (genLet (decompositionSol chaine 0))
+let genTemplate top ?(on_err = fun () -> ()) sol =
+  Learnocaml_toplevel.reset top >>= fun () ->
+  Learnocaml_toplevel.execute_phrase top sol >>=
+    fun ok ->
+    if ok then
+      let list_f_ty = extract_functions (get_answer top) in
+      let result =
+        List.fold_right (fun (f, _ty) r ->
+            Format.sprintf {|let %s =@.  "Replace this string with you code."@.@.|} f ^ r)
+          list_f_ty ""
+      in Lwt.return result
+    else Lwt.return (let () = on_err () in "")
 
 (* ---- create an exo ------------------------------------------------------- *)
 let exo_creator proper_id =
@@ -364,9 +292,6 @@ let exo_creator proper_id =
     ~id:proper_id
     ~decipher:false
     ()
-
-let get_answer top =
-  Learnocaml_toplevel.execute_test top
 
 (* TODO look for the record type of res to make the message more understandable *)
 let typecheck_dialog_box div_id res =
@@ -488,24 +413,24 @@ module Editor_io = struct
     ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
     result_t
 
+  (* Return true if the ID and the title is unique *)
+  (* FIXME: refactor this as the handling of IDs has changed *)
   let upload_new_exercise id to_save =
     let to_save = put_exercise_id id to_save
     in
     let open Exercise.Meta in
-    let result= idUnique id && titleUnique to_save.metadata.title in
-    if result then
-      update_index to_save;
-   result        
-              
+    let result = idUnique id && titleUnique to_save.metadata.title in
+    if result then update_index to_save;
+    result
+
   let upload () =
     run_async_with_log
       (fun () ->
         upload_file () >>=
           fun file ->
-          let (f:Js.js_string Js.t ->(Js.js_string Js.t -> unit)->unit) = Js.Unsafe.eval_string "editor_import" in 
+          let (f:Js.js_string Js.t ->(Js.js_string Js.t -> unit)->unit) = Js.Unsafe.eval_string "editor_import" in
           let callback =
             (fun text ->
-              
               SMap.iter
                 (fun id editor_state ->
                   if not (upload_new_exercise id editor_state)  then
@@ -520,6 +445,5 @@ module Editor_io = struct
             Js.Unsafe.fun_call f
               [| Js.Unsafe.inject file ;
                  Js.Unsafe.inject callback|]
-          in Lwt.return_unit)          
-                                                             
+          in Lwt.return_unit)
 end
