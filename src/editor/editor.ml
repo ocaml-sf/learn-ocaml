@@ -25,6 +25,7 @@ open Editor_lib
 open Dom_html
 open Test_spec
 
+module H = Tyxml_js.Html
 
 (*----------------------------------------------------------------------*)
 
@@ -355,40 +356,24 @@ let () =
   Ace.set_contents ace_temp contents ;
   Ace.set_font_size ace_temp 18;
 
-  let messages = Tyxml_js.Html5.ul [] in
   begin template_button
       ~icon: "sync" [%i"Gen. template"] @@ fun () ->
     if (Ace.get_contents ace_temp) = "" then
         Ace.set_contents ace_temp (genTemplate (Ace.get_contents ace) )
     else
       begin
-       let aborted, abort_message =
-         let t, u = Lwt.task () in
-         let btn_cancel = Tyxml_js.Html5.(button [ pcdata [%i"Cancel"] ]) in
-         Manip.Ev.onclick btn_cancel
-           (fun _ -> hide_loading ~id:"learnocaml-exo-loading" () ; true) ;
-         let btn_yes = Tyxml_js.Html5.(button [ pcdata [%i"Yes"] ]) in
-         Manip.Ev.onclick btn_yes
-           (fun _ -> Ace.set_contents ace_temp
-                       (genTemplate (Ace.get_contents ace));
-                     hide_loading ~id:"learnocaml-exo-loading" ();
-                     true);
-         let div =
-           Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                             [pcdata [%i"Do you want to crush the template?\n"];
-                              btn_yes ;
-                              pcdata " " ;
-                              btn_cancel ]) in
-         Manip.SetCss.opacity div (Some "0") ;
-         t, div in
-       Manip.replaceChildren messages
-         Tyxml_js.Html5.[ li [ pcdata "" ] ] ;
-       show_load "learnocaml-exo-loading" [ abort_message ] ;
-       Manip.SetCss.opacity abort_message (Some "1")
-      end;
-    Lwt.return ()
-  end ;
-
+        Learnocaml_common.confirm
+          ~title:"Confirmation"
+          ~ok_label:"Yes"
+          [ H.p [H.pcdata "Do you want to crush the template?\n"] ]
+          (fun () ->
+            Ace.set_contents ace_temp
+              (genTemplate (Ace.get_contents ace));
+            hide_loading ~id:"learnocaml-exo-loading" ());
+      end ;
+    Lwt.return();
+  end;
+  
   let typecheck_template () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
                     ^ Ace.get_contents ace_prep ^ "\n") in

@@ -33,32 +33,17 @@ let fetch_editor_index ()=
 
 let delete_button_handler exercise_id =
   (fun _ ->
-     begin
-       let messages = Tyxml_js.Html5.ul [] in
-       let _aborted, abort_message =
-         let t, _u = Lwt.task () in
-         let btn_no = Tyxml_js.Html5.(button [ pcdata [%i"No"] ]) in
-         Manip.Ev.onclick btn_no ( fun _ ->
-             hide_loading ~id:"learnocaml-main-loading" () ; true) ;
-         let btn_yes = Tyxml_js.Html5.(button [ pcdata [%i"Yes"] ]) in
-         Manip.Ev.onclick btn_yes (fun _ ->
-             remove_exo exercise_id;
-             Dom_html.window##.location##reload ; true) ;
-         let div =
-           Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                             [ pcdata [%i"Are you sure you want \
-                                          to delete this exercise?\n"] ;
-                               btn_yes ;
-                               pcdata " " ;
-                               btn_no ]) in
-         Manip.SetCss.opacity div (Some "0") ;
-         t, div in
-       Manip.replaceChildren messages
-         Tyxml_js.Html5.[ li [ pcdata "" ] ] ;
-       show_load "learnocaml-main-loading" [ abort_message ] ;
-       Manip.SetCss.opacity abort_message (Some "1") ;
-     end ;
-     true) ;;
+    let message =
+      pcdata [%i"Are you sure you want  to delete this exercise?\n"]
+    in
+    Learnocaml_common.confirm
+      ~title:"Confirmation"
+      ~ok_label:"Yes"
+      [message]
+      (fun () ->
+        remove_exo exercise_id;
+        Dom_html.window##.location##reload);
+    true) ;;
 
 let import_bar =
   a ~a:[ a_onclick (fun _ -> Editor_io.upload ();true);
@@ -83,7 +68,7 @@ let new_exercise_bar =
                         a new exercise"]]]]  
 
   
-let rec editor_tab token _ _ () =
+let editor_tab  _ _ () =
 
 
     Lwt_js.sleep 0.5 >>= fun () ->

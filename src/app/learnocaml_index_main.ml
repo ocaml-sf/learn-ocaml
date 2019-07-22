@@ -505,9 +505,9 @@ let teacher_tab token a b () =
   Learnocaml_teacher_tab.teacher_tab token a b () >>= fun div ->
   Lwt.return div
 
-let editor_tab token a b () =
+let editor_tab a b () =
   show_loading[%i"Loading Editor"] @@ fun () ->
-  Learnocaml_editor_tab.editor_tab token a b () >>= fun div ->
+  Learnocaml_editor_tab.editor_tab a b () >>= fun div ->
   Lwt.return div                                    
  
 let get_stored_token () =
@@ -699,7 +699,7 @@ let () =
        then [ "playground", ([%i"Playground"], playground_tab) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
-          [ "teacher", ([%i"Teach"], teacher_tab t);"editor",([%i"Editor"], editor_tab t)]
+          [ "teacher", ([%i"Teach"], teacher_tab t);"editor",([%i"Editor"], editor_tab )]
        | _ -> []) 
         
     in
