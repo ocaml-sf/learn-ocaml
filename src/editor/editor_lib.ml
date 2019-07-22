@@ -414,9 +414,9 @@ module Editor_io = struct
     result_t
 
   (* Return true if the ID and the title is unique *)
-  (* FIXME: refactor this as the handling of IDs has changed *)
-  let upload_new_exercise id to_save =
-    let to_save = put_exercise_id id to_save
+  let upload_new_exercise to_save =
+    let id = to_save.exercise.id in
+    let to_save = put_exercise_id id to_save (* to put the id in metadata too *)
     in
     let open Exercise.Meta in
     let result = idUnique id && titleUnique to_save.metadata.title in
@@ -433,7 +433,7 @@ module Editor_io = struct
             (fun text ->
               SMap.iter
                 (fun id editor_state ->
-                  if not (upload_new_exercise id editor_state)  then
+                  if not (upload_new_exercise editor_state)  then
                     alert ([%i"Identifier and/or title not unique\n"] ^
                 "id:" ^ id ^ [%i" title:"] ^ editor_state.metadata.title))
                 (Json_repr_browser.Json_encoding.destruct 
