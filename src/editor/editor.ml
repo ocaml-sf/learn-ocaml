@@ -324,8 +324,7 @@ let () =
           if ok then
             begin
               let questions = monomorph_generator (extract_functions (get_answer top)) in
-              let indexed_list= List.mapi (fun i elt -> (i,elt)) questions in
-              let string = compile indexed_list in
+              let string = compile questions in
               Ace.set_contents ace_t string;
               Lwt.return_unit
             end

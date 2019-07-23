@@ -9,8 +9,10 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(** Allows typing a question passing by a string
-  * @param question_untyped id_question *)
-val question_typed : Learnocaml_data.Editor.test_qst_untyped -> int -> string
+(** [question_typed] is used by [compile]
+    @return the compiled string of a single question *)
+val question_typed : ?num:int -> Learnocaml_data.Editor.test_qst_untyped -> string
 
-val compile :  (int * Learnocaml_data.Editor.test_qst_untyped) list -> string
+(** [compile] is used by the "Generate" feature of the test.ml tab
+    @return the compiled string of all given questions *)
+val compile : (string * Learnocaml_data.Editor.test_qst_untyped list) list -> string
