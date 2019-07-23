@@ -803,8 +803,10 @@ let () =
        H.div ~a:[H.a_style "text-align: center;"]
          [token_disp_div (get_stored_token ())]]
       (fun () ->
-         Lwt.async @@ fun () ->
+        Lwt.async @@ fun () ->
+         let index = Learnocaml_local_storage.(retrieve editor_index) in
          Learnocaml_local_storage.clear ();
+         Learnocaml_local_storage.(store editor_index index);
          reload ();
          Lwt.return_unit)
   in
