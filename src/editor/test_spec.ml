@@ -80,7 +80,7 @@ let parse_type string =
   !acc;;
 
 (* The tester arg could take into account exceptions/sorted lists/etc. *)
-let question_typed question id_question =
+let question_typed ?num question =
   let open Learnocaml_data.Editor in
   let opt_string param = function
     | "" -> ""
@@ -89,6 +89,7 @@ let question_typed question id_question =
     | "" -> ""
     | f -> Format.sprintf "fun () -> last ((%s) ())" f
   in
+  let suffix = match num with None -> "" | Some n -> "_" ^ string_of_int n in
   match question with
   | TestAgainstSpec a ->
      (* FIXME *)
@@ -97,12 +98,13 @@ let question_typed question id_question =
   | TestSuite a ->
      let name, prot, tester, suite =
        a.name, parse_type a.ty, opt_string "test" a.tester, a.suite in
-     Format.sprintf "let question%d =@.  \
+     (* Naming convention: [q_name], [q_name1; q_name2] (occurrence 1/3) *)
+     Format.sprintf "let q_%s%s =@.  \
                      let prot = %s in@.  \
                      test_function%s prot@.  \
                      (lookup_student (ty_of_prot prot) %s)@.  \
                      %s;;@."
-       id_question prot tester name suite
+       name suffix prot tester name suite
   | TestAgainstSol a ->
      let name = a.name
      and prot = parse_type a.ty
@@ -111,12 +113,13 @@ let question_typed question id_question =
      and tester = opt_string "test" a.tester
      and suite = a.suite
      in
-     Format.sprintf "let question%d =@.  \
+     (* Naming convention: [q_name], [q_name1; q_name2] (occurrence 2/3) *)
+     Format.sprintf "let q_%s%s =@.  \
                      let prot = %s in@.  \
                      test_function_against_solution ~gen:(%d)%s%s prot@.  \
                      \"%s\"@.  \
                      %s;;@."
-     id_question prot gen sampler tester name suite
+     name suffix prot gen sampler tester name suite
 
 (*****************)
 (* compile stuff *)
@@ -291,18 +294,35 @@ let fonction =
       "" in
   fonction
 
-  let compile indexed_list =
-    let tests = test_prel ^ (ast_fonction true true) in
-    let tests = List.fold_left (fun acc (qid,quest) ->
-          acc ^ (question_typed quest qid)^" \n")
-         tests indexed_list in
-    let tests = tests ^ init ^ "[\n" ^ ast_code true true in
-    let tests =
-      List.fold_left (fun acc (qid, quest) ->
-          let name=match quest with
-            | TestAgainstSol a->a.name
-            | TestAgainstSpec a ->a.name
-            | TestSuite a -> a.name in
-          acc ^ (section name ("question" ^ string_of_int qid ) ))
-         tests indexed_list in
-    tests ^ " ]"
+(* Naming convention: [q_name], [q_name1; q_name2] (occurrence 3/3) *)
+(* [cat_question "foo" [42] = "q_foo"]
+   [cat_question "foo" [42; 42; 42] = "q_foo_1 @ q_foo_2 @ q_foo_3"] *)
+let cat_question name list_qst =
+  match list_qst with
+  | [] -> invalid_arg "cat_question"
+  | [_] -> "q_" ^ name
+  | _q :: ((_ :: _) as l) ->
+     List.fold_left (fun (i, acc) _e ->
+         (i + 1, acc ^" @ q_"^ name ^ "_" ^ string_of_int i))
+       (2, "q_" ^ name ^ "_1") l
+     |> snd
+
+let compile indexed_list =
+  let tests = test_prel ^ (ast_fonction true true) in
+  let tests = List.fold_left (fun acc (_name, list_qst) ->
+                  acc ^
+                  if List.length list_qst > 1 then
+                    List.fold_left (fun (i, acc) qst ->
+                        (i + 1, acc ^ question_typed ~num:i qst ^" \n"))
+                      (1, "") list_qst
+                    |> snd
+                  else List.fold_left (fun acc qst ->
+                           acc ^ question_typed qst ^" \n")
+                         "" list_qst)
+                tests indexed_list in
+  let tests = tests ^ init ^ "[\n" ^ ast_code true true in
+  let tests =
+    List.fold_left (fun acc (name, list_qst) ->
+        acc ^ section name (cat_question name list_qst))
+      tests indexed_list in
+  tests ^ " ]"

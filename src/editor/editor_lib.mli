@@ -106,8 +106,8 @@ val typecheck_dialog_box : string-> 'a Toploop_results.toplevel_result -> unit L
 val extract_functions : string -> (string * string) list
 
 (** Generate monomorphic test specifications
-    @return a list of ("function_name", [(alea, "monomorphic type")]) *)
-val monomorph_generator : (string * string) list -> Editor.test_qst_untyped list
+    @return a list of ("function_name", list_of_monomorphic_test_cases) *)
+val monomorph_generator : (string * string) list -> (string * Editor.test_qst_untyped list) list
 
 val show_load : Html_types.text Tyxml_js.Html.wrap ->
 [< Html_types.div_content_fun ] Tyxml_js.Html.elt Tyxml_js.Html.list_wrap ->

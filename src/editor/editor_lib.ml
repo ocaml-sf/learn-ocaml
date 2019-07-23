@@ -197,7 +197,7 @@ let rec undup_assoc = function
    even if it is defined before the non-function expression. *)
 let extract_functions s =
   (* Remove module/module_types as their signature could contain val items *)
-  let s = Regexp.(global_replace (regexp "module type\\\s\\w+\\s=\\ssig\\s[^]+?\\send\\s*") s "") in
+  let s = Regexp.(global_replace (regexp "module type\\s\\w+\\s=\\ssig\\s[^]+?\\send\\s*") s "") in
   let s = Regexp.(global_replace (regexp "module type\\s\\w+\\s=\\s\\w+\\s*") s "") in
   let s = Regexp.(global_replace (regexp "module\\s\\w+\\s:\\ssig\\s[^]+?\\send\\s*") s "") in
   let s = Regexp.(global_replace (regexp "module\\s\\w+\\s:\\s\\w+\\s*") s "") in
@@ -226,6 +226,22 @@ let replace_all map s =
       Regexp.(global_replace (regexp_string e) res by))
     s map
 
+(* [gen1] and [gen2] are helper functions devised to generate for each
+   polymorphic function, two monomorphic testcases.
+
+   Properties:
+   * forall i, gen1 i \in base
+   * forall i, gen1 i <> gen2 i
+   * forall i, j \in [[0, 11]], i <> j -> (gen1 i, gen2 i) <> (gen1 j, gen2 j)
+
+   List.map gen1 [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11]
+    = ["int"; "bool"; "char"; "string"; "int"; "bool"; "char"; "string";
+       "int"; "bool"; "char"; "string"]
+
+   List.map gen2 [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11]
+    = ["bool"; "int"; "bool"; "bool"; "char"; "char"; "int"; "char";
+       "string"; "string"; "string"; "int"]
+ *)
 let base = ["int"; "bool"; "char"; "string"]
 let gen1 i = List.nth base (i mod 4)
 let gen2 i =
@@ -244,15 +260,13 @@ let monomorph_generator l =
          and t2 = replace_all (List.mapi (fun i e -> (e, gen2 i)) vars) ty
          in [(5, t1); (5, t2)]
   in
-  List.map (fun (func, ty) -> (func, f ty)) l
-  |> List.map  (fun (name, list_mono)  ->
-         List.fold_left  (fun acc (gen, ty) ->
-             TestAgainstSol
-               {name; ty; suite = "[]"; gen;
-                tester = ""; sampler = ""}::acc)
-           []
-           list_mono)
-  |> List.flatten
+  List.map (fun (name, ty) ->
+      let list_mono = f ty in
+      let list_qst = List.map (fun (gen, mono_ty) ->
+                         TestAgainstSol {name; ty = mono_ty; suite = "[]"; gen;
+                                         tester = ""; sampler = ""})
+                       list_mono
+      in (name, list_qst)) l
 
 (* ____Functions for "GenTemplate" feature__________________________________ *)
 
