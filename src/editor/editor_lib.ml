@@ -413,15 +413,6 @@ module Editor_io = struct
     ignore (Js.Unsafe.meth_call input_files_load "click" [||]) ;
     result_t
 
-  (* Return true if the ID and the title is unique *)
-  let upload_new_exercise to_save =
-    let id = to_save.exercise.id in
-    let to_save = put_exercise_id id to_save (* to put the id in metadata too *)
-    in
-    let open Exercise.Meta in
-    let result = idUnique id && titleUnique to_save.metadata.title in
-    if result then update_index to_save;
-    result
 
   let upload () =
     run_async_with_log
@@ -429,13 +420,23 @@ module Editor_io = struct
         upload_file () >>=
           fun file ->
           let (f:Js.js_string Js.t ->(Js.js_string Js.t -> unit)->unit) = Js.Unsafe.eval_string "editor_import" in
+          let override_all = Js_utils.confirm "Do you want to override all?" in 
           let callback =
             (fun text ->
               SMap.iter
                 (fun id editor_state ->
-                  if not (upload_new_exercise editor_state)  then
-                    alert ([%i"Identifier and/or title not unique\n"] ^
-                "id:" ^ id ^ [%i" title:"] ^ editor_state.metadata.title))
+                  let editor_state = put_exercise_id id editor_state in (* update metadata.id *)  
+                  if (not (idUnique id && titleUnique id)) && not override_all  then
+                    let override = Js_utils.confirm
+                      ([%i"Identifier and/or title not unique\n"] ^
+                         "id:" ^ id ^ [%i" title:"] ^ editor_state.metadata.title ^
+                           "\n Do you want to override?")
+                    in
+                    if override then
+                      update_index editor_state;
+                    else
+                      update_index editor_state      
+                )
                 (Json_repr_browser.Json_encoding.destruct 
                    (SMap.enc editor_state_enc)
                    (Js._JSON##(parse text)));
