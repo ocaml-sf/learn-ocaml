@@ -54,7 +54,10 @@ let string_with_spaces list=
       ""
       list
   in
-  String.sub s 1 (String.length s - 1 )
+  if s="" then
+    ""
+  else
+    String.sub s 1 (String.length s - 1 )
 
 let resultOptionToBool = function
   | None -> false
@@ -94,7 +97,7 @@ let difficulty_select =
    
 let backward_input =get (getElementById_coerce "backward" CoerceTo.input)                      
 let forward_input = get (getElementById_coerce "forward" CoerceTo.input)
-let  previous_state =
+let previous_state =
   match get_editor_state previous_id with
   | exception Not_found -> None    
   | state->Some state
@@ -115,7 +118,7 @@ let _ = match previous_state with
                     if s="" then Js.string ""
                     else
                       Js.string (String.sub s 0 (String.length s - 2));
-                  
+                                   
                   required_input##.value := Js.string
                                               (string_with_spaces
                                                  state.metadata.requirements);
