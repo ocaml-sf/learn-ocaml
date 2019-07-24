@@ -42,6 +42,8 @@ let create_range s e =
 
 let read_position pos = (pos##.row, pos##.column)
 
+let get_cursor_position {editor} = editor##(getCursorPosition)                       
+                      
 let read_range range =
   ((range##.start##.row, range##.start##.column),
    (range##.end_##.row, range##.end_##.column))
@@ -93,6 +95,9 @@ let set_mode {editor} name =
 
 let on {editor} event callback =
   editor##getSession##(on (Js.string event) (Js.Unsafe.meth_callback callback))
+
+let insert {editor} position content =
+  editor##getSession##(insert position (Js.string content))
 
 type mark_type = Error | Warning | Message
 

@@ -61,6 +61,7 @@ class type editSession = object
   method on : Js.js_string Js.t ->
               ((Dom_html.event Js.t , unit) Js.meth_callback)->
               unit Js.meth
+  method insert : position Js.t -> Js.js_string Js.t -> unit Js.meth      
   method setAnnotations : annotation Js.t Js.js_array Js.t -> unit Js.meth
   method getAnnotations : annotation Js.t Js.js_array Js.t Js.meth
   method clearAnnotations : unit Js.meth

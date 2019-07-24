@@ -351,7 +351,8 @@ let () =
             end
           else (select_tab "toplevel" ; Lwt.return ())
   end;
-
+  
+  (* Generate 1 *)
   let echo_lol =
     H.(a ~a: [a_onclick (fun _ -> js_log "lol";true)] [pcdata "log lol"])
   in
@@ -360,7 +361,7 @@ let () =
     dropup ~icon:"sync" ~theme:"light" "Generate 1" [echo_lol]
   in
   Manip.appendChild test_toolbar generate1;
-
+(* end generate 1 *)
   
   let typecheck_testml () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
