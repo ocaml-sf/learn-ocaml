@@ -32,6 +32,6 @@
  (name ty)
  (wrapped false)
  (library_flags :standard -linkall)
- (modules Ty)
+ (modules Ty Prot)
  (libraries compiler-libs)
 )

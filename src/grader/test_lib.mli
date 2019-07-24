@@ -1102,51 +1102,17 @@ module type S = sig
         can be returned. *)
     val result : (unit -> 'a) -> 'a result
 
-    (** The type of arguments, represented as heterogeneous lists.
-
-        Usage: [arg 3 @@ arg "word" @@ last false]
-
-        Alternatively: [3 @: "word" @:!! false]
-     *)
-    type ('arrow, 'uarrow, 'ret) args
-    val last :
-      'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) args
+    (** Helper notations for [Prot.args] *)
     val (!!) :
       'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) args
-    val arg :
-      'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+      ('a -> 'ret, 'a -> unit, 'ret) Prot.args
     val (@:) :
       'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) Prot.args
     val (@:!!) :
       'a -> 'b ->
-      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
-
-    val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
-
-    (** The type of function prototypes.
-
-        Usage: [arg_ty [%ty: int]
-        @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
-    type ('arrow, 'uarrow, 'ret) prot
-    val last_ty :
-      'a Ty.ty ->
-      'ret Ty.ty ->
-      (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) prot
-    val arg_ty :
-      'a Ty.ty ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
-      (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
-
-    val ty_of_prot :
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
-    val get_ret_ty :
-      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) Prot.args
 
     (** {2 Lookup functions} *)
 
@@ -1174,16 +1140,16 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
          unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
       ('ar -> 'row) lookup ->
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args * (unit -> 'ret)) list ->
       Learnocaml_report.t
 
     (** [test_function_against ~gen ~test ~test_stdout ~test_stderr
@@ -1194,19 +1160,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
       ?before_user :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args list ->
       Learnocaml_report.t
 
     (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
@@ -1217,19 +1183,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
       ?before_user:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
       ?after:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
          'ret * string * string ->
          'ret * string * string ->
          Learnocaml_report.item list) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
       string ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args list ->
       Learnocaml_report.item list
 
     (** Helper notation to test pure functions.
