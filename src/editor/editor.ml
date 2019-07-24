@@ -357,8 +357,28 @@ let () =
     H.(a ~a: [a_onclick (fun _ -> js_log "lol";true)] [pcdata "log lol"])
   in
 
+  let against_solution_template =
+    (*let solution =
+      Editor.TestAgainstSol
+        {name = "plus"; ty = "int -> int -> int ";
+         gen=10; suite= "[1 @:!! 4 ; 3 @:!! 3 ]";
+         tester = ""; sampler = ""}
+    in
+    let string_to_insert = question_typed solution in *)
+    let string_to_insert = "let q_plus =\n  let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (* type: int-> int -> int *)\n  test_function_against_solution ~gen:(10) prot (*10 random tests *)\n    \"plus\"                                (* function name = plus *)\n    [1 @:!! 4 ; 3 @:!! 3 ];;    (* compare (plus 1 4) and \n                                (plus 3 3) against professor\'s solution *)"
+    in
+    H.(a ~a:[ a_onclick (fun _ ->
+           let position = Ace.get_cursor_position ace_t in
+           Ace.insert ace_t position string_to_insert;true) ]
+         [pcdata "Against solution template"])
+  in
+
   let generate1 =
-    dropup ~icon:"sync" ~theme:"light" "Generate 1" [echo_lol]
+    dropup
+      ~icon:"sync"
+      ~theme:"light"
+      "Generate 1"
+      [echo_lol;against_solution_template]
   in
   Manip.appendChild test_toolbar generate1;
 (* end generate 1 *)
