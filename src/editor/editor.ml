@@ -21,6 +21,27 @@ open Test_spec
 
 module H = Tyxml_js.Html
 
+         
+let dropup ~icon ~theme name items = 
+  let dropup_content =
+    H.(div ~a:[a_class ["dropup-content"]] items)
+  in
+  let drop_button =
+    H.(button ~a:[a_class ["dropbtn"]] [ 
+           img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+           pcdata " " ;
+           span ~a:[ a_class [ "label" ] ] [ pcdata name ]
+    ])
+  in
+  Manip.Ev.onclick drop_button
+    (fun _ -> Manip.toggleClass dropup_content "show");
+
+  (* TODO translate it to js_of_ocaml *)
+  let _ =
+   Js.Unsafe.js_expr " //Close the dropdown menu if the user clicks outside of it\nwindow.onclick = function(event) {\n  if (!event.target.matches(\'.dropbtn\')) {\n    var dropdowns = document.getElementsByClassName(\"dropup-content\");\n    var i;\n    for (i = 0; i < dropdowns.length; i++) {\n      var openDropdown = dropdowns[i];\n      if (openDropdown.classList.contains(\'show\')) {\n        openDropdown.classList.remove(\'show\');\n      }\n    }\n  }\n} " in ();
+  H.(div ~a:[a_class ["dropup"]] [drop_button; dropup_content])
+    
+    
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -331,6 +352,16 @@ let () =
           else (select_tab "toplevel" ; Lwt.return ())
   end;
 
+  let echo_lol =
+    H.(a ~a: [a_onclick (fun _ -> js_log "lol";true)] [pcdata "log lol"])
+  in
+
+  let generate1 =
+    dropup ~icon:"sync" ~theme:"light" "Generate 1" [echo_lol]
+  in
+  Manip.appendChild test_toolbar generate1;
+
+  
   let typecheck_testml () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
                     ^ Ace.get_contents ace_prep ^ "\n") in
