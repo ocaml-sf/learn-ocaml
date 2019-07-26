@@ -326,3 +326,46 @@ let compile indexed_list =
         acc ^ section name (cat_question name list_qst))
       tests indexed_list in
   tests ^ " ]"
+
+(*
+module Generate_1 = struct
+  open Tyxml_js.Html5
+  open Learnocaml_common
+  open Learnocaml_data
+  open Lwt.Infix
+     
+  let ask_name top =
+    ask_string ~title:"Name" [ pcdata "Enter the function name"] >>=
+      (fun name ->
+        let questions = extract_functions (get_answer top) in
+        match  List.assoc_opt name questions  with
+        | None -> Learnocaml_common.alert "No question with this name found"; Lwt.return None
+        | Some s -> Lwt.return (Some (name,s))
+      )
+    
+  let generate_against_solution tuple_opt =
+    match tuple_opt with
+    | None -> ""
+    | Some (name, ty) ->  let question =
+                            Editor.TestAgainstSol
+                              {name = name; ty;
+                               gen=10; suite= "[1 @:!! 4 ; 3 @:!! 3 ]";
+                               tester = ""; sampler = ""}
+                          in
+                          question_typed question
+
+  let generate_test_suite tuple_opt =
+    match tuple_opt with
+    | None -> ""
+    | Some (name, ty) ->  let question =
+                            Editor.TestSuite
+                              {name = name; ty;
+                               gen=10; suite= "[1 @:!! 4 ; 3 @:!! 3 ]";
+                               tester = ""; sampler = ""}
+                          in
+                          question_typed question
+                           
+                                 
+end
+            
+ *)

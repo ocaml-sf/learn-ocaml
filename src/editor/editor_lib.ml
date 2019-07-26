@@ -462,3 +462,58 @@ module Editor_io = struct
                  Js.Unsafe.inject callback|]
           in Lwt.return_unit) 
 end
+
+module Templates = struct
+  
+  let give_templates () =
+    Learnocaml_local_storage.(retrieve editor_templates)
+    
+  (*gives the first 3 templates to show *)
+  let give_first_templates () =
+    let templates =
+      give_templates ()
+    in
+    match templates with
+    | [] -> []
+    | hd :: [] -> [hd] 
+    | hd :: snd :: [] -> [hd; snd]
+    | hd :: snd :: thrd :: _ -> [ hd; snd; thrd]
+                             
+  let against_solution_template =
+    { name = "Against solution"; 
+      template = {|
+     let q_plus =
+       let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (* type: int-> int -> int *)  
+       test_function_against_solution ~gen:(10) prot (*10 random tests *)
+          "plus"                                (* function name = plus *)
+          [1 @:!! 4 ; 3 @:!! 3 ];;    (* compare (plus 1 4) and 
+                                         (plus 3 3) against professor\'s solution *)
+     |}
+    }
+    
+  let test_suite_template =
+    { name = "Test Suite"; 
+    template = {|
+     let q_plus2 =
+       let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (*type : int -> int ->int *)
+       test_function prot
+         (lookup_student (ty_of_prot prot) "plus")  (*function name :"plus" *)
+         [5 @:!! 4  ==> 9;                         (* plus 5 4 = 9 *)
+         5 @:!! 5 ==> 10;                         
+         1 @:!! 1 ==> 2;
+         0 @:!! 0 ==> 0];;
+     |}
+    }
+                          
+  let save templates =
+    Learnocaml_local_storage.(store editor_templates templates) 
+
+  (* adding default templates if empty *)
+  let init () = let templates = give_templates () in
+                if  templates = [] then                  
+                   [against_solution_template;
+                   test_suite_template]
+                  |> save
+                
+                
+end 

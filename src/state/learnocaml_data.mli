@@ -461,5 +461,11 @@ module Editor : sig
       metadata : Exercise.Meta.t; }
 
   val editor_state_enc : editor_state Json_encoding.encoding
+
+  type editor_template =
+    { name : string;
+      template : string}
+
+  val editor_template_enc : editor_template Json_encoding.encoding
     
 end

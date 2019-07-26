@@ -118,3 +118,13 @@ module Editor_io : sig
   val upload : unit -> unit
   val download_all : unit -> unit
 end
+
+module Templates : sig
+  val give_templates : unit -> Learnocaml_data.Editor.editor_template list
+  val give_first_templates :
+    unit -> Learnocaml_data.Editor.editor_template list
+  val against_solution_template : Learnocaml_data.Editor.editor_template
+  val test_suite_template : Learnocaml_data.Editor.editor_template
+  val save : Learnocaml_data.Editor.editor_template list -> unit
+  val init : unit -> unit
+end

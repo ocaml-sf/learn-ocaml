@@ -352,40 +352,30 @@ let () =
           else (select_tab "toplevel" ; Lwt.return ())
   end;
   
-  (* Generate 1 *)
-  let echo_lol =
-    H.(a ~a: [a_onclick (fun _ -> js_log "lol";true)] [pcdata "log lol"])
+  (* templates *)
+  let default_templates =
+    Templates.init();
+    Templates.give_first_templates () 
+    |> List.map (fun Editor.{name; template} ->
+           H.(a ~a:[ a_onclick (fun _ ->
+                         let position = Ace.get_cursor_position ace_t in
+                         Ace.insert ace_t position template;true)]
+                [pcdata name]))
   in
 
-  let against_solution_template =
-    (*let solution =
-      Editor.TestAgainstSol
-        {name = "plus"; ty = "int -> int -> int ";
-         gen=10; suite= "[1 @:!! 4 ; 3 @:!! 3 ]";
-         tester = ""; sampler = ""}
-    in
-    let string_to_insert = question_typed solution in *)
-    let string_to_insert = "let q_plus =\n  let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (* type: int-> int -> int *)\n  test_function_against_solution ~gen:(10) prot (*10 random tests *)\n    \"plus\"                                (* function name = plus *)\n    [1 @:!! 4 ; 3 @:!! 3 ];;    (* compare (plus 1 4) and \n                                (plus 3 3) against professor\'s solution *)"
-    in
-    H.(a ~a:[ a_onclick (fun _ ->
-           let position = Ace.get_cursor_position ace_t in
-           Ace.insert ace_t position string_to_insert;true) ]
-         [pcdata "Against solution template"])
-  in
-
-  let generate1 =
+  let templates =
     dropup
       ~icon:"sync"
       ~theme:"light"
-      "Generate 1"
-      [echo_lol;against_solution_template]
+      "Templates"
+      default_templates 
   in
-  Manip.appendChild test_toolbar generate1;
-(* end generate 1 *)
+  Manip.appendChild test_toolbar templates;
+(* end templates *)
   
   let typecheck_testml () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
-                    ^ Ace.get_contents ace_prep ^ "\n") in
+                     ^ Ace.get_contents ace_prep ^ "\n") in
     Editor_lib.typecheck true ace_t editor_t top prelprep ~mock:true
       ~onpasterr:(fun () -> select_tab "prepare"; typecheck_prepare ())
       (Ace.get_contents ace_t) in
