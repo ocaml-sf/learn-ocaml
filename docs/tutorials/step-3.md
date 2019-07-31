@@ -162,9 +162,3 @@ let exercise_6 =
 
 
 
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-2.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)

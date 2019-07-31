@@ -98,16 +98,16 @@ ones:
 ## Optional arguments of grading functions
 
 * `gen`: number of automatically generated tests. See
-  [step-3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+  [step-3](../tutorials/step-3)
   and
-  [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
+  [step-4](../tutorials/step-4)
   for more information.
 
 * `sampler`: used to define sampler for automatically generating
   inputs for tests. See
-  [step-3](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
+  [step-3](../tutorials/step-3)
   and
-  [step-4](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
+  [step-4](../tutorials/step-4)
   for more information.
 
 * `test`: is used to redefine the function which compare the output of
@@ -209,12 +209,3 @@ The function `test_ignore` for optional argument `test` enables to
 ignore the student and solution output. On the contrary,
 `io_test_equals` for `test_stdout` enables to compare standard outputs
 with the structural equality.
-
---- 
-
-[Previous
-step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-4.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)

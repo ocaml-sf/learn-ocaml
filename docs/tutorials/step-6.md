@@ -72,10 +72,3 @@ let exercise_2 =
                      Message ([ Text "The answer should "; Code "Left" ; Text "."] , Informative) ]
     )
 ```
-
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-7.md)

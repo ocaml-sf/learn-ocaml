@@ -27,9 +27,9 @@ GNU/Linux and MacOS X are supported.
 ## Software requirements
 
 Please make sure that the following tools are available on your machine:
-- git    (>= 2.00)
-- make   (>= 4)
-- opam   (>= 2.00)
+  - git    (>= 2.00)
+  - make   (>= 4)
+  - opam   (>= 2.00)
 
 To install opam, please follow the instructions described on the
 [Official OPAM website](https://opam.ocaml.org/doc/Install.html).
@@ -105,4 +105,4 @@ homepage of the learn-ocaml instance that is running on your local
 machine.
 
 You are now ready to write your first exercise! Please proceed to
-the next tutorial [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
+the next tutorial [How to write exercises?](../howto-write-exercises)

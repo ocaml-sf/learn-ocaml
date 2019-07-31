@@ -263,9 +263,3 @@ do use the second method (see the examples in `advanced_examples`).
 This is useful if you need to grade several functions that share some
 input types.
 
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)
-	
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
