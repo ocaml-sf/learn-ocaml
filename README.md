@@ -66,7 +66,7 @@ See [https://opensource.org/licenses/BSD-3-Clause].
 Authors and Acknowledgements
 ----------------------------
 
-Learn-OCaml is a software by OCamlPro.
+Learn-OCaml is a free software by the OCaml Software Foundation.
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 
