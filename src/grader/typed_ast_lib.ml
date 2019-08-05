@@ -158,7 +158,8 @@ module PtoS = struct
       | Pexp_constraint (expr, typ), _ ->
           begin
             match texpr.exp_extra with
-            | (Texp_constraint _, _, _) :: _ ->
+            | (Texp_constraint _, _, _) :: exp_extra ->
+                let texpr = {texpr with exp_extra} in
                 let expr = expr_aux expr texpr in
                 Sexp_constraint (expr, typ)
             | _ -> assert false
@@ -171,7 +172,8 @@ module PtoS = struct
       | Pexp_open (ovf, lid, expr), _ ->
           begin
             match texpr.exp_extra with
-            | (Texp_open _, _, _) :: _ ->
+            | (Texp_open _, _, _) :: exp_extra ->
+                let texpr = {texpr with exp_extra} in
                 let expr = expr_aux expr texpr in
                 Sexp_open (ovf, lid, expr)
             | _ -> assert false
