@@ -64,7 +64,7 @@ module Make (Test_lib: Test_lib.S) : S = struct
       match result with
       | Pass -> [Message ([Text "Test passed with output";
                            Code expected_str],
-                          Success 0)]
+                          Important)]
       | Fail _ ->
           [Message ([Text "Test failed: expected output";
                      Code expected_str;

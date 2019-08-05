@@ -255,7 +255,7 @@ module Make () : S = struct
     in
     let final_report =
       match sorted_report with
-      | [] -> [Message ([Text "No style issues found"], Success 0)]
+      | [] -> [Message ([Text "No style issues found"], Important)]
       | (loc, report) :: xs ->
           (* Remove adjacent duplicates and strip location tags *)
           let rec uniq l acc last_seen =
