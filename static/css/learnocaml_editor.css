@@ -636,6 +636,33 @@ body {
 }
 /* end generate 1*/
 
+/*template editor */
+
+.json-editor {
+  font-size: 18px;
+  font-family: 'Inconsolata', monospace;
+  position: relative !important;
+  flex-grow: 12;
+  background: #666;
+  color: #fff;
+  z-index: 1002;
+  width: 80%;
+  margin: 0 10%;
+}
+div.json-editor-overlay > div {
+  display:flex; 
+  flex-direction:column
+}
+
+div.json-editor-overlay > div::before, div.json-editor-overlay > div::after {
+	content: "";
+	flex: 0 !important;
+}
+
+.json-editor > ::before
+/* end template editor */
+
+
 /* question tab */
 
 

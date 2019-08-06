@@ -35,13 +35,44 @@ let dropup ~icon ~theme name items =
   in
   Manip.Ev.onclick drop_button
     (fun _ -> Manip.toggleClass dropup_content "show");
-
   (* TODO translate it to js_of_ocaml *)
   let _ =
    Js.Unsafe.js_expr " //Close the dropdown menu if the user clicks outside of it\nwindow.onclick = function(event) {\n  if (!event.target.matches(\'.dropbtn\')) {\n    var dropdowns = document.getElementsByClassName(\"dropup-content\");\n    var i;\n    for (i = 0; i < dropdowns.length; i++) {\n      var openDropdown = dropdowns[i];\n      if (openDropdown.classList.contains(\'show\')) {\n        openDropdown.classList.remove(\'show\');\n      }\n    }\n  }\n} " in ();
   H.(div ~a:[a_class ["dropup"]] [drop_button; dropup_content])
     
-    
+
+let ace_editor_container ~save ~size ~editor ~box_title =
+  let layer = H.(div ~a:
+                       [a_class ["learnocaml-dialog-overlay"; "json-editor-overlay"] ]
+                       []) in
+
+  let close_btn =
+    H.(button ~a:[ a_onclick (fun _ ->
+                       Manip.removeChild Manip.Elt.body layer;false
+         )] [pcdata "Cancel"])
+  in
+  let save_btn  =
+    H.(button ~a:[ a_onclick (fun _ ->
+                       save();
+                       Manip.removeChild Manip.Elt.body layer;false
+         )] [pcdata "Save"])
+  in
+  let container =
+    H.(div
+         [
+           h3 [pcdata box_title];
+           div [];
+           editor;
+           div ~a:[a_class ["buttons"] ] [ close_btn; save_btn]
+         ]
+    )
+  in
+  let (width, height) = size in  
+  Manip.SetCss.width container width;
+  Manip.SetCss.height container height;
+  Manip.replaceChildren layer [container];
+  
+  layer
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -363,12 +394,34 @@ let () =
                 [pcdata name]))
   in
 
-  let templates =
+  let json_editor_div  = H.(div ~a: [ a_class ["json-editor"]] []) in
+                         
+  
+  let json_editor_ace = json_editor_div
+                        |> Tyxml_js.To_dom.of_div
+                        |> Ace.create_editor
+  in
+  Ace.set_font_size json_editor_ace 18;
+  
+  let configuration =
+    H.(a ~a: [ a_onclick (fun _ ->
+                   let div = 
+                     ace_editor_container
+                       ~box_title: "Template Configuration"
+                       ~size: ("90%","80%")
+                       ~save: (fun ()-> ())
+                       ~editor: json_editor_div
+                   in
+                     Manip.appendToBody div;
+                   true )]
+         [pcdata "Configuration"])
+  in
+let templates =
     dropup
       ~icon:"sync"
       ~theme:"light"
       "Templates"
-      default_templates 
+      (configuration :: default_templates) 
   in
   Manip.appendChild test_toolbar templates;
 (* end templates *)
