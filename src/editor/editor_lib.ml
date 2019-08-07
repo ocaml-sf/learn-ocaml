@@ -14,10 +14,12 @@ open Learnocaml_common
 open Learnocaml_index
 open Lwt.Infix
 open Js_utils
-open Tyxml_js.Html5
 open Dom_html
 open Editor
 open Exercise.Meta
+
+module H = Tyxml_js.Html
+ 
 (* Internationalization *)
 
 let get_editor_state id=
@@ -515,5 +517,27 @@ module Templates = struct
                    test_suite_template]
                   |> save
                 
-                
+  let to_string templates =
+    let json =
+      Json_repr_browser.Json_encoding.construct
+        (Json_encoding.list Editor.editor_template_enc)
+        templates
+    in
+    Json_repr_browser.js_stringify ~indent:2 json
+  |> Js.to_string
+
+  let from_string string =
+    let json = Json_repr_browser.parse string in 
+    Json_repr_browser.Json_encoding.destruct
+      (Json_encoding.list Editor.editor_template_enc)
+      json
+
+
+  let template_to_a_elt ace_t Editor.{name; template}  =
+    H.(a ~a:[ a_onclick (fun _ ->
+                  let position = Ace.get_cursor_position ace_t in
+                  Ace.insert ace_t position template;true);
+         a_class ["editor-template"]]
+         [pcdata name])
+    
 end 

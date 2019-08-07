@@ -40,39 +40,77 @@ let dropup ~icon ~theme name items =
    Js.Unsafe.js_expr " //Close the dropdown menu if the user clicks outside of it\nwindow.onclick = function(event) {\n  if (!event.target.matches(\'.dropbtn\')) {\n    var dropdowns = document.getElementsByClassName(\"dropup-content\");\n    var i;\n    for (i = 0; i < dropdowns.length; i++) {\n      var openDropdown = dropdowns[i];\n      if (openDropdown.classList.contains(\'show\')) {\n        openDropdown.classList.remove(\'show\');\n      }\n    }\n  }\n} " in ();
   H.(div ~a:[a_class ["dropup"]] [drop_button; dropup_content])
     
+let editor_overlay () =
+    H.(div ~a:[a_class ["learnocaml-dialog-overlay"; "json-editor-overlay"] ]
+         [])
+ 
 
-let ace_editor_container ~save ~size ~editor ~box_title =
-  let layer = H.(div ~a:
-                       [a_class ["learnocaml-dialog-overlay"; "json-editor-overlay"] ]
-                       []) in
-
-  let close_btn =
-    H.(button ~a:[ a_onclick (fun _ ->
-                       Manip.removeChild Manip.Elt.body layer;false
-         )] [pcdata "Cancel"])
-  in
-  let save_btn  =
-    H.(button ~a:[ a_onclick (fun _ ->
-                       save();
-                       Manip.removeChild Manip.Elt.body layer;false
-         )] [pcdata "Save"])
-  in
+let editor_container ~size ~contents ~buttons ~box_title =   
   let container =
     H.(div
          [
            h3 [pcdata box_title];
            div [];
-           editor;
-           div ~a:[a_class ["buttons"] ] [ close_btn; save_btn]
+           contents;
+           div ~a:[a_class ["buttons"] ] buttons
          ]
     )
   in
   let (width, height) = size in  
   Manip.SetCss.width container width;
   Manip.SetCss.height container height;
-  Manip.replaceChildren layer [container];
+  container
   
-  layer
+
+let ace_editor_container ~save ~size ~editor ~box_title =
+  let overlay = editor_overlay () in 
+  let close_btn =
+    H.(button ~a:[ a_onclick (fun _ ->
+                       Manip.removeChild Manip.Elt.body overlay;false
+         )] [pcdata "Cancel"])
+  in
+  let save_btn  =
+    H.(button ~a:[ a_onclick (fun _ ->
+                       save();
+                       reload(); false
+         )] [pcdata "Save"])
+  in
+  let container = editor_container
+                    ~size
+                    ~contents: editor
+                    ~buttons: [close_btn;save_btn]
+                    ~box_title
+  in
+  Manip.replaceChildren overlay [container];
+  overlay
+
+let all_templates_container ~size ~elements ~box_title =
+  let overlay = editor_overlay () in
+  let close () =  Manip.removeChild Manip.Elt.body overlay in
+  let ok_btn =
+    H.(button ~a:[ a_onclick (fun _ ->
+                      close ();false
+         )] [pcdata "Ok"])
+  in
+
+  List.iter
+    (fun elt ->
+      let dom_elt = Tyxml_js.To_dom.of_a elt in
+      Dom_html.addEventListener dom_elt Dom_html.Event.click
+        (Dom_html.handler ( fun _ -> close ();Js._true ))
+        Js._true
+      |> ignore) 
+    elements;
+
+  let container = editor_container
+                    ~size
+                    ~contents: H.(div ~a: [a_style "overflow:auto"] elements)
+                    ~buttons: [ok_btn]
+                    ~box_title
+  in
+  Manip.replaceChildren overlay [container];
+  overlay
+                           
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -387,11 +425,7 @@ let () =
   let default_templates =
     Templates.init();
     Templates.give_first_templates () 
-    |> List.map (fun Editor.{name; template} ->
-           H.(a ~a:[ a_onclick (fun _ ->
-                         let position = Ace.get_cursor_position ace_t in
-                         Ace.insert ace_t position template;true)]
-                [pcdata name]))
+    |> List.map (Templates.template_to_a_elt ace_t)
   in
 
   let json_editor_div  = H.(div ~a: [ a_class ["json-editor"]] []) in
@@ -404,24 +438,54 @@ let () =
   Ace.set_font_size json_editor_ace 18;
   
   let configuration =
+    let save () =
+      run_async_with_log @@
+        fun () ->
+        Ace.get_contents json_editor_ace
+        |> Templates.from_string
+        |> Templates.save
+        |> Lwt.return
+    in
     H.(a ~a: [ a_onclick (fun _ ->
                    let div = 
                      ace_editor_container
                        ~box_title: "Template Configuration"
                        ~size: ("90%","80%")
-                       ~save: (fun ()-> ())
+                       ~save
                        ~editor: json_editor_div
                    in
-                     Manip.appendToBody div;
+                   Manip.appendToBody div;
+                   Templates.give_templates ()
+                   |> Templates.to_string
+                   |> Ace.set_contents json_editor_ace;
                    true )]
          [pcdata "Configuration"])
   in
-let templates =
+
+  let all_templates =
+    H.(a ~a:[a_class [ "editor-template"];
+             a_onclick (fun _ ->
+                 let content =
+                   Templates.give_templates ()
+                   |> List.map (Templates.template_to_a_elt ace_t)
+                 in
+                 let div =
+                   all_templates_container
+                     ~box_title: "All templates"
+                     ~size: ("90%","80%")
+                     ~elements: content
+                 in
+                 Manip.appendToBody div;
+                   true)]
+         [pcdata "All templates"])
+  in
+    
+  let templates =
     dropup
       ~icon:"sync"
       ~theme:"light"
       "Templates"
-      (configuration :: default_templates) 
+      (configuration :: all_templates :: default_templates) 
   in
   Manip.appendChild test_toolbar templates;
 (* end templates *)

@@ -577,7 +577,7 @@ body {
   }
 }
 
-/* generate 1 of Test tab */
+/* templaates  of Test tab */
 
  /* Dropup Button */
  .dropbtn {
@@ -634,7 +634,7 @@ body {
 #learnocaml-exo-tab-test > .buttons > div:not(:first-child) {
   border-left: 1px #eee solid;
 }
-/* end generate 1*/
+/* end templates 1*/
 
 /*template editor */
 
@@ -659,8 +659,25 @@ div.json-editor-overlay > div::before, div.json-editor-overlay > div::after {
 	flex: 0 !important;
 }
 
-.json-editor > ::before
 /* end template editor */
+
+/*all templates */
+
+.editor-template{
+  color: #eee;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+  background-color: #333 ;
+
+}
+
+.editor-template:hover{
+  background-color: cadetblue;
+}
+
+/* all templates */
 
 
 /* question tab */

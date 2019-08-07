@@ -11,6 +11,8 @@
 
 open Learnocaml_data
 open Editor
+module H = Tyxml_js.Html
+
 val update_index : Editor.editor_state -> unit
 
 (** Getters of an editor exercise
@@ -127,4 +129,8 @@ module Templates : sig
   val test_suite_template : Learnocaml_data.Editor.editor_template
   val save : Learnocaml_data.Editor.editor_template list -> unit
   val init : unit -> unit
+  val to_string : Learnocaml_data.Editor.editor_template list -> string
+  val from_string : string -> Learnocaml_data.Editor.editor_template list
+  val template_to_a_elt : 'a Ace.editor -> Learnocaml_data.Editor.editor_template ->
+                          [> [> Html_types.pcdata ] Html_types.a ] H.elt
 end
