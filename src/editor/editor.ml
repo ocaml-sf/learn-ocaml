@@ -175,7 +175,8 @@ let onchange ace_list =
       (fun _ -> activate_before_unload ();) in
   List.iter (fun ace -> add_change_listener ace) ace_list 
 
-          
+let recovering_callback = ref (fun () -> ()) 
+  
 let () =
   run_async_with_log @@ fun () ->
                (*set_string_translations ();*)
@@ -444,6 +445,7 @@ let () =
         Ace.get_contents json_editor_ace
         |> Templates.from_string
         |> Templates.save
+        |> !recovering_callback
         |> Lwt.return
     in
     H.(a ~a: [ a_onclick (fun _ ->
@@ -556,6 +558,7 @@ let () =
     let old_state = get_editor_state id in
     let new_state = {metadata=old_state.metadata;exercise} in
     update_index new_state in
+  recovering_callback:= recovering;
   begin editor_button
       ~icon: "save" [%i"Save"] @@ fun () ->
     recovering ();
