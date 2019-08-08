@@ -5,6 +5,8 @@ type 'a test_result =
   | Fail of 'a
   | Err of exn
 
+type 'a mutant = string * 'a
+
 let run_test_against f (input, expected) =
   try
     let output = f input in
@@ -21,20 +23,28 @@ let run_test_against_mutant f (input, expected) =
 let uncurry2 f = fun (x, y) -> f x y
 let uncurry3 f = fun (x, y, z) -> f x y z
 let uncurry4 f = fun (x, y, z, w) -> f x y z w
+let map_snd f = fun (x, y) -> (x, f y)
 
 module type S = sig
   val test_unit_tests_1:
     ?points: int ->
-    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) list -> Learnocaml_report.t
+    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant list -> Learnocaml_report.t
   val test_unit_tests_2:
     ?points: int ->
-    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant list -> Learnocaml_report.t
   val test_unit_tests_3:
     ?points: int ->
-    ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c -> 'd) Ty.ty
+    -> string
+    -> ('a -> 'b -> 'c -> 'd) mutant list
+    -> Learnocaml_report.t
   val test_unit_tests_4:
     ?points: int ->
-    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+    -> string
+    -> ('a -> 'b -> 'c -> 'd -> 'e) mutant list
+    -> Learnocaml_report.t
+  val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
 module Make (Test_lib: Test_lib.S) : S = struct
@@ -45,15 +55,18 @@ module Make (Test_lib: Test_lib.S) : S = struct
     Format.asprintf "%a" (typed_printer ty)
   let string_of_exn = typed_printer [%ty: exn]
 
-  let test_against_mutant ~points mut name tests =
+  let test_against_mutant ~points (name, mut) num tests =
     let result = List.exists (run_test_against_mutant mut) tests in
     if result then
       Message
-        ([Text "Your tests successfully revealed the bug in implementation"; Text name],
+        ([Text "Your tests successfully revealed the bug in implementation";
+          Text num;
+          Text ": ";
+          Text name],
          Success points)
     else
       Message
-        ([Text "Your tests did not expose the bug in implementation"; Text name],
+        ([Text "Your tests did not expose the bug in implementation"; Text num],
          Failure)
 
   let test_against_solution soln printer out_printer (input, expected) =

@@ -3,6 +3,8 @@ type 'a test_result =
   | Fail of 'a
   | Err of exn
 
+type 'a mutant = string * 'a
+
 (* Run a test (a pair of input and expected output) on a function.
 *)
 val run_test_against: ('a -> 'b) -> ('a * 'b) -> 'b test_result
@@ -26,16 +28,22 @@ val run_test_against_mutant: ('a -> 'b) -> ('a * 'b) -> bool
 module type S = sig
   val test_unit_tests_1:
     ?points: int ->
-    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) list -> Learnocaml_report.t
+    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant list -> Learnocaml_report.t
   val test_unit_tests_2:
     ?points: int ->
-    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant list -> Learnocaml_report.t
   val test_unit_tests_3:
     ?points: int ->
-    ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c -> 'd) Ty.ty
+    -> string
+    -> ('a -> 'b -> 'c -> 'd) mutant list
+    -> Learnocaml_report.t
   val test_unit_tests_4:
     ?points: int ->
-    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e) list -> Learnocaml_report.t
+    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+    -> string
+    -> ('a -> 'b -> 'c -> 'd -> 'e) mutant list
+    -> Learnocaml_report.t
 end
 
 module Make (Test_lib: Test_lib.S) : S

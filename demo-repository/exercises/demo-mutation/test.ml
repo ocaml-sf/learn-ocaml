@@ -38,15 +38,19 @@ let rec size_ignores_l t =
   match t with
   | Empty -> 0
   | Node (_, _, r) -> 1 + (size_ignores_l r)
+let rec correct_size t =
+  match t with
+  | Empty -> 0
+  | Node (l, _, r) -> 1 + (correct_size l) + (correct_size r)
 let rec size_wrong_base t =
   match t with
   | Empty -> 1
-  | Node (l, _, r) -> 1 + (size_wrong_base l) + (size_wrong_base r)
+  | Node (l, _, r) -> 1 + (correct_size l) + (correct_size r)
 let size_mutants = [
-  size_always_0;
-  size_duplicates_l;
-  size_ignores_l;
-  size_wrong_base
+  ("Node case doesn't add 1 to size", size_always_0);
+  ("Node case counts the left child twice", size_duplicates_l);
+  ("Node case ignores the left child", size_ignores_l);
+  ("Incorrect base case", size_wrong_base)
 ]
 
 let rec height_always_0 t =
@@ -61,15 +65,19 @@ let rec height_ignores_l t =
   match t with
   | Empty -> 0
   | Node (_, _, r) -> 1 + (height_ignores_l r)
+let rec correct_height t =
+  match t with
+  | Empty -> 0
+  | Node (l, _, r) -> 1 + max (correct_height l) (correct_height r)
 let rec height_wrong_base t =
   match t with
   | Empty -> 1
-  | Node (l, _, r) -> 1 + max (height_wrong_base l) (height_wrong_base r)
+  | Node (l, _, r) -> 1 + max (correct_height l) (correct_height r)
 let height_mutants = [
-  height_always_0;
-  height_duplicates_l;
-  height_ignores_l;
-  height_wrong_base
+  ("Node case doesn't add 1 to height", height_always_0);
+  ("Node case counts the left child twice", height_duplicates_l);
+  ("Node case ignores the left child", height_ignores_l);
+  ("Incorrect base case", height_wrong_base)
 ]
 
 let rec num_leaves_always_0 t =
@@ -92,10 +100,10 @@ let rec num_internal_nodes t =
   | Node (Empty, _, Empty) -> 0
   | Node (l, _, r) -> 1 + (num_internal_nodes l) + (num_internal_nodes r)
 let num_leaves_mutants = [
-  num_leaves_always_0;
-  num_leaves_duplicates_l;
-  num_leaves_plus_one;
-  num_internal_nodes
+  ("Leaf case doesn't increment the count", num_leaves_always_0);
+  ("Internal node case counts the left child twice", num_leaves_duplicates_l);
+  ("Internal node case is off by 1", num_leaves_plus_one);
+  ("Counts internal nodes instead of leaves", num_internal_nodes)
 ]
 
 (* Message to be shown upon failing mutation testing *)
