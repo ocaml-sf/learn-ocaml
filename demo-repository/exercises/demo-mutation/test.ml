@@ -119,9 +119,9 @@ let mut_test_failure_msg = Message ( [Text mut_test_failure_str], Failure)
 *)
 let scale_if_passed mut_report test_report =
   let test_report =
-    if snd (Report.result mut_report)
-    then mut_test_failure_msg :: test_report (* mutation testing failed *)
-    else scale 2 test_report
+    if Mutation_test.passed_mutation_testing mut_report
+    then scale 2 test_report
+    else mut_test_failure_msg :: test_report (* mutation testing failed *)
   in
   mut_report @ test_report
 
