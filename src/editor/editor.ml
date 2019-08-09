@@ -431,14 +431,13 @@ let () =
 
   let json_editor_div  = H.(div ~a: [ a_class ["json-editor"]] []) in
                          
-  let json_editor= json_editor_div
-                   |> Tyxml_js.To_dom.of_div
-                   |> Ocaml_mode.create_ocaml_editor
-  in
-  let json_editor_ace = Ocaml_mode.get_editor json_editor
-                        
+  
+  let json_editor_ace = json_editor_div
+                        |> Tyxml_js.To_dom.of_div
+                        |> Ace.create_editor
   in
   Ace.set_font_size json_editor_ace 18;
+  Ace.set_mode json_editor_ace "ace/mode/json";
   
   let configuration =
     let save () =
