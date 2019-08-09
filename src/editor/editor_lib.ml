@@ -518,20 +518,28 @@ module Templates = struct
                   |> save
                 
   let to_string templates =
-    let json =
-      Json_repr_browser.Json_encoding.construct
-        (Json_encoding.list Editor.editor_template_enc)
-        templates
+    let rec aux acc = function
+      | [] -> acc
+      | Editor.{name; template} :: l ->
+         let new_acc = acc ^ "#"
+                       ^ name ^ "\n" ^ template
+         in
+         aux new_acc l
     in
-    Json_repr_browser.js_stringify ~indent:2 json
-  |> Js.to_string
-
+    aux "" templates
+    
   let from_string string =
-    let json = Json_repr_browser.parse string in 
-    Json_repr_browser.Json_encoding.destruct
-      (Json_encoding.list Editor.editor_template_enc)
-      json
+    let extract =
+      Regexp.(split (regexp_with_flag "^#+\\s*(.*)\n" "m")) string
+    in
 
+    let rec aux acc = function
+      | name :: template :: l -> aux ({name;template}:: acc) l
+      | _ -> acc
+    in
+    match extract with
+    | [] -> []
+    |  _ ::l -> List.rev (aux [] l)
 
   let template_to_a_elt ace_t Editor.{name; template}  =
     H.(a ~a:[ a_onclick (fun _ ->
