@@ -45,12 +45,12 @@ let editor_overlay () =
          [])
  
 
-let editor_container ~size ~contents ~buttons ~box_title =   
+let editor_container ~size ~contents ~buttons ~box_title ~box_header =   
   let container =
     H.(div
          [
            h3 [pcdata box_title];
-           div [];
+           div [pcdata box_header];
            contents;
            div ~a:[a_class ["buttons"] ] buttons
          ]
@@ -62,7 +62,7 @@ let editor_container ~size ~contents ~buttons ~box_title =
   container
   
 
-let ace_editor_container ~save ~size ~editor ~box_title =
+let ace_editor_container ~save ~size ~editor ~box_title ~box_header =
   let overlay = editor_overlay () in 
   let close_btn =
     H.(button ~a:[ a_onclick (fun _ ->
@@ -80,11 +80,12 @@ let ace_editor_container ~save ~size ~editor ~box_title =
                     ~contents: editor
                     ~buttons: [close_btn;save_btn]
                     ~box_title
+                    ~box_header
   in
   Manip.replaceChildren overlay [container];
   overlay
 
-let all_templates_container ~size ~elements ~box_title =
+let all_templates_container ~size ~elements ~box_title ~box_header =
   let overlay = editor_overlay () in
   let close () =  Manip.removeChild Manip.Elt.body overlay in
   let ok_btn =
@@ -107,6 +108,7 @@ let all_templates_container ~size ~elements ~box_title =
                     ~contents: H.(div ~a: [a_style "overflow:auto"] elements)
                     ~buttons: [ok_btn]
                     ~box_title
+                    ~box_header
   in
   Manip.replaceChildren overlay [container];
   overlay
@@ -453,6 +455,7 @@ let () =
                    let div = 
                      ace_editor_container
                        ~box_title: "Template Configuration"
+                       ~box_header:  "The three first templates will be visible in the menu"
                        ~size: ("90%","80%")
                        ~save
                        ~editor: json_editor_div
@@ -477,6 +480,7 @@ let () =
                      ~box_title: "All templates"
                      ~size: ("90%","80%")
                      ~elements: content
+                     ~box_header:""
                  in
                  Manip.appendToBody div;
                    true)]
