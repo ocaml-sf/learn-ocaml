@@ -638,7 +638,7 @@ body {
 
 /*template editor */
 
-.json-editor {
+.config-editor {
   font-size: 18px;
   font-family: 'Inconsolata', monospace;
   position: relative !important;
@@ -649,12 +649,15 @@ body {
   width: 80%;
   margin: 0 10%;
 }
-div.json-editor-overlay > div {
+
+div.config-editor-overlay > div {
   display:flex; 
-  flex-direction:column
+  flex-direction:column;
+  max-width: 100% !important;
+
 }
 
-div.json-editor-overlay > div::before, div.json-editor-overlay > div::after {
+div.config-editor-overlay > div::before, div.config-editor-overlay > div::after {
 	content: "";
 	flex: 0 !important;
 }

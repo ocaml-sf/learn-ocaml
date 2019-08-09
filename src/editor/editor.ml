@@ -41,7 +41,7 @@ let dropup ~icon ~theme name items =
   H.(div ~a:[a_class ["dropup"]] [drop_button; dropup_content])
     
 let editor_overlay () =
-    H.(div ~a:[a_class ["learnocaml-dialog-overlay"; "json-editor-overlay"] ]
+    H.(div ~a:[a_class ["learnocaml-dialog-overlay"; "config-editor-overlay"] ]
          [])
  
 
@@ -433,21 +433,21 @@ let () =
     |> List.map (Templates.template_to_a_elt ace_t)
   in
 
-  let json_editor_div  = H.(div ~a: [ a_class ["json-editor"]] []) in
+  let config_editor_div  = H.(div ~a: [ a_class ["config-editor"]] []) in
                          
   
-  let json_editor_ace = json_editor_div
+  let config_editor_ace = config_editor_div
                         |> Tyxml_js.To_dom.of_div
                         |> Ace.create_editor
   in
-  Ace.set_font_size json_editor_ace 18;
-  Ace.set_mode json_editor_ace "ace/mode/json";
+  Ace.set_font_size config_editor_ace 18;
+  Ace.set_mode config_editor_ace "ace/mode/ocaml";
   
   let configuration =
     let save () =
       run_async_with_log @@
         fun () ->
-        Ace.get_contents json_editor_ace
+        Ace.get_contents config_editor_ace
         |> Templates.from_string
         |> Templates.save
         |> !recovering_callback
@@ -460,12 +460,12 @@ let () =
                        ~box_header:  "The three first templates will be visible in the menu"
                        ~size: ("90%","80%")
                        ~save
-                       ~editor: json_editor_div
+                       ~editor: config_editor_div
                    in
                    Manip.appendToBody div;
                    Templates.give_templates ()
                    |> Templates.to_string
-                   |> Ace.set_contents json_editor_ace;
+                   |> Ace.set_contents config_editor_ace;
                    true )]
          [pcdata "Configuration"])
   in
