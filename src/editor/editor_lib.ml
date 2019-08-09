@@ -480,7 +480,11 @@ module Templates = struct
     | hd :: [] -> [hd] 
     | hd :: snd :: [] -> [hd; snd]
     | hd :: snd :: thrd :: _ -> [ hd; snd; thrd]
-                             
+
+  (* WARNING very important that |} is without indenitng and in a new line 
+     if not there will be a bug for the first edition of the templates in the editor:
+     add templates after the last template is not possible if you don't know the trick.
+     The trick is to remove the new line of the last template and then manually type return in the keyboard *)
   let against_solution_template =
     { name = "Against solution"; 
       template = {|
@@ -490,7 +494,7 @@ module Templates = struct
           "plus"                                (* function name = plus *)
           [1 @:!! 4 ; 3 @:!! 3 ];;    (* compare (plus 1 4) and 
                                          (plus 3 3) against professor\'s solution *)
-     |}
+|}
     }
     
   let test_suite_template =
@@ -504,7 +508,7 @@ module Templates = struct
          5 @:!! 5 ==> 10;                         
          1 @:!! 1 ==> 2;
          0 @:!! 0 ==> 0];;
-     |}
+|}
     }
                           
   let save templates =
