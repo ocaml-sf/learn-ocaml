@@ -50,7 +50,7 @@ let editor_container ~size ~contents ~buttons ~box_title ~box_header =
     H.(div
          [
            h3 [pcdata box_title];
-           div [pcdata box_header];
+           div [box_header];
            contents;
            div ~a:[a_class ["buttons"] ] buttons
          ]
@@ -80,7 +80,7 @@ let ace_editor_container ~save ~size ~editor ~box_title ~box_header =
                     ~contents: editor
                     ~buttons: [close_btn;save_btn]
                     ~box_title
-                    ~box_header
+                    ~box_header: (H.pcdata box_header)
   in
   Manip.replaceChildren overlay [container];
   overlay
@@ -102,10 +102,12 @@ let all_templates_container ~size ~elements ~box_title ~box_header =
         Js._true
       |> ignore) 
     elements;
-
+   let contents = H.(div ~a: [a_style "overflow:auto";
+                              a_class["templates-to-change"]] elements)
+   in 
   let container = editor_container
                     ~size
-                    ~contents: H.(div ~a: [a_style "overflow:auto"] elements)
+                    ~contents
                     ~buttons: [ok_btn]
                     ~box_title
                     ~box_header
@@ -475,14 +477,38 @@ let () =
                    Templates.give_templates ()
                    |> List.map (Templates.template_to_a_elt ace_t)
                  in
+                  
+                 let input_elt =
+                   (H.input ())
+                 in
+
+                                               
                  let div =
                    all_templates_container
                      ~box_title: "All templates"
                      ~size: ("90%","80%")
                      ~elements: content
-                     ~box_header:""
+                     ~box_header: input_elt
                  in
                  Manip.appendToBody div;
+                 let to_change =
+                   match Manip.by_classname "templates-to-change" with
+                   | [] -> H.div []
+                   | div :: _ -> div
+                 in
+                 Manip.Ev.oninput input_elt
+                   (fun _ -> let value = Manip.value input_elt in
+                             let content =
+                               Templates.give_templates ()
+                               |> List.filter ( fun Editor.{name; _ } ->
+                                                let reg_exp = Regexp.regexp value in
+                                                match Regexp.string_match reg_exp name 0 with
+                                                | None -> false
+                                                | Some _ -> true)
+                             |> List.map (Templates.template_to_a_elt ace_t)
+                             in
+                             Manip.replaceChildren to_change content;true); 
+                                                
                    true)]
          [pcdata "All templates"])
   in
