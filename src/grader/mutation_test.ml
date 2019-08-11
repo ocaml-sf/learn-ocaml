@@ -7,15 +7,15 @@ type 'a test_result =
 
 type 'a mutant = string * 'a
 
-let run_test_against f (input, expected) =
+let run_test_against ?(compare = (=)) f (input, expected) =
   try
     let output = f input in
-    if output = expected then Pass
+    if compare output expected then Pass
     else Fail output
   with exn -> Err exn
 
-let run_test_against_mutant f (input, expected) =
-  match run_test_against f (input, expected) with
+let run_test_against_mutant ?(compare = (=)) f (input, expected) =
+  match run_test_against ~compare f (input, expected) with
   | Pass -> false
   | _ -> true
 
@@ -29,14 +29,17 @@ module type S = sig
   val test_unit_tests_1:
     ?points: int ->
     ?test_student_soln: bool ->
+    ?test: ('b -> 'b -> bool) ->
     ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant list -> Learnocaml_report.t
   val test_unit_tests_2:
     ?points: int ->
     ?test_student_soln: bool ->
+    ?test: ('c -> 'c -> bool) ->
     ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant list -> Learnocaml_report.t
   val test_unit_tests_3:
     ?points: int ->
     ?test_student_soln: bool ->
+    ?test: ('d -> 'd -> bool) ->
     ('a -> 'b -> 'c -> 'd) Ty.ty
     -> string
     -> ('a -> 'b -> 'c -> 'd) mutant list
@@ -44,6 +47,7 @@ module type S = sig
   val test_unit_tests_4:
     ?points: int ->
     ?test_student_soln: bool ->
+    ?test: ('e -> 'e -> bool) ->
     ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
     -> string
     -> ('a -> 'b -> 'c -> 'd -> 'e) mutant list
@@ -59,8 +63,8 @@ module Make (Test_lib: Test_lib.S) : S = struct
     Format.asprintf "%a" (typed_printer ty)
   let string_of_exn = typed_printer [%ty: exn]
 
-  let test_against_mutant ~points (name, mut) num tests =
-    let result = List.exists (run_test_against_mutant mut) tests in
+  let test_against_mutant ~points ~compare (name, mut) num tests =
+    let result = List.exists (run_test_against_mutant ~compare mut) tests in
     if result then
       Message
         ([Text "Your tests successfully revealed the bug in implementation";
@@ -73,10 +77,13 @@ module Make (Test_lib: Test_lib.S) : S = struct
         ([Text "Your tests did not expose the bug in implementation"; Text num],
          Failure)
 
-  let test_against_fn ?(show_output=false) f printer out_printer (input, expected) =
+  let test_against_fn
+      ~compare
+      ?(show_output=false)
+      f printer out_printer (input, expected) =
     let msg = Message ([Text "Running test"; Code (printer input)], Informative) in
     let expected_str = out_printer expected in
-    let result = run_test_against f (input, expected) in
+    let result = run_test_against ~compare f (input, expected) in
     let report =
       match result with
       | Pass -> [Message ([Text "Test passed with output";
@@ -103,10 +110,13 @@ module Make (Test_lib: Test_lib.S) : S = struct
   let mutation_header = "...against our buggy implementations"
   let stud_header = "...against your implementation"
 
-  let test_against_mutants ~points muts tests =
+  let test_against_mutants ~points ~compare muts tests =
     let string_of_num x = "#" ^ (string_of_int x) in
     let test_against_mutant_i i mut =
-      test_against_mutant ~points mut (string_of_num (succ i)) tests
+      test_against_mutant
+        ~points
+        ~compare
+        mut (string_of_num (succ i)) tests
     in
     List.mapi test_against_mutant_i muts
 
@@ -154,14 +164,14 @@ module Make (Test_lib: Test_lib.S) : S = struct
   let append_map f l =
     List.fold_right (fun x acc -> (f x) @ acc) l []
 
-  let test_soln_report soln printer out_printer tests =
+  let test_soln_report ~compare soln printer out_printer tests =
     match soln with
     | Unbound report -> soln_not_found_msg :: report
     | Found soln ->
-        let tester = test_against_fn soln printer out_printer in
+        let tester = test_against_fn ~compare soln printer out_printer in
         append_map tester tests
 
-  let test_stud_section stud printer out_printer tests =
+  let test_stud_section ~compare stud printer out_printer tests =
     match stud with
     | None -> []
     | Some lookup ->
@@ -170,13 +180,16 @@ module Make (Test_lib: Test_lib.S) : S = struct
           | Unbound report -> report
           | Found stud ->
               let tester =
-                test_against_fn ~show_output: true stud printer out_printer
+                test_against_fn
+                  ~compare
+                  ~show_output: true
+                  stud printer out_printer
               in
               append_map tester tests
         in
         [Section ([Text stud_header], stud_report)]
 
-  let test ~points test_ty printer out_printer name soln stud muts =
+  let test ~points ~compare test_ty printer out_printer name soln stud muts =
     let test_name = name ^ "_tests" in
     let report =
       test_variable_property test_ty test_name @@
@@ -184,11 +197,15 @@ module Make (Test_lib: Test_lib.S) : S = struct
       if List.length tests = 0 then
         no_test_cases_report
       else
-        let soln_report = test_soln_report soln printer out_printer tests in
-        let stud_section = test_stud_section stud printer out_printer tests in
+        let soln_report =
+          test_soln_report ~compare soln printer out_printer tests
+        in
+        let stud_section =
+          test_stud_section ~compare stud printer out_printer tests
+        in
         let maybe_mut_report =
           if snd (Learnocaml_report.result soln_report) then None
-          else Some (test_against_mutants ~points muts tests)
+          else Some (test_against_mutants ~points ~compare muts tests)
         in
         test_report soln_report stud_section maybe_mut_report
     in
@@ -203,6 +220,7 @@ module Make (Test_lib: Test_lib.S) : S = struct
   let test_unit_tests_1
       ?(points = 1)
       ?(test_student_soln = true)
+      ?test:(compare = (=))
       ty name muts =
     let (domain, range) = Ty.domains ty in
     let test_ty = Ty.lst (Ty.pair2 domain range) in
@@ -215,11 +233,12 @@ module Make (Test_lib: Test_lib.S) : S = struct
         Some (process_lookup (fun x -> x) lookup_student ty name)
       else None
     in
-    test ~points test_ty printer out_printer name soln stud muts
+    test ~points ~compare test_ty printer out_printer name soln stud muts
 
   let test_unit_tests_2
       ?(points = 1)
       ?(test_student_soln = true)
+      ?test:(compare = (=))
       ty name muts =
     let (dom1, rng) = Ty.domains ty in
     let (dom2, range) = Ty.domains rng in
@@ -237,11 +256,15 @@ module Make (Test_lib: Test_lib.S) : S = struct
         Some (process_lookup uncurry2 lookup_student ty name)
       else None
     in
-    test ~points test_ty printer out_printer name soln stud muts
+    test
+      ~points
+      ~compare
+      test_ty printer out_printer name soln stud muts
 
   let test_unit_tests_3
       ?(points = 1)
       ?(test_student_soln = true)
+      ?test:(compare = (=))
       ty name muts =
     let (dom1, rng1) = Ty.domains ty in
     let (dom2, rng2) = Ty.domains rng1 in
@@ -265,11 +288,15 @@ module Make (Test_lib: Test_lib.S) : S = struct
         Some (process_lookup uncurry3 lookup_student ty name)
       else None
     in
-    test ~points test_ty printer out_printer name soln stud muts
+    test
+      ~points
+      ~compare
+      test_ty printer out_printer name soln stud muts
 
   let test_unit_tests_4
       ?(points = 1)
       ?(test_student_soln = true)
+      ?test:(compare = (=))
       ty name muts =
     let (dom1, rng1) = Ty.domains ty in
     let (dom2, rng2) = Ty.domains rng1 in
@@ -296,6 +323,9 @@ module Make (Test_lib: Test_lib.S) : S = struct
         Some (process_lookup uncurry4 lookup_student ty name)
       else None
     in
-    test ~points test_ty printer out_printer name soln stud muts
+    test
+      ~points
+      ~compare
+      test_ty printer out_printer name soln stud muts
 
 end
