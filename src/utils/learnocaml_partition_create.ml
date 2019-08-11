@@ -50,7 +50,7 @@ let partition_by_grade funname =
   let rec get_relative_section = function
     | [] -> []
     | (Message _)::xs -> get_relative_section xs
-    | (Section (t,res))::xs ->
+    | (Section (t,res))::xs | (SectionMin (t,res, _))::xs ->
        match t with
        | Text _::Code  fn::_ ->
           if fn = funname
@@ -62,6 +62,7 @@ let partition_by_grade funname =
     let aux acc =
       function
       | Section (_,s) -> get_grade s
+      | SectionMin (_, s, min) -> max (get_grade s) min
       | Message (_,s) ->
          match s with
          | Success i -> acc + i
