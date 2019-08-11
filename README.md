@@ -7,7 +7,7 @@ lessons and tutorials.
 
 A demo is available at: [http://learn-ocaml.hackojo.org/].
 
-![Build status logo](https://travis-ci.org/ocaml-sf/learn-ocaml.svg)
+[![Build Status](https://travis-ci.org/ocaml-sf/learn-ocaml.svg?branch=master)](https://travis-ci.org/ocaml-sf/learn-ocaml)
 
 Howtos
 ------
