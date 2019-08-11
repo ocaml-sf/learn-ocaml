@@ -109,6 +109,21 @@ let result items =
   let (n, b) = do_report items in
   (max n 0, b)
 
+let rec scale ?(penalties = true) factor items =
+  List.map (scale_item penalties factor) items
+and scale_item penalties factor = function
+  | Section (text, report) ->
+      Section (text, scale ~penalties factor report)
+  | SectionMin (text, report, min) ->
+      SectionMin (text,
+                  scale ~penalties factor report,
+                  if penalties then factor * min else min)
+  | Message (text, Success n) ->
+      Message (text, Success (factor * n))
+  | Message (text, Penalty n) when penalties ->
+      Message (text, Penalty (factor * n))
+  | item -> item
+
 let enc =
   let open Json_encoding in
   let text_enc =

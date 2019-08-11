@@ -472,6 +472,11 @@ module type S = sig
       -> 'a sampler
       -> 'a array sampler
 
+    (** [sample_pair s1 s2] returns a sampler that generates a value
+        of type ['a * 'b] using [s1] and [s2] to generate values of
+        type ['a] and ['b], respectively, on each call. *)
+    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
+
     (** [sample_alternatively s] returns a sampler that mimics
        randomly the behavior of one of [s] sampler and change at each
        call. *)
@@ -1242,6 +1247,22 @@ module type S = sig
      ('a -> Learnocaml_report.t)
      -> ('a -> Learnocaml_report.t)
      -> ('a -> Learnocaml_report.t)
+
+   (** [r1 @@> f] returns [r1] if [r1] is a failure report,
+       otherwise returns the result of report generator
+       [f ()]. *)
+   val (@@>) :
+     Learnocaml_report.t
+     -> (unit -> Learnocaml_report.t)
+     -> Learnocaml_report.t
+
+   (** [r1 @@= f] returns [r1] if [r1] is a failure report,
+       otherwise concatenates [r1] to the result of report
+       generator [f ()]. *)
+   val (@@=) :
+     Learnocaml_report.t
+     -> (unit -> Learnocaml_report.t)
+     -> Learnocaml_report.t
 
    (**/**)
    include (module type of Ast_checker)

@@ -63,6 +63,9 @@ type _ request =
   | Set_exercise_status:
       teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
+  | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
+
   | Invalid_request:
       string -> string request
 
@@ -138,6 +141,9 @@ module Conversions (Json: JSON_CODEC) = struct
           json Exercise.Status.enc
       | Set_exercise_status _ ->
           json J.unit
+
+      | Partition _ ->
+          json Partition.enc
 
       | Invalid_request _ ->
           str
@@ -232,6 +238,10 @@ module Conversions (Json: JSON_CODEC) = struct
           (Json.encode
              (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
              status)
+
+    | Partition (token, eid, fid, prof) ->
+        get ~token
+          ["partition"; eid; fid; string_of_int prof]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -355,6 +365,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
+      | `GET, ["partition"; eid; fid; prof], Some token
+        when Token.is_teacher token ->
+          Partition (token, eid, fid, int_of_string prof) |> k
+
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
           Exercise_status_index token |> k
@@ -376,6 +390,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           | ["exercise.html"]
         | ["playground.html"]
         | ["student-view.html"]
+        | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
           Static path |> k

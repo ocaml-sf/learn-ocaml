@@ -119,6 +119,7 @@ module type S = sig
     val sample_bool : bool sampler
     val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
     val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
+    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
     val sample_alternatively : 'a sampler list -> 'a sampler
     val sample_cases : 'a list -> 'a sampler
     val sample_option : 'a sampler -> 'a option sampler
@@ -461,6 +462,8 @@ module type S = sig
   end
 
   val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
+  val (@@>) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
+  val (@@=) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
 
   (**/**)
   include (module type of Ast_checker)
@@ -1860,6 +1863,9 @@ module Make
     let sample_list ?min_size ?max_size ?dups ?sorted sample () =
       Array.to_list (sample_array ?min_size ?max_size ?dups ?sorted sample ())
 
+    let sample_pair sample1 sample2 () =
+      (sample1 (), sample2 ())
+
     let printable_funs = ref []
 
     let fun_printer ppf f =
@@ -1883,6 +1889,9 @@ module Make
   end
 
   let (@@@) f g = fun x -> f x @ g x
+  let (@@>) r1 f = if snd (Learnocaml_report.result r1) then r1 else f ()
+  let (@@=) r1 f = if snd (Learnocaml_report.result r1) then r1 else r1 @ f ()
+
   (**/**)
   include Ast_checker
   include Tester

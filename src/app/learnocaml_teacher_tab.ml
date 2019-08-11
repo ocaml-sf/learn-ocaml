@@ -203,9 +203,20 @@ let rec teacher_tab token _select _params () =
           acc groups_list
     | Exercise.Index.Exercises exlist ->
         List.fold_left (fun acc (id, meta) ->
-            let open_ () =
+            let open_exercise_ () =
               let _win = window_open ("/exercises/"^id^"/") "_blank" in
               false
+            in
+            let open_partition_ () =
+              Lwt.async (fun () ->
+                ask_string ~title:"Choose a function name"
+                  [H.pcdata @@ "Choose a function name to partition codes from "^ id ^": "]
+                >|= fun funname ->
+                let _win =
+                  window_open
+                    ("/partition-view.html?id="^ id ^"&function="^funname^"&prof=30") "_blank"
+                in ());
+                false
             in
             match meta with None -> acc | Some meta ->
             let st = status id in
@@ -220,10 +231,10 @@ let rec teacher_tab token _select _params () =
               H.a_id hid;
               H.a_class ("exercise_line" :: classes);
               H.a_onclick (fun _ -> !toggle_selected_exercises [id]; false);
-              H.a_ondblclick (fun _ -> open_ ());
+              H.a_ondblclick (fun _ -> open_exercise_ ());
               H.a_onmouseup (fun ev ->
                   Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
-                  if btn = Dom_html.Middle_button then open_ () else true);
+                  if btn = Dom_html.Middle_button then open_partition_ () else true);
             ] [
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]

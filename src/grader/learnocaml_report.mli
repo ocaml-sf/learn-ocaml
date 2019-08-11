@@ -34,6 +34,13 @@ and inline =
 (** Gets the total successes of a report, and tells if a failure happened *)
 val result : t -> int * bool
 
+(** Scales all of the point values of the items in a report by an integer
+    factor. Useful for weighting different components of an exercise.
+    If [penalties] ([true] by default), scales the values of [Penalty]
+    items and the minimum values for [SectionMin], otherwise leaves them
+    untouched. *)
+val scale : ?penalties: bool -> int -> t -> t
+
 (** Gets a report as HTML in a string
     (if [not bare] add a container div and inline style) *)
 val to_html :  ?bare: bool -> t -> string

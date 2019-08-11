@@ -472,6 +472,15 @@ module Request_handler = struct
             status
           >>= respond_json cache
 
+      | Api.Partition (token, eid, fid, prof) ->
+         lwt_catch_fail (fun () ->
+           verify_teacher_token token
+           >?= fun () ->
+           Learnocaml_partition_create.partition eid fid prof
+           >>= respond_json cache
+           )
+           (fun exn -> (`Not_found, Printexc.to_string exn))
+
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 
