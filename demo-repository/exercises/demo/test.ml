@@ -42,9 +42,9 @@ let test_divide () =
 
 let test_sum3 () =
   test_function_against_solution
-    ~gen:2                 (* only 2 random test cases *)
-    [%prot: int -> int -> int -> int] (* function type *)
-    "sum3"                            (* function name *)
+    ~gen:2                  (* only 2 random test cases *)
+    [%funty: int -> int -> int -> int] (* function type *)
+    "sum3"                             (* function name *)
     (* list of additional, explicit test cases *)
     [ 10 @: 20 @:!! 30 ;
       -1 @: -2 @:!! -3 ]

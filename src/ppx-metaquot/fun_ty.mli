@@ -8,9 +8,9 @@
 
 (** Library of heterogeneous, nonempty lists and their corresponding types.
 
-    let p = [%prot: int -> bool]
+    let p = [%funty: int -> bool]
 
-    val p : ((int -> bool) Ty.ty, int -> unit, bool) Prot.prot = <abstr>
+    val p : ((int -> bool) Ty.ty, int -> unit, bool) Fun_ty.fun_ty = <abstr>
 *)
 
 (** The type of arguments, represented as heterogeneous lists.
@@ -36,18 +36,18 @@ val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
     [arg_ty [%ty: int]
      @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]]
 *)
-type ('arrow, 'uarrow, 'ret) prot
+type ('arrow, 'uarrow, 'ret) fun_ty
 val last_ty :
   'a Ty.ty ->
   'ret Ty.ty ->
-  (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) prot
+  (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) fun_ty
 val arg_ty :
   'a Ty.ty ->
-  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
-  (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
+  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
+  (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) fun_ty
 
-val ty_of_prot :
-  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
+val ty_of_fun_ty :
+  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
 val get_ret_ty :
   ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
 
@@ -58,10 +58,10 @@ end
 
 module Make : functor (M : S) -> sig
   val print :
-    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) prot ->
+    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) fun_ty ->
     Format.formatter -> ('p -> 'a, 'p -> 'c, 'r) args -> unit
   val get_sampler :
-    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) prot ->
+    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) fun_ty ->
     unit -> ('p -> 'a, 'p -> 'c, 'r) args
 end
 

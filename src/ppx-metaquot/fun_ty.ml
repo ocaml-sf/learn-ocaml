@@ -15,24 +15,30 @@ type (_, _, _) args =
 let last x = Last x
 let arg x r = Arg (x, r)
 
-let rec apply : type p a c r. (p -> a) -> (p -> a, p -> c, r) args -> r = fun f x ->
+let rec apply
+        : type p a c r. (p -> a) -> (p -> a, p -> c, r) args -> r = fun f x ->
   match x with
   | Last x -> f x
   | Arg (x, Last r) -> (f x) r
   | Arg (x, Arg (y, r)) -> apply (f x) (Arg (y, r))
 
-(* Usage: arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit] *)
-type (_, _, _) prot =
-  | Last_ty : 'a Ty.ty * 'r Ty.ty -> (('a -> 'r) Ty.ty, 'a -> unit, 'r) prot
-  | Arg_ty : 'a Ty.ty * (('b -> 'c) Ty.ty, 'b -> 'd, 'r) prot -> (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) prot
+(* Usage:
+   arg_ty [%ty: int] @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]
+ *)
+type (_, _, _) fun_ty =
+  | Last_ty : 'a Ty.ty * 'r Ty.ty -> (('a -> 'r) Ty.ty, 'a -> unit, 'r) fun_ty
+  | Arg_ty : 'a Ty.ty * (('b -> 'c) Ty.ty, 'b -> 'd, 'r) fun_ty ->
+             (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) fun_ty
 
 let last_ty x r = Last_ty (x, r)
 let arg_ty x r = Arg_ty (x, r)
 
-let rec ty_of_prot : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> (p -> a) Ty.ty  = function
+let rec ty_of_fun_ty
+        : type p a c r. ((p -> a) Ty.ty, p -> c, r) fun_ty -> (p -> a) Ty.ty =
+  function
   | Last_ty (a, b) -> Ty.curry a b
   | Arg_ty (x, Last_ty (l, r)) -> Ty.curry x (Ty.curry l r)
-  | Arg_ty (x, Arg_ty (y, r)) -> Ty.curry x (ty_of_prot (Arg_ty (y, r)))
+  | Arg_ty (x, Arg_ty (y, r)) -> Ty.curry x (ty_of_fun_ty (Arg_ty (y, r)))
 
 let rec get_ret_ty
         : type p a c r. (p -> a) Ty.ty -> (p -> a, p -> c, r) args -> r Ty.ty =
@@ -55,7 +61,8 @@ end
 
 module Make (M : S) = struct
   let rec print
-          : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> Format.formatter -> (p -> a, p -> c, r) args -> unit =
+          : type p a c r. ((p -> a) Ty.ty, p -> c, r) fun_ty ->
+                 Format.formatter -> (p -> a, p -> c, r) args -> unit =
     fun t ppf x ->
     match t, x with
     | Last_ty (arg_ty, _), Last x ->
@@ -72,7 +79,8 @@ module Make (M : S) = struct
     | Last_ty (_, _), Arg (_, _) -> .
 
   let rec get_sampler
-          : type p a c r. ((p -> a) Ty.ty, p -> c, r) prot -> unit -> (p -> a, p -> c, r) args =
+          : type p a c r. ((p -> a) Ty.ty, p -> c, r) fun_ty -> unit ->
+                 (p -> a, p -> c, r) args =
     fun wit ->
     match wit with
     | Last_ty (x, _) ->

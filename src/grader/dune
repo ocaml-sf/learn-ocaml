@@ -105,7 +105,7 @@
         %{ocaml-config:standard_library}/compiler-libs/parse.cmi)
        (:generated-cmis
         ../ppx-metaquot/.ty.objs/ty.cmi
-        ../ppx-metaquot/.prot.objs/prot.cmi
+        ../ppx-metaquot/.fun_ty.objs/fun_ty.cmi
         .testing.objs/introspection_intf.cmi
         .learnocaml_report.objs/learnocaml_report.cmi
         .testing.objs/test_lib.cmi

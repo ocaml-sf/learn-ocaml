@@ -1102,17 +1102,17 @@ module type S = sig
         can be returned. *)
     val result : (unit -> 'a) -> 'a result
 
-    (** Helper notations for [Prot.args] *)
+    (** Helper notations for [Fun_ty.args] *)
     val (!!) :
       'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) Prot.args
+      ('a -> 'ret, 'a -> unit, 'ret) Fun_ty.args
     val (@:) :
       'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) Prot.args
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) Fun_ty.args
     val (@:!!) :
       'a -> 'b ->
-      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) Prot.args
+      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) Fun_ty.args
 
     (** {2 Lookup functions} *)
 
@@ -1140,16 +1140,16 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
          unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
       ('ar -> 'row) lookup ->
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args * (unit -> 'ret)) list ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args * (unit -> 'ret)) list ->
       Learnocaml_report.t
 
     (** [test_function_against ~gen ~test ~test_stdout ~test_stderr
@@ -1160,19 +1160,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
       ?before_user :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
       Learnocaml_report.t
 
     (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
@@ -1183,19 +1183,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
       ?before_user:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
       ?after:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
          'ret * string * string ->
          'ret * string * string ->
          Learnocaml_report.item list) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Prot.prot ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
       string ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Prot.args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
       Learnocaml_report.item list
 
     (** Helper notation to test pure functions.
@@ -1203,7 +1203,7 @@ module type S = sig
         [p ==> r] is the pair [(p, fun () -> r)].
 
         Example: [test_function prot
-                  (lookup_student (ty_of_prot prot) name)
+                  (lookup_student (ty_of_fun_ty prot) name)
                   [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
     val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end

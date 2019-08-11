@@ -207,30 +207,30 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
          [Nolabel, tyexpr])
       (Typ.constr ty_id [cty])
 
-  let prot_of this l e =
+  let fun_ty_of this l e =
     (* Naming convention: ty:=Ty.ty, cty:=core_type, ety:=expression *)
     let glob_cty = get_typ l e in
     match glob_cty with
     | { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg0, next) ; _ } ->
        (* OK: The type expression is an arrow type *)
        (* Recursion over [core_type]s: *)
-       let rec get_prot_of arg0 next =
+       let rec get_fun_ty_of arg0 next =
          match next with
          | { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg', next') ; _ } ->
-            let prot_next, ucty, ret = get_prot_of arg' next' in
-            (* Arg_ty (arg0, prot_next) : (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) *)
-            let cons_arg_id = Location.mknoloc Longident.(Ldot (Lident "Prot", "arg_ty")) in
+            let fun_ty_next, ucty, ret = get_fun_ty_of arg' next' in
+            (* Arg_ty (arg0, fun_ty_next) : (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) *)
+            let cons_arg_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "arg_ty")) in
             let arg0_ety = ty_of this arg0 in
             let ucty = Typ.arrow Nolabel arg0 ucty in
             (Exp.apply
                (Exp.apply
                   (Exp.ident cons_arg_id)
                   [Nolabel, arg0_ety])
-               [Nolabel, prot_next],
+               [Nolabel, fun_ty_next],
              ucty, ret)
          | _ ->
-            (* Last_ty (arg0, next) : (('a -> 'r) Ty.ty, 'a -> unit, 'r) prot *)
-            let cons_last_id = Location.mknoloc Longident.(Ldot (Lident "Prot", "last_ty")) in
+            (* Last_ty (arg0, next) : (('a -> 'r) Ty.ty, 'a -> unit, 'r) fun_ty *)
+            let cons_last_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "last_ty")) in
             let arg0_ety = ty_of this arg0 in
             let next_ety = ty_of this next in
             let unit_id = Location.mknoloc (Longident.Lident "unit") in
@@ -244,15 +244,15 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
              ucty, next)
        in
        (* Main branch *)
-       let prot_next, ucty, ret = get_prot_of arg0 next in
-       (* prot_next : (('a -> 'b -> 'r) Ty.ty, 'a -> 'b -> unit, 'r) [typecast] *)
-       let prot_id = Location.mknoloc Longident.(Ldot (Lident "Prot", "prot")) in
+       let fun_ty_next, ucty, ret = get_fun_ty_of arg0 next in
+       (* fun_ty_next : (('a -> 'b -> 'r) Ty.ty, 'a -> 'b -> unit, 'r) [typecast] *)
+       let fun_ty_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "fun_ty")) in
        let ty_id = Location.mknoloc Longident.(Ldot (Lident "Ty", "ty")) in
        let glob_cty_ty = Typ.constr ty_id [glob_cty] in
        Exp.constraint_
-         prot_next
-         (Typ.constr prot_id [glob_cty_ty; ucty; ret])
-    | _ -> invalid_arg "prot_of: not an arrow type"
+         fun_ty_next
+         (Typ.constr fun_ty_id [glob_cty_ty; ucty; ret])
+    | _ -> invalid_arg "fun_ty_of: not an arrow type"
   (* ------ </edited for learn-ocaml> ------ *)
 
   let expander _args =
@@ -276,8 +276,8 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
            | Pexp_extension({txt="ty";loc=l}, e) ->
               let ty = get_typ l e in
               ty_of this ty
-           | Pexp_extension({txt="prot";loc=l}, e) ->
-              prot_of this l e
+           | Pexp_extension({txt="funty";loc=l}, e) ->
+              fun_ty_of this l e
 (* ------ </edited for learn-ocaml> ------ *)
            | _ ->
                super.expr this e
