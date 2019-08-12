@@ -32,12 +32,28 @@ val last :
   'a ->
   ('a -> 'ret, 'a -> unit, 'ret) args
 
-(** [arg e l], or equivalently [e @: l], adds [e] in front of the
+(** [arg a l], or equivalently [a @: l], adds [a] in front of the
    argument list [l] *)
 val arg :
   'a ->
   ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
   ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+
+(** Helper notation for [last] *)
+val (!!) :
+  'a ->
+  ('a -> 'ret, 'a -> unit, 'ret) args
+
+(** Helper notation for [arg] *)
+val (@:) :
+  'a ->
+  ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
+  ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
+
+(** [a @:!! l] is another notation for [a @: !! l] (with a space) *)
+val (@:!!) :
+  'a -> 'b ->
+  ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
 (** [apply f l] applies a n-ary function [f] to the arguments from [l] *)
 val apply :

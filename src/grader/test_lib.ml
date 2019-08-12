@@ -290,7 +290,7 @@ module type S = sig
       ?sampler : (unit -> 'a * 'b * 'c) ->
       ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t) ->
       ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
-      
+
     (*----------------------------------------------------------------------------*)
 
     val test_function_4 :
@@ -349,16 +349,13 @@ module type S = sig
 
     (*----------------------------------------------------------------------------*)
 
-    val (!!) :
-      'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) Fun_ty.args
-    val (@:) :
-      'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) Fun_ty.args
-    val (@:!!) :
-      'a -> 'b ->
-      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) Fun_ty.args
+    include (module type of Fun_ty
+                            with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
+                            and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty)
+
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
+    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
 
     type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
 
@@ -375,16 +372,16 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
        unit) ->
     ?after :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
        ('ret * string * string) ->
        ('ret * string * string) ->
        Learnocaml_report.t) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
     ('ar -> 'row) lookup ->
-    (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args * (unit -> 'ret)) list ->
+    (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
     Learnocaml_report.t
 
   val test_function_against :
@@ -393,19 +390,19 @@ module type S = sig
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
     ?before_reference :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
     ?before_user :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
     ?after :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
        ('ret * string * string) ->
        ('ret * string * string) ->
        Learnocaml_report.t) ->
     ?sampler:
-      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
     ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-    ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
     Learnocaml_report.t
 
   val test_function_against_solution :
@@ -414,19 +411,19 @@ module type S = sig
     ?test_stdout: io_tester ->
     ?test_stderr: io_tester ->
     ?before_reference:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
     ?before_user:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
     ?after:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
         'ret * string * string ->
         'ret * string * string ->
         Learnocaml_report.item list) ->
     ?sampler:
-      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
     string ->
-    ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
+    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
     Learnocaml_report.item list
 
   val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
@@ -1196,20 +1193,22 @@ module Make
 
     (*----------------------------------------------------------------------------*)
 
+    include Fun_ty
+
     (* The GADT [args] & [last, arg] are defined in [fun_ty.ml] *)
+
     (* The GADT [fun_ty] &
        [last_ty, arg_ty, ty_of_fun_ty, apply, get_ret_ty, print, get_sampler]
        are defined in [fun_ty.ml] *)
 
-    let (!!) = Fun_ty.last
-    let (@:) = Fun_ty.arg
-    let (@:!!) a b = a @: !! b
+    let ty_of_prot = ty_of_fun_ty
+    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
 
     module Aux = struct
       let typed_printer = typed_printer
       let typed_sampler = Introspection.get_sampler
     end
-    module FunTyAux = Fun_ty.Make(Aux)
+    module FunTyAux = Make(Aux)
 
     (*----------------------------------------------------------------------------*)
 

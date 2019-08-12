@@ -15,6 +15,10 @@ type (_, _, _) args =
 let last x = Last x
 let arg x r = Arg (x, r)
 
+let (!!) = last
+let (@:) = arg
+let (@:!!) a b = a @: !! b
+
 let rec apply
         : type p a c r. (p -> a) -> (p -> a, p -> c, r) args -> r = fun f x ->
   match x with

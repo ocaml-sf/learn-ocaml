@@ -1102,17 +1102,13 @@ module type S = sig
         can be returned. *)
     val result : (unit -> 'a) -> 'a result
 
-    (** Helper notations for [Fun_ty.args] *)
-    val (!!) :
-      'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) Fun_ty.args
-    val (@:) :
-      'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) Fun_ty.args
-    val (@:!!) :
-      'a -> 'b ->
-      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) Fun_ty.args
+    include (module type of Fun_ty
+                            with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
+                            and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty)
+
+    val ty_of_prot :
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
+    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
 
     (** {2 Lookup functions} *)
 
@@ -1140,16 +1136,16 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
          unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       ('ar -> 'row) lookup ->
-      (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args * (unit -> 'ret)) list ->
+      (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
       Learnocaml_report.t
 
     (** [test_function_against ~gen ~test ~test_stdout ~test_stderr
@@ -1160,19 +1156,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
       ?before_user :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
       ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.t
 
     (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
@@ -1183,19 +1179,19 @@ module type S = sig
       ?test_stdout: io_tester ->
       ?test_stderr: io_tester ->
       ?before_reference:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
       ?before_user:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args -> unit) ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
       ?after:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args ->
+        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
          'ret * string * string ->
          'ret * string * string ->
          Learnocaml_report.item list) ->
       ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) Fun_ty.fun_ty ->
+        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       string ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) Fun_ty.args list ->
+      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.item list
 
     (** Helper notation to test pure functions.
