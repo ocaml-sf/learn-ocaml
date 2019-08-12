@@ -306,11 +306,16 @@ module Make () : S = struct
     let on_expression expr =
       match expr.sexp_desc with
       | Sexp_ifthenelse (e1, e2, Some e3) ->
+          let e1_height = expr_height e1 in
           if is_true e2 then
             if is_false e3 then
               rewrite_report_expr expr e1 Warning
             else
-            if not_shadowed "Pervasives.||" "||" expr then
+            if
+              not_shadowed "Pervasives.||" "||" expr
+              && e1_height < 3
+              && expr_height e3 < 3
+            then
               rewrite_report_expr expr (pervasives_or e1 e3) Suggestion
             else
               []
@@ -322,7 +327,12 @@ module Make () : S = struct
           then
             rewrite_report_expr expr (pervasives_not e1) Warning
 
-          else if is_false e3 && not_shadowed "Pervasives.&&" "&&" expr then
+          else if
+            is_false e3
+            && not_shadowed "Pervasives.&&" "&&" expr
+            && e1_height < 3
+            && expr_height e2 < 3
+          then
             rewrite_report_expr expr (pervasives_and e1 e2) Suggestion
 
           else []
@@ -380,10 +390,26 @@ module Make () : S = struct
       Some ("A match-expression with a single clause "
             ^ "can be rewritten as a let-binding.")
     in
+    let dotdotdot =
+      let dotdotdot_str = "(* ... your code here ... *)" in
+      let id = Ident.create dotdotdot_str in
+      let path = Path.Pident id in
+      let lid = Longident.Lident dotdotdot_str in
+      let loc = {Asttypes.txt = lid; loc = Location.none} in
+      let desc = Sexp_ident (path, loc) in
+      tast_of_desc desc
+    in
     let on_expression expr =
       match expr.sexp_desc with
-      | Sexp_match (exp, [{sc_lhs; sc_guard = None; sc_rhs}]) ->
+      | Sexp_match (exp, [({sc_lhs; sc_guard = None; sc_rhs}) as case]) ->
           let vb = {svb_pat = sc_lhs; svb_expr = exp} in
+          let sc_rhs =
+            if expr_height sc_rhs > 3 then
+              dotdotdot
+            else sc_rhs
+          in
+          let sexp_desc = Sexp_match (exp, [{case with sc_rhs}]) in
+          let expr = {expr with sexp_desc} in
           let expr' = tast_of_desc
               (Sexp_let (Asttypes.Nonrecursive, [vb], sc_rhs))
           in

@@ -84,6 +84,12 @@ val lookup_in_expr_env: Typed_ast.expression -> string -> Path.t
 val same_expr: Typed_ast.expression -> Typed_ast.expression -> bool
 val same_pattern : Typed_ast.pattern -> Typed_ast.pattern -> bool
 
+(* Calculating the approximate "height" of an expression.
+   This is mostly useful for determining if an expression is
+   "large" or not, e.g. for style checker transformation
+   purposes. *)
+val expr_height: Typed_ast.expression -> int
+
 (* Helpers for constructing Typed_ast fragments.
    The fields of these fragments are completely uninitialized:
    empty typing environment, type unit, no location or attributes, etc.

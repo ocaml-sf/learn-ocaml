@@ -1119,6 +1119,148 @@ module Typed_ast_compare = struct
 
 end
 
+module Typed_ast_height = struct
+  open Typed_ast
+
+  let rec exp_height exp =
+    match exp.sexp_desc with
+    | Sexp_ident _
+    | Sexp_constant _ -> 1
+    | Sexp_let (_, vbs, expr) ->
+        let h1 = exp_height expr in
+        let h' =
+          List.fold_left
+            (fun acc vb -> max acc (vb_height vb))
+            h1
+            vbs
+        in
+        1 + h'
+    | Sexp_function cases ->
+        let h' =
+          List.fold_left
+            (fun acc case -> max acc (case_height case))
+            0
+            cases
+        in
+        1 + h'
+    | Sexp_fun (_, expo, pat, expr) ->
+        let h1 = pat_height pat in
+        let h2 = exp_height expr in
+        let h' = max h1 h2 in
+        begin
+          match expo with
+          | None -> 1 + h'
+          | Some exp ->
+              let h3 = exp_height exp in
+              1 + max h' h3
+        end
+    | Sexp_apply (expr, args) ->
+        let h1 = exp_height expr in
+        let h' =
+          List.fold_left
+            (fun acc (_, exp) -> max acc (exp_height exp))
+            h1
+            args
+        in
+        1 + h'
+    | Sexp_match (expr, cases)
+    | Sexp_try (expr, cases) ->
+        let h1 = exp_height expr in
+        let h' =
+          List.fold_left
+            (fun acc case -> max acc (case_height case))
+            h1
+            cases
+        in
+        1 + h'
+    | Sexp_tuple exps ->
+        let h' =
+          List.fold_left
+            (fun acc exp -> max acc (exp_height exp))
+            0
+            exps
+        in
+        1 + h'
+    | Sexp_construct (_, None) -> 1
+    | Sexp_construct (_, Some exp) -> 1 + exp_height exp
+    | Sexp_record (fields, expo) ->
+        let h' =
+          List.fold_left
+            (fun acc (_, exp) -> max acc (exp_height exp))
+            0
+            fields
+        in
+        begin
+          match expo with
+          | None -> 1 + h'
+          | Some exp ->
+              let h1 = exp_height exp in
+              1 + max h' h1
+        end
+    | Sexp_field (exp, _) -> 1 + exp_height exp
+    | Sexp_setfield (e1, _, e2) ->
+        1 + max (exp_height e1) (exp_height e2)
+    | Sexp_ifthenelse (e1, e2, expo) ->
+        let h1 = exp_height e1 in
+        let h2 = exp_height e2 in
+        let h' = max h1 h2 in
+        begin
+          match expo with
+          | None -> 1 + h'
+          | Some exp ->
+              let h3 = exp_height exp in
+              1 + max h' h3
+        end
+    | Sexp_sequence (e1, e2) ->
+        1 + max (exp_height e1) (exp_height e2)
+    | Sexp_constraint (exp, _)
+    | Sexp_assert exp
+    | Sexp_open (_, _, exp) -> 1 + exp_height exp
+
+  and pat_height pat =
+    match pat with
+    | Spat_any
+    | Spat_var _
+    | Spat_constant _ -> 1
+    | Spat_alias (pat, _, _) -> 1 + pat_height pat
+    | Spat_tuple pats ->
+        let h' =
+          List.fold_left
+            (fun acc pat -> max acc (pat_height pat))
+            0
+            pats
+        in
+        1 + h'
+    | Spat_construct (_, None) -> 1
+    | Spat_construct (_, Some pat) -> 1 + pat_height pat
+    | Spat_record (fields, _) ->
+        let h' =
+          List.fold_left
+            (fun acc (_, pat) -> max acc (pat_height pat))
+            0
+            fields
+        in
+        1 + h'
+    | Spat_or (p1, p2) ->
+        let h1 = pat_height p1 in
+        let h2 = pat_height p2 in
+        1 + max h1 h2
+    | Spat_constraint (pat, _) -> 1 + pat_height pat
+
+  and vb_height {svb_pat; svb_expr} =
+    1 + max (pat_height svb_pat) (exp_height svb_expr)
+
+  and case_height {sc_lhs; sc_guard; sc_rhs} =
+    let h1 = pat_height sc_lhs in
+    let h2 = exp_height sc_rhs in
+    let h' = max h1 h2 in
+    match sc_guard with
+    | None -> 1 + h'
+    | Some exp ->
+        let h3 = exp_height exp in
+        1 + max h' h3
+end
+
 module Typed_ast_fragments = struct
   open Typed_ast
 
@@ -1595,6 +1737,8 @@ let check_tailcalls var =
 
 let same_expr = Typed_ast_compare.compare_expression
 let same_pattern = Typed_ast_compare.compare_pattern
+
+let expr_height = Typed_ast_height.exp_height
 
 let lookup_in_expr_env =
   let open Typed_ast in

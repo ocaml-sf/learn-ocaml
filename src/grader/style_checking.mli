@@ -263,6 +263,10 @@ module type S = sig
 
      Suggested rewriting:
      <e1> || <e2>
+
+     Note: rewrite suggestions involving && or || are
+     only triggered when the sub-expressions are
+     relatively simple and "small".
   *)
   val if_returning_bool: Typed_ast_lib.checker
 
