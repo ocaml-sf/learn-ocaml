@@ -609,7 +609,7 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
   get_config_option ?local ~save_back server_opt token_opt
   >>= function
   | Some c -> Lwt.return c
-  | None -> Lwt.fail_with "Not config file found please do learn-ocaml-client init"
+  | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
 
 let man p = [
     `S "DESCRIPTION";
@@ -640,11 +640,11 @@ module Init = struct
     | None ->
        match create_token_args.nickname with
        | Some n -> (get_nonce_and_create_token server (Some n) create_token_args.secret)
-       | _ -> Lwt.fail_with "You must provide a token or a nickname and a secret"
+       | _ -> Lwt.fail_with "You must provide a token or a nickname and a secret."
   in
   let get_server () =
     match global_args.server_url with
-    | None -> Lwt.fail_with "You must provide a server"
+    | None -> Lwt.fail_with "You must provide a server."
     | Some s -> Lwt.return s
   in
   get_server () >>= fun server ->
@@ -652,10 +652,10 @@ module Init = struct
   get_token server >>= fun token ->
   let config = { ConfigFile. server; token } in
   ConfigFile.write path config >|= fun () ->
-  Printf.eprintf "Configuration written to %s\n%!" path;
+  Printf.eprintf "Configuration written to %s.\n%!" path;
   0
 
-  let man = man "Initialize the configuration file with the server and : \
+  let man = man "Initialize the configuration file with the server, and \
                  a token or
                  a nickname and a secret \
                  "
