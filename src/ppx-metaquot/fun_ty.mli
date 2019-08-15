@@ -27,107 +27,123 @@
     Alternatively: [3 @: "word" @:!! false] *)
 type ('arrow, 'uarrow, 'ret) args
 
-(** [last e], or equivalently [!! e], builds a one-element argument list *)
+(** [last e], or equivalently [!! e], builds a one-element argument list. *)
 val last :
   'a ->
   ('a -> 'ret, 'a -> unit, 'ret) args
 
 (** [arg a l], or equivalently [a @: l], adds [a] in front of the
-   argument list [l] *)
+   argument list [l]. *)
 val arg :
   'a ->
   ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
   ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
-(** Helper notation for [last] *)
+(** Helper notation for [last]. *)
 val (!!) :
   'a ->
   ('a -> 'ret, 'a -> unit, 'ret) args
 
-(** Helper notation for [arg] *)
+(** Helper notation for [arg]. *)
 val (@:) :
   'a ->
   ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
   ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
-(** [a @:!! l] is another notation for [a @: !! l] (with a space) *)
+(** [a @:!! l] is another notation for [a @: !! l] (with a space). *)
 val (@:!!) :
   'a -> 'b ->
   ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
-(** [apply f l] applies a n-ary function [f] to the arguments from [l] *)
+(** [apply f l] applies a n-ary function [f] to the arguments from [l]. *)
 val apply :
   ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
   'ret
 
 (** GADT for function types.
 
-    Given an arrow type ['a -> 'row], the following construct provides
-    a more precise representation of this function type than
-    [[%ty: 'a -> 'row] : ('a -> 'row) Ty.ty]:
+    This abstract type fulfills a similar aim as the ['a Ty.ty] type:
+    provide a type-safe way to build terms representing an OCaml type
+    (relying on [Parsetree.core_type]), the type of these terms being
+    themselves parameterized by the type at stake, in order to
+    constrain the type of other arguments involved in the considered
+    (grader) expression.
 
-    [[%funty: 'a -> 'row] : (('a -> 'row) Ty.ty, 'a -> 'urow, 'ret) fun_ty]
+    For ['a Ty.ty], this aim can be achived with the ppx expression
+    [[%ty: int]], which builds an abstract term of type [int Ty.ty]
+    (this term also gathering an appropriate encoding of the [int]
+    type in terms of [Parsetree.core_type]).
 
-    In particular, the codomain type ['ret] is made explicit, so that
-    if ['row = 'b -> 'c], we get ['urow = 'b -> unit] and ['ret = 'c].
+    For implementing n-ary graders, this information is not sufficient
+    in practice, notably as we need to make it explicit in the type
+    annotation, what is the co-domain of the n-ary function at stake.
 
-    Usage: [arg_ty [%ty: int] @@ arg_ty [%ty: string] @@
-            last_ty [%ty: bool] [%ty: unit]]
+    This is achieved by the GADT
+    [(('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty].
 
-    Alternatively: [[%funty: int -> string -> bool -> unit]] *)
+    There are two ways to build terms of this type:
+
+    1. Use the two functions [arg_ty], [last_ty], and appropriate
+       [[%ty: type]] expressions, for example:
+
+        [arg_ty [%ty: int] @@
+         last_ty [%ty: string] [%ty: bool]];
+
+    2. Use directly the [[%funty: 'ar -> 'row]] construct, for example:
+
+        [[%funty: int -> string -> bool]].
+
+    For both cases in this example, we get a term of type:
+
+    [((int -> string -> bool) Ty.ty, int -> string -> unit, bool) fun_ty],
+
+    where the co-domain type [bool] is now explicit. *)
 type ('arrow, 'uarrow, 'ret) fun_ty
 
-(** [last_ty [%ty: a] [%ty: r]] builds a function type for [a -> r] *)
+(** [last_ty [%ty: a] [%ty: r]] builds a function type for [a -> r]. *)
 val last_ty :
   'a Ty.ty ->
   'ret Ty.ty ->
   (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) fun_ty
 
 (** [arg_ty [%ty: a] [%funty: b ->...-> r]] builds a function type for
-    [a -> b ->...-> r] *)
+    [a -> b ->...-> r]. *)
 val arg_ty :
   'a Ty.ty ->
   (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
   (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) fun_ty
 
 (** [ty_of_fun_ty funty] returns a term of type [('ar -> 'row) Ty.ty],
-    assuming [funty : (('ar -> 'row) Ty.ty, _, _) fun_ty] *)
+    assuming [funty : (('ar -> 'row) Ty.ty, _, _) fun_ty]. *)
 val ty_of_fun_ty :
   (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
   ('ar -> 'row) Ty.ty
 
-(** [get_ret_ty funty] returns a term of type ['ret Ty.ty], assuming
-   [funty : (_ , _, 'ret) fun_ty] *)
+(** [get_ret_ty ty l] returns a term of type ['ret Ty.ty] such that if
+    [ty : ('ar -> 'row) Ty.ty] and [l] contains n arguments, ['ar -> 'row]
+    is the arrow type of an n-argument function with co-domain ['ret]. *)
 val get_ret_ty :
-  ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
+  ('ar -> 'row) Ty.ty -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret Ty.ty
 
-
-(** Signature [S] is intended to be instantiated in [Test_lib] with:
-    [module M = struct
-      let typed_printer ty ppf v = Introspection.print_value ppf v ty
-      let typed_sampler = Introspection.get_sampler
-    end] *)
 module type S = sig
-  val typed_printer :
-    'a Ty.ty -> Format.formatter -> 'a -> unit
-  val typed_sampler :
-    'a Ty.ty -> unit -> 'a
+  val typed_printer : 'a Ty.ty -> Format.formatter -> 'a -> unit
+  val typed_sampler : 'a Ty.ty -> unit -> 'a
 end
 
-(** [Make(M)] provides a generic printer and sampler for the arguments
-    of n-ary functions specified using [args] and [fun_ty] GADTs *)
+(** [Make], used in [Test_lib], provides a generic printer and sampler
+    for argument lists of n-ary functions, depending on their type. *)
 module Make : functor (M : S) -> sig
   val print :
-    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) fun_ty ->
-    Format.formatter -> ('p -> 'a, 'p -> 'c, 'r) args -> unit
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
+    Format.formatter -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit
   val get_sampler :
-    (('p -> 'a) Ty.ty, 'p -> 'c, 'r) fun_ty ->
-    unit -> ('p -> 'a, 'p -> 'c, 'r) args
+    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
+    unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
 end
 
 (** [apply_args_1], [apply_args_2], [apply_args3], [apply_args_4] are
     variants of the [apply] function, assuming a fixed number of args;
-    they have thus a more precise type and are used in [Test_lib] *)
+    they have thus a more precise type and are used in [Test_lib]. *)
 val apply_args_1 :
   ('a -> 'b) -> ('a -> 'c, 'a -> unit, 'c) args -> 'b
 
