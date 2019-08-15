@@ -414,6 +414,7 @@ let () =
                                                 | Some _ -> true)
                              |> List.map (Templates.template_to_a_elt ace_t)
                              in
+                             Manip.removeChild Manip.Elt.body div;
                              Manip.replaceChildren to_change content;true); 
                                                 
                    true)]
