@@ -1711,7 +1711,7 @@ let check_tailcalls var =
              Code (Path.name var);
              Text "are tail calls"
             ],
-            Success points)]
+            if points = 0 then Important else Success points)]
 
     | Some {expr; parent} ->
         let suffix =

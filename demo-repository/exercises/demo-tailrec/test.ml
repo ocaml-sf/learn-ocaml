@@ -40,7 +40,7 @@ let nonrec_failure_msg name =
 let nonrec_success_msg name =
   Message (
       [Text "Verified that"; Code name; Text "is not recursive"],
-      Success 0
+      Important
     )
 
 let check_nonrec tast name =
