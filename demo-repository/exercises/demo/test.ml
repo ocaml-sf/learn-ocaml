@@ -11,7 +11,7 @@ let test_plus () =
   @
   test_unit_tests_2
     [%ty : int -> int -> int ] "plus"
-    [ ("Subtracts instead of adding", fun x y -> x - y) ]
+    [ ("Subtracts instead of adding", 1, fun x y -> x - y) ]
 
 let test_minus () =
   test_function_2_against_solution
@@ -20,7 +20,7 @@ let test_minus () =
   @
   test_unit_tests_2
     [%ty : int -> int -> int ] "minus"
-    [ ("Adds instead of subtracting", fun x y -> x + y) ]
+    [ ("Adds instead of subtracting", 1, fun x y -> x + y) ]
 
 let test_times () =
   test_function_2_against_solution
@@ -29,7 +29,7 @@ let test_times () =
   @
   test_unit_tests_2
     [%ty: int -> int -> int ] "times"
-    [ ("Divides instead of multiplying", fun x y -> x / y) ]
+    [ ("Divides instead of multiplying", 1, fun x y -> x / y) ]
 
 let test_divide () =
   test_function_2_against_solution
@@ -38,7 +38,7 @@ let test_divide () =
   @
   test_unit_tests_2
     [%ty : int -> int -> int ] "divide"
-    [ ("Multiplies instead of dividing", fun x y -> x * y) ]
+    [ ("Multiplies instead of dividing", 1, fun x y -> x * y) ]
 
 let () =
   set_result @@
