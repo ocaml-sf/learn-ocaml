@@ -3,7 +3,12 @@ type 'a test_result =
   | Fail of 'a
   | Err of exn
 
-type 'a mutant = string * 'a
+(** The information about a mutant is made up of:
+    - A name describing the bug in the mutant function
+    - The number of points to be awarded for exposing the bug
+    - The mutant function itself.
+*)
+type 'a mutant_info = string * int * 'a
 
 (* Run a test (a pair of input and expected output) on a function.
    The [compare] parameter specifies a comparison function for
@@ -44,30 +49,26 @@ val run_test_against_mutant:
 *)
 module type S = sig
   val test_unit_tests_1:
-    ?points: int ->
     ?test_student_soln: bool ->
     ?test: ('b -> 'b -> bool) ->
-    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant list -> Learnocaml_report.t
+    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant_info list -> Learnocaml_report.t
   val test_unit_tests_2:
-    ?points: int ->
     ?test_student_soln: bool ->
     ?test: ('c -> 'c -> bool) ->
-    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant list -> Learnocaml_report.t
+    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant_info list -> Learnocaml_report.t
   val test_unit_tests_3:
-    ?points: int ->
     ?test_student_soln: bool ->
     ?test: ('d -> 'd -> bool) ->
     ('a -> 'b -> 'c -> 'd) Ty.ty
     -> string
-    -> ('a -> 'b -> 'c -> 'd) mutant list
+    -> ('a -> 'b -> 'c -> 'd) mutant_info list
     -> Learnocaml_report.t
   val test_unit_tests_4:
-    ?points: int ->
     ?test_student_soln: bool ->
     ?test: ('e -> 'e -> bool) ->
     ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
     -> string
-    -> ('a -> 'b -> 'c -> 'd -> 'e) mutant list
+    -> ('a -> 'b -> 'c -> 'd -> 'e) mutant_info list
     -> Learnocaml_report.t
 
   (* To be called on a report returned by one of the above 4 functions,
