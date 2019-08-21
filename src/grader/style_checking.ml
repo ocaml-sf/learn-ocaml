@@ -280,6 +280,14 @@ module Make () : S = struct
     | None
 
   let comparison_to_bool =
+    let compare_true_details =
+      Some ("Comparing a boolean expression to true is the same as "
+            ^ "just using that boolean expression.")
+    in
+    let compare_false_details =
+      Some ("Comparing a boolean expression to false is the same as "
+            ^ "just negating that expression.")
+    in
     let equals_true_or_false expr = match expr.sexp_desc with
       | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
           if is_true v1 then Equals_true v2
@@ -291,10 +299,15 @@ module Make () : S = struct
     in
     let on_expression expr =
       match equals_true_or_false expr with
-      | Equals_true expr' -> rewrite_report_expr expr expr' Warning
+      | Equals_true expr' ->
+          rewrite_report_expr
+            ~details: compare_true_details
+            expr expr' Warning
       | Equals_false expr' ->
           if not_shadowed "Pervasives.not" "not" expr then
-            rewrite_report_expr expr (pervasives_not expr') Warning
+            rewrite_report_expr
+              ~details: compare_false_details
+              expr (pervasives_not expr') Warning
           else
             []
       | None -> []
@@ -303,20 +316,41 @@ module Make () : S = struct
 
   (* If returning bool checker *)
   let if_returning_bool =
+    let if_tf_details =
+      Some ("Instead of writing an if-expression with branches true and "
+            ^ "false, you should just use the condition directly.")
+    in
+    let if_ft_details =
+      Some ("Instead of writing an if-expression with branches false and "
+            ^ "true, you should just use the negation of the condition "
+            ^ "directly.")
+    in
+    let if_or_details =
+      Some ("An if-expression where the first branch is just true "
+            ^ "has the same meaning as an or-expression.")
+    in
+    let if_and_details =
+        Some ("An if-expression where the second branch is just false "
+              ^ "has the same meaning as an and-expression.")
+    in
     let on_expression expr =
       match expr.sexp_desc with
       | Sexp_ifthenelse (e1, e2, Some e3) ->
           let e1_height = expr_height e1 in
           if is_true e2 then
             if is_false e3 then
-              rewrite_report_expr expr e1 Warning
+              rewrite_report_expr
+                ~details: if_tf_details
+                expr e1 Warning
             else
             if
               not_shadowed "Pervasives.||" "||" expr
               && e1_height < 3
               && expr_height e3 < 3
             then
-              rewrite_report_expr expr (pervasives_or e1 e3) Suggestion
+              rewrite_report_expr
+                ~details: if_or_details
+                expr (pervasives_or e1 e3) Suggestion
             else
               []
 
@@ -325,7 +359,9 @@ module Make () : S = struct
             && is_true e3
             && not_shadowed "Pervasives.not" "not" expr
           then
-            rewrite_report_expr expr (pervasives_not e1) Warning
+            rewrite_report_expr
+              ~details: if_ft_details
+              expr (pervasives_not e1) Warning
 
           else if
             is_false e3
@@ -333,7 +369,9 @@ module Make () : S = struct
             && e1_height < 3
             && expr_height e2 < 3
           then
-            rewrite_report_expr expr (pervasives_and e1 e2) Suggestion
+            rewrite_report_expr
+              ~details: if_and_details
+              expr (pervasives_and e1 e2) Suggestion
 
           else []
 
@@ -343,6 +381,10 @@ module Make () : S = struct
 
   (* List selectors to match checker *)
   let list_selectors_to_match =
+    let details =
+      Some ("You should use pattern-matching instead of explicit "
+            ^ "list selectors.")
+    in
     let equals_empty_list expr = match expr.sexp_desc with
       | Sexp_apply (f, [(_, v1); (_, v2)]) when is_equals f ->
           if is_empty_list v1 then Some v2
@@ -377,7 +419,7 @@ module Make () : S = struct
                                     sc_rhs = e3''}
                   in
                   let expr' = match_expr other [empty_case; other_case] in
-                  rewrite_report_expr expr expr' Warning
+                  rewrite_report_expr ~details expr expr' Warning
             | None -> []
           end
       | _ -> []
@@ -420,6 +462,14 @@ module Make () : S = struct
 
   (* Unnecessary append checker *)
   let unnecessary_append =
+    let cons_details =
+      Some ("The :: (cons) operator can be used to add an element "
+            ^ "to the front of a list.")
+    in
+    let append_empty_details =
+      Some ("Appending an empty list to another list just gives back "
+            ^ "the original list.")
+    in
     let is_append_expr expr =
       match expr.sexp_desc with
       | Sexp_apply (f, [_; _]) -> is_append f
@@ -440,11 +490,14 @@ module Make () : S = struct
       match expr.sexp_desc with
       | Sexp_apply (f, [(_, l1); (_, l2)]) when is_append f ->
           if is_empty_list l1 then
-            rewrite_report_expr expr l2 Warning
+            rewrite_report_expr
+              ~details: append_empty_details expr l2 Warning
             @
             expression ~inside_append_chain: true sub l2
           else if is_empty_list l2 then
-            rewrite_report_expr expr l1 Warning
+            rewrite_report_expr
+              ~details: append_empty_details
+              expr l1 Warning
             @
             expression ~inside_append_chain: true sub l1
           else begin
@@ -456,7 +509,9 @@ module Make () : S = struct
                   default_checker.expression sub expr
                 else
                   let expr' = cons_expr x l2 in
-                  rewrite_report_expr expr expr' Suggestion
+                  rewrite_report_expr
+                    ~details: cons_details
+                    expr expr' Suggestion
                   @
                   expression ~inside_append_chain sub x
                   @
