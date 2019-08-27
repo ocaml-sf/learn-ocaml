@@ -85,12 +85,12 @@ do
 	
 	#init config
 	docker exec -i $SERVERID \
-	learn-ocaml-client init --server http://localhost:8080 --token="$TOKEN" 
+	learn-ocaml-client init --server=http://localhost:8080 --token="$TOKEN" 
 	# For each solution
 	for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
 	do
 	    # Grade file
-	    docker exec -i $SERVERID \ 		  
+	    docker exec -i $SERVERID \
 	      learn-ocaml-client grade --json --id="$SUBDIR" \
 	      /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt 
 	    if [ $? -ne 0 ]; then
