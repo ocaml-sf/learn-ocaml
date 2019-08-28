@@ -7,25 +7,15 @@ type 'a test_result =
 
 type 'a mutant_info = string * int * 'a
 
-let run_test_against ?(compare = (=)) f (input, expected) =
-  try
-    let output = f input in
-    if compare output expected then Pass
-    else Fail output
-  with exn -> Err exn
-
-let run_test_against_mutant ?(compare = (=)) f (input, expected) =
-  match run_test_against ~compare f (input, expected) with
-  | Pass -> false
-  | _ -> true
-
-
 let uncurry2 f = fun (x, y) -> f x y
 let uncurry3 f = fun (x, y, z) -> f x y z
 let uncurry4 f = fun (x, y, z, w) -> f x y z w
 let map_third f = fun (x, y, z) -> (x, y, f z)
 
 module type S = sig
+  val run_test_against_mutant:
+    ?compare: ('b -> 'b -> bool) ->
+    ('a -> 'b) -> ('a * 'b) -> bool
   val test_unit_tests_1:
     ?test_student_soln: bool ->
     ?test: ('b -> 'b -> bool) ->
@@ -53,6 +43,19 @@ end
 
 module Make (Test_lib: Test_lib.S) : S = struct
   open Test_lib
+
+  let run_test_against ?(compare = (=)) f (input, expected) =
+    try
+      let run_f () = f input in
+      let output = run_timeout run_f in
+      if compare output expected then Pass
+      else Fail output
+    with exn -> Err exn
+
+  let run_test_against_mutant ?(compare = (=)) f (input, expected) =
+    match run_test_against ~compare f (input, expected) with
+    | Pass -> false
+    | _ -> true
 
   let typed_printer ty =
     let typed_printer ppf v = Introspection.print_value ppf v ty in
