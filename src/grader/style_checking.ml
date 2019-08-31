@@ -1,29 +1,32 @@
 module type S = sig
+  type checker_result = Location.t * Learnocaml_report.item
+  type checker = checker_result Typed_ast_lib.checker
+
   module Checkers: sig
     type report_severity = Suggestion | Warning
 
     val stateless_style_checker:
-      ?on_expression: (Typed_ast.expression -> Typed_ast_lib.checker_result list) ->
-      ?on_pattern: (Typed_ast.pattern -> Typed_ast_lib.checker_result list) ->
-      ?on_structure_item: (Typed_ast.structure_item -> Typed_ast_lib.checker_result list) ->
-      unit -> Typed_ast_lib.checker
+      ?on_expression: (Typed_ast.expression -> checker_result list) ->
+      ?on_pattern: (Typed_ast.pattern -> checker_result list) ->
+      ?on_structure_item: (Typed_ast.structure_item -> checker_result list) ->
+      unit -> checker
 
     val non_rewrite_report:
       Location.t -> report_severity -> string ->
-      Typed_ast_lib.checker_result list
+      checker_result list
     val rewrite_report:
       ?details: string option ->
       string -> Location.t -> string -> string -> report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
     val rewrite_report_expr:
       ?details: string option ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
     val rewrite_report_vb:
       ?details: string option ->
       Asttypes.rec_flag -> Typed_ast.pattern ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
 
     module Helpers: sig
       val not_shadowed: string -> string -> Typed_ast.expression -> bool
@@ -48,22 +51,25 @@ module type S = sig
   end
 
   val ast_style_check_structure:
-    Typed_ast_lib.checker list -> Typed_ast.structure -> Learnocaml_report.t
+    checker list -> Typed_ast.structure -> Learnocaml_report.t
   val all_checkers:
     ?max_match_clauses: int ->
     ?max_if_cases: int ->
-    unit -> Typed_ast_lib.checker list
-  val comparison_to_bool: Typed_ast_lib.checker
-  val if_returning_bool: Typed_ast_lib.checker
-  val list_selectors_to_match: Typed_ast_lib.checker
-  val single_match_to_let: Typed_ast_lib.checker
-  val unnecessary_append: Typed_ast_lib.checker
-  val limit_match_clauses: int -> Typed_ast_lib.checker
-  val limit_if_cases: int -> Typed_ast_lib.checker
-  val eta_reduction: Typed_ast_lib.checker
+    unit -> checker list
+  val comparison_to_bool: checker
+  val if_returning_bool: checker
+  val list_selectors_to_match: checker
+  val single_match_to_let: checker
+  val unnecessary_append: checker
+  val limit_match_clauses: int -> checker
+  val limit_if_cases: int -> checker
+  val eta_reduction: checker
 end
 
 module Make () : S = struct
+  type checker_result = Location.t * Learnocaml_report.item
+  type checker = checker_result Typed_ast_lib.checker
+
   open Typed_ast
   open Typed_ast_lib
 

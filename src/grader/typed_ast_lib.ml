@@ -825,19 +825,17 @@ module Typed_ast_mapper = struct
 
 end
 
-type checker_result = Location.t * Learnocaml_report.item
-
-type checker = {
-  expression:     checker -> Typed_ast.expression -> checker_result list;
-  pattern:        checker -> Typed_ast.pattern -> checker_result list;
-  case:           checker -> Typed_ast.case -> checker_result list;
-  cases:          checker -> Typed_ast.case list -> checker_result list;
-  module_binding: checker -> Typed_ast.module_binding -> checker_result list;
-  module_expr:    checker -> Typed_ast.module_expr -> checker_result list;
-  structure:      checker -> Typed_ast.structure -> checker_result list;
-  structure_item: checker -> Typed_ast.structure_item -> checker_result list;
-  value_binding:  checker -> Asttypes.rec_flag -> Typed_ast.value_binding -> checker_result list;
-  value_bindings: checker -> Asttypes.rec_flag -> Typed_ast.value_binding list -> checker_result list;
+type 'a checker = {
+  expression:     'a checker -> Typed_ast.expression -> 'a list;
+  pattern:        'a checker -> Typed_ast.pattern -> 'a list;
+  case:           'a checker -> Typed_ast.case -> 'a list;
+  cases:          'a checker -> Typed_ast.case list -> 'a list;
+  module_binding: 'a checker -> Typed_ast.module_binding -> 'a list;
+  module_expr:    'a checker -> Typed_ast.module_expr -> 'a list;
+  structure:      'a checker -> Typed_ast.structure -> 'a list;
+  structure_item: 'a checker -> Typed_ast.structure_item -> 'a list;
+  value_binding:  'a checker -> Asttypes.rec_flag -> Typed_ast.value_binding -> 'a list;
+  value_bindings: 'a checker -> Asttypes.rec_flag -> Typed_ast.value_binding list -> 'a list;
 }
 
 module Typed_ast_checker = struct

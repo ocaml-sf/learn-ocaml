@@ -29,6 +29,9 @@
 *)
 
 module type S = sig
+  type checker_result = Location.t * Learnocaml_report.item
+  type checker = checker_result Typed_ast_lib.checker
+
   (* Utilities for creating custom style checkers *)
   module Checkers : sig
     (* Report severities - this affects the status used for
@@ -81,10 +84,10 @@ module type S = sig
        running these style checkers.
     *)
     val stateless_style_checker:
-      ?on_expression: (Typed_ast.expression -> Typed_ast_lib.checker_result list) ->
-      ?on_pattern: (Typed_ast.pattern -> Typed_ast_lib.checker_result list) ->
-      ?on_structure_item: (Typed_ast.structure_item -> Typed_ast_lib.checker_result list) ->
-      unit -> Typed_ast_lib.checker
+      ?on_expression: (Typed_ast.expression -> checker_result list) ->
+      ?on_pattern: (Typed_ast.pattern -> checker_result list) ->
+      ?on_structure_item: (Typed_ast.structure_item -> checker_result list) ->
+      unit -> checker
 
     (* Generating a style error report without a suggested rewriting.
        For example, this is used for the checker that reports an
@@ -97,7 +100,7 @@ module type S = sig
     *)
     val non_rewrite_report:
       Location.t -> report_severity -> string ->
-      Typed_ast_lib.checker_result list
+      checker_result list
 
     (* Generating a style error report with a suggested rewriting.
        This is used to implement most of the built-in style checkers.
@@ -122,7 +125,7 @@ module type S = sig
       string ->
       string ->
       report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
 
     (* rewrite_report_expr ~details orig rewritten sev
        generates a report flagging the expression orig as containing
@@ -134,7 +137,7 @@ module type S = sig
     val rewrite_report_expr:
       ?details: string option ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
 
     (* Generates a report flagging the expression position of a
        value binding as containing a style error.
@@ -151,7 +154,7 @@ module type S = sig
       ?details: string option ->
       Asttypes.rec_flag -> Typed_ast.pattern ->
       Typed_ast.expression -> Typed_ast.expression -> report_severity ->
-      Typed_ast_lib.checker_result list
+      checker_result list
 
     (* Helper functions for creating style checkers *)
     module Helpers : sig
@@ -221,12 +224,12 @@ module type S = sig
      one raised by the earliest checker in the list will be reported.
   *)
   val ast_style_check_structure:
-    Typed_ast_lib.checker list -> Typed_ast.structure -> Learnocaml_report.t
+    checker list -> Typed_ast.structure -> Learnocaml_report.t
 
   val all_checkers:
     ?max_match_clauses: int ->
     ?max_if_cases: int ->
-    unit -> Typed_ast_lib.checker list
+    unit -> checker list
 
   (* Eliminate comparisons to boolean values, for example:
 
@@ -242,7 +245,7 @@ module type S = sig
      Suggested rewriting:
      not <expression>
   *)
-  val comparison_to_bool: Typed_ast_lib.checker
+  val comparison_to_bool: checker
 
   (* Replace if statements returning boolean values when
      appropriate, for example:
@@ -268,7 +271,7 @@ module type S = sig
      only triggered when the sub-expressions are
      relatively simple and "small".
   *)
-  val if_returning_bool: Typed_ast_lib.checker
+  val if_returning_bool: checker
 
   (* Replace use of explicit list structure selectors with pattern
      matching, for example:
@@ -288,7 +291,7 @@ module type S = sig
         replaced by hd and (List.tl <list-expression>)
         replaced by tl>
   *)
-  val list_selectors_to_match: Typed_ast_lib.checker
+  val list_selectors_to_match: checker
 
   (* Rewrite match expressions with a single case to
      let expressions, for example:
@@ -300,7 +303,7 @@ module type S = sig
      Suggested rewriting:
      let (x, y) = p in <expression using x and y>
   *)
-  val single_match_to_let: Typed_ast_lib.checker
+  val single_match_to_let: checker
 
   (* Rewrite unnecessary usages of append, that could
      be replaced with cons or removed entirely, for example:
@@ -320,12 +323,12 @@ module type S = sig
      Does not suggest replacing append with cons when
      inside a chain of appends, e.g. l1 @ [x] @ l2.
   *)
-  val unnecessary_append: Typed_ast_lib.checker
+  val unnecessary_append: checker
 
   (* limit_match_clauses n produces a checker that
      warns for match expressions with strictly more than
      n clauses. *)
-  val limit_match_clauses: int -> Typed_ast_lib.checker
+  val limit_match_clauses: int -> checker
 
   (* limit_if_depth n produces a checker that warns
      for conditional expressions with strictly more
@@ -345,7 +348,7 @@ module type S = sig
      considered, i.e. the contents of the then-branch
      are not counted in the nesting depth.
   *)
-  val limit_if_cases: int -> Typed_ast_lib.checker
+  val limit_if_cases: int -> checker
 
   (* Performs eta-reduction on function expressions.
      Suggested eta-reductions respect the relaxed value
@@ -369,7 +372,7 @@ module type S = sig
      Suggested rewriting:
      let compose l = List.fold_right (@@) l
   *)
-  val eta_reduction: Typed_ast_lib.checker
+  val eta_reduction: checker
 
 end
 
