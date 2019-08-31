@@ -762,17 +762,24 @@ module Make () : S = struct
             let (dropped, expr') = remove_params params num_params n sapp in
 
             (* If any variables bound by the dropped patterns appear
-               free in f, this isn't a valid reduction *)
-            if occurs_in dropped f then
+               free in the reduced body, this isn't a valid reduction *)
+            if occurs_in dropped expr' then
               aux (n - 1)
             else
               let pexpr = parsetree_of_tast_expression expr' in
-              let texp = Typecore.type_expression env pexpr in
-              let typ' = texp.Typedtree.exp_type in
-              if is_weakly_polymorphic typ' then
-                aux (n - 1)
-              else
-                expr'
+              (* Since the occurs_in check has been performed, typechecking
+                 should not fail here. But just in case, we will clean up
+                 after any possible type errors to avoid giving a
+                 confusing error message.
+              *)
+              try
+                let texp = Typecore.type_expression env pexpr in
+                let typ' = texp.Typedtree.exp_type in
+                if is_weakly_polymorphic typ' then
+                  aux (n - 1)
+                else
+                  expr'
+              with _ -> raise Abort
       in
       aux common_args
     in
@@ -832,7 +839,7 @@ module Make () : S = struct
       () =
     [
       list_selectors_to_match;
-      (* temporarily removed until it is fixed: eta_reduction; *)
+      eta_reduction;
       single_match_to_let;
       unnecessary_append;
       comparison_to_bool;
