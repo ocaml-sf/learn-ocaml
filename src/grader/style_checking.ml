@@ -832,7 +832,7 @@ module Make () : S = struct
       () =
     [
       list_selectors_to_match;
-      eta_reduction;
+      (* temporarily removed until it is fixed: eta_reduction; *)
       single_match_to_let;
       unnecessary_append;
       comparison_to_bool;
