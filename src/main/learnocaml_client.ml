@@ -656,9 +656,7 @@ module Init = struct
     0
 
   let man = man "Initialize the configuration file with the server, and \
-                 a token or
-                 a nickname and a secret \
-                 "
+                 a token or a nickname and a secret"
 
   let cmd =
     Term.(
