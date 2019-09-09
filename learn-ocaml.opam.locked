@@ -47,6 +47,7 @@ depends: [
   "markup" {= "0.8.0"}
   "ocaml" {= "4.05.0"}
   "ocamlfind" {= "1.8.0"}
+  "ocamlgraph" {= "1.8.8"}
   "ocp-indent-nlfork" {= "1.5.3"}
   "ocp-ocamlres" {= "0.4"}
   "ocplib-json-typed" {= "0.6"}

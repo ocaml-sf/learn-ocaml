@@ -23,6 +23,7 @@
             learnocaml_ppx_metaquot
             learnocaml_ppx_metaquot_lib
             ocplib-json-typed
+            ocamlgraph
             learnocaml_report
             learnocaml_repository)
  (modules Introspection_intf

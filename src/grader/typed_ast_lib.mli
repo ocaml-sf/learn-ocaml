@@ -111,3 +111,8 @@ val cons_pat: Typed_ast.pattern -> Typed_ast.pattern -> Typed_ast.pattern
 val cons_expr: Typed_ast.expression -> Typed_ast.expression -> Typed_ast.expression
 val apply_expr: Typed_ast.expression -> Typed_ast.expression list -> Typed_ast.expression
 val match_expr: Typed_ast.expression -> Typed_ast.case list -> Typed_ast.expression
+
+(* Helpers for performing dependency analysis *)
+val depends_on: Typed_ast.structure -> Path.t -> Path.t -> bool
+val dependencies: Typed_ast.structure -> Path.t -> Path.t list
+val dump_deps: Typed_ast.structure -> string

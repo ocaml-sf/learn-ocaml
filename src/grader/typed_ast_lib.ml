@@ -1760,3 +1760,281 @@ let cons_pat = Typed_ast_fragments.cons_pat
 let cons_expr = Typed_ast_fragments.cons_expr
 let apply_expr = Typed_ast_fragments.apply_expr
 let match_expr = Typed_ast_fragments.match_expr
+
+module Dependencies = struct
+  open Typed_ast
+
+  (* Comparing Paths, for graphs *)
+  module ComparablePath : (Graph.Sig.COMPARABLE with type t = Path.t) = struct
+    type t = Path.t
+    let compare = Path.compare
+    let equal = Path.same
+    let hash = Hashtbl.hash
+  end
+
+  module G = Graph.Imperative.Digraph.Concrete(ComparablePath)
+  module Q = Queue
+  let string_of_path = Path.name
+
+  (* Traverse graph g in a breadth-first fashion
+     from vertex v. Return a list of all vertices visited.
+     v will be present in the return list *only* if there
+     is a cycle in g leading back to v.
+  *)
+  let bfs g v =
+    let q: Path.t Q.t = Q.create () in
+    let deps = ref (VarSet.empty) in
+    Q.push v q;
+    while not (Q.is_empty q) do
+      let v = Q.pop q in
+      G.iter_succ
+        (fun u ->
+           if not (VarSet.mem u !deps) then
+             begin
+               deps := VarSet.add u !deps;
+               Q.push u q
+             end)
+        g
+        v
+    done;
+    VarSet.fold (fun (v: Path.t) l -> v :: l) !deps []
+
+  (* Traverse graph g in a breadth-first fashion, starting
+     from the vertices in the list of vertices init.
+     Return a set of the *sinks* (i.e., vertices with
+     no outgoing edges) reachable from the vertices in
+     init.
+  *)
+  let bfs' g init =
+    let q: Path.t Q.t = Q.create () in
+    let results = ref (VarSet.empty) in
+    let marked = ref VarSet.empty in
+    VarSet.iter
+      (fun v -> Q.push v q)
+      init;
+    while not (Q.is_empty q) do
+      let v = Q.pop q in
+      marked := VarSet.add v !marked;
+      if (G.out_degree g v) = 0 then
+        results := VarSet.add v !results
+      else
+        G.iter_succ
+          (fun u ->
+             if not (VarSet.mem u !marked) then
+               begin
+                 marked := VarSet.add u !marked;
+                 Q.push u q
+               end)
+          g
+          v
+    done;
+    !results
+
+  (* Return a set of the *free* variables (relative to expr)
+     used by expr.
+     By "used", we mean "not unused", i.e. for an expression
+     [let _ = e1 in e2], the free variables in [e1] are *not*
+     counted as used.
+     This analysis does not take into account any possible
+     side effects of expressions.
+     It is neither sound nor complete:
+     - A variable may sometimes be erroneously reported as being
+       used because we do not work too hard to get around some
+       ways students may try to trick us, e.g. by creating a
+       function that doesn't use its arguments and then
+       calling that function on some variables that they
+       desire to mark "used".
+     - A variable may appear to be unused because it is part
+       of an expression that is called only for its side
+       effect, with the result being discarded.
+       At present these drawbacks seem acceptable for our purposes.
+  *)
+  let rec used_variables expr =
+    match expr.sexp_desc with
+    | Sexp_ident (var, _) -> VarSet.singleton var
+    | Sexp_constant _ -> VarSet.empty
+    | Sexp_let (_, vbs, body) ->
+        (* Invariant: vars contains ONLY free variables
+           and variables bound by vbs *)
+        let vars = used_variables body in
+        (* Set of variables bound by vbs *)
+        let bvs =
+          List.fold_left
+            (fun set {svb_pat; _} ->
+               let bvs = variables_bound_by_pattern svb_pat in
+               VarSet.union set bvs)
+            VarSet.empty
+            vbs
+        in
+        (* Create a dependency graph for the bvs *)
+        let g = G.create () in
+        List.iter (treat_vb g) vbs;
+        (* Find the free variables that the bvs depend on. *)
+        let vb_vars = bfs' g (VarSet.inter vars bvs) in
+        (* Don't return the bvs themselves, because they aren't
+           free variables. *)
+        VarSet.diff (VarSet.union vars vb_vars) bvs
+    | Sexp_function cases ->
+        List.fold_left
+          (fun set case -> VarSet.union set (treat_case case))
+          VarSet.empty
+          cases
+    (* Ignoring optional/labelled arguments for now *)
+    | Sexp_fun (_, _, pat, body) ->
+        let bvs = variables_bound_by_pattern pat in
+        let used_vars = used_variables body in
+        VarSet.diff used_vars bvs
+    | Sexp_apply (exp, exps) ->
+        List.fold_left
+          (fun set (_, exp) -> VarSet.union set (used_variables exp))
+          (used_variables exp)
+          exps
+    | Sexp_match (exp, cases)
+    | Sexp_try (exp, cases) ->
+        List.fold_left
+          (fun set case -> VarSet.union set (treat_case case))
+          (used_variables exp)
+          cases
+    | Sexp_tuple exps ->
+        List.fold_left
+          (fun set exp -> VarSet.union set (used_variables exp))
+          VarSet.empty
+          exps
+    | Sexp_construct (_, None) -> VarSet.empty
+    | Sexp_construct (_, Some exp) -> used_variables exp
+    | Sexp_record (fields, expo) ->
+        let field_vars =
+          List.fold_left
+            (fun set (_, exp) -> VarSet.union set (used_variables exp))
+            VarSet.empty
+            fields
+        in
+        begin
+          match expo with
+          | None -> field_vars
+          | Some exp -> VarSet.union field_vars (used_variables exp)
+        end
+    | Sexp_field (exp, _) -> used_variables exp
+    | Sexp_setfield (exp1, _, exp2) ->
+        VarSet.union (used_variables exp1) (used_variables exp2)
+    | Sexp_ifthenelse (e1, e2, expo) ->
+        let used_vars = VarSet.union (used_variables e1) (used_variables e2) in
+        begin
+          match expo with
+          | None -> used_vars
+          | Some exp -> VarSet.union used_vars (used_variables exp)
+        end
+    | Sexp_sequence (exp1, exp2) ->
+        VarSet.union (used_variables exp1) (used_variables exp2)
+    | Sexp_constraint (exp, _) -> used_variables exp
+    | Sexp_assert exp -> used_variables exp
+    | Sexp_open (_, _, exp) -> used_variables exp
+
+  and treat_vb g {svb_pat; svb_expr} =
+    let bvs = variables_bound_by_pattern svb_pat in
+    let used_vars = used_variables svb_expr in
+    VarSet.iter
+      (fun var ->
+         G.add_vertex g var;
+         VarSet.iter (G.add_edge g var) used_vars)
+      bvs
+
+  and treat_case {sc_lhs; sc_guard; sc_rhs} =
+    let bvs = variables_bound_by_pattern sc_lhs in
+    let used_vars_body = used_variables sc_rhs in
+    let used_vars =
+      match sc_guard with
+      | None -> used_vars_body
+      | Some exp -> VarSet.union used_vars_body (used_variables exp)
+    in
+    VarSet.diff used_vars bvs
+
+  (* Given a Typed AST structure, return a dependency graph
+     for the top-level definitions. Vertices in this graph
+     can be top-level variables or built-ins (including variables
+     defined in the prelude). A (directed) edge exists between
+     variables v1 and v2 if v1 "depends" on v2, meaning v2 is
+     used somewhere in the definition of v1, either directly
+     or transitively through use of another variable that
+     depends on v2.
+  *)
+  let dep_graph str =
+    let g = G.create () in
+    let deps_vb {svb_pat; svb_expr} =
+      let ids = variables_bound_by_pattern svb_pat in
+      let free_vars =
+        used_variables svb_expr
+      in
+      VarSet.iter
+        (fun var ->
+           VarSet.iter
+             (fun dep_var -> G.add_edge g var dep_var)
+             free_vars)
+        ids
+    in
+    let deps item =
+      match item with
+      | Sstr_value (_, vbs) -> List.iter deps_vb vbs
+      | _ -> ()
+    in
+    List.iter deps str.sstr_items;
+    g
+
+  (* Given a typed AST structure [str] and two variables (type [Path.t]),
+     generate a dependency graph for [str] and return [true] iff the vertex
+     corresponding to [dep] is reachable from the vertex corresponding to
+     [var]. If [var] does not exist as a vertex in [g], return [false].
+  *)
+  let depends_on str var dep =
+    let g = dep_graph str in
+    if G.mem_vertex g var then
+      let deps = bfs g var in
+      List.mem dep deps
+    else
+      false (* or error? *)
+
+  (* Generate a dependency graph for the typed AST structure
+     [str] and return a list of variables that [var]
+     depends on. [var] should be a variable bound in a top-level
+     definition in [str].
+     If [var] is not a top-level variable, the result is the
+     empty list.
+  *)
+  let dependencies str var =
+    let g = dep_graph str in
+    if G.mem_vertex g var then
+      bfs g var
+    else
+      []
+
+  (* For debugging purposes: generate a dependency graph for the
+     typed AST structure [str] and return a string representation
+     of the vertices and edges in the graph.
+  *)
+  let dump_deps str =
+    let g = dep_graph str in
+    let vs =
+      G.fold_vertex
+        (fun v l -> (string_of_path v) :: l)
+        g []
+    in
+    let es =
+      G.fold_edges
+        (fun v1 v2 l -> (string_of_path v1, string_of_path v2) :: l)
+        g []
+    in
+    let v_str = List.fold_left (fun str s -> str ^ "\n" ^ s) "" vs in
+    let e_str =
+      List.fold_left
+        (fun str (s1, s2) -> str ^ "\n(" ^ s1 ^ ", " ^ s2 ^ ")")
+        "" es
+    in
+    let v_str = "VERTICES:\n" ^ v_str in
+    let e_str = "EDGES:\n" ^ e_str in
+    v_str ^ "\n\n" ^ e_str
+
+end
+
+let depends_on = Dependencies.depends_on
+let dependencies = Dependencies.dependencies
+let dump_deps = Dependencies.dump_deps
