@@ -640,7 +640,7 @@ module Init = struct
       | None ->
          match create_token_args.nickname with
          | Some n -> (get_nonce_and_create_token server (Some n) create_token_args.secret)
-         | _ -> Lwt.fail_with "You must provide a token or a nickname and a secret."
+         | _ -> Lwt.fail_with "You must provide a token or a nickname+secret pair."
     in
     let get_server () =
       match global_args.server_url with
@@ -656,7 +656,7 @@ module Init = struct
     0
 
   let man = man "Initialize the configuration file with the server, and \
-                 a token or a nickname and a secret"
+                 a token or a nickname+secret pair"
 
   let cmd =
     Term.(
