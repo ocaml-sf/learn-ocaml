@@ -454,6 +454,12 @@ module PtoS = struct
     in
     let fields, tfields = match_fields fields tfields in
     let fields = List.map2 (map_snd2 expr_aux) fields tfields in
+    (* Corner case: if expo is not None, but all record fields are
+       also explicitly listed, texpo will be None.
+       In this case, let's just pretend that expo was None as well,
+       since it was erased from the typed tree.
+    *)
+    let expo = if texpo = None then None else expo in
     let expo = map_opt2 expr_aux expo texpo in
     Sexp_record (fields, expo)
 
