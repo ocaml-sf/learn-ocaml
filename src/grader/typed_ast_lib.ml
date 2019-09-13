@@ -1755,6 +1755,16 @@ let structure_of_item = Typed_ast_fragments.structure_of_item
 
 let path_of_id = Typed_ast_fragments.path_of_id
 
+let soln_path tast id =
+  let path = ref None in
+  let _ =
+    find_binding tast id @@ fun _ p _ ->
+    path := Some p; []
+  in
+  match !path with
+  | None -> raise Not_found
+  | Some path -> path
+
 let tast_expr_of_ident =
   Typed_ast_fragments.tast_expr_of_ident
 let tast_pat_of_ident =
@@ -1782,12 +1792,16 @@ module Dependencies = struct
   module Q = Queue
   let string_of_path = Path.name
 
-  (* Traverse graph g in a breadth-first fashion
-     from vertex v. Return a list of all vertices visited.
-     v will be present in the return list *only* if there
-     is a cycle in g leading back to v.
+  type dep_graph = G.t
+
+  (* Traverse graph [g] in a breadth-first fashion from vertex [v].
+     Do *not* traverse past vertices indicated in the list [stop_at].
+     Return a list of all vertices visited.
+     v will be present in the return list *only* if there is a
+     cycle in g leading back to v.
   *)
-  let bfs g v =
+  let bfs g ~stop_at v =
+    let stop_at = VarSet.of_list stop_at in
     let q: Path.t Q.t = Q.create () in
     let deps = ref (VarSet.empty) in
     Q.push v q;
@@ -1798,7 +1812,8 @@ module Dependencies = struct
            if not (VarSet.mem u !deps) then
              begin
                deps := VarSet.add u !deps;
-               Q.push u q
+               if not (VarSet.mem u stop_at) then
+                 Q.push u q
              end)
         g
         v
@@ -1986,39 +2001,37 @@ module Dependencies = struct
     List.iter deps str.sstr_items;
     g
 
-  (* Given a typed AST structure [str] and two variables (type [Path.t]),
-     generate a dependency graph for [str] and return [true] iff the vertex
-     corresponding to [dep] is reachable from the vertex corresponding to
-     [var]. If [var] does not exist as a vertex in [g], return [false].
+  (* Given a dependency graph [g] and two variables (type [Path.t]),
+     return [true] iff the vertex corresponding to [dep] is reachable
+     from the vertex corresponding to [var] in [g]. If [var] does not
+     exist as a vertex in [g], return [false].
+     Does not propagate the transitive dependencies of variables
+     specified by optional argument [dont_propagate].
   *)
-  let depends_on str var dep =
-    let g = dep_graph str in
+  let depends_on g ?(dont_propagate = []) var dep =
     if G.mem_vertex g var then
-      let deps = bfs g var in
+      let deps = bfs g ~stop_at: dont_propagate var in
       List.mem dep deps
     else
       false (* or error? *)
 
-  (* Generate a dependency graph for the typed AST structure
-     [str] and return a list of variables that [var]
-     depends on. [var] should be a variable bound in a top-level
-     definition in [str].
-     If [var] is not a top-level variable, the result is the
+  (* Given a dependency graph [g] and a variable (type [Path.t]) [var],
+     return a list of variables that [var] depends on. [var] should be a
+     vertex in [g]. If [var] is not a vertex in [g], the result is the
      empty list.
+     Does not propagate the transitive dependencies of variables
+     specified by optional argument [dont_propagate].
   *)
-  let dependencies str var =
-    let g = dep_graph str in
+  let dependencies g ?(dont_propagate = []) var =
     if G.mem_vertex g var then
-      bfs g var
+      bfs g ~stop_at: dont_propagate var
     else
       []
 
-  (* For debugging purposes: generate a dependency graph for the
-     typed AST structure [str] and return a string representation
-     of the vertices and edges in the graph.
+  (* For debugging purposes: return a string representation
+     of the vertices and edges in the dependency graph [g].
   *)
-  let dump_deps str =
-    let g = dep_graph str in
+  let dump_deps g =
     let vs =
       G.fold_vertex
         (fun v l -> (string_of_path v) :: l)
@@ -2041,6 +2054,8 @@ module Dependencies = struct
 
 end
 
+type dep_graph = Dependencies.dep_graph
+let dependency_graph = Dependencies.dep_graph
 let depends_on = Dependencies.depends_on
 let dependencies = Dependencies.dependencies
 let dump_deps = Dependencies.dump_deps

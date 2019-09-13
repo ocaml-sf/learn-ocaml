@@ -101,6 +101,11 @@ val structure_of_item: Typed_ast.structure_item -> Typed_ast.structure
    Raises Not_found if the identifier is not predefined.
 *)
 val path_of_id: string -> Path.t
+(* Retrieving the path for an identifier defined in the student solution.
+   Raises Not_found if the identifier is not defined in the student
+   solution.
+*)
+val soln_path: Typed_ast.structure -> string -> Path.t
 
 val tast_expr_of_ident: Ident.t -> Typed_ast.expression
 val tast_pat_of_ident: Ident.t -> Typed_ast.pattern
@@ -113,6 +118,14 @@ val apply_expr: Typed_ast.expression -> Typed_ast.expression list -> Typed_ast.e
 val match_expr: Typed_ast.expression -> Typed_ast.case list -> Typed_ast.expression
 
 (* Helpers for performing dependency analysis *)
-val depends_on: Typed_ast.structure -> Path.t -> Path.t -> bool
-val dependencies: Typed_ast.structure -> Path.t -> Path.t list
-val dump_deps: Typed_ast.structure -> string
+type dep_graph
+val dependency_graph: Typed_ast.structure -> dep_graph
+val depends_on:
+  dep_graph ->
+  ?dont_propagate: Path.t list ->
+  Path.t -> Path.t -> bool
+val dependencies:
+  dep_graph ->
+  ?dont_propagate: Path.t list ->
+  Path.t -> Path.t list
+val dump_deps: dep_graph -> string
