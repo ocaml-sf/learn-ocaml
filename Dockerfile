@@ -28,6 +28,25 @@ RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
 
+FROM alpine:3.7 as client
+LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro"
+
+RUN apk update \
+  && apk add ncurses-libs libev dumb-init \
+  && addgroup learn-ocaml \
+  && adduser learn-ocaml -DG learn-ocaml
+
+VOLUME ["/learnocaml"]
+
+USER learn-ocaml
+WORKDIR /learnocaml
+
+COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bin
+
+ENTRYPOINT ["dumb-init","learn-ocaml-client"]
+
+
+
 FROM alpine:3.7 as program
 LABEL Description="learn-ocaml app manager" Vendor="OCamlPro"
 
@@ -49,22 +68,3 @@ COPY --from=compilation /home/opam/install-prefix /usr
 
 CMD ["build","serve"]
 ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
-
-
-
-FROM alpine:3.7 as client
-LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro"
-
-RUN apk update \
-  && apk add ncurses-libs libev dumb-init \
-  && addgroup learn-ocaml \
-  && adduser learn-ocaml -DG learn-ocaml
-
-VOLUME ["/learnocaml"]
-
-USER learn-ocaml
-WORKDIR /learnocaml
-
-COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bin
-
-ENTRYPOINT ["dumb-init","learn-ocaml-client"]
