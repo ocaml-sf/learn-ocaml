@@ -6,3 +6,23 @@ set -e
 echo "### Pushing learn-ocaml-client image"
 
 docker push "${DOCKER_REPO}-client:${DOCKER_TAG}"
+
+echo "### Listing remote tags:"
+git for-each-ref --format "%(refname:strip=2)" refs/tags/
+
+latest=$(git for-each-ref --format "%(refname:strip=2)" refs/tags/ \
+  | sort -V | tail -n1)
+
+echo "### Latest tag is: $latest"
+
+if [ "$SOURCE_BRANCH" = "$latest" ]; then
+    echo "### Do additional docker push (${DOCKER_REPO}:latest)"
+    docker tag "${IMAGE_NAME}" "${DOCKER_REPO}:latest"
+    docker push "${DOCKER_REPO}:latest"
+
+    echo "### Do additional docker push (${DOCKER_REPO}-client:latest)"
+    docker tag "${DOCKER_REPO}-client:${DOCKER_TAG}" "${DOCKER_REPO}-client:latest"
+    docker push "${DOCKER_REPO}-client:latest"
+else
+    echo "### no additional docker push"
+fi
