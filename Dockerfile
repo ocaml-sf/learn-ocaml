@@ -29,7 +29,20 @@ RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
 FROM alpine:3.7 as client
-LABEL Description="learn-ocaml command-line client" Vendor="OCamlPro"
+
+ARG BUILD_DATE
+ARG VCS_BRANCH
+ARG VCS_REF
+
+LABEL org.label-schema.build-date="${BUILD_DATE}" \
+  org.label-schema.name="learn-ocaml-client" \
+  org.label-schema.description="learn-ocaml command-line client" \
+  org.label-schema.url="https://ocaml-sf.org/" \
+  org.label-schema.vendor="The OCaml Software Foundation" \
+  org.label-schema.version="${VCS_BRANCH}" \
+  org.label-schema.vcs-ref="${VCS_REF}" \
+  org.label-schema.vcs-url="https://github.com/ocaml-sf/learn-ocaml" \
+  org.label-schema.schema-version="1.0"
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init \
@@ -48,7 +61,20 @@ ENTRYPOINT ["dumb-init","learn-ocaml-client"]
 
 
 FROM alpine:3.7 as program
-LABEL Description="learn-ocaml app manager" Vendor="OCamlPro"
+
+ARG BUILD_DATE
+ARG VCS_BRANCH
+ARG VCS_REF
+
+LABEL org.label-schema.build-date="${BUILD_DATE}" \
+  org.label-schema.name="learn-ocaml" \
+  org.label-schema.description="learn-ocaml app manager" \
+  org.label-schema.url="https://ocaml-sf.org/" \
+  org.label-schema.vendor="The OCaml Software Foundation" \
+  org.label-schema.version="${VCS_BRANCH}" \
+  org.label-schema.vcs-ref="${VCS_REF}" \
+  org.label-schema.vcs-url="https://github.com/ocaml-sf/learn-ocaml" \
+  org.label-schema.schema-version="1.0"
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init git \
