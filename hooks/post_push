@@ -1,0 +1,8 @@
+#!/bin/bash
+# href: https://docs.docker.com/docker-cloud/builds/advanced/
+
+set -e
+
+echo "### Pushing learn-ocaml-client image"
+
+docker push "${DOCKER_REPO}-client:${DOCKER_TAG}"
