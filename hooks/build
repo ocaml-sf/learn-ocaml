@@ -30,7 +30,7 @@ echo "BUILD_DATE: ${BUILD_DATE}"
 
 echo "### Building learn-ocaml image"
 
-docker build --rm --force-rm \
+docker build --pull --rm --force-rm \
   --build-arg=BUILD_DATE="${BUILD_DATE}" \
   --build-arg=VCS_BRANCH="${SOURCE_BRANCH}" \
   --build-arg=VCS_REF="${VCS_REF}" \
@@ -39,7 +39,7 @@ docker build --rm --force-rm \
 
 echo "### Building learn-ocaml-client image"
 
-exec docker build --rm --force-rm \
+exec docker build --pull --rm --force-rm \
   --build-arg=BUILD_DATE="${BUILD_DATE}" \
   --build-arg=VCS_BRANCH="${SOURCE_BRANCH}" \
   --build-arg=VCS_REF="${VCS_REF}" \
