@@ -3,7 +3,7 @@ Teaching the Art of Functional Programming
 
 This is a fork of the Learn-OCaml platform, with extensions implemented as described in the ICFP '19 submission *Teaching the Art of Functional Programming Using Automated Grading*.
 
-Instructions for setting up and running the Learn-OCaml platform can be found in the base repository's README, copied below.
+Instructions for setting up and running the Learn-OCaml platform can be found in the **Howtos** section below.
 
 The demo exercise in the folder `demo_repository` is modified from the original to include a demo of the mutation testing and style checking functionality.
 
@@ -16,15 +16,13 @@ lessons and tutorials.
 
 A demo is available at: [http://learn-ocaml.hackojo.org/].
 
-[![Build Status](https://travis-ci.org/ocaml-sf/learn-ocaml.svg?branch=master)](https://travis-ci.org/ocaml-sf/learn-ocaml)
-
 Howtos
 ------
 
-* [How to set up an environment to develop exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-setup-exercise-development-environment.md)
-* [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-* [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
-* [How to deploy an instance of Learn OCaml?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-a-learn-ocaml-instance.md)
+* [How to set up an environment to develop exercises?](https://github.com/teaching-the-art-of-fp/learn-ocaml/blob/teaching-fp/docs/howto-setup-exercise-development-environment.md)
+* [How to write exercises?](https://github.com/teaching-the-art-of-fp/learn-ocaml/blob/teaching-fp/docs/howto-write-exercises.md)
+* [How to submit an exercise to the global corpus?](https://github.com/teaching-the-art-of-fp/learn-ocaml/blob/teaching-fp/docs/howto-submit-an-exercise.md)
+* [How to deploy an instance of Learn OCaml?](https://github.com/teaching-the-art-of-fp/learn-ocaml/blob/teaching-fp/docs/howto-deploy-a-learn-ocaml-instance.md)
 
 Contacts
 --------
