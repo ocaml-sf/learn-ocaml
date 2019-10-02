@@ -40,6 +40,15 @@ let test_divide () =
     [%ty : int -> int -> int ] "divide"
     [ ("Multiplies instead of dividing", 1, fun x y -> x * y) ]
 
+let test_sum3 () =
+  test_function_against_solution
+    ~gen:2                  (* only 2 random test cases *)
+    [%funty: int -> int -> int -> int] (* function type *)
+    "sum3"                             (* function name *)
+    (* list of additional, explicit test cases *)
+    [ 10 @: 20 @:!! 30 ;
+      -1 @: -2 @:!! -3 ]
+
 let () =
   set_result @@
   ast_sanity_check code_ast @@ fun () ->
@@ -54,4 +63,7 @@ let () =
        test_times ()) ;
     Section
       ([ Text "Function:" ; Code "divide" ],
-       test_divide ()) ]
+       test_divide ()) ;
+    Section
+    ([ Text "Function:" ; Code "sum3" ],
+       test_sum3 ()) ]
