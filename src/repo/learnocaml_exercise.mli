@@ -66,6 +66,14 @@ module File : sig
   (** Returns the (public) [descr.html] *)
   val descr: (string * string) list file
 
+  (** Returns the (public) [../depend.txt] *)
+  val depend: string file
+
+  (** Returns the (public) dependencies *)
+  val dependencies: string -> string file list
+
+  (** Returns the key of a file *)
+  val key : 'a file -> string
 end
 
 (** Access a field from the exercise, using the [t] representation, without **

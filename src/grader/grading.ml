@@ -142,6 +142,38 @@ let get_grade
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Report = Learnocaml_report" ;
       set_progress [%i"Launching the test bench."] ;
+
+      let () =
+
+         let mods : (string * string) list = (* list of pairs (path, content) *)
+          let open Learnocaml_exercise in
+          let files = File.dependencies (access File.depend exo) in
+          List.map (fun f -> let path = File.key f 
+                             and content = decipher f exo in
+                             (path,content)) files 
+        in
+        let ml_files, mli_files = 
+            List.partition (fun (s,_) -> match Filename.extension s with
+                                         | ".ml" -> true
+                                         | ".mli" -> false
+                                         | _ -> failwith "depend.txt (1)") mods 
+        in
+        let insert_dependencies_in_env (current_path,structure) =
+          let name = String.capitalize_ascii (Filename.(remove_extension (basename current_path))) in
+          handle_error (internal_error [%i"while loading users dependencies"]) @@
+          match List.find_opt (fun (path,_) -> path = current_path ^ "i") mli_files with 
+          | Some (_,signature) -> Toploop_ext.use_mod_string ~print_outcome ~ppf_answer 
+                                    ~modname:name 
+                                    ~sig_code:signature 
+                                    structure
+          | None -> Toploop_ext.use_mod_string ~print_outcome ~ppf_answer 
+                      ~modname:name 
+                      structure
+          in
+        List.iter insert_dependencies_in_env ml_files
+
+      in
+ 
       handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
         (Learnocaml_exercise.(decipher File.test exo)) ;
