@@ -609,7 +609,7 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
   get_config_option ?local ~save_back server_opt token_opt
   >>= function
   | Some c -> Lwt.return c
-  | None -> init ?local ?server:server_opt ?token:token_opt ()
+  | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
 
 let man p = [
     `S "DESCRIPTION";
@@ -628,6 +628,47 @@ let get_config_o ?save_back o =
   let open Args_global in
   get_config ~local:o.local ?save_back o.server_url o.token
 
+module Init = struct
+  open Args_global
+  open Args_create_token
+     
+  let init global_args create_token_args =
+    let path = if global_args.local then ConfigFile.local_path else ConfigFile.user_path in
+    let get_token server =
+      match global_args.token with
+      | Some token -> Lwt.return token
+      | None ->
+         match create_token_args.nickname with
+         | Some n -> (get_nonce_and_create_token server (Some n) create_token_args.secret)
+         | _ -> Lwt.fail_with "You must provide a token or a nickname and a secret."
+    in
+    let get_server () =
+      match global_args.server_url with
+      | None -> Lwt.fail_with "You must provide a server."
+      | Some s -> Lwt.return s
+    in
+    get_server () >>= fun server ->
+    check_server_version server >>= fun () ->
+    get_token server >>= fun token ->
+    let config = { ConfigFile. server; token } in
+    ConfigFile.write path config >|= fun () ->
+    Printf.eprintf "Configuration written to %s.\n%!" path;
+    0
+
+  let man = man "Initialize the configuration file with the server, and \
+                 a token or
+                 a nickname and a secret \
+                 "
+
+  let cmd =
+    Term.(
+      const (fun go co -> Pervasives.exit (Lwt_main.run (init go co)))
+      $ Args_global.term $ Args_create_token.term),
+    Term.info ~man
+      ~doc:"Initialize the configuration file."
+      "init"
+end
+  
 module Grade = struct
   open Args_exercises
   let grade go eo =
@@ -951,7 +992,8 @@ end
 
 let () =
   match Term.eval_choice ~catch:false Main.cmd
-          [ Grade.cmd
+          [ Init.cmd
+          ; Grade.cmd
           ; Print_token.cmd
           ; Set_options.cmd
           ; Fetch.cmd

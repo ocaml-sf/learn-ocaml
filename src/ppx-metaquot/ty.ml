@@ -31,17 +31,17 @@ let pair2 (Ty t1) (Ty t2) =
       ptyp_loc = Location.none;
       ptyp_attributes = []}
 
- let pair3 (Ty t1) (Ty t2) (Ty t3) =
+let pair3 (Ty t1) (Ty t2) (Ty t3) =
   Ty {Parsetree.ptyp_desc = Parsetree.Ptyp_tuple [t1; t2; t3];
       ptyp_loc = Location.none;
       ptyp_attributes = []}
 
- let pair4 (Ty t1) (Ty t2) (Ty t3) (Ty t4) =
+let pair4 (Ty t1) (Ty t2) (Ty t3) (Ty t4) =
   Ty {Parsetree.ptyp_desc = Parsetree.Ptyp_tuple [t1; t2; t3; t4];
       ptyp_loc = Location.none;
       ptyp_attributes = []}
 
- let lst (Ty ty) =
+let lst (Ty ty) =
   Ty {Parsetree.ptyp_desc =
         Parsetree.Ptyp_constr ({Asttypes.txt = Longident.Lident "list";
                                 loc = Location.none},

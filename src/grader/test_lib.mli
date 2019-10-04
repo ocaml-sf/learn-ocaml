@@ -1102,51 +1102,13 @@ module type S = sig
         can be returned. *)
     val result : (unit -> 'a) -> 'a result
 
-    (** The type of arguments, represented as heterogeneous lists.
-
-        Usage: [arg 3 @@ arg "word" @@ last false]
-
-        Alternatively: [3 @: "word" @:!! false]
-     *)
-    type ('arrow, 'uarrow, 'ret) args
-    val last :
-      'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) args
-    val (!!) :
-      'a ->
-      ('a -> 'ret, 'a -> unit, 'ret) args
-    val arg :
-      'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
-    val (@:) :
-      'a ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-      ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
-    val (@:!!) :
-      'a -> 'b ->
-      ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
-
-    val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
-
-    (** The type of function prototypes.
-
-        Usage: [arg_ty [%ty: int]
-        @@ arg_ty [%ty: string] @@ last_ty [%ty: bool] [%ty: unit]] *)
-    type ('arrow, 'uarrow, 'ret) prot
-    val last_ty :
-      'a Ty.ty ->
-      'ret Ty.ty ->
-      (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) prot
-    val arg_ty :
-      'a Ty.ty ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
-      (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) prot
+    include (module type of Fun_ty
+                            with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
+                            and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty)
 
     val ty_of_prot :
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot -> ('ar -> 'row) Ty.ty
-    val get_ret_ty :
-      ('p -> 'a) Ty.ty -> ('p -> 'a, 'p -> 'c, 'ret) args -> 'ret Ty.ty
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
+    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
 
     (** {2 Lookup functions} *)
 
@@ -1181,7 +1143,7 @@ module type S = sig
          ('ret * string * string) ->
          ('ret * string * string) ->
          Learnocaml_report.t) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       ('ar -> 'row) lookup ->
       (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
       Learnocaml_report.t
@@ -1204,7 +1166,7 @@ module type S = sig
          Learnocaml_report.t) ->
       ?sampler:
         (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.t
@@ -1227,7 +1189,7 @@ module type S = sig
          Learnocaml_report.item list) ->
       ?sampler:
         (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) prot ->
+      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
       string ->
       ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
       Learnocaml_report.item list
@@ -1237,7 +1199,7 @@ module type S = sig
         [p ==> r] is the pair [(p, fun () -> r)].
 
         Example: [test_function prot
-                  (lookup_student (ty_of_prot prot) name)
+                  (lookup_student (ty_of_fun_ty prot) name)
                   [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
     val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end
