@@ -5,19 +5,17 @@ This is Learn-OCaml, a platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-A demo is available at: (http://learn-ocaml.hackojo.org/).
+A demo is available at: [http://learn-ocaml.hackojo.org/](http://learn-ocaml.hackojo.org/).
 
-[![Build Status](https://travis-ci.org/ocaml-sf/learn-ocaml.svg?branch=master)](https://travis-ci.org/ocaml-sf/learn-ocaml)
-[![learn-ocaml](https://img.shields.io/badge/docker-ocamlsf%2Flearn--ocaml-blue.svg)](https://hub.docker.com/r/ocamlsf/learn-ocaml "Docker image of learn-ocaml")
-[![learn-ocaml-client](https://img.shields.io/badge/docker-ocamlsf%2Flearn--ocaml--client-blue.svg)](https://hub.docker.com/r/ocamlsf/learn-ocaml-client "Docker image of learn-ocaml-client")
+![Build status logo](https://travis-ci.org/ocaml-sf/learn-ocaml.svg)
 
 Howtos
 ------
 
-* [How to set up an environment to develop exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-setup-exercise-development-environment.md)
-* [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-* [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
-* [How to deploy an instance of Learn OCaml?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-a-learn-ocaml-instance.md)
+* [How to set up an environment to develop exercises?](./howto-setup-exercise-development-environment)
+* [How to write exercises?](./howto-write-exercises)
+* [How to submit an exercise to the global corpus?](./howto-submit-an-exercise)
+* [How to deploy an instance of Learn OCaml?](./howto-deploy-a-learn-ocaml-instance)
 
 Contacts
 --------
@@ -43,19 +41,19 @@ permitted, alteration requires prior written authorization by
 OCamlPro.
 
 The OCaml / ocaml.org logo is released under the very liberal UNLICENSE.
-See (https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md).
+See [https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md](https://github.com/ocaml/ocaml.org/blob/master/LICENSE.md).
 
 The Inconsolata font is released under the Open Font License.
-See (http://www.levien.com/type/myfonts/inconsolata.html).
+See [http://www.levien.com/type/myfonts/inconsolata.html](http://www.levien.com/type/myfonts/inconsolata.html).
 
 The Biolinum font is licensed under the GNU General Public License with
 a the 'Font-Exception'.
-See (http://www.linuxlibertine.org).
+See [http://www.linuxlibertine.org](http://www.linuxlibertine.org).
 
 The public instance of Learn OCaml uses the Fontin font instead of
 Biolinum. This font is licensed under the exljbris Font Foundry Free
 Font License Agreement, which, to our understanding, does not allow us
-to redistribute it. See (http://www.exljbris.com/eula.html). You will
+to redistribute it. See [http://www.exljbris.com/eula.html](http://www.exljbris.com/eula.html). You will
 optionally have to procure the files by yourself while building the
 app. If not, the CSS provides a reasonable fallback font.
 
@@ -63,12 +61,12 @@ Contributions to this repository are placed under the BSD
 license. This means that we can merge them with the same license as
 the rest of the codebase, while you keep all the rights on your code.
 And we will not have to bother you with any future license update.
-See (https://opensource.org/licenses/BSD-3-Clause).
+See [https://opensource.org/licenses/BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause).
 
 Authors and Acknowledgements
 ----------------------------
 
-Learn-OCaml is a free software by the OCaml Software Foundation.
+Learn-OCaml is a software by OCamlPro.
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 

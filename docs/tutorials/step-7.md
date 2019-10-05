@@ -203,8 +203,3 @@ let exercise_2 =
 	~test:(test_eq_ok (fun x _ -> p_list x))
 	[10 ; 20]
 ```
-
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-6.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)

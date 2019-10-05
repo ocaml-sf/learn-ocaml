@@ -83,7 +83,7 @@ corresponding report. For a function called `my_function`, it will be
 The next steps will bring you progressively to understand most of the
 possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
-5](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-5.md)
+5](../tutorials/step-5)
 where you will:
 * find the signature of `grade_function_1_against_solution`
 * learn a new grading function for functions
@@ -154,10 +154,3 @@ let () =
 
 You can find this example in the
 `exercises/grade-function-polymorphism` directory (branch: step-2).
-
----
-[Previous step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)
-
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-3.md)

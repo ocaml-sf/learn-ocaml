@@ -166,6 +166,7 @@ val retrieve: ?ignore:'a -> 'a Learnocaml_api.request -> 'a Lwt.t
 val get_worker_code: string -> (unit -> string Lwt.t)
 
 val set_string_translations_exercises : unit -> unit
+val set_string_translations_view : unit -> unit
 
 val local_save : 'a Ace.editor -> string -> unit
 
@@ -180,6 +181,11 @@ val toplevel_launch :
      Learnocaml_local_storage.storage_key) ->
   (unit -> unit) ->
   button_group -> string -> Learnocaml_toplevel.t Lwt.t
+
+val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> 'c) -> unit
+
+val ace_display :
+  [< Html_types.div ] Tyxml_js.To_dom.elt -> (string -> unit) * (unit -> unit)
 
 val init_toplevel_pane :
   Learnocaml_toplevel.t Lwt.t ->

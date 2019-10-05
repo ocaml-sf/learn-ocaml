@@ -212,6 +212,10 @@ msgstr "Erreur dans le code."
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne type pas."
 
+#: src/grader/learnocaml_report.ml
+msgid "(minimum mark)"
+msgstr "(note minimale)"
+
 #: src/app/learnocaml_exercise_main.ml:check_if_need_refresh
 msgid "WARNING: You have an older grader version than the server"
 msgstr "ATTENTION: La version locale du grader est plus ancienne que celle du serveur"
@@ -276,6 +280,10 @@ msgstr "@[<v 2>Important: %a@]"
 #: src/grader/learnocaml_report.ml:533,58--83
 msgid "@[<v 2>Success %d: %a@]"
 msgstr "@[<v 2>Réussite %d: %a@]"
+
+#: src/grader/learnocaml_report.ml
+msgid "@[<v 2>Penalty %d: %a@]"
+msgstr "@[<v 2>Pénalité %d: %a@]"
 
 #: src/app/learnocaml_common.ml:76,21--37
 msgid "INTERNAL ERROR"
@@ -591,6 +599,10 @@ msgstr "Cours"
 msgid "Teach"
 msgstr "Enseignement"
 
+#: src/app/learnocaml_index_main.ml
+msgid "Failed to download archive. Please try again later!"
+msgstr "Le téléchargement de l'archive a échoué. Veuillez réessayer ulterieurement!"
+
 #: src/app/learnocaml_index_main.ml:866,15--69
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token:"
@@ -625,6 +637,10 @@ msgstr "Exporter vers un fichier"
 #: src/app/learnocaml_index_main.ml:892,9--17
 msgid "Import"
 msgstr "Importer"
+
+#: src/app/learnocaml_index_main.ml:893
+msgid "Download all source files"
+msgstr "Télécharger tous les fichiers sources"
 
 #: src/app/learnocaml_index_main.ml:898,38--44
 msgid "Menu"

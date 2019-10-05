@@ -17,9 +17,9 @@ NB: Do not forget to escape `:` if it appears in `REPOSITORY` to avoid a parsing
 
 - or generate a new docker image that includes your repository:
 
-      cd REPOSITORY
-      wget https://raw.githubusercontent.com/ocaml-sf/learn-ocaml/master/Dockerfile.app
-      docker build -t learn-ocaml-app -f Dockerfile.app .
+        cd REPOSITORY
+        wget https://raw.githubusercontent.com/ocaml-sf/learn-ocaml/master/Dockerfile.app
+        docker build -t learn-ocaml-app -f Dockerfile.app .
 
   and then deploy that image:
 
