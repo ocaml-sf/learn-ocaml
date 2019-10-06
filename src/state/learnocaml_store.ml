@@ -147,10 +147,11 @@ end
 module Server = struct
   let get () =
     Lwt.catch
-      (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
+      (fun () -> read_static_file Learnocaml_index.server_config_path Server.config_enc)
       (fun e ->
         match e with
-        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return @@ Server.default ()
+        | Unix.Unix_error (Unix.ENOENT,_,_) ->
+           Lwt.return @@ Server.build_config Server.empty_preconfig
         | e -> raise e
       )
 end

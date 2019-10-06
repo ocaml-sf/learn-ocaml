@@ -121,17 +121,24 @@ module Student: sig
 end
 
 module Server : sig
+  (* preconfig: the type of configuration files in the corpus repository,
+     where users can pre-set some of the server settings. *)
+  type preconfig = {
+    secret : string option;
+  }
+  val empty_preconfig : preconfig
+
+  (* config: the type of configuration of a running server, generated
+     from the preconfig during the 'build' stage. *)
   type config = {
     secret : string option; (* maybe a secret *)
-    server_id : int (* random integer generated each building time *)
-    }
+    server_id : int; (* random integer generated each building time *)
+  }
 
-  val default: ?secret:string -> unit -> config
+  val build_config : preconfig -> config
 
-  (* only used in the building case to generate a random server_id *)
-  val enc_init: config Json_encoding.encoding
-
-  val enc: config Json_encoding.encoding
+  val preconfig_enc: preconfig Json_encoding.encoding
+  val config_enc: config Json_encoding.encoding
 end
 
 module Exercise: sig
