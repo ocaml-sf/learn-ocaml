@@ -102,13 +102,18 @@ module Args = struct
       output_json: string option;
     }
 
-    let term =
-      let apply
-          exercises
-          output_json grade_student display_outcomes quiet
-          display_std_outputs dump_outputs dump_reports timeout
-          verbose dump_dot =
+    let grader_conf =
+      let apply exercises output_json =
         let exercises = List.flatten exercises in
+        { exercises; output_json }
+      in
+      Term.(const apply $exercises $output_json)
+
+    let grader_cli =
+      let apply
+          grade_student display_outcomes quiet display_std_outputs
+          dump_outputs dump_reports timeout verbose dump_dot
+        =
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
         Grader_cli.display_callback := not quiet;
@@ -120,12 +125,14 @@ module Args = struct
         Grader_cli.dump_dot := dump_dot;
         Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
-        { exercises; output_json }
+        ()
       in
-      Term.(const apply
-            $exercises $output_json $grade_student $display_outcomes
-            $quiet $display_std_outputs $dump_outputs $dump_reports
-            $timeout $verbose $dump_dot)
+      Term.(const apply $grade_student $display_outcomes $quiet $display_std_outputs
+            $dump_outputs $dump_reports  $timeout $verbose $dump_dot)
+
+    let term =
+      let apply conf () = conf in
+      Term.(const apply $grader_conf $grader_cli)
   end
 
   module Builder = struct
@@ -182,9 +189,15 @@ module Args = struct
       toplevel: bool option;
     }
 
-    let term =
-      let apply repo_dir contents_dir
-          try_ocaml lessons playground exercises toplevel exercises_filtered jobs =
+    let builder_conf =
+      let apply
+        contents_dir try_ocaml lessons exercises playground toplevel
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+      in
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel)
+
+    let repo_conf =
+      let apply repo_dir exercises_filtered jobs =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_exercise_repository.exercises_filtered :=
@@ -194,11 +207,13 @@ module Args = struct
         Learnocaml_process_playground_repository.playground_dir :=
           repo_dir/"playground";
         Learnocaml_process_exercise_repository.n_processes := jobs;
-        { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+        ()
       in
-      Term.(const apply $repo_dir $contents_dir
-            $try_ocaml $lessons $playground $exercises $toplevel $exercises_filtered $jobs)
+      Term.(const apply $repo_dir $exercises_filtered $jobs)
 
+    let term =
+      let apply conf () = conf in
+      Term.(const apply $builder_conf $repo_conf)
   end
 
   module Server = struct
