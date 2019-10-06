@@ -266,12 +266,10 @@ let main o =
        let server_config = o.repo_dir/"server_config.json"
        and www_server_config = o.app_dir/"server_config.json" in
        let module ServerData = Learnocaml_data.Server in
-       let module ServerStore = Learnocaml_store.Server in
        Random.self_init ();
        Lwt.catch
          (fun () ->
-           let enc = ServerData.enc_init in
-           ServerStore.get_from_file ~enc server_config
+           Learnocaml_store.get_from_file ServerData.enc_init server_config
            >|= fun pre_config ->
            match pre_config.ServerData.secret with
              | None -> None
@@ -281,7 +279,7 @@ let main o =
            | exn -> Lwt.fail exn) 
        >>= fun secret ->
          let json_config = ServerData.default ?secret () in
-         ServerStore.write_to_file json_config www_server_config
+         Learnocaml_store.write_to_file ServerData.enc json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
