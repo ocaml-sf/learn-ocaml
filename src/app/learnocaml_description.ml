@@ -1,10 +1,13 @@
+open Js_utils
 open Lwt.Infix
 open Learnocaml_common
-module H = Tyxml_js.Html
-open Js_utils
 open Learnocaml_data.Exercise.Meta
+(* module H = Tyxml_js.Html *)
 
-let token = Learnocaml_data.Token.parse (arg "token") 
+let init_tabs, select_tab =
+  mk_tab_handlers "text" ["text"; "meta"]
+
+let token = Learnocaml_data.Token.parse (arg "token")
 module Exercise_link =
   struct
     let exercise_link ?(cl = []) id content =
@@ -19,7 +22,7 @@ module Exercise_link =
 module Display = Display_exercise(Exercise_link)    
 open Display
        
-let _ =
+let () =
   run_async_with_log @@ fun () ->
      let id = arg "id" in 
      Learnocaml_local_storage.init () ;
@@ -27,6 +30,7 @@ let _ =
      let exercise_fetch =
        retrieve (Learnocaml_api.Exercise (token, id))
      in
+     init_tabs ();
      exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
 
      (* display exercise questions *)
@@ -44,7 +48,3 @@ let _ =
          d##close) ;
      (* display meta *)
      display_meta token ex_meta id
-;;
-
-
-     
