@@ -340,8 +340,10 @@ let get_score =
   let rec get_score report =
     List.fold_left (fun acc -> function
         | Section (_text, report) -> get_score acc report
+        | SectionMin (_text, report, min) -> get_score acc report |> max min
         | Message (_text, status) -> match status with
           | Success i -> acc + i
+          | Penalty i -> acc - i
           | _ -> acc)
       report
   in
@@ -386,13 +388,14 @@ let console_report ?(verbose=false) ex report =
   in
   let rec all_good report =
     (List.for_all @@ function
-      | Section (_, report) -> all_good report
-      | Message (_, (Success _ | Informative | Warning | Important)) -> true
+      | Section (_, report) | SectionMin (_, report, _) -> all_good report
+      | Message (_, (Success _ | Penalty _
+                   | Informative | Warning | Important)) -> true
       | Message (_, Failure) -> false)
       report
   in
   let rec format_item = function
-    | Section (text, report) ->
+    | Section (text, report) | SectionMin (text, report, _) ->
         let good = all_good report in
         let score = get_score report in
         let title =
@@ -408,6 +411,8 @@ let console_report ?(verbose=false) ex report =
             (String.concat "\n" @@ List.map format_item report)
     | Message (text, Success i) ->
         print_score i ^ "   " ^ format_text text
+    | Message (text, Penalty i) ->
+        print_score (-i) ^ "   " ^ format_text text
     | Message (text, Failure) ->
         print_score 0 ^ "   " ^ format_text text
     | Message (text, Warning) ->
@@ -604,7 +609,7 @@ let get_config ?local ?(save_back=false) server_opt token_opt =
   get_config_option ?local ~save_back server_opt token_opt
   >>= function
   | Some c -> Lwt.return c
-  | None -> init ?local ?server:server_opt ?token:token_opt ()
+  | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
 
 let man p = [
     `S "DESCRIPTION";
@@ -623,6 +628,45 @@ let get_config_o ?save_back o =
   let open Args_global in
   get_config ~local:o.local ?save_back o.server_url o.token
 
+module Init = struct
+  open Args_global
+  open Args_create_token
+     
+  let init global_args create_token_args =
+    let path = if global_args.local then ConfigFile.local_path else ConfigFile.user_path in
+    let get_token server =
+      match global_args.token with
+      | Some token -> Lwt.return token
+      | None ->
+         match create_token_args.nickname with
+         | Some n -> (get_nonce_and_create_token server (Some n) create_token_args.secret)
+         | _ -> Lwt.fail_with "You must provide a token or a nickname+secret pair."
+    in
+    let get_server () =
+      match global_args.server_url with
+      | None -> Lwt.fail_with "You must provide a server."
+      | Some s -> Lwt.return s
+    in
+    get_server () >>= fun server ->
+    check_server_version server >>= fun () ->
+    get_token server >>= fun token ->
+    let config = { ConfigFile. server; token } in
+    ConfigFile.write path config >|= fun () ->
+    Printf.eprintf "Configuration written to %s.\n%!" path;
+    0
+
+  let man = man "Initialize the configuration file with the server, and \
+                 a token or a nickname+secret pair"
+
+  let cmd =
+    Term.(
+      const (fun go co -> Pervasives.exit (Lwt_main.run (init go co)))
+      $ Args_global.term $ Args_create_token.term),
+    Term.info ~man
+      ~doc:"Initialize the configuration file."
+      "init"
+end
+  
 module Grade = struct
   open Args_exercises
   let grade go eo =
@@ -766,11 +810,12 @@ let write_exercise_file id str =
   let f = Filename.concat (Sys.getcwd ()) (id ^ ".ml") in
   if Sys.file_exists f then
     (Printf.eprintf "File %s already exists, not overwriting.\n" f;
-     Lwt.return_unit)
+     Lwt.return false)
   else
     Lwt_io.(with_file ~mode:Output ~perm:0o600 f) @@ fun oc ->
         Lwt_io.write oc str >|= fun () ->
-        Printf.eprintf "Wrote file %s\n%!" f
+        Printf.printf "Wrote file %s\n%!" f;
+        true
 
 module Fetch = struct
   let fetch_save server_url token =
@@ -889,7 +934,9 @@ module Template = struct
        write_exercise_file
          exercise_id
          Learnocaml_exercise.(access File.template exercise)
-       >|= fun () -> 0
+       >|= function
+       | true -> 0
+       | false -> 3
 
   let man = man "Get the template of a given exercise"
 
@@ -943,7 +990,8 @@ end
 
 let () =
   match Term.eval_choice ~catch:false Main.cmd
-          [ Grade.cmd
+          [ Init.cmd
+          ; Grade.cmd
           ; Print_token.cmd
           ; Set_options.cmd
           ; Fetch.cmd

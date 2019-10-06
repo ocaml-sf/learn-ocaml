@@ -23,7 +23,7 @@
 (library
  (name learnocaml_ppx_metaquot)
  (wrapped false)
- (libraries learnocaml_ppx_metaquot_lib ty ocaml-migrate-parsetree)
+ (libraries learnocaml_ppx_metaquot_lib ty fun_ty ocaml-migrate-parsetree)
  (modules Ppx_metaquot_main)
  (kind ppx_rewriter)
 )
@@ -34,4 +34,12 @@
  (library_flags :standard -linkall)
  (modules Ty)
  (libraries compiler-libs)
+)
+
+(library
+ (name fun_ty)
+ (wrapped false)
+ (library_flags :standard -linkall)
+ (modules Fun_ty)
+ (libraries ty)
 )

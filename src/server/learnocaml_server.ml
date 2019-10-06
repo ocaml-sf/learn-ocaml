@@ -279,6 +279,15 @@ module Request_handler = struct
                (`Not_found, "token not found")
                (respond_json cache))
          (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Archive_zip token ->
+          let open Lwt_process in
+          let path = Filename.concat !sync_dir (Token.to_path token) in 
+          let cmd = shell ("git archive master --format=zip -0 --remote="^path)
+          and stdout = `FD_copy Unix.stdout in
+          Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
+          lwt_ok @@ Response { contents = contents;
+                               content_type = "application/zip";
+                               caching = Nocache }
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -462,6 +471,15 @@ module Request_handler = struct
                 set (three_way_merge ~ancestor ~theirs ~ours))
             status
           >>= respond_json cache
+
+      | Api.Partition (token, eid, fid, prof) ->
+         lwt_catch_fail (fun () ->
+           verify_teacher_token token
+           >?= fun () ->
+           Learnocaml_partition_create.partition eid fid prof
+           >>= respond_json cache
+           )
+           (fun exn -> (`Not_found, Printexc.to_string exn))
 
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)

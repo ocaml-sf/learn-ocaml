@@ -245,18 +245,6 @@ let exercises_tab assignments answers =
       let lines, sighandlers = List.split lines in
       Lwt.return (H.table (List.concat lines), Some sighandlers)
 
-let mouseover_toggle_signal elt sigvalue setter =
-  let rec hdl _ =
-    Manip.Ev.onmouseout elt (fun _ ->
-        setter None;
-        Manip.Ev.onmouseover elt hdl;
-        true
-      );
-    setter (Some sigvalue);
-    true
-  in
-  Manip.Ev.onmouseover elt hdl
-
 let stats_tab assignments answers =
   let smap_add n m key =
     try
@@ -419,21 +407,7 @@ let display_report exo report =
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
-let update_answer_tab, clear_answer_tab =
-  let ace = lazy (
-    let editor =
-      Ocaml_mode.create_ocaml_editor
-        (Tyxml_js.To_dom.of_div El.Tabs.(editor.tab))
-    in
-    let ace = Ocaml_mode.get_editor editor in
-    Ace.set_font_size ace 16;
-    Ace.set_readonly ace true;
-    ace
-  ) in
-  (fun ans ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans.Answer.solution),
-  (fun () ->
-     Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
 let clear_tabs () =
   restore_report_button ();
@@ -476,21 +450,7 @@ let update_tabs meta exo ans =
   | None -> ()
   | Some ans ->
       update_report_tab exo ans;
-      update_answer_tab ans
-
-let set_string_translations () =
-  let translations = [
-    "txt_loading", [%i"Loading student data"];
-    "learnocaml-exo-button-stats", [%i"Stats"];
-    "learnocaml-exo-button-list", [%i"Exercises"];
-    "learnocaml-exo-button-report", [%i"Report"];
-    "learnocaml-exo-button-text", [%i"Subject"];
-    "learnocaml-exo-button-editor", [%i"Answer"];
-  ] in
-  List.iter
-    (fun (id, text) ->
-       Manip.setInnerHtml (find_component id) text)
-    translations
+      update_answer_tab ans.Answer.solution
 
 let () =
   run_async_with_log @@ fun () ->
@@ -498,7 +458,7 @@ let () =
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  set_string_translations ();
+  set_string_translations_view ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then
     (* No security here: it's client-side, and we don't check that the token is

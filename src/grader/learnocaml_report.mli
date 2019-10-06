@@ -11,13 +11,13 @@
 type t = item list
 
 and item =
-  | Section of text * t
-  (** A titled block that groups subreports *)
-  | Message of text * status
-  (** Basic report block *)
+  | Section of text * t (** A titled block that groups subreports *)
+  | SectionMin of text * t * int (** A section with a minimum score *)
+  | Message of text * status (** Basic report block *)
 
 and status =
   | Success of int (** With given points *)
+  | Penalty of int (** With taken points *)
   | Failure (** With missed points *)
   | Warning (** A student error without influence on the grade *)
   | Informative (** A message for the student *)
@@ -33,6 +33,13 @@ and inline =
 
 (** Gets the total successes of a report, and tells if a failure happened *)
 val result : t -> int * bool
+
+(** Scales all of the point values of the items in a report by an integer
+    factor. Useful for weighting different components of an exercise.
+    If [penalties] ([true] by default), scales the values of [Penalty]
+    items and the minimum values for [SectionMin], otherwise leaves them
+    untouched. *)
+val scale : ?penalties: bool -> int -> t -> t
 
 (** Gets a report as HTML in a string
     (if [not bare] add a container div and inline style) *)

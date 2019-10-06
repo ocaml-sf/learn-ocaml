@@ -27,7 +27,7 @@ specific shape, illustrated by the following ascii art:
 ```
 
 The complete format specification for exercise description is given in
-[docs/exercises_format.md](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/exercises_format.md).
+[docs/exercises_format.md](../../exercises_format).
 
 - The directory `exercises` must contain the descriptions of the
   exercises. Each exercise description is stored in a dedicated
@@ -75,8 +75,3 @@ The complete format specification for exercise description is given in
 Reproduce this structure in your own exercise directory. For the moment,
 your list of exercises is probably empty but it will be populated by the
 next step of this tutorial.
-
----
-[Table of contents](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
-
-[Next step](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/tutorials/step-1.md)

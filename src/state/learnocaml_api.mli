@@ -36,6 +36,8 @@ type _ request =
       teacher token -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
+  | Archive_zip:
+      'a token -> string request
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git:
@@ -79,6 +81,9 @@ type _ request =
       unit request
     (** The two Status.t correspond to the states before and after changes, used
         for three-way merge *)
+
+  | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request

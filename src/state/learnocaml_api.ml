@@ -23,6 +23,8 @@ type _ request =
       teacher token -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
+  | Archive_zip:
+      'a token -> string request
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git: 'a token * string list -> string request
@@ -60,6 +62,9 @@ type _ request =
       teacher token * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
       teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
+
+  | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request
@@ -102,6 +107,8 @@ module Conversions (Json: JSON_CODEC) = struct
           Token.(to_string, parse)
       | Fetch_save _ ->
           json Save.enc
+      | Archive_zip _ ->
+          str
       | Update_save _ ->
           json Save.enc
       | Git _ -> str
@@ -134,6 +141,9 @@ module Conversions (Json: JSON_CODEC) = struct
           json Exercise.Status.enc
       | Set_exercise_status _ ->
           json J.unit
+
+      | Partition _ ->
+          json Partition.enc
 
       | Invalid_request _ ->
           str
@@ -172,6 +182,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Fetch_save token ->
         get ~token ["save.json"]
+    | Archive_zip token ->
+        get ~token ["archive.zip"]
     | Update_save (token, save) ->
         post ~token ["sync"] (Json.encode Save.enc save)
     | Git _ ->
@@ -227,6 +239,10 @@ module Conversions (Json: JSON_CODEC) = struct
              (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
              status)
 
+    | Partition (token, eid, fid, prof) ->
+        get ~token
+          ["partition"; eid; fid; string_of_int prof]
+
     | Invalid_request s ->
         failwith ("Error request "^s)
 
@@ -275,6 +291,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
+      | `GET, ["archive.zip"], Some token ->
+          Archive_zip token |> k
       | `POST body, ["sync"], Some token ->
           (match Json.decode Save.enc body with
            | save -> Update_save (token, save) |> k
@@ -347,6 +365,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
+      | `GET, ["partition"; eid; fid; prof], Some token
+        when Token.is_teacher token ->
+          Partition (token, eid, fid, int_of_string prof) |> k
+
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
           Exercise_status_index token |> k
@@ -365,11 +387,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET,
         ( ["index.html"]
-          | ["exercise.html"]
+        | ["exercise.html"]
         | ["playground.html"]
         | ["student-view.html"]
         | ["new_exercise.html"]
         | ["editor.html"]
+        | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
           Static path |> k

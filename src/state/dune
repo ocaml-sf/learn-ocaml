@@ -8,7 +8,8 @@
  (name learnocaml_data)
  (wrapped false)
  (modules Learnocaml_data)
- (libraries learnocaml_toplevel_history
+ (libraries asak
+	    learnocaml_toplevel_history
             learnocaml_report
             learnocaml_repository)
 )

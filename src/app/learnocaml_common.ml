@@ -684,6 +684,34 @@ let get_worker_code name =
         let url = js_code_url js in worker_url := Some url; url
     | Some url -> Lwt.return url
 
+let mouseover_toggle_signal elt sigvalue setter =
+  let rec hdl _ =
+    Manip.Ev.onmouseout elt (fun _ ->
+        setter None;
+        Manip.Ev.onmouseover elt hdl;
+        true
+      );
+    setter (Some sigvalue);
+    true
+  in
+  Manip.Ev.onmouseover elt hdl
+
+let ace_display tab =
+  let ace = lazy (
+    let answer =
+      Ocaml_mode.create_ocaml_editor
+        (Tyxml_js.To_dom.of_div tab)
+    in
+    let ace = Ocaml_mode.get_editor answer in
+    Ace.set_font_size ace 16;
+    Ace.set_readonly ace true;
+    ace
+  ) in
+  (fun ans ->
+     Ace.set_contents (Lazy.force ace) ~reset_undo:true ans),
+  (fun () ->
+    Ace.set_contents (Lazy.force ace) ~reset_undo:true "")
+
 let toplevel_launch ?display_welcome ?after_init ?(on_disable=fun () -> ()) ?(on_enable=fun () -> ())
       container history on_show toplevel_buttons_group id =
   let timeout_prompt =
@@ -727,6 +755,14 @@ let init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_butto
     Lwt.return ()
   end
 
+let set_inner_list lst =
+  let aux (id, text) =
+    match Js_utils.Manip.by_id id with
+    | None -> ()
+    | Some component ->
+       Manip.setInnerHtml component text in
+  List.iter aux lst
+
 let set_string_translations_exercises () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
@@ -737,14 +773,17 @@ let set_string_translations_exercises () =
     "learnocaml-exo-button-meta", [%i"Details"];
     "learnocaml-exo-editor-pane", [%i"Editor"];
     "txt_grade_report", [%i"Click the Grade button to get your report"];
-  ] in
-  List.iter
-    (fun (id, text) ->
-      match Js_utils.Manip.by_id id with
-      | None -> ()
-      | Some component ->
-         Manip.setInnerHtml component text)
-    translations
+  ] in set_inner_list translations
+
+let set_string_translations_view () =
+  let translations = [
+    "txt_loading", [%i"Loading student data"];
+    "learnocaml-exo-button-stats", [%i"Stats"];
+    "learnocaml-exo-button-list", [%i"Exercises"];
+    "learnocaml-exo-button-report", [%i"Report"];
+    "learnocaml-exo-button-text", [%i"Subject"];
+    "learnocaml-exo-button-editor", [%i"Answer"];
+  ] in set_inner_list translations
 
 let local_save ace id =
   let key = Learnocaml_local_storage.exercise_state id in
