@@ -1123,7 +1123,7 @@ module Display_exercise =
     let display_exercise_link content_id meta e =
       display_link (display_exercise_meta e meta) content_id e
 
-    let display_authors authors =
+    let display_authors caption_text authors =
       let open Tyxml_js.Html5 in
       let author (name, mail) =
         span [ pcdata name ;
@@ -1131,7 +1131,8 @@ module Display_exercise =
                a ~a:[ a_href ("mailto:" ^ mail) ] [ pcdata mail ] ;
                pcdata ">" ;
           ] in
-      display_list @@ List.map author authors
+      span [ pcdata caption_text; pcdata " " ]
+      :: (display_list @@ List.map author authors)
 
     let add_map_set sk id map =
       SMap.add sk
@@ -1172,14 +1173,12 @@ module Display_exercise =
 
     let display_meta token ex_meta id =
       let open Learnocaml_data.Exercise in
-      let open Tyxml_js.Html5 in
       let ident = Format.asprintf "%s %s" [%i "Identifier:" ] id in
-      let caption title = span [ pcdata title; pcdata " " ] in
       let authors =
         match ex_meta.Meta.author with
         | [] -> None
-        | [author] -> Some (caption [%i "Author"] :: display_authors [author])
-        | authors -> Some (caption [%i "Authors"] :: display_authors authors) in
+        | [author] -> Some (display_authors [%i "Author"] [author])
+        | authors -> Some (display_authors [%i "Authors"] authors) in
       retrieve (Learnocaml_api.Exercise_index token)
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in

@@ -222,7 +222,7 @@ val set_nickname_div : unit -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
 
-val  get_token : unit -> Learnocaml_data.student Learnocaml_data.token Lwt.t
+val get_token : unit -> Learnocaml_data.student Learnocaml_data.token Lwt.t
 
 module Display_exercise :functor
   (Q : sig
@@ -269,6 +269,7 @@ module Display_exercise :functor
       Learnocaml_data.Exercise.Meta.t ->
       string Tyxml_js.Html5.wrap -> [> Html_types.div ] Tyxml_js.Html5.elt
     val display_authors :
+      string ->
       (string Tyxml_js.Html5.wrap * string Tyxml_js.Html5.wrap) list ->
       [> `PCDATA | `Span ] Tyxml_js.Html5.elt list
     val display_meta :
