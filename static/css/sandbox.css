@@ -79,21 +79,21 @@ button {
   flex: 1;
 }
 
-button::before,
-button::after {
+!dialog button::before,
+!dialog button::after {
   position: absolute;
   left:0; right:0; bottom:0; top:0;
   z-index: 1010;
   content:"";
   background: transparent;
 }
-button:active:not([disabled])::after {
+!dialog button:active:not([disabled])::after {
   background: var(--bg-button);
 }
-button:hover:not([disabled])::after {
+!dialog button:hover:not([disabled])::after {
   background: rgba(170,204,255,0.5);
 }
-button[disabled]::before {
+!dialog button[disabled]::before {
   transition: background 0.5s 0.5s;
   background: rgba(128,128,128,0.4);
 }
@@ -148,6 +148,7 @@ button[disabled]::before {
   background: #ccc;
   display: flex;
   flex-direction: column;
+  color: var(--txt-dark);
 }
 .loading-layer.initial {
   opacity: 1;
@@ -181,6 +182,7 @@ button[disabled]::before {
 }
 .loading-layer .messages {
   /* text-shadow: 0 0 5px #888; */
+  color: var(--txt-dark);
   vertical-align: bottom;
   position: relative;
   height: 120px;
@@ -315,6 +317,7 @@ div.learnocaml-dialog-overlay > div code {
   /*! justify-content: stretch; */
   flex: 0 1 auto;
   height: calc(100% - 55px);
+  max-width: 780px;
 }
 .toplevel-pane > div.toplevel-output {
   flex: 1 1 auto;
@@ -326,6 +329,7 @@ div.learnocaml-dialog-overlay > div code {
   /*! max-height: calc(100% - 38px); */
   /*! max-width: 100%; */
   width: 100%;
+  max-width: 100%;
 }
 .toplevel-pane > div.toplevel-input {
   flex: 0 0 max-content;
@@ -336,6 +340,7 @@ div.learnocaml-dialog-overlay > div code {
   /*! border-top: 1px #666 solid; */
   /* box-shadow: inset 2px 2px 5px 1px rgba(0,0,0,0.3) ; */
   /*! position: relative; */
+  max-width: 100%;
 }
 /*
 .toplevel-pane > div.toplevel-input::before {
@@ -400,8 +405,9 @@ div.learnocaml-dialog-overlay > div code {
   padding: 4px 2px 4px 4px;
   /*! border-left: 10px black solid; */
   white-space: pre-wrap;
+  word-wrap: break-word;
   /*! margin-right: 6px; */
-  min-width: max-content;
+  /*min-width: max-content;*/
 }
 .toplevel-pane pre.toplevel-answer {
   background: var(--bg-code);
@@ -436,16 +442,15 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane pre.toplevel-output .stdout { color: #eee; }
 .toplevel-pane pre.toplevel-output .stderr { color: #ecc; }
 
+/* .toplevel-pane > div.toplevel-output .old::before {
+ *   position: relative;
+ *   transition: background 0.5s 0.5s;
+ *   background: rgba(255,255,255,0.4);
+ * } */
 .toplevel-pane > div.toplevel-output .old {
-  position: relative;
+  /* box-shadow: inset 3px 3px 8px 2px rgba(0,0,0,0.3); */
+  background: rgb(100,100,100);
 }
-.toplevel-pane > div.toplevel-output .old {
-  position: absolute;
-  top: -1px; left: -10px; right: 0; bottom: -1px;
-  background: rgba(255,255,255,0.4);
-  content: "";
-}
-
 .toplevel-pane .toplevel-html-block + .toplevel-html-block,
 .toplevel-pane pre.toplevel-output + pre.toplevel-output,
 .toplevel-pane pre.toplevel-answer + pre.toplevel-answer,
@@ -661,7 +666,7 @@ div.learnocaml-dialog-overlay > div code {
   display: flex;
   flex-direction: column;
   justify-content: stretch;
-  max-width: 780px;
+  max-width: 100%;
   height: 100%;
 }
 
@@ -777,19 +782,19 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-success::after {
-  content: "â";
+  content: "✌";
   color: #0a0;
   text-shadow: 0px 0px 40px #6F6;
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-warn::after {
-  content: "â ";
+  content: "✋";
   color: #ec0;
   text-shadow: 0px 0px 40px #Fe6;
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-error::after {
-  content: "â";
+  content: "☠";
   color: #b00;
   text-shadow: 0px 0px 40px #F66;
 }
@@ -802,3 +807,16 @@ div.learnocaml-dialog-overlay > div code {
   content: "  "
 }
 
+@keyframes check_status_animation {
+  0%   { opacity: 0; z-index: 9999; }
+  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}
+
+@-webkit-keyframes check_status_animation {
+  0%   { opacity: 0; z-index: 9999; }
+  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  100% { opacity: 0; z-index: -9999; }
+}
