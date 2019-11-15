@@ -224,7 +224,8 @@ button {
 .logo {
   font-family: 'Fontin', 'Linux Biolinum', sans-serif ;
   /* text-shadow: 5px 5px 10px rgba(0,0,0,0.4); */
-  flex: 1;
+  display: flex;
+  flex-direction: row;
   overflow: hidden;
   white-space: nowrap;
   -webkit-user-select: none;
@@ -233,6 +234,9 @@ button {
   user-select: none;
   cursor: default;
 }
+
+.logo > * { flex: auto; }
+
 @media (max-width: 549px) {
   .logo {
     line-height: 28px;
@@ -631,12 +635,17 @@ div.learnocaml-dialog-overlay > div code {
 
 /* -------------------- pane layout  ------------------------------ */
 #learnocaml-exo-toolbar {
-  height: 80px;
+  height: 70px;
   overflow: hidden;
   width: 100%;
   display: flex;
+  background-color: var(--bg-text);
+  color: var(--txt-light);
 }
-
+#learnocaml-exo-toolbar:link {
+  text-decoration: none;
+  color: var(--txt-light);
+}
 #learnocaml-exo-tabs {
   /*! text-align: center; */
   position: absolute;
