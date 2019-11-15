@@ -32,7 +32,7 @@ body {
   font-size: 16px;
   line-height: 18px;
   margin: 0;
-  padding: 0 auto;
+  padding: 0;
   background: var(--bg-light);
   height: 100vh;
 }
@@ -78,7 +78,7 @@ button {
   border: none;
   flex: 1;
 }
-
+/*
 !dialog button::before,
 !dialog button::after {
   position: absolute;
@@ -97,6 +97,7 @@ button {
   transition: background 0.5s 0.5s;
   background: rgba(128,128,128,0.4);
 }
+*/
 /* -------------------- font faces -------------------------------- */
 @font-face {
   font-family: "Linux Biolinum";
@@ -341,6 +342,7 @@ div.learnocaml-dialog-overlay > div code {
   /* box-shadow: inset 2px 2px 5px 1px rgba(0,0,0,0.3) ; */
   /*! position: relative; */
   max-width: 100%;
+  min-height: 19px;
 }
 /*
 .toplevel-pane > div.toplevel-input::before {
@@ -384,8 +386,10 @@ div.learnocaml-dialog-overlay > div code {
   color: var(--txt-dark);
   z-index: 0;
   resize: none;
-  min-height: 18px;
+  min-height: 19px;
   display: block;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 .toplevel-pane > div.toplevel-input:not(.disabled):hover {
   background: #c0d8ff;
