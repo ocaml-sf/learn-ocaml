@@ -79,16 +79,16 @@ type 'a response =
                 code: Cohttp.Code.status_code }
 
 let caching: type resp. resp Api.request -> caching = function
-  | Api.Version () -> Shortcache (Some ["version"])
-  | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
-  | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
-
-  | Api.Exercise _ -> Nocache
-
-  | Api.Lesson_index () -> Shortcache (Some ["lessons"])
-  | Api.Lesson id -> Shortcache (Some ["lesson";id])
-  | Api.Tutorial_index () -> Shortcache (Some ["tutorials"])
-  | Api.Tutorial id -> Shortcache (Some ["tutorial";id])
+  (* | Api.Version () -> Shortcache (Some ["version"])
+   * | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
+   * | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
+   * 
+   * | Api.Exercise _ -> Nocache
+   * 
+   * | Api.Lesson_index () -> Shortcache (Some ["lessons"])
+   * | Api.Lesson id -> Shortcache (Some ["lesson";id])
+   * | Api.Tutorial_index () -> Shortcache (Some ["tutorials"])
+   * | Api.Tutorial id -> Shortcache (Some ["tutorial";id]) *)
 
   | _ -> Nocache
 

@@ -86,6 +86,7 @@ let prettify_ocaml ?(snapshot = initial_state) code =
     match Nstream.next_full stream with
     | None -> List.rev acc, snapshot
     | Some ({token = EOF}, _snapshot, _) -> List.rev acc, snapshot
+    (* | Some ({token = SPACES|EOL}, _snapshot, stream) -> format snapshot stream acc *)
     | Some (tok, snapshot, stream) ->
         let this =
           let kind = Ocaml_mode.token_type tok.token in
@@ -320,7 +321,7 @@ let output_warning ?phrase output warning =
       insert output ~phrase (Warning (phrase.warnings, warning, pre)) pre
 
 let clear output =
-  Js_utils.Manip.removeChildren output.container ;
+  Js_utils.Manip.removeChildren output.container;
   output.blocks <- []
 
 let oldify output =
