@@ -25,6 +25,11 @@
     --code-variable: #f8f8f8 /*#fb9a4b*/;
     --code-keyword: #ffaa00;
     --code-meta: #9df39f;
+
+
+    --topbar-height: 70px;
+    --gap: 10px;
+    --button-height: 37px;
 }
 
 body {
@@ -67,8 +72,9 @@ select, button {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  margin: 10px 0;
-  grid-gap: 10px;
+  margin: var(--gap) 0;
+  /* grid-gap: var(--gap); */
+  height: var(--button-height);
 }
 
 button {
@@ -77,6 +83,11 @@ button {
   padding: 10px;
   border: none;
   flex: 1;
+  margin-right: var(--gap);
+}
+
+button:last-child {
+  margin-right: 0;
 }
 /*
 !dialog button::before,
@@ -149,12 +160,12 @@ button {
   background: #ccc;
   display: flex;
   flex-direction: column;
-  color: var(--txt-dark);
 }
 .loading-layer.initial {
   opacity: 1;
   z-index: 9999;
   background: #eee;
+  color: var(--txt-dark);
 }
 .loading-layer.loaded {
   animation: loaded_animation 0.5s ease-out both;
@@ -224,8 +235,8 @@ button {
 .logo {
   font-family: 'Fontin', 'Linux Biolinum', sans-serif ;
   /* text-shadow: 5px 5px 10px rgba(0,0,0,0.4); */
-  display: flex;
-  flex-direction: row;
+  /* display: flex;
+   * flex-direction: row; */
   overflow: hidden;
   white-space: nowrap;
   -webkit-user-select: none;
@@ -235,35 +246,24 @@ button {
   cursor: default;
 }
 
-.logo > * { flex: auto; }
+/* .logo > * { flex: auto; } */
 
-@media (max-width: 549px) {
+/* @media (min-width: 550px) { */
   .logo {
-    line-height: 28px;
-    font-size: 28px;
-    padding: 6px;
-  }
-  .logo > img {
-    vertical-align: -3px;
-    height: 26px;
-  }
-}
-@media (min-width: 550px) {
-  .logo {
-    line-height: 44px;
-    font-size: 40px;
+    line-height: calc(--var(topbar-height) - 26px);
+    font-size: calc(--var(topbar-height) - 30px);
     padding: 8px;
   }
-  .logo > img {
+  .logo img {
     vertical-align: -10px;
   }
-}
+/* } */
 
 /* -------------------- overlay dialog boxes ----------------------- */
 div.learnocaml-dialog-overlay {
   display: flex;
   flex-direction: column;
-  position: absolute;
+  position: fixed;
   top: 0; left: 0; bottom: 0; right: 0;
   background: rgba(0,0,0,0.8);
   color: var(--txt-light);
@@ -298,7 +298,7 @@ div.learnocaml-dialog-overlay > div > div.buttons {
 }
 div.learnocaml-dialog-overlay > div > div.buttons > button {
   display: block;
-  margin: 10px auto;
+  margin: var(--gap) auto;
   padding: 5px 10px;
   border: none;
   background-color: white;
@@ -313,6 +313,12 @@ div.learnocaml-dialog-overlay > div code {
   padding: 4px;
   border: 1px solid #666;
 }
+
+.pane {
+  height: 100%;
+  height: calc(100% - var(--button-height) - 2*var(--gap));
+}
+
 /* toplevel pane */
 .toplevel-pane {
   display: flex;
@@ -321,7 +327,6 @@ div.learnocaml-dialog-overlay > div code {
   /*! overflow: hidden; */
   /*! justify-content: stretch; */
   flex: 0 1 auto;
-  height: calc(100% - 55px);
   max-width: 780px;
 }
 .toplevel-pane > div.toplevel-output {
@@ -338,7 +343,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 .toplevel-pane > div.toplevel-input {
   flex: 0 0 max-content;
-  margin: 10px 0 0 0;
+  margin: var(--gap) 0 0 0;
   padding: 5px;
   /*! position: relative; */
   background: #ddd;
@@ -361,11 +366,8 @@ div.learnocaml-dialog-overlay > div code {
   background: transparent;
   margin: 0;
   display: block;
-  padding: 5px 5px 5px 10px;
+  padding: 5px 5px 5px var(--gap);
   top: 0; left: 0;
-  font-size: 18px;
-  line-height: 18px;
-  font-family: 'Inconsolata', monospace;
   content: "#";
 }
 .toplevel-pane > div.toplevel-input.disabled::after {
@@ -384,9 +386,6 @@ div.learnocaml-dialog-overlay > div code {
   width: 100%;
   border: none;
   background: transparent;
-  font-size: 18px;
-  line-height: 18px;
-  font-family: 'Inconsolata', monospace;
   color: var(--txt-dark);
   z-index: 0;
   resize: none;
@@ -424,7 +423,7 @@ div.learnocaml-dialog-overlay > div code {
 .toplevel-pane pre.toplevel-code {
   background: var(--bg-code-curline);
   border-left-color: #444;
-  border-top: 10px solid white;
+  border-top: var(--gap) solid white;
   /*! width: 100%; */
 }
 .toplevel-pane pre.toplevel-error {
@@ -627,6 +626,7 @@ div.learnocaml-dialog-overlay > div code {
 #learnocaml-exo-loading {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
+  color: var(--txt-dark);
 }
 #learnocaml-exo-loading.loading,
 #learnocaml-exo-loading.loaded {
@@ -635,44 +635,45 @@ div.learnocaml-dialog-overlay > div code {
 
 /* -------------------- pane layout  ------------------------------ */
 #learnocaml-exo-toolbar {
-  height: 70px;
+  height: var(--tobpar-height);
   overflow: hidden;
   width: 100%;
   display: flex;
+  flex-direction: row;
   background-color: var(--bg-text);
   color: var(--txt-light);
 }
-#learnocaml-exo-toolbar:link {
-  text-decoration: none;
-  color: var(--txt-light);
+.logo {
+  /* display: block; */
+  flex: initial;
 }
 #learnocaml-exo-tabs {
   /*! text-align: center; */
   position: absolute;
-  top: 80px;
+  top: calc(var(--topbar-height)+var(--gap));
   left: 0;
   right: 0;
   /*! display: grid; */
   /*! overflow: hidden; */
   /*  grid-template-columns: 1fr 800px fit-content(80em) 1fr;*/
-  grid-gap: 10px;
+  /* grid-gap: 10px; */
   display: flex;
   justify-content: space-around;
   bottom: 0px;
   flex-direction: row;
 }
-@media(max-width: 1599px) {
-  #learnocaml-exo-tabs > div:not(.front-tab){
-    display: none;
-  }
-}
 
-#learnocaml-exo-tabs > div.placeholder-column {
+div.placeholder-column {
   background-color: transparent;
   flex: 1;
 }
 
-#learnocaml-exo-tabs > div {
+div.gap-column {
+  background-color: transparent;
+  width: var(--gap);
+}
+
+.learnocaml-tab {
   background-color: var(--bg-heavy);
   /*! font-family: 'Inconsolata', monospace; */
   flex: 0 0 780px;
@@ -695,7 +696,6 @@ div.learnocaml-dialog-overlay > div code {
 
 #learnocaml-exo-tab-editor > .pane {
   width: 100%;
-  height: calc(100% - 55px);
   background: var(--bg-code);
   color: var(--code-text);
   /*! z-index: 1002; */
@@ -832,4 +832,45 @@ div.learnocaml-dialog-overlay > div code {
   49%  { opacity: 1; transform: scale(2); z-index: 9999; }
   99%  { opacity: 0; transform: scale(2); z-index: 9999; }
   100% { opacity: 0; z-index: -9999; }
+}
+
+
+@media (max-width: 549px) {
+  :root {
+    --topbar-height: 40px;
+    --gap: 5px;
+    --button-height: 37px;
+  }
+  /* #learnocaml-exo-tabs {
+   *   top: 50px;
+   * }
+   * #learnocaml-exo-toolbar {
+   *   height: 40px;
+   * }
+   * .logo {
+   *   line-height: 28px;
+   *   font-size: 28px;
+   *   padding: 6px;
+   * }
+   * .logo img {
+   *   vertical-align: -3px;
+   *   height: 26px;
+   * } */
+  .buttons .label {
+    display: none;
+  }
+}
+@media(max-width: 799px) {
+  div.buttons {
+    margin-bottom: 0;
+    height: 37px;
+  }
+  div.pane {
+    height: calc(100% - 47px);
+  }
+}
+@media(max-width: 1599px) {
+  #learnocaml-exo-tabs > div:not(.front-tab) {
+    display: none;
+  }
 }

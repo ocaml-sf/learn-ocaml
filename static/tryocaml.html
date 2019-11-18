@@ -30,13 +30,21 @@
     <script language="JavaScript">
       var n = Math.floor (Math.random () * 8.99) + 1;
       document.getElementById('chamo-img').src = '/icons/tryocaml_loading_' + n + '.gif';
+
+      function switchTabs() {
+        var panes = document.getElementsByClassName("learnocaml-tab");
+        for (p of panes) { p.classList.toggle("front-tab"); }
+      }
     </script>
     <!-- Anything below could be recreated dynamically, but IDs must be kept. -->
     <div id="learnocaml-exo-toolbar">
       <div class ="logo">
-        <img src="/icons/logo_ocaml.svg">
+        <img src="/icons/logo_ocaml.svg" onclick="switchTabs()">
         <span>Try OCaml</span>
-        <img src="/icons/logo_ocp.svg">
+      </div>
+      <div class="placeholder-column"></div>
+      <div class ="logo">
+        <a href="http://ocamlpro.com"><img src="/icons/logo_ocp.svg"></a>
       </div>
     </div>
     <!-- <div id="learnocaml-exo-tab-buttons">
@@ -46,13 +54,14 @@
     <div id="learnocaml-exo-tabs">
       <!-- Same comment as above for the first two tabs. -->
       <div class="placeholder-column"></div>
-      <div id="learnocaml-exo-tab-editor">
+      <div id="learnocaml-exo-tab-editor" class="learnocaml-tab">
         <div id="learnocaml-exo-editor-pane" class="pane">Editor</div>
         <div id="learnocaml-exo-editor-toolbar" class="buttons">
         </div>
       </div>
-      <div id="learnocaml-exo-tab-toplevel" class="front-tab">
-        <div id="learnocaml-exo-toplevel-pane" class="toplevel-pane">
+      <div class="gap-column"></div>
+      <div id="learnocaml-exo-tab-toplevel" class="front-tab learnocaml-tab">
+        <div id="learnocaml-exo-toplevel-pane" class="toplevel-pane pane">
         </div>
         <div id="learnocaml-exo-toplevel-toolbar" class="buttons">
         </div>
