@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Js_of_ocaml
+open Js_of_ocaml_tyxml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
@@ -32,10 +34,10 @@ let tabs = [ Ids.editor_pane; Ids.toplevel_pane ]
 let select_tab id =
   Manip.focus (find_component id)
 
-let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
+let display_list ?(sep=Tyxml_js.Html5.txt ", ") l =
   let open Tyxml_js.Html5 in
   let rec gen acc = function
-    | [] -> [ pcdata "" ]
+    | [] -> [ txt "" ]
     | a :: [] -> a :: acc
     | a :: ((_ :: _) as rem) ->
         gen (sep :: (a  :: acc)) rem
@@ -190,7 +192,7 @@ let () =
   begin editor_button
       ~icon: "cleanup" [%i"Clear"] @@ fun () ->
     confirm ~title:[%i"CLEAR FILE"]
-      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      [H.txt [%i"This will discard all your edits. Are you sure?"]]
       (fun () -> Ace.set_contents ace "");
     Lwt.return ()
   end ;

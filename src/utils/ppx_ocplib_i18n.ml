@@ -101,7 +101,7 @@ let dump_pot () =
           Format.pp_print_string fmt "#:";
           List.iter (fun l ->
               Format.pp_print_char fmt ' ';
-              Location.print_compact fmt l)
+              Location.print_loc fmt l)
             locs;
           Format.fprintf fmt "\nmsgid %S\n" s;
           Format.fprintf fmt "msgstr \"\"\n\n";

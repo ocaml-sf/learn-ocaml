@@ -36,7 +36,7 @@ module Lesson: sig
     val get: unit -> t Lwt.t
   end
 
-  include module type of struct include Lesson end with module Index := Index
+  include module type of struct include Lesson end with module Index := Lesson.Index
 
   val get: id -> t Lwt.t
 
@@ -49,7 +49,7 @@ module Tutorial: sig
     val get: unit -> t Lwt.t
   end
 
-  include module type of struct include Tutorial end with module Index := Index
+  include module type of struct include Tutorial end with module Index := Tutorial.Index
 
   val get: id -> t Lwt.t
 
@@ -80,9 +80,9 @@ module Exercise: sig
   end
 
   include module type of struct include Exercise end
-  with module Meta := Meta
-   and module Status := Status
-   and module Index := Index
+  with module Meta := Exercise.Meta
+   and module Status := Exercise.Status
+   and module Index := Exercise.Index
 
   val get: id -> t Lwt.t
 
@@ -151,7 +151,7 @@ module Student: sig
     val set: Student.t list -> unit Lwt.t
   end
 
-  include module type of struct include Student end with module Index := Index
+  include module type of struct include Student end with module Index := Student.Index
 
   val get: student token -> t option Lwt.t
 

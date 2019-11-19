@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 let debug = ref false
 
 let (>>=) = Lwt.bind
@@ -33,7 +34,7 @@ let wrap pp =
 
 module IntMap = Map.Make(struct
     type t = int
-    let compare (x:int) (y:int) = Pervasives.compare x y
+    let compare (x:int) (y:int) = compare x y
   end)
 let map_option f o = match o with | None -> None | Some o -> Some (f o)
 let iter_option f o = match o with | None -> () | Some o -> f o

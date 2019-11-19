@@ -6,6 +6,10 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+open Js_of_ocaml_tyxml
+open Js_of_ocaml_lwt
+
 type block =
   | Html of string * [ `Div ] Tyxml_js.Html5.elt
   | Std of (string * [ `Out | `Err ]) list ref * [ `Pre ] Tyxml_js.Html5.elt
@@ -63,9 +67,9 @@ let rec pretty_html
   List.map
     (function
       | String text ->
-          pcdata text
+          txt text
       | Ref n ->
-          span ~a: [ a_class [ "ref" ] ] [ pcdata (string_of_int n) ]
+          span ~a: [ a_class [ "ref" ] ] [ txt (string_of_int n) ]
       | Class (cls, [ Class (cls', [ Class (cls'', toks) ]) ]) ->
           span ~a: [ a_class [ cls ; cls' ; cls'' ] ] (pretty_html toks)
       | Class (cls, [ Class (cls', toks) ]) ->
@@ -162,7 +166,7 @@ let output_std ?phrase output (str, chan) =
         buf, pre in
   let cls = match chan with `Err -> "stderr" | `Out -> "stdout" in
   Js_utils.Manip.appendChild pre
-    (Tyxml_js.Html5.(span ~a: [ a_class [ cls ] ] [ pcdata str ])) ;
+    (Tyxml_js.Html5.(span ~a: [ a_class [ cls ] ] [ txt str ])) ;
   buf := (str, chan) :: !buf ;
   scroll output
 
@@ -290,7 +294,7 @@ let hilight cls output u locs lbl =
 let output_error ?phrase output error =
   let { Toploop_results.locs ; msg ; if_highlight } = error in
   let content =
-    [ Tyxml_js.Html5.pcdata
+    [ Tyxml_js.Html5.txt
         (match phrase with None -> msg | Some _ -> if_highlight) ] in
   let pre =
     Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-error" ] ]) content in
@@ -306,7 +310,7 @@ let output_warning ?phrase output warning =
   | None, _ | _, [] ->
       let pre =
         Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-warning" ] ]
-                          [ pcdata msg ]) in
+                          [ txt msg ]) in
       insert output ?phrase (Warning (0, warning, pre)) pre
   | Some phrase, _ ->
       phrase.warnings <- phrase.warnings + 1 ;
@@ -315,9 +319,9 @@ let output_warning ?phrase output warning =
       let pre =
         Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-warning" ] ]
                           [ span ~a: [ a_class [ "ref" ] ]
-                              [ pcdata (string_of_int phrase.warnings) ] ;
-                            pcdata ":" ;
-                            pcdata if_highlight ]) in
+                              [ txt (string_of_int phrase.warnings) ] ;
+                            txt ":" ;
+                            txt if_highlight ]) in
       insert output ~phrase (Warning (phrase.warnings, warning, pre)) pre
 
 let clear output =

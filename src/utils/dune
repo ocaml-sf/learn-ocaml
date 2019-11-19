@@ -2,7 +2,7 @@
  (name jsutils)
  (wrapped false)
  (flags :standard -warn-error -4-42-44-45-48-33-27-32-34)
- (libraries lwt js_of_ocaml.ppx js_of_ocaml.tyxml)
+ (libraries lwt js_of_ocaml.ppx js_of_ocaml-tyxml)
  (modules Js_utils Lwt_request)
  (preprocess (pps js_of_ocaml.ppx))
 )

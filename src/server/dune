@@ -7,7 +7,7 @@
             ezjsonm
             lwt.unix
             lwt_utils
-            cohttp.lwt
+            cohttp-lwt-unix
             magic-mime
             checkseum.c
             decompress

@@ -16,6 +16,9 @@
  * You should have received a copy of the GNU Library General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Js_of_ocaml
+open Js_of_ocaml_tyxml
+
 let doc = Dom_html.document
 let window = Dom_html.window
 (* let loc = Js.Unsafe.variable "location" *)

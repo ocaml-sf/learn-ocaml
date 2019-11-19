@@ -6,6 +6,9 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+open Js_of_ocaml_tyxml
+open Js_of_ocaml_lwt
 open Js_utils
 open Lwt.Infix
 open Learnocaml_data
@@ -80,8 +83,8 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
         div in
   Manip.replaceChildren div [
     H.div [
-      H.h3 [ H.pcdata titletext ];
-      H.div [ H.p [ H.pcdata (String.trim message) ] ];
+      H.h3 [ H.txt titletext ];
+      H.div [ H.p [ H.txt (String.trim message) ] ];
     ]
   ]
 
@@ -94,7 +97,7 @@ let box_button txt f =
         match Manip.by_id dialog_layer_id with
         | Some div -> Manip.removeChild Manip.Elt.body div; false
         | None -> (); false)
-  ] [ H.pcdata txt ]
+  ] [ H.txt txt ]
 
 let close_button txt =
   box_button txt @@ fun () -> ()
@@ -112,7 +115,7 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
         div in
   Manip.replaceChildren div [
     H.div [
-      H.h3 [ H.pcdata title ];
+      H.h3 [ H.txt title ];
       H.div message;
       H.div ~a:[ H.a_class ["buttons"] ] buttons;
     ]
@@ -131,7 +134,7 @@ let lwt_alert ~title ~buttons message =
   waiter
 
 let alert ?(title=[%i"ERROR"]) ?buttons message =
-  ext_alert ~title ?buttons [ H.p [H.pcdata (String.trim message)] ]
+  ext_alert ~title ?buttons [ H.p [H.txt (String.trim message)] ]
 
 let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
   ext_alert ~title contents ~buttons:[
@@ -275,8 +278,8 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
   let button =
     H.(button [
         img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
-        pcdata " " ;
-        span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
+        txt " " ;
+        span ~a:[ a_class [ "label" ] ] [ txt lbl ]
       ]) in
   Manip.Ev.onclick button
     (fun _ ->
@@ -317,7 +320,7 @@ let dropdown ~id ~title items =
     in
     H.div ~a: [H.a_class ["dropdown_btn"]] [
       H.button ~a: [H.a_onclick toggle]
-        (title @ [H.pcdata " \xe2\x96\xb4" (* U+25B4 *)]);
+        (title @ [H.txt " \xe2\x96\xb4" (* U+25B4 *)]);
       H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
     ]
 
@@ -331,10 +334,10 @@ let render_rich_text ?on_runnable_clicked text =
     | [] -> List.rev acc
     | Text text :: rest ->
         render
-          (H.pcdata text :: acc)
+          (H.txt text :: acc)
           rest
     | Code { code ; runnable } :: rest ->
-        let elt = H.code [ H.pcdata code ] in
+        let elt = H.code [ H.txt code ] in
         (match runnable, on_runnable_clicked with
          | true, Some cb ->
              Manip.addClass elt "runnable" ;
@@ -348,7 +351,7 @@ let render_rich_text ?on_runnable_clicked text =
     | Image _ :: _ -> assert false
     | Math code :: rest ->
         render
-          (H.pcdata ("`" ^ code ^ "`") :: acc)
+          (H.txt ("`" ^ code ^ "`") :: acc)
           rest in
   (render [] text
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] H.elt list)
@@ -392,8 +395,8 @@ let rec retrieve ?ignore req =
   | Ok x -> Lwt.return x
   | Error e ->
       lwt_alert ~title:[%i"REQUEST ERROR"] [
-        H.p [H.pcdata [%i"Could not retrieve data from server"]];
-        H.code [H.pcdata (Server_caller.string_of_error e)];
+        H.p [H.txt [%i"Could not retrieve data from server"]];
+        H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:(
         ([%i"Retry"], (fun () -> retrieve req)) ::
         (match ignore with
@@ -432,8 +435,8 @@ let rec sync_save token save_file =
       Lwt.return save
   | Error e ->
       lwt_alert ~title:[%i"SYNC FAILED"] [
-        H.p [H.pcdata [%i"Could not synchronise save with the server"]];
-        H.code [H.pcdata (Server_caller.string_of_error e)];
+        H.p [H.txt [%i"Could not synchronise save with the server"]];
+        H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:[
         [%i"Retry"], (fun () -> sync_save token save_file);
         [%i"Ignore"], (fun () -> Lwt.return save_file);
@@ -651,7 +654,7 @@ let string_of_date ?(time=false) t =
 let date ?(time=false) t =
   let date = new%js Js.date_fromTimeValue (t *. 1000.) in
   H.time ~a:[ H.a_datetime (Js.to_string date##toISOString) ] [
-    H.pcdata
+    H.txt
       (Js.to_string (if time then date##toLocaleString
                      else date##toLocaleDateString))
   ]
@@ -662,7 +665,7 @@ let tag_span tag =
   in
   H.span ~a:[H.a_class ["tag"];
              H.a_style ("background-color: "^color)]
-    [H.pcdata tag]
+    [H.txt tag]
 
 let get_worker_code name =
   let worker_url = ref None in

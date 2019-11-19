@@ -8,7 +8,7 @@
 
 (** An OCaml toplevel whose input and output will be in a given HTML [div]. *)
 
-open Tyxml_js
+open Js_of_ocaml_tyxml.Tyxml_js
 
 (** An abstract type representing a toplevel instance. *)
 type t

@@ -24,4 +24,5 @@ let domains = function
 let curry (Ty arg) (Ty ret) =
   Ty { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
     ptyp_loc = Location.none ;
-    ptyp_attributes = [] }
+    ptyp_loc_stack = [];
+    ptyp_attributes = []; }

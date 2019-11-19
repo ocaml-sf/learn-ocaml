@@ -6,11 +6,16 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+
 exception Request_failed of (int * string)
 
 let url_encode_list l =
   String.concat "&" (List.map (fun (name, arg) ->
       Printf.sprintf "%s=%s" name (Url.urlencode arg)) l)
+
+let resp_text req =
+  Js.to_string @@ Js.Opt.get req##.responseText (fun () -> Js.string "")
 
 let get ?(headers=[]) ~url ~args =
   let (res, w) = Lwt.task () in
@@ -25,11 +30,12 @@ let get ?(headers=[]) ~url ~args =
     headers;
   let callback () =
     match req##.status with
-    | 200 -> Lwt.wakeup w (Js.to_string req##.responseText)
+    | 200 -> Lwt.wakeup w (resp_text req)
     | 204 -> Lwt.wakeup w ""
     | code (* including 0 *) ->
-        Lwt.wakeup_exn w
-	        (Request_failed (code, Js.to_string req##.responseText)) in
+        Lwt.wakeup_exn w @@
+        Request_failed (code, resp_text req)
+  in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with
 	     XmlHttpRequest.DONE -> callback ()
@@ -51,10 +57,10 @@ let post ?(headers=[]) ?(get_args=[]) ~url ~body =
     headers;
   let callback () =
     match req##.status with
-    | 200 -> Lwt.wakeup w (Js.to_string req##.responseText)
+    | 200 -> Lwt.wakeup w (resp_text req)
     | 204 -> Lwt.wakeup w ""
     | code (* including 0 *) -> Lwt.wakeup_exn w
-	  (Request_failed (code, Js.to_string req##.responseText))
+	  (Request_failed (code, resp_text req))
   in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with

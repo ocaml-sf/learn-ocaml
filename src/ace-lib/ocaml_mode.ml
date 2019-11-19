@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+open Js_of_ocaml_lwt
 open Js_utils
 
 open Lwt.Infix

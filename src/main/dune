@@ -29,7 +29,7 @@
  (libraries cmdliner
             lwt.unix
             lwt_utils
-            cohttp.lwt
+            cohttp-lwt
             grading_cli
             learnocaml_data
             learnocaml_api)
