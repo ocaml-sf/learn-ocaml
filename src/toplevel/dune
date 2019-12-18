@@ -24,7 +24,7 @@
  (modules Learnocaml_toplevel_worker_main)
  (preprocess (pps js_of_ocaml.ppx))
  (js_of_ocaml (flags :standard +dynlink.js +toplevel.js
-                     --toplevel --nocmis))
+                     --toplevel --nocmis --pretty --no-sourcemap))
 )
 
 (library
@@ -39,6 +39,7 @@
  (wrapped false)
  (modes byte)
  (flags :standard -w -9-41 -warn-error -27)
+ (js_of_ocaml (flags :standard --source-map-inline))
  (libraries toploop_results
             jsutils
             js_of_ocaml

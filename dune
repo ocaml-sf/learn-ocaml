@@ -1,7 +1,7 @@
 (dirs (:standard \ docker www sync demo-repository))
 
 (env
-  (release (flags -safe-string -w +a-4-42-44-45-48-3)
+  (release (flags -safe-string -w +a-4-42-44-45-48-3 -g)
            (ocamlc_flags)
            (ocamlopt_flags))
 )
