@@ -598,18 +598,19 @@ div.learnocaml-dialog-overlay > div code {
   border-bottom: 2px #ca0 solid;
 }
 
-.toplevel-pane > div.dialog-container {
-  position: fixed;
-  top: var(--topbar-height); left: 0;
-  bottom: 0; right: 0;
+.toplevel-pane div.dialog-container {
+  position: absolute;
+  top: 0;
+  bottom: var(--bottom-gap);
   background: rgba(0,0,0,0.6) ;
   display: flex;
   flex-direction: column;
   /* box-shadow: inset 3px 3px 8px 2px rgba(0,0,0,0.3); */
   z-index: 222;
+  width: 780px;
 }
 
-.toplevel-pane > div.dialog-container > div.dialog {
+.toplevel-pane div.dialog-container > div.dialog {
   flex: 0 0 auto;
   text-align: center;
   margin: 0 auto;
@@ -618,29 +619,29 @@ div.learnocaml-dialog-overlay > div code {
   width: 720px;
   max-width: 90vw;
 }
-.toplevel-pane > div.dialog-container > div.dialog > * {
+.toplevel-pane div.dialog-container > div.dialog > * {
   padding: 10px;
   margin: 0;
   text-align: center;
   background: #eee;
   color: #000;
 }
-.toplevel-pane > div.dialog-container > div.dialog > .buttons {
+.toplevel-pane div.dialog-container > div.dialog > .buttons {
   padding: var(--gap);
 }
-.toplevel-pane > div.dialog-container > div.dialog > h1:first-child {
+.toplevel-pane div.dialog-container > div.dialog > h1:first-child {
   background: #555;
   font-size: 18px;
   line-height: 18px;
   color: #fff;
   margin: 0;
 }
-.toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child {
+.toplevel-pane div.dialog-container > div.dialog > .buttons:last-child {
   /* background: rgba(255,255,255,0.8); */
   display: flex;
   flex-direction: row;
 }
-.toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child > * {
+.toplevel-pane div.dialog-container > div.dialog > .buttons:last-child > * {
   flex: 1;
   border: none;
   background: none;
@@ -656,8 +657,8 @@ div.learnocaml-dialog-overlay > div code {
  *   border-left: 1px #666 solid;
  * } */
 
-.toplevel-pane > div.dialog-container::after,
-.toplevel-pane > div.dialog-container::before {
+.toplevel-pane div.dialog-container::after,
+.toplevel-pane div.dialog-container::before {
   flex: 1;
   content: "";
 }

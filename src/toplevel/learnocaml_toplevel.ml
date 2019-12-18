@@ -276,6 +276,7 @@ let make_timeout_popup
   let clock_span = span [] in
   let countdown_span = span [] in
   let dialog =
+    div @@ [
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
           [ h1 [ txt [%i"Infinite loop?"] ] ;
@@ -288,7 +289,7 @@ let make_timeout_popup
                 countdown_span ;
                 txt [%i" seconds."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
-              [ btn_continue ; btn_stop ] ] ] in
+              [ btn_continue ; btn_stop ] ] ] ] in
   Lwt.catch
     (fun () ->
        Manip.appendChild container dialog ;
