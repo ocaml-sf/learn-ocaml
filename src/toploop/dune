@@ -2,6 +2,7 @@
  (name toploop_results)
  (wrapped false)
  (modules Toploop_results)
+ (libraries compiler-libs.toplevel)
 )
 
 (library

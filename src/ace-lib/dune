@@ -12,4 +12,6 @@
             lwt
             ocp-indent-nlfork.lib)
  (preprocess (pps js_of_ocaml.ppx))
+ (js_of_ocaml
+  (javascript_files ace_bindings.js))
 )

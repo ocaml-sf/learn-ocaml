@@ -10,7 +10,7 @@
 
 (executable
  (name learnocaml_toplevel_worker_main)
- (modes byte)
+ (modes (byte js))
  (flags :standard -w -41 -warn-error -4-42-44-45-48-32-27)
  (link_flags :standard -linkall)
  (libraries jsutils
