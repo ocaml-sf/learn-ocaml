@@ -7,7 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
-let debug = ref false
+let debug = ref true
 
 let (>>=) = Lwt.bind
 let (>>?) o f =
@@ -154,7 +154,7 @@ let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.
     if !debug then Js_utils.debug "Host: queuing %d" msg_id;
     let (t, u) = Lwt.task () in
     Lwt.on_cancel t
-      (fun () -> Lwt.async (fun () -> worker.reset_worker worker));
+      (fun () -> Js_utils.log "Canceled"; Lwt.async (fun () -> worker.reset_worker worker));
     worker.wakeners <- IntMap.add msg_id (U (msg_ty, u, t)) worker.wakeners;
     worker.counter <- msg_id + 1;
     worker.worker##(postMessage (Json.output (msg_id, msg)));
