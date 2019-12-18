@@ -231,7 +231,7 @@ let reset worker ?(timeout = fun () -> never_ending) () =
       worker.after_init worker
   | `Reset Toploop_results.Error (err, _) ->
       Lwt.cancel timeout;
-      worker.pp_stderr err.Toploop_results.msg;
+      worker.pp_stderr (Format.asprintf "%a" Location.print_report (Toploop_results.to_error err));
       worker.reset_worker worker
   | `Timeout ->
       (* Not canceling the Reset thread, but manually resetting. *)

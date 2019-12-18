@@ -190,10 +190,12 @@ let execute_phrase top ?timeout content =
   ] >>= fun () ->
   t >>= fun result ->
   let warnings, result = match result with
-    | Toploop_results.Ok (result, warnings) -> warnings, result
+    | Toploop_results.Ok (result, warnings) ->
+        List.map Toploop_results.to_warning warnings, result
     | Toploop_results.Error (error, warnings) ->
-        Learnocaml_toplevel_output.output_error ~phrase top.output error ;
-        warnings, false in
+        Learnocaml_toplevel_output.output_error ~phrase top.output
+          (Toploop_results.to_error error) ;
+        List.map Toploop_results.to_warning warnings, false in
   List.iter
     (Learnocaml_toplevel_output.output_warning ~phrase top.output)
     warnings ;
@@ -244,9 +246,9 @@ let load top ?(print_outcome = true) ?timeout ?message content =
      reset top);
   ] >>= fun () ->
   t >>= fun result ->
-  let warnings, result = match result with
-    | Toploop_results.Ok (result, warnings) -> warnings, result
-    | Toploop_results.Error (error, warnings) ->
+  let warnings, result = match Toploop_results.to_report result with
+    | Ok (result, warnings) -> warnings, result
+    | Error (error, warnings) ->
         Learnocaml_toplevel_output.output_error top.output error ;
         warnings, false in
   List.iter

@@ -6,22 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-type 'a toplevel_result = 'a Toploop_results.toplevel_result =
-  (* ('a * warning list, error * warning list) result = *)
-  | Ok of 'a * warning list
-  | Error of error * warning list
-
-and error = Toploop_results.error =
-  { msg: string;
-    locs: loc list;
-    if_highlight: string; }
-
-and warning = error
-
-and loc = Toploop_results.loc  = {
-  loc_start: int * int;
-  loc_end: int * int;
-}
+include Toploop_results
 
 module Ppx = struct
 
@@ -121,15 +106,17 @@ let report_error err =
 
 let error_of_exn exn =
   match Location.error_of_exn exn with
-  | None ->
+  | None | Some `Already_displayed ->
       let msg = match exn with
         | Failure msg -> msg
         | exn -> Printexc.to_string exn
       in
-      { msg; locs = []; if_highlight = msg }
-  | Some error -> report_error error
+      let main = { Location.txt = (fun fmt -> Format.pp_print_text fmt msg);
+                   loc = Location.none } in
+      { Location.main; sub = []; kind = Location.Report_error }
+  | Some (`Ok report) -> report
 
-let return_exn exn = return_error (error_of_exn exn)
+let return_exn exn = return_error (of_report (error_of_exn exn))
 
 (** Execution helpers *)
 
@@ -199,7 +186,7 @@ let execute ?ppf_code ?(print_outcome  = true) ~ppf_answer code =
       return_success true
   | exn ->
       flush_all ();
-      return_error (error_of_exn exn)
+      return_exn exn
 
 let use_string
     ?(filename = "//toplevel//") ?(print_outcome  = true) ~ppf_answer code =
@@ -223,7 +210,7 @@ let use_string
       return_success false
   | exn ->
       flush_all ();
-      return_error (error_of_exn exn)
+      return_exn exn
 
 let parse_mod_string ?filename modname sig_code impl_code =
   let open Parsetree in
@@ -264,14 +251,14 @@ let use_mod_string
     return_success res
   with exn ->
     flush_all ();
-    return_error (error_of_exn exn)
+    return_exn exn
 
 (* Extracted from the "execute" function in "ocaml/toplevel/toploop.ml" *)
 let check_phrase env = function
   | Parsetree.Ptop_def sstr ->
       Typecore.reset_delayed_checks ();
-      let (str, sg, newenv) = Typemod.type_toplevel_phrase env sstr in
-      let sg' = Typemod.simplify_signature sg in
+      let (str, sg, sn, newenv) = Typemod.type_toplevel_phrase env sstr in
+      let sg' = Typemod.Signature_names.simplify newenv sn sg in
       ignore (Includemod.signatures env sg sg');
       Typecore.force_delayed_checks ();
       let _lam = Translmod.transl_toplevel_definition str in
