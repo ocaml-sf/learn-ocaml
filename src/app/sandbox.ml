@@ -67,6 +67,11 @@ let local_save ace id =
                mtime = gettimeofday () }
 
 
+let editor_placeholder_text =
+  [%i "(* This is an OCaml editor. Enter your program here and send it to the \
+       toplevel \n\
+      \   using the \"Eval code\" button. *)\n\n"]
+
 let () =
   log "GO";
   Lwt.async_exception_hook := begin fun e ->
@@ -99,7 +104,7 @@ let () =
     | _ -> try arg "id" with Not_found -> "sandbox"
   in
   Dom_html.document##.title :=
-    Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
+    Js.string ("TryOCaml");
   let after_init top =
     Learnocaml_toplevel.set_checking_environment top
   in
@@ -165,7 +170,7 @@ let () =
   Ace.set_contents ace ~reset_undo:true
     (match solution with
      | Some solution -> solution
-     | None -> "") ;
+     | None -> editor_placeholder_text) ;
   Ace.set_font_size ace 18;
   let typecheck set_class =
     Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->

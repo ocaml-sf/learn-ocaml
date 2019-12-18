@@ -25,11 +25,43 @@
     --code-variable: #f8f8f8 /*#fb9a4b*/;
     --code-keyword: #ffaa00;
     --code-meta: #9df39f;
+}
 
-
-    --topbar-height: 70px;
+@media (height < 820px) {
+  :root {
+    --topbar-height: 40px;
+    --gap: 5px;
+    --button-height: 37px;
+  }
+}
+@media (height >= 820px) {
+  :root {
+    --topbar-height: 63px;
     --gap: 10px;
     --button-height: 37px;
+  }
+}
+
+@media(width < 800px) {
+  :root {
+    --bottom-gap: 0px;
+  }
+}
+@media(width >= 800px) {
+  :root {
+    --bottom-gap: var(--gap);
+  }
+}
+
+@media (width < 550px) {
+  .buttons .label {
+    display: none;
+  }
+}
+@media(width < 1600px) {
+  #learnocaml-exo-tabs > div:not(.front-tab) {
+    display: none;
+  }
 }
 
 body {
@@ -46,6 +78,9 @@ button, select {
   font-size: 16px;
   line-height: 16px;
   outline: none;
+}
+button:focus {
+  outline: none !important;
 }
 code, pre, textarea {
   font-family: 'Inconsolata', monospace;
@@ -72,7 +107,7 @@ select, button {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  margin: var(--gap) 0;
+  margin: var(--gap) 0 0 0;
   /* grid-gap: var(--gap); */
   height: var(--button-height);
 }
@@ -209,7 +244,7 @@ button:last-child {
 }
 .loading-layer .messages ul li {
   list-style: none;
-  opacity: 0.1;
+  /* opacity: 0.1; */
   font-size: 16px; line-height: 18px;
 }
 
@@ -246,18 +281,18 @@ button:last-child {
   cursor: default;
 }
 
-/* .logo > * { flex: auto; } */
+.logo span {
+  position: absolute;
+  top: 0;
+  font-size: calc(0.5 * var(--topbar-height));
+  line-height: calc(0.6 * var(--topbar-height));
+  padding: calc(0.2 * var(--topbar-height));
+}
 
-/* @media (min-width: 550px) { */
-  .logo {
-    line-height: calc(--var(topbar-height) - 26px);
-    font-size: calc(--var(topbar-height) - 30px);
-    padding: 8px;
-  }
-  .logo img {
-    vertical-align: -10px;
-  }
-/* } */
+.logo img {
+    height: calc(0.75 * var(--topbar-height));
+    padding: calc(0.125 * var(--topbar-height));;
+}
 
 /* -------------------- overlay dialog boxes ----------------------- */
 div.learnocaml-dialog-overlay {
@@ -295,10 +330,11 @@ div.learnocaml-dialog-overlay > div > h3 + div {
 div.learnocaml-dialog-overlay > div > div.buttons {
   display: flex;
   flex-direction: row;
+  margin: var(--gap);
 }
 div.learnocaml-dialog-overlay > div > div.buttons > button {
   display: block;
-  margin: var(--gap) auto;
+  /* margin: var(--gap) auto; */
   padding: 5px 10px;
   border: none;
   background-color: white;
@@ -315,8 +351,7 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 .pane {
-  height: 100%;
-  height: calc(100% - var(--button-height) - 2*var(--gap));
+  height: calc(100% - var(--button-height) - var(--gap) - var(--bottom-gap));
 }
 
 /* toplevel pane */
@@ -361,14 +396,17 @@ div.learnocaml-dialog-overlay > div code {
   content:"";
 }
 */
-.toplevel-pane > div.toplevel-input > textarea::before {
-  position: absolute;
+.toplevel-pane > div.toplevel-input::before {
+  /* position: absolute; */
   background: transparent;
   margin: 0;
   display: block;
-  padding: 5px 5px 5px var(--gap);
-  top: 0; left: 0;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
   content: "#";
+  color: var(--bg-code-cursor);
 }
 .toplevel-pane > div.toplevel-input.disabled::after {
   transition: background 0.2s 0.5s;
@@ -383,7 +421,7 @@ div.learnocaml-dialog-overlay > div code {
   z-index: 14;
   margin: 0;
   padding: 0;
-  width: 100%;
+  width: calc(100% - 14px);
   border: none;
   background: transparent;
   color: var(--txt-dark);
@@ -393,6 +431,7 @@ div.learnocaml-dialog-overlay > div code {
   display: block;
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin-left: 14px;
 }
 .toplevel-pane > div.toplevel-input:not(.disabled):hover {
   background: #c0d8ff;
@@ -560,29 +599,34 @@ div.learnocaml-dialog-overlay > div code {
 }
 
 .toplevel-pane > div.dialog-container {
-  position: absolute;
-  top: 0; left: 0;
+  position: fixed;
+  top: var(--topbar-height); left: 0;
   bottom: 0; right: 0;
   background: rgba(0,0,0,0.6) ;
   display: flex;
   flex-direction: column;
   /* box-shadow: inset 3px 3px 8px 2px rgba(0,0,0,0.3); */
+  z-index: 222;
 }
 
 .toplevel-pane > div.dialog-container > div.dialog {
   flex: 0 0 auto;
   text-align: center;
-  margin: 0 10% 0 10%;
+  margin: 0 auto;
   color: #000;
   /* box-shadow: 3px 3px 8px 2px rgba(0,0,0,0.3); */
-  border: 1px #ccc solid;
+  width: 720px;
+  max-width: 90vw;
 }
 .toplevel-pane > div.dialog-container > div.dialog > * {
   padding: 10px;
   margin: 0;
   text-align: center;
-  background: rgba(255,255,255,0.8);
+  background: #eee;
   color: #000;
+}
+.toplevel-pane > div.dialog-container > div.dialog > .buttons {
+  padding: var(--gap);
 }
 .toplevel-pane > div.dialog-container > div.dialog > h1:first-child {
   background: #555;
@@ -592,13 +636,9 @@ div.learnocaml-dialog-overlay > div code {
   margin: 0;
 }
 .toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child {
-  background: rgba(255,255,255,0.8);
+  /* background: rgba(255,255,255,0.8); */
   display: flex;
-  padding: 0;
   flex-direction: row;
-  background: #ffc;
-  border-top: 1px #666 solid;
-  color: #000;
 }
 .toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child > * {
   flex: 1;
@@ -607,10 +647,14 @@ div.learnocaml-dialog-overlay > div code {
   padding: 10px;
   font-size: 18px;
   line-height: 18px;
+  background: var(--bg-button);
+  height: var(--button-height);
+  color: var(--fg-button);
+  /* margin: var(--gap); */
 }
-.toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child > :not(:first-child){
-  border-left: 1px #666 solid;
-}
+/* .toplevel-pane > div.dialog-container > div.dialog > .buttons:last-child > :not(:first-child){
+ *   border-left: 1px #666 solid;
+ * } */
 
 .toplevel-pane > div.dialog-container::after,
 .toplevel-pane > div.dialog-container::before {
@@ -635,7 +679,7 @@ div.learnocaml-dialog-overlay > div code {
 
 /* -------------------- pane layout  ------------------------------ */
 #learnocaml-exo-toolbar {
-  height: var(--tobpar-height);
+  height: var(--topbar-height);
   overflow: hidden;
   width: 100%;
   display: flex;
@@ -650,7 +694,7 @@ div.learnocaml-dialog-overlay > div code {
 #learnocaml-exo-tabs {
   /*! text-align: center; */
   position: absolute;
-  top: calc(var(--topbar-height)+var(--gap));
+  top: calc(var(--topbar-height) + var(--gap));
   left: 0;
   right: 0;
   /*! display: grid; */
@@ -795,21 +839,21 @@ div.gap-column {
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-success::after {
-  content: "✌";
+  content: "✓";
   color: #0a0;
-  text-shadow: 0px 0px 40px #6F6;
+  /* text-shadow: 0px 0px 40px #6F6; */
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-warn::after {
-  content: "✋";
+  content: "⚠";
   color: #ec0;
-  text-shadow: 0px 0px 40px #Fe6;
+  /* text-shadow: 0px 0px 40px #Fe6; */
 }
 
 #learnocaml-exo-editor-pane.ocaml-check-error::after {
-  content: "☠";
+  content: "❌";
   color: #b00;
-  text-shadow: 0px 0px 40px #F66;
+  /* text-shadow: 0px 0px 40px #F66; */
 }
 
 .toplevel-pane div.toplevel-output > :last-child::after {
@@ -822,55 +866,14 @@ div.gap-column {
 
 @keyframes check_status_animation {
   0%   { opacity: 0; z-index: 9999; }
-  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
-  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  49%  { opacity: 1; transform: scale(0.5); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(0.5); z-index: 9999; }
   100% { opacity: 0; z-index: -9999; }
 }
 
 @-webkit-keyframes check_status_animation {
   0%   { opacity: 0; z-index: 9999; }
-  49%  { opacity: 1; transform: scale(2); z-index: 9999; }
-  99%  { opacity: 0; transform: scale(2); z-index: 9999; }
+  49%  { opacity: 1; transform: scale(0.5); z-index: 9999; }
+  99%  { opacity: 0; transform: scale(0.5); z-index: 9999; }
   100% { opacity: 0; z-index: -9999; }
-}
-
-
-@media (max-width: 549px) {
-  :root {
-    --topbar-height: 40px;
-    --gap: 5px;
-    --button-height: 37px;
-  }
-  /* #learnocaml-exo-tabs {
-   *   top: 50px;
-   * }
-   * #learnocaml-exo-toolbar {
-   *   height: 40px;
-   * }
-   * .logo {
-   *   line-height: 28px;
-   *   font-size: 28px;
-   *   padding: 6px;
-   * }
-   * .logo img {
-   *   vertical-align: -3px;
-   *   height: 26px;
-   * } */
-  .buttons .label {
-    display: none;
-  }
-}
-@media(max-width: 799px) {
-  div.buttons {
-    margin-bottom: 0;
-    height: 37px;
-  }
-  div.pane {
-    height: calc(100% - 47px);
-  }
-}
-@media(max-width: 1599px) {
-  #learnocaml-exo-tabs > div:not(.front-tab) {
-    display: none;
-  }
 }
