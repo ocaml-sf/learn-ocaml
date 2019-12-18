@@ -21,24 +21,25 @@ let split_primitives p =
 
 let setup = lazy (
   Hashtbl.add Toploop.directive_table "enable"
-    (Toploop.Directive_string Option.Optim.enable);
+    (Toploop.Directive_string Config.Flag.enable);
   Hashtbl.add Toploop.directive_table "disable"
-    (Toploop.Directive_string Option.Optim.disable);
+    (Toploop.Directive_string Config.Flag.disable);
   Hashtbl.add Toploop.directive_table "debug_on"
-    (Toploop.Directive_string Option.Debug.enable);
+    (Toploop.Directive_string Debug.enable);
   Hashtbl.add Toploop.directive_table "debug_off"
-    (Toploop.Directive_string Option.Debug.disable);
+    (Toploop.Directive_string Debug.disable);
   Hashtbl.add Toploop.directive_table "tailcall"
-    (Toploop.Directive_string (Option.Param.set "tc"));
+    (Toploop.Directive_string (Config.Param.set "tc"));
   (* Workaround Marshal bug triggered by includemod.ml:607 *)
   Clflags.error_size := 0 ;
   (* Disable inlining of JSOO which may blow the JS stack *)
-  Option.Optim.disable "inline" ;
+  Config.Flag.disable "inline" ;
   Topdirs.dir_directory "/cmis";
   let initial_primitive_count =
     Array.length (split_primitives (Symtable.data_primitive_names ())) in
 
   let compile s =
+    let s = String.concat "" (Array.to_list s) in
     let prims =
       split_primitives (Symtable.data_primitive_names ()) in
     let unbound_primitive p =
@@ -70,11 +71,18 @@ let setup = lazy (
          Format.(pp_print_flush std_formatter ());
          Format.(pp_print_flush err_formatter ());
          flush stdout; flush stderr;
-         res)))
+         res));
+  Js.Unsafe.global##.toplevelReloc := Js.Unsafe.callback (fun name ->
+      let name = Js.to_string name in
+      Js_of_ocaml_compiler.Ocaml_compiler.Symtable.reloc_ident name);
+  ())
 
 let initialize () =
-  Lazy.force setup ;
-  Toploop.initialize_toplevel_env ()
+  Topdirs.dir_directory "/worker_cmis";
+  Lazy.force setup;
+  Toploop.initialize_toplevel_env ();
+  Toploop.input_name := "//toplevel//"
+
 
 type redirection =
   { channel : out_channel ;

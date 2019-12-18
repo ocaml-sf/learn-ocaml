@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Learnocaml_toplevel_worker_messages
 
 let debug = ref false
@@ -34,7 +35,7 @@ let unwrap_result =
 
 module IntMap = Map.Make(struct
     type t = int
-    let compare (x:int) (y:int) = Pervasives.compare x y
+    let compare (x:int) (y:int) = compare x y
   end)
 
 (* Limit the frequency of sent messages to one per ms, using an active
@@ -53,12 +54,14 @@ module IntMap = Map.Make(struct
    does a big computation just after a bufferized write. And it would
    still need some kind of active waiting to limit throughput. All in
    all this spinwait is not that ugly. *)
-let last = ref 0.
-let rec wait () =
-  let now = Sys.time () (* let's hope this yields a bit *) in
-  if now -. !last > 0.001 then
-    last := now
-  else wait ()
+let wait =
+  let last = ref 0. in
+  let rec aux () =
+    let now = Sys.time () (* let's hope this yields a bit *) in
+    if now -. !last > 0.001 then last := now
+    else aux ()
+  in
+  aux
 
 let post_message (m: toploop_msg) =
   wait () ;
@@ -193,11 +196,12 @@ let handler : type a. a host_msg -> a return Lwt.t = function
             Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "unit")) []) in
           { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
             ptyp_loc = Location.none ;
-            ptyp_attributes = [] } in
+            ptyp_attributes = [];
+            ptyp_loc_stack = [] } in
         Typetexp.transl_type_scheme !Toploop.toplevel_env ast in
       Toploop.toplevel_env :=
         Env.add_value
-          (Ident.create name)
+          (Ident.create_local name)
           { Types.
             val_type = ty.Typedtree.ctyp_type;
             val_kind = Types.Val_reg;
@@ -238,16 +242,26 @@ let () =
         post_message (ReturnError (id, res, w));
         Lwt.return_unit
   in
-  let path = "/worker_cmis" in
-  Sys_js.mount ~path
-    (fun ~prefix:_ ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
-       | cmi ->
-           Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
-           Some cmi
-       | exception Not_found -> None) ;
-  Config.load_path := [ path ] ;
-  Toploop_jsoo.initialize ();
+  (* the new toplevel uses directory listings to discover .cmis, so the old
+     approach of using [Sys_js.mount] for subpaths of individual files no longer
+     works: we need to mount everything explicitely. *)
+  let rec rec_mount path = function
+    | OCamlRes.Res.Dir (name, children) ->
+        List.iter (rec_mount (name::path)) children
+    | OCamlRes.Res.File (name, content) ->
+        let name = "/" ^ String.concat "/" (List.rev (name::path)) in
+        Js.Unsafe.set content (Js.string "t") 9 ; (* XXX hack *)
+        Sys_js.create_file ~name ~content
+    | OCamlRes.Res.Error _ -> ()
+  in
+  rec_mount [] (OCamlRes.Res.Dir ("worker_cmis", Embedded_cmis.root));
+  (try Toploop_jsoo.initialize () with
+   | Typetexp.Error (loc, env, error) ->
+       Js_utils.log "FAILED INIT %a at %a"
+         (Typetexp.report_error env) error
+         Location.print_loc loc
+   | e ->
+       Js_utils.log "FAILED INIT %s" (Printexc.to_string e));
   Hashtbl.add Toploop.directive_table
     "debug_worker"
     (Toploop.Directive_bool (fun b -> debug := b));

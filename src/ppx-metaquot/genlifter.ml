@@ -191,7 +191,7 @@ module Main : sig end = struct
   let args =
     let open Arg in
     [
-      "-I", String (fun s -> Config.load_path := Misc.expand_directory Config.standard_library s :: !Config.load_path),
+      "-I", String (fun s -> Load_path.add_dir (Misc.expand_directory Config.standard_library s)),
       "<dir> Add <dir> to the list of include directories";
     ]
 
@@ -199,7 +199,7 @@ module Main : sig end = struct
     Printf.sprintf "%s [options] <type names>\n" Sys.argv.(0)
 
   let main () =
-    Config.load_path := [Config.standard_library];
+    Load_path.init [ Config.standard_library ];
     Arg.parse (Arg.align args) gen usage;
     let meths = !meths in
     let meths =
