@@ -189,17 +189,20 @@ let execute_phrase top ?timeout content =
      reset_with_timeout top ~timeout ());
   ] >>= fun () ->
   t >>= fun result ->
-  let warnings, result = match result with
+  let error, warnings, result = match result with
     | Toploop_results.Ok (result, warnings) ->
-        List.map Toploop_results.to_warning warnings, result
+        None, List.map Toploop_results.to_warning warnings, result
     | Toploop_results.Error (error, warnings) ->
         Learnocaml_toplevel_output.output_error ~phrase top.output
           (Toploop_results.to_error error) ;
-        List.map Toploop_results.to_warning warnings, false in
+        Some (Toploop_results.to_error error),
+        List.map Toploop_results.to_warning warnings,
+        false
+  in
   List.iter
     (Learnocaml_toplevel_output.output_warning ~phrase top.output)
     warnings ;
-  Lwt.return result
+  Lwt.return (error, warnings, result)
 
 let execute top =
   Learnocaml_toplevel_input.execute top.input
@@ -470,7 +473,7 @@ let create
       Lwt.catch
         (fun () -> execute_phrase top code)
         (function
-          | Lwt.Canceled -> Lwt.return true
+          | Lwt.Canceled -> Lwt.return (None, [], true)
           | exn -> Lwt.fail exn )) ;
   let first_time = ref true in
   let after_init top =

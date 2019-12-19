@@ -99,12 +99,12 @@ val make_flood_popup:
     @param timeout
       See {!create}.
     @returns
-      Returns [Success true] whenever the code was correctly
-      typechecked and its evaluation did not raise an exception nor
-      timeouted and [false] otherwise. *)
+      Returns [errors, warnings, success]. [success] is true whenever the code
+      was correctly typechecked and its evaluation did not raise an exception
+      nor timeouted and [false] otherwise. *)
 val execute_phrase: t ->
   ?timeout:(t -> unit Lwt.t) ->
-  string -> bool Lwt.t
+  string -> (Location.report option * Location.report list * bool) Lwt.t
 
 (** Execute a given piece of code without displaying it.
 

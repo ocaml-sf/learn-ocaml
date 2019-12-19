@@ -85,6 +85,30 @@ let editor_placeholder_text =
        the \"Eval code\"\n\
       \   button. *)\n\n"]
 
+let report_in_editor ~set_class editor error warnings =
+  let transl_loc loc =
+    let open Location in
+    let transl_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol) in
+    { Ocaml_mode.
+      loc_start = transl_pos loc.loc_start;
+      loc_end = transl_pos loc.loc_end;
+    }
+  in
+  let transl_rep rep =
+    List.map (fun l ->
+        let loc = transl_loc l.Location.loc in
+        let msg = Format.asprintf "%t" l.Location.txt in
+        { Ocaml_mode.loc; msg })
+      Location.(rep.main::rep.sub)
+  in
+  let error = match error with
+    | None -> None
+    | Some rep -> Some (transl_rep rep)
+  in
+  let warnings =
+    List.map transl_rep warnings in
+  Ocaml_mode.report_error ~set_class editor error warnings
+
 let () =
   log "GO";
   Lwt.async_exception_hook := begin fun e ->
@@ -197,28 +221,7 @@ let () =
       match Toploop_results.to_report res with
       | Ok ((), warnings) -> None, warnings
       | Error (err, warnings) -> Some err, warnings in
-    let transl_loc loc =
-      let open Location in
-      let transl_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol) in
-      { Ocaml_mode.
-        loc_start = transl_pos loc.loc_start;
-        loc_end = transl_pos loc.loc_end;
-      }
-    in
-    let transl_rep rep =
-      List.map (fun l ->
-          let loc = transl_loc l.Location.loc in
-          let msg = Format.asprintf "%t" l.Location.txt in
-          { Ocaml_mode.loc; msg })
-        Location.(rep.main::rep.sub)
-    in
-    let error = match error with
-      | None -> None
-      | Some rep -> Some (transl_rep rep)
-    in
-    let warnings =
-      List.map transl_rep warnings in
-    Ocaml_mode.report_error ~set_class editor error warnings  >>= fun () ->
+    report_in_editor ~set_class editor error warnings >>= fun () ->
     Ace.focus ace ;
     Lwt.return () in
   begin editor_button
@@ -243,7 +246,9 @@ let () =
   begin editor_button
       ~group: toplevel_buttons_group
       ~icon: "run" [%i"Eval code"] @@ fun () ->
-    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace) >>= fun _ ->
+    Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace)
+    >>= fun (error, warnings, _result) ->
+    report_in_editor ~set_class:false editor error warnings >>= fun _ ->
     select_tab Ids.toplevel_pane;
     Lwt.return_unit
   end ;
