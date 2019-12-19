@@ -10,7 +10,7 @@ build-deps:
 build:
 	@${DUNE} build ${DUNE_ARGS}
 
-TRYOCAML_MLDEPS = src/toplevel/learnocaml_toplevel_worker_main.ml src/app/sandbox.ml
+TRYOCAML_MLDEPS = src/toplevel/learnocaml_toplevel_worker_main.ml src/app/tryocaml.ml
 TRYOCAML_JSDEPS = src/ace-lib/ace_bindings.js
 
 .PHONY: tryocaml
@@ -18,7 +18,7 @@ tryocaml: ${TRYOCAML_MLDEPS} ${TRYOCAML_JSDEPS}
 	${DUNE} build ${DUNE_ARGS} $(TRYOCAML_MLDEPS:.ml=.bc.js)
 	mkdir -p www/js
 	cp _build/default/src/toplevel/learnocaml_toplevel_worker_main.bc.js www/js/learnocaml-toplevel-worker.js
-	cp _build/default/src/app/sandbox.bc.js www/js/sandbox.js
+	cp _build/default/src/app/tryocaml.bc.js www/js/tryocaml.js
 	cp -r static/js/ace www/js/
 	cp -r static/fonts www/
 	cp -r static/icons www/

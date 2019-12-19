@@ -63,7 +63,7 @@
 )
 
 (executable
- (name sandbox)
+ (name tryocaml)
  (modes byte)
  (flags :standard -warn-error -9-27-33)
  (libraries ezjsonm
@@ -73,7 +73,7 @@
             learnocaml_toplevel
             js_of_ocaml.ppx
             ocplib_i18n)
- (modules Sandbox)
+ (modules Tryocaml)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml
   (flags :standard +cstruct/cstruct.js --source-map-inline --pretty))
@@ -103,5 +103,5 @@
  (files (learnocaml_index_main.bc.js as www/js/learnocaml-main.js)
         (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
         (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js)
-        (sandbox.bc.js as www/js/sandbox.js))
+        (tryocaml.bc.js as www/js/tryocaml.js))
 )

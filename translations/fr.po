@@ -219,19 +219,19 @@ msgstr ""
 msgid "The toplevel has been reset.\n"
 msgstr "Le toplevel a été redémarré.\n"
 
-#: File "src/app/sandbox.ml", line 61, characters 24-51
+#: File "src/app/tryocaml.ml", line 61, characters 24-51
 msgid "Preparing the environment"
 msgstr "Préparation de l'environnement"
 
-#: File "src/app/sandbox.ml", line 62, characters 44-52 64, 37-45
+#: File "src/app/tryocaml.ml", line 62, characters 44-52 64, 37-45
 msgid "Editor"
 msgstr "Éditeur"
 
-#: File "src/app/sandbox.ml", line 63, characters 46-56
+#: File "src/app/tryocaml.ml", line 63, characters 46-56
 msgid "Toplevel"
 msgstr "Toplevel"
 
-#: File "src/app/sandbox.ml", lines 83-86, characters 6-25
+#: File "src/app/tryocaml.ml", lines 83-86, characters 6-25
 msgid ""
 "(* This is an OCaml editor.\n"
 "   Enter your program here and send it to the toplevel using the \"Eval code"
@@ -244,35 +244,35 @@ msgstr ""
 "   bouton \"Évaluer le code\" ci-dessous. *)\n"
 "\n"
 
-#: File "src/app/sandbox.ml", line 193, characters 26-33 228,
+#: File "src/app/tryocaml.ml", line 193, characters 26-33 228,
 msgid "Clear"
 msgstr "Effacer"
 
-#: File "src/app/sandbox.ml", line 198, characters 25-32
+#: File "src/app/tryocaml.ml", line 198, characters 25-32
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: File "src/app/sandbox.ml", line 204, characters 22-35
+#: File "src/app/tryocaml.ml", line 204, characters 22-35
 msgid "Eval phrase"
 msgstr "Évaluer la phrase"
 
-#: File "src/app/sandbox.ml", line 229, characters 22-34
+#: File "src/app/tryocaml.ml", line 229, characters 22-34
 msgid "CLEAR FILE"
 msgstr "TOUT EFFACER"
 
-#: File "src/app/sandbox.ml", line 230, characters 16-65
+#: File "src/app/tryocaml.ml", line 230, characters 16-65
 msgid "This will discard all your edits. Are you sure?"
 msgstr "Toutes vos modifications seront perdues. Vous êtes sûr·e ?"
 
-#: File "src/app/sandbox.ml", line 235, characters 27-33
+#: File "src/app/tryocaml.ml", line 235, characters 27-33
 msgid "Save"
 msgstr "Sauver"
 
-#: File "src/app/sandbox.ml", line 243, characters 28-35
+#: File "src/app/tryocaml.ml", line 243, characters 28-35
 msgid "Check"
 msgstr "Valider"
 
-#: File "src/app/sandbox.ml", line 248, characters 22-33
+#: File "src/app/tryocaml.ml", line 248, characters 22-33
 msgid "Eval code"
 msgstr "Évaluer le code"
 

@@ -138,7 +138,7 @@ let () =
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
-    | _ -> try arg "id" with Not_found -> "sandbox"
+    | _ -> try arg "id" with Not_found -> "tryocaml"
   in
   Dom_html.document##.title :=
     Js.string ("TryOCaml");
