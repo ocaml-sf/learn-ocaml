@@ -79,7 +79,7 @@ let local_save ace id =
                mtime = gettimeofday () }
 
 
-let editor_placeholder_text =
+let editor_placeholder_text () =
   [%i "(* This is an OCaml editor.\n\
       \   Enter your program here and send it to the toplevel using \
        the \"Eval code\"\n\
@@ -213,7 +213,7 @@ let () =
   Ace.set_contents ace ~reset_undo:true
     (match solution with
      | Some solution -> solution
-     | None -> editor_placeholder_text) ;
+     | None -> editor_placeholder_text ()) ;
   Ace.set_font_size ace 18;
   let typecheck set_class =
     Learnocaml_toplevel.check top (Ace.get_contents ace) >>= fun res ->
