@@ -9,7 +9,7 @@
 open Js_of_ocaml
 open Learnocaml_toplevel_worker_messages
 
-let debug = ref true
+let debug = ref false
 
 let (>>=) = Lwt.bind
 
