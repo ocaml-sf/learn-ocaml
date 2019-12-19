@@ -27,14 +27,14 @@
     --code-meta: #9df39f;
 }
 
-@media (height < 820px) {
+@media (max-height: 819px) {
   :root {
     --topbar-height: 40px;
     --gap: 5px;
     --button-height: 37px;
   }
 }
-@media (height >= 820px) {
+@media (min-height: 820px) {
   :root {
     --topbar-height: 63px;
     --gap: 10px;
@@ -42,38 +42,38 @@
   }
 }
 
-@media(width <= 780px) {
+@media(max-width: 780px) {
   :root {
     --pane-width: 100%;
   }
 }
-@media(width > 780px) {
+@media(min-width: 781px) {
   :root {
     --pane-width: 780px;
   }
 }
-@media(width < 800px) {
+@media(max-width: 799px) {
   :root {
     --bottom-gap: 0px;
   }
 }
-@media(width >= 800px) {
+@media(min-width: 800px) {
   :root {
     --bottom-gap: var(--gap);
   }
 }
 
-@media (width < 550px) {
+@media (max-width: 549px) {
   .buttons .label {
     display: none;
   }
 }
-@media(width < 1600px) {
+@media(max-width: 1599px) {
   #learnocaml-exo-tabs > div:not(.front-tab) {
     display: none;
   }
 }
-@media(width >= 1600px) {
+@media(min-width: 1600px) {
   #learnocaml-exo-toolbar > div.tab-buttons {
     display: none;
   }
