@@ -39,7 +39,7 @@
           Learnocaml_index_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml
-  (flags :standard +cstruct/cstruct.js --pretty --sourcemap-inline)
+  (flags :standard +cstruct/cstruct.js)
   (javascript_files ../ace-lib/ace_bindings.js))
 )
 
@@ -76,7 +76,7 @@
  (modules Tryocaml)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
  (js_of_ocaml
-  (flags :standard +cstruct/cstruct.js --source-map-inline --pretty))
+  (flags :standard +cstruct/cstruct.js))
 )
 
 (executable

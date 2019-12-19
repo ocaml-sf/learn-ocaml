@@ -24,7 +24,7 @@
  (modules Learnocaml_toplevel_worker_main)
  (preprocess (pps js_of_ocaml.ppx))
  (js_of_ocaml (flags :standard +dynlink.js +toplevel.js
-                     --toplevel --nocmis --pretty --no-sourcemap))
+                     --toplevel --nocmis --no-sourcemap))
 )
 
 (library
