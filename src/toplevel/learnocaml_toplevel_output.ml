@@ -329,7 +329,14 @@ let output_error ?phrase output error =
   end ;
   insert output ?phrase (Error (error, pre)) pre
 
+let noloc_report_printer =
+  let pp_loc = fun _self _report _ppf _loc -> () in
+  { Location.batch_mode_printer with
+    Location.pp_main_loc = pp_loc;
+    Location.pp_submsg_loc = pp_loc }
+
 let output_warning ?phrase output warning =
+  Location.report_printer := (fun () -> noloc_report_printer);
   (* let { Toploop_results.locs ; msg ; if_highlight } = warning in *)
   let locs =
     List.map (fun m -> m.Location.loc)
@@ -351,7 +358,7 @@ let output_warning ?phrase output warning =
         Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-warning" ] ]
                           [ span ~a: [ a_class [ "ref" ] ]
                               [ txt (string_of_int phrase.warnings) ] ;
-                            txt ":" ;
+                            txt " " ;
                             txt msg ]) in
       insert output ~phrase (Warning (phrase.warnings, warning, pre)) pre
 
