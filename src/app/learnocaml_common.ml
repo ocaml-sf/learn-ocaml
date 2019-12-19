@@ -894,6 +894,7 @@ module Editor_button (E : Editor_info) = struct
   let eval top select_tab =
     editor_button
       ~icon: "run" [%i"Eval code"] @@ fun () ->
+      Learnocaml_toplevel.reset top >>= fun () ->
       Learnocaml_toplevel.execute_phrase top (Ace.get_contents E.ace) >>= fun _ ->
       select_tab "toplevel";
       Lwt.return_unit
