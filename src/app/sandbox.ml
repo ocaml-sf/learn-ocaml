@@ -27,12 +27,24 @@ module H = Tyxml_js.Html
 module Ids = struct
   let editor_pane = "learnocaml-exo-tab-editor"
   let toplevel_pane = "learnocaml-exo-tab-toplevel"
+  let editor_switch = editor_pane ^ "-trigger"
+  let toplevel_switch = toplevel_pane ^ "-trigger"
 end
 
-let tabs = [ Ids.editor_pane; Ids.toplevel_pane ]
-
 let select_tab id =
-  Manip.focus (find_component id)
+  List.iter (fun tab ->
+      if Js.to_string (Tyxml_js.To_dom.of_element tab)##.id = id then
+        (Manip.addClass tab "front-tab";
+         Manip.focus tab)
+      else Manip.removeClass tab "front-tab")
+    (Manip.by_classname "learnocaml-tab");
+  let trigger_id = id ^ "-trigger" in
+  List.iter (fun tab ->
+      if Js.to_string (Tyxml_js.To_dom.of_element tab)##.id = trigger_id then
+        (Manip.addClass tab "front-tab";
+         Manip.focus tab)
+      else Manip.removeClass tab "front-tab")
+    (Manip.by_classname "learnocaml-tab-trigger")
 
 let display_list ?(sep=Tyxml_js.Html5.txt ", ") l =
   let open Tyxml_js.Html5 in
@@ -47,8 +59,8 @@ let display_list ?(sep=Tyxml_js.Html5.txt ", ") l =
 let set_string_translations () =
   let translations = [
     "txt_preparing", [%i"Preparing the environment"];
-    (* "learnocaml-exo-button-editor", [%i"Editor"];
-     * "learnocaml-exo-button-toplevel", [%i"Toplevel"]; *)
+    "learnocaml-exo-tab-editor-trigger", [%i"Editor"];
+    "learnocaml-exo-tab-toplevel-trigger", [%i"Toplevel"];
     "learnocaml-exo-editor-pane", [%i"Editor"];
   ] in
   List.iter
@@ -68,9 +80,10 @@ let local_save ace id =
 
 
 let editor_placeholder_text =
-  [%i "(* This is an OCaml editor. Enter your program here and send it to the \
-       toplevel \n\
-      \   using the \"Eval code\" button. *)\n\n"]
+  [%i "(* This is an OCaml editor.\n\
+      \   Enter your program here and send it to the toplevel using \
+       the \"Eval code\"\n\
+      \   button. *)\n\n"]
 
 let () =
   log "GO";
@@ -137,6 +150,12 @@ let () =
       ~container:(find_component "learnocaml-exo-toplevel-pane")
       ~history () in
   log "init_tabs";
+  let () =
+    Manip.Ev.onclick (find_component Ids.editor_switch)
+      (fun _ -> select_tab Ids.editor_pane; true);
+    Manip.Ev.onclick (find_component Ids.toplevel_switch)
+      (fun _ -> select_tab Ids.toplevel_pane; true);
+  in
   log "toplevel launch";
   toplevel_launch >>= fun top ->
   let solution =
@@ -210,7 +229,7 @@ let () =
     Lwt.return ()
   end ;
   begin editor_button
-      ~icon: "download" [%i"Download"] @@ fun () ->
+      ~icon: "download" [%i"Save"] @@ fun () ->
     let name = id ^ ".ml" in
     let contents = Js.string (Ace.get_contents ace) in
     Learnocaml_common.fake_download ~name ~contents ;
