@@ -1177,8 +1177,8 @@ module Display_exercise =
       let authors =
         match ex_meta.Meta.author with
         | [] -> None
-        | [author] -> Some (display_authors [%i "Author"] [author])
-        | authors -> Some (display_authors [%i "Authors"] authors) in
+        | [author] -> Some (display_authors [%i "Author:"] [author])
+        | authors -> Some (display_authors [%i "Authors:"] authors) in
       retrieve (Learnocaml_api.Exercise_index token)
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in
