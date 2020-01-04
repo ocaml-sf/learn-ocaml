@@ -5,11 +5,11 @@
 ## Different grading functions for functions
 There are 2 main grading functions:
 
-* `grade_function_<nb_args>_againt_solution`: the usual. Test the
+* `test_function_<nb_args>_againt_solution`: the usual. Test the
   student code against a given solution written in the `solution.ml`
   file.
 
-* `grade_function_<nb_args>`: compare the student code to a series of
+* `test_function_<nb_args>`: compare the student code to a series of
   tests where both inputs and expected outputs are given. Note that
   you still need to write a solution in `solution.ml` to build your
   exercise session since `learn-ocaml build` tests your grader with
@@ -33,14 +33,14 @@ ones:
   errors. The function `~test_stderr` is used to build this report.
   By default, `~test_stderr` is set to ignore standard error and
   returns an empty report.
-  
+
 - report resulting of the result of function `~after` and returns an
-  empty report by default. 
-  
-## `grade_function_<nb_args>_against_solution`
+  empty report by default.
+
+## `test_function_<nb_args>_against_solution`
 ### Signature for unary function
 ```ocaml
-  val grade_function_1_against_solution :
+  val test_function_1_against_solution :
 	?gen: int ->
 	?test: 'b tester ->
 	?test_stdout: io_tester ->
@@ -53,7 +53,7 @@ ones:
 ```
 
 ### Mandatory arguments
-[`grade_function_1_againt_solution_1 ty name tests`]:
+[`test_function_1_againt_solution_1 ty name tests`]:
 
 * `ty`: type of the tested function specified for the given tests. It
   must not contain type variables (i.e. `'a`, `'b` etc..), match the
@@ -64,12 +64,12 @@ ones:
 
 * `tests`: list of tested inputs.
 
-## `grade_function_<nb_args>`
+## `test_function_<nb_args>`
 
 ### Signature of grading function for unary function
 
 ```ocaml
-  val grade_function_1 :
+  val test_function_1 :
 	?test: 'b tester ->
 	?test_stdout: io_tester ->
 	?test_stderr: io_tester ->
@@ -78,8 +78,8 @@ ones:
 	('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.item
 ```
 
-### Mandatory arguments 
-[`grade_function_1 ty name tests`]:
+### Mandatory arguments
+[`test_function_1 ty name tests`]:
 
 * `ty`: type of the tested function specified for the given tests. It
   must not contain type variables (i.e. `'a`, `'b` etc..), match the
@@ -140,7 +140,7 @@ ones:
   evaluation. See WIP for more information.
 
 * `before`: same as `before_reference` for
-  `grade_function_<nb_args>`. Since no solution is evaluated, there is
+  `test_function_<nb_args>`. Since no solution is evaluated, there is
   no need to distinguish between before or after solution evaluation.
 
 ## Examples
@@ -148,24 +148,24 @@ ones:
 Note: only trivial examples can be found here. For more advanced
 examples, see the corresponding tutorials.
 
-### Identity 
+### Identity
 
-This is a classical example of an unary function, with a user-defined sampler. 
+This is a classical example of an unary function, with a user-defined sampler.
 
 ```ocaml
 let exercise_1 =
-	grade_function_1_against_solution
+	test_function_1_against_solution
 	[%ty: int -> int]
 	"identity"
 	~gen:10
 	~sampler:(fun () -> Random.int 42)
 	[0 ; 42]
 ```
-With `grade_function_1`: 
+With `test_function_1`:
 ```ocaml
-let exercise_2 = 
-	grade_function_1 
-		[%ty: int -> int] 
+let exercise_2 =
+	test_function_1
+		[%ty: int -> int]
 		"identity"
 		[0, 0, "", "" ;
 		42, 42, "", ""]  (* List of tests *)
@@ -186,7 +186,7 @@ different from the solution ones without causing a failure).
 
 ```ocaml
 let exercise_2 =
-	grade_function_1_against_solution
+	test_function_1_against_solution
 		[%ty: unit -> unit]
 		~test:test_ignore
 		~test_stdout:io_test_equals
@@ -196,8 +196,8 @@ let exercise_2 =
 ```
 
 ```ocaml
-let exercise_4 = 
-	grade_function_1 
+let exercise_4 =
+	test_function_1
 	[%ty: unit -> unit]
 	~test:test_ignore
 	~test_stdout:io_test_equals
