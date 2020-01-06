@@ -71,7 +71,7 @@ let with_git_register =
        git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
     f >>= fun files ->
     git ("add"::"--"::files) () >>=
-    git ["commit";"-m";"Update"] >>=
+    git ["commit";"--allow-empty";"-m";"Update"] >>=
     git ["update-server-info"]
 
 let write ?(no_create=false) file ?(extra=[]) contents =
