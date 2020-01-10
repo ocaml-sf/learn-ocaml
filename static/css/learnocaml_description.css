@@ -1,0 +1,228 @@
+body {
+    margin: 0;
+    padding: 0;
+    /* box-sizing: content-box; */
+    background: #eee;
+}
+
+#learnocaml-exo-toolbar {
+    height: 60px;
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    color: #fff;
+    z-index: 1004;
+    border-bottom: 1px #eee solid;
+    display: flex;
+    background: #222;
+}
+
+#learnocaml-exo-toolbar::before {
+    top: 61px;
+    z-index: 1004;
+    position: absolute;
+    left: 0px; height: 5px; width: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0) 5px);
+    content:"";
+}
+
+/* -------------------- text tab ---------------------------------- */
+#learnocaml-exo-tab-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#learnocaml-exo-tabs > * > h1 {
+  flex: 0 0 auto;
+  background: #222;
+  color: #eee;
+  font-size: 20px;
+  line-height: 22px;
+  margin: 0;
+  padding: 10px;
+  display: block;
+  font-weight: normal;
+  position: relative;
+}
+#learnocaml-exo-tabs > * > h1:first-child {
+  margin-top: 5px;
+}
+#learnocaml-exo-tabs > *  > iframe {
+  border: none;
+  overflow: auto;
+  flex: 1 3 auto ;
+}
+#learnocaml-exo-tab-meta > h1::after {
+  position: absolute;
+  left: 0px; bottom: -5px; width: 100%;
+  content:"";
+  height:5px; background: pink;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
+}
+
+/* BEGIN excerpt from learnocaml_exercise.css */
+
+.learnocaml-exo-meta-category ~ .exercise + .exercise {
+  border-top: 1px #333 solid;
+}
+.learnocaml-exo-meta-category > .exercise {
+  position: relative;
+  background: linear-gradient(to top, #aaa 0px, #eee 10px, #ddd 100%);
+  color: black;
+  text-decoration: none;
+}
+.learnocaml-exo-meta-category ~ .exercise:hover::after {
+  position: absolute;
+  background: #acf;
+  opacity: 0.3;
+  z-index: 1010;
+  left:0; right:0; bottom:0; top:0;
+  content:"";
+}
+.learnocaml-exo-meta-category ~ .exercise > .descr {
+  padding: 10px;
+  flex: 1 1 auto;
+}
+.learnocaml-exo-meta-category ~ .exercise > .descr > h1 {
+  margin: 0 0 10px 0; padding: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+.learnocaml-exo-meta-category ~ .exercise > .descr > p {
+  margin: 10px 0 0 0; padding: 0;
+  text-align: justify;
+}
+.learnocaml-exo-meta-category > .pack {
+  padding: 10px;
+  margin: 0;
+  background: #222;
+  color: #eee;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 26px;
+}
+
+/* END excerpt from learnocaml_exercise.css */
+/* begin custom */
+
+#learnocaml-exo-tab-meta p {
+    padding: 5px 10px 5px 10px;
+}
+
+.learnocaml-exo-meta-category {
+    margin: 0px 0px;
+    padding: 10px;
+}
+
+.learnocaml-exo-meta-category-title {
+    margin: 0px 0px;
+    padding: 10px;
+    /* font-size: 20px; */
+    /* line-height: 26px; */
+    /* background: #ddd; */
+    /* font-weight: normal; */
+}
+
+/* -------------------- tabs and tab buttons ---------------------- */
+#learnocaml-exo-tab-buttons {
+    position: absolute;
+    top: 61px;
+    z-index: 999;
+    display: flex;
+    height: 40px;
+}
+#learnocaml-exo-tab-buttons > button {
+    flex: 1;
+    padding: 0;
+    border: none;
+    color: #333;
+    background: #eee;
+    position: relative;
+    z-index: 1000;
+}
+#learnocaml-exo-tab-buttons > button:not(:first-child) {
+    border-left: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled]) {
+    border-bottom: 1px #333 solid;
+}
+#learnocaml-exo-tab-buttons > button[disabled]::before {
+    display: none;
+}
+#learnocaml-exo-tab-buttons > button:not([disabled])::after {
+    position: absolute;
+    left:0; right:0; bottom:0; top:0;
+    content:"";
+    z-index: 1009;
+    background: linear-gradient(to top, rgba(0,0,0,0.4) 0, transparent 5px);
+}
+#learnocaml-exo-tabs > * {
+    position: absolute;
+    z-index: 997;
+    background: #eee;
+    padding: 0;
+    opacity: 0;
+}
+#learnocaml-exo-tabs > *.front-tab {
+    z-index: 998;
+    opacity: 1;
+}
+
+/* -------------------- FULLPAGE MODE -------------------------- */
+@media (min-width: 1200px) {
+    #learnocaml-exo-tab-buttons {
+	display: none;
+    }
+
+    #learnocaml-exo-tabs {
+	position: absolute;
+	left: 0; top: 60px; right: 0; bottom: 0;
+	display: flex;
+	flex-direction: row;
+	overflow-x: hidden;
+    }
+
+    #learnocaml-exo-tabs > * {
+	z-index: 998;
+	opacity: 1;
+	overflow: hidden;
+    }
+
+    #learnocaml-exo-tab-text {
+	position: relative;
+	flex-grow: 4;
+	border-right: #222 2px solid;
+	overflow-y: auto;
+    }   
+    #learnocaml-exo-tab-meta {
+	position: relative;
+	flex-grow: 1;
+	opacity: 1;
+	z-index: 1000;
+	overflow-y: auto;
+    }
+    #learnocaml-exo-tab-meta-sep {
+    	position: sticky;
+    	top: -60px; bottom: 0; width: 5px;
+	z-index: 1000;
+    	background: linear-gradient(to right, #fff 0px, #fff 1px, rgba(0,0,0,0.6) 1px, rgba(0,0,0,0) 5px);
+    	content:"";
+    }
+}
+
+/* -------------------- TOOLBAR MODE --------------------------- */
+@media (max-width: 1199px) {
+    #learnocaml-exo-tab-buttons {
+	left: 0; right: 0;
+    }
+
+    #learnocaml-exo-tabs {
+	position: absolute;
+	left: 0; top: 100px; right: 0; bottom: 0;
+	overflow-x: hidden;
+    }
+
+    #learnocaml-exo-tabs > * {
+	left: 0; top: 0; right: 0; bottom: 0;
+    }
+}
