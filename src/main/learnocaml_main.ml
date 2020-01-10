@@ -269,17 +269,13 @@ let main o =
        Random.self_init ();
        Lwt.catch
          (fun () ->
-           Learnocaml_store.get_from_file ServerData.enc_init server_config
-           >|= fun pre_config ->
-           match pre_config.ServerData.secret with
-             | None -> None
-             | Some x -> Some (Sha.sha512 x))
+           Learnocaml_store.get_from_file ServerData.preconfig_enc server_config)
          (function 
-           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return None
+           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return ServerData.empty_preconfig
            | exn -> Lwt.fail exn) 
-       >>= fun secret ->
-         let json_config = ServerData.default ?secret () in
-         Learnocaml_store.write_to_file ServerData.enc json_config www_server_config
+       >>= fun preconfig ->
+         let json_config = ServerData.build_config preconfig in
+         Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
