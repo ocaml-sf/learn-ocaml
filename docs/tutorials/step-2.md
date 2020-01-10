@@ -25,7 +25,7 @@ open Test_lib
 open Report
 
 let exercise_1 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
     [%ty: int -> int] (* Type of the tested function *)
     "identity"        (* Identifier of the tested function *)
     ~gen:0            (* Number of automatically generated tests *)
@@ -37,12 +37,12 @@ let () =
   [exercise_1]
 ```
 
-The function `Test_lib.grade_function_1_against_solution` is the key
+The function `Test_lib.test_function_1_against_solution` is the key
 here. Let us take a moment to understand how it is called:
 
 - The argument `[%ty: int -> int]` is written in a PPX extension of
   OCaml: it reifies the type `int -> int` as a first-class value. With
-  that information in its hands, `grade_function_1_against_solution`
+  that information in its hands, `test_function_1_against_solution`
   can check that the student has written a function of the right type.
 
 - The string `"identity"` is the identifier of the function to be tested.
@@ -56,7 +56,7 @@ here. Let us take a moment to understand how it is called:
 
 This function also determines the text written in the header of the
 corresponding report. For a function called `my_function`, it will be
-"Function: my_function". 
+"Function: my_function".
 
 ## Do it yourself!
 
@@ -77,7 +77,7 @@ corresponding report. For a function called `my_function`, it will be
 
 8. Grade your answer and observe the effect of the previous
    change. This is the topic of the next step of this tutorial!
-   
+
 
 ## Want to learn more about grading function ?
 The next steps will bring you progressively to understand most of the
@@ -85,33 +85,33 @@ possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
 5](../tutorials/step-5)
 where you will:
-* find the signature of `grade_function_1_against_solution`
+* find the signature of `test_function_1_against_solution`
 * learn a new grading function for functions
 * learn how to change the header report
 * have a quick resumé of the utility of each optional arguments with a
 link to the right tutorial.
 
-## Multiple arguments 
+## Multiple arguments
 To grade a function with multiple arguments you simply need to use the
 corresponding grading function which follows this pattern :
-`Test_lib.grade_function_<function arity>_against_solution` and give
-the inputs as n-uplets: 
+`Test_lib.test_function_<function arity>_against_solution` and give
+the inputs as n-uplets:
 
 ```ocaml
 open Test_lib
 open Report
 
 let exercise_1 =
-	grade_function_2_against_solution
+	test_function_2_against_solution
 		[%ty: int -> int -> int] "op"
-		~gen:5 
+		~gen:5
 		[ (1,2) ; (0,1) ]
 
 let () =
   set_result @@
   ast_sanity_check code_ast @@ fun () ->
   [ exercise_1 ]
-	
+
 ```
 
 
@@ -132,15 +132,15 @@ open Report
 
 let exercise_1 =
     Section ([ Text "Function: "; Code "identity" ; Text " with multiple tested input types." ],
-             [ grade_function_1_against_solution
+             [ test_function_1_against_solution
                [%ty: int -> int] (* [identity] tested with integer *)
                "identity"
                ~gen:0 [1 ; 2];
-               grade_function_1_against_solution
+               test_function_1_against_solution
                  [%ty: char -> char] (* [identity] tested with char *)
                  "identity"
                  ~gen:0 ['c' ; 'a'];
-               grade_function_1_against_solution
+               test_function_1_against_solution
                  [%ty: float -> float] (* [identity] tested with float *)
                  "identity"
                  ~gen:0 [1.1 ; 2.4]]
