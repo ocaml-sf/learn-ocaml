@@ -142,6 +142,7 @@
 )
 
 (install
+ (package learn-ocaml)
  (section share)
  (files (learnocaml_index_main.bc.js as www/js/learnocaml-main.js)
         (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
