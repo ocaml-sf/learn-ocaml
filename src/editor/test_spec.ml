@@ -17,63 +17,7 @@ let rec to_string_aux char_list =match char_list with
   | []-> ""
   | c::l -> (string_of_char c) ^ ( to_string_aux l)
 
-(* FIXME: it seems "str" always starts (and sometimes ends) with a space.
-   This should be fix so that the space comes from [to_ty] itself. *)
-let to_ty str = "[%ty:" ^ str ^ "]"
-
-let rec decompositionSol str n =
-  if str = "" then []
-  else if n + 1 = String.length str then [(str.[n])]
-  else (str.[n])::(decompositionSol str (n+1))
-
-let parse_type string =
-  let char_list_ref = ref (List.rev (decompositionSol string 0)) in
-  let para_cpt =ref 0 in
-  let esp_cpt= ref 0 in
-  (* reverse char_list before using it *)
-  let rec last_arg char_list acc =
-    match char_list with
-      []->char_list_ref:=[];acc
-    |elt :: l ->
-        if elt = ')' then
-          incr para_cpt;
-        if elt ='(' then
-          decr para_cpt;
-        if elt='>' && !para_cpt=0 then
-          match l with
-            '-'::l2 -> char_list_ref:=l2;acc
-          |_ -> failwith "toto"
-        else
-          begin
-            if !esp_cpt=0 && elt=' ' then
-              begin
-                esp_cpt:=1;
-                last_arg l ( elt::acc )
-              end
-            else
-              begin
-                if elt<>' ' then
-                  begin
-                    esp_cpt:=0;
-                    last_arg l (elt::acc)
-                  end
-                else
-                  last_arg l acc
-              end
-          end in
-  let init_acc () =
-    let arg1=last_arg (!char_list_ref ) [] in
-    let arg2=last_arg (!char_list_ref)  [] in
-    let ty1=to_ty (to_string_aux arg1) in
-    let ty2=to_ty (to_string_aux arg2) in
-    "last_ty "^ty2^" "^ty1 in
-  let acc =ref (init_acc ()) in
-  while !char_list_ref <>[] do
-    let arg=last_arg (!char_list_ref) [] in
-    let ty= to_ty (to_string_aux arg) in
-    acc:="arg_ty "^ty^" ("^(!acc)^")" ;
-  done;
-  !acc;;
+let to_funty str = "[%funty: " ^ str ^ "]"
 
 (* The tester arg could take into account exceptions/sorted lists/etc. *)
 let question_typed ?num question =
@@ -93,7 +37,7 @@ let question_typed ?num question =
      ^ "(TestAgainstSpec not currently supported by the learn-ocaml runtime) *)"
   | TestSuite a ->
      let name, prot, tester, suite =
-       a.name, parse_type a.ty, opt_string "test" a.tester, a.suite in
+       a.name, to_funty a.ty, opt_string "test" a.tester, a.suite in
      (* Naming convention: [q_name], [q_name_1; q_name_2] (occurrence 1/3) *)
      Format.sprintf "let q_%s%s =@.  \
                      let prot = %s in@.  \
@@ -103,7 +47,7 @@ let question_typed ?num question =
        name suffix prot tester name suite
   | TestAgainstSol a ->
      let name = a.name
-     and prot = parse_type a.ty
+     and prot = to_funty a.ty
      and gen = a.gen
      and sampler = opt_string "sampler" (sampler_args a.sampler)
      and tester = opt_string "test" a.tester
