@@ -39,7 +39,7 @@ obviously the default value of optional argument [~test].
 
 ```ocaml
 let exercise_1 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: int -> tri] "convert"
 	~gen:0
 	~test:test (* optional since [test] is the default value of [~test] *)
@@ -58,7 +58,7 @@ let sample_tri () = match Random.int 3 with
   | _ -> Two
 
 let exercise_2 =
-  grade_function_2_against_solution
+  test_function_2_against_solution
 	[%ty: tri -> tri -> tri] "-"
 	~gen:9
 	~test:(test_eq_exn
@@ -75,7 +75,7 @@ function.
 
 ```ocaml
 let exercise_3 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: int list -> tri list] "convert_list"
 	~gen:5
 	~sampler:(sample_list (fun () -> Random.int 3))
@@ -126,7 +126,7 @@ end of the compared strings using the optional argument `~trim`.
 
 ```ocaml
 let exercise_1 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: tri -> unit]
 	"print_tri"
 	~gen:0
@@ -143,7 +143,7 @@ strings.
 
 ```ocaml
 let exercise_2 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: tri list-> unit]
 	"print_tri_list"
 	~gen:3
@@ -153,7 +153,7 @@ let exercise_2 =
 	[]
 
 let exercise_3 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: tri list list-> unit]
 	"print_tri_list_list"
 	~gen:4
@@ -175,7 +175,7 @@ integer. We want the integer to be between 0 and 10.
 let p x = if x >= 0 && x < 10 then true else false
 
 let exercise_1 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: unit -> int] "rand_int"
 	~gen:10
 	~test:(test_eq_ok (fun x _ -> p x))
@@ -197,7 +197,7 @@ let p_list l =
   else false
 
 let exercise_2 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
 	[%ty: int -> int list] "rand_list"
 	~gen:0
 	~test:(test_eq_ok (fun x _ -> p_list x))

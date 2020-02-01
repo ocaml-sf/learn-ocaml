@@ -29,7 +29,7 @@ let exercise_0 =
 
 #### More classical example with `grade_variable_against_solution`
 `grade_variable_against_solution` is more versatile and works
-basically like `grade_function_against_solution`.
+basically like `test_function_against_solution`.
 ```ocaml
 let exercise_1 =
   grade_variable_against_solution [%ty: float] "norm"

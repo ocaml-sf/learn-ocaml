@@ -222,6 +222,61 @@ val set_nickname_div : unit -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
 
+val get_token : unit -> Learnocaml_data.student Learnocaml_data.token Lwt.t
+
+module Display_exercise :functor
+  (Q : sig
+         val exercise_link :
+           ?cl:string list ->
+           string ->
+           'a Tyxml_js.Html.elt list ->
+           [> 'a Html_types.a ] Tyxml_js.Html.elt
+       end) ->
+  sig
+    val display_descr :
+      Learnocaml_data.Exercise.Meta.t ->
+      [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_stars :
+      Learnocaml_data.Exercise.Meta.t ->
+      [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_kind :
+      Learnocaml_data.Exercise.Meta.t ->
+      [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_exercise_meta :
+      string -> Learnocaml_data.Exercise.Meta.t -> string -> unit Lwt.t
+    val display_list :
+      ?sep:([> Html_types.pcdata ] as 'a) Tyxml_js.Html5.elt ->
+      'a Tyxml_js.Html5.elt list -> 'a Tyxml_js.Html5.elt list
+    val get_skill_index :
+      'a Learnocaml_data.token ->
+      [< `Focus of Learnocaml_data.SMap.key
+       | `Requirements of Learnocaml_data.SMap.key ] ->
+      Learnocaml_data.SSet.elt list Lwt.t
+    val display_skill_meta :
+      'a -> string Tyxml_js.Html5.wrap list -> string -> unit Lwt.t
+    val display_link :
+      (string -> 'a) ->
+      string ->
+      string Tyxml_js.Html5.wrap -> [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_skill_link :
+      string Tyxml_js.Html5.wrap list ->
+      string ->
+      [< `Focus of string Tyxml_js.Html5.wrap
+       | `Requirements of string Tyxml_js.Html5.wrap ] ->
+      [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_exercise_link :
+      string ->
+      Learnocaml_data.Exercise.Meta.t ->
+      string Tyxml_js.Html5.wrap -> [> Html_types.div ] Tyxml_js.Html5.elt
+    val display_authors :
+      string ->
+      (string Tyxml_js.Html5.wrap * string Tyxml_js.Html5.wrap) list ->
+      [> `PCDATA | `Span ] Tyxml_js.Html5.elt list
+    val display_meta :
+      'a Learnocaml_data.token ->
+      Learnocaml_data.Exercise.Meta.t -> string -> unit Lwt.t
+  end
+
 module Grade_exercise : sig
   val get_grade :
     ?callback:(string -> unit) ->
@@ -231,4 +286,3 @@ module Grade_exercise : sig
   val display_report :
     Learnocaml_exercise.t -> Learnocaml_data.Report.t -> int
 end
-  

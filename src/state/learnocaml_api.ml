@@ -339,6 +339,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
+      | `GET, ("description"::path), _token ->
+         (* match token with
+          | None -> Invalid_request "Missing token" |> k *)
+          Static ["description.html"] |> k
       | `GET, ("playground"::path), _token ->
          begin
            match last path with
@@ -390,6 +394,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         | ["exercise.html"]
         | ["playground.html"]
         | ["student-view.html"]
+        | ["description.html"]
         | ["new_exercise.html"]
         | ["editor.html"]
         | ["partition-view.html"]
@@ -400,7 +405,6 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["favicon.ico"], _ ->
           Static ["icons"; "favicon.ico"] |> k
 
-          
       | meth, path, _ ->
           Invalid_request
             (Printf.sprintf "%s /%s%s"

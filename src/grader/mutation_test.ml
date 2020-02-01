@@ -57,10 +57,9 @@ module Make (Test_lib: Test_lib.S) : S = struct
     | Pass -> false
     | _ -> true
 
-  let typed_printer ty =
-    let typed_printer ppf v = Introspection.print_value ppf v ty in
-    Format.asprintf "%a" typed_printer
-  let string_of_exn = typed_printer [%ty: exn]
+  let typed_printer ty ppf v = Introspection.print_value ppf v ty
+  let print_with ty = Format.asprintf "%a" (typed_printer ty)
+  let string_of_exn = print_with [%ty: exn]
 
   let test_against_mutant ~compare (name, points, mut) num tests =
     let result = List.exists (run_test_against_mutant ~compare mut) tests in
@@ -222,8 +221,10 @@ module Make (Test_lib: Test_lib.S) : S = struct
     let (domain, range) = Ty.domains ty in
     let test_ty = Ty.lst (Ty.pair2 domain range) in
     let in_printer = typed_printer domain in
-    let printer input = name ^ " " ^ (in_printer input) in
-    let out_printer = typed_printer range in
+    let printer input =
+      Format.asprintf "@[<hv 2>%s@ %a@]" name in_printer input
+    in
+    let out_printer = print_with range in
     let soln = process_lookup (fun x -> x) lookup_solution ty name in
     let stud =
       if test_student_soln then
@@ -242,9 +243,10 @@ module Make (Test_lib: Test_lib.S) : S = struct
     let in1_printer = typed_printer dom1 in
     let in2_printer = typed_printer dom2 in
     let printer (in1, in2) =
-      name ^ " " ^ (in1_printer in1) ^ " " ^ (in2_printer in2)
+      Format.asprintf "@[<hv 2>%s@ %a@ %a@]"
+        name in1_printer in1 in2_printer in2
     in
-    let out_printer = typed_printer range in
+    let out_printer = print_with range in
     let muts = List.map (map_third uncurry2) muts in
     let soln = process_lookup uncurry2 lookup_solution ty name in
     let stud =
@@ -270,11 +272,10 @@ module Make (Test_lib: Test_lib.S) : S = struct
     let in2_printer = typed_printer dom2 in
     let in3_printer = typed_printer dom3 in
     let printer (in1, in2, in3) =
-      name ^ " " ^ (in1_printer in1)
-      ^ " " ^ (in2_printer in2)
-      ^ " " ^ (in3_printer in3)
+      Format.asprintf "@[<hv 2>%s@ %a@ %a@ %a@]"
+        name in1_printer in1 in2_printer in2 in3_printer in3
     in
-    let out_printer = typed_printer range in
+    let out_printer = print_with range in
     let muts = List.map (map_third uncurry3) muts in
     let soln = process_lookup uncurry3 lookup_solution ty name in
     let stud =
@@ -302,12 +303,10 @@ module Make (Test_lib: Test_lib.S) : S = struct
     let in3_printer = typed_printer dom3 in
     let in4_printer = typed_printer dom4 in
     let printer (in1, in2, in3, in4) =
-      name ^ " " ^ (in1_printer in1)
-      ^ " " ^ (in2_printer in2)
-      ^ " " ^ (in3_printer in3)
-      ^ " " ^ (in4_printer in4)
+      Format.asprintf "@[<hv 2>%s@ %a@ %a@ %a@ %a@]"
+        name in1_printer in1 in2_printer in2 in3_printer in3 in4_printer in4
     in
-    let out_printer = typed_printer range in
+    let out_printer = print_with range in
     let muts = List.map (map_third uncurry4) muts in
     let soln = process_lookup uncurry4 lookup_solution ty name in
     let stud =

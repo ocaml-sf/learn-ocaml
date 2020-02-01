@@ -970,8 +970,256 @@ let setup_prelude_pane ace prelude =
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
 
+let get_token () =
+  try
+    Learnocaml_local_storage.(retrieve sync_token) |>
+      Lwt.return
+  with Not_found ->
+    retrieve (Learnocaml_api.Nonce ())
+    >>= fun nonce ->
+    ask_string ~title:"Secret"
+      [H.pcdata [%i"Enter the secret"]]
+    >>= fun secret ->
+    retrieve
+      (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
+    >|= fun token ->
+    Learnocaml_local_storage.(store sync_token) token;
+    token
+
+module Display_exercise =
+  functor (
+    Q: sig
+      val exercise_link: ?cl:string list ->
+                         string -> 'a Tyxml_js.Html.elt list -> [> 'a Html_types.a ] Tyxml_js.Html.elt
+    end) ->
+  struct
+    open Q
+    let display_descr ex_meta =
+      let open Tyxml_js.Html5 in
+      let open Learnocaml_data.Exercise in
+      match ex_meta.Meta.short_description with
+      | None -> div ~a:[ a_class [ "descr" ] ] []
+      | Some descr ->
+         div ~a:[ a_class [ "descr" ] ] [
+             h2 ~a:[ a_class [ "learnocaml-exo-meta-category" ] ]
+               [ pcdata ex_meta.Meta.title ] ;
+             p [ pcdata descr ]
+           ]
+
+    let display_stars ex_meta =
+      let open Tyxml_js.Html5 in
+      let open Learnocaml_data.Exercise in
+      let stars =
+        let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
+        let num = max (min num 40) 0 in
+        let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
+        let src = Format.asprintf "/icons/stars_%02d.svg" num in
+        img ~alt ~src ()
+      in
+      div ~a:[ a_class [ "stars" ] ] [
+          p [
+              pcdata [%i "Difficulty:"] ;
+              pcdata " "; (* Put no whitespace in translation strings
+                             (the colon is mandatory, though, given
+                             the conventions are different in English
+                             and French, for example). *)
+              stars
+            ]
+        ]
+
+    let display_kind ex_meta =
+      let open Tyxml_js.Html5 in
+      let open Learnocaml_data.Exercise in
+      let kind_repr = string_of_exercise_kind ex_meta.Meta.kind in
+      div ~a:[ a_class [ "length" ] ] [
+          p [ pcdata (Format.sprintf [%if "Kind: %s"] kind_repr) ]
+        ]
+
+    let display_exercise_meta id meta content_id =
+      let content = find_component content_id in
+      let descr =
+        exercise_link ~cl:[ "exercise" ] id [
+            display_descr meta ;
+            H.div ~a:[  ] [
+                display_stars meta ;
+                display_kind meta ;
+              ]
+          ]
+      in
+      Manip.replaceChildren content [ descr ];
+      Lwt.return ()
+
+    let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
+      let open Tyxml_js.Html5 in
+      let rec gen acc = function
+        | [] -> [ pcdata "" ]
+        | a :: [] -> a :: acc
+        | a :: ((_ :: _) as rem) ->
+           gen (sep :: (a  :: acc)) rem
+      in
+      gen [] l |> List.rev
+
+    let get_skill_index token =
+      let index = lazy (
+                      retrieve (Learnocaml_api.Exercise_index token)
+    >|= fun (index, _) ->
+                      Exercise.Index.fold_exercises (fun (req, focus) id meta ->
+                          let add sk id map =
+                            SMap.add sk
+                              (SSet.add id (try SMap.find sk map with Not_found -> SSet.empty))
+                              map
+                          in
+                          List.fold_left (fun acc sk -> add sk id acc) req
+                            meta.Exercise.Meta.requirements,
+                          List.fold_left (fun acc sk -> add sk id acc) focus
+                            meta.Exercise.Meta.focus
+                        ) (SMap.empty, SMap.empty) index
+                    ) in
+      fun skill ->
+      Lazy.force index >|= fun (req, focus) ->
+      try match skill with
+          | `Requirements s -> SSet.elements (SMap.find s req)
+          | `Focus s -> SSet.elements (SMap.find s focus)
+      with Not_found -> []
+
+    let display_skill_meta _skill exs content_id =
+      let content = find_component content_id in
+      Manip.replaceChildren content
+        (display_list @@
+           List.map (fun ex_id ->
+               exercise_link ex_id [Tyxml_js.Html5.pcdata ex_id]) exs);
+      Lwt.return ()
+
+    let display_link onclick content_id value =
+      let open Tyxml_js.Html5 in
+      let cid = Format.asprintf "%s-%s" content_id value in
+      let expand_id = Format.asprintf "%s-expand" cid in
+      let displayed = ref false in
+      let onclick _ =
+        let exp = find_component expand_id in
+        if !displayed then
+          Manip.removeChildren (find_component cid)
+        else
+          ignore (onclick cid);
+        Manip.removeChildren exp;
+        Manip.appendChild exp (pcdata (if !displayed then "[-]" else "[+]"));
+        displayed := not !displayed;
+        true
+      in
+      div [ p ~a:[ a_class [ "learnocaml-exo-expandable-link" ] ;
+                   a_onclick onclick ] [
+                span ~a:[ a_id expand_id ;
+                          a_class ["expand-sign"] ] [ pcdata "[+]" ] ;
+                pcdata value ] ;
+            div ~a:[ a_id cid ;
+                     a_class [ "learnocaml-exo-meta-category" ] ]
+              []
+        ]
+
+    let display_skill_link index content_id s =
+      let skill = match s with `Focus s | `Requirements s -> s in
+      display_link (display_skill_meta s index) content_id skill
+
+    let display_exercise_link content_id meta e =
+      display_link (display_exercise_meta e meta) content_id e
+
+    let display_authors caption_text authors =
+      let open Tyxml_js.Html5 in
+      let author (name, mail) =
+        span [ pcdata name ;
+               pcdata " <" ;
+               a ~a:[ a_href ("mailto:" ^ mail) ] [ pcdata mail ] ;
+               pcdata ">" ;
+          ] in
+      span [ pcdata caption_text; pcdata " " ]
+      :: (display_list @@ List.map author authors)
+
+    let add_map_set sk id map =
+      SMap.add sk
+        (SSet.add id (try SMap.find sk map with Not_found -> SSet.empty))
+        map
+
+    let extract_maps_exo_index index =
+      Exercise.Index.fold_exercises
+        (fun (req, focus) id meta ->
+          (List.fold_left (fun acc sk -> add_map_set sk id acc) req
+             meta.Exercise.Meta.requirements,
+           List.fold_left (fun acc sk -> add_map_set sk id acc) focus
+             meta.Exercise.Meta.focus))
+        (SMap.empty, SMap.empty) index
+
+    let opt_display_skills caption map label fskill = function
+      | [] -> None
+      | skills ->
+         Some (caption,
+               display_list ~sep:(H.pcdata "") @@
+                 List.map (fun s ->
+                     display_skill_link
+                       (try SSet.elements (SMap.find s map) with Not_found -> [])
+                       label (fskill s))
+                   skills)
+
+    let opt_display_adjacent_exos index label exos caption =
+      List.fold_left (fun acc id ->
+          match Exercise.Index.find_opt index id with
+          |  Some meta ->
+              display_exercise_link label meta id :: acc
+          | None -> acc)
+        []
+        (List.rev exos)
+      |> function
+        | [] -> None
+        | l -> Some (caption, display_list ~sep:(H.pcdata "") l)
+
+    let display_meta token ex_meta id =
+      let open Learnocaml_data.Exercise in
+      let ident = Format.asprintf "%s %s" [%i "Identifier:" ] id in
+      let authors =
+        match ex_meta.Meta.author with
+        | [] -> None
+        | [author] -> Some (display_authors [%i "Author:"] [author])
+        | authors -> Some (display_authors [%i "Authors:"] authors) in
+      retrieve (Learnocaml_api.Exercise_index token)
+      >|= fun (index, _) ->
+      let req_map, focus_map = extract_maps_exo_index index in
+      let focus =
+        opt_display_skills [%i "Skills trained:"] focus_map
+          "learnocaml-exo-focus-meta" (fun s -> `Focus s)
+          ex_meta.Meta.focus in
+      let requirements =
+        opt_display_skills [%i "Skills required:"] req_map
+          "learnocaml-exo-requirements-meta" (fun s -> `Requirements s)
+          ex_meta.Meta.requirements in
+      let backward =
+        opt_display_adjacent_exos index "learnocaml-exo-backward-meta"
+          ex_meta.Meta.backward [%i "Previous exercises:"] in
+      let forward =
+        opt_display_adjacent_exos index "learnocaml-exo-forward-meta"
+          ex_meta.Meta.forward [%i "Next exercises:"] in
+      let tab = find_div_or_append_to_body "learnocaml-exo-tab-meta" in
+      Manip.replaceChildren tab @@
+        Tyxml_js.Html5.([
+              h1 ~a:[ a_class [ "learnocaml-exo-meta-title" ] ]
+                [ pcdata [%i "Metadata" ] ] ;
+              div ~a:[ a_id "learnocaml-exo-content-meta" ] @@
+                [ display_descr ex_meta ;
+                  display_stars ex_meta ;
+                  display_kind ex_meta ;
+                  p [ pcdata ident ] ;
+                  (match authors with Some a -> p a | None -> div [])
+                ] @ List.map
+                      (function
+                       | Some (title, values) ->
+                          div (h2 ~a:[ a_class
+                                         [ "learnocaml-exo-meta-category-title" ] ]
+                                 [ pcdata title ] :: values)
+                       | None -> div [])
+                      [ focus ; requirements ; backward ; forward ]
+        ])
+  end
+
 module Grade_exercise = struct
-  
+
 let get_grade =
   let get_worker = get_worker_code "learnocaml-grader-worker.js" in
   fun ?callback ?timeout exercise ->
@@ -1008,4 +1256,4 @@ let display_report exo report =
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
-end                          
+end
