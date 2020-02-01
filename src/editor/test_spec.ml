@@ -216,7 +216,7 @@ let ast_fonction quality imperative  =
     else fonction ^ " and report = []" in
   let fonction = fonction ^ {|
                              in if imperative_report = [] && report = []
-                             then [ Message ([ Text "OK (no prohibited construction detected)"], Success 0) ]
+                             then [ Message ([ Text "OK (no prohibited construction detected)"], Important) ]
                              else imperative_report @ report;;
 
                              |} in
