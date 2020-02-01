@@ -244,6 +244,7 @@ let cat_question name list_qst =
        (2, "q_" ^ name ^ "_1") l
      |> snd
 
+(* TODO/FIXME: Add some "let () = set_progress ..." lines *)
 let compile indexed_list =
   let tests = test_prel ^ (ast_fonction true true) in
   let tests = List.fold_left (fun acc (_name, list_qst) ->

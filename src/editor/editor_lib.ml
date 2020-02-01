@@ -249,6 +249,9 @@ let gen2 i =
   if q + 1 = r then List.nth base 0
   else List.nth base (q + 1)
 
+(* TODO/FIXME: when the considered function is higher-order,
+   we should insert a comment and disable automatic testcases (~gen:0)
+   in order to avoid the Exception: Failure "unsamplable type". *)
 let monomorph_generator l =
   let f ty =
     let vars =
