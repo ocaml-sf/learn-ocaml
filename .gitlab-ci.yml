@@ -1,0 +1,25 @@
+image: ocaml/opam2:alpine-3.7
+
+cache:
+  paths:
+    - _opam
+    - _build
+
+before_script:
+  - "grep -q archive-mirrors: ~/.opam/config || echo 'archive-mirrors: [ \"https://opam.ocaml.org/cache\" ]' >> ~/.opam/config"
+  - opam repository set-url default https://opam.ocaml.org
+  - "[ -d _opam ] || opam switch create . ocaml-base-compiler.4.09.0 --no-install"
+  - "grep -q pre-session-commands: ~/.opam/config || echo 'pre-session-commands: [\"sudo\" \"apk\" \"add\" depexts]' >>~/.opam/config"
+  - opam install . -y --deps-only --locked
+
+pages:
+  stage: deploy
+  script:
+    - make tryocaml
+    - mkdir -p public
+    - "cp -r www/* public"
+  artifacts:
+    paths:
+      - public
+  only:
+    - tryocaml
