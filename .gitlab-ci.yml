@@ -10,11 +10,12 @@ before_script:
   - opam repository set-url default https://opam.ocaml.org
   - "[ -d _opam ] || opam switch create . ocaml-base-compiler.4.09.0 --no-install"
   - "grep -q pre-session-commands: ~/.opam/config || echo 'pre-session-commands: [\"sudo\" \"apk\" \"add\" depexts]' >>~/.opam/config"
-  - opam install . -y --deps-only --locked
+  - opam install ./tryocaml.opam.locked -y --deps-only
 
 pages:
   stage: deploy
   script:
+    - "eval $(opam env)"
     - make tryocaml
     - mkdir -p public
     - "cp -r www/* public"

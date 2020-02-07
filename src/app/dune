@@ -100,8 +100,13 @@
 
 (install
  (section share)
+ (package learn-ocaml)
  (files (learnocaml_index_main.bc.js as www/js/learnocaml-main.js)
         (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
-        (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js)
-        (tryocaml.bc.js as www/js/tryocaml.js))
+        (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js))
+)
+(install
+ (section share)
+ (package tryocaml)
+ (files (tryocaml.bc.js as www/js/tryocaml.js))
 )

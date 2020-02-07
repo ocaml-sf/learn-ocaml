@@ -23,6 +23,15 @@ icons:
 dune: file-list
 	@echo '(install' >$@
 	@echo ' (section share)' >>$@
+	@echo ' (package learn-ocaml)' >>$@
+	@echo ' (files' >>$@
+	@$(foreach f,$(FILES),echo '  ($f as ${addprefix www/,$f})' >>$@;)
+	@echo ' )' >>$@
+	@echo ')' >>$@
+	@echo >>$@
+	@echo '(install' >>$@
+	@echo ' (section share)' >>$@
+	@echo ' (package tryocaml)' >>$@
 	@echo ' (files' >>$@
 	@$(foreach f,$(FILES),echo '  ($f as ${addprefix www/,$f})' >>$@;)
 	@echo ' )' >>$@

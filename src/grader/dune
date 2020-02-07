@@ -213,5 +213,6 @@
 
 (install
  (section share)
+ (package learn-ocaml)
  (files (grader_jsoo_worker.bc.js as www/js/learnocaml-grader-worker.js))
 )

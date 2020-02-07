@@ -7,6 +7,7 @@
 
 (executable
  (public_name learn-ocaml)
+ (package learn-ocaml)
  (name learnocaml_main)
  (modes byte)
  (ocamlc_flags :standard -custom)
@@ -21,6 +22,7 @@
 
 (executable
  (public_name learn-ocaml-client)
+ (package learn-ocaml)
  (name learnocaml_client)
  (modes byte)
  (ocamlc_flags :standard -custom)
@@ -37,6 +39,7 @@
 
 (executable
  (public_name learn-ocaml-server)
+ (package learn-ocaml)
  (name learnocaml_server_main)
  (modules learnocaml_server_main)
  (libraries learnocaml_server_args)
