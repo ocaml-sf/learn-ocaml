@@ -1,4 +1,5 @@
 (install
+ (package learn-ocaml)
  (section share_root)
  (files (complete.sh as bash-completion/completions/learn-ocaml))
 )
