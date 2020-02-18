@@ -32,7 +32,7 @@ depends: [
   "ocp-ocamlres" {= "0.4"}
   "ocplib-json-typed" {= "0.6"}
   "ipaddr" {= "2.8.0" }
-  "cstruct" {= "5.0.0"}
+  "cstruct" {= "3.3.0"}
   "ppx_tools"
 ]
 build: [
