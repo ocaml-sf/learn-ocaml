@@ -67,10 +67,10 @@ module File : sig
   val descr: (string * string) list file
 
   (** Returns the (public) [../depend.txt] *)
-  val depend: string file
+  val depend: string option file
 
   (** Returns the (public) dependencies *)
-  val dependencies: string -> string file list
+  val dependencies: string option -> string file list
 
   (** Returns the key of a file *)
   val key : 'a file -> string

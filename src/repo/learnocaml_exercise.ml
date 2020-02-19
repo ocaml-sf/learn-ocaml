@@ -17,14 +17,14 @@ type t =
     test : string ;
     solution : string ;
     max_score : int ;
-    depend : string ;
+    depend : string option ;
     dependencies : string list;
   }
 
 let encoding =
   let open Json_encoding in
   conv
-    (fun { id; prelude; template; descr; prepare; test; solution; max_score; depend; dependencies} ->
+    (fun { id; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
        id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
     (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
        { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
@@ -37,7 +37,7 @@ let encoding =
        (req "test" string)
        (req "solution" string)
        (req "max-score" int)
-       (req  "depend" string)
+       (req  "depend" (option string))
        (req  "dependencies" (list string)))
 
 (* let meta_from_string m =
@@ -184,25 +184,28 @@ module File = struct
      }
 
   let depend =
-    { key = "../depend.txt" ; ciphered = false ; (* does'nt work with ciphered = true *)
-      decode = (fun v -> v) ; encode = (fun v -> v) ;
+    { key = "../depend.txt" ; ciphered = false ;
+      decode = (fun v -> Some v) ; 
+      encode = (function None -> "<no dependencies>" | Some v -> v) ;
       field = (fun ex -> ex.depend) ;
       update = (fun depend ex -> { ex with depend })
      }
 
-  let dependencies dep = 
-    let extract_depend dep = 
-      (String.split_on_char '\n' dep)
-      |> (List.map String.trim)
-      |> List.filter (fun s -> String.length s > 0 && s.[0] <> '#') 
-    in
-    List.mapi (fun i lib_name ->
-                ({ key = lib_name ; ciphered = true ;
-                   decode = (fun v -> v) ; encode = (fun v -> v) ;
-                   field = (fun ex -> List.nth ex.dependencies i) ;
-                   update = (fun _ _ -> failwith "Learnocaml_exercise.dependencies")
-                 }))
-        (extract_depend dep)
+  let dependencies = function
+    | None -> []
+    | Some dep ->  
+      let extract_depend dep = 
+        (String.split_on_char '\n' dep)
+        |> (List.map String.trim)
+        |> List.filter (fun s -> String.length s > 0 && s.[0] <> '#') 
+      in
+      List.mapi (fun i lib_name ->
+                  ({ key = lib_name ; ciphered = true ;
+                     decode = (fun v -> v) ; encode = (fun v -> v) ;
+                     field = (fun ex -> List.nth ex.dependencies i) ;
+                     update = (fun _ _ -> failwith "Learnocaml_exercise.dependencies")
+                   }))
+          (extract_depend dep)
 
   let key f = f.key
 
@@ -321,7 +324,7 @@ module File = struct
           read_file test ;
           read_file depend ;
           (* read_max_score () *) ] >>= fun () ->
-      join (let dep = try get depend !ex with Missing_file _ -> "" in 
+      join (let dep = try get depend !ex with Missing_file _ -> None in 
             List.map read_file (dependencies dep)) >>= fun () ->
       return !ex
   end
@@ -364,7 +367,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
     let open Concur in
     FileReader.read ~read_field ?id ?decipher () >>= fun ex ->
     try
-      let dep = try field_from_file File.depend ex with File.(Missing_file _) -> "" in
+      let dep = try field_from_file File.depend ex with File.Missing_file _ -> None in
       return
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
@@ -398,7 +401,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         acc := nacc ;
         return ()
       with Not_found -> Concur.return () in
-      let d = decipher File.depend ex in
+      let dep = access File.depend ex in
     join
       ([ write_field id ;
         (* write_field meta ;
@@ -411,7 +414,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field test ;
         write_field depend ;
         (* write_field max_score *) ] 
-        @ (List.map write_field (dependencies d)) )
+        @ (List.map write_field (dependencies dep)) )
         >>= fun () ->
     return !acc
 end

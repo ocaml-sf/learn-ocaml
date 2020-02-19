@@ -156,19 +156,16 @@ let get_grade
             List.partition (fun (s,_) -> match Filename.extension s with
                                          | ".ml" -> true
                                          | ".mli" -> false
-                                         | _ -> failwith "depend.txt (1)") mods 
+                                         | _ -> failwith ("uninterpreted dependency \"" ^ s ^
+                                                          "\".file extension expected : .ml or .mli")) mods 
         in
         let insert_dependencies_in_env (current_path,structure) =
           let name = String.capitalize_ascii (Filename.(remove_extension (basename current_path))) in
-          handle_error (internal_error [%i"while loading users dependencies"]) @@
+          handle_error (internal_error [%i"while loading user dependencies"]) @@
+          let use_mod = Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:name in
           match List.find_opt (fun (path,_) -> path = current_path ^ "i") mli_files with 
-          | Some (_,signature) -> Toploop_ext.use_mod_string ~print_outcome ~ppf_answer 
-                                    ~modname:name 
-                                    ~sig_code:signature 
-                                    structure
-          | None -> Toploop_ext.use_mod_string ~print_outcome ~ppf_answer 
-                      ~modname:name 
-                      structure
+          | Some (_,signature) -> use_mod ~sig_code:signature structure
+          | None -> use_mod structure
           in
         List.iter insert_dependencies_in_env ml_files
 
