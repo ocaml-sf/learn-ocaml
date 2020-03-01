@@ -105,6 +105,9 @@ module File = struct
         decode raw
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
+  let get_opt file ex =
+    try get file ex with Missing_file _ -> None
+
   let has { key ; _ } ex =
     StringMap.mem key ex
 
@@ -115,6 +118,8 @@ module File = struct
       StringMap.add key (Learnocaml_xor.encode ~prefix (encode raw)) ex
     else
       StringMap.add key (encode raw) ex
+
+  let key file = file.key
 
   let id =
     { key = "id" ; ciphered = false ;
@@ -186,29 +191,32 @@ module File = struct
   let depend =
     { key = "../depend.txt" ; ciphered = false ;
       decode = (fun v -> Some v) ; 
-      encode = (function None -> "<no dependencies>" | Some v -> v) ;
+      encode = (function 
+                | None -> "" (* no `depend` ~ empty `depend` *)
+                | Some txt -> txt) ;
       field = (fun ex -> ex.depend) ;
       update = (fun depend ex -> { ex with depend })
      }
 
   let dependencies = function
     | None -> []
-    | Some dep ->  
-      let extract_depend dep = 
-        (String.split_on_char '\n' dep)
-        |> (List.map String.trim)
-        |> List.filter (fun s -> String.length s > 0 && s.[0] <> '#') 
+    | Some lines ->  
+      let parse lines =                     
+        (String.split_on_char '\n' lines)
+        |> (List.map String.trim)                
+        |> (List.filter (function 
+                         | "" -> false        (* blank line *)
+                         | s -> s.[0] <> '#')) (* comments starting with '#' *)
       in
-      List.mapi (fun i lib_name ->
-                  ({ key = lib_name ; ciphered = true ;
+      let filenames = parse lines in
+      List.mapi (fun i file_name ->
+                  ({ key = file_name ; ciphered = true ;
                      decode = (fun v -> v) ; encode = (fun v -> v) ;
                      field = (fun ex -> List.nth ex.dependencies i) ;
                      update = (fun _ _ -> failwith "Learnocaml_exercise.dependencies")
                    }))
-          (extract_depend dep)
-
-  let key f = f.key
-
+        filenames
+  
   module MakeReader (Concur : Concur) = struct
     let read ~read_field ?id: ex_id ?(decipher = true) () =
       let open Concur in
@@ -324,8 +332,7 @@ module File = struct
           read_file test ;
           read_file depend ;
           (* read_max_score () *) ] >>= fun () ->
-      join (let dep = try get depend !ex with Missing_file _ -> None in 
-            List.map read_file (dependencies dep)) >>= fun () ->
+      join (List.map read_file (dependencies (get_opt depend !ex))) >>= fun () ->
       return !ex
   end
 
@@ -362,12 +369,14 @@ let field_from_file file files =
   with Not_found -> raise File.(Missing_file file.key)
 
 module MakeReaderAnddWriter (Concur : Concur) = struct
+  
   module FileReader = File.MakeReader(Concur)
+
   let read ~read_field ?id ?decipher () =
     let open Concur in
     FileReader.read ~read_field ?id ?decipher () >>= fun ex ->
     try
-      let dep = try field_from_file File.depend ex with File.Missing_file _ -> None in
+      let depend = File.get_opt File.depend ex in
       return
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
@@ -378,8 +387,16 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           test = field_from_file File.test ex ;
           solution = field_from_file File.solution ex ;
           max_score = 0 ;
-          depend = dep ;
-          dependencies = List.map (fun f -> field_from_file f ex) (File.dependencies dep) ;
+          depend ;
+          dependencies = 
+            let field_from_dependency file =
+              try field_from_file file ex
+              with File.Missing_file msg 
+              -> let msg' = msg ^ ": dependency declared in " 
+                                ^ File.(key depend) ^ ", but not found" in
+                 raise (File.Missing_file msg') 
+            in 
+            List.map field_from_dependency (File.dependencies depend)             
         }
     with File.Missing_file _ as e -> fail e
 
@@ -401,7 +418,6 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         acc := nacc ;
         return ()
       with Not_found -> Concur.return () in
-      let dep = access File.depend ex in
     join
       ([ write_field id ;
         (* write_field meta ;
@@ -414,7 +430,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field test ;
         write_field depend ;
         (* write_field max_score *) ] 
-        @ (List.map write_field (dependencies dep)) )
+        @ (List.map write_field (dependencies (access depend ex))) )
         >>= fun () ->
     return !acc
 end
