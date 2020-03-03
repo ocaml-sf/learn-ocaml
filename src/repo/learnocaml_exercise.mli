@@ -75,7 +75,8 @@ module File : sig
   (** Returns the (public) depend file *)
   val depend: string option file
 
-  (** Returns the (public) dependencies *)
+  (** [dependencies txt] create the (private, already deciphered) dependencies 
+      declared in [txt] *)
   val dependencies: string option -> string file list
 end
 

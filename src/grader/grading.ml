@@ -144,33 +144,30 @@ let get_grade
       set_progress [%i"Launching the test bench."] ;
 
       let () =
-
-         let mods : (string * string) list = (* list of pairs (path, content) *)
-          let open Learnocaml_exercise in
-          let files = File.dependencies (access File.depend exo) in
-          List.map (fun f -> let path = File.key f 
-                             and content = decipher f exo in
-                             (path,content)) files 
-        in
-        let ml_files, mli_files = 
-            List.partition (fun (s,_) -> match Filename.extension s with
-                                         | ".ml" -> true
-                                         | ".mli" -> false
-                                         | _ -> failwith ("uninterpreted dependency \"" ^ s ^
-                                                          "\".file extension expected : .ml or .mli")) mods 
-        in
-        let insert_dependencies_in_env (current_path,structure) =
-          let name = String.capitalize_ascii (Filename.(remove_extension (basename current_path))) in
-          handle_error (internal_error [%i"while loading user dependencies"]) @@
-          let use_mod = Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:name in
-          match List.find_opt (fun (path,_) -> path = current_path ^ "i") mli_files with 
-          | Some (_,signature) -> use_mod ~sig_code:signature structure
-          | None -> use_mod structure
-          in
-        List.iter insert_dependencies_in_env ml_files
-
+        let open Learnocaml_exercise in
+        let files = File.dependencies (access File.depend exo) in
+        let rec load_dependencies signatures = function
+        | [] -> () (* signatures without implementation are ignored *)
+        | file::fs ->
+          let path = File.key file
+          and content = decipher file exo in
+          let modname = String.capitalize_ascii @@
+                        Filename.remove_extension @@ Filename.basename path in
+          match Filename.extension path with
+          | ".mli" -> load_dependencies ((modname,content) :: signatures) fs
+          | ".ml" -> 
+            (handle_error (internal_error [%i"while loading user dependencies"]) @@
+             let use_mod = 
+               Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname in
+             match List.assoc_opt modname signatures with 
+             | Some sig_code -> use_mod ~sig_code content
+             | None -> use_mod content); 
+             load_dependencies signatures fs
+          | _ -> failwith ("uninterpreted dependency \"" ^ path ^
+                           "\".file extension expected : .ml or .mli") in 
+          load_dependencies [] files
       in
- 
+
       handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
         (Learnocaml_exercise.(decipher File.test exo)) ;

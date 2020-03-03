@@ -24,7 +24,7 @@ type t =
 let encoding =
   let open Json_encoding in
   conv
-    (fun { id; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
+    (fun { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
        id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
     (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
        { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
@@ -106,7 +106,9 @@ module File = struct
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
   let get_opt file ex =
-    try get file ex with Missing_file _ -> None
+    try (* a missing file here is necessarily [file] *) 
+      get file ex 
+    with Missing_file _ -> None 
 
   let has { key ; _ } ex =
     StringMap.mem key ex
@@ -198,23 +200,34 @@ module File = struct
       update = (fun depend ex -> { ex with depend })
      }
 
+  (* [parse_dependencies txt] extracts dependencies from the string [txt].
+    Dependencies are file names separated by at least one line break.
+    [txt] may contain comments starting with characters ';' or '#' 
+    and ending by a line break. *)
+  let parse_dependencies txt =
+    let remove_comment ~start:c line =
+          match String.index_opt line c with
+          | None -> line
+          | Some index -> String.sub line 0 index in
+    let lines = String.split_on_char '\n' txt in
+    List.filter (function "" -> false | _ -> true) @@
+    List.map (fun line -> String.trim @@
+                          remove_comment ~start:'#' @@ 
+                          remove_comment ~start:';' line) lines
+
   let dependencies = function
     | None -> []
-    | Some lines ->  
-      let parse lines =                     
-        (String.split_on_char '\n' lines)
-        |> (List.map String.trim)                
-        |> (List.filter (function 
-                         | "" -> false        (* blank line *)
-                         | s -> s.[0] <> '#')) (* comments starting with '#' *)
-      in
-      let filenames = parse lines in
-      List.mapi (fun i file_name ->
-                  ({ key = file_name ; ciphered = true ;
-                     decode = (fun v -> v) ; encode = (fun v -> v) ;
-                     field = (fun ex -> List.nth ex.dependencies i) ;
-                     update = (fun _ _ -> failwith "Learnocaml_exercise.dependencies")
-                   }))
+    | Some txt ->
+      let filenames = parse_dependencies txt in
+      List.mapi 
+        (fun pos filename ->
+          { key = filename ; ciphered = true ;
+            decode = (fun v -> v) ; encode = (fun v -> v) ;
+            field = (fun ex -> List.nth ex.dependencies pos) ;
+            update = (fun v ex -> 
+                        let dependencies = 
+                          List.mapi (fun i v' -> if i = pos then v else v')
+                            ex.dependencies in { ex with dependencies }) })
         filenames
   
   module MakeReader (Concur : Concur) = struct
