@@ -224,7 +224,7 @@ let parse_mod_string ?filename modname sig_code impl_code =
         init_loc sig_lb (String.uncapitalize_ascii modname ^ ".mli");
         let s = Parse.interface sig_lb in
         Mod.constraint_ (Mod.structure str) (Mty.signature s) in
-  Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ]
+  Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc (Some modname)) m) ]
 
 let use_mod_string
     ?filename
