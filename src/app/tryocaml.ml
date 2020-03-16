@@ -246,6 +246,7 @@ let () =
   begin editor_button
       ~group: toplevel_buttons_group
       ~icon: "run" [%i"Eval code"] @@ fun () ->
+    Learnocaml_toplevel.reset top >>= fun () ->
     Learnocaml_toplevel.execute_phrase top (Ace.get_contents ace)
     >>= fun (error, warnings, _result) ->
     report_in_editor ~set_class:false editor error warnings >>= fun _ ->
