@@ -8,7 +8,7 @@ cache:
 before_script:
   - "grep -q archive-mirrors: ~/.opam/config || echo 'archive-mirrors: [ \"https://opam.ocaml.org/cache\" ]' >> ~/.opam/config"
   - opam repository set-url default https://opam.ocaml.org
-  - "[ -d _opam ] || opam switch create . ocaml-base-compiler.4.09.0 --no-install"
+  - "[ -d _opam ] || opam switch create . --no-install"
   - "grep -q pre-session-commands: ~/.opam/config || echo 'pre-session-commands: [\"sudo\" \"apk\" \"add\" depexts]' >>~/.opam/config"
   - opam install ./tryocaml.opam.locked -y --deps-only
 
@@ -24,3 +24,9 @@ pages:
       - public
   only:
     - tryocaml
+
+build_image:
+  stage: build
+  script:
+    - docker build -t learn-ocaml --target compilation .
+    - "docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build"
