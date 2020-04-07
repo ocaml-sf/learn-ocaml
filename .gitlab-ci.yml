@@ -1,0 +1,12 @@
+image: docker:git
+services:
+- docker:dind
+
+variables:
+  DOCKER_HOST: tcp://localhost:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+
+build:
+  script:
+  - docker build -t learn-ocaml --target server .
+  - docker push learn-ocaml
