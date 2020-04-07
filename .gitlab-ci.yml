@@ -1,8 +1,0 @@
-image: docker:git
-services:
-- docker:dind
-
-build:
-  script:
-  - docker build -t learn-ocaml --target server .
-  - docker push learn-ocaml
