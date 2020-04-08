@@ -474,7 +474,8 @@ let create
         (fun () -> execute_phrase top code)
         (function
           | Lwt.Canceled -> Lwt.return (None, [], true)
-          | exn -> Lwt.fail exn )) ;
+          | exn -> Lwt.fail exn )
+      >>= fun _ -> Lwt.return_unit) ;
   let first_time = ref true in
   let after_init top =
     if !first_time || not oldify then
