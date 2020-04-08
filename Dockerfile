@@ -3,7 +3,7 @@ LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR learn-ocaml
 
-COPY learn-ocaml.opam learn-ocaml.opam.locked ./
+COPY tryocaml.opam tryocaml.opam.locked ./
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMYES true
