@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.7 as compilation
+FROM ocaml/opam2:alpine as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR learn-ocaml
@@ -9,7 +9,7 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config
 RUN opam repository set-url default http://opam.ocaml.org
-RUN opam switch 4.05
+RUN opam switch 4.10
 RUN echo 'pre-session-commands: ["sudo" "apk" "add" depexts]' >>~/.opam/config
 RUN opam install . --deps-only --locked
 
@@ -25,7 +25,7 @@ RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
 RUN opam install . --destdir /home/opam/install-prefix --locked --deps-only
-RUN make tryocaml
+RUN opam exec -- make tryocaml
 
 FROM bitnami/nginx:latest as server
 LABEL Description="TryOCaml web-server" Vendor="OCamlPro"
