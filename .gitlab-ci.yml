@@ -5,6 +5,8 @@ stages:
 variables:
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
+  POSTGRES_ENABLED: "false"
+  ROLLOUT_RESOURCE_TYPE: deployment
 
 build:
   stage: build
@@ -45,6 +47,7 @@ deploy-dev:
     kubernetes:
       namespace: tryocaml-dev
   script:
+    - mkdir -p /.kube
     - echo -n $KUBE_CONFIG | base64 -d > /.kube/config
     - kubectl config view
   only:
