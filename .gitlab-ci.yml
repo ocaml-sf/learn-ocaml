@@ -3,7 +3,7 @@ stages:
   - deploy
 
 variables:
-  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
   POSTGRES_ENABLED: "false"
   ROLLOUT_RESOURCE_TYPE: deployment
@@ -15,7 +15,7 @@ build:
     entrypoint: [""]
   script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_RELEASE_IMAGE --target server
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_TEST_IMAGE --target server
   only:
     - tryocaml
 
@@ -40,15 +40,39 @@ deploy-auto:
 
 deploy-dev:
   stage: deploy
-  image: bitnami/kubectl:latest
+  image: lwolf/helm-kubectl-docker:latest
+#   image: bitnami/kubectl:latest
   environment:
     name: dev
     url: https://tryocaml.k.ocaml.pro
     kubernetes:
       namespace: tryocaml-dev
+  before_script:
+    - mkdir -p /etc/deploy
+    - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
+#    - kubectl config use-context XXX
+    - helm init --client-only
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
   script:
-    - mkdir -p /.kube
-    - echo -n $KUBE_CONFIG | base64 -d > /.kube/config
-    - kubectl config view
+    - cd deploy/libr-files
+    - helm install bitnami/nginx --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets=gitlab-registry
   only:
   - tryocaml
+
+
+# deploy-dev:
+#   stage: deploy
+#   image: bitnami/kubectl:latest
+#   environment:
+#     name: dev
+#     url: https://tryocaml.k.ocaml.pro
+#     kubernetes:
+#       namespace: tryocaml-dev
+#   script:
+#     - mkdir -p /.kube
+#     - echo -n $KUBE_CONFIG | base64 -d > /.kube/config
+#     - kubectl config view
+#   only:
+#   - tryocaml
+
