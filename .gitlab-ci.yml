@@ -1,8 +1,51 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
+
 build:
+  stage: build
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - echo "--context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --target server"
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --target server
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_RELEASE_IMAGE --target server
+  only:
+    - tryocaml
+
+deploy-auto:
+  stage: deploy
+  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.12.1"
+  script:
+    - auto-deploy check_kube_domain
+    - auto-deploy download_chart
+    - auto-deploy ensure_namespace
+    - auto-deploy initialize_tiller
+    - auto-deploy create_secret
+    - auto-deploy deploy
+  environment:
+    name: dev
+    url: https://tryocaml.k.ocaml.pro
+    kubernetes:
+      namespace: tryocaml-dev
+  only:
+    refs:
+      - tryocaml
+
+deploy-dev:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  environment:
+    name: dev
+    url: https://tryocaml.k.ocaml.pro
+    kubernetes:
+      namespace: tryocaml-dev
+  script:
+    - echo -n $KUBE_CONFIG | base64 -d > /.kube/config
+    - kubectl config view
+  only:
+  - tryocaml
