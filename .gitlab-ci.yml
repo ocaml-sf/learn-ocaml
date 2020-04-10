@@ -19,24 +19,24 @@ build:
   only:
     - tryocaml
 
-deploy-auto:
-  stage: deploy
-  image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.12.1"
-  script:
-    - auto-deploy check_kube_domain
-    - auto-deploy download_chart
-    - auto-deploy ensure_namespace
-    - auto-deploy initialize_tiller
-    - auto-deploy create_secret
-    - auto-deploy deploy
-  environment:
-    name: dev
-    url: https://tryocaml.k.ocaml.pro
-    kubernetes:
-      namespace: tryocaml-dev
-  only:
-    refs:
-      - tryocaml
+# deploy-auto:
+#   stage: deploy
+#   image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.12.1"
+#   script:
+#     - auto-deploy check_kube_domain
+#     - auto-deploy download_chart
+#     - auto-deploy ensure_namespace
+#     - auto-deploy initialize_tiller
+#     - auto-deploy create_secret
+#     - auto-deploy deploy
+#   environment:
+#     name: dev
+#     url: https://tryocaml.k.ocaml.pro
+#     kubernetes:
+#       namespace: tryocaml-dev
+#   only:
+#     refs:
+#       - tryocaml
 
 deploy-dev:
   stage: deploy
@@ -55,7 +55,6 @@ deploy-dev:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
   script:
-    - cd deploy/libr-files
     - helm install bitnami/nginx --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets=gitlab-registry
   only:
   - tryocaml
