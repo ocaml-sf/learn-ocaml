@@ -210,10 +210,8 @@ module File = struct
           | None -> line
           | Some index -> String.sub line 0 index in
     let lines = String.split_on_char '\n' txt in
-    List.filter (function "" -> false | _ -> true) @@
-    List.map (fun line -> String.trim @@
-                          remove_comment ~start:'#' @@ 
-                          remove_comment ~start:';' line) lines
+    List.filter ((<>) "") @@
+    List.map (fun line -> String.trim (remove_comment ~start:'#' line)) lines
 
   let dependencies = function
     | None -> []
