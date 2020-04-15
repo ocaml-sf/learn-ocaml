@@ -191,7 +191,7 @@ module File = struct
      }
 
   let depend =
-    { key = "../depend.txt" ; ciphered = false ;
+    { key = "depend.txt" ; ciphered = false ;
       decode = (fun v -> Some v) ; 
       encode = (function 
                 | None -> "" (* no `depend` ~ empty `depend` *)
