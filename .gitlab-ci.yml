@@ -50,7 +50,6 @@ deploy-dev:
   before_script:
     - mkdir -p /etc/deploy
     - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
-    - docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
     - kubectl config set-credentials gitlab --token="${USER_TOKEN}"
 #     - kubectl config set-context default --cluster=k8s --user=gitlab
 #     - kubectl config use-context default
@@ -59,7 +58,7 @@ deploy-dev:
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
   script:
-    - helm install bitnami/nginx --debug --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0]=gitlab-registry
+    - helm install bitnami/nginx --debug --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0]=docker-registry
   only:
   - tryocaml
 
