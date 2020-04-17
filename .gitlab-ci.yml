@@ -3,6 +3,7 @@ stages:
   - deploy
 
 variables:
+  POD_NAME: tryocaml
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
   POSTGRES_ENABLED: "false"
@@ -14,6 +15,7 @@ build:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
+    - echo $KUBE_CONFIG >&2
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_TEST_IMAGE --target server
   only:
@@ -51,14 +53,14 @@ deploy-dev:
     - mkdir -p /etc/deploy
     - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
     - kubectl config set-credentials gitlab --token="${USER_TOKEN}"
-#     - kubectl config set-context default --cluster=k8s --user=gitlab
-#     - kubectl config use-context default
+    - kubectl config set-context default --cluster=ovh-ocamlpro --user=gitlab
+    - kubectl config use-context default
 # #    - kubectl config use-context XXX
     - helm init --client-only
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
   script:
-    - helm install bitnami/nginx --debug --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0].name=docker-registry
+    - helm install bitnami/nginx --name=$POD_NAME --debug --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0].name=docker-registry
   only:
   - tryocaml
 
