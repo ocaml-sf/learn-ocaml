@@ -15,7 +15,6 @@ build:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
-    - echo $KUBE_CONFIG >&2
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_TEST_IMAGE --target server
   only:
@@ -53,7 +52,7 @@ deploy-dev:
     - mkdir -p /etc/deploy
     - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
     - kubectl config set-credentials gitlab --token="${USER_TOKEN}"
-    - kubectl config set-context default --cluster=ovh-ocamlpro --user=gitlab
+    - kubectl config set-context default --cluster=ovh-ocamlpro --user=gitlab-admin
     - kubectl config use-context default
 # #    - kubectl config use-context XXX
     - helm init --client-only
