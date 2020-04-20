@@ -49,11 +49,11 @@ deploy-dev:
     # kubernetes:
     #   namespace: tryocaml-dev
   before_script:
-    - mkdir -p /etc/deploy
-    - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
-    - kubectl config set-credentials gitlab --token="${USER_TOKEN}"
-    - kubectl config set-context default --cluster=ovh-ocamlpro --user=gitlab-admin
-    - kubectl config use-context default
+    # - mkdir -p /etc/deploy
+    # - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
+    # - kubectl config set-credentials gitlab-admin --token="${USER_TOKEN}"
+    # - kubectl config set-context default --cluster=ovh-ocamlpro --user=gitlab-admin
+    # - kubectl config use-context default
 # #    - kubectl config use-context XXX
     - helm init --client-only
     - helm repo add bitnami https://charts.bitnami.com/bitnami
