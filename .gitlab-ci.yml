@@ -1,22 +1,52 @@
 stages:
   - build
+  - image
   - deploy
 
 variables:
   POD_NAME: tryocaml
-  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
   POSTGRES_ENABLED: "false"
-  ROLLOUT_RESOURCE_TYPE: deployment
+#  ROLLOUT_RESOURCE_TYPE: deployment
 
 build:
   stage: build
+  image: ocaml/opam2:alpine
+  before_script:
+    - "echo 'archive-mirrors: [ \"https://opam.ocaml.org/cache\" ]' >> ~/.opam/config"
+    - opam repository set-url default http://opam.ocaml.org
+    - opam switch 4.10
+    - "echo 'pre-session-commands: [\"sudo\" \"apk\" \"add\" depexts]' >>~/.opam/config"
+    - opam install ./tryocaml.opam --deps-only --locked
+  script:
+    - opam exec -- make tryocaml
+  artifacts:
+    paths:
+      - www
+  only:
+    - tryocaml
+
+make-image:
+  stage: image
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CONTAINER_TEST_IMAGE --target server
+    - |
+      echo "{
+        \"auths\": {
+          \"$CI_REGISTRY\": {
+            \"username\":\"$CI_REGISTRY_USER\",
+            \"password\":\"$CI_REGISTRY_PASSWORD\"
+      }}}
+      " > /kaniko/.docker/config.json
+    - |
+      echo "FROM bitnami/nginx:latest
+      LABEL Description=\"TryOCaml web-server\" Vendor=\"OCamlPro\"
+      COPY www /app
+      " > /kaniko/Dockerfile
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile /kaniko/Dockerfile --destination $CONTAINER_TEST_IMAGE
   only:
     - tryocaml
 
@@ -46,8 +76,8 @@ deploy-dev:
   environment:
     name: dev
     url: https://tryocaml.k.ocaml.pro
-    # kubernetes:
-    #   namespace: tryocaml-dev
+    kubernetes:
+      namespace: tryocaml-dev
   before_script:
     # - mkdir -p /etc/deploy
     # - echo $KUBE_CONFIG | base64 -d > /etc/deploy/config
@@ -56,10 +86,12 @@ deploy-dev:
     # - kubectl config use-context default
 # #    - kubectl config use-context XXX
     - helm init --client-only
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo update
+    # - helm repo add bitnami https://charts.bitnami.com/bitnami
+    # - helm repo update
   script:
-    - helm install bitnami/nginx --name=$POD_NAME --namespace $KUBE_NAMESPACE --debug --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0].name=docker-registry
+    - echo $KUBE_NAMESPACE > /tmp/tt1
+    - cat /tmp/tt1
+    - helm install --repo https://charts.bitnami.com/bitnami bitnami/nginx --name=$POD_NAME --namespace $KUBE_NAMESPACE --atomic --set image.registry=$CI_REGISTRY,image.repository=$CI_REGISTRY_IMAGE,image.tag=$CI_COMMIT_REF_SLUG,ingress.hosts[0].name=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].hosts=$CI_PROJECT_NAME.k.ocaml.pro,ingress.tls[0].secretName=${CI_PROJECT_NAME}-tls,image.pullSecrets[0].name=docker-registry
   only:
   - tryocaml
 
