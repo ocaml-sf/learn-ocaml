@@ -8,17 +8,27 @@ variables:
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
   POSTGRES_ENABLED: "false"
-#  ROLLOUT_RESOURCE_TYPE: deployment
+  OPAMFILE: tryocaml.opam.locked
+  ROLLOUT_RESOURCE_TYPE: deployment
+
+prepare:
+  stage: .pre
+  image: registry.ocamlpro.com/ocamlpro/ocaml-docker-images:4.10
+  script:
+    - "[ -d _opam ] || opam switch create . --deps-only --locked"
+  cache:
+    key:
+      files:
+        - $OPAMFILE
+    paths:
+      - _opam
+  artifacts:
+    paths:
+      - _opam
 
 build:
   stage: build
-  image: ocaml/opam2:alpine
-  before_script:
-    - "echo 'archive-mirrors: [ \"https://opam.ocaml.org/cache\" ]' >> ~/.opam/config"
-    - opam repository set-url default http://opam.ocaml.org
-    - opam switch 4.10
-    - "echo 'pre-session-commands: [\"sudo\" \"apk\" \"add\" depexts]' >>~/.opam/config"
-    - opam install ./tryocaml.opam --deps-only --locked
+  image: registry.ocamlpro.com/ocamlpro/ocaml-docker-images:4.10
   script:
     - opam exec -- make tryocaml
   artifacts:
@@ -34,7 +44,8 @@ make-image:
     entrypoint: [""]
   script:
     - |
-      echo "{
+      echo "\
+      {
         \"auths\": {
           \"$CI_REGISTRY\": {
             \"username\":\"$CI_REGISTRY_USER\",
@@ -42,32 +53,13 @@ make-image:
       }}}
       " > /kaniko/.docker/config.json
     - |
-      echo "FROM bitnami/nginx:latest
-      LABEL Description=\"TryOCaml web-server\" Vendor=\"OCamlPro\"
+      echo "\
+      FROM bitnami/nginx:latest
       COPY www /app
       " > /kaniko/Dockerfile
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile /kaniko/Dockerfile --destination $CONTAINER_TEST_IMAGE
   only:
     - tryocaml
-
-# deploy-auto:
-#   stage: deploy
-#   image: "registry.gitlab.com/gitlab-org/cluster-integration/auto-deploy-image:v0.12.1"
-#   script:
-#     - auto-deploy check_kube_domain
-#     - auto-deploy download_chart
-#     - auto-deploy ensure_namespace
-#     - auto-deploy initialize_tiller
-#     - auto-deploy create_secret
-#     - auto-deploy deploy
-#   environment:
-#     name: dev
-#     url: https://tryocaml.k.ocaml.pro
-#     kubernetes:
-#       namespace: tryocaml-dev
-#   only:
-#     refs:
-#       - tryocaml
 
 deploy-dev:
   stage: deploy
@@ -104,25 +96,6 @@ deploy-dev:
           - hosts: $CI_PROJECT_NAME.k.ocaml.pro
           - secretName: ${CI_PROJECT_NAME}-tls
       " > deploy.yaml
-    - echo $KUBE_NAMESPACE > /tmp/tt1
-    - cat /tmp/tt1
-    - helm install --repo https://charts.bitnami.com/bitnami bitnami/nginx --name=$POD_NAME --namespace $KUBE_NAMESPACE --atomic -f deploy.yaml
+    - helm install --repo https://charts.bitnami.com/bitnami bitnami/nginx --name=$POD_NAME --namespace tryocaml-dev --atomic -f deploy.yaml
   only:
   - tryocaml
-
-
-# deploy-dev:
-#   stage: deploy
-#   image: bitnami/kubectl:latest
-#   environment:
-#     name: dev
-#     url: https://tryocaml.k.ocaml.pro
-#     kubernetes:
-#       namespace: tryocaml-dev
-#   script:
-#     - mkdir -p /.kube
-#     - echo -n $KUBE_CONFIG | base64 -d > /.kube/config
-#     - kubectl config view
-#   only:
-#   - tryocaml
-
