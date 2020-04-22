@@ -157,14 +157,14 @@ let get_grade
           | ".mli" -> load_dependencies ((modname,content) :: signatures) fs
           | ".ml" -> 
             let included,content = 
-              (* the first line of an .ml file can contain an annotation     *)
-              (* @included which denotes that this file has to be included   *)
-              (* directly in the toplevel environment, and not in an module. *)
+              (* the first line of an .ml file can contain an annotation       *)
+              (* [@@@included] which denotes that this file has to be included *)
+              (* directly in the toplevel environment, and not in an module.   *)
               match String.index_opt content '\n' with
               | None -> (false,content)
               | Some i -> 
                 (match String.trim (String.sub content 0 i) with 
-                 | "@included" -> 
+                 | "[@@@included]" -> 
                     let content' = String.sub content i @@ 
                                    (String.length content - i)
                     in (true,content')
