@@ -16,7 +16,7 @@ Each declaration in **depend.txt** is a single line containing the relative path
 
 By default each dependency *foo.ml* is isolated in a module *Foo*, which can be constrained by the content of an optional signature file *foo.mli*. Furthermore, we can add an annotation `@included` at the beginning of a file *foo.ml* to denote that all the bindings of *foo.ml* are evaluated in the toplevel environment (and not in a module *Foo*). 
 
-Note that when you edited an *.ml* or *.mli* dependency file which is not defined at the root of your exercice directory, the change will not be applied. In this case a simple shell command `$ touch test.ml` refresh the exercise.
+Dependencies that are not defined at the root of the exercise repository are ignored by the build system: therefore, if you modify them, do not forget to refresh the timestamp of `test.ml` (using `touch` for instance).
 
 ### A complete example
 
@@ -164,7 +164,6 @@ module Odd_even : sig val test : unit -> Report.t end
 ```
 
 In the end, this feature can provide an increased comfort for writing large automated graders and for reusing them in other exercises.
-
 
 
 
