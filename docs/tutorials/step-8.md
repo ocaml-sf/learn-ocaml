@@ -14,7 +14,7 @@ It is possible to extend this environment by declaring some other user-defined m
 
 Each declaration in **depend.txt** is a single line containing the relative path of an *.ml* or *.mli* file. The order of the *.ml* declarations specifies the order in which each module is loaded in the grading environment.
 
-By default each dependency *foo.ml* is isolated in a module *Foo*, which can be constrained by the content of an optional signature file *foo.mli*. Furthermore, we can add an annotation `@included` at the beginning of a file *foo.ml* to denote that all the bindings of *foo.ml* are evaluated in the toplevel environment (and not in a module *Foo*). 
+By default each dependency *foo.ml* is isolated in a module *Foo*, which can be constrained by the content of an optional signature file *foo.mli*. Furthermore, we can add an annotation `[@@@included]` at the beginning of a file *foo.ml* to denote that all the bindings of *foo.ml* are evaluated in the toplevel environment (and not in a module *Foo*). 
 
 Dependencies that are not defined at the root of the exercise repository are ignored by the build system: therefore, if you modify them, do not forget to refresh the timestamp of `test.ml` (using `touch` for instance).
 
@@ -39,7 +39,7 @@ Let's write an exercise dedicated to *Peano numbers*. Here is the structure of t
 │   │   ├── template.ml
 │   │   ├── test.ml
 │   │   └── tests
-│   │   │   ├── samples.ml
+│   │       ├── samples.ml
 │   │       ├── add.ml
 │   │       └── odd_even.ml
 │   ├── an-other-exercise
@@ -126,10 +126,10 @@ let test () =
     [%ty : peano -> bool ] "even"
     [ Z ; S(Z) ; S(S(Z)) ]
 ```
-Remember that **Test_lib** internally requires a user-defined sampler `sample_peano : unit -> peano` to generate value of type `peano`. This sampler has to be present in the toplevel environment -- and not in a module -- in order to be found by the introspection primitives during grading. Therefore, we define this sampler in a file starting with the annotation `@included`.
-- **samples.ml**:
+Remember that **Test_lib** internally requires a user-defined sampler `sample_peano : unit -> peano` to generate value of type `peano`. This sampler has to be present in the toplevel environment -- and not in a module -- in order to be found by the introspection primitives during grading. Therefore, we define this sampler in a file starting with the annotation `[@@@included]`.
+- **tests/samples.ml**:
 ```ocaml
-@included
+[@@@included]
 
 let sample_peano () =
   let rec aux = function
@@ -138,7 +138,7 @@ let sample_peano () =
   in aux (Random.int 42)
 ```
 
-Finally, **test.ml** will be evaluated in the following environment:
+Finally, the content of **test.ml** will be evaluated in the following environment:
 
 ```ocaml
 val print_html : 'a -> 'b
