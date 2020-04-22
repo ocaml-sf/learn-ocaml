@@ -46,7 +46,7 @@ Let's write an exercise dedicated to *Peano numbers*. Here is the structure of t
 │   │   ├── depend.txt
 │   │   │ ...
 ```
-The exercise **peano** follows the classical format : **prelude.ml**, **prepare.ml**, **solution.ml**, **template.ml** and **test.ml**. It comprises moreover several dependencies (**check.ml**, **samples.ml**, **add.ml** and **odd_even.ml**) which are declared as follow in **depend.txt**:
+The exercise **peano** follows the classical format : **prelude.ml**, **prepare.ml**, **solution.ml**, **template.ml** and **test.ml**. It also includes several dependencies (**check.ml**, **samples.ml**, **add.ml** and **odd_even.ml**) which are declared as follows in **depend.txt**:
 
 ```txt
 ../lib/check.mli
@@ -164,6 +164,5 @@ module Odd_even : sig val test : unit -> Report.t end
 ```
 
 In the end, this feature can provide an increased comfort for writing large automated graders and for reusing them in other exercises.
-
 
 
