@@ -126,7 +126,7 @@ let test () =
     [%ty : peano -> bool ] "even"
     [ Z ; S(Z) ; S(S(Z)) ]
 ```
-Remember that **Test_lib** internally requires a user-defined sampler `sample_peano : unit -> peano` to generate value of type `peano`. This sampler has to be present in the toplevel environment -- and not in a module -- in order to be found by the introspection primitives during grading. Therefore, we define this sampler in a file starting by the annotation `@included`.
+Remember that **Test_lib** internally requires a user-defined sampler `sample_peano : unit -> peano` to generate value of type `peano`. This sampler has to be present in the toplevel environment -- and not in a module -- in order to be found by the introspection primitives during grading. Therefore, we define this sampler in a file starting with the annotation `@included`.
 - **samples.ml**:
 ```ocaml
 @included
@@ -164,7 +164,6 @@ module Odd_even : sig val test : unit -> Report.t end
 ```
 
 In the end, this feature can provide an increased comfort for writing large automated graders and for reusing them in other exercises.
-
 
 
 
