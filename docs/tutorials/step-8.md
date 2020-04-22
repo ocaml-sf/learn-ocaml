@@ -14,7 +14,7 @@ It is possible to extend this environment by declaring some other user-defined m
 
 Each declaration in **depend.txt** is a single line containing the relative path of an *.ml* or *.mli* file. The order of the *.ml* declarations specifies the order in which each module is loaded in the grading environment.
 
-By default each dependency *foo.ml* is isolated in a module *Foo*, which can be constrained by the content of an optional signature file *foo.mli*. Furthermore, we can add an annotation `@included` at the beginning of a file *foo.ml* to denote that all the bindings of *foo.ml* is are evaluated in the toplevel environment (and not in a module *Foo*). 
+By default each dependency *foo.ml* is isolated in a module *Foo*, which can be constrained by the content of an optional signature file *foo.mli*. Furthermore, we can add an annotation `@included` at the beginning of a file *foo.ml* to denote that all the bindings of *foo.ml* are evaluated in the toplevel environment (and not in a module *Foo*). 
 
 Note that when you edited an *.ml* or *.mli* dependency file which is not defined at the root of your exercice directory, the change will not be applied. In this case a simple shell command `$ touch test.ml` refresh the exercise.
 
@@ -164,7 +164,6 @@ module Odd_even : sig val test : unit -> Report.t end
 ```
 
 In the end, this feature can provide an increased comfort for writing large automated graders and for reusing them in other exercises.
-
 
 
 
