@@ -919,6 +919,10 @@ msgstr "Lancement du banc de test."
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
 
+#: src/grader/grading.ml:173,43--80
+msgid "while loading user dependencies"
+msgstr "lors du chargement des dépendances"
+
 #~ msgid "No description available."
 #~ msgstr "Aucune description."
 
