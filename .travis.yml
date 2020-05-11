@@ -1,25 +1,29 @@
 language: c
-dist: bionic
 
 .main: &MAIN
-  os:
-    - linux
-    - osx
+  os: linux
+  dist: bionic
   before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make docker-images; fi
+    - make docker-images
   script:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd tests; sh -c ./runtests.sh; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sh .ci-macosx.sh; fi
+    - sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'
+    - cd tests; sh -c ./runtests.sh
+
+.macos: &MACOS
+  os: osx
+  script:
+    - sh .ci-macosx.sh
 
 .docker: &DOCKER
   os: linux
+  dist: bionic
   script:
-  - docker build -t "learn-ocaml-${DOCKERFILE#*.}" -f "$DOCKERFILE" .
+    - docker build -t "learn-ocaml-${DOCKERFILE#*.}" -f "$DOCKERFILE" .
 
 jobs:
   include:
     - <<: *MAIN
+    - <<: *MACOS
     - env:
       - DOCKERFILE=Dockerfile.test-client
       <<: *DOCKER
