@@ -12,15 +12,17 @@ dist: bionic
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd tests; sh -c ./runtests.sh; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sh .ci-macosx.sh; fi
 
-.client: &CLIENT
+.docker: &DOCKER
   os: linux
   script:
-  - docker build -t learn-ocaml-client-deps-test -f Dockerfile.test-client .
+  - docker build -t "learn-ocaml-${DOCKERFILE#*.}" -f "$DOCKERFILE" .
 
 jobs:
   include:
     - <<: *MAIN
-    - <<: *CLIENT
+    - env:
+      - DOCKERFILE=Dockerfile.test-client
+      <<: *DOCKER
 
 notifications:
   webhooks:
