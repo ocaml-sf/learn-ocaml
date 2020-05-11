@@ -1,14 +1,26 @@
 language: c
-os:
-  - linux
-  - osx
 dist: bionic
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make docker-images; fi
-script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd tests; sh -c ./runtests.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sh .ci-macosx.sh; fi
+
+.main: &MAIN
+  os:
+    - linux
+    - osx
+  before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make docker-images; fi
+  script:
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd tests; sh -c ./runtests.sh; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sh .ci-macosx.sh; fi
+
+.client: &CLIENT
+  os: linux
+  script:
+  - docker build -t learn-ocaml-client-deps-test -f Dockerfile.test-client .
+
+jobs:
+  include:
+    - <<: *MAIN
+    - <<: *CLIENT
 
 notifications:
   webhooks:
