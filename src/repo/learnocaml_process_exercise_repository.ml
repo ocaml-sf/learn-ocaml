@@ -228,9 +228,11 @@ let main dest_dir =
              spawn_grader
          in
          listmap (fun (id, ex_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
+             let dst_ex_dir = String.concat Filename.dir_sep [dest_dir; "static"; id] in
+             Lwt_utils.mkdir_p dst_ex_dir >>= fun () ->
                Lwt_stream.iter_p (fun base ->
                  let d = Filename.concat ex_dir base in
-                 let dst = String.concat Filename.dir_sep [dest_dir; "static"; id; base] in
+                 let dst = String.concat Filename.dir_sep [dst_ex_dir; base] in
                  if Sys.is_directory d && base.[0] <> '.' then
                    (Lwt_utils.mkdir_p (Filename.dirname dst) >>= fun () ->
                     Lwt_utils.copy_tree d dst)
