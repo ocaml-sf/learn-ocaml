@@ -111,6 +111,7 @@ depends: [
   "uri" {= "1.9.7"}
   "uutf" {= "1.0.2"}
   "yojson" {= "1.7.0"}
+  "vg" {= "0.9.3"}
 ]
 build: [
   [make "static"]

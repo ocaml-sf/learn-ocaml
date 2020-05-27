@@ -46,6 +46,8 @@
                 (run odoc html %{dep:test_lib.odoc} -o %{workspace_root}/_doc/_html)))
 )
 
+
+
 (rule
  (targets embedded_cmis.ml)
  (deps %{ocaml-config:standard_library}/array.cmi
@@ -83,7 +85,10 @@
        %{ocaml-config:standard_library}/string.cmi
        %{ocaml-config:standard_library}/sys.cmi
        %{ocaml-config:standard_library}/uchar.cmi
-       %{ocaml-config:standard_library}/weak.cmi)
+       %{ocaml-config:standard_library}/weak.cmi
+       %{lib:gg:gg.cmi}
+       %{lib:vg:vg.cmi}
+       %{lib:vg:vgr_svg.cmi})
  (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
@@ -92,7 +97,7 @@
  (wrapped false)
  (modes byte)
  (modules Embedded_cmis)
- (libraries ocplib-ocamlres.runtime bigarray)
+ (libraries ocplib-ocamlres.runtime bigarray vg gg vg.svg)
 )
 
 (rule
