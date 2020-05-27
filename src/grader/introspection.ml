@@ -205,13 +205,21 @@ let sample_value ty =
     let open Asttypes in
     let open Types in
     let open Ast_helper in
+    let sampler_id suffix =
+      Exp.ident (Location.mknoloc (Longident.Lident ("sample_" ^ suffix))) in
     let rec phrase ty = match ty.desc with
       | Tconstr (path, [], _) ->
-          let lid = (Location.mknoloc (Longident.Lident ("sample_" ^ Path.name path))) in
-          Exp.ident lid
+          sampler_id (Path.name path)
       | Tconstr (path, tl, _) ->
-          let lid = (Location.mknoloc (Longident.Lident ("sample_" ^ Path.name path))) in
-          Exp.apply (Exp.ident lid) (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
+          Exp.apply (sampler_id (Path.name path))
+            (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
+      | Ttuple tys ->
+         begin match tys with
+           | [_; _] ->
+              Exp.apply (sampler_id "pair")
+               (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tys)
+           | _ -> failwith "sample_value: unsupported tuple arity"
+         end
       | _ -> failwith "unsamplable type"
     in
     let lid = Location.mknoloc lid in
