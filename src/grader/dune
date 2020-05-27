@@ -52,6 +52,7 @@
        %{ocaml-config:standard_library}/arrayLabels.cmi
        %{ocaml-config:standard_library}/buffer.cmi
        %{ocaml-config:standard_library}/bytes.cmi
+       %{ocaml-config:standard_library}/bigarray.cmi
        %{ocaml-config:standard_library}/camlinternalFormatBasics.cmi
        %{ocaml-config:standard_library}/camlinternalFormat.cmi
        %{ocaml-config:standard_library}/camlinternalLazy.cmi
@@ -81,7 +82,7 @@
        %{ocaml-config:standard_library}/string.cmi
        %{ocaml-config:standard_library}/sys.cmi
        %{ocaml-config:standard_library}/uchar.cmi
-       %{ocaml-config:standard_library}/weak.cmi )
+       %{ocaml-config:standard_library}/weak.cmi)
  (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
@@ -90,7 +91,7 @@
  (wrapped false)
  (modes byte)
  (modules Embedded_cmis)
- (libraries ocplib-ocamlres.runtime)
+ (libraries ocplib-ocamlres.runtime bigarray)
 )
 
 (rule
