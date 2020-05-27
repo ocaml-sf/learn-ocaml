@@ -30,14 +30,20 @@ module File : sig
   (** Get was called on a missing undefaulted field *)
   exception Missing_file of string
 
-  (** Access a field in an exercise, may raise [Missing_field] *)
+  (** Access a field in an exercise, may raise [Missing_file] *)
   val get: 'a file -> files -> 'a
+
+  (** Access an optional field in an exercise *)
+  val get_opt : 'a option file -> files -> 'a option
 
   (** Check the existence of a field in an exercise *)
   val has: 'a file -> files -> bool
 
   (** Access a field in an exercise *)
   val set: 'a file -> 'a -> files -> files
+
+  (** Returns the key (i.e. then name) of a file *)
+  val key: 'a file -> string
 
   (** Learnocaml_exercise id accessor *)
   val id: id file
@@ -66,6 +72,12 @@ module File : sig
   (** Returns the (public) [descr.html] *)
   val descr: (string * string) list file
 
+  (** Returns the (public) depend file *)
+  val depend: string option file
+
+  (** [dependencies txt] create the (private, already deciphered) dependencies 
+      declared in [txt] *)
+  val dependencies: string option -> string file list
 end
 
 (** Access a field from the exercise, using the [t] representation, without **

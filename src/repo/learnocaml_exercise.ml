@@ -17,16 +17,18 @@ type t =
     test : string ;
     solution : string ;
     max_score : int ;
+    depend : string option ;
+    dependencies : string list;
   }
 
 let encoding =
   let open Json_encoding in
   conv
-    (fun { id; prelude; template; descr; prepare; test; solution; max_score } ->
-       id, prelude, template, descr, prepare, test, solution, max_score)
-    (fun (id, prelude, template, descr, prepare, test, solution, max_score) ->
-       { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score })
-    (obj8
+    (fun { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
+       id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
+    (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
+       { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
+    (obj10
        (req "id" string)
        (req "prelude" string)
        (req "template" string)
@@ -34,7 +36,9 @@ let encoding =
        (req "prepare" string)
        (req "test" string)
        (req "solution" string)
-       (req "max-score" int))
+       (req "max-score" int)
+       (req  "depend" (option string))
+       (req  "dependencies" (list string)))
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
@@ -101,6 +105,11 @@ module File = struct
         decode raw
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
+  let get_opt file ex =
+    try (* a missing file here is necessarily [file] *) 
+      get file ex 
+    with Missing_file _ -> None 
+
   let has { key ; _ } ex =
     StringMap.mem key ex
 
@@ -111,6 +120,8 @@ module File = struct
       StringMap.add key (Learnocaml_xor.encode ~prefix (encode raw)) ex
     else
       StringMap.add key (encode raw) ex
+
+  let key file = file.key
 
   let id =
     { key = "id" ; ciphered = false ;
@@ -179,6 +190,44 @@ module File = struct
       update = (fun solution ex -> { ex with solution })
      }
 
+  let depend =
+    { key = "depend.txt" ; ciphered = false ;
+      decode = (fun v -> Some v) ; 
+      encode = (function 
+                | None -> "" (* no `depend` ~ empty `depend` *)
+                | Some txt -> txt) ;
+      field = (fun ex -> ex.depend) ;
+      update = (fun depend ex -> { ex with depend })
+     }
+
+  (* [parse_dependencies txt] extracts dependencies from the string [txt].
+    Dependencies are file names separated by at least one line break.
+    [txt] may contain comments starting with characters ';' or '#' 
+    and ending by a line break. *)
+  let parse_dependencies txt =
+    let remove_comment ~start:c line =
+          match String.index_opt line c with
+          | None -> line
+          | Some index -> String.sub line 0 index in
+    let lines = String.split_on_char '\n' txt in
+    List.filter ((<>) "") @@
+    List.map (fun line -> String.trim (remove_comment ~start:'#' line)) lines
+
+  let dependencies = function
+    | None -> []
+    | Some txt ->
+      let filenames = parse_dependencies txt in
+      List.mapi 
+        (fun pos filename ->
+          { key = filename ; ciphered = true ;
+            decode = (fun v -> v) ; encode = (fun v -> v) ;
+            field = (fun ex -> List.nth ex.dependencies pos) ;
+            update = (fun v ex -> 
+                        let dependencies = 
+                          List.mapi (fun i v' -> if i = pos then v else v')
+                            ex.dependencies in { ex with dependencies }) })
+        filenames
+  
   module MakeReader (Concur : Concur) = struct
     let read ~read_field ?id: ex_id ?(decipher = true) () =
       let open Concur in
@@ -292,7 +341,9 @@ module File = struct
           read_file prepare ;
           read_file solution ;
           read_file test ;
+          read_file depend ;
           (* read_max_score () *) ] >>= fun () ->
+      join (List.map read_file (dependencies (get_opt depend !ex))) >>= fun () ->
       return !ex
   end
 
@@ -324,17 +375,19 @@ let cipher f v ex =
   else
     f.update (f.encode v) ex
 
-
 let field_from_file file files =
   try File.(StringMap.find file.key files |> file.decode)
   with Not_found -> raise File.(Missing_file file.key)
 
 module MakeReaderAnddWriter (Concur : Concur) = struct
+  
   module FileReader = File.MakeReader(Concur)
+
   let read ~read_field ?id ?decipher () =
     let open Concur in
     FileReader.read ~read_field ?id ?decipher () >>= fun ex ->
     try
+      let depend = File.get_opt File.depend ex in
       return
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
@@ -345,6 +398,16 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           test = field_from_file File.test ex ;
           solution = field_from_file File.solution ex ;
           max_score = 0 ;
+          depend ;
+          dependencies = 
+            let field_from_dependency file =
+              try field_from_file file ex
+              with File.Missing_file msg 
+              -> let msg' = msg ^ ": dependency declared in " 
+                                ^ File.(key depend) ^ ", but not found" in
+                 raise (File.Missing_file msg') 
+            in 
+            List.map field_from_dependency (File.dependencies depend)             
         }
     with File.Missing_file _ as e -> fail e
 
@@ -367,7 +430,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         return ()
       with Not_found -> Concur.return () in
     join
-      [ write_field id ;
+      ([ write_field id ;
         (* write_field meta ;
          * write_field title ; *)
         write_field prelude ;
@@ -376,7 +439,10 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field prepare ;
         write_field solution ;
         write_field test ;
-        (* write_field max_score *) ] >>= fun () ->
+        write_field depend ;
+        (* write_field max_score *) ] 
+        @ (List.map write_field (dependencies (access depend ex))) )
+        >>= fun () ->
     return !acc
 end
 

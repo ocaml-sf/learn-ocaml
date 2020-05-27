@@ -142,6 +142,50 @@ let get_grade
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Report = Learnocaml_report" ;
       set_progress [%i"Launching the test bench."] ;
+
+      let () =
+        let open Learnocaml_exercise in
+        let files = File.dependencies (access File.depend exo) in
+        let rec load_dependencies signatures = function
+        | [] -> () (* signatures without implementation are ignored *)
+        | file::fs ->
+          let path = File.key file
+          and content = decipher file exo in
+          let modname = String.capitalize_ascii @@
+                        Filename.remove_extension @@ Filename.basename path in
+          match Filename.extension path with
+          | ".mli" -> load_dependencies ((modname,content) :: signatures) fs
+          | ".ml" -> 
+            let included,content = 
+              (* the first line of an .ml file can contain an annotation       *)
+              (* [@@@included] which denotes that this file has to be included *)
+              (* directly in the toplevel environment, and not in an module.   *)
+              match String.index_opt content '\n' with
+              | None -> (false,content)
+              | Some i -> 
+                (match String.trim (String.sub content 0 i) with 
+                 | "[@@@included]" -> 
+                    let content' = String.sub content i @@ 
+                                   (String.length content - i)
+                    in (true,content')
+                 | _ -> (false,content))
+            in
+            (handle_error (internal_error [%i"while loading user dependencies"]) @@
+             match included with
+             | true -> Toploop_ext.use_string ~print_outcome ~ppf_answer 
+                                  ~filename:(Filename.basename path) content 
+             | false ->
+               let use_mod = 
+                 Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname in
+               match List.assoc_opt modname signatures with 
+               | Some sig_code -> use_mod ~sig_code content
+               | None -> use_mod content); 
+               load_dependencies signatures fs
+          | _ -> failwith ("uninterpreted dependency \"" ^ path ^
+                           "\", file extension expected : .ml or .mli") in 
+          load_dependencies [] files
+      in
+
       handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
         (Learnocaml_exercise.(decipher File.test exo)) ;

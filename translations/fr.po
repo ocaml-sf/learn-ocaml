@@ -933,10 +933,14 @@ msgstr "Lancement du banc de test."
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
 
-#~ msgid "Failed to download archive. Please try again later!"
-#~ msgstr ""
-#~ "Le téléchargement de l'archive a échoué. Veuillez réessayer "
-#~ "ulterieurement!"
+#: src/grader/grading.ml:173,43--80
+msgid "while loading user dependencies"
+msgstr "lors du chargement des dépendances"
+
+msgid "Failed to download archive. Please try again later!"
+msgstr ""
+"Le téléchargement de l'archive a échoué. Veuillez réessayer "
+"ulterieurement!"
 
 #~ msgid "No description available."
 #~ msgstr "Aucune description."
