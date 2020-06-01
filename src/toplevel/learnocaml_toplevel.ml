@@ -380,6 +380,22 @@ let wrap_flusher_to_prevent_flood top name hook real =
       flooded := total
     end
 
+let load_pp err top pps =
+  let build_pp name ty code =
+    Format.sprintf
+      "let %s fmt (obj : %s) = %s;; #install_printer %s" name ty code name
+  in
+  let rec loading err = function
+    | [] -> err
+    | (pp_name, pp_type, pp_code) :: pps ->
+        err
+        >>=
+          (fun _ ->
+            load ~print_outcome:false top (build_pp pp_name pp_type pp_code))
+        >>= (fun _ -> loading err pps)
+  in
+  err >>= (fun _ -> loading err pps)
+
 let welcome_phrase () =
   [%i"Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
       print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
@@ -388,6 +404,23 @@ let welcome_phrase () =
       print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] \
       to navigate through history\" ;;"]
   (* U+2191 upwards arrow, U+2193 downwards arrow*)
+
+
+(* List of pretty printer with name, type and code to execute.
+  Produce a name fmt obj function. *)
+let pretty_printers = [
+"print_image",
+"Vg.image",
+"
+let coeff = 1.0 in
+let b = Buffer.create 2048 in
+let size = Gg.Size2.v (coeff *. 100.) (coeff *. 100.) in
+let view = Gg.Box2.v Gg.P2.o (Gg.Size2.v coeff coeff) in
+let r = Vg.Vgr.create (Vgr_svg.target ()) (`Buffer b) in
+ignore (Vg.Vgr.render r (`Image (size, view, obj)));
+ignore (Vg.Vgr.render r `End);
+ print_svg (Buffer.contents b)";
+]
 
 let create
     ?worker_js_file
@@ -495,10 +528,16 @@ let create
     else
       first_time := false ;
     Learnocaml_toplevel_worker_caller.register_callback worker "print_html"
-      (Learnocaml_toplevel_output.output_html output) >>= fun _ ->
+      (Learnocaml_toplevel_output.output_html output)
+    >>= fun _ ->
+      Learnocaml_toplevel_worker_caller.register_callback worker "print_svg"
+        (Learnocaml_toplevel_output.output_svg output)
+    >>= fun err -> load_pp (Lwt.return err) top pretty_printers
+    >>= fun _ ->
     match after_init with
     | None -> Lwt.return_unit
-    | Some f -> f top in
+    | Some f -> f top
+  in
   after_init top >>= fun () ->
   Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
