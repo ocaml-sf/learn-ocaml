@@ -180,6 +180,18 @@ let output_html ?phrase output html =
   Js_utils.Manip.appendChild output.container div ;
   insert output ?phrase (Html (html, div)) div
 
+
+
+
+let output_svg ?phrase output svg =
+  let svg =
+    let pattern = "l:href" in
+    let with_ = "href" in
+    Stringext.replace_all svg ~pattern ~with_
+  in
+  output_html ?phrase output svg
+
+
 let output_code ?phrase output code =
   let snapshot =
     let blocks = match phrase with
