@@ -362,6 +362,7 @@ let output_warning ?phrase output warning =
       insert output ~phrase (Warning (phrase.warnings, warning, pre)) pre
 
 let clear output =
+  Id_generator.reset_ids ();
   Js_utils.Manip.removeChildren output.container ;
   output.blocks <- []
 
