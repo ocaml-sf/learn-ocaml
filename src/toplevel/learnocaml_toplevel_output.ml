@@ -181,16 +181,44 @@ let output_html ?phrase output html =
   insert output ?phrase (Html (html, div)) div
 
 
+(* Module to generate new id *)
+module Id_generator : sig
+  val get_fresh_id : unit -> int
+  val reset_ids : unit -> unit
+end =
+struct
+  let id = ref 0
 
+  let get_fresh_id () =
+    let idx = !id in
+    id := !id + 1;
+    idx
+
+  let reset_ids () =
+    id := 0
+end
+
+let replace_markup idx markup svg =
+  let open Re in
+  let f g = Format.sprintf " %s=\"%s-%d\"" markup (Group.get g 1) idx in
+  let regexp = Format.sprintf "[ ]+%s=\"([#A-Za-z0-9]+)\"" markup in
+  let regexp = Posix.compile_pat regexp in
+  replace ~f regexp svg
+
+let replace_link svg =
+  let open Re in
+  let regexp = Posix.compile_pat "l:href" in
+  replace_string regexp ~by:"href" svg
+
+let rewrite_svg svg =
+  let idx = Id_generator.get_fresh_id () in
+  replace_markup idx "id" svg
+  |> replace_markup idx "l:href"
+  |> replace_link
 
 let output_svg ?phrase output svg =
-  let svg =
-    let pattern = "l:href" in
-    let with_ = "href" in
-    Stringext.replace_all svg ~pattern ~with_
-  in
+  let svg = rewrite_svg svg  in
   output_html ?phrase output svg
-
 
 let output_code ?phrase output code =
   let snapshot =

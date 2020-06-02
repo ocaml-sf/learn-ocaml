@@ -87,7 +87,7 @@
        %{ocaml-config:standard_library}/uchar.cmi
        %{ocaml-config:standard_library}/weak.cmi
 
-       %{lib:stringext:stringext.cmi}
+       %{lib:re:re.cmi}
        %{lib:gg:gg.cmi}
        %{lib:vg:vg.cmi}
        %{lib:vg:vgr_svg.cmi})
@@ -101,7 +101,7 @@
  (modules Embedded_cmis)
  (libraries ocplib-ocamlres.runtime bigarray
             vg gg vg.svg
-            stringext)
+            re)
 )
 
 (rule
