@@ -201,7 +201,7 @@ end
 let replace_markup idx markup svg =
   let open Re in
   let f g = Format.sprintf " %s=\"%s-%d\"" markup (Group.get g 1) idx in
-  let regexp = Format.sprintf "[ ]+%s=\"([#A-Za-z0-9]+)\"" markup in
+  let regexp = Format.sprintf "[ ]+%s=\"(#?[A-Za-z0-9]+)\"" markup in
   let regexp = Posix.compile_pat regexp in
   replace ~f regexp svg
 
