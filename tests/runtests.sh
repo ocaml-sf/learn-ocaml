@@ -20,17 +20,17 @@ red () {
 }
 
 # run a server in a docker container
-run_server (){
-    SYNC=$(pwd)/$DIR/sync
-    REPO=$(pwd)/$DIR/repo
+run_server () {
+    SYNC="$(pwd)"/"$dir"/sync
+    REPO="$(pwd)"/"$dir"/repo
 
-    mkdir $DIR/sync 2>/dev/null
-    chmod o+w $DIR/sync
+    mkdir "$dir"/sync 2>/dev/null
+    chmod o+w "$dir"/sync
 
     # Run the server in background
     SERVERID=$(docker run --entrypoint '' -d \
-      -v $(pwd)/$DIR:/home/learn-ocaml/actual \
-      -v $SYNC:/sync -v $REPO:/repository \
+      -v "$(pwd)"/"$dir":/home/learn-ocaml/actual \
+      -v "$SYNC":/sync -v "$REPO":/repository \
       learn-ocaml /bin/sh \
         -c "learn-ocaml --sync-dir=/sync --repo=/repository build && 
 learn-ocaml --sync-dir=/sync --repo=/repository build serve")
@@ -42,85 +42,96 @@ learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 	red "PROBLEM, server is not running.\n"
 
 	red "LS:"
-	ls -Rl $DIR
+	ls -Rl "$dir"
 	echo ""
 
 	red "LOGS:"
-	docker logs $SERVERID
-	docker rm $SERVERID > /dev/null
+	docker logs "$SERVERID"
+	docker rm "$SERVERID" > /dev/null
 	exit 1
     fi
 }
 
-clean (){
+clean () {
     popd > /dev/null
     chmod o-w sync
 
-    docker kill $SERVERID > /dev/null
-    docker rm   $SERVERID > /dev/null
+    docker kill "$SERVERID" > /dev/null
+    docker rm   "$SERVERID" > /dev/null
 }
 
-clean_fail (){
+clean_fail () {
     clean
     exit 1
 }
 
+handle_file () {
+    subdir="$1"
+    tosend="$(basename "$2")"
+    # Grade file
+    docker exec -i "$SERVERID" \
+	   learn-ocaml-client grade --json --id="$subdir" \
+	   /home/learn-ocaml/actual/"$subdir"/"$tosend" > res.json 2> stderr.txt
+    if [ $? -ne 0 ]; then
+	red "NOT OK: $dir$tosend"
+	cat stderr.txt
+	clean_fail
+    fi
+    if [ $SETTER -eq 1 ]; then
+	cp res.json "$tosend.json"
+    else
+	# If there isn't something to compare
+	if [ ! -f "$tosend.json" ]; then
+	    red "$tosend.json does not exist"
+	    clean_fail
+	else
+	    diff res.json "$tosend.json"
+	    # If diff failed
+	    if [ $? -ne 0 ]; then
+		red "DIFF FAILED: $dir$tosend"
+		clean_fail
+	    fi
+	fi
+    fi
+    green "OK: $dir$tosend"
+    rm res.json stderr.txt
+    let count++
+}
+
+handle_subdir () {
+    subdir="$(basename "$1")"
+    pushd "$1" >/dev/null
+
+    #init config
+    docker exec -i "$SERVERID" \
+	   learn-ocaml-client init --server=http://localhost:8080 --token="$token"
+    # For each solution
+    for tosend in $(find . -name "*.ml" -type f -printf "%f\n")
+    do
+	handle_file "$subdir" "$tosend"
+    done
+
+    clean
+}
+
 # For each subdirectory (ie. each corpus)
-for DIR in `ls -d */`
+for dir in $(ls -d ./*/)
 do
     run_server
 
-    pushd $DIR > /dev/null
+    pushd "$dir" > /dev/null
 
-    echo "---> Doing $DIR:"
+    echo "---> Entering $dir:"
 
     # Get the token from the sync/ directory
-    TOKEN=$(find sync -maxdepth 5 -mindepth 5 | head -n 1 | sed 's|sync/||' | sed 's|/|-|g')
+    token=$(find sync -maxdepth 5 -mindepth 5 | head -n 1 | sed 's|sync/||' | sed 's|/|-|g')
 
     # For each subdir (ie. each exercice)
-    for SUBDIR in `find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync -printf "%f\n"`
+    while IFS= read -r subdir;
     do
-	pushd $SUBDIR > /dev/null
+	handle_subdir "$subdir"
+    done < <(find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync)
 
-	
-	#init config
-	docker exec -i $SERVERID \
-	learn-ocaml-client init --server=http://localhost:8080 --token="$TOKEN" 
-	# For each solution
-	for TOSEND in `find . -name "*.ml" -type f -printf "%f\n"`
-	do
-	    # Grade file
-	    docker exec -i $SERVERID \
-	      learn-ocaml-client grade --json --id="$SUBDIR" \
-	      /home/learn-ocaml/actual/$SUBDIR/$TOSEND > res.json 2> stderr.txt 
-	    if [ $? -ne 0 ]; then
-		red "NOT OK: $DIR$TOSEND"
-		cat stderr.txt
-	        clean_fail
-	    fi
-	    if [ $SETTER -eq 1 ]; then
-	       cp res.json "$TOSEND.json"
-	    else
-		# If there isn't something to compare
-		if [ ! -f "$TOSEND.json" ]; then
-		    red "$TOSEND.json does not exist"
-		    clean_fail
-		else
-		    diff res.json "$TOSEND.json"
-		    # If diff failed
-		    if [ $? -ne 0 ]; then
-			red "DIFF FAILED: $DIR$TOSEND"
-			clean_fail
-		    fi
-		fi
-	    fi
-            green "OK: $DIR$TOSEND"
-	    rm res.json stderr.txt
-	    let count++
-	done
-
-	clean
-    done
     popd > /dev/null
 done
 
