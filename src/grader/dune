@@ -58,6 +58,7 @@
        %{ocaml-config:standard_library}/camlinternalLazy.cmi
        %{ocaml-config:standard_library}/camlinternalMod.cmi
        %{ocaml-config:standard_library}/camlinternalOO.cmi
+       %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi
        %{ocaml-config:standard_library}/char.cmi
        %{ocaml-config:standard_library}/complex.cmi
        %{ocaml-config:standard_library}/digest.cmi
