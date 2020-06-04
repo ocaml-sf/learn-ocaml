@@ -374,23 +374,36 @@ let enc_check_version_2 enc =
     (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
 
 module Server = struct
-  type config = {
-    secret : string option; (* maybe a secret *)
-    server_id : int
-    }
+  type preconfig = {
+    secret : string option;
+  }
+  let empty_preconfig = {
+    secret = None;
+  }
 
-  let default ?secret () =
-    let server_id = Random.bits () in
-    {secret; server_id}
-
-  let enc_init =
-    J.conv (fun c -> c.secret)
-           (fun secret -> default ?secret ()) @@
+  let preconfig_enc =
+    J.conv (fun (c : preconfig) -> c.secret)
+           (fun secret : preconfig -> {secret}) @@
       J.obj1 (J.opt "secret" J.string)
 
-  let enc =
-    J.conv (fun c -> (c.secret,c.server_id))
-           (fun (secret,server_id) -> {secret; server_id}) @@
+  type config = {
+    secret : string option;
+    server_id : int;
+  }
+
+  let build_config (preconf : preconfig) : config =
+    let secret = match preconf.secret with
+      | None -> None
+      | Some secret_in_clear -> Some (Sha.sha512 secret_in_clear) in
+    let server_id = Random.bits () in
+    {
+      secret;
+      server_id;
+    }
+
+  let config_enc =
+    J.conv (fun (c : config) -> (c.secret,c.server_id))
+           (fun (secret,server_id) : config -> {secret; server_id}) @@
       J.obj2 (J.opt "secret" J.string) (J.req "server_id" J.int)
 end
 

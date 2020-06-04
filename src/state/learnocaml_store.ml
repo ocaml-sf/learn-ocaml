@@ -28,6 +28,14 @@ module Json_codec = struct
     | `Null -> ""
     | _ -> assert false
 end
+let get_from_file enc p =
+  Lwt_io.(with_file ~mode: Input p read) >|=
+    Json_codec.decode enc
+
+let write_to_file enc s p =
+  let open Lwt_io in
+  let s = Json_codec.encode enc s in
+  with_file ~mode:output p @@ fun oc -> write oc s
 
 let sanitise_path prefix subpath =
   let rec resolve acc = function
@@ -44,8 +52,7 @@ let sanitise_path prefix subpath =
 
 let read_static_file path enc =
   let path = String.split_on_char '/' path in
-  Lwt_io.(with_file ~mode: Input (sanitise_path !static_dir path) read) >|=
-  Json_codec.decode enc
+  get_from_file enc (sanitise_path !static_dir path)
 
 let with_git_register =
   let dir_mutex = Lwt_utils.gen_mutex_table () in
@@ -64,7 +71,7 @@ let with_git_register =
        git ["config";"--local";"user.email";"none@learn-ocaml.org"]) >>=
     f >>= fun files ->
     git ("add"::"--"::files) () >>=
-    git ["commit";"-m";"Update"] >>=
+    git ["commit";"--allow-empty";"-m";"Update"] >>=
     git ["update-server-info"]
 
 let write ?(no_create=false) file ?(extra=[]) contents =
@@ -138,24 +145,15 @@ module Playground = struct
 end
 
 module Server = struct
-
-  let get_from_file ?(enc = Server.enc) p =
-    Lwt_io.(with_file ~mode: Input p read) >|=
-      Json_codec.decode enc
-
   let get () =
     Lwt.catch
-      (fun () -> read_static_file Learnocaml_index.server_config_path Server.enc)
+      (fun () -> read_static_file Learnocaml_index.server_config_path Server.config_enc)
       (fun e ->
         match e with
-        | Unix.Unix_error (Unix.ENOENT,_,_) -> Lwt.return @@ Server.default ()
+        | Unix.Unix_error (Unix.ENOENT,_,_) ->
+           Lwt.return @@ Server.build_config Server.empty_preconfig
         | e -> raise e
       )
-
-  let write_to_file ?(enc = Server.enc) s p =
-    let open Lwt_io in
-    let s = Json_codec.encode enc s in
-    with_file ~mode:output p @@ fun oc -> write oc s
 end
 
 module Tutorial = struct
@@ -201,8 +199,7 @@ module Exercise = struct
     let tbl = lazy (
       let tbl = Hashtbl.create 223 in
       Lwt.catch (fun () ->
-          Lwt_io.(with_file ~mode:Input (store_file ()) read) >|=
-          Json_codec.decode (J.list enc) >|= fun l ->
+          get_from_file (J.list enc) (store_file ()) >|= fun l ->
           List.iter (fun st -> Hashtbl.add tbl st.id st) l;
           tbl)
       @@ function
@@ -414,9 +411,7 @@ module Save = struct
 
   let get token =
     Token.find_save token >>= function
-    | Some save ->
-        Lwt_io.with_file ~mode:Lwt_io.Input save @@ fun chan ->
-        Lwt_io.read chan >|= Json_codec.decode (J.option enc)
+    | Some save -> get_from_file (J.option enc) save
     | None -> Lwt.return_none
 
   let set token save =
@@ -500,9 +495,8 @@ module Student = struct
     let store_file () = Filename.concat !sync_dir "students.json"
 
     let load () =
-      Lwt.catch (fun () ->
-          Lwt_io.(with_file ~mode:Input (store_file ()) read) >|=
-          Json_codec.decode store_enc)
+      Lwt.catch
+        (fun () -> get_from_file store_enc (store_file ()))
         (function
           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return Token.Map.empty
           | e -> Lwt.fail e)

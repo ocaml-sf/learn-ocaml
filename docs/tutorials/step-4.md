@@ -13,7 +13,7 @@ You can find the examples below in the
 `exercises/sampler-user-defined-types` directory (branch: step-4).
 
 In the examples, we use the type `color` defined as :
-```ocaml 
+```ocaml
 type color = Green | Yellow | Red | Blue
 ```
 
@@ -24,15 +24,15 @@ As in the previous step, you can add the argument `~sampler` of type
 
 ```ocaml
 let exercise_1 =
-	grade_function_1_against_solution
+	test_function_1_against_solution
 		[%ty: color -> string] "color_to_string"
 		~sampler: (fun () ->  match Random.int 4 with
 		           | 0 -> Red | 1 -> Green | 2 -> Yellow | _ -> Blue)
 		~gen:5
 		[]
 ```
-		 
-### Method 2: Defining a sampler 
+
+### Method 2: Defining a sampler
 You can also define your own sampler and not use the `~sampler`
 argument with the following rule: a sampler of type `unit -> my_type`
 has to be named `sample_my_type`.
@@ -46,7 +46,7 @@ let sample_color () : color =
     | _ -> Blue
 
 let exercise_2 =
-	grade_function_1_against_solution
+	test_function_1_against_solution
 		[%ty: color -> string] "color_to_string"
 		~gen:5
 		[]
@@ -79,7 +79,7 @@ let sample_col () = match Random.int 2 with
   | 0 -> B
   | _ -> R
 
-let sample_col_tree () = 
+let sample_col_tree () =
   let rec builder h = match h with
     | 0 -> Leaf
     | n -> match Random.int 3 with
@@ -88,9 +88,9 @@ let sample_col_tree () =
   in
   let h = Random.int 5 + 2 in
   builder h
-  
+
 let exercise_1 =
-	grade_function_2_against_solution
+	test_function_2_against_solution
 		[%ty: col tree -> col -> col tree] "monochrome"
 		~sampler:(fun () -> sample_col_tree (), sample_col ())
 		~gen:5
@@ -110,14 +110,14 @@ So for example, if we want to test a function of type `col tree -> int`, so we n
 let sample_col () = match Random.int 2 with
   | 0 -> B
   | _ -> R
-      
+
 (*A parametric type*)
 let sample_tree (sample: unit -> 'a) : unit -> 'a tree =
   let rec builder h = match h with
     | 0 -> Leaf
     | n -> match Random.int 3 with
       | 0 -> Leaf
-      | _ -> Node (builder (h-1), sample (), builder (h-1))    
+      | _ -> Node (builder (h-1), sample (), builder (h-1))
   in
   let h = Random.int 5 + 2 in
   fun () -> builder h
@@ -126,7 +126,7 @@ let sample_tree (sample: unit -> 'a) : unit -> 'a tree =
 The grading function is then simply :
 ```ocaml
 let exercise_2 =
-	grade_function_1_against_solution
+	test_function_1_against_solution
 		[%ty: col tree -> int] "height"
 		~gen:5
 		[]
@@ -136,7 +136,7 @@ Note that if instead of [col tree], the input type is [int tree] (or
 another type with a predefined sampler), you need nothing more.
 ```ocaml
 let exercise_2bis =
-  grade_function_1_against_solution
+  test_function_1_against_solution
     [%ty: int tree -> int] "height"
     ~gen:5
     []
@@ -148,7 +148,7 @@ example. The grader is simply:
 
 ```ocaml
 let exercise_3 =
-	grade_function_2_against_solution
+	test_function_2_against_solution
 		[%ty: col tree -> col -> col tree] "monochrome"
 		~gen:5
 		[]
@@ -168,7 +168,7 @@ The user-defined type is:
 type position = {x: int ; y: int}
 ```
 
-and its corresponding sampler: 
+and its corresponding sampler:
 ```ocaml
 let sample_position () = { x=sample_int () ; y=sample_int () }
 ```
@@ -176,9 +176,9 @@ let sample_position () = { x=sample_int () ; y=sample_int () }
 #### First example: `get_x`
 
 Exactly as shown previously, using metdho 2:
-```ocaml 
+```ocaml
 let exercise_1 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
     [%ty: position -> int ]
     "get_x"
     ~gen:5
@@ -188,7 +188,7 @@ let exercise_1 =
 #### Second example: `map` (functional input type)
 
 We want to grade the function 'map' for 'int list' so we need a
-sampler for function of type 'int -> int'. 
+sampler for function of type 'int -> int'.
 
 This is not possible to use the naming convention for a functional
 type without an alias (see method 2).
@@ -200,13 +200,13 @@ let sampler_fun () = match Random.int 3 with
   | _ -> fun x -> if x < 0 then -1 else 1
 ```
 ##### Method 1
-For this method, we can just build the proper sampler for all the function arguments. 
+For this method, we can just build the proper sampler for all the function arguments.
 ```ocaml
 let sampler_2 () =
   (sampler_fun (), sample_list ~min_size:1 ~max_size:10 sample_int ())
 
 let exercise_2 =
-  grade_function_2_against_solution
+  test_function_2_against_solution
     [%ty:  (int -> int) -> int list -> int list ] "map"
     ~sampler:sampler_2
     ~gen:5
@@ -222,7 +222,7 @@ type f_int_int = int -> int
 let sample_f_int_int = sampler_fun
 
 let exercise_2bis =
-  grade_function_2_against_solution
+  test_function_2_against_solution
     [%ty:  f_int_int -> int list -> int list ] "map"
     ~gen:5
     []
@@ -235,7 +235,7 @@ you can either use method 1 or define an alias and use method 2.
 ##### Method 1
 ```ocaml
 let exercise_3 =
-  grade_function_1_against_solution
+  test_function_1_against_solution
     [%ty:  int * int -> int ] "first_elt"
     ~sampler: (fun () -> sample_int (), sample_int ())
     ~gen:5
@@ -246,9 +246,9 @@ let exercise_3 =
 ```ocaml
 type pair_int = int * int
 let sample_pair_int () = sample_int (), sample_int ()
-                  
+
 let exercise_3bis =
-  grade_function_1_against_solution
+  test_function_1_against_solution
     [%ty:  pair_int -> int ] "first_elt"
     ~gen:5
     []

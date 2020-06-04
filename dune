@@ -1,5 +1,11 @@
 (ignored_subdirs (docker _obuild www sync demo-repository))
 
+(rule
+ (targets VERSION)
+ (action (with-stdout-to %{targets}
+           (run opam show ./%{dep:./learn-ocaml.opam} -f version --normalise)))
+)
+
 (env
   (release (flags -safe-string -w +a-4-42-44-45-48-3)
            (ocamlc_flags)
