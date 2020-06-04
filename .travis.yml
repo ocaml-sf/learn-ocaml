@@ -7,7 +7,9 @@ language: c
     - make docker-images
   script:
     - sh -c 'docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build'
-    - cd tests; sh -c ./runtests.sh
+    - cd tests
+    - mkdir corpuses; cd corpuses; git clone https://github.com/ocaml-sf/learn-ocaml-corpus
+    - cd ..; sh -c ./runtests.sh
 
 .macos: &MACOS
   os: osx
