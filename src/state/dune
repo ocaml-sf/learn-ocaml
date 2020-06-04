@@ -27,8 +27,15 @@
 )
 
 (library
+ (name bd)
+ (wrapped false)
+ (modules Bd)
+ (libraries lwt lwt.unix yojson learnocaml_data)
+)
+
+(library
  (name learnocaml_store)
  (wrapped false)
  (modules Learnocaml_store)
- (libraries lwt_utils learnocaml_api)
+ (libraries bd lwt_utils learnocaml_api)
 )
