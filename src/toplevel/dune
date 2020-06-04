@@ -35,6 +35,14 @@
 )
 
 (library
+  (name learnocaml_toplevel_pp)
+  (wrapped false)
+  (modes byte)
+  (libraries vg gg vg.svg)
+  (modules Learnocaml_toplevel_pp)
+)
+
+(library
  (name learnocaml_toplevel)
  (wrapped false)
  (modes byte)
@@ -48,6 +56,7 @@
             ocplib-json-typed
             learnocaml_toplevel_history
             learnocaml_toplevel_worker_messages
+            learnocaml_toplevel_pp
             ocplib_i18n)
  (modules Learnocaml_toplevel_worker_caller
           Learnocaml_toplevel_output
@@ -55,6 +64,8 @@
           Learnocaml_toplevel)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
 )
+
+
 
 (install
  (package learn-ocaml)
