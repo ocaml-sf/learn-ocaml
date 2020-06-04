@@ -73,7 +73,7 @@ handle_file () {
 	   learn-ocaml-client grade --json --id="$subdir" \
 	   /home/learn-ocaml/actual/"$subdir"/"$tosend" > res.json 2> stderr.txt
     if [ $? -ne 0 ]; then
-	red "NOT OK: $dir$tosend"
+	red "NOT OK: $dir/$tosend"
 	cat stderr.txt
 	clean_fail
     fi
@@ -88,12 +88,12 @@ handle_file () {
 	    diff res.json "$tosend.json"
 	    # If diff failed
 	    if [ $? -ne 0 ]; then
-		red "DIFF FAILED: $dir$tosend"
+		red "DIFF FAILED: $dir/$tosend"
 		clean_fail
 	    fi
 	fi
     fi
-    green "OK: $dir$tosend"
+    green "OK: $dir/$tosend"
     rm res.json stderr.txt
     let count++
 }
@@ -115,7 +115,7 @@ handle_subdir () {
 }
 
 # For each subdirectory (ie. each corpus)
-for dir in $(ls -d ./*/)
+while IFS= read -r dir;
 do
     run_server
 
@@ -133,6 +133,21 @@ do
     done < <(find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync)
 
     popd > /dev/null
-done
+done < <(find . -maxdepth 1 -type d ! -path . ! -path ./corpuses)
+
+while IFS= read -r corpus;
+do
+    echo "---> Testing corpus $corpus:"
+
+    docker run --entrypoint '' -v "$(realpath "$corpus")":/repository \
+	   learn-ocaml /bin/sh -c \
+	   "learn-ocaml --repo=/repository build"
+    if [ $? -ne 0 ]; then
+	red "Failed to build $corpus."
+	exit 1
+    fi
+
+    let count++
+done < <(find ./corpuses -mindepth 1 -maxdepth 1 -type d)
 
 green "\nALL $count TESTS PASSED\n"
