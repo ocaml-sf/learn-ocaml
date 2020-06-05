@@ -337,7 +337,7 @@ module Token = struct
       | Unix.Unix_error (Unix.EEXIST, _, _) -> aux ()
       | e -> Lwt.fail e
     in
-    aux () >>= fun t -> Token_index.add_token t () >>= fun u -> u; Lwt.return t
+    aux () >>= fun t -> Token_index.add_token t () >|= fun _ -> t
 
   let register ?(allow_teacher=false) token =
     if not allow_teacher && is_teacher token then
