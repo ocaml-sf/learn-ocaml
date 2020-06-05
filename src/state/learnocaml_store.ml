@@ -8,11 +8,13 @@
 
 open Lwt.Infix
 open Learnocaml_data
+open Bd
 
 module J = Json_encoding
 
 let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
+(* Remember to change the sync_dir in Bd.ml *)
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
 module Json_codec = struct
@@ -335,7 +337,7 @@ module Token = struct
       | Unix.Unix_error (Unix.EEXIST, _, _) -> aux ()
       | e -> Lwt.fail e
     in
-    aux ()
+    aux () >>= fun t -> Bd.add_token t () >>= fun u -> u; Lwt.return t
 
   let register ?(allow_teacher=false) token =
     if not allow_teacher && is_teacher token then
@@ -377,9 +379,7 @@ module Token = struct
 
     let enc = J.(list enc)
 
-    open Bd
-
-    let get () = Bd.test ()
+    let get () = Bd.get_tokens ()
 
   end
 
