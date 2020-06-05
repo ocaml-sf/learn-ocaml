@@ -27,9 +27,9 @@
 )
 
 (library
- (name bd)
+ (name token_index)
  (wrapped false)
- (modules Bd)
+ (modules Token_index)
  (libraries lwt lwt.unix yojson learnocaml_data)
 )
 
@@ -37,5 +37,5 @@
  (name learnocaml_store)
  (wrapped false)
  (modules Learnocaml_store)
- (libraries bd lwt_utils learnocaml_api)
+ (libraries token_index lwt_utils learnocaml_api)
 )
