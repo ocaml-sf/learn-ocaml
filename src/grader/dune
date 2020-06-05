@@ -195,6 +195,7 @@
  (name grader_jsoo_worker)
  (modes byte)
  (flags :standard -warn-error -9-27)
+ (link_flags :standard -linkall)
  (libraries toploop_jsoo
             grading
             ezjsonm
