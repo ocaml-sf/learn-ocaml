@@ -23,13 +23,17 @@
             learnocaml_ppx_metaquot
             learnocaml_ppx_metaquot_lib
             ocplib-json-typed
+            ocamlgraph
             learnocaml_report
             learnocaml_repository)
  (modules Introspection_intf
           Introspection
           Test_lib
+          Typed_ast
+          Typed_ast_lib
+          Style_checking
           Mutation_test)
- (modules_without_implementation Introspection_intf)
+ (modules_without_implementation Introspection_intf Typed_ast)
  (preprocess (pps learnocaml_ppx_metaquot))
 )
 
@@ -52,11 +56,13 @@
        %{ocaml-config:standard_library}/arrayLabels.cmi
        %{ocaml-config:standard_library}/buffer.cmi
        %{ocaml-config:standard_library}/bytes.cmi
+       %{ocaml-config:standard_library}/bigarray.cmi
        %{ocaml-config:standard_library}/camlinternalFormatBasics.cmi
        %{ocaml-config:standard_library}/camlinternalFormat.cmi
        %{ocaml-config:standard_library}/camlinternalLazy.cmi
        %{ocaml-config:standard_library}/camlinternalMod.cmi
        %{ocaml-config:standard_library}/camlinternalOO.cmi
+       %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi
        %{ocaml-config:standard_library}/char.cmi
        %{ocaml-config:standard_library}/complex.cmi
        %{ocaml-config:standard_library}/digest.cmi
@@ -81,7 +87,7 @@
        %{ocaml-config:standard_library}/string.cmi
        %{ocaml-config:standard_library}/sys.cmi
        %{ocaml-config:standard_library}/uchar.cmi
-       %{ocaml-config:standard_library}/weak.cmi )
+       %{ocaml-config:standard_library}/weak.cmi)
  (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
@@ -90,7 +96,7 @@
  (wrapped false)
  (modes byte)
  (modules Embedded_cmis)
- (libraries ocplib-ocamlres.runtime)
+ (libraries ocplib-ocamlres.runtime bigarray)
 )
 
 (rule
@@ -102,13 +108,18 @@
         %{ocaml-config:standard_library}/compiler-libs/ast_mapper.cmi
         %{ocaml-config:standard_library}/compiler-libs/parsetree.cmi
         %{ocaml-config:standard_library}/compiler-libs/location.cmi
-        %{ocaml-config:standard_library}/compiler-libs/parse.cmi)
+        %{ocaml-config:standard_library}/compiler-libs/parse.cmi
+        %{ocaml-config:standard_library}/compiler-libs/path.cmi
+        %{ocaml-config:standard_library}/compiler-libs/ident.cmi)
        (:generated-cmis
         ../ppx-metaquot/.ty.objs/ty.cmi
         ../ppx-metaquot/.fun_ty.objs/fun_ty.cmi
         .testing.objs/introspection_intf.cmi
         .learnocaml_report.objs/learnocaml_report.cmi
         .testing.objs/test_lib.cmi
+        .testing.objs/typed_ast.cmi
+        .testing.objs/typed_ast_lib.cmi
+        .testing.objs/style_checking.cmi
         .testing.objs/mutation_test.cmi))
  (action (with-stdout-to %{targets}
            (run ocp-ocamlres -format ocamlres %{compiler-cmis} %{generated-cmis})))
@@ -192,6 +203,7 @@
 )
 
 (install
+ (package learn-ocaml)
  (section share)
  (files (grader_jsoo_worker.bc.js as www/js/learnocaml-grader-worker.js))
 )

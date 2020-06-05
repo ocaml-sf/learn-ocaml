@@ -20,6 +20,8 @@ val sync_dir: string ref
 
 (** Used both for file i/o and request handling *)
 module Json_codec: Learnocaml_api.JSON_CODEC
+val get_from_file : 'a Json_encoding.encoding -> string -> 'a Lwt.t
+val write_to_file : 'a Json_encoding.encoding -> 'a -> string -> unit Lwt.t
 
 (* [sanitise_path prefix subdir] simplifies "." and ".." references in [subdir],
    and returns the concatenation, but guaranteeing the result remains below
@@ -56,11 +58,7 @@ module Playground: sig
 end
 
 module Server : sig
-  val get_from_file : ?enc:Server.config Json_encoding.encoding ->
-                      string -> Server.config Lwt.t
   val get : unit -> Server.config Lwt.t
-  val write_to_file : ?enc:Server.config Json_encoding.encoding ->
-                      Server.config -> string -> unit Lwt.t
 end
 
 module Tutorial: sig

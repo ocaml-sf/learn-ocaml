@@ -1,7 +1,7 @@
 (rule
  (targets learnocaml_version.ml)
  (action (with-stdout-to %{targets}
-           (echo "let v = \"%{version:learn-ocaml}\"")))
+           (echo "let v = \"%{read-strings:../../VERSION}\"")))
 )
 
 (library
@@ -9,7 +9,8 @@
  (wrapped false)
  (modules Learnocaml_data)
  (libraries asak
-	    learnocaml_toplevel_history
+            sha
+            learnocaml_toplevel_history
             learnocaml_report
             learnocaml_repository)
 )
@@ -21,7 +22,7 @@
  (modules Learnocaml_version Learnocaml_api)
  (libraries ocplib-json-typed
             ezjsonm
-	    conduit
+            conduit
             learnocaml_data)
 )
 

@@ -242,7 +242,9 @@ let format items =
       let format_section_html result_str =
         [ E ("span", [ "class", "score" ],
              [ T (result_str ^ min_str)])] in
-      match result with
+      (* Hack: never fold the style report *)
+      if title = [Text "Style report"] then ("informative", [], unfolder)
+      else match result with
         | (0, false) ->
             "informative folded", [], unfolder
         | (n, false) ->

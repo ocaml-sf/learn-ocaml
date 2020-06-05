@@ -17,12 +17,12 @@ GNU/Linux and MacOS X are supported.
 >       -v $REPOSITORY:/repository:ro \
 >       -v learn-ocaml-sync:/sync \
 >       -p 80:8080 --name learn-ocaml-server \
->       ocamlsf/learn-ocaml:dev
+>       teachingfp/learn-ocaml:latest
 >
 > This will start an instance of the learn-ocaml server on port 80 (ignore the
 > message about 8080, this is the port used internally).
 > An example repository can be obtained in the `demo-repository` directory of
-> [learn-ocaml](https://github.com/ocaml-sf/learn-ocaml/archive/master.zip).
+> [learn-ocaml](https://github.com/teaching-the-art-of-fp/learn-ocaml/archive/teaching-fp.zip).
 
 ## Software requirements
 
@@ -46,14 +46,11 @@ your exercises.
 
 We assume that the current directory is `$DIR`.
 
-First, clone the current learn-ocaml source tree:
+First, clone the current learn-ocaml source tree and check out the **teaching-fp** branch:
 ```
-git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
-```
-
-If you do not have a GitHub account, do instead:
-```
-git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
+git clone https://github.com/teaching-the-art-of-fp/learn-ocaml.git
+cd learn-ocaml
+git checkout teaching-fp
 ```
 
 Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies

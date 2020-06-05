@@ -102,13 +102,18 @@ module Args = struct
       output_json: string option;
     }
 
-    let term =
-      let apply
-          exercises
-          output_json grade_student display_outcomes quiet
-          display_std_outputs dump_outputs dump_reports timeout
-          verbose dump_dot =
+    let grader_conf =
+      let apply exercises output_json =
         let exercises = List.flatten exercises in
+        { exercises; output_json }
+      in
+      Term.(const apply $exercises $output_json)
+
+    let grader_cli =
+      let apply
+          grade_student display_outcomes quiet display_std_outputs
+          dump_outputs dump_reports timeout verbose dump_dot
+        =
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
         Grader_cli.display_callback := not quiet;
@@ -120,12 +125,14 @@ module Args = struct
         Grader_cli.dump_dot := dump_dot;
         Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
         Learnocaml_process_exercise_repository.dump_reports := dump_reports;
-        { exercises; output_json }
+        ()
       in
-      Term.(const apply
-            $exercises $output_json $grade_student $display_outcomes
-            $quiet $display_std_outputs $dump_outputs $dump_reports
-            $timeout $verbose $dump_dot)
+      Term.(const apply $grade_student $display_outcomes $quiet $display_std_outputs
+            $dump_outputs $dump_reports  $timeout $verbose $dump_dot)
+
+    let term =
+      let apply conf () = conf in
+      Term.(const apply $grader_conf $grader_cli)
   end
 
   module Builder = struct
@@ -182,9 +189,15 @@ module Args = struct
       toplevel: bool option;
     }
 
-    let term =
-      let apply repo_dir contents_dir
-          try_ocaml lessons playground exercises toplevel exercises_filtered jobs =
+    let builder_conf =
+      let apply
+        contents_dir try_ocaml lessons exercises playground toplevel
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+      in
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel)
+
+    let repo_conf =
+      let apply repo_dir exercises_filtered jobs =
         Learnocaml_process_exercise_repository.exercises_dir :=
           repo_dir/"exercises";
         Learnocaml_process_exercise_repository.exercises_filtered :=
@@ -194,11 +207,13 @@ module Args = struct
         Learnocaml_process_playground_repository.playground_dir :=
           repo_dir/"playground";
         Learnocaml_process_exercise_repository.n_processes := jobs;
-        { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+        ()
       in
-      Term.(const apply $repo_dir $contents_dir
-            $try_ocaml $lessons $playground $exercises $toplevel $exercises_filtered $jobs)
+      Term.(const apply $repo_dir $exercises_filtered $jobs)
 
+    let term =
+      let apply conf () = conf in
+      Term.(const apply $builder_conf $repo_conf)
   end
 
   module Server = struct
@@ -266,22 +281,16 @@ let main o =
        let server_config = o.repo_dir/"server_config.json"
        and www_server_config = o.app_dir/"server_config.json" in
        let module ServerData = Learnocaml_data.Server in
-       let module ServerStore = Learnocaml_store.Server in
        Random.self_init ();
        Lwt.catch
          (fun () ->
-           let enc = ServerData.enc_init in
-           ServerStore.get_from_file ~enc server_config
-           >|= fun pre_config ->
-           match pre_config.ServerData.secret with
-             | None -> None
-             | Some x -> Some (Sha.sha512 x))
+           Learnocaml_store.get_from_file ServerData.preconfig_enc server_config)
          (function 
-           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return None
+           | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return ServerData.empty_preconfig
            | exn -> Lwt.fail exn) 
-       >>= fun secret ->
-         let json_config = ServerData.default ?secret () in
-         ServerStore.write_to_file json_config www_server_config
+       >>= fun preconfig ->
+         let json_config = ServerData.build_config preconfig in
+         Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
