@@ -4,6 +4,7 @@ open Learnocaml_data
 
 
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
+let json_file = "sync/token.json"
 
 (* Unlocked *)
 let mutex_json_token = Lwt_mutex.create ()
@@ -56,7 +57,7 @@ let rec list_cast list =
 let write_index list =
   (let data =  cast_list @@ list_cast list in
   Lwt_mutex.lock mutex_json_token >|= fun () ->
-  let oo = open_out "token.json" in
+  let oo = open_out json_file in
   Yojson.Basic.pretty_to_channel oo data;
   close_out oo;
   Lwt_mutex.unlock mutex_json_token;)
@@ -78,14 +79,14 @@ let get_file nom () =
 
 (* Token list *)
 let get_tokens () =
-  let json = get_file "token.json" () in
+  let json = get_file json_file () in
   json >|= Yojson.Basic.Util.to_list >|= List.map (fun e -> Yojson.Basic.Util.to_string e) >|= string_to_token
 
 let add_token token () =
   (let token = string_to_json @@ Token.to_string token in
-  let json_list = get_file "token.json" () >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
+  let json_list = get_file json_file () >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
   Lwt_mutex.lock mutex_json_token >>= fun () ->
-  (let oo = open_out "token.json" in
+  (let oo = open_out json_file in
   json_list >|= cast_list >|= Yojson.Basic.pretty_to_channel oo >|= fun () ->
   close_out oo;
   Lwt_mutex.unlock mutex_json_token;))
