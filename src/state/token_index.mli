@@ -1,11 +1,18 @@
-val sync_dir : string ref
-val mutex_json_token : Lwt_mutex.t
-val cast_list : 'a -> [> `List of 'a ]
-val string_to_json : string -> Yojson.Basic.t
-val token_to_string : Learnocaml_data.Token.t list -> string list
-val get_file : string -> unit -> Yojson.Basic.t Lwt.t
-val get_tokens : unit -> Learnocaml_data.Token.t list Lwt.t
-val list_cast : string list -> Yojson.Basic.t list
-val write_index :  string list -> unit Lwt.t
-val create_index : unit Lwt.t
-val add_token : Learnocaml_data.Token.t -> unit -> unit Lwt.t
+(* This file is part of Learn-OCaml.
+ *
+ * Copyright (C) 2019-2020 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
+ *
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
+(** Create or regenerate token index from sync/ and write sync/token.json.
+    This step may take a long time (up to several minutes).  Automatically
+    called (once and for all) by [get_tokens] or [add_token] if need be. *)
+val create_index : string -> unit Lwt.t
+
+(** Get the list of all tokens. *)
+val get_tokens : string -> unit -> Learnocaml_data.Token.t list Lwt.t
+
+(** Add a registered token in the index. *)
+val add_token : Learnocaml_data.Token.t -> string -> unit Lwt.t

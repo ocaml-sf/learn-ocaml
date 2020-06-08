@@ -3,22 +3,21 @@ open Lwt
 open Learnocaml_data
 
 
-let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
-let json_file = "sync/token.json"
+let token_file = "sync/token.json"
 
 (* Unlocked *)
-let mutex_json_token = Lwt_mutex.create ()
+let mutex_token = Lwt_mutex.create ()
 
-let cast_list list = (`List list)
+let cast_list l = `List l
 
 let string_to_json (value:string) = (`String value : Yojson.Basic.t)
 
-let token_to_string liste = List.map (fun t -> Token.to_string t) liste
+let token_to_string l = List.map (fun t -> Token.to_string t) l
 
-let string_to_token liste = List.map (fun t -> Token.parse t) liste
+let string_to_token l = List.map (fun t -> Token.parse t) l
 
-let get () =
-      let base = !sync_dir in
+let get (sync_dir : string) () =
+      let base = sync_dir in
       let ( / ) dir f = if dir = "" then f else Filename.concat dir f in
       let rec scan f d acc =
         let rec aux s acc =
@@ -47,46 +46,38 @@ let get () =
         ) "" []
 
 
-(* string List -> (`String: Yojson.Basic.t) List *)
-let rec list_cast list =
-  match list with
-  | x::l -> string_to_json x :: list_cast l
-  | [] -> []
-
-(* Create and write index file *)
-let write_index list =
-  (let data =  cast_list @@ list_cast list in
-  Lwt_mutex.lock mutex_json_token >|= fun () ->
-  let oo = open_out json_file in
+let write_file file mutex data =
+  (Lwt_mutex.lock mutex >|= fun () ->
+  let oo = open_out file in
   Yojson.Basic.pretty_to_channel oo data;
   close_out oo;
-  Lwt_mutex.unlock mutex_json_token;)
+  Lwt_mutex.unlock mutex)
 
-let create_index = (get () >>= write_index;)
+let create_index (sync_dir : string) =
+  let l = get sync_dir () in
+  let data =  l >|= List.map string_to_json >|= cast_list in
+  data >>= write_file token_file mutex_token
 
 
 (* if file doesn't exist, create it *)
-let get_file nom () =
-  if Sys.file_exists nom then(
+let get_file nom (sync_dir : string) =
+  if Sys.file_exists nom then begin
     try
       Lwt.return @@ Yojson.Basic.from_file nom
     with
-      Json_error _ ->  create_index >|= fun () -> Yojson.Basic.from_file nom)
+    (* Note: this error handling could be adapted later on, to be "more conservative"? (this does not matter now, as the "sync/token.json" file is not critical and can be regenerated) *)
+      Json_error _ ->  create_index sync_dir >|= fun () -> Yojson.Basic.from_file nom end
   else
-    create_index >|= fun () -> Yojson.Basic.from_file nom
- 
+    create_index sync_dir >|= fun () -> Yojson.Basic.from_file nom
 
 
 (* Token list *)
-let get_tokens () =
-  let json = get_file json_file () in
-  json >|= Yojson.Basic.Util.to_list >|= List.map (fun e -> Yojson.Basic.Util.to_string e) >|= string_to_token
+let get_tokens (sync_dir : string) () =
+  let json = get_file token_file sync_dir in
+  json >|= Yojson.Basic.Util.to_list >|= List.map Yojson.Basic.Util.to_string >|= string_to_token
 
-let add_token token () =
-  (let token = string_to_json @@ Token.to_string token in
-  let json_list = get_file json_file () >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
-  Lwt_mutex.lock mutex_json_token >>= fun () ->
-  (let oo = open_out json_file in
-  json_list >|= cast_list >|= Yojson.Basic.pretty_to_channel oo >|= fun () ->
-  close_out oo;
-  Lwt_mutex.unlock mutex_json_token;))
+
+let add_token token (sync_dir : string) =
+  let token = string_to_json @@ Token.to_string token in
+   let json_list = get_file token_file sync_dir >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
+   json_list >|= cast_list >>= write_file token_file mutex_token
