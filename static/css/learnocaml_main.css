@@ -980,6 +980,11 @@ div#login-overlay button {
   min-width: 10em;
 }
 
+div#login-overlay a {
+  color: #9bd;
+  text-align: center;
+}
+
 #logout-overlay {
     display: none;
     position: fixed;

@@ -641,12 +641,19 @@ let set_string_translations () =
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_first_connection_nickname", [%i"Choose a nickname"];
+    "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
+    "txt_first_connection_token", [%i"Token"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
-    "txt_returning_dialog", [%i"Enter your token"];
+    "txt_returning_nickname", [%i"Nickname"];
+    "txt_returning_password", [%i"Password"];
     "txt_login_returning",  [%i"Connect"];
+    "txt_login_forgotten", [%i"Forgot your password?"];
+    "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
+                                       information entered will be used in the \
+                                       context of the Pfitaxel plateform."];
   ] in
   List.iter
     (fun (id, text) ->
@@ -654,8 +661,6 @@ let set_string_translations () =
     translations;
   let placeholder_translations = [
     El.nickname_field, configured config##.txtNickname
-      [%i"Nickname"];
-    El.Login_overlay.input_nick, configured config##.txtNickname
       [%i"Nickname"];
   ] in
   List.iter

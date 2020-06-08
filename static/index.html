@@ -66,34 +66,52 @@
       <!-- </div> -->
     </div>
     <div id="login-overlay">
-      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h3>
+      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h1>
       <div id="login-new">
         <h4 id="txt_first_connection"><!-- First connection --></h4>
         <div>
-          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <div id="txt_first_connection_nickname"><!-- Choose a nickname --></div>
           <div class="filler_h"></div>
-          <input id="login-nickname-input" type="text" placeholder="Nickname"
-                 minlength="2" autocomplete="off"></input>
+          <input id="login-nickname-input" type="text" minlength="2" autocomplete="off">
+        </div>
+	<div>
+	  <div id="txt_first_connection_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="login-password-input" type="password" minlength="1">
         </div>
 	<div>
 	  <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
           <div class="filler_h"></div>
-          <input id="login-secret-input" type="text" placeholder="Secret"
-                 minlength="1" autocomplete="off"></input>
+          <input id="login-secret-input" type="text" minlength="1" autocomplete="off">
+        </div>
+        <div>
+          <div id="txt_first_connection_token"><!-- Enter your token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="first-connection-token-input"
+                 autocomplete="off">
+        </div>
+        <div>
+          <input type="checkbox" id="first-connection-consent">
+          <label for="first-connection-consent" id="txt_first_connection_consent"></label>
         </div>
         <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
       </div>
       <div id="login-returning">
         <h4 id="txt_returning"><!-- Returning user --></h4>
         <div>
-          <div id="txt_returning_dialog"><!-- Enter your token --></div>
+          <div id="txt_returning_nickname"><!-- Nickname --></div>
           <div class="filler_h"></div>
-          <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
-                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
-                 id="login-token-input"
-                 autocomplete="off">
+          <input type="text" id="login-token-input">
         </div>
+	<div>
+	  <div id="txt_returning_password"><!-- Password --></div>
+	  <div class="filler_h"></div>
+	  <input type="password" id="login-token-password">
+	</div>
         <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+	<a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
       </div>
     </div>
     <div id="learnocaml-main-loading" class="loaded"></div>
