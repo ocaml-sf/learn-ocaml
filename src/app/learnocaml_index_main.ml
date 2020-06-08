@@ -860,7 +860,10 @@ let () =
       xset El.content (fun s -> s##.style##.left := Js.string "");
       Manip.SetCss.display El.show_panel "none";
       true);
-  init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
+  Server_caller.request (Learnocaml_api.Version ()) >>=
+    (function
+     | Ok _ -> init_sync_token sync_button_state >|= init_tabs
+     | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
     let (_, select) = List.assoc activity tabs in
