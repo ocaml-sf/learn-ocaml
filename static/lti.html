@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml</title>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+    <script language="JavaScript" src="/js/learnocaml-lti.js" defer></script>
+    <style>
+      #txt_first_connection_question {
+          flex: auto;
+          text-align: center;
+      }
+
+      #login-overlay > div > div:last-child {
+          padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-overlay">
+      <div id="login-new">
+        <h4 id="txt_first_connection_dialog"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_question"></div>
+        </div>
+        <div>
+          <button id="first-connection-yes"><span id="txt_button_yes"><!-- Yes --></span></button>
+          <button id="first-connection-no"><span id="txt_button_no"><!-- No --></span></button>
+        </div>
+      </div>
+      <div id="login-returning">
+        <h4 id="txt_returning_token"><!-- Enter your token --></h4>
+        <div>
+          <div id="txt_returning_token_label"><!-- Token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 autocomplete="off">
+        </div>
+        <div>
+          <button id="login-connect-button"><span id="txt_button_connect"><!-- Connect --></span></button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

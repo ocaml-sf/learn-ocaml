@@ -401,6 +401,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         | ["student-view.html"]
         | ["description.html"]
         | ["partition-view.html"]
+        | ["lti.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
           Static path |> k
