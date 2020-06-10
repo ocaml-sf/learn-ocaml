@@ -8,13 +8,11 @@
 
 open Lwt.Infix
 open Learnocaml_data
-open Token_index
 
 module J = Json_encoding
 
 let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
-(* Remember to change the sync_dir in token_index.ml *)
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
 module Json_codec = struct

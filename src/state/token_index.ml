@@ -3,18 +3,16 @@ open Lwt
 open Learnocaml_data
 
 
-let token_file = "sync/token.json"
+let token_file = "token.json"
 
 (* Unlocked *)
 let mutex_token = Lwt_mutex.create ()
 
 let cast_list l = `List l
 
-let string_to_json (value:string) = (`String value : Yojson.Basic.t)
+let cast_string (value:string) = `String value
 
-let token_to_string l = List.map (fun t -> Token.to_string t) l
-
-let string_to_token l = List.map (fun t -> Token.parse t) l
+let string_to_token l = List.map Token.parse l
 
 let get (sync_dir : string) () =
       let base = sync_dir in
@@ -47,16 +45,16 @@ let get (sync_dir : string) () =
 
 
 let write_file file mutex data =
-  (Lwt_mutex.lock mutex >|= fun () ->
+  Lwt_mutex.lock mutex >|= fun () ->
   let oo = open_out file in
   Yojson.Basic.pretty_to_channel oo data;
   close_out oo;
-  Lwt_mutex.unlock mutex)
+  Lwt_mutex.unlock mutex
 
 let create_index (sync_dir : string) =
   let l = get sync_dir () in
-  let data =  l >|= List.map string_to_json >|= cast_list in
-  data >>= write_file token_file mutex_token
+  let data =  l >|= List.map cast_string >|= cast_list in
+  data >>= write_file (sync_dir ^ "/" ^ token_file) mutex_token
 
 
 (* if file doesn't exist, create it *)
@@ -73,11 +71,11 @@ let get_file nom (sync_dir : string) =
 
 (* Token list *)
 let get_tokens (sync_dir : string) () =
-  let json = get_file token_file sync_dir in
+  let json = get_file (sync_dir ^ "/" ^ token_file) sync_dir in
   json >|= Yojson.Basic.Util.to_list >|= List.map Yojson.Basic.Util.to_string >|= string_to_token
 
 
 let add_token token (sync_dir : string) =
-  let token = string_to_json @@ Token.to_string token in
-   let json_list = get_file token_file sync_dir >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
-   json_list >|= cast_list >>= write_file token_file mutex_token
+  let token = cast_string @@ Token.to_string token in
+   let json_list = get_file (sync_dir ^ "/" ^ token_file) sync_dir >|=  Yojson.Basic.Util.to_list >>= fun l -> Lwt.return @@ token::l in
+   json_list >|= cast_list >>= write_file (sync_dir ^ "/" ^ token_file) mutex_token

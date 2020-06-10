@@ -344,7 +344,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
-      | `GET, ("description"::_), _token ->
+      | `GET, ("description"::_path), _token ->
          (* match token with
           | None -> Invalid_request "Missing token" |> k *)
           Static ["description.html"] |> k

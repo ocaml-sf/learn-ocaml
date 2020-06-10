@@ -37,6 +37,7 @@ depends: [
   "ppx_tools"
   "ppx_sexp_conv" {= "v0.9.0"}
   "ppx_fields_conv" {= "v0.9.0"}
+  "yojson" {>= "1.4.0" }
 ]
 build: [
   ["dune" "build" "@install" "-p" name "-j" jobs]
