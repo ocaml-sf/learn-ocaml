@@ -346,7 +346,7 @@ let stats_tab assignments answers =
   ]
 
 let init_exercises_and_stats_tabs teacher_token student_token answers =
-  retrieve (Learnocaml_api.Exercise_index teacher_token)
+  retrieve (Learnocaml_api.Exercise_index (Some teacher_token))
   >>= fun (index, _) ->
   retrieve (Learnocaml_api.Exercise_status_index teacher_token)
   >>= fun status ->

@@ -955,7 +955,7 @@ module Exercise_list = struct
   let exercise_list o  =
     get_config_o o
     >>= fun {ConfigFile.server;token} ->
-    fetch server (Learnocaml_api.Exercise_index (token))
+    fetch server (Learnocaml_api.Exercise_index (Some token))
     >>= (fun index->
     let open Json_encoding in
     let ezjsonm = (Json_encoding.construct

@@ -53,7 +53,7 @@ type _ request =
       teacher token * Exercise.id list * Token.t list -> string request
 
   | Exercise_index:
-      'a token -> (Exercise.Index.t * (Exercise.id * float) list) request
+      'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
       'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
 

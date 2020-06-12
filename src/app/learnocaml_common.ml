@@ -1061,7 +1061,7 @@ module Display_exercise =
 
     let get_skill_index token =
       let index = lazy (
-                      retrieve (Learnocaml_api.Exercise_index token)
+                      retrieve (Learnocaml_api.Exercise_index (Some token))
     >|= fun (index, _) ->
                       Exercise.Index.fold_exercises (fun (req, focus) id meta ->
                           let add sk id map =
@@ -1179,7 +1179,7 @@ module Display_exercise =
         | [] -> None
         | [author] -> Some (display_authors [%i "Author:"] [author])
         | authors -> Some (display_authors [%i "Authors:"] authors) in
-      retrieve (Learnocaml_api.Exercise_index token)
+      retrieve (Learnocaml_api.Exercise_index (Some token))
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in
       let focus =

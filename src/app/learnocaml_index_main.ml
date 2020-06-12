@@ -685,9 +685,9 @@ let () =
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
       (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-      (match token, get_opt config##.enableExercises with
-       | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
-       | _ -> []) @
+        (if get_opt config##.enableExercises then
+           ["exercises", ([%i"Exercises"], exercises_tab token)]
+        else []) @
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
