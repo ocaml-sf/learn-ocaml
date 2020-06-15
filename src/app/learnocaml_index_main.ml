@@ -595,14 +595,14 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "none";
   token
 
-let init_sync_token button_state =
+let init_sync_token button_group =
   catch
     (fun () ->
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found -> init_token_dialog ()
        end >>= fun token ->
-       enable_button button_state ;
+       enable_button_group button_group ;
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
 
@@ -671,8 +671,8 @@ let () =
     Js.string ("Learn OCaml" ^ " v."^Learnocaml_api.version);
   Manip.setInnerText El.version ("v."^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
-  let sync_button_state = button_state () in
-  disable_button sync_button_state ;
+  let sync_button_group = button_group () in
+  disable_button_group sync_button_group;
   let menu_hidden = ref true in
   let no_tab_selected () =
     Manip.removeChildren El.content ;
@@ -814,7 +814,7 @@ let () =
          Lwt.return_unit)
   in
   List.iter (fun (text, icon, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~icon text f)
+      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
     [
       [%i"Show token"], "token", (fun () ->
           show_token_dialog (get_stored_token ());
@@ -867,7 +867,7 @@ let () =
       true);
   Server_caller.request (Learnocaml_api.Version ()) >>=
     (function
-     | Ok _ -> init_sync_token sync_button_state >|= init_tabs
+     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
