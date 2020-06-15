@@ -433,7 +433,8 @@ module Request_handler = struct
           >>= respond_json cache
       | Api.Exercise_index None ->
          lwt_fail (`Forbidden, "Forbidden")
-      | Api.Exercise (token, id) ->
+
+      | Api.Exercise (Some token, id) ->
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
@@ -442,7 +443,9 @@ module Request_handler = struct
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
-              lwt_fail (`Forbidden, "Exercise closed"))
+             lwt_fail (`Forbidden, "Exercise closed"))
+      | Api.Exercise (None, _) ->
+         lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json cache

@@ -90,11 +90,11 @@ let () =
   run_async_with_log @@ fun () ->
   set_string_translations_exercises ();
   Learnocaml_local_storage.init ();
-  retrieve (Learnocaml_api.Version ())
-  >|= fun (_,server_id) ->
-    Learnocaml_local_storage.(store server_id) server_id;
-  let token = get_token ()
-    
+  Server_caller.request (Learnocaml_api.Version ()) >>=
+    (function
+     | Ok (_, server_id) -> Learnocaml_local_storage.(store server_id) server_id; Lwt.return_true
+     | Error _ -> Lwt.return_false) >>= fun has_server ->
+  let token = get_token ~has_server ()
   in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
@@ -285,4 +285,3 @@ let () =
   typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()
-;;

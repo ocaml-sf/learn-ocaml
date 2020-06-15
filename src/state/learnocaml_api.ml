@@ -39,7 +39,7 @@ type _ request =
   | Exercise_index:
       'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
-      'a token * string -> (Exercise.Meta.t * Exercise.t * float option) request
+      'a token option * string -> (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index:
       unit -> (string * string) list request
@@ -118,8 +118,6 @@ module Conversions (Json: JSON_CODEC) = struct
           json J.unit
       | Students_csv _ ->
           str
-      | Exercise_index (Some _) ->
-         json (J.tup2 Exercise.Index.enc (J.assoc J.float))
       | Exercise_index _ ->
          json (J.tup2 Exercise.Index.enc (J.assoc J.float))
       | Exercise _ ->
@@ -211,9 +209,12 @@ module Conversions (Json: JSON_CODEC) = struct
     | Exercise_index (Some token) ->
        get ~token ["exercise-index.json"]
     | Exercise_index None ->
-       get ["exercises.json"]
-    | Exercise (token, id) ->
-        get ~token ("exercises" :: String.split_on_char '/' (id^".json"))
+       get ["exercise-index.json"]
+
+    | Exercise (Some token, id) ->
+       get ~token ("exercises" :: String.split_on_char '/' (id^".json"))
+    | Exercise (None, id) ->
+       get ("exercises" :: String.split_on_char '/' (id^".json"))
 
     | Lesson_index () ->
         get ["lessons.json"]
@@ -329,17 +330,15 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Students_csv (token, exercises, students) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
-      | `GET, ["exercise-index.json"], Some token ->
-         Exercise_index (Some token) |> k
-      | `GET, ["exercise.json"], None ->
-         Exercise_index None |> k
+      | `GET, ["exercise-index.json"], token ->
+         Exercise_index token |> k
       | `GET, ("exercises"::path), token ->
           (match last path with
            | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
                (match token with
                 | Some token ->
                     let id = Filename.chop_suffix (String.concat "/" path) ".json" in
-                    Exercise (token, id) |> k
+                    Exercise (Some token, id) |> k
                 | None -> Invalid_request "Missing token" |> k)
            | Some "" ->
                Static ["exercise.html"] |> k

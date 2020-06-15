@@ -385,7 +385,7 @@ let extract_text_from_rich_text text =
 let set_state_from_save_file ?token save =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
-  match token with None -> () | Some t -> store sync_token t;
+  (match token with None -> () | Some t -> store sync_token t);
   store nickname save.nickname;
   store all_exercise_states
     (SMap.merge (fun _ ans edi ->
@@ -454,6 +454,24 @@ let rec sync_save token save_file =
 let sync token = sync_save token (get_state_as_save_file ())
 
 let sync_exercise token ?answer ?editor id =
+  let handle_serverless () =
+    (* save the text at least locally (but not the report & grade, that could
+       be misleading) *)
+    let txt = match editor, answer with
+      | Some t, _ -> Some t
+      | _, Some a -> Some a.Answer.solution
+      | _ -> None
+    in
+    match txt with
+    | Some txt ->
+       let key = Learnocaml_local_storage.exercise_state id in
+       let a0 = Learnocaml_local_storage.retrieve key in
+       Learnocaml_local_storage.store key
+         {a0 with Answer.
+          solution = txt;
+          mtime = gettimeofday () }
+    | None -> ()
+  in
   let nickname = Learnocaml_local_storage.(retrieve nickname) in
   let toplevel_history =
     SMap.find_opt id Learnocaml_local_storage.(retrieve all_toplevel_histories)
@@ -470,26 +488,15 @@ let sync_exercise token ?answer ?editor id =
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = opt_to_map toplevel_history;
   } in
-  Lwt.catch (fun () -> sync_save token save_file)
-    (fun e ->
-       (* save the text at least locally (but not the report & grade, that could
-          be misleading) *)
-       let txt = match editor, answer with
-         | Some t, _ -> Some t
-         | _, Some a -> Some a.Answer.solution
-         | _ -> None
-       in
-       (match txt with
-        | Some txt ->
-            let key = Learnocaml_local_storage.exercise_state id in
-            let a0 = Learnocaml_local_storage.retrieve key in
-            Learnocaml_local_storage.store key
-              {a0 with Answer.
-                    solution = txt;
-                    mtime = gettimeofday () }
-        | None -> ());
-       raise e)
-
+  match token with
+  | Some token ->
+     Lwt.catch (fun () -> sync_save token save_file)
+       (fun e ->
+         handle_serverless ();
+         raise e)
+  | None -> set_state_from_save_file save_file;
+            handle_serverless ();
+            Lwt.return save_file
 
 let string_of_seconds seconds =
   let days = seconds / 24 / 60 / 60 in
@@ -970,21 +977,24 @@ let setup_prelude_pane ace prelude =
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
 
-let get_token () =
-  try
-    Learnocaml_local_storage.(retrieve sync_token) |>
-      Lwt.return
-  with Not_found ->
-    retrieve (Learnocaml_api.Nonce ())
-    >>= fun nonce ->
-    ask_string ~title:"Secret"
-      [H.pcdata [%i"Enter the secret"]]
-    >>= fun secret ->
-    retrieve
-      (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
-    >|= fun token ->
-    Learnocaml_local_storage.(store sync_token) token;
-    token
+let get_token ?(has_server = true) () =
+  if not has_server then
+    Lwt.return None
+  else
+    try
+      Some Learnocaml_local_storage.(retrieve sync_token) |>
+        Lwt.return
+    with Not_found ->
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
+      ask_string ~title:"Secret"
+        [H.pcdata [%i"Enter the secret"]]
+      >>= fun secret ->
+      retrieve
+        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
+      >|= fun token ->
+      Learnocaml_local_storage.(store sync_token) token;
+      Some token
 
 module Display_exercise =
   functor (
@@ -1179,7 +1189,7 @@ module Display_exercise =
         | [] -> None
         | [author] -> Some (display_authors [%i "Author:"] [author])
         | authors -> Some (display_authors [%i "Authors:"] authors) in
-      retrieve (Learnocaml_api.Exercise_index (Some token))
+      retrieve (Learnocaml_api.Exercise_index token)
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in
       let focus =

@@ -127,7 +127,7 @@ val sync: Token.t -> Save.t Lwt.t
 (** The same, but limiting the submission to the given exercise, using the given
     answer if any, and the given editor text, if any. *)
 val sync_exercise:
-  Token.t -> ?answer:Learnocaml_data.Answer.t -> ?editor:string ->
+  Token.t option -> ?answer:Learnocaml_data.Answer.t -> ?editor:string ->
   Learnocaml_data.Exercise.id ->
   Save.t Lwt.t
 
@@ -209,7 +209,7 @@ module Editor_button (E : Editor_info) : sig
   val cleanup : string -> unit
   val download : string -> unit
   val eval : Learnocaml_toplevel.t -> (string -> 'a) -> unit
-  val sync : Token.t Lwt.t -> Learnocaml_data.SMap.key -> unit
+  val sync : Token.t option Lwt.t -> Learnocaml_data.SMap.key -> unit
 end
 
 val setup_editor : string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
@@ -222,7 +222,7 @@ val set_nickname_div : unit -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
 
-val get_token : unit -> Learnocaml_data.student Learnocaml_data.token Lwt.t
+val get_token : ?has_server:bool -> unit -> Learnocaml_data.student Learnocaml_data.token option Lwt.t
 
 module Display_exercise :functor
   (Q : sig
@@ -273,6 +273,6 @@ module Display_exercise :functor
       (string Tyxml_js.Html5.wrap * string Tyxml_js.Html5.wrap) list ->
       [> `PCDATA | `Span ] Tyxml_js.Html5.elt list
     val display_meta :
-      'a Learnocaml_data.token ->
+      'a Learnocaml_data.token option ->
       Learnocaml_data.Exercise.Meta.t -> string -> unit Lwt.t
   end
