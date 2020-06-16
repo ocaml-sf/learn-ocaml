@@ -377,7 +377,7 @@ module Token = struct
 
     let enc = J.(list enc)
 
-    let get () = Token_index.get_tokens !sync_dir ()
+    let get () = Token_index.get_tokens !sync_dir
 
   end
 

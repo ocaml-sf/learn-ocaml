@@ -8,11 +8,12 @@
 
 (** Create or regenerate token index from sync/ and write sync/token.json.
     This step may take a long time (up to several minutes).  Automatically
-    called (once and for all) by [get_tokens] or [add_token] if need be. *)
+    called (once and for all) by [get_tokens] or [add_token] if need be.
+    The first argument denotes the sync directory path. *)
 val create_index : string -> unit Lwt.t
 
 (** Get the list of all tokens. *)
-val get_tokens : string -> unit -> Learnocaml_data.Token.t list Lwt.t
+val get_tokens : string -> Learnocaml_data.Token.t list Lwt.t
 
 (** Add a registered token in the index. *)
 val add_token : Learnocaml_data.Token.t -> string -> unit Lwt.t
