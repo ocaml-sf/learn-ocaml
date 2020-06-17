@@ -1,6 +1,6 @@
 # Step 3: Grading with generators for Ocaml simple built-in types
  You can find the examples below in the
-	`exercises/sampler-built-in-types` directory (branch: step-3).
+  `exercises/sampler-built-in-types` directory (branch: step-3).
 
 As see previously, you can either give manually inputs for the tested
 functions or you can ask the grader to automatically generate inputs.
@@ -34,9 +34,9 @@ automatically generated.
 
 ```ocaml
 let exercise_1 =
-	test_function_1_against_solution
-		[%ty: int -> int] "identity"
-		~gen:5 [0]
+  test_function_1_against_solution
+    [%ty: int -> int] "identity"
+    ~gen:5 [0]
 
 ```
 
@@ -56,11 +56,11 @@ argument `~sampler` that has type:
 
 ```ocaml
 let exercise_2 =
-	test_function_2_against_solution
-		[%ty: int -> int -> int] "pi1"
-		~sampler:(fun () -> (Random.int 31 + 12, Random.int 31 + 12) )
-		~gen:5
-		[]
+  test_function_2_against_solution
+    [%ty: int -> int -> int] "pi1"
+    ~sampler:(fun () -> (Random.int 31 + 12, Random.int 31 + 12) )
+    ~gen:5
+    []
 ```
 
 ## Method 2 : redefining the corresponding sampling function.
@@ -73,15 +73,15 @@ function call.
 let sample_int = Random.int 31 + 12
 
 let exercise_3 =
-	test_function_2_against_solution
-		[%ty: int -> int -> int] "pi1"
-		~gen:5
-		[]
+  test_function_2_against_solution
+    [%ty: int -> int -> int] "pi1"
+    ~gen:5
+    []
 ```
 
 ## More avanced examples
  You can find the examples below in the
-	`exercises/advanced-examples-step-3` directory (branch: step-3).
+  `exercises/advanced-examples-step-3` directory (branch: step-3).
 
 There is nothing new to learn in this part, there are only more
 examples of how to build a sampler for more complexed types. In
@@ -90,39 +90,39 @@ particular, there are examples with:
 * list
 ```ocaml
 let exercise_1 =
-	test_function_2_against_solution
-		[%ty: int -> int list -> int list] "push"
-		~gen:5
-		[]
+  test_function_2_against_solution
+    [%ty: int -> int list -> int list] "push"
+    ~gen:5
+    []
 ```
 * tuple
 ```ocaml
 let exercise_2 =
-	test_function_1_against_solution
-		[%ty: (int * int) -> int] "first"
-		~gen:5
-		~sampler:(fun () -> (Random.int 10, Random.int 10))
-		[]
+  test_function_1_against_solution
+    [%ty: (int * int) -> int] "first"
+    ~gen:5
+    ~sampler:(fun () -> (Random.int 10, Random.int 10))
+    []
 ```
 
 * type option
 ```ocaml
 let exercise_3 =
-	test_function_1_against_solution
-		[%ty: int option -> int] "opt"
-		~gen:5
-		[]
+  test_function_1_against_solution
+    [%ty: int option -> int] "opt"
+    ~gen:5
+    []
 
 let sampler_4 () =
   let sampler_tuple () = (sample_int (), sample_int ()) in
   (sample_option sampler_tuple) ()
 
 let exercise_4 =
-	test_function_1_against_solution
-		[%ty: (int * int) option -> int] "opt_add"
-		~gen:5
-		~sampler:sampler_4
-		[]
+  test_function_1_against_solution
+    [%ty: (int * int) option -> int] "opt_add"
+    ~gen:5
+    ~sampler:sampler_4
+    []
 ```
 
 * functional type
@@ -137,11 +137,11 @@ let sampler_5 () =
 
 
 let exercise_5 =
-	test_function_2_against_solution
-		[%ty: (int -> int) -> int -> int] "apply"
-		~gen:5
-		~sampler:sampler_5
-		[]
+  test_function_2_against_solution
+    [%ty: (int -> int) -> int -> int] "apply"
+    ~gen:5
+    ~sampler:sampler_5
+    []
 
 ```
 
@@ -152,11 +152,11 @@ let sampler_6 =
   sample_array ~min_size:1 ~max_size:10 sample_int
 
 let exercise_6 =
-	test_function_1_against_solution
-		[%ty: int array -> int list] "array_to_list"
-		~gen:5
-		~sampler:sampler_6
-		[]
+  test_function_1_against_solution
+    [%ty: int array -> int list] "array_to_list"
+    ~gen:5
+    ~sampler:sampler_6
+    []
 ```
 
 
