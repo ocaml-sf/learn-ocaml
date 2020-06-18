@@ -257,9 +257,7 @@ module Exercise = struct
   module Index = struct
     include Exercise.Index
 
-
-    let get () =
-      Lazy.force !index >>= fun index ->
+    let get_from_index index =
       Exercise.Index.mapk_exercises (fun id m k ->
           Status.get id >>= fun s ->
           { m with Meta.requirements = Status.skills_prereq m s;
@@ -267,6 +265,9 @@ module Exercise = struct
           |> k)
         index
         Lwt.return
+
+    let get () =
+      Lazy.force !index >>= get_from_index
 
     let reload () =
       read_static_file Learnocaml_index.exercise_index_path Exercise.Index.enc

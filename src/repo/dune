@@ -50,6 +50,7 @@
             markup
             grading_cli
             learnocaml_repository
+            learnocaml_store
             learnocaml_data
             learnocaml_tutorial_parser)
 )

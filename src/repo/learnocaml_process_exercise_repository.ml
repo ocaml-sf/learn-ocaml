@@ -185,6 +185,9 @@ let main dest_dir =
        fill_structure SMap.empty structure >>= fun (all_exercises, index) ->
        to_file Index.enc (dest_dir / Learnocaml_index.exercise_index_path) index >>= fun () ->
        dump_dot index >>= fun () ->
+       Learnocaml_store.Exercise.Index.get_from_index index >>= fun index ->
+       to_file Json_encoding.(tup2 Learnocaml_store.Exercise.Index.enc (assoc float)) (dest_dir / "exercise-index.json") (index, [])
+       >>= fun () ->
        SSet.iter (fun id ->
            if not (SMap.mem id all_exercises) then
              Format.printf "[Warning] Filtered exercise '%s' not found.@." id)
