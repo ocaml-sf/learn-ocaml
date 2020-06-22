@@ -12,7 +12,7 @@ let exercises_dir = "exercises"
 
 let exercise_path id = exercises_dir ^ "/" ^ id ^ ".json"
 
-let playground_dir = "playground"
+let playground_dir = "playgrounds"
 
 let playground_path id = playground_dir ^ "/" ^ id ^ ".json"
 
