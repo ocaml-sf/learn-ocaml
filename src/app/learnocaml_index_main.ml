@@ -60,6 +60,11 @@ end
 
 let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
 
+let get_url token dynamic_url static_url id =
+  match token with
+  | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
+  | None -> static_url ^ Url.urlencode id
+
 let exercises_tab token _ _ () =
   show_loading [%i"Loading exercises"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -106,7 +111,7 @@ let exercises_tab token _ _ () =
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in
-              a ~a:[ a_href ("/exercises/" ^ Url.urlencode exercise_id ^ "/") ;
+              a ~a:[ a_href (get_url token "/exercises/" "/exercise.html#id=" exercise_id) ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] (
                   h1 [ pcdata title ] ::
@@ -148,7 +153,7 @@ let exercises_tab token _ _ () =
     Manip.appendChild El.content list_div;
     Lwt.return list_div
 
-let playground_tab _ _ () =
+let playground_tab token _ _ () =
   show_loading [%i"Loading playground"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
   retrieve (Learnocaml_api.Playground_index ())
@@ -158,7 +163,7 @@ let playground_tab _ _ () =
       let open Tyxml_js.Html5 in
       let title = pmeta.Playground.Meta.title in
       let short_description = pmeta.Playground.Meta.short_description in
-      a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
+      a ~a:[ a_href (get_url token "/playground/" "/playground.html#id=" id) ;
              a_class [ "exercise" ] ] [
           div ~a:[ a_class [ "descr" ] ] (
               h1 [ pcdata title ] ::
@@ -691,7 +696,7 @@ let () =
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
-       then [ "playground", ([%i"Playground"], playground_tab) ] else []) @
+       then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
            [ "teacher", ([%i"Teach"], teacher_tab t) ]
