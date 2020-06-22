@@ -24,7 +24,7 @@ The interface for the module `Test_lib` can be found in
 [test_lib.mli](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/test_lib.mli).
 
 The interface for the module `Report` can be found in
-[learnocaml_report.mli](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_report.mli).
+[learnocaml_report.mli](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/learnocaml_report.mli).
 
 `Test_lib.set_result` waits for the final `report`. A value of type
 `report` can be built from the constructors defined in the module
