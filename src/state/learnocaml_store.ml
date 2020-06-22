@@ -283,7 +283,9 @@ module Exercise = struct
 
   let get id =
     Lwt.catch
-      (fun () -> read_static_file (Learnocaml_index.exercise_path id) enc)
+      (fun () -> read_static_file (Learnocaml_index.exercise_path id)
+                   J.(tup3 Meta.enc enc (option float)) >>= fun (_, ex, _) ->
+                 Lwt.return ex)
       (function
         | Unix.Unix_error _ -> Lwt.fail Not_found
         | e -> Lwt.fail e)

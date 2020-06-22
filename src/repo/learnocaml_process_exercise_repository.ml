@@ -59,7 +59,7 @@ let print_grader_error exercise = function
 
 let spawn_grader
     dump_outputs dump_reports
-    ?print_result ?dirname exercise output_json =
+    ?print_result ?dirname meta exercise output_json =
   let rec sleep () =
     if !n_processes <= 0 then
       Lwt_main.yield () >>= sleep
@@ -76,7 +76,7 @@ let spawn_grader
       Grader_cli.display_callback := false;
       Lwt_main.run
         (Lwt.catch (fun () ->
-             Grader_cli.grade ?print_result ?dirname exercise output_json
+             Grader_cli.grade ?print_result ?dirname meta exercise output_json
              >|= fun r ->
              print_grader_error exercise r;
              match r with
@@ -221,10 +221,10 @@ let main dest_dir =
            if !n_processes = 1 then
              Lwt_list.map_s,
              fun dump_outputs dump_reports ?print_result ?dirname
-               exercise json_path ->
+               meta exercise json_path ->
                Grader_cli.dump_outputs := dump_outputs;
                Grader_cli.dump_reports := dump_reports;
-               Grader_cli.grade ?print_result ?dirname exercise json_path
+               Grader_cli.grade ?print_result ?dirname meta exercise json_path
                >|= fun r -> print_grader_error exercise r; r
            else
              Lwt_list.map_p,
@@ -246,7 +246,7 @@ let main dest_dir =
                  Lwt.return true
                end else begin
                  grade dump_outputs dump_reports
-                   ~dirname:(!exercises_dir / id) exercise (Some json_path)
+                   ~dirname:(!exercises_dir / id) (Index.find index id) exercise (Some json_path)
                  >>= function
                  | Ok () ->
                      Format.printf "%-24s     [OK]@." id ;
