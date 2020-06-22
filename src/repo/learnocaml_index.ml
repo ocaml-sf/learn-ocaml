@@ -22,7 +22,7 @@ let lesson_index_path = "lessons.json"
 
 let lessons_dir = "lessons"
 
-let lesson_path id = lessons_dir ^ "/" ^ "lesson_" ^ id ^ ".json"
+let lesson_path id = lessons_dir ^ "/" ^ id ^ ".json"
 
 let tutorial_index_path = "tutorials.json"
 
