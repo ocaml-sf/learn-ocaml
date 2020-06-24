@@ -183,7 +183,7 @@ val toplevel_launch :
   (unit -> unit) ->
   button_group -> string -> Learnocaml_toplevel.t Lwt.t
 
-val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> 'c) -> unit
+val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> unit) -> unit
 
 val ace_display :
   [< Html_types.div ] Tyxml_js.To_dom.elt -> (string -> unit) * (unit -> unit)
@@ -209,7 +209,7 @@ end
 module Editor_button (E : Editor_info) : sig
   val cleanup : string -> unit
   val download : string -> unit
-  val eval : Learnocaml_toplevel.t -> (string -> 'a) -> unit
+  val eval : Learnocaml_toplevel.t -> (string -> unit) -> unit
   val sync : Token.t Lwt.t -> Learnocaml_data.SMap.key -> unit
 end
 

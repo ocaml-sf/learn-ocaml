@@ -1228,6 +1228,6 @@ let worker_with_code code =
   let url = Dom_html.window##._URL##createObjectURL blob in
   Worker.create (Js.to_string url)
 
-let worker url =
+let _worker url =
   let open Lwt.Infix in
   Lwt_request.get ?headers:None ~url ~args:[] >|= worker_with_code
