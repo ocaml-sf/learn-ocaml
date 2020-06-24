@@ -22,9 +22,9 @@ depends: [
   "cohttp" {>= "1.0.0" & < "2.0.0"}
   "cohttp-lwt-unix" {>= "1.0.0" & < "2.0.0"}
   "digestif" {>= "0.7.1"}
-  "dune" {>= "1.1.1"}
+  "dune" {>= "1.7"}
   "ezjsonm"
-  "lwt" {>= "3.2.0" & < "4.0.0"}
+  "lwt" {>= "3.2.0"}
   "lwt_ssl"
   "ocaml" {= "4.05.0"}
   "ocamlfind" {build}
