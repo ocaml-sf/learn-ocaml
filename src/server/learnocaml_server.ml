@@ -68,12 +68,14 @@ type cached_response = {
   deflated_body: string option;
   content_type: string;
   caching: caching;
+  cookies: Cohttp.Cookie.Set_cookie_hdr.t list
 }
 
 type 'a response =
   | Response of { contents: 'a;
                   content_type: string;
-                  caching: caching }
+                  caching: caching;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
   | Cached of cached_response
 
 type error = (Cohttp.Code.status_code * string)
@@ -108,21 +110,22 @@ let lwt_option_fail x e f =
   | Some x -> f x
   | None -> lwt_fail e
 
-let respond_static caching path =
+let respond_static ?(cookies=[]) caching path =
   lwt_catch_fail
     (fun () ->
        read_static_file path >>= fun contents ->
        let content_type =
          Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)
        in
-       lwt_ok @@ Response { contents; content_type; caching })
+       lwt_ok @@ Response { contents; content_type; caching; cookies })
     (fun e -> (`Not_found, Printexc.to_string e))
 
-let respond_json caching contents =
+let respond_json ?(cookies=[]) caching contents =
   lwt_ok @@
     Response { contents;
                content_type = "application/json";
-               caching }
+               caching;
+               cookies }
 
 let verify_teacher_token token =
   Token.check_teacher token >>= function
@@ -167,6 +170,11 @@ let check_report exo report grade =
   let max_grade = Learnocaml_exercise.(access File.max_score) exo in
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade
+
+let generate_csrf_token length =
+  let random_bytes = Bytes.make length '\000' in
+  Cryptokit.Random.secure_rng#random_bytes random_bytes 0 length;
+  B64.encode (Bytes.to_string random_bytes)
 
 module Memory_cache = struct
 
@@ -224,6 +232,14 @@ module Request_handler = struct
       fun conn config cache -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
+      | Api.Static ["lti.html"] ->
+         (* 32 bytes of entropy, same as RoR as of 2020. *)
+         let csrf_token = generate_csrf_token 32 in
+         let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                          ~expiration:(`Max_age (Int64.of_int 3600))
+                          ~path:"/" ~http_only:true
+                          ("csrf", csrf_token)] in
+         respond_static ~cookies cache ["lti.html"]
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->
@@ -287,7 +303,8 @@ module Request_handler = struct
           Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
-                               caching = Nocache }
+                               caching = Nocache;
+                               cookies = [] }
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -326,7 +343,8 @@ module Request_handler = struct
               lwt_ok @@
                 Response { contents;
                            content_type = "application/octet-stream";
-                           caching = Nocache })
+                           caching = Nocache;
+                           cookies = [] })
             (fun e -> (`Not_found, Printexc.to_string e))
 
       | Api.Students_list token ->
@@ -413,7 +431,8 @@ module Request_handler = struct
           lwt_ok @@
             Response {contents = Buffer.contents buf;
                       content_type = "text/csv";
-                      caching = Nocache}
+                      caching = Nocache;
+                      cookies = []}
 
       | Api.Exercise_index (Some token) ->
           Exercise.Index.get () >>= fun index ->
@@ -595,8 +614,8 @@ let launch () =
         (Cohttp.Header.get_acceptable_encodings req.Request.headers)
     in
     let respond = function
-      | Response {contents=body; content_type; caching; _}
-      | Cached {body; content_type; caching; _} as resp ->
+      | Response {contents=body; content_type; caching; cookies; _}
+      | Cached {body; content_type; caching; cookies; _} as resp ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
             | Longcache _ ->
@@ -611,10 +630,12 @@ let launch () =
             | Nocache ->
                 Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
+          let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+          let headers = Cohttp.Header.add_list headers cookies_hdr in
           let resp = match resp, caching with
             | Response _, (Longcache key | Shortcache (Some key)) ->
                 let cached =
-                  {body; deflated_body = None; content_type; caching}
+                  {body; deflated_body = None; content_type; caching; cookies = []}
                 in
                 Memory_cache.add key cached;
                 Cached cached
@@ -655,10 +676,24 @@ let launch () =
      | `GET -> lwt_ok {Api.meth = `GET; path; args}
      | `POST ->
         begin
-          string_of_stream (Cohttp_lwt.Body.to_stream body)
-          >>= function
-          | Some s -> lwt_ok {Api.meth = `POST s; path; args}
-          | None -> lwt_fail (`Bad_request, "Missing POST body")
+          Cohttp_lwt.Body.to_string body
+          >>= fun params ->
+          let param_list = Uri.query_of_encoded params in
+          if param_list = [] then
+            lwt_fail (`Bad_request, "Missing POST body")
+          else
+            let cookies = Cohttp.Cookie.Cookie_hdr.extract req.Request.headers in
+            match List.assoc_opt "csrf" param_list,
+                  List.assoc_opt "csrf" cookies with
+            | Some (param_csrf :: _), Some cookie_csrf ->
+               if Eqaf.equal param_csrf cookie_csrf then
+                 lwt_ok {Api.meth = `POST params; path; args}
+               else
+                 lwt_fail (`Forbidden, "CSRF token mismatch")
+            | None, None | None, Some _ ->
+               lwt_ok {Api.meth = `POST params; path; args}
+            | _, _ ->
+               lwt_fail (`Forbidden, "Bad CSRF token")
         end
      | _ -> lwt_fail (`Bad_request, "Unsupported method"))
     >?= (fun req ->
