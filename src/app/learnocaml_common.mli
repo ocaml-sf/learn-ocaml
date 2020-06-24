@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Learnocaml_data
 
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt

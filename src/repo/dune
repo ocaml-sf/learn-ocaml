@@ -5,7 +5,7 @@
           Learnocaml_exercise)
  (libraries ocplib-json-typed
             learnocaml_xor
-	    omd
+            omd
             lwt
             ezjsonm)
 )
@@ -16,6 +16,7 @@
  (modules Learnocaml_tutorial_parser)
  (libraries learnocaml_repository
             learnocaml_data
+            lwt.unix
             markup
             omd)
 )
@@ -41,7 +42,7 @@
  (modules Learnocaml_process_common
           Learnocaml_process_exercise_repository
           Learnocaml_process_tutorial_repository
-	  Learnocaml_process_playground_repository)
+    Learnocaml_process_playground_repository)
  (libraries ezjsonm
             str
             lwt.unix

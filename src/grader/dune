@@ -9,7 +9,7 @@
 
 (rule
  (targets learnocaml_report.odoc)
- (deps .learnocaml_report.objs/learnocaml_report.cmti)
+ (deps .learnocaml_report.objs/byte/learnocaml_report.cmti)
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
@@ -35,12 +35,12 @@
 
 (rule
  (targets test_lib.odoc)
- (deps .testing.objs/test_lib.cmti)
+ (deps .testing.objs/byte/test_lib.cmti)
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
-(rule
- (alias doc)
+(alias
+ (name doc)
  (action (progn (run mkdir -p doc)
                 (run odoc html %{dep:learnocaml_report.odoc} -o %{workspace_root}/_doc/_html)
                 (run odoc html %{dep:test_lib.odoc} -o %{workspace_root}/_doc/_html)))

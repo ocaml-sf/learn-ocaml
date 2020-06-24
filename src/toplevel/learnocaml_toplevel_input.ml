@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+
 let indent_caml s in_lines =
   let output = {
     IndentPrinter.debug = false;

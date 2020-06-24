@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -35,7 +36,7 @@ let open_tok tok =
 let list_of_tok =
   List.map @@ fun x ->
     let tok = Token.to_string x in
-    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.pcdata (tok ^ " ")]
+    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -43,10 +44,10 @@ let rec render_tree =
   | Leaf xs ->
      [H.p ~a:[ H.a_onclick (fun _ ->
                    set_selected_class (Some xs); true)]
-        [H.pcdata ("Leaf with " ^ string_of_int (List.length xs) ^ " student(s)")]]
+        [H.txt ("Leaf with " ^ string_of_int (List.length xs) ^ " student(s)")]]
   | Node (f,l,r) ->
      [
-       H.p [ H.pcdata ("Node " ^ string_of_int f) ]
+       H.p [ H.txt ("Node " ^ string_of_int f) ]
      ;  H.ul [
             H.li (render_tree l)
           ; H.li (render_tree r)
@@ -62,7 +63,7 @@ let render_trees xs =
       ^ " (" ^ string_of_int (weight_of_tree List.length t) ^ " students)" in
     i+1,
     H.li
-      ( H.pcdata str
+      ( H.txt str
       :: render_tree t)
     :: acc
   in
@@ -71,7 +72,7 @@ let render_trees xs =
 let render_classes xs =
   let aux (grade,values) acc =
     let str = string_of_int grade ^ "pts :" in
-    H.p [H.pcdata str] ::
+    H.p [H.txt str] ::
       H.ul (render_trees values) ::
         acc
   in List.fold_right aux xs []
@@ -96,14 +97,14 @@ let exercises_tab part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.pcdata not_graded :: list_of_tok part.not_graded)
-  :: H.p ( H.pcdata bad_type :: list_of_tok part.bad_type)
-  :: H.p [H.pcdata total_sum]
+  H.p (H.txt not_graded :: list_of_tok part.not_graded)
+  :: H.p ( H.txt bad_type :: list_of_tok part.bad_type)
+  :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
 let _class_selection_updater =
   let previous = ref None in
-  let of_repr repr = [H.code [H.pcdata repr]] in
+  let of_repr repr = [H.code [H.txt repr]] in
   let onclick p tok repr =
      H.a_onclick @@
        fun _ ->
@@ -118,7 +119,7 @@ let _class_selection_updater =
     let strtok = Token.to_string tok in
     H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
-      [H.pcdata strtok; p] in
+      [H.txt strtok; p] in
   let mkfirst (tok,repr) =
     let p =  H.p (of_repr repr) in
     previous := Some p;
