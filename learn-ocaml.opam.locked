@@ -101,7 +101,7 @@ depends: [
   "rresult" {= "0.6.0"}
   "seq" {= "0.2.2"}
   "sexplib" {= "v0.9.3"}
-  "ssl" {= "0.5.4"}
+  "ssl" {= "0.5.5"}
   "stdio" {= "v0.9.1"}
   "stdlib-shims" {= "0.1.0"}
   "stringext" {= "1.6.0"}

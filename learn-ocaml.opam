@@ -36,7 +36,7 @@ depends: [
   "lwt" {>= "4.0.0"}
   "lwt_react"
   "lwt_ssl"
-  "ssl" {= "0.5.4"}
+  "ssl" {= "0.5.5"}
   "magic-mime"
   "markup"
   "ocaml" {= "4.05.0"}

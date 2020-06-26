@@ -21,7 +21,7 @@ depends: [
   "asak"
   "cohttp" {>= "1.0.0" & < "2.0.0"}
   "cohttp-lwt-unix" {>= "1.0.0" & < "2.0.0"}
-  "ssl" {= "0.5.4"}
+  "ssl" {= "0.5.5"}
   "digestif" {>= "0.7.1"}
   "dune" {= "2.0.1"}
   "ezjsonm"
