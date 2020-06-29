@@ -261,6 +261,7 @@ let process_html_file orig_file dest_file root =
          | `Start_element ((e, "link"), attrs) -> transform_tag e "link" attrs "href"
          | `Start_element ((e, "script"), attrs) -> transform_tag e "script" attrs "src"
          | `Start_element ((e, "img"), attrs) -> transform_tag e "img" attrs "src"
+         | `Start_element ((e, "a"), attrs) -> transform_tag e "a" attrs "href"
          | t -> t)
   |> Markup.pretty_print
   |> Markup.write_html
