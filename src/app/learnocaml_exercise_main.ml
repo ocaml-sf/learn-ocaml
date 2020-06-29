@@ -10,6 +10,7 @@ open Js_utils
 open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
@@ -197,7 +198,7 @@ let () =
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
     Dom_html.window##.location##assign
-      (Js.string "/index.html#activity=exercises") ;
+      (Js.string (api_server ^ "/index.html#activity=exercises")) ;
     Lwt.return ()
   end ;
   let messages = Tyxml_js.Html5.ul [] in
