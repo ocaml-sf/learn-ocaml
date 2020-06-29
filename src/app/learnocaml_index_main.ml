@@ -10,6 +10,7 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 
 module H = Tyxml_js.Html5
 
@@ -63,7 +64,7 @@ let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
 let get_url token dynamic_url static_url id =
   match token with
   | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
-  | None -> static_url ^ Url.urlencode id
+  | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
 
 let exercises_tab token _ _ () =
   show_loading [%i"Loading exercises"] @@ fun () ->
@@ -111,7 +112,7 @@ let exercises_tab token _ _ () =
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in
-              a ~a:[ a_href (get_url token "/exercises/" "/exercise.html#id=" exercise_id) ;
+              a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] (
                   h1 [ pcdata title ] ::
@@ -163,7 +164,7 @@ let playground_tab token _ _ () =
       let open Tyxml_js.Html5 in
       let title = pmeta.Playground.Meta.title in
       let short_description = pmeta.Playground.Meta.short_description in
-      a ~a:[ a_href (get_url token "/playground/" "/playground.html#id=" id) ;
+      a ~a:[ a_href (get_url token "/playground/" "playground.html#id=" id) ;
              a_class [ "exercise" ] ] [
           div ~a:[ a_class [ "descr" ] ] (
               h1 [ pcdata title ] ::
@@ -605,18 +606,6 @@ let init_sync_token button_group =
        enable_button_group button_group ;
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
-
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
-  method enableLessons: bool Js.optdef_prop
-  method enableExercises: bool Js.optdef_prop
-  method enableToplevel: bool Js.optdef_prop
-  method enablePlayground: bool Js.optdef_prop
-  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
-  method txtNickname: Js.js_string Js.t Js.optdef_prop
-end
-
-let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
 
 let set_string_translations () =
   let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in

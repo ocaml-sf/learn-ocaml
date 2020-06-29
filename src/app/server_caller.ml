@@ -71,9 +71,8 @@ let () =
               (Printexc.to_string e))
   | _ -> None
 
-let urlpath =
-  let api_server = "" in
-  fun p -> String.concat "/" (api_server::p)
+let urlpath p =
+  String.concat "/" (Learnocaml_config.api_server :: p)
 
 let request req =
   let do_req = function

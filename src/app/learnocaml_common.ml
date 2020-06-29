@@ -9,6 +9,7 @@
 open Js_utils
 open Lwt.Infix
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
@@ -171,7 +172,7 @@ let show_loading ?(id = "ocp-loading-layer") contents f =
     Manip.(removeClass elt "loaded") ;
     Manip.(addClass elt "loading") ;
     let chamo_src =
-      "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
+      api_server ^ "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
     Manip.replaceChildren elt
       H.[
         div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -286,7 +287,7 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     H.(button [
-        img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         pcdata " " ;
         span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
       ]) in
@@ -537,13 +538,13 @@ let stars_div stars =
     let num = 5 * int_of_float (stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-    let src = Format.asprintf "/icons/stars_%02d.svg" num in
+    let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
     H.img ~alt ~src ()
   ]
 
 let exercise_text ex_meta exo =
   let mathjax_url =
-    "/js/mathjax/MathJax.js?delayStartupUntil=configured"
+    api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
   in
   let mathjax_config =
     "MathJax.Hub.Config({\n\
@@ -578,7 +579,7 @@ let exercise_text ex_meta exo =
      <html><head>\
      <title>%s - exercise text</title>\
      <meta charset='UTF-8'>\
-     <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
+     <link rel='stylesheet' href='%s/css/learnocaml_standalone_description.css'>\
      <script type='text/x-mathjax-config'>%s</script>
             <script type='text/javascript' src='%s'></script>\
      </head>\
@@ -588,6 +589,7 @@ let exercise_text ex_meta exo =
      <script type='text/javascript'>MathJax.Hub.Configured()</script>\
      </html>"
     ex_meta.Exercise.Meta.title
+    api_server
     mathjax_config
     mathjax_url
     descr
@@ -1023,7 +1025,7 @@ module Display_exercise =
         let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
         let num = max (min num 40) 0 in
         let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-        let src = Format.asprintf "/icons/stars_%02d.svg" num in
+        let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
         img ~alt ~src ()
       in
       div ~a:[ a_class [ "stars" ] ] [
