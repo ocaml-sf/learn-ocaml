@@ -597,12 +597,35 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "none";
   token
 
+let get_cookie name =
+  Js.(to_array (str_array (Dom_html.document##.cookie##split (string ";"))))
+  |> Array.fold_left
+       (fun res v ->
+         match res with
+         | Some _ -> res
+         | None -> let cookie = Js.to_string v
+                                |> String.trim
+                                |> String.split_on_char '=' in
+                   match cookie with
+                   | n :: v when n = name -> Some (String.concat "=" v)
+                   | _ -> None)
+       None
+
 let init_sync_token button_group =
   catch
     (fun () ->
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
-         with Not_found -> init_token_dialog ()
+         with Not_found ->
+               match get_cookie "token" with
+               | None -> init_token_dialog ()
+               | Some token ->
+                  let token = Learnocaml_data.Token.parse token in
+                  Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+                  | Ok save ->
+                     set_state_from_save_file ~token save;
+                     Lwt.return token
+                  | Error _ -> init_token_dialog ()
        end >>= fun token ->
        enable_button_group button_group ;
        Lwt.return (Some token))
@@ -639,7 +662,6 @@ let set_string_translations () =
     (fun (el, text) ->
        (Tyxml_js.To_dom.of_input el)##.placeholder := Js.string text)
     placeholder_translations
-
 
 let () =
   Lwt.async_exception_hook := begin fun e ->
