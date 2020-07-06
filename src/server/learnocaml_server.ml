@@ -76,6 +76,9 @@ type 'a response =
                   content_type: string;
                   caching: caching;
                   cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
+  | Redirect of { code: Cohttp.Code.status_code;
+                  url: string;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
   | Cached of cached_response
 
 type error = (Cohttp.Code.status_code * string)
@@ -196,6 +199,7 @@ module Request_handler = struct
   let map_ret f r =
     r >?= function
     | Response ({contents; _} as r) -> lwt_ok @@ Response {r with contents = f contents}
+    | (Redirect _) as r -> lwt_ok r
     | (Cached _) as r -> lwt_ok r
 
   let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -667,6 +671,11 @@ let launch () =
             (fun e ->
               Server.respond_error ~status:`Internal_server_error
                 ~body:(Printexc.to_string e) ())
+      | Redirect { code; url; cookies } ->
+         let headers = Cohttp.Header.init_with "Location" url in
+         let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+         let headers = Cohttp.Header.add_list headers cookies_hdr in
+         Server.respond_string ~headers ~status:code ~body:"" ()
     in
     if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
        Some last_modified
