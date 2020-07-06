@@ -28,6 +28,10 @@ type _ request =
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git: 'a token * string list -> string request
+  | Launch:
+      string -> string request
+  | Launch_login:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request
@@ -112,6 +116,8 @@ module Conversions (Json: JSON_CODEC) = struct
       | Update_save _ ->
           json Save.enc
       | Git _ -> str
+      | Launch _ -> str
+      | Launch_login _ -> str
       | Students_list _ ->
           json (J.list Student.enc)
       | Set_students_list _ ->
@@ -187,7 +193,11 @@ module Conversions (Json: JSON_CODEC) = struct
     | Update_save (token, save) ->
         post ~token ["sync"] (Json.encode Save.enc save)
     | Git _ ->
-        assert false (* Reserved for the [git] client *)
+       assert false (* Reserved for the [git] client *)
+    | Launch _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_login _ ->
+       assert false (* Reserved for an LTI application *)
 
     | Students_list token ->
         assert (Token.is_teacher token);
@@ -344,6 +354,13 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
+
+      | `POST body, ["launch"], _token ->
+         Launch body |> k
+
+      | `POST body, ["launch"; "login"], _token ->
+         Launch_login body |> k
+
       | `GET, ("description"::_path), _token ->
          (* match token with
           | None -> Invalid_request "Missing token" |> k *)

@@ -31,7 +31,7 @@
           <button id="first-connection-no"><span id="txt_button_no"><!-- No --></span></button>
         </div>
       </div>
-      <form method="post" action="/launch">
+      <form method="post" action="/launch/login">
         <div id="login-returning">
           <h4 id="txt_returning_token"><!-- Enter your token --></h4>
           <div>
@@ -40,9 +40,11 @@
             <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
                    pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
                    id="login-token-input"
+		   name="token"
                    autocomplete="off">
           </div>
           <input type="hidden" id="login-csrf-input" name="csrf">
+          <input type="hidden" id="login-id-input" name="user-id">
           <div>
             <button id="login-connect-button" type="submit"><span id="txt_button_connect"><!-- Connect --></span></button>
           </div>

@@ -236,14 +236,70 @@ module Request_handler = struct
       fun conn config cache -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
-      | Api.Static ["lti.html"] ->
+      | Api.Launch body ->
          (* 32 bytes of entropy, same as RoR as of 2020. *)
          let csrf_token = generate_csrf_token 32 in
          let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
                           ~expiration:(`Max_age (Int64.of_int 3600))
                           ~path:"/" ~http_only:true
                           ("csrf", csrf_token)] in
-         respond_static ~cookies cache ["lti.html"]
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         Token_index.check_oauth !sync_dir "http://localhost:8080/launch" params >>=
+           (function
+            | Ok id ->
+               Token_index.MoodleIndex.user_exists !sync_dir id >>= fun exists ->
+               if exists then
+                 Token_index.MoodleIndex.get_user_token !sync_dir id >>= fun token ->
+                 let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                  ~expiration:(`Max_age (Int64.of_int 60))
+                                  ~path:"/"
+                                  ("token", Token.to_string token)] in
+                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+               else
+                 (read_static_file ["launch.html"] >|= fun s ->
+                  Markup.string s
+                  |> Markup.parse_html
+                  |> Markup.signals
+                  |> Markup.map (function
+                         | `Start_element ((e, "input"), attrs) ->
+                            (match List.assoc_opt ("", "type") attrs,
+                                   List.assoc_opt ("", "name") attrs with
+                             | Some "hidden", Some "csrf" ->
+                                `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                             | Some "hidden", Some "user-id" ->
+                                `Start_element ((e, "input"), (("", "value"), id) :: attrs)
+                             | _ -> `Start_element ((e, "input"), attrs))
+                         | t -> t)
+                  |> Markup.pretty_print
+                  |> Markup.write_html
+                  |> Markup.to_string) >>= fun contents ->
+                 lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | Error e -> lwt_fail (`Forbidden, e))
+      | Api.Launch_login body ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                          ~expiration:(`Max_age (Int64.of_int 60))
+                          ~path:"/" ~http_only:true
+                          ("csrf", "expired")] in
+         let token = Token.parse (List.assoc "token" params) and
+             user_id = List.assoc "user-id" params in
+         Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
+         if exists then
+           (* This can only happen if the user launched twice at the
+              same time and completed the form twice, but as the CSRF
+              in the cookies has changed twice (once for the second
+              form, once for the invalidation), this should not happen
+              at all. *)
+           lwt_fail (`Forbidden, "user exists")
+         else
+           Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+           let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
+                            ~expiration:(`Max_age (Int64.of_int 60))
+                            ~path:"/"
+                            ("token", Token.to_string token)) :: cookies in
+           lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->

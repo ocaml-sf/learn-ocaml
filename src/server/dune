@@ -18,5 +18,6 @@
             learnocaml_store
             token_index
             learnocaml_partition_create
-            cryptokit)
+            cryptokit
+            markup)
 )

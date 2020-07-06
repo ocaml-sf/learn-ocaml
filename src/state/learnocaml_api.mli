@@ -42,6 +42,10 @@ type _ request =
       'a token * Save.t -> Save.t request
   | Git:
       'a token * string list -> string request
+  | Launch:
+      string -> string request
+  | Launch_login:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request
