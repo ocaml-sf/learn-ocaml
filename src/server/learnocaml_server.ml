@@ -179,6 +179,14 @@ let generate_csrf_token length =
   Cryptokit.Random.secure_rng#random_bytes random_bytes 0 length;
   B64.encode (Bytes.to_string random_bytes)
 
+let generate_hmac secret csrf user_id =
+  let decoder = Cryptokit.Hexa.decode () in
+  let secret = Cryptokit.transform_string decoder secret in
+  let hmac = Cryptokit.MAC.hmac_sha256 secret and
+      encoder = Cryptokit.Hexa.encode () in
+  Cryptokit.hash_string hmac (csrf ^ user_id)
+  |> Cryptokit.transform_string encoder
+
 module Memory_cache = struct
 
   let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
@@ -257,7 +265,9 @@ module Request_handler = struct
                                   ("token", Token.to_string token)] in
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
                else
-                 (read_static_file ["launch.html"] >|= fun s ->
+                 (Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+                  let hmac = generate_hmac secret csrf_token id in
+                  read_static_file ["launch.html"] >|= fun s ->
                   Markup.string s
                   |> Markup.parse_html
                   |> Markup.signals
@@ -269,6 +279,8 @@ module Request_handler = struct
                                 `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
                              | Some "hidden", Some "user-id" ->
                                 `Start_element ((e, "input"), (("", "value"), id) :: attrs)
+                             | Some "hidden", Some "hmac" ->
+                                `Start_element ((e, "input"), (("", "value"), hmac) :: attrs)
                              | _ -> `Start_element ((e, "input"), attrs))
                          | t -> t)
                   |> Markup.pretty_print
@@ -284,22 +296,29 @@ module Request_handler = struct
                           ~path:"/" ~http_only:true
                           ("csrf", "expired")] in
          let token = Token.parse (List.assoc "token" params) and
-             user_id = List.assoc "user-id" params in
-         Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
-         if exists then
-           (* This can only happen if the user launched twice at the
+             user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params in
+         Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+         let new_hmac = generate_hmac secret csrf user_id in
+         if not (Eqaf.equal hmac new_hmac) then
+           lwt_fail (`Forbidden, "bad hmac")
+         else
+           Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
+           if exists then
+             (* This can only happen if the user launched twice at the
               same time and completed the form twice, but as the CSRF
               in the cookies has changed twice (once for the second
               form, once for the invalidation), this should not happen
               at all. *)
-           lwt_fail (`Forbidden, "user exists")
-         else
-           Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
-           let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
-                            ~expiration:(`Max_age (Int64.of_int 60))
-                            ~path:"/"
-                            ("token", Token.to_string token)) :: cookies in
-           lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+             lwt_fail (`Forbidden, "user exists")
+           else
+             Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+             let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
+                              ~expiration:(`Max_age (Int64.of_int 60))
+                              ~path:"/"
+                              ("token", Token.to_string token)) :: cookies in
+             lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->
