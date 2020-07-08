@@ -9,7 +9,7 @@
     <script language="JavaScript" src="/js/learnocaml-config.js"></script>
     <script language="JavaScript" src="/js/learnocaml-lti.js" defer></script>
     <style>
-      #txt_first_connection_question {
+      #txt_question {
           flex: auto;
           text-align: center;
       }
@@ -21,15 +21,33 @@
   </head>
   <body>
     <div id="login-overlay">
-      <div id="login-new">
-        <h4 id="txt_first_connection_dialog"><!-- First connection --></h4>
+      <div id="login-question">
+        <h4 id="txt_dialog"><!-- First connection --></h4>
         <div>
-          <div id="txt_first_connection_question"></div>
+          <div id="txt_question"></div>
         </div>
         <div>
           <button id="first-connection-yes"><span id="txt_button_yes"><!-- Yes --></span></button>
           <button id="first-connection-no"><span id="txt_button_no"><!-- No --></span></button>
         </div>
+      </div>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <div class="filler_h"></div>
+          <input id="login-nickname-input" type="text" placeholder="Nickname"
+                 minlength="2" autocomplete="off"></input>
+        </div>
+      	<div>
+      	  <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="login-secret-input" type="text" placeholder="Secret"
+                 minlength="1" autocomplete="off"></input>
+        </div>
+	<div>
+          <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+	</div>
       </div>
       <form method="post" action="/launch/login">
         <div id="login-returning">
