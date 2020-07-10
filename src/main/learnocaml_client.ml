@@ -424,7 +424,7 @@ let console_report ?(verbose=false) ex report =
   List.iter (fun i -> print_endline (format_item i)) report;
   print_newline ()
 
-module Api_client = Learnocaml_api.Client (Learnocaml_store.Json_codec)
+module Api_client = Learnocaml_api.Client (Token_index.Json_codec)
 
 let fetch server_url req =
   let url path args =

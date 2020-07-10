@@ -32,14 +32,15 @@
  (flags :standard -linkall)
  (modules Learnocaml_client)
  (libraries cmdliner
- 	    sha
+            sha
             lwt.unix
             lwt_utils
             cohttp.lwt
             grading_cli
             learnocaml_data
-	    learnocaml_store
-            learnocaml_api)
+            learnocaml_store
+            learnocaml_api
+            token_index)
 )
 
 (executable

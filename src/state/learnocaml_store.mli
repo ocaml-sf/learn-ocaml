@@ -18,8 +18,6 @@ val sync_dir: string ref
 
 (** {2 Utility server-side conversion functions} *)
 
-(** Used both for file i/o and request handling *)
-module Json_codec: Learnocaml_api.JSON_CODEC
 val get_from_file : 'a Json_encoding.encoding -> string -> 'a Lwt.t
 val write_to_file : 'a Json_encoding.encoding -> 'a -> string -> unit Lwt.t
 

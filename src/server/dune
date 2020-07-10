@@ -9,12 +9,13 @@
             lwt_utils
             cohttp.lwt
             magic-mime
-	    sha
+            sha
             checkseum.c
             decompress
             learnocaml_report
             learnocaml_data
             learnocaml_api
             learnocaml_store
-	    learnocaml_partition_create)
+            token_index
+            learnocaml_partition_create)
 )

@@ -511,7 +511,7 @@ module Request_handler = struct
 
 end
 
-module Api_server = Api.Server (Json_codec) (Request_handler)
+module Api_server = Api.Server (Token_index.Json_codec) (Request_handler)
 
 let init_teacher_token () =
   Token.Index.get () >>= function tokens ->
