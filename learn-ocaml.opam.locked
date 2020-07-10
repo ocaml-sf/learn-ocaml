@@ -111,7 +111,6 @@ depends: [
   "uchar" {= "0.0.2"}
   "uri" {= "1.9.7"}
   "uutf" {= "1.0.2"}
-  "yojson" {= "1.7.0"}
 ]
 build: [
   [make "static"]

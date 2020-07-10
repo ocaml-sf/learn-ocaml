@@ -51,7 +51,6 @@ depends: [
   "ppx_cstruct"
   "ppx_tools"
   "uutf" {>= "1.0" }
-  "yojson" {>= "1.4.0" }
   "asak" {>= "0.1"}
 ]
 build: [

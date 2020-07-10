@@ -30,7 +30,7 @@
  (name token_index)
  (wrapped false)
  (modules Token_index)
- (libraries lwt lwt.unix yojson learnocaml_data)
+ (libraries lwt lwt.unix learnocaml_data)
 )
 
 (library
