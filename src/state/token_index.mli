@@ -32,3 +32,15 @@ module TokenIndex: sig
   (** Add a registered token in the index. *)
   val add_token : string -> Learnocaml_data.Token.t -> unit Lwt.t
 end
+
+module MoodleIndex: sig
+  val create_index : string -> unit Lwt.t
+
+  val add_user : string -> string -> Learnocaml_data.Token.t -> unit Lwt.t
+
+  (** Get a Moodle user's token, create it if not exist *)
+  val get_user_token : string -> string -> Learnocaml_data.Token.t Lwt.t
+
+  val get_users : string -> (string * Learnocaml_data.Token.t) list Lwt.t
+  val user_exists : string -> string -> bool Lwt.t
+end

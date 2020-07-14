@@ -112,3 +112,40 @@ module BaseTokenIndex (RW: IndexRW) = struct
 end
 
 module TokenIndex = BaseTokenIndex (IndexFile)
+
+module BaseMoodleIndex (RW: IndexRW) = struct
+  let rw = RW.init ()
+  let file = "moodle_user.json"
+
+  let enc = J.assoc Token.enc
+
+  let parse = Json_codec.decode enc
+  let serialise = Json_codec.encode ?minify:(Some(false)) enc
+
+  let create_index sync_dir =
+    RW.write rw (sync_dir / file) serialise []
+
+  let get_users sync_dir =
+    Lwt.catch
+      (fun () -> RW.read (sync_dir / file) parse)
+      (fun _exn -> Lwt.return [])
+
+  let user_exists sync_dir id =
+    get_users sync_dir >|=
+    List.exists (fun (rid, _token) -> rid = id)
+
+  let add_user sync_dir id token =
+    get_users sync_dir >>= fun users ->
+    if List.exists (fun (rid, _token) -> rid = id) users then
+      Lwt.return ()
+    else
+      let users = (id, token) :: users in
+      RW.write rw (sync_dir / file) serialise users
+
+  let get_user_token sync_dir id =
+    get_users sync_dir >|= fun users ->
+    List.find (fun (rid, _token) -> rid = id) users
+    |> snd
+end
+
+module MoodleIndex = BaseMoodleIndex (IndexFile)
