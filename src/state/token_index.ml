@@ -149,3 +149,64 @@ module BaseMoodleIndex (RW: IndexRW) = struct
 end
 
 module MoodleIndex = BaseMoodleIndex (IndexFile)
+
+module BaseOauthIndex (RW: IndexRW) = struct
+  let rw = RW.init ()
+  let file = "oauth.json"
+
+  let enc = J.(assoc (list string))
+
+  let parse = Json_codec.decode enc
+  let serialise = Json_codec.encode ?minify:(Some(false)) enc
+
+   (* Copyright https://github.com/astrada/gapi-ocaml
+      Return a secret hexa encoded *)
+  let gen_secret len =
+    let hexa_encode s =
+      let transform = Cryptokit.Hexa.encode () in
+      transform#put_string s;
+      transform#finish;
+      transform#get_string
+    in
+    let secret = hexa_encode @@ Cryptokit.Random.string Cryptokit.Random.secure_rng len in
+    Printf.printf "Auto-generated secret : %s\n" secret;
+    secret
+
+  let create_index sync_dir =
+    let secret = gen_secret 32 in
+    RW.write rw (sync_dir / file) serialise [(secret, [])] >|= fun () ->
+    secret
+
+  let get_first_oauth sync_dir =
+    let create () =
+      create_index sync_dir >|= fun secret ->
+      (secret, []) in
+    Lwt.catch
+      (fun () ->
+         RW.read (sync_dir / file) parse >>= function
+         | oauth :: _ -> Lwt.return oauth
+         | [] -> create ())
+      (fun _exn -> create ())
+
+  let get_current_secret sync_dir =
+    get_first_oauth sync_dir >|= fun (secret, _nonces) ->
+    secret
+
+  let purge sync_dir =
+    get_first_oauth sync_dir >>= fun oauth ->
+    RW.write rw (sync_dir / file) serialise [oauth]
+
+  let add_nonce sync_dir nonce =
+    RW.read (sync_dir / file) parse >>= fun oauth ->
+    let oauth =
+      match oauth with
+      | (secret, nonces) :: r -> (secret, nonce :: nonces) :: r
+      | [] -> [(gen_secret 32, [nonce])] in
+    RW.write rw (sync_dir / file) serialise oauth
+
+  let check_nonce sync_dir nonce =
+    get_first_oauth sync_dir >|= fun (_secret, nonces) ->
+    List.exists ((=) nonce) nonces
+end
+
+module OauthIndex = BaseOauthIndex (IndexFile)

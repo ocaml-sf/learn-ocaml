@@ -44,3 +44,13 @@ module MoodleIndex: sig
   val get_users : string -> (string * Learnocaml_data.Token.t) list Lwt.t
   val user_exists : string -> string -> bool Lwt.t
 end
+
+module OauthIndex: sig
+  val create_index : string -> string Lwt.t
+
+  val get_first_oauth : string -> (string * string list) Lwt.t
+  val get_current_secret : string -> string Lwt.t
+
+  (** Delete all secrets + nonce associated excepted the current secret with its nonces *)
+  val purge : string -> unit Lwt.t
+end
