@@ -210,3 +210,72 @@ module BaseOauthIndex (RW: IndexRW) = struct
 end
 
 module OauthIndex = BaseOauthIndex (IndexFile)
+
+type oauth_args = {
+    signature: string;
+    timestamp: string;
+    nonce: string;
+    version: string;
+    consumer_key: string;
+    signature_method: string;
+  }
+
+let get_oauth_args args =
+  (* POST request handling *)
+  List.(
+    let signature = assoc "oauth_signature" args and
+        timestamp = assoc "oauth_timestamp" args and
+        nonce = assoc "oauth_nonce" args and
+        version = assoc "oauth_version" args and
+        consumer_key = assoc "oauth_consumer_key" args and
+        signature_method = assoc "oauth_signature_method" args in
+    {signature; timestamp; nonce; version; consumer_key; signature_method}
+  )
+
+(* Based on gapi-ocaml
+  This function will build a signature by using hmac_sha1 algorithm.*)
+let signature_oauth list_args http_method basic_uri secret =
+  let pair_encode = (* 1 : encode keys/values *)
+    List.filter (fun (k, _) -> k <> "oauth_signature") list_args
+    |> List.map (fun (k, v) ->
+         Netencoding.Url.(encode ~plus:false k, encode ~plus:false v)) in
+  let pair_sorted = List.sort compare pair_encode in
+  let list_concat =  (* 3 : Form key=value&key2=value2*)
+    List.map (fun (k, v) -> k ^ "=" ^ v) pair_sorted
+    |> String.concat "&" in
+  let signature_base_string =     (* 4 : Add HTTP method and URI *)
+    Printf.sprintf "%s&%s&%s" (String.uppercase_ascii http_method)
+      (Netencoding.Url.encode ~plus:false basic_uri)
+      (Netencoding.Url.encode ~plus:false list_concat) in
+  let signing_key = (Netencoding.Url.encode ~plus:false secret) ^ "&" in  (* 5 : Build signing_key *)
+  let encoding =
+    let hash = Cryptokit.MAC.hmac_sha1 signing_key in
+    let _ = hash#add_string signature_base_string in
+    let result = hash#result in
+    hash#wipe;
+    B64.encode result
+  in encoding
+
+let oauth_signature_method = "HMAC-SHA1"
+
+(** Don't give the same oauth_consumer_key to differents LTI consumer **)
+(* Deal with the request to check OAuth autenticity and return Moodle user's token*)
+let check_oauth sync_dir url args =
+  try
+    let oauth_args = get_oauth_args args in
+    if oauth_args.signature_method <> oauth_signature_method then
+      Lwt.return (Error "Not implemented")
+    else
+      OauthIndex.check_nonce sync_dir oauth_args.nonce >>= fun exists ->
+      if exists then
+        Lwt.return (Error "Nonce already used")
+      else
+        OauthIndex.add_nonce sync_dir oauth_args.nonce >>= fun () ->
+        OauthIndex.get_current_secret sync_dir >|=
+          signature_oauth args "post" url >>= fun s ->
+        if Eqaf.equal s oauth_args.signature then
+          Lwt.return (Ok (oauth_args.consumer_key ^ (List.assoc "user_id" args)))
+        else
+          Lwt.return (Error "Wrong signature")
+  with Not_found ->
+    Lwt.return (Error "Missing args")

@@ -54,3 +54,5 @@ module OauthIndex: sig
   (** Delete all secrets + nonce associated excepted the current secret with its nonces *)
   val purge : string -> unit Lwt.t
 end
+
+val check_oauth : string -> string -> (string * string) list -> (string, string) result Lwt.t
