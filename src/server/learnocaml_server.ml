@@ -244,7 +244,7 @@ module Request_handler = struct
       fun conn config cache -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
-      | Api.Launch body ->
+      | Api.Launch body when config.ServerData.use_moodle ->
          (* 32 bytes of entropy, same as RoR as of 2020. *)
          let csrf_token = generate_csrf_token 32 in
          let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
@@ -288,7 +288,7 @@ module Request_handler = struct
                   |> Markup.to_string) >>= fun contents ->
                  lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
             | Error e -> lwt_fail (`Forbidden, e))
-      | Api.Launch_login body ->
+      | Api.Launch_login body when config.ServerData.use_moodle ->
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
          let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
@@ -319,6 +319,10 @@ module Request_handler = struct
                               ~path:"/"
                               ("token", Token.to_string token)) :: cookies in
              lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+      | Api.Launch _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_login _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->
@@ -673,6 +677,9 @@ let compress ?(level = 4) data =
 let launch () =
   Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
+  if config.Learnocaml_data.Server.use_moodle
+     && not config.Learnocaml_data.Server.use_passwd then
+    failwith "Cannot enable Moodle/LTI without enabling passwords.";
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
