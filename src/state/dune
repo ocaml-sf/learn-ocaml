@@ -30,7 +30,7 @@
  (name token_index)
  (wrapped false)
  (modules Token_index)
- (libraries lwt lwt.unix learnocaml_api learnocaml_data cryptokit netstring)
+ (libraries lwt lwt.unix learnocaml_api learnocaml_data cryptokit netstring safepass)
 )
 
 (library

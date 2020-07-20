@@ -56,3 +56,16 @@ module OauthIndex: sig
 end
 
 val check_oauth : string -> string -> (string * string) list -> (string, string) result Lwt.t
+
+type authentication =
+  | AuthToken of Learnocaml_data.Token.t
+  | Passwd of (string * string)
+
+module UserIndex: sig
+  val create_index : string -> Learnocaml_data.Token.t list -> unit Lwt.t
+  val authenticate : string -> authentication -> Learnocaml_data.Token.t option Lwt.t
+  val exists : string -> string -> bool Lwt.t
+  val add : string -> Learnocaml_data.Token.t -> (string * string) option -> unit Lwt.t
+  val upgrade : string -> Learnocaml_data.Token.t -> string -> string -> unit Lwt.t
+  val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
+end
