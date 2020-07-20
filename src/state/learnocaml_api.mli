@@ -34,6 +34,10 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
+  | Create_user:
+      string * string * string -> student token request
+  | Login:
+      string * string -> student token request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:

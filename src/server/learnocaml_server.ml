@@ -368,7 +368,27 @@ module Request_handler = struct
          >?= fun () ->
          Token.create_teacher ()
          >>= respond_json cache
-
+      | Api.Create_user (email, password, secret) when config.ServerData.use_passwd ->
+         Token.create_student () >>= fun token ->
+         Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
+         if exists then
+           lwt_fail (`Forbidden, "User already exists")
+         else if String.length email < 5 || not (String.contains email '@') then
+           lwt_fail (`Bad_request, "Invalid email address")
+         else if String.length password < 8 then
+           lwt_fail (`Bad_request, "Password must be at least 8 characters long")
+         else
+           Token_index.UserIndex.add !sync_dir token (Some(email, password)) >>= fun () ->
+           respond_json cache token
+      | Api.Login (nick, password) when config.ServerData.use_passwd ->
+         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
+           (function
+            | Some token -> respond_json cache token
+            | _ -> lwt_fail (`Forbidden, "bad login/password"))
+      | Api.Create_user _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Login _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->

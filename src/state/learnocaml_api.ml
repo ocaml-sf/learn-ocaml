@@ -21,6 +21,10 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
+  | Create_user:
+      string * string * string -> student token request
+  | Login:
+      string * string -> student token request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -108,7 +112,13 @@ module Conversions (Json: JSON_CODEC) = struct
           Token.(to_string, parse)
       | Create_teacher_token _ ->
           json J.(obj1 (req "token" string)) +>
-          Token.(to_string, parse)
+            Token.(to_string, parse)
+      | Create_user _ ->
+          json J.(obj1 (req "token" string)) +>
+            Token.(to_string, parse)
+      | Login _ ->
+           json J.(obj1 (req "token" string)) +>
+            Token.(to_string, parse)
       | Fetch_save _ ->
           json Save.enc
       | Archive_zip _ ->
@@ -166,10 +176,10 @@ module Conversions (Json: JSON_CODEC) = struct
       path;
       args = match token with None -> [] | Some t -> ["token", Token.to_string t];
     } in
-    let post ~token path body = {
+    let post ?token path body = {
       meth = `POST body;
       path;
-      args = ["token", Token.to_string token];
+      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
     } in
     function
     | Static path ->
@@ -179,12 +189,20 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Nonce () ->
         get ["nonce"]
-    | Create_token (secret_candiate, token, nick) ->
-        get ?token (["sync"; "new"; secret_candiate] @
+    | Create_token (secret_candidate, token, nick) ->
+        get ?token (["sync"; "new"; secret_candidate] @
                     (match nick with None -> [] | Some n -> [n]))
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "new"]
+    | Create_user (nick, passwd, secret_candidate) ->
+        post (["sync"; "new_user"])
+          (Json.encode
+             J.(tup3 string string string)
+             (nick, passwd, secret_candidate))
+    | Login (nick, passwd) ->
+        post (["sync"; "login"])
+          (Json.encode J.(tup2 string string) (nick, passwd))
 
     | Fetch_save token ->
         get ~token ["save.json"]
@@ -303,6 +321,14 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Create_token (secret_candidate, token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
+      | `POST body, ["sync"; "new_user"], _ ->
+         (match Json.decode J.(tup3 string string string) body with
+          | nick, password, secret -> Create_user (nick, password, secret) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `POST body, ["sync"; "login"], _ ->
+         (match Json.decode J.(tup2 string string) body with
+          | nick, password -> Login (nick, password) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
