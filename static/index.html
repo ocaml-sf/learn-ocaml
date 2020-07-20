@@ -72,25 +72,17 @@
         <div>
           <div id="txt_first_connection_nickname"><!-- Choose a nickname --></div>
           <div class="filler_h"></div>
-          <input id="login-nickname-input" type="text" minlength="2" autocomplete="off">
-        </div>
-	<div>
-	  <div id="txt_first_connection_password"><!-- Password --></div>
-          <div class="filler_h"></div>
-          <input id="login-password-input" type="password" minlength="1">
-        </div>
-	<div>
-	  <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
-          <div class="filler_h"></div>
-          <input id="login-secret-input" type="text" minlength="1" autocomplete="off">
+          <input id="register-nickname-input" type="text" minlength="2" autocomplete="off">
         </div>
         <div>
-          <div id="txt_first_connection_token"><!-- Enter your token --></div>
+          <div id="txt_first_connection_password"><!-- Password --></div>
           <div class="filler_h"></div>
-          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
-                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
-                 id="first-connection-token-input"
-                 autocomplete="off">
+          <input id="register-password-input" type="password" minlength="1">
+        </div>
+        <div>
+          <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="register-secret-input" type="text" minlength="1" autocomplete="off">
         </div>
         <div>
           <input type="checkbox" id="first-connection-consent">
@@ -103,15 +95,28 @@
         <div>
           <div id="txt_returning_nickname"><!-- Nickname --></div>
           <div class="filler_h"></div>
-          <input type="text" id="login-token-input">
+          <input type="text" id="login-nick-input">
         </div>
-	<div>
-	  <div id="txt_returning_password"><!-- Password --></div>
-	  <div class="filler_h"></div>
-	  <input type="password" id="login-token-password">
-	</div>
+        <div>
+          <div id="txt_returning_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input type="password" id="login-password-input">
+        </div>
         <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
-	<a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
+        <a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
+      </div>
+      <div id="login-token">
+        <h4 id="txt_returning_with_token"><!-- Login with a token --></h4>
+        <div>
+          <div id="txt_returning_token"><!-- Token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 name="token"
+                 autocomplete="off">
+        </div>
+        <button id="login-token-button"><span id="txt_token_returning"><!-- Connect --></span></button>
       </div>
     </div>
     <div id="learnocaml-main-loading" class="loaded"></div>

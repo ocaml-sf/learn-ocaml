@@ -43,11 +43,15 @@ module El = struct
 
   module Login_overlay = struct
     let login_overlay_id, login_overlay = id "login-overlay"
-    let input_nick_id, input_nick = id "login-nickname-input"
-    let input_secret_id, input_secret = id "login-secret-input"
+    let reg_input_nick_id, reg_input_nick = id "register-nickname-input"
+    let reg_input_password_id, reg_input_password = id "register-password-input"
+    let input_secret_id, input_secret = id "register-secret-input"
     let button_new_id, button_new = id "login-new-button"
-    let input_tok_id, input_tok = id "login-token-input"
+    let login_input_nick_id, login_input_nick = id "login-nick-input"
+    let login_input_password_id, login_input_password = id "login-password-input"
     let button_connect_id, button_connect = id "login-connect-button"
+    let login_input_token_id, login_input_token = id "login-token-input"
+    let button_token_connect_id, button_token_connect = id "login-token-button"
     let nickname_field_id, nickname_field = id "learnocaml-nickname"
   end
 
@@ -540,30 +544,32 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "block";
   let get_token, got_token = Lwt.task () in
   let create_token () =
-    let nickname = String.trim (Manip.value input_nick) in
+    let nickname = String.trim (Manip.value reg_input_nick) in
     if Token.check nickname || String.length nickname < 2 then
-      (Manip.SetCss.borderColor input_nick "#f44";
+      (Manip.SetCss.borderColor reg_input_nick "#f44";
        Lwt.return_none)
     else
-      let secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
+      let password = Manip.value reg_input_password and
+          secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
       retrieve (Learnocaml_api.Nonce ())
       >>= fun nonce ->
       let secret = Sha.sha512 (nonce ^ secret) in
       (Learnocaml_local_storage.(store nickname) nickname;
        retrieve
-         (Learnocaml_api.Create_token (secret, None, Some nickname))
+         (Learnocaml_api.Create_user (nickname, password, secret))
        >>= fun token ->
        Learnocaml_local_storage.(store sync_token) token;
        show_token_dialog token;
        Lwt.return_some (token, nickname))
   in
-  let rec login_token () =
-    let input = input_tok in
-    match Token.parse (Manip.value input) with
-    | exception (Failure _) ->
-        Manip.SetCss.borderColor input "#f44";
-        Lwt.return_none
-    | token ->
+  let rec login_passwd () =
+    let input = Manip.value login_input_nick and
+        password = Manip.value login_input_password in
+    Server_caller.request (Learnocaml_api.Login (input, password)) >>= function
+    | Error e ->
+       alert ~title:[%i"ERROR"] (Server_caller.string_of_error e);
+       Lwt.return_none
+    | Ok token ->
         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
         | Ok save ->
             set_state_from_save_file ~token save;
@@ -577,6 +583,30 @@ let init_token_dialog () =
               H.p [H.txt [%i"Could not retrieve data from server"]];
               H.code [H.txt (Server_caller.string_of_error e)];
             ] ~buttons:[
+              [%i"Retry"], (fun () -> login_passwd ());
+              [%i"Cancel"], (fun () -> Lwt.return_none);
+            ]
+  in
+  let rec login_token () =
+    let input = login_input_token in
+    match Token.parse (Manip.value input) with
+    | exception (Failure _) ->
+       Manip.SetCss.borderColor input "#f44";
+       Lwt.return_none
+    | token ->
+       Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+       | Ok save ->
+          set_state_from_save_file ~token save;
+          Lwt.return_some (token, save.Save.nickname)
+       | Error (`Not_found _) ->
+          alert ~title:[%i"TOKEN NOT FOUND"]
+            [%i"The entered token couldn't be recognised."];
+          Lwt.return_none
+       | Error e ->
+          lwt_alert ~title:[%i"REQUEST ERROR"] [
+              H.p [H.pcdata [%i"Could not retrieve data from server"]];
+              H.code [H.pcdata (Server_caller.string_of_error e)];
+            ] ~buttons:[
               [%i"Retry"], (fun () -> login_token ());
               [%i"Cancel"], (fun () -> Lwt.return_none);
             ]
@@ -589,9 +619,11 @@ let init_token_dialog () =
     t
   in
   Manip.Ev.onclick button_new (handler create_token false);
-  Manip.Ev.onreturn input_nick (handler create_token ());
-  Manip.Ev.onclick button_connect (handler login_token false);
-  Manip.Ev.onreturn input_tok (handler login_token ());
+  Manip.Ev.onreturn reg_input_nick (handler create_token ());
+  Manip.Ev.onclick button_connect (handler login_passwd false);
+  Manip.Ev.onreturn login_input_password (handler login_passwd ());
+  Manip.Ev.onclick button_token_connect (handler login_token false);
+  Manip.Ev.onreturn login_input_token (handler login_token ());
   get_token >|= fun (token, nickname) ->
   (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
   Manip.SetCss.display login_overlay "none";
@@ -644,7 +676,6 @@ let set_string_translations () =
     "txt_first_connection_nickname", [%i"Choose a nickname"];
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
-    "txt_first_connection_token", [%i"Token"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
     "txt_returning_nickname", [%i"Nickname"];
@@ -653,7 +684,10 @@ let set_string_translations () =
     "txt_login_forgotten", [%i"Forgot your password?"];
     "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                        information entered will be used in the \
-                                       context of the Pfitaxel plateform."];
+                                        context of the Pfitaxel plateform."];
+    "txt_returning_with_token", [%i"Login with a token"];
+    "txt_returning_token", [%i"Token"];
+    "txt_token_returning", [%i"Connect"];
   ] in
   List.iter
     (fun (id, text) ->
