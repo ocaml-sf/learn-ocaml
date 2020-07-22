@@ -180,6 +180,16 @@
  (preprocess (pps js_of_ocaml.ppx))
 )
 
+(library
+ (name resource_analysis)
+ (wrapped false)
+ (modes byte)
+ (libraries core_kernel
+            learnocaml_report)
+ (modules Resource_analysis)
+ (preprocess (pps ppx_jane))
+)
+
 (executable
  (name grader_jsoo_worker)
  (modes byte)
@@ -207,3 +217,36 @@
  (section share)
  (files (grader_jsoo_worker.bc.js as www/js/learnocaml-grader-worker.js))
 )
+
+
+(executable
+ (name raml_worker)
+ (modes byte)
+ (flags :standard -warn-error -9-27)
+ (libraries toploop_jsoo
+            grading
+		resource_analysis
+            js_of_ocaml
+            js_of_ocaml-ppx
+           js_of_ocaml.ppx
+	core_kernel
+
+            learnocaml_report
+   )
+ (modules Raml_worker)
+ (preprocess (pps js_of_ocaml.ppx))
+ (js_of_ocaml (flags :standard --toplevel --nocmis
+                     +nat.js +toplevel.js +cstruct/cstruct.js +dynlink.js ))
+)
+
+
+
+(install
+ (package learn-ocaml)
+ (section share)
+ (files (raml_worker.bc.js as www/js/raml_worker.js))
+)
+
+
+
+
