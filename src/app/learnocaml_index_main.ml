@@ -655,6 +655,9 @@ let get_cookie name =
                    | _ -> None)
        None
 
+let delete_cookie name =
+  Dom_html.document##.cookie := Js.string (Printf.sprintf "%s=; Max-age=-1;" name)
+
 let init_sync_token button_group =
   catch
     (fun () ->
@@ -874,6 +877,7 @@ let () =
       (fun () ->
          Lwt.async @@ fun () ->
          Learnocaml_local_storage.clear ();
+         delete_cookie "token";
          reload ();
          Lwt.return_unit)
   in
