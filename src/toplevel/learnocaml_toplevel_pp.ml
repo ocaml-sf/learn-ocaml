@@ -18,8 +18,7 @@ let construct_image i =
   Buffer.contents b
 
 (* Prelude for pretty printer *)
-let prelude_pp = "
-let pp_svg _ i = construct_image i |> print_svg;;"
+let prelude_pp = "let pp_svg _ i = construct_image i |> print_svg;;"
 
 
 (* List of pretty printer to deploy in toplevel *)
