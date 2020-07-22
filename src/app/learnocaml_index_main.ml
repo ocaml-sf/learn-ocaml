@@ -43,11 +43,12 @@ module El = struct
 
   module Login_overlay = struct
     let login_overlay_id, login_overlay = id "login-overlay"
-    let reg_input_nick_id, reg_input_nick = id "register-nickname-input"
+    let reg_input_email_id, reg_input_email = id "register-email-input"
+    let reg_input_nick_id, reg_input_nick = id "register-nick-input"
     let reg_input_password_id, reg_input_password = id "register-password-input"
     let input_secret_id, input_secret = id "register-secret-input"
     let button_new_id, button_new = id "login-new-button"
-    let login_input_nick_id, login_input_nick = id "login-nick-input"
+    let login_input_email_id, login_input_email = id "login-email-input"
     let login_input_password_id, login_input_password = id "login-password-input"
     let button_connect_id, button_connect = id "login-connect-button"
     let login_input_token_id, login_input_token = id "login-token-input"
@@ -544,26 +545,37 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "block";
   let get_token, got_token = Lwt.task () in
   let create_token () =
-    let nickname = String.trim (Manip.value reg_input_nick) in
-    if Token.check nickname || String.length nickname < 2 then
-      (Manip.SetCss.borderColor reg_input_nick "#f44";
-       Lwt.return_none)
+    let email = Manip.value reg_input_email and
+        password = Manip.value reg_input_password in
+    (* 5 for a character, @, character, dot, character. *)
+    let email_criteria = String.length email < 5 || not (String.contains email '@') and
+        passwd_criteria = String.length password < 8 in
+    Manip.SetCss.borderColor reg_input_email "";
+    Manip.SetCss.borderColor reg_input_password "";
+    if email_criteria || passwd_criteria then
+      begin
+        if email_criteria then
+          Manip.SetCss.borderColor reg_input_email "#f44";
+        if passwd_criteria then
+          Manip.SetCss.borderColor reg_input_password "#f44";
+        Lwt.return_none
+      end
     else
-      let password = Manip.value reg_input_password and
+      let nickname = String.trim (Manip.value reg_input_nick) and
           secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
       retrieve (Learnocaml_api.Nonce ())
       >>= fun nonce ->
       let secret = Sha.sha512 (nonce ^ secret) in
       (Learnocaml_local_storage.(store nickname) nickname;
        retrieve
-         (Learnocaml_api.Create_user (nickname, password, secret))
+         (Learnocaml_api.Create_user (email, nickname, password, secret))
        >>= fun token ->
        Learnocaml_local_storage.(store sync_token) token;
        show_token_dialog token;
        Lwt.return_some (token, nickname))
   in
   let rec login_passwd () =
-    let input = Manip.value login_input_nick and
+    let input = Manip.value login_input_email and
         password = Manip.value login_input_password in
     Server_caller.request (Learnocaml_api.Login (input, password)) >>= function
     | Error e ->
@@ -673,18 +685,19 @@ let set_string_translations () =
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_nickname", [%i"Choose a nickname"];
+    "txt_first_connection_email", [%i"Email address"];
+    "txt_first_connection_nickname", [%i"Nickname"];
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
-    "txt_returning_nickname", [%i"Nickname"];
+    "txt_returning_email", [%i"Email address"];
     "txt_returning_password", [%i"Password"];
     "txt_login_returning",  [%i"Connect"];
     "txt_login_forgotten", [%i"Forgot your password?"];
     "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                        information entered will be used in the \
-                                        context of the Pfitaxel plateform."];
+                                        context of the Learn-OCaml plateform."];
     "txt_returning_with_token", [%i"Login with a token"];
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];

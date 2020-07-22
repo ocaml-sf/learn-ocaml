@@ -187,6 +187,28 @@ let generate_hmac secret csrf user_id =
   Cryptokit.hash_string hmac (csrf ^ user_id)
   |> Cryptokit.transform_string encoder
 
+let create_student conn (config: Learnocaml_data.Server.config) cache
+      nonce_req secret_candidate nick =
+  let module ServerData = Learnocaml_data.Server in
+  lwt_option_fail
+    (Hashtbl.find_opt nonce_req conn)
+    (`Forbidden, "No registered token for your address")
+  @@ fun nonce ->
+     Hashtbl.remove nonce_req conn;
+     let know_secret =
+       match config.ServerData.secret with
+       | None -> true
+       | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
+     if not know_secret
+     then lwt_fail (`Forbidden, "Bad secret")
+     else
+       Token.create_student ()
+       >>= fun tok ->
+       (match nick with
+        | None -> Lwt.return_unit
+        | Some nickname -> Save.set tok Save.{empty with nickname})
+       >>= fun () -> respond_json cache tok
+
 module Memory_cache = struct
 
   let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
@@ -267,7 +289,7 @@ module Request_handler = struct
                else
                  (Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
                   let hmac = generate_hmac secret csrf_token id in
-                  read_static_file ["launch.html"] >|= fun s ->
+                  read_static_file ["lti.html"] >|= fun s ->
                   Markup.string s
                   |> Markup.parse_html
                   |> Markup.signals
@@ -339,24 +361,7 @@ module Request_handler = struct
       | Api.Create_token (secret_candidate, None, nick) ->
          valid_string_of_endp conn
          >?= fun conn ->
-         lwt_option_fail
-           (Hashtbl.find_opt nonce_req conn)
-           (`Forbidden, "No registered token for your address")
-         @@ fun nonce ->
-         Hashtbl.remove nonce_req conn;
-         let know_secret =
-           match config.ServerData.secret with
-           | None -> true
-           | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
-         if not know_secret
-         then lwt_fail (`Forbidden, "Bad secret")
-         else
-           Token.create_student ()
-           >>= fun tok ->
-           (match nick with | None -> Lwt.return_unit
-                            | Some nickname ->
-                               Save.set tok Save.{empty with nickname})
-           >>= fun () -> respond_json cache tok
+         create_student conn config cache nonce_req secret_candidate nick
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
          lwt_catch_fail
             (fun () -> Token.register token >>= fun () -> respond_json cache token)
@@ -368,7 +373,9 @@ module Request_handler = struct
          >?= fun () ->
          Token.create_teacher ()
          >>= respond_json cache
-      | Api.Create_user (email, password, secret) when config.ServerData.use_passwd ->
+      | Api.Create_user (email, nick, password, secret) when config.ServerData.use_passwd ->
+         valid_string_of_endp conn
+         >?= fun conn ->
          Token.create_student () >>= fun token ->
          Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
          if exists then
@@ -379,7 +386,7 @@ module Request_handler = struct
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else
            Token_index.UserIndex.add !sync_dir token (Some(email, password)) >>= fun () ->
-           respond_json cache token
+           create_student conn config cache nonce_req secret (Some nick)
       | Api.Login (nick, password) when config.ServerData.use_passwd ->
          Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
            (function

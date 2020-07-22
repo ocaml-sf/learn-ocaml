@@ -22,7 +22,7 @@ type _ request =
   | Create_teacher_token:
       teacher token -> teacher token request
   | Create_user:
-      string * string * string -> student token request
+      string * string * string * string -> student token request
   | Login:
       string * string -> student token request
   | Fetch_save:
@@ -195,11 +195,11 @@ module Conversions (Json: JSON_CODEC) = struct
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "new"]
-    | Create_user (nick, passwd, secret_candidate) ->
+    | Create_user (email, nick, passwd, secret_candidate) ->
         post (["sync"; "new_user"])
           (Json.encode
-             J.(tup3 string string string)
-             (nick, passwd, secret_candidate))
+             J.(tup4 string string string string)
+             (email, nick, passwd, secret_candidate))
     | Login (nick, passwd) ->
         post (["sync"; "login"])
           (Json.encode J.(tup2 string string) (nick, passwd))
@@ -322,8 +322,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
       | `POST body, ["sync"; "new_user"], _ ->
-         (match Json.decode J.(tup3 string string string) body with
-          | nick, password, secret -> Create_user (nick, password, secret) |> k
+         (match Json.decode J.(tup4 string string string string) body with
+          | email, nick, password, secret ->
+             Create_user (email, nick, password, secret) |> k
           | exception e -> Invalid_request (Printexc.to_string e) |> k)
       | `POST body, ["sync"; "login"], _ ->
          (match Json.decode J.(tup2 string string) body with
