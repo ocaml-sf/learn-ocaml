@@ -1,0 +1,13 @@
+{
+  "learnocaml_version": "2",
+  "groups": {
+    "demo": {
+      "title": "Demo exercise pack",
+      "exercises": [
+        "demo-mutation",
+        "demo-style",
+        "demo-tailrec"
+      ]
+    }
+  }
+}

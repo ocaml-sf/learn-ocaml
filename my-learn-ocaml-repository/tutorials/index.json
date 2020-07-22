@@ -1,0 +1,12 @@
+{ "learnocaml_version": "1",
+  "series":
+  { "tutorials-doc":
+    { "title": "Tutorial Syntaxes Documentation",
+      "tutorials":
+      [ "html-syntax",
+        "md-syntax" ]},
+    "demo-tutorials":
+    { "title": "Tutorial Examples",
+      "tutorials":
+      [ "html-demo",
+        "md-demo" ]} } }
