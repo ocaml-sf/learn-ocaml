@@ -15,28 +15,33 @@ module H = Tyxml_js.Html5
 let id s = s, find_component s
 
 let login_overlay_id, login_overlay = id "login-overlay"
-let login_question_id, login_question = id "login-question"
 let login_new_id, login_new = id "login-new"
 let login_returning_id, login_returning = id "login-returning"
-let button_yes_id, button_yes = id "first-connection-yes"
-let button_no_id, button_no = id "first-connection-no"
 
-let login_nickname_input_id, login_nickname_input = id "login-nickname-input"
-let login_secret_input_id, login_secret_input = id "login-secret-input"
+let reg_input_email_id, reg_input_email = id "register-email-input"
+let reg_input_nick_id, reg_input_nick = id "register-nick-input"
+let reg_input_password_id, reg_input_password = id "register-password-input"
+let input_secret_id, input_secret = id "register-secret-input"
 let login_new_button_id, login_new_button = id "login-new-button"
 
+let login_email_input_id, login_email_input = id "login-email-input"
+let login_password_input_id, login_password_input = id "login-password-input"
 let login_csrf_input_id, login_csrf_input = id "login-csrf-input"
 let login_id_input_id, login_id_input = id "login-id-input"
 let login_hmac_input_id, login_hmac_input = id "login-hmac-input"
+let login_connect_button_id, login_connect_button = id "login-connect-button"
+
+let login_direct_button_id, login_direct_button = id "login-direct-login"
 
 let set_string_translations =
   List.iter
     (fun (id, text) ->
       Manip.setInnerHtml (find_component id) text)
 
-let send_sync_request token =
+let send_sync_request () =
   let parameters =
-    [("token", [Token.to_string token]);
+    [("email", [Manip.value reg_input_email]);
+     ("passwd", [Manip.value reg_input_password]);
      ("csrf", [Manip.value login_csrf_input]);
      ("user-id", [Manip.value login_id_input]);
      ("hmac", [Manip.value login_hmac_input])]
@@ -51,92 +56,65 @@ let send_sync_request token =
   else
     Error ()
 
-let token_disp_div token =
-  H.input ~a: [
-    H.a_input_type `Text;
-    H.a_size 17;
-    H.a_style "font-size: 110%; font-weight: bold;";
-    H.a_class ["learnocaml_token"];
-    H.a_readonly ();
-    H.a_value (Token.to_string token);
-  ] ()
-
-let show_token_dialog token =
-  let close_button = H.button ~a: [
-                         H.a_onclick (fun _ ->
-                             send_sync_request token;
-                             Dom_html.window##.location##assign (Js.string "/");
-                             false
-                           )
-                       ] [ H.pcdata [%i"OK"] ] in
-  let buttons = Some([close_button]) in
-  ext_alert ~title:[%i"Your Learn-OCaml token"] ?buttons [
-    H.p [H.pcdata [%i"Your token is displayed below. It identifies you and \
-                      allows to share your workspace between devices."]];
-    H.p [H.pcdata [%i"Please write it down."]];
-    H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
-  ]
-
 let create_token () =
-  let nickname = String.trim (Manip.value login_nickname_input) in
-  if Token.check nickname || String.length nickname < 2 then
-    (Manip.SetCss.borderColor login_nickname_input "#f44";
-     Lwt.return_none)
+  let email = Manip.value reg_input_email and
+      password = Manip.value reg_input_password in
+  (* 5 for a character, @, character, dot, character. *)
+  let email_criteria = String.length email < 5 || not (String.contains email '@') and
+      passwd_criteria = String.length password < 8 in
+  Manip.SetCss.borderColor reg_input_email "";
+  Manip.SetCss.borderColor reg_input_password "";
+  if email_criteria || passwd_criteria then
+    begin
+      if email_criteria then
+        Manip.SetCss.borderColor reg_input_email "#f44";
+      if passwd_criteria then
+        Manip.SetCss.borderColor reg_input_password "#f44";
+      Lwt.return_none
+    end
   else
-    let secret = Sha.sha512 (String.trim (Manip.value login_secret_input)) in
+    let nickname = String.trim (Manip.value reg_input_nick) and
+        secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
     retrieve (Learnocaml_api.Nonce ())
     >>= fun nonce ->
     let secret = Sha.sha512 (nonce ^ secret) in
     (Learnocaml_local_storage.(store nickname) nickname;
      retrieve
-       (Learnocaml_api.Create_token (secret, None, Some nickname))
+       (Learnocaml_api.Create_user (email, nickname, password, secret))
      >>= fun token ->
      Learnocaml_local_storage.(store sync_token) token;
-     show_token_dialog token;
      Lwt.return_some (token, nickname))
 
 let init_dialogs () =
-  hide login_new;
-  hide login_returning;
   Manip.SetCss.display login_overlay "block";
-  Manip.Ev.onclick button_yes (fun _ ->
-      hide login_question;
-      Manip.SetCss.display login_returning "block";
-      true);
-  Manip.Ev.onclick button_no (fun _ ->
-      hide login_question;
-      Manip.SetCss.display login_new "block";
-      true);
   Manip.Ev.onclick login_new_button (fun _ ->
       Lwt.async (fun _ ->
           create_token () >>= function
-          | Some (token, _nickname) ->
-             Lwt.return (show_token_dialog token)
+          | Some (_token, _nickname) ->
+             send_sync_request ();
+             Dom_html.window##.location##assign (Js.string "/");
+             Lwt.return ()
           | None -> Lwt.return_unit);
       true)
 
-let try_stored_token () =
-  try
-    send_sync_request Learnocaml_local_storage.(retrieve sync_token)
-  with Not_found ->
-    Error ()
-
 let () =
   (match Js_utils.get_lang () with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  match try_stored_token () with
-  | Ok () -> Dom_html.window##.location##assign (Js.string "/")
-  | Error () ->
-     init_dialogs ();
-     set_string_translations [
-         "txt_dialog", [%i"First connection"];
-         "txt_question", [%i"Do you have a Learn OCaml account?"];
-         "txt_button_yes", [%i"Yes"];
-         "txt_button_no", [%i"No"];
-         "txt_first_connection", [%i"First connection"];
-         "txt_first_connection_dialog", [%i"Choose a nickname"];
-         "txt_first_connection_secret", [%i"Enter the secret"];
-         "txt_login_new", [%i"Create new token"];
-         "txt_returning_token", [%i"Enter your token"];
-         "txt_returning_token_label", [%i"Token"];
-         "txt_button_connect", [%i"Connect"]
-       ]
+  init_dialogs ();
+  set_string_translations [
+      "txt_first_connection", [%i"First connection"];
+      "txt_first_connection_email", [%i"Email address"];
+      "txt_first_connection_nickname", [%i"Nickname"];
+      "txt_first_connection_password", [%i"Password"];
+      "txt_first_connection_secret", [%i"Enter the secret"];
+      "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
+                                          information entered will be used in the \
+                                          context of the Learn-OCaml plateform."];
+      "txt_login_new", [%i"Create new token"];
+      "txt_returning", [%i"Returning user"];
+      "txt_returning_email", [%i"Email address"];
+      "txt_returning_password", [%i"Password"];
+      "txt_login_returning", [%i"Connect"];
+      "txt_login_forgotten", [%i"Forgot your password?"];
+      "txt_direct_login", [%i"Direct login"];
+      "txt_button_direct_login", [%i"Direct login"];
+    ]
