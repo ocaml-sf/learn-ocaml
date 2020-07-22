@@ -55,6 +55,9 @@ depends: [
   "yojson" {>= "1.4.0" }
   "asak" {>= "0.1"}
 ]
+pin-depends: [
+  "vg.dev" "git+https://github.com/maiste/vg#ocaml_rendering"
+]
 build: [
   [make "static"]
   ["dune" "build" "-p" name "-j" jobs]
