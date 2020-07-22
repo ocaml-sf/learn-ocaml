@@ -24,7 +24,11 @@
             learnocaml_ppx_metaquot_lib
             ocplib-json-typed
             learnocaml_report
-            learnocaml_repository)
+            learnocaml_repository
+            vg
+            gg
+            bigarray
+            vg.bigarray)
  (modules Introspection_intf
           Introspection
           Test_lib

@@ -534,6 +534,27 @@ module type S = sig
 
   end
 
+
+  (** {1 Grading functions for vg images} *)
+
+  (** Grading function for vg images. *)
+  module Test_functions_vg_var : sig
+
+    (** [test_var w h got exp] returns {!LearnOcaml_report.Success 1}
+       report if vg image [got] is equal to [exp] with [w] and [h] dimensions
+       and {!LearnOcaml_report.Failure} report otherwise. *)
+    val test_vg :
+      int -> int -> Vg.image -> Vg.image -> Learnocaml_report.t
+
+    (** [test_variable_against_solution w h name] returns {!LearnOcaml_report.Success
+        1} report if image of dimension [w] and [h] named [name] exists and is equal to
+        image with the same name defined in solution. Otherwise returns
+        {!LearnOcaml_report.Failure} report.*)
+    val test_vg_against_solution:
+      int -> int -> string -> Learnocaml_report.t
+
+  end
+
   (** {1 Grading functions for types} *)
 
   (** Grading function for types. *)
@@ -1233,6 +1254,7 @@ module type S = sig
    include (module type of Sampler)
    include (module type of Test_functions_types)
    include (module type of Test_functions_ref_var)
+   include (module type of Test_functions_vg_var)
    include (module type of Test_functions_function)
    include (module type of Test_functions_generic)
 end

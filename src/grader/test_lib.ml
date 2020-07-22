@@ -145,6 +145,17 @@ module type S = sig
 
   end
 
+  (*-----------------------------------------------------------------------------*)
+
+  module Test_functions_vg_var : sig
+
+    val test_vg :
+      int -> int -> Vg.image -> Vg.image -> Learnocaml_report.t
+
+    val test_vg_against_solution:
+      int -> int -> string -> Learnocaml_report.t
+  end
+
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_types : sig
@@ -441,6 +452,7 @@ module type S = sig
   include (module type of Sampler)
   include (module type of Test_functions_types)
   include (module type of Test_functions_ref_var)
+  include (module type of Test_functions_vg_var)
   include (module type of Test_functions_function)
   include (module type of Test_functions_generic)
 
@@ -1408,6 +1420,100 @@ module Make
 
   (*----------------------------------------------------------------------------*)
 
+  module Test_functions_vg_var = struct
+    open Gg
+    open Vg
+    open Bigarray
+    open Test_functions_generic
+
+    let render_array w h img =
+      let size = Size2.v (float_of_int w) (float_of_int h) in
+      let view = Box2.v P2.o size in
+      let stride = 24 * w in
+      let data =
+        Array1.create int8_unsigned c_layout (stride * h)
+      in
+      let target = Vgr_bigarray.target data in
+      let r = Vgr.create target `Other in
+      ignore (Vgr.render r (`Image (size, view, img)));
+      ignore (Vgr.render r `End );
+      data
+
+    let compute_diff_array f_dist w h got exp =
+      let got = render_array w h got in
+      let exp = render_array w h exp in
+      let size = Array1.dim exp in
+      let kind = Array1.kind exp in
+      let layout = Array1.layout exp in
+      let output = Array1.create kind layout size in
+      let rec compute_array k =
+        if k >= size then output
+        else
+          let p_exp =
+            Array1.get exp k, Array1.get exp (k+1), Array1.get exp (k+2)
+          in
+          let p_got =
+            Array1.get got k, Array1.get got (k+1), Array1.get got (k+2)
+          in
+          let r, g, b = f_dist p_exp p_got in
+          Array1.set output k r;
+          Array1.set output (k+1) g;
+          Array1.set output (k+2) b;
+          compute_array (k+3)
+      in compute_array 0
+
+    let compute_dist p_exp p_got =
+      let r_exp, g_exp, b_exp = p_exp in
+      let r_got, g_got, b_got = p_got in
+      let partial_dist c_exp c_got =
+        (c_exp - c_got |> float_of_int) ** 2.0
+      in
+      let r = partial_dist r_exp r_got in
+      let g = partial_dist g_exp g_got in
+      let b = partial_dist b_exp b_got in
+      let d = sqrt (r +. g +. b) |> int_of_float in
+      let gray = (d * 255) / (3. *. (255. ** 2.) |> sqrt |> int_of_float) in
+      gray, gray, gray
+
+    let show a =
+      let dim = Array1.dim a in
+      let rec loop acc k =
+        if k < dim then
+          let px = a.{k} |> string_of_int in
+          let acc = acc ^ ", " ^ px in
+          loop acc (k+1)
+        else acc
+      in loop "" 0
+
+
+    let test_vg w h got exp =
+      let open Learnocaml_report in
+      let diff = compute_diff_array compute_dist w h got exp in
+      let size = Array1.dim diff in
+      let rec check_image k =
+        if k >= size then
+          [Message ([Text "Nice answer"], Success 1)]
+        else
+          let r, g, b =
+            Array1.get diff k, Array1.get diff (k+1), Array1.get diff (k+2)
+          in
+          if r != 0 || g != 0 || b != 0 then
+            let txt = show diff in
+            [Message ([Text "Wrong answer" ; Text txt], Failure)]
+          else
+              check_image (k+3)
+      in check_image 0
+
+    let test_vg_against_solution w h name =
+      let ty = [%ty: Vg.image ] in
+      test_value (lookup_solution ty name) @@ fun sol ->
+      test_value (lookup_student ty name) @@ fun got ->
+      test_vg w h got sol
+
+  end
+
+  (*----------------------------------------------------------------------------*)
+
   module Test_functions_function = struct
     open Test_functions_generic
 
@@ -1805,6 +1911,7 @@ module Make
   include Sampler
   include Test_functions_types
   include Test_functions_ref_var
+  include Test_functions_vg_var
   include Test_functions_function
   include Test_functions_generic
 
