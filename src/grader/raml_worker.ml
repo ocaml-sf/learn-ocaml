@@ -1,1 +1,1 @@
-let _ = print_string "Hellow"
+let _ = print_string "Hi"

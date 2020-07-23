@@ -1,3 +1,4 @@
+
 module Serialize = struct 
 	open Core_kernel
 	(*
@@ -27,7 +28,7 @@ module Serialize = struct
 				| [] -> []
 				| x :: xs -> (f x) :: (map f xs);;
 
-
+(*
 	let rec convert_t : t -> Learnocaml_report.t = (fun s -> map convert_item s)
 	and convert_item : item -> Learnocaml_report.item = 
 		(fun s -> 	match s with 
@@ -52,7 +53,7 @@ module Serialize = struct
 			
 	
 
-  	
+  	*)
 
 	let (>>) f g = (fun x -> g (f x)) (* Function compostion left to right*)
 
@@ -163,5 +164,23 @@ open Serialize
 
 
 let coerce = Serialize.coerce
+
+
+
+type 'a tree = Leaf | Node of 'a * ('a tree) * ('a tree) [@@deriving sexp]
+
+
+
+
+
+let rec gen_tree n = if n = 0 then Leaf 
+		else let child = (gen_tree (n-1)) in 
+			Node (n,child,child)
+
+let sample_tree = (gen_tree 10)
+
+let show_tree t = t |> (sexp_of_tree int_helper.sexp_of_c) |> to_string
+
+
 
 

@@ -69,6 +69,13 @@ and output_attrs ppf attrs =
 
 (* -- report format --------------------------------------------------------- *)
 
+let list_of_sexp =  Sexplib.Std.list_of_sexp
+let sexp_of_list = Sexplib.Std.sexp_of_list
+let int_of_sexp = Sexplib.Std.int_of_sexp 
+let sexp_of_int = Sexplib.Std.sexp_of_int
+let string_of_sexp = Sexplib.Std.string_of_sexp 
+let sexp_of_string = Sexplib.Std.sexp_of_string
+
 type t = item list
 
 and item =
@@ -86,7 +93,7 @@ and inline =
   | Text of string
   | Break
   | Code of string
-  | Output of string
+  | Output of string [@@deriving sexp]
 
 let result items =
   let rec do_report items =
@@ -114,7 +121,7 @@ let rec scale ?(penalties = true) factor items =
 and scale_item penalties factor = function
   | Section (text, report) ->
       Section (text, scale ~penalties factor report)
-  | SectionMin (text, report, min) ->
+  | SectionMin (text, report, min) ->       
       SectionMin (text,
                   scale ~penalties factor report,
                   if penalties then factor * min else min)

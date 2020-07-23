@@ -1,11 +1,15 @@
+(ignored_subdirs (raml-1.4.2  ))
+
+
 (library
  (name learnocaml_report)
  (wrapped false)
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
- (preprocess (pps ppx_ocplib_i18n))
- (libraries ocplib-json-typed ocplib_i18n)
+ (preprocess (pps ppx_jane ppx_ocplib_i18n ))
+ (libraries ocplib-json-typed ocplib_i18n core_kernel)
 )
+
 
 (rule
  (targets learnocaml_report.odoc)
@@ -163,6 +167,7 @@
  (modules Grader_jsoo_messages)
 )
 
+
 (library
  (name grading_jsoo)
  (wrapped false)
@@ -178,16 +183,6 @@
             grader_jsoo_messages)
  (modules Grading_jsoo)
  (preprocess (pps js_of_ocaml.ppx))
-)
-
-(library
- (name resource_analysis)
- (wrapped false)
- (modes byte)
- (libraries core_kernel
-            learnocaml_report)
- (modules Resource_analysis)
- (preprocess (pps ppx_jane))
 )
 
 (executable
@@ -212,12 +207,6 @@
                      +cstruct/cstruct.js +dynlink.js +toplevel.js))
 )
 
-(install
- (package learn-ocaml)
- (section share)
- (files (grader_jsoo_worker.bc.js as www/js/learnocaml-grader-worker.js))
-)
-
 
 (executable
  (name raml_worker)
@@ -225,18 +214,30 @@
  (flags :standard -warn-error -9-27)
  (libraries toploop_jsoo
             grading
-		resource_analysis
+		;resource_analysis
+            ocplib-json-typed.browser
+            ocplib_i18n
             js_of_ocaml
             js_of_ocaml-ppx
            js_of_ocaml.ppx
+            jsutils
 	core_kernel
 
             learnocaml_report
    )
  (modules Raml_worker)
- (preprocess (pps js_of_ocaml.ppx))
+(preprocess (pps js_of_ocaml.ppx))
  (js_of_ocaml (flags :standard --toplevel --nocmis
-                     +nat.js +toplevel.js +cstruct/cstruct.js +dynlink.js ))
+                     +cstruct/cstruct.js +dynlink.js +toplevel.js ))
+)
+
+
+
+
+(install
+ (package learn-ocaml)
+ (section share)
+ (files (raml_worker.bc.js as ./raml_worker.js))
 )
 
 
@@ -244,9 +245,5 @@
 (install
  (package learn-ocaml)
  (section share)
- (files (raml_worker.bc.js as www/js/raml_worker.js))
+ (files (grader_jsoo_worker.bc.js as www/js/learnocaml-grader-worker.js))
 )
-
-
-
-
