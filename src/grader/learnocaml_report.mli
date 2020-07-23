@@ -63,3 +63,7 @@ val warning : message:string -> item
 val message : message:string -> item
 val info : message:string -> item
 val section : title:string -> t -> item
+
+
+val t_of_sexp : Sexplib0.Sexp.t -> t
+val sexp_of_t : t -> Sexplib0.Sexp.t

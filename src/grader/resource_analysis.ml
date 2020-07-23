@@ -5,6 +5,8 @@ module Serialize = struct
 	Duplicate learnocaml_report type definition
 	 as the required ppx, core_kernel dependencies broke learn-ocaml when used directly
 	 *)
+
+(*
 	type t = item list
 
 	and item =
@@ -28,7 +30,7 @@ module Serialize = struct
 				| [] -> []
 				| x :: xs -> (f x) :: (map f xs);;
 
-(*
+
 	let rec convert_t : t -> Learnocaml_report.t = (fun s -> map convert_item s)
 	and convert_item : item -> Learnocaml_report.item = 
 		(fun s -> 	match s with 
@@ -151,7 +153,6 @@ module Serialize = struct
 
 
 
-	let serialized_report_helper = {c_of_sexp = t_of_sexp; sexp_of_c = sexp_of_t}
 
 
 
@@ -161,6 +162,11 @@ module Serialize = struct
 
 open Serialize
 
+
+let report_of_string s = try 
+			s |> of_string |> Learnocaml_report.t_of_sexp |> (fun x -> Some x)
+			with 
+			| _ -> None 
 
 
 let coerce = Serialize.coerce
@@ -177,7 +183,7 @@ let rec gen_tree n = if n = 0 then Leaf
 		else let child = (gen_tree (n-1)) in 
 			Node (n,child,child)
 
-let sample_tree = (gen_tree 10)
+let sample_tree = (gen_tree 2)
 
 let show_tree t = t |> (sexp_of_tree int_helper.sexp_of_c) |> to_string
 

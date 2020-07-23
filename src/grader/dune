@@ -176,6 +176,7 @@
             js_of_ocaml-lwt
             js_of_ocaml-ppx
             ezjsonm
+		resource_analysis
             ocplib-json-typed.browser
             learnocaml_repository
             learnocaml_report
@@ -207,6 +208,15 @@
                      +cstruct/cstruct.js +dynlink.js +toplevel.js))
 )
 
+(library
+ (name resource_analysis)
+ (wrapped false)
+ (modes byte)
+ (libraries core_kernel
+            learnocaml_report)
+ (modules Resource_analysis)
+ (preprocess (pps ppx_jane))
+)
 
 (executable
  (name raml_worker)
@@ -214,15 +224,13 @@
  (flags :standard -warn-error -9-27)
  (libraries toploop_jsoo
             grading
-		;resource_analysis
+	resource_analysis
             ocplib-json-typed.browser
             ocplib_i18n
             js_of_ocaml
             js_of_ocaml-ppx
            js_of_ocaml.ppx
             jsutils
-	core_kernel
-
             learnocaml_report
    )
  (modules Raml_worker)

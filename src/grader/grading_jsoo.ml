@@ -11,6 +11,33 @@ exception Timeout
 open Grader_jsoo_messages
 open Lwt.Infix
 
+let raml_analysis_thread solution = 
+	let open Learnocaml_report in
+	let worker_file = "/js/raml_worker.js" in 
+	let t,u = Lwt.task () in
+
+	let _ = Lwt.wakeup u [Message ([Text "A resource bound could not be derived, hello from a woken thread"],Informative)] in 
+	t
+	
+	
+(*	let _ = Lwt.on_cancel t (fun () -> worker##terminate) in 
+	let worker = Worker.create worker_file in 
+	let onmessage ev = 
+		begin
+			let str :string = ev##.data in 
+			let raml_report : Learnocaml_report.t = 
+					match (Resource_analysis.report_of_string str) with
+					| Some report -> report 
+					| None -> [Message ([Text "A resource bound could not be derived"],Informative)] in 
+			let _ = worker##terminate in 
+			let _ = Lwt.wakeup u raml_report in 
+			Js._true 
+		end in
+	let _ = worker##.onmessage := Dom.handler onmessage in 
+	let _ = worker##(postMessage "") in
+	t *)
+
+
 let get_grade
     ?(worker_js_file = "/js/learnocaml-grader-worker.js")
     ?(callback = (fun _ -> ()))
@@ -25,7 +52,8 @@ let get_grade
       | Callback text -> callback text
       | Answer (report, stdout, stderr, outcomes) ->
           worker##terminate ;
-          Lwt.wakeup u (report, stdout, stderr, outcomes)
+	let open Learnocaml_report in 
+          Lwt.wakeup u ([Message ([Text "A resource bound could not be derived"],Informative)] @ report, stdout, stderr, outcomes)
     end ;
     Js._true
   in
@@ -33,10 +61,15 @@ let get_grade
   Lwt.return @@
   fun solution ->
     let req = { exercise ; solution } in
+    let combined_result = (raml_analysis_thread solution) >>= (fun raml_report ->
+			t >>= (fun (report,stdout,stderr,outcomes) -> 
+			Lwt.return (raml_report @ report,stdout,stderr,outcomes))) in  
+
+ 
     let json = Json_repr_browser.Json_encoding.construct to_worker_enc req in
     worker##(postMessage json) ;
     let timer =
       Lwt_js.sleep timeout >>= fun () ->
       worker##terminate ;
       Lwt.fail Timeout in
-    Lwt.pick [ timer ; t ]
+    Lwt.pick [ timer ; (*t*) combined_result ]
