@@ -25,6 +25,8 @@ type _ request =
       string * string * string * string -> student token request
   | Login:
       string * string -> student token request
+  | Can_login:
+      student token -> bool request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -121,6 +123,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Login _ ->
            json J.(obj1 (req "token" string)) +>
             Token.(to_string, parse)
+      | Can_login _ -> json J.bool
       | Fetch_save _ ->
           json Save.enc
       | Archive_zip _ ->
@@ -206,6 +209,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Login (nick, passwd) ->
         post (["sync"; "login"])
           (Json.encode J.(tup2 string string) (nick, passwd))
+    | Can_login token ->
+       get ~token ["sync"; "canlogin"]
 
     | Fetch_save token ->
         get ~token ["save.json"]
@@ -335,6 +340,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
          (match Json.decode J.(tup2 string string) body with
           | nick, password -> Login (nick, password) |> k
           | exception e -> Invalid_request (Printexc.to_string e) |> k)
+
+      | `GET, ["sync"; "canlogin"], Some token ->
+         Can_login token |> k
 
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k

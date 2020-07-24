@@ -38,6 +38,8 @@ type _ request =
       string * string * string * string -> student token request
   | Login:
       string * string -> student token request
+  | Can_login:
+      student token -> bool request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:

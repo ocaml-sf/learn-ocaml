@@ -16,6 +16,7 @@ module Json_codec = struct
     match J.construct enc x with
     | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
     | `Null -> ""
+    | `Bool v -> string_of_bool v
     | _ -> assert false
 end
 

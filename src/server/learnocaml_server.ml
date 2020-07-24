@@ -424,6 +424,10 @@ module Request_handler = struct
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Login _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Can_login token ->
+         Token_index.UserIndex.can_login !sync_dir token >>=
+         respond_json cache
+
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
