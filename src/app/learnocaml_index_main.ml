@@ -623,7 +623,7 @@ let set_string_translations () =
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_first_connection_dialog", [%i"Please specify your Student ID"];
     "txt_first_connection_secret", [%i"Secret"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
@@ -636,9 +636,9 @@ let set_string_translations () =
     translations;
   let placeholder_translations = [
     El.nickname_field, configured config##.txtNickname
-      [%i"Nickname"];
+      [%i"Student ID"];
     El.Login_overlay.input_nick, configured config##.txtNickname
-      [%i"Nickname"];
+      [%i"Student ID"];
   ] in
   List.iter
     (fun (el, text) ->
