@@ -520,6 +520,9 @@ let teacher_tab token a b () =
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
+let can_show_token () =
+  Learnocaml_local_storage.(retrieve can_show_token)
+
 let sync () = sync (get_stored_token ())
 
 let token_disp_div token =
@@ -533,12 +536,13 @@ let token_disp_div token =
   ] ()
 
 let show_token_dialog token =
-  ext_alert ~title:[%i"Your Learn-OCaml token"] [
-    H.p [H.txt [%i"Your token is displayed below. It identifies you and \
-                      allows to share your workspace between devices."]];
-    H.p [H.txt [%i"Please write it down."]];
-    H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
-  ]
+  if can_show_token () then
+    ext_alert ~title:[%i"Your Learn-OCaml token"] [
+        H.p [H.txt [%i"Your token is displayed below. It identifies you and \
+                          allows to share your workspace between devices."]];
+        H.p [H.txt [%i"Please write it down."]];
+        H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
+      ]
 
 let init_token_dialog () =
   let open El.Login_overlay in
@@ -571,7 +575,7 @@ let init_token_dialog () =
          (Learnocaml_api.Create_user (email, nickname, password, secret))
        >>= fun token ->
        Learnocaml_local_storage.(store sync_token) token;
-       show_token_dialog token;
+       Learnocaml_local_storage.(store can_show_token) false;
        Lwt.return_some (token, nickname))
   in
   let rec login_passwd () =
@@ -585,6 +589,7 @@ let init_token_dialog () =
         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
         | Ok save ->
             set_state_from_save_file ~token save;
+            Learnocaml_local_storage.(store can_show_token) false;
             Lwt.return_some (token, save.Save.nickname)
         | Error (`Not_found _) ->
             alert ~title:[%i"TOKEN NOT FOUND"]
@@ -606,22 +611,29 @@ let init_token_dialog () =
        Manip.SetCss.borderColor input "#f44";
        Lwt.return_none
     | token ->
-       Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
-       | Ok save ->
-          set_state_from_save_file ~token save;
-          Lwt.return_some (token, save.Save.nickname)
-       | Error (`Not_found _) ->
+       Server_caller.request (Learnocaml_api.Can_login token) >>= function
+       | Error _ | Ok false ->
           alert ~title:[%i"TOKEN NOT FOUND"]
             [%i"The entered token couldn't be recognised."];
           Lwt.return_none
-       | Error e ->
-          lwt_alert ~title:[%i"REQUEST ERROR"] [
-              H.p [H.pcdata [%i"Could not retrieve data from server"]];
-              H.code [H.pcdata (Server_caller.string_of_error e)];
-            ] ~buttons:[
-              [%i"Retry"], (fun () -> login_token ());
-              [%i"Cancel"], (fun () -> Lwt.return_none);
-            ]
+       | _ ->
+          Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+          | Ok save ->
+             set_state_from_save_file ~token save;
+             Learnocaml_local_storage.(store can_show_token) true;
+             Lwt.return_some (token, save.Save.nickname)
+          | Error (`Not_found _) ->
+             alert ~title:[%i"TOKEN NOT FOUND"]
+               [%i"The entered token couldn't be recognised."];
+             Lwt.return_none
+          | Error e ->
+             lwt_alert ~title:[%i"REQUEST ERROR"] [
+                 H.p [H.pcdata [%i"Could not retrieve data from server"]];
+                 H.code [H.pcdata (Server_caller.string_of_error e)];
+               ] ~buttons:[
+                 [%i"Retry"], (fun () -> login_token ());
+                 [%i"Cancel"], (fun () -> Lwt.return_none);
+               ]
   in
   let handler f t = fun _ ->
     Lwt.async (fun () ->
@@ -671,6 +683,7 @@ let init_sync_token button_group =
                   Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
                   | Ok save ->
                      set_state_from_save_file ~token save;
+                     Learnocaml_local_storage.(store can_show_token) false;
                      Lwt.return token
                   | Error _ -> init_token_dialog ()
        end >>= fun token ->
@@ -864,16 +877,24 @@ let () =
          (get_stored_token (), get_state_as_save_file ()))
     >|= (function
         | Ok _ ->
-            [%i"Be sure to write down your token before logging out:"]
+            if can_show_token () then
+              [%i"Be sure to write down your token before logging out:"]
+            else
+              [%i"Are you sure you want to logout?"]
         | Error _ ->
             [%i"WARNING: the data could not be synchronised with the server. \
                 Logging out will lose your local changes, be sure you exported \
                 a backup."])
     >|= fun s ->
+    let dialog_content =
+      (H.p [H.txt s]) ::
+        if can_show_token () then
+          [H.div ~a:[H.a_style "text-align: center;"]
+             [token_disp_div (get_stored_token ())]]
+        else
+          [] in
     confirm ~title:[%i"Logout"] ~ok_label:[%i"Logout"]
-      [H.p [H.txt s];
-       H.div ~a:[H.a_style "text-align: center;"]
-         [token_disp_div (get_stored_token ())]]
+      dialog_content
       (fun () ->
          Lwt.async @@ fun () ->
          Learnocaml_local_storage.clear ();
@@ -881,19 +902,20 @@ let () =
          reload ();
          Lwt.return_unit)
   in
-  List.iter (fun (text, icon, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
+  let show_token_button_state = button_state () in
+  List.iter (fun (text, icon, state, f) ->
+      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ?state:state ~icon text f)
     [
-      [%i"Show token"], "token", (fun () ->
+      [%i"Show token"], "token", Some show_token_button_state, (fun () ->
           show_token_dialog (get_stored_token ());
           Lwt.return_unit);
-      [%i"Sync workspace"], "sync", (fun () ->
+      [%i"Sync workspace"], "sync", None, (fun () ->
           catch_with_alert @@ fun () ->
           sync () >>= fun _ -> Lwt.return_unit);
-      [%i"Export to file"], "download", download_save;
-      [%i"Import"], "upload", import_save;
-      [%i"Download all source files"], "download", download_all;
-      [%i"Logout"], "logout",
+      [%i"Export to file"], "download", None, download_save;
+      [%i"Import"], "upload", None, import_save;
+      [%i"Download all source files"], "download", None, download_all;
+      [%i"Logout"], "logout", None,
       (fun () -> Lwt.async logout_dialog; Lwt.return_unit);
     ];
   begin button
@@ -935,7 +957,11 @@ let () =
       true);
   Server_caller.request (Learnocaml_api.Version ()) >>=
     (function
-     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
+     | Ok _ ->
+        init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
+        if not (can_show_token ()) then
+          disable_button show_token_button_state;
+        Lwt.return tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
