@@ -317,8 +317,41 @@ module Request_handler = struct
                           ~expiration:(`Max_age (Int64.of_int 60))
                           ~path:"/" ~http_only:true
                           ("csrf", "expired")] in
-         let token = Token.parse (List.assoc "token" params) and
+         let email = List.assoc "email" params and
+             passwd = List.assoc "passwd" params and
              user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params in
+         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (email, passwd)) >>=
+           (function
+            | None -> lwt_fail (`Forbidden, "incorrect password")
+            | Some token ->
+               Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+               let new_hmac = generate_hmac secret csrf user_id in
+               if not (Eqaf.equal hmac new_hmac) then
+                 lwt_fail (`Forbidden, "bad hmac")
+               else
+                 Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
+                 if exists then
+                   (* This can only happen if the user launched twice
+                      at the same time and completed the form twice,
+                      but as the CSRF in the cookies has changed twice
+                      (once for the second form, once for the
+                      invalidation), this should not happen at all. *)
+                   lwt_fail (`Forbidden, "user exists")
+                 else
+                   Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+                   let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
+                                    ~expiration:(`Max_age (Int64.of_int 60))
+                                    ~path:"/"
+                                    ("token", Token.to_string token)) :: cookies in
+                   lwt_ok @@ Redirect { code=`See_other; url="/"; cookies })
+      | Api.Launch_direct body when config.ServerData.use_moodle ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) and
+             make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let user_id = List.assoc "user-id" params and
              csrf = List.assoc "csrf" params and
              hmac = List.assoc "hmac" params in
          Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
@@ -326,24 +359,19 @@ module Request_handler = struct
          if not (Eqaf.equal hmac new_hmac) then
            lwt_fail (`Forbidden, "bad hmac")
          else
-           Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
-           if exists then
-             (* This can only happen if the user launched twice at the
-              same time and completed the form twice, but as the CSRF
-              in the cookies has changed twice (once for the second
-              form, once for the invalidation), this should not happen
-              at all. *)
-             lwt_fail (`Forbidden, "user exists")
-           else
-             Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
-             let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
-                              ~expiration:(`Max_age (Int64.of_int 60))
-                              ~path:"/"
-                              ("token", Token.to_string token)) :: cookies in
-             lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+           Token.create_student () >>= fun token ->
+           Token_index.(
+             TokenIndex.add_token !sync_dir token >>= fun () ->
+             MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+             UserIndex.add !sync_dir token None) >>= fun () ->
+           let cookies = [make_cookie ("token", Token.to_string token);
+                          make_cookie ("csrf", "expired")] in
+           lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Launch _ ->
          lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Launch_login _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_direct _ ->
          lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Static path ->
          respond_static cache path

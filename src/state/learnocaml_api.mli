@@ -50,6 +50,8 @@ type _ request =
       string -> string request
   | Launch_login:
       string -> string request
+  | Launch_direct:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request

@@ -36,6 +36,8 @@ type _ request =
       string -> string request
   | Launch_login:
       string -> string request
+  | Launch_direct:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request
@@ -128,6 +130,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Git _ -> str
       | Launch _ -> str
       | Launch_login _ -> str
+      | Launch_direct _ -> str
       | Students_list _ ->
           json (J.list Student.enc)
       | Set_students_list _ ->
@@ -215,6 +218,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Launch _ ->
        assert false (* Reserved for an LTI application *)
     | Launch_login _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_direct _ ->
        assert false (* Reserved for an LTI application *)
 
     | Students_list token ->
@@ -387,6 +392,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `POST body, ["launch"; "login"], _token ->
          Launch_login body |> k
+
+      | `POST body, ["launch"; "direct"], _ ->
+         Launch_direct body |> k
 
       | `GET, ("description"::_path), _token ->
          (* match token with
