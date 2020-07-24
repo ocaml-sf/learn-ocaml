@@ -245,7 +245,7 @@
 (install
  (package learn-ocaml)
  (section share)
- (files (raml_worker.bc.js as ./raml_worker.js))
+ (files (raml_worker.bc.js as www/js/raml_worker.js))
 )
 
 

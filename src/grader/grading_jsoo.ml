@@ -11,31 +11,33 @@ exception Timeout
 open Grader_jsoo_messages
 open Lwt.Infix
 
+
+
+
 let raml_analysis_thread solution = 
 	let open Learnocaml_report in
 	let worker_file = "/js/raml_worker.js" in 
 	let t,u = Lwt.task () in
-
+(*(apply (func_of_name "foo")  [|unsafe_coerce str|])
 	let _ = Lwt.wakeup u [Message ([Text "A resource bound could not be derived, hello from a woken thread"],Informative)] in 
 	t
-	
-	
-(*	let _ = Lwt.on_cancel t (fun () -> worker##terminate) in 
+	*)
 	let worker = Worker.create worker_file in 
-	let onmessage ev = 
+	let _ = Lwt.on_cancel t (fun () -> worker##terminate) in 
+	let onmessage1 (ev) = 
 		begin
-			let str :string = ev##.data in 
+			let str = Js.to_string ev##.data in
 			let raml_report : Learnocaml_report.t = 
 					match (Resource_analysis.report_of_string str) with
 					| Some report -> report 
-					| None -> [Message ([Text "A resource bound could not be derived"],Informative)] in 
+					| None -> [Message ([Text (( "<<") ^ str ^ ">>" ^ "A resource bound could not be derived")],Informative)] in 
 			let _ = worker##terminate in 
 			let _ = Lwt.wakeup u raml_report in 
 			Js._true 
 		end in
-	let _ = worker##.onmessage := Dom.handler onmessage in 
-	let _ = worker##(postMessage "") in
-	t *)
+	let _ = worker##.onmessage := Dom.handler onmessage1 in 
+	let _ = worker##(postMessage (Js.string "23098098")) in
+	t 
 
 
 let get_grade
