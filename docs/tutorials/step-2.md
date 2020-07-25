@@ -83,7 +83,7 @@ corresponding report. For a function called `my_function`, it will be
 The next steps will bring you progressively to understand most of the
 possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
-5](../tutorials/step-5)
+5](step-5.md)
 where you will:
 * find the signature of `test_function_1_against_solution`
 * learn a new grading function for functions
@@ -102,10 +102,10 @@ open Test_lib
 open Report
 
 let exercise_1 =
-	test_function_2_against_solution
-		[%ty: int -> int -> int] "op"
-		~gen:5
-		[ (1,2) ; (0,1) ]
+  test_function_2_against_solution
+    [%ty: int -> int -> int] "op"
+    ~gen:5
+    [ (1,2) ; (0,1) ]
 
 let () =
   set_result @@

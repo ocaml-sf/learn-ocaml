@@ -1,4 +1,4 @@
-(ignored_subdirs (docker _obuild www sync demo-repository))
+(dirs :standard \ docker _obuild www sync demo-repository)
 
 (rule
  (targets VERSION)

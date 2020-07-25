@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
@@ -28,7 +29,7 @@ let check_if_need_refresh has_server =
       and refresh () = Dom_html.window##.location##reload
       and cancel_label = [%i "I will do it myself!"]
       and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
-      let contents = [ H.p [H.pcdata (String.trim message) ] ] in
+      let contents = [ H.p [H.txt (String.trim message) ] ] in
       confirm ~title ~ok_label ~cancel_label contents refresh)
   else
     Lwt.return_unit
@@ -52,17 +53,17 @@ let display_report exo report =
   if grade >= 100 then begin
     Manip.addClass report_button "success" ;
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
+      Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else if grade = 0 then begin
     Manip.addClass report_button "failure" ;
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
+      Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else begin
     Manip.addClass report_button "partial" ;
     let pct = Format.asprintf "%2d%%" grade in
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ;
-                       span ~a: [ a_class [ "score" ] ] [ pcdata pct ]]
+      Tyxml_js.Html5.[ txt [%i"Report"] ;
+                       span ~a: [ a_class [ "score" ] ] [ txt pct ]]
   end ;
   let report_container = find_component "learnocaml-exo-tab-report" in
   Manip.setInnerHtml report_container
@@ -173,7 +174,7 @@ let () =
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ h1 [ pcdata ex_meta.Exercise.Meta.title ] ;
+    Tyxml_js.Html5.[ h1 [ txt ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor, ace = setup_editor solution in
@@ -203,7 +204,7 @@ let () =
   end ;
   let messages = Tyxml_js.Html5.ul [] in
   let callback text =
-    Manip.appendChild messages Tyxml_js.Html5.(li [ pcdata text ]) in
+    Manip.appendChild messages Tyxml_js.Html5.(li [ txt text ]) in
   let worker =
     ref (get_grade ~callback exo)
   in
@@ -216,17 +217,17 @@ let () =
     check_if_need_refresh has_server >>= fun () ->
     let aborted, abort_message =
       let t, u = Lwt.task () in
-      let btn = Tyxml_js.Html5.(button [ pcdata [%i"abort"] ]) in
+      let btn = Tyxml_js.Html5.(button [ txt [%i"abort"] ]) in
       Manip.Ev.onclick btn (fun _ -> Lwt.wakeup u () ; true) ;
       let div =
         Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                          [ pcdata [%i"Grading is taking a lot of time, "] ;
+                          [ txt [%i"Grading is taking a lot of time, "] ;
                             btn ;
-                            pcdata " ?" ]) in
+                            txt " ?" ]) in
       Manip.SetCss.opacity div (Some "0") ;
       t, div in
     Manip.replaceChildren messages
-      Tyxml_js.Html5.[ li [ pcdata [%i"Launching the grader"] ] ] ;
+      Tyxml_js.Html5.[ li [ txt [%i"Launching the grader"] ] ] ;
     let submit_report = not !is_readonly in (* Don't count the grading time *)
     show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ]
     @@ fun () ->

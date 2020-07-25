@@ -1,3 +1,4 @@
+open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
@@ -36,7 +37,7 @@ let () =
          (* display exercise questions *)
          let text_iframe = Dom_html.createIframe Dom_html.document in
          Manip.replaceChildren text_container
-           Tyxml_js.Html5.[ h1 [ pcdata ex_meta.title ] ;
+           Tyxml_js.Html5.[ h1 [ txt ex_meta.title ] ;
                             Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
          Js.Opt.case
            (text_iframe##.contentDocument)
@@ -51,4 +52,4 @@ let () =
      with Not_found ->
        Lwt.return @@
          Manip.replaceChildren text_container
-           Tyxml_js.Html5.[ h1 [ pcdata "Error: Missing token" ] ]
+           Tyxml_js.Html5.[ h1 [ txt "Error: Missing token" ] ]

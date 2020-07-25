@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Learnocaml_data
 
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
@@ -182,7 +183,7 @@ val toplevel_launch :
   (unit -> unit) ->
   button_group -> string -> Learnocaml_toplevel.t Lwt.t
 
-val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> 'c) -> unit
+val mouseover_toggle_signal : 'a Tyxml_js.Html5.elt -> 'b -> ('b option -> unit) -> unit
 
 val ace_display :
   [< Html_types.div ] Tyxml_js.To_dom.elt -> (string -> unit) * (unit -> unit)

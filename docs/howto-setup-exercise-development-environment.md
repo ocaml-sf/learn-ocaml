@@ -105,4 +105,4 @@ homepage of the learn-ocaml instance that is running on your local
 machine.
 
 You are now ready to write your first exercise! Please proceed to
-the next tutorial [How to write exercises?](../howto-write-exercises)
+the next tutorial [How to write exercises?](howto-write-exercises.md)
