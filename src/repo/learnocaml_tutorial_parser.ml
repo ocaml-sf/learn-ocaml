@@ -8,7 +8,6 @@
 
 open Learnocaml_data
 open Tutorial
-
 open Lwt.Infix
 
 let lines_margin lines =

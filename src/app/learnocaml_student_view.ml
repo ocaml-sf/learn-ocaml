@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -143,22 +144,22 @@ let exercises_tab assignments answers =
                 H.a_onclick (fun _ ->
                     set_selected_exercise (Some id);
                     true) ] [
-        H.td ~a:[ H.a_class ["exercise-id"] ] [ H.pcdata id ];
+        H.td ~a:[ H.a_class ["exercise-id"] ] [ H.txt id ];
         H.td ~a:[ H.a_class ["exercise-title"] ]
-          [ H.pcdata meta.Exercise.Meta.title ];
+          [ H.txt meta.Exercise.Meta.title ];
         H.td ~a:[ H.a_class ["exercise-kind"] ] [
-          H.pcdata (string_of_exercise_kind meta.Exercise.Meta.kind);
+          H.txt (string_of_exercise_kind meta.Exercise.Meta.kind);
         ];
         H.td ~a:[ H.a_class ["exercise-stars"] ]
           [ stars_div meta.Exercise.Meta.stars ];
         H.td ~a:[ H.a_class ["grade"]; grade_sty grade ] [
           match grade with
-          | None -> H.pcdata ""
-          | Some g -> H.pcdata (Printf.sprintf "%d%%" g)
+          | None -> H.txt ""
+          | Some g -> H.txt (Printf.sprintf "%d%%" g)
         ];
         H.td ~a:[ H.a_class ["last-updated"] ] [
           match mtime with
-          | None -> H.pcdata ""
+          | None -> H.txt ""
           | Some t -> date ~time:true t
         ];
       ]
@@ -208,30 +209,30 @@ let exercises_tab assignments answers =
         let text =
           match assg with
           | Some (start, _) when start > now ->
-              [H.pcdata [%i"Future assignment (starting "];
+              [H.txt [%i"Future assignment (starting "];
                date start;
-               H.pcdata ")"]
+               H.txt ")"]
           | Some (_, stop) when stop < now ->
-              [H.pcdata [%i"Terminated assignment ("];
+              [H.txt [%i"Terminated assignment ("];
                date stop;
-               H.pcdata ")"]
+               H.txt ")"]
           | Some (_, stop) ->
-              [H.pcdata [%i"Ongoing assignment (due "];
+              [H.txt [%i"Ongoing assignment (due "];
                date stop;
-               H.pcdata ")"]
+               H.txt ")"]
           | None ->
-              [H.pcdata [%i"Open exercises"]];
+              [H.txt [%i"Open exercises"]];
         in
         H.tr ~a:[ H.a_class ["learnocaml-assignment-line"];
                   grade_sty (Some (int_of_float avg_grade)) ] [
           H.th ~a:[ H.a_scope `Rowgroup; H.a_colspan 4 ] text;
           H.th ~a:[ H.a_scope `Rowgroup;
                     H.a_class ["grade"] ] [
-            H.pcdata (Printf.sprintf "%01.1f%%" avg_grade)
+            H.txt (Printf.sprintf "%01.1f%%" avg_grade)
           ];
           H.th ~a:[ H.a_scope `Rowgroup;
                     H.a_class ["last-updated"] ] [
-            match mtime with Some t -> date ~time:true t | None -> H.pcdata "";
+            match mtime with Some t -> date ~time:true t | None -> H.txt "";
           ];
         ] ::
         lines,
@@ -240,7 +241,7 @@ let exercises_tab assignments answers =
       assignments
   in
   match assg_lines with
-  | [] -> Lwt.return (H.pcdata "No assigned or open exercises found", None)
+  | [] -> Lwt.return (H.txt "No assigned or open exercises found", None)
   | lines ->
       let lines, sighandlers = List.split lines in
       Lwt.return (H.table (List.concat lines), Some sighandlers)
@@ -276,7 +277,7 @@ let stats_tab assignments answers =
       (0, 0, 0, SMap.empty, SMap.empty)
       assignments
   in
-  let item ?(indent=0) ?(fmt = H.pcdata) lbl title v =
+  let item ?(indent=0) ?(fmt = H.txt) lbl title v =
     H.tr ~a:[H.a_title title] [
       H.td ~a:[H.a_class ["stats-label"];
                H.a_style ("padding-left:"^string_of_int (indent * 8)^"px")]
@@ -288,7 +289,7 @@ let stats_tab assignments answers =
     let cls = H.a_class ["grade"; "stats-pct"] in
     if y = 0 then
       H.div ~a:[cls; H.a_style ("background-color:"^grade_color None)]
-        [H.pcdata "--%"]
+        [H.txt "--%"]
     else
     let r = 100. *. float_of_int x /. float_of_int y in
     let color = grade_color (Some (int_of_float r)) in
@@ -299,9 +300,9 @@ let stats_tab assignments answers =
     in
     H.div ~a:[H.a_class ["grade"; "stats-pct"];
                H.a_style background]
-      [H.pcdata (Printf.sprintf "%02.1f%%" r)]
+      [H.txt (Printf.sprintf "%02.1f%%" r)]
   in [
-    H.h3 [H.pcdata [%i"Student stats"]];
+    H.h3 [H.txt [%i"Student stats"]];
     H.table ~a:[H.a_class ["student-stats"]] begin
       [
         item [%i"completion"]
@@ -317,7 +318,7 @@ let stats_tab assignments answers =
       @
       (if SMap.is_empty by_focus then [] else
        H.tr [H.th ~a:[H.a_colspan 2]
-               [H.pcdata [%i"success over exercises training skills"]]] ::
+               [H.txt [%i"success over exercises training skills"]]] ::
        List.map (fun (sk, (tot, count)) ->
            let i =
              item ~indent:1 ~fmt:tag_span sk
@@ -331,7 +332,7 @@ let stats_tab assignments answers =
       @
       (if SMap.is_empty by_prereq then [] else
        H.tr [H.th ~a:[H.a_colspan 2]
-               [H.pcdata [%i"success over exercises requiring skills"]]] ::
+               [H.txt [%i"success over exercises requiring skills"]]] ::
        List.map (fun (sk, (tot, count)) ->
            let i =
              item ~indent:1 ~fmt:tag_span sk
@@ -378,7 +379,7 @@ let restore_report_button () =
   Manip.removeClass report_button "failure";
   Manip.removeClass report_button "partial";
   Manip.replaceChildren report_button
-    Tyxml_js.Html5.[ pcdata [%i"Report"] ]
+    Tyxml_js.Html5.[ txt [%i"Report"] ]
 
 let display_report exo report =
   let score, _failed = Report.result report in
@@ -391,17 +392,17 @@ let display_report exo report =
   if grade >= 100 then begin
     Manip.addClass report_button "success" ;
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
+      Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else if grade = 0 then begin
     Manip.addClass report_button "failure" ;
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ]
+      Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else begin
     Manip.addClass report_button "partial" ;
     let pct = Format.asprintf "%2d%%" grade in
     Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ pcdata [%i"Report"] ;
-                       span ~a: [ a_class [ "score" ] ] [ pcdata pct ]]
+      Tyxml_js.Html5.[ txt [%i"Report"] ;
+                       span ~a: [ a_class [ "score" ] ] [ txt pct ]]
   end ;
   Manip.setInnerHtml El.Tabs.(report.tab)
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
@@ -419,7 +420,7 @@ let clear_tabs () =
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren El.Tabs.(text.tab) [
-    H.h1 [H.pcdata meta.Exercise.Meta.title];
+    H.h1 [H.txt meta.Exercise.Meta.title];
     Tyxml_js.Of_dom.of_iFrame text_iframe
   ];
   Js.Opt.case
@@ -438,11 +439,11 @@ let update_report_tab exo ans =
        | Some g when g <> grade ->
            Manip.appendChildFirst El.Tabs.(report.tab)
              (H.div ~a:[H.a_class ["warning"]]
-                [H.pcdata [%i"GRADE DOESN'T MATCH: cheating suspected"]])
+                [H.txt [%i"GRADE DOESN'T MATCH: cheating suspected"]])
        | _ -> ())
   | None ->
       Manip.replaceChildren El.Tabs.(report.tab)
-        [H.div [H.pcdata [%i"No report available"]]]
+        [H.div [H.txt [%i"No report available"]]]
 
 let update_tabs meta exo ans =
   update_text_tab meta exo;
