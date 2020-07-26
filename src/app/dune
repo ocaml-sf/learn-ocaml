@@ -25,16 +25,25 @@
     ocplib_i18n)
 )
 
+(library
+  (name learnocaml_png_web)
+  (modules Learnocaml_png)
+  (modes byte)
+  (implements learnocaml_png)
+  (libraries js_of_ocaml)
+  (preprocess (pps js_of_ocaml.ppx)))
+
 (executable
  (name learnocaml_index_main)
  (modes byte)
  (flags :standard -warn-error -6-9-27-33-39)
  (libraries ezjsonm
             ace
-	    sha
+            sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
+            learnocaml_png_web
             js_of_ocaml.ppx
             ocplib_i18n)
  (modules Learnocaml_teacher_tab
@@ -52,10 +61,11 @@
  (libraries ezjsonm
             grading_jsoo
             ace
-	    sha
+      sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
+            learnocaml_png_web
             js_of_ocaml.ppx
             ocplib_i18n)
  (modules Learnocaml_exercise_main)
@@ -71,10 +81,11 @@
  (flags :standard -warn-error -9-27-33)
  (libraries ezjsonm
             ace
-	    sha
+      sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
+            learnocaml_png_web
             js_of_ocaml.ppx
             ocplib_i18n)
  (modules Learnocaml_playground_main)
@@ -93,6 +104,7 @@
             ace
             learnocaml_repository
             learnocaml_app_common
+            learnocaml_png_web
             lwt_react
             js_of_ocaml.ppx
             ocplib_i18n)
@@ -111,6 +123,7 @@
             ace
             learnocaml_repository
             learnocaml_app_common
+            learnocaml_png_web
             js_of_ocaml.ppx
             ocplib_i18n)
  (modules Learnocaml_description_main)
@@ -126,11 +139,12 @@
  (modes byte)
  (flags :standard -warn-error -9-27-33)
  (libraries asak
-	    ezjsonm
+      ezjsonm
             grading_jsoo
             ace
             learnocaml_repository
             learnocaml_app_common
+            learnocaml_png_web
             lwt_react
             js_of_ocaml.ppx
             ocplib_i18n)

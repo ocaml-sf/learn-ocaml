@@ -8,6 +8,8 @@
 
 (* -- minimal HTML producer ------------------------------------------------- *)
 
+open Bigarray
+
 type html = elt list
 and elt =
   | C of string
@@ -82,10 +84,14 @@ and status =
 
 and text = inline list
 
+and image_struct =
+(int, int8_unsigned_elt, c_layout) Array1.t * int * int
+
 and inline =
   | Text of string
   | Break
   | Code of string
+  | Image of image_struct
   | Output of string
 
 let result items =
@@ -108,6 +114,22 @@ let result items =
         (max n min, b) in
   let (n, b) = do_report items in
   (max n 0, b)
+
+let marshal data =
+  let dim = Array1.dim data in
+  let rec loop k acc =
+    if k < dim then
+      let acc = data.{k} :: acc in
+      loop (k+1) acc
+    else acc  |> List.rev
+  in loop 0 []
+
+let unmarshall int_data =
+  let dim = List.length int_data in
+  let data = Array1.create int8_unsigned c_layout dim in
+  List.iteri (fun i elt -> data.{i} <- elt) int_data;
+  data
+
 
 let rec scale ?(penalties = true) factor items =
   List.map (scale_item penalties factor) items
@@ -145,6 +167,20 @@ let enc =
             | (text, `Normal) -> Text text
             | (text, `Code) -> Code text
             | (text, `Output) -> Output text) ;
+        case
+          (obj3
+            (req "data" (list int))
+            (req "width" int)
+            (req "height" int))
+          (function
+           | Image (data, w, h) ->
+               let str_data = marshal data in
+               Some (str_data, w, h)
+           | _ -> None)
+          (function
+            | (int_data, w, h) ->
+                let data = unmarshall int_data in
+                Image (data, w, h)) ;
         case
           empty
           (function Break -> Some () | _ -> None)
@@ -274,6 +310,9 @@ let format items =
           S ("br", [])
       | Code s when String.contains s '\n' ->
           E ("code", ["class", "code-block" ], [ T s ])
+      | Image (data, w, h) ->
+         let data = Learnocaml_png.to_png_data data w h in
+          S ("img", ["class", "vg-image"; "src", data])
       | Output s ->
           E ("code", ["class", "output-block" ], [ T s ])
       | Code s ->
@@ -581,6 +620,8 @@ let print ppf items =
         Format.fprintf ppf "@,%a%a" print_code s print_text rest
     | Output s :: rest ->
         Format.fprintf ppf "@,%a%a" print_code s print_text rest
+    | Image _ :: rest ->
+        Format.fprintf ppf "@,Image data code%a" print_text rest
     | [] -> ()
   and print_code ppf s =
     let s = String.trim s in

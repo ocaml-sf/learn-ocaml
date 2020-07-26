@@ -8,6 +8,8 @@
 
 (** {2 Formatted report output} *)
 
+open Bigarray
+
 type t = item list
 
 and item =
@@ -25,10 +27,14 @@ and status =
 
 and text = inline list
 
+and image_struct =
+(int, int8_unsigned_elt, c_layout) Array1.t * int * int
+
 and inline =
   | Text of string (** A word *)
   | Break (** Line separator *)
   | Code of string (** For expressions *)
+  | Image of image_struct (* For Vg image *)
   | Output of string (** For output *)
 
 (** Gets the total successes of a report, and tells if a failure happened *)

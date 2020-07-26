@@ -18,7 +18,8 @@
             learnocaml_process_repository_lib
             learnocaml_server_lib
             learnocaml_server_args
-            learnocaml_report)
+            learnocaml_report
+            learnocaml_png_server)
 )
 
 (executable
@@ -30,14 +31,15 @@
  (flags :standard -linkall)
  (modules Learnocaml_client)
  (libraries cmdliner
- 	    sha
+            sha
             lwt.unix
             lwt_utils
             cohttp.lwt
             grading_cli
             learnocaml_data
-	    learnocaml_store
-            learnocaml_api)
+            learnocaml_store
+            learnocaml_api
+            learnocaml_png_server)
 )
 
 (executable
@@ -45,5 +47,6 @@
  (public_name learn-ocaml-server)
  (name learnocaml_server_main)
  (modules learnocaml_server_main)
- (libraries learnocaml_server_args)
+ (libraries learnocaml_server_args
+            learnocaml_png_server)
 )

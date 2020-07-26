@@ -380,6 +380,8 @@ let console_report ?(verbose=false) ex report =
   let format_text t =
     String.concat " " @@ List.map (function
         | Text w -> w
+        | Image (data, w, h) ->
+            Learnocaml_png.to_png_data data w h
         | Break -> "\n"
         | Code s when String.contains s '\n' -> "\n"^block ~border_color:[`Cyan] s
         | Code s -> color [`Cyan] s

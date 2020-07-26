@@ -4,7 +4,10 @@
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
  (preprocess (pps ppx_ocplib_i18n))
- (libraries ocplib-json-typed ocplib_i18n)
+ (libraries ocplib-json-typed
+            ocplib_i18n
+            vg
+            learnocaml_png)
 )
 
 (rule
@@ -209,6 +212,7 @@
             ocplib_i18n
             learnocaml_repository
             learnocaml_report
+            learnocaml_png_web
             jsutils
             js_of_ocaml.ppx
             grader_jsoo_messages)

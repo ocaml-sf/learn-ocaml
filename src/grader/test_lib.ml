@@ -1429,7 +1429,7 @@ module Make
     let render_array w h img =
       let size = Size2.v (float_of_int w) (float_of_int h) in
       let view = Box2.v P2.o size in
-      let stride = 24 * w in
+      let stride = 3 * w in
       let data =
         Array1.create int8_unsigned c_layout (stride * h)
       in
@@ -1460,7 +1460,7 @@ module Make
           Array1.set output (k+1) g;
           Array1.set output (k+2) b;
           compute_array (k+3)
-      in compute_array 0
+      in got, (compute_array 0)
 
     let compute_dist p_exp p_got =
       let r_exp, g_exp, b_exp = p_exp in
@@ -1475,33 +1475,20 @@ module Make
       let gray = (d * 255) / (3. *. (255. ** 2.) |> sqrt |> int_of_float) in
       gray, gray, gray
 
-    let show a =
-      let dim = Array1.dim a in
-      let rec loop acc k =
-        if k < dim then
-          let px = a.{k} |> string_of_int in
-          let acc = acc ^ ", " ^ px in
-          loop acc (k+1)
-        else acc
-      in loop "" 0
-
-
     let test_vg w h got exp =
       let open Learnocaml_report in
-      let diff = compute_diff_array compute_dist w h got exp in
+      let got, diff = compute_diff_array compute_dist w h got exp in
       let size = Array1.dim diff in
       let rec check_image k =
         if k >= size then
-          [Message ([Text "Nice answer"], Success 1)]
+          [Message ([Text "Correct value" ; Break; Image (got, w, h)], Success 1)]
         else
           let r, g, b =
             Array1.get diff k, Array1.get diff (k+1), Array1.get diff (k+2)
           in
           if r != 0 || g != 0 || b != 0 then
-            let txt = show diff in
-            [Message ([Text "Wrong answer" ; Text txt], Failure)]
-          else
-              check_image (k+3)
+            [Message ([Text "Wrong value" ; Break ; Image (diff, w, h)], Failure)]
+          else check_image (k+3)
       in check_image 0
 
     let test_vg_against_solution w h name =
