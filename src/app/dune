@@ -27,10 +27,10 @@
 
 (library
   (name learnocaml_png_web)
-  (modules Learnocaml_png)
   (modes byte)
   (implements learnocaml_png)
   (libraries js_of_ocaml)
+  (modules Learnocaml_png)
   (preprocess (pps js_of_ocaml.ppx)))
 
 (executable
@@ -61,7 +61,7 @@
  (libraries ezjsonm
             grading_jsoo
             ace
-      sha
+            sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
@@ -81,7 +81,7 @@
  (flags :standard -warn-error -9-27-33)
  (libraries ezjsonm
             ace
-      sha
+            sha
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
@@ -139,7 +139,7 @@
  (modes byte)
  (flags :standard -warn-error -9-27-33)
  (libraries asak
-      ezjsonm
+            ezjsonm
             grading_jsoo
             ace
             learnocaml_repository

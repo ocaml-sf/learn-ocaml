@@ -45,8 +45,8 @@
  (name learnocaml_png)
  (wrapped false)
  (flags :standard -warn-error A-4-42-44-45-48)
- (modules Learnocaml_png)
  (virtual_modules Learnocaml_png)
+ (modules Learnocaml_png)
  )
 
 (library
