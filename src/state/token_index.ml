@@ -170,7 +170,6 @@ module BaseOauthIndex (RW: IndexRW) = struct
       transform#get_string
     in
     let secret = hexa_encode @@ Cryptokit.Random.string Cryptokit.Random.secure_rng len in
-    Printf.printf "Auto-generated secret : %s\n" secret;
     secret
 
   let create_index sync_dir =
