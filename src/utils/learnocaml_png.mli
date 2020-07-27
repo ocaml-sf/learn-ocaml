@@ -9,7 +9,7 @@
 open Bigarray
 
 (** [to_png_data data w h] generates a string containing the png image
-    [data] as a string. The image as dimension [w] * [h]. *)
+    [data] as a string. The image has dimensions [w] * [h]. *)
 val to_png_data:
   (int, int8_unsigned_elt, c_layout) Array1.t -> int -> int -> string
 

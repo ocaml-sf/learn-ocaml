@@ -23,5 +23,7 @@ let to_png_data data w h =
       let px = r ^ " " ^ g ^ " " ^ b ^ " " in
       let acc = px :: acc in
       loop (k+3) acc
-    else List.rev acc |> String.concat ""
+    else
+      List.rev acc
+      |> String.concat ""
   in loop 0 header

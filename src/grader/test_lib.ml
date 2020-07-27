@@ -1445,20 +1445,16 @@ module Make
       let size = Array1.dim exp in
       let kind = Array1.kind exp in
       let layout = Array1.layout exp in
-      let output = Array1.create kind layout size in
+      let data = Array1.create kind layout size in
       let rec compute_array k =
-        if k >= size then output
+        if k >= size then data
         else
-          let p_exp =
-            Array1.get exp k, Array1.get exp (k+1), Array1.get exp (k+2)
-          in
-          let p_got =
-            Array1.get got k, Array1.get got (k+1), Array1.get got (k+2)
-          in
+          let p_exp = exp.{k}, exp.{k+1}, exp.{k+2} in
+          let p_got = got.{k}, got.{k+1}, got.{k+2} in
           let r, g, b = f_dist p_exp p_got in
-          Array1.set output k r;
-          Array1.set output (k+1) g;
-          Array1.set output (k+2) b;
+          data.{k} <- r;
+          data.{k+1} <- g;
+          data.{k+2} <- b;
           compute_array (k+3)
       in got, (compute_array 0)
 
@@ -1481,14 +1477,14 @@ module Make
       let size = Array1.dim diff in
       let rec check_image k =
         if k >= size then
-          [Message ([Text "Correct value" ; Break; Image (got, w, h)], Success 1)]
+          [Message ([Text "Correct value" ; Break; Image (got, w, h)],
+            Success 1)]
         else
-          let r, g, b =
-            Array1.get diff k, Array1.get diff (k+1), Array1.get diff (k+2)
-          in
-          if r != 0 || g != 0 || b != 0 then
-            [Message ([Text "Wrong value" ; Break ; Image (diff, w, h)], Failure)]
-          else check_image (k+3)
+          if diff.{k} != 0 || diff.{k+1} != 0 || diff.{k+2} != 0 then
+            [Message ([Text "Wrong value" ; Break ; Image (diff, w, h)],
+              Failure)]
+          else
+            check_image (k+3)
       in check_image 0
 
     let test_vg_against_solution w h name =

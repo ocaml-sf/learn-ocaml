@@ -117,17 +117,21 @@ let result items =
 
 let marshal data =
   let dim = Array1.dim data in
-  let rec loop k acc =
+  let rec loop k int_data =
     if k < dim then
-      let acc = data.{k} :: acc in
-      loop (k+1) acc
-    else acc  |> List.rev
+      let int_data = data.{k} :: int_data in
+      loop (k+1) int_data
+    else
+      int_data
+      |> List.rev
   in loop 0 []
 
 let unmarshall int_data =
   let dim = List.length int_data in
   let data = Array1.create int8_unsigned c_layout dim in
-  List.iteri (fun i elt -> data.{i} <- elt) int_data;
+  List.iteri (
+    fun i elt -> data.{i} <- elt
+  ) int_data;
   data
 
 
@@ -174,8 +178,8 @@ let enc =
             (req "height" int))
           (function
            | Image (data, w, h) ->
-               let str_data = marshal data in
-               Some (str_data, w, h)
+               let int_data = marshal data in
+               Some (int_data, w, h)
            | _ -> None)
           (function
             | (int_data, w, h) ->
@@ -312,7 +316,7 @@ let format items =
           E ("code", ["class", "code-block" ], [ T s ])
       | Image (data, w, h) ->
          let data = Learnocaml_png.to_png_data data w h in
-          S ("img", ["class", "vg-image"; "src", data])
+          S ("img", ["src", data])
       | Output s ->
           E ("code", ["class", "output-block" ], [ T s ])
       | Code s ->
@@ -621,7 +625,7 @@ let print ppf items =
     | Output s :: rest ->
         Format.fprintf ppf "@,%a%a" print_code s print_text rest
     | Image _ :: rest ->
-        Format.fprintf ppf "@,Image data code%a" print_text rest
+        Format.fprintf ppf "Vg image%a" print_text rest
     | [] -> ()
   and print_code ppf s =
     let s = String.trim s in

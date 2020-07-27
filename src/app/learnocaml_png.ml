@@ -11,14 +11,14 @@ open Bigarray
 
 let fill big_data data =
   let dim = Array1.dim big_data in
-  let rec loop i j =
-    if i < dim then
+  let rec loop big_count data_count =
+    if big_count < dim then
       begin
-        Dom_html.pixel_set data j big_data.{i};
-        Dom_html.pixel_set data (j+1) big_data.{i+1};
-        Dom_html.pixel_set data (j+2) big_data.{i+2};
-        Dom_html.pixel_set data (j+3) 255;
-        loop (i+3) (j+4)
+        Dom_html.pixel_set data data_count big_data.{big_count};
+        Dom_html.pixel_set data (data_count+1) big_data.{big_count+1};
+        Dom_html.pixel_set data (data_count+2) big_data.{big_count+2};
+        Dom_html.pixel_set data (data_count+3) 255;
+        loop (big_count+3) (data_count+4)
       end
     else ()
   in loop 0 0
@@ -32,4 +32,5 @@ let to_png_data big_data w h =
   let data = image_data ##.data in
   fill big_data data;
   context ## putImageData image_data 0. 0.;
-  canvas##toDataURL_type (Js.string "image/png") |> Js.to_string
+  canvas##toDataURL_type (Js.string "image/png")
+  |> Js.to_string

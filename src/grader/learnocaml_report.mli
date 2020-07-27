@@ -27,7 +27,7 @@ and status =
 
 and text = inline list
 
-and image_struct =
+and image_struct = (** An array with its width and its height *)
 (int, int8_unsigned_elt, c_layout) Array1.t * int * int
 
 and inline =
