@@ -163,14 +163,8 @@ module BaseOauthIndex (RW: IndexRW) = struct
    (* Copyright https://github.com/astrada/gapi-ocaml
       Return a secret hexa encoded *)
   let gen_secret len =
-    let hexa_encode s =
-      let transform = Cryptokit.Hexa.encode () in
-      transform#put_string s;
-      transform#finish;
-      transform#get_string
-    in
-    let secret = hexa_encode @@ Cryptokit.Random.string Cryptokit.Random.secure_rng len in
-    secret
+    Cryptokit.Random.string Cryptokit.Random.secure_rng len
+    |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
 
   let create_index sync_dir =
     let secret = gen_secret 32 in
@@ -250,9 +244,7 @@ let signature_oauth list_args http_method basic_uri secret =
   let signing_key = (Netencoding.Url.encode ~plus:false secret) ^ "&" in  (* 5 : Build signing_key *)
   let encoding =
     let hash = Cryptokit.MAC.hmac_sha1 signing_key in
-    let _ = hash#add_string signature_base_string in
-    let result = hash#result in
-    hash#wipe;
+    let result = Cryptokit.hash_string hash signature_base_string in
     B64.encode result
   in encoding
 
