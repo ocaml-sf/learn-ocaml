@@ -19,6 +19,8 @@ depends: [
   "cmdliner"
   "omd"
   "asak"
+  "gg"
+  "vg"
   "cohttp" {>= "1.0.0" & < "2.0.0"}
   "cohttp-lwt-unix" {>= "1.0.0" & < "2.0.0"}
   "ssl" {= "0.5.5"}
