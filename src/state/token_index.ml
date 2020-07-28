@@ -2,6 +2,7 @@ open Lwt
 open Learnocaml_data
 
 let ( / ) dir f = if dir = "" then f else Filename.concat dir f
+let indexes_subdir = "data"
 
 module J = Json_encoding
 
@@ -42,6 +43,12 @@ module IndexFile: IndexRW = struct
 
   let write mutex filename serialise data =
     Lwt_mutex.lock mutex >>= fun () ->
+    let path = Filename.dirname filename in
+    Lwt_utils.is_directory path >>= fun is_directory ->
+    (if is_directory then
+       Lwt.return_unit
+     else
+       Lwt_unix.mkdir path 0o755) >>= fun () ->
     Lwt_io.open_file ~mode:Lwt_io.Output filename >>= fun channel ->
     Lwt_io.write channel (serialise data) >>= fun () ->
     Lwt_io.close channel >>= fun () ->
@@ -64,7 +71,7 @@ module BaseTokenIndex (RW: IndexRW) = struct
         let rec aux s acc =
           Lwt.catch (fun () ->
               Lwt_stream.get s >>= function
-              | Some ("." | "..") -> aux s acc
+              | Some ("." | ".." | "data") -> aux s acc
               | Some x -> scan f (d / x) acc >>= aux s
               | None -> Lwt.return acc)
           @@ function
@@ -86,10 +93,10 @@ module BaseTokenIndex (RW: IndexRW) = struct
             Lwt.return acc
         ) "" [] in
     Lwt_io.printl "Regenerating the token index..." >>= fun () ->
-    found_indexes >>= RW.write rw (sync_dir / file) serialise_str
+    found_indexes >>= RW.write rw (sync_dir / indexes_subdir / file) serialise_str
 
   let get_file sync_dir name =
-    let filename = (sync_dir / name) in
+    let filename = (sync_dir / indexes_subdir / name) in
     let create () =
           create_index sync_dir >>= fun () ->
           RW.read filename parse in
@@ -109,7 +116,7 @@ module BaseTokenIndex (RW: IndexRW) = struct
 
   let add_token sync_dir token =
     get_tokens sync_dir >>= fun tokens ->
-    RW.write rw (sync_dir / file) serialise (token :: tokens)
+    RW.write rw (sync_dir / indexes_subdir / file) serialise (token :: tokens)
 end
 
 module TokenIndex = BaseTokenIndex (IndexFile)
@@ -124,11 +131,11 @@ module BaseMoodleIndex (RW: IndexRW) = struct
   let serialise = Json_codec.encode ?minify:(Some(false)) enc
 
   let create_index sync_dir =
-    RW.write rw (sync_dir / file) serialise []
+    RW.write rw (sync_dir / indexes_subdir / file) serialise []
 
   let get_users sync_dir =
     Lwt.catch
-      (fun () -> RW.read (sync_dir / file) parse)
+      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
       (fun _exn -> Lwt.return [])
 
   let user_exists sync_dir id =
@@ -141,7 +148,7 @@ module BaseMoodleIndex (RW: IndexRW) = struct
       Lwt.return ()
     else
       let users = (id, token) :: users in
-      RW.write rw (sync_dir / file) serialise users
+      RW.write rw (sync_dir / indexes_subdir / file) serialise users
 
   let get_user_token sync_dir id =
     get_users sync_dir >|= fun users ->
@@ -168,7 +175,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
 
   let create_index sync_dir =
     let secret = gen_secret 32 in
-    RW.write rw (sync_dir / file) serialise [(secret, [])] >|= fun () ->
+    RW.write rw (sync_dir / indexes_subdir / file) serialise [(secret, [])] >|= fun () ->
     secret
 
   let get_first_oauth sync_dir =
@@ -177,7 +184,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
       (secret, []) in
     Lwt.catch
       (fun () ->
-         RW.read (sync_dir / file) parse >>= function
+         RW.read (sync_dir / indexes_subdir / file) parse >>= function
          | oauth :: _ -> Lwt.return oauth
          | [] -> create ())
       (fun _exn -> create ())
@@ -188,15 +195,15 @@ module BaseOauthIndex (RW: IndexRW) = struct
 
   let purge sync_dir =
     get_first_oauth sync_dir >>= fun oauth ->
-    RW.write rw (sync_dir / file) serialise [oauth]
+    RW.write rw (sync_dir / indexes_subdir / file) serialise [oauth]
 
   let add_nonce sync_dir nonce =
-    RW.read (sync_dir / file) parse >>= fun oauth ->
+    RW.read (sync_dir / indexes_subdir / file) parse >>= fun oauth ->
     let oauth =
       match oauth with
       | (secret, nonces) :: r -> (secret, nonce :: nonces) :: r
       | [] -> [(gen_secret 32, [nonce])] in
-    RW.write rw (sync_dir / file) serialise oauth
+    RW.write rw (sync_dir / indexes_subdir / file) serialise oauth
 
   let check_nonce sync_dir nonce =
     get_first_oauth sync_dir >|= fun (_secret, nonces) ->
@@ -306,15 +313,15 @@ module BaseUserIndex (RW: IndexRW) = struct
 
   let create_index sync_dir tokens =
     token_list_to_users tokens
-    |> RW.write rw (sync_dir / file) serialise
+    |> RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let get_data sync_dir =
     Lwt.catch
-      (fun () -> RW.read (sync_dir / file) parse)
+      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
       (fun _exn ->
         TokenIndex.get_tokens sync_dir >>= fun tokens ->
         let users = token_list_to_users tokens in
-        RW.write rw (sync_dir / file) serialise users >|= fun () ->
+        RW.write rw (sync_dir / indexes_subdir / file) serialise users >|= fun () ->
         users)
 
   let authenticate sync_dir auth =
@@ -345,7 +352,7 @@ module BaseUserIndex (RW: IndexRW) = struct
       | Password (token, name, passwd) ->
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
          Password (token, name, hash) in
-    RW.write rw (sync_dir / file) serialise (new_user :: users)
+    RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
   let upgrade sync_dir token name passwd =
     get_data sync_dir >|=
@@ -355,10 +362,10 @@ module BaseUserIndex (RW: IndexRW) = struct
           | Password (found_token, name, _passwd) when found_token = token ->
              Password (token, name, passwd)
           | elt -> elt) >>=
-      RW.write rw (sync_dir / file) serialise
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let can_login sync_dir token =
-    RW.read (sync_dir / file) parse >|= fun users ->
+    RW.read (sync_dir / indexes_subdir / file) parse >|= fun users ->
       List.find_opt (function
           | Token (found_token, use_moodle) -> found_token = token && not use_moodle
           | _ -> false) users <> None
