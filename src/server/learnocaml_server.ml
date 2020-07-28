@@ -188,7 +188,7 @@ let generate_hmac secret csrf user_id =
   |> Cryptokit.transform_string encoder
 
 let create_student conn (config: Learnocaml_data.Server.config) cache
-      nonce_req secret_candidate nick =
+      nonce_req secret_candidate nick base_auth =
   let module ServerData = Learnocaml_data.Server in
   lwt_option_fail
     (Hashtbl.find_opt nonce_req conn)
@@ -207,7 +207,13 @@ let create_student conn (config: Learnocaml_data.Server.config) cache
        (match nick with
         | None -> Lwt.return_unit
         | Some nickname -> Save.set tok Save.{empty with nickname})
-       >>= fun () -> respond_json cache tok
+       >>= fun () ->
+       let auth =
+         (match base_auth with
+          | `Token use_moodle -> Token_index.Token (tok, use_moodle)
+          | `Password (email, password) -> Token_index.Password (tok, email, password)) in
+       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+       respond_json cache tok
 
 module Memory_cache = struct
 
@@ -360,10 +366,11 @@ module Request_handler = struct
            lwt_fail (`Forbidden, "bad hmac")
          else
            Token.create_student () >>= fun token ->
+           let auth = Token_index.Token (token, true) in
            Token_index.(
              TokenIndex.add_token !sync_dir token >>= fun () ->
              MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
-             UserIndex.add !sync_dir token None) >>= fun () ->
+             UserIndex.add !sync_dir auth) >>= fun () ->
            let cookies = [make_cookie ("token", Token.to_string token);
                           make_cookie ("csrf", "expired")] in
            lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
@@ -386,13 +393,18 @@ module Request_handler = struct
               Hashtbl.add nonce_req conn nonce;
               nonce
          in respond_json cache nonce
+      | Api.Create_token _ when config.ServerData.use_passwd ->
+         lwt_fail (`Forbidden, "Creating a raw token is forbidden on this instance.")
       | Api.Create_token (secret_candidate, None, nick) ->
          valid_string_of_endp conn
          >?= fun conn ->
-         create_student conn config cache nonce_req secret_candidate nick
+         create_student conn config cache nonce_req secret_candidate nick (`Token false)
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
          lwt_catch_fail
-            (fun () -> Token.register token >>= fun () -> respond_json cache token)
+            (fun () -> Token.register token >>= fun () ->
+                       let auth = Token_index.Token (token, false) in
+                       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+                       respond_json cache token)
             (function
              | Failure body -> (`Bad_request, body)
              | exn -> (`Internal_server_error, Printexc.to_string exn))
@@ -404,7 +416,6 @@ module Request_handler = struct
       | Api.Create_user (email, nick, password, secret) when config.ServerData.use_passwd ->
          valid_string_of_endp conn
          >?= fun conn ->
-         Token.create_student () >>= fun token ->
          Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
          if exists then
            lwt_fail (`Forbidden, "User already exists")
@@ -413,8 +424,7 @@ module Request_handler = struct
          else if String.length password < 8 then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else
-           Token_index.UserIndex.add !sync_dir token (Some(email, password)) >>= fun () ->
-           create_student conn config cache nonce_req secret (Some nick)
+           create_student conn config cache nonce_req secret (Some nick) (`Password (email, password))
       | Api.Login (nick, password) when config.ServerData.use_passwd ->
          Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
            (function

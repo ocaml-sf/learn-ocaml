@@ -369,14 +369,16 @@ let main o =
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
               \  enableToplevel: %b,\n\
-              \  root: \"%s\"\n\
+              \  root: \"%s\",\n\
+              \  enablePasswd: %b\n\
                }\n"
               (tutorials_ret <> None)
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
               (o.builder.Builder.toplevel <> Some false)
-              o.builder.Builder.root >>= fun () ->
+              o.builder.Builder.root
+              preconfig.ServerData.use_passwd >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true

@@ -67,6 +67,22 @@
     </div>
     <div id="login-overlay">
       <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h1>
+      <div id="login-new-token">
+        <h4 id="txt_token_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_token_first_connection_dialog"><!-- Choose a nickname --></div>
+          <div class="filler_h"></div>
+          <input id="token-nickname-input" type="text" placeholder="Nickname"
+                 minlength="2" autocomplete="off"></input>
+        </div>
+        <div>
+          <div id="txt_token_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="token-secret-input" type="text" placeholder="Secret"
+                 minlength="1" autocomplete="off"></input>
+        </div>
+        <button id="token-new-button"><span id="txt_token_new"><!-- Create new token --></span></button>
+      </div>
       <div id="login-new">
         <h4 id="txt_first_connection"><!-- First connection --></h4>
         <div>

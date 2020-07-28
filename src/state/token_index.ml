@@ -338,14 +338,13 @@ module BaseUserIndex (RW: IndexRW) = struct
           | Password (_token, found_name, _passwd) -> found_name = name
           | _ -> false)
 
-  let add sync_dir token auth =
+  let add sync_dir auth =
     get_data sync_dir >>= fun users ->
     let new_user = match auth with
-      | Some (name, passwd) ->
+      | Token _ -> auth
+      | Password (token, name, passwd) ->
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-         Password (token, name, hash)
-      | None ->
-         Token (token, true) in
+         Password (token, name, hash) in
     RW.write rw (sync_dir / file) serialise (new_user :: users)
 
   let upgrade sync_dir token name passwd =

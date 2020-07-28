@@ -43,6 +43,13 @@ module El = struct
 
   module Login_overlay = struct
     let login_overlay_id, login_overlay = id "login-overlay"
+    let login_new_token_id, login_new_token = id "login-new-token"
+    let login_new_id, login_new = id "login-new"
+    let login_returning_id, login_returning = id "login-returning"
+
+    let token_nickname_id, token_nickname = id "token-nickname-input"
+    let token_secret_id, token_secret = id "token-secret-input"
+    let token_new_button_id, token_new_button = id "token-new-button"
     let reg_input_email_id, reg_input_email = id "register-email-input"
     let reg_input_nick_id, reg_input_nick = id "register-nick-input"
     let reg_input_password_id, reg_input_password = id "register-password-input"
@@ -64,6 +71,20 @@ module El = struct
     let toplevel_id = "learnocaml-main-toplevel"
   end
 end
+
+class type learnocaml_config = object
+  method enableTryocaml: bool Js.optdef_prop
+  method enableLessons: bool Js.optdef_prop
+  method enableExercises: bool Js.optdef_prop
+  method enableToplevel: bool Js.optdef_prop
+  method enablePasswd: bool Js.optdef_prop
+  method enablePlayground: bool Js.optdef_prop
+  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
+  method txtNickname: Js.js_string Js.t Js.optdef_prop
+end
+
+let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
+let get_opt o = Js.Optdef.get o (fun () -> false)
 
 let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [txt msg]]]
 
@@ -547,62 +568,97 @@ let show_token_dialog token =
 let init_token_dialog () =
   let open El.Login_overlay in
   Manip.SetCss.display login_overlay "block";
+  if get_opt config##.enablePasswd then
+    Manip.SetCss.display login_new_token "none"
+  else
+    begin
+      Manip.SetCss.display login_new "none";
+      Manip.SetCss.display login_returning "none"
+    end;
   let get_token, got_token = Lwt.task () in
-  let create_token () =
-    let email = Manip.value reg_input_email and
-        password = Manip.value reg_input_password in
-    (* 5 for a character, @, character, dot, character. *)
-    let email_criteria = String.length email < 5 || not (String.contains email '@') and
-        passwd_criteria = String.length password < 8 in
-    Manip.SetCss.borderColor reg_input_email "";
-    Manip.SetCss.borderColor reg_input_password "";
-    if email_criteria || passwd_criteria then
-      begin
-        if email_criteria then
-          Manip.SetCss.borderColor reg_input_email "#f44";
-        if passwd_criteria then
-          Manip.SetCss.borderColor reg_input_password "#f44";
-        Lwt.return_none
-      end
+  let create_raw_token () =
+    if not (get_opt config##.enablePasswd) then
+      let nickname = String.trim (Manip.value token_nickname) in
+      if Token.check nickname || String.length nickname < 2 then
+        (Manip.SetCss.borderColor token_nickname "#f44";
+         Lwt.return_none)
+      else
+        let secret = Sha.sha512 (String.trim (Manip.value token_secret)) in
+        retrieve (Learnocaml_api.Nonce ())
+        >>= fun nonce ->
+        let secret = Sha.sha512 (nonce ^ secret) in
+        (Learnocaml_local_storage.(store nickname) nickname;
+         retrieve
+           (Learnocaml_api.Create_token (secret, None, Some nickname))
+         >>= fun token ->
+         Learnocaml_local_storage.(store sync_token) token;
+         Learnocaml_local_storage.(store can_show_token) true;
+         show_token_dialog token;
+         Lwt.return_some (token, nickname))
     else
-      let nickname = String.trim (Manip.value reg_input_nick) and
-          secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
-      retrieve (Learnocaml_api.Nonce ())
-      >>= fun nonce ->
-      let secret = Sha.sha512 (nonce ^ secret) in
-      (Learnocaml_local_storage.(store nickname) nickname;
-       retrieve
-         (Learnocaml_api.Create_user (email, nickname, password, secret))
-       >>= fun token ->
-       Learnocaml_local_storage.(store sync_token) token;
-       Learnocaml_local_storage.(store can_show_token) false;
-       Lwt.return_some (token, nickname))
+      Lwt.return_none
+  in
+  let create_token () =
+    if get_opt config##.enablePasswd then
+      let email = Manip.value reg_input_email and
+          password = Manip.value reg_input_password in
+      (* 5 for a character, @, character, dot, character. *)
+      let email_criteria = String.length email < 5 || not (String.contains email '@') and
+          passwd_criteria = String.length password < 8 in
+      Manip.SetCss.borderColor reg_input_email "";
+      Manip.SetCss.borderColor reg_input_password "";
+      if email_criteria || passwd_criteria then
+        begin
+          if email_criteria then
+            Manip.SetCss.borderColor reg_input_email "#f44";
+          if passwd_criteria then
+            Manip.SetCss.borderColor reg_input_password "#f44";
+          Lwt.return_none
+        end
+      else
+        let nickname = String.trim (Manip.value reg_input_nick) and
+            secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
+        retrieve (Learnocaml_api.Nonce ())
+        >>= fun nonce ->
+        let secret = Sha.sha512 (nonce ^ secret) in
+        (Learnocaml_local_storage.(store nickname) nickname;
+         retrieve
+           (Learnocaml_api.Create_user (email, nickname, password, secret))
+         >>= fun token ->
+         Learnocaml_local_storage.(store sync_token) token;
+         Learnocaml_local_storage.(store can_show_token) false;
+         Lwt.return_some (token, nickname))
+    else
+      Lwt.return_none
   in
   let rec login_passwd () =
     let input = Manip.value login_input_email and
         password = Manip.value login_input_password in
-    Server_caller.request (Learnocaml_api.Login (input, password)) >>= function
-    | Error e ->
-       alert ~title:[%i"ERROR"] (Server_caller.string_of_error e);
-       Lwt.return_none
-    | Ok token ->
-        Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
-        | Ok save ->
+    if get_opt config##.enablePasswd then
+      Server_caller.request (Learnocaml_api.Login (input, password)) >>= function
+      | Error e ->
+         alert ~title:[%i"ERROR"] (Server_caller.string_of_error e);
+         Lwt.return_none
+      | Ok token ->
+         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+         | Ok save ->
             set_state_from_save_file ~token save;
             Learnocaml_local_storage.(store can_show_token) false;
             Lwt.return_some (token, save.Save.nickname)
-        | Error (`Not_found _) ->
+         | Error (`Not_found _) ->
             alert ~title:[%i"TOKEN NOT FOUND"]
               [%i"The entered token couldn't be recognised."];
             Lwt.return_none
-        | Error e ->
+         | Error e ->
             lwt_alert ~title:[%i"REQUEST ERROR"] [
-              H.p [H.txt [%i"Could not retrieve data from server"]];
-              H.code [H.txt (Server_caller.string_of_error e)];
-            ] ~buttons:[
-              [%i"Retry"], (fun () -> login_passwd ());
-              [%i"Cancel"], (fun () -> Lwt.return_none);
-            ]
+                H.p [H.txt [%i"Could not retrieve data from server"]];
+                H.code [H.txt (Server_caller.string_of_error e)];
+              ] ~buttons:[
+                [%i"Retry"], (fun () -> login_passwd ());
+                [%i"Cancel"], (fun () -> Lwt.return_none);
+              ]
+    else
+      Lwt.return_none
   in
   let rec login_token () =
     let input = login_input_token in
@@ -642,6 +698,8 @@ let init_token_dialog () =
         | None -> ());
     t
   in
+  Manip.Ev.onclick token_new_button (handler create_raw_token false);
+  Manip.Ev.onreturn token_nickname (handler create_raw_token ());
   Manip.Ev.onclick button_new (handler create_token false);
   Manip.Ev.onreturn reg_input_nick (handler create_token ());
   Manip.Ev.onclick button_connect (handler login_passwd false);
@@ -700,6 +758,10 @@ let set_string_translations () =
     [%i"Activities"];
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
+    "txt_token_first_connection", [%i"First connection"];
+    "txt_token_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_token_secret", [%i"Enter the secret"];
+    "txt_token_new", [%i"Create new token"];
     "txt_first_connection", [%i"First connection"];
     "txt_first_connection_email", [%i"Email address"];
     "txt_first_connection_nickname", [%i"Nickname"];
@@ -764,7 +826,6 @@ let () =
     delete_arg "activity"
   in
   let init_tabs token =
-    let get_opt o = Js.Optdef.get o (fun () -> false) in
     let tabs =
       (if get_opt config##.enableTryocaml
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
