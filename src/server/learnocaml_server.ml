@@ -211,7 +211,7 @@ let create_student conn (config: Learnocaml_data.Server.config) cache
        let auth =
          (match base_auth with
           | `Token use_moodle -> Token_index.Token (tok, use_moodle)
-          | `Password (email, password) -> Token_index.Password (tok, email, password)) in
+          | `Password (email, password) -> Token_index.Password (tok, email, password, Some(email))) in
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
        respond_json cache tok
 

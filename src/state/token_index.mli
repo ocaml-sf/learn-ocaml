@@ -59,7 +59,7 @@ val check_oauth : string -> string -> (string * string) list -> (string, string)
 
 type user =
   | Token of (Learnocaml_data.Token.t * bool)
-  | Password of (Learnocaml_data.Token.t * string * string)
+  | Password of (Learnocaml_data.Token.t * string * string * string option)
 
 type authentication =
   | AuthToken of Learnocaml_data.Token.t

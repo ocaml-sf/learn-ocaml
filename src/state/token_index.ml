@@ -281,7 +281,7 @@ let check_oauth sync_dir url args =
 
 type user =
   | Token of (Token.t * bool)
-  | Password of (Token.t * string * string)
+  | Password of (Token.t * string * string * string option)
 
 type authentication =
   | AuthToken of Token.t
@@ -297,13 +297,13 @@ module BaseUserIndex (RW: IndexRW) = struct
                       | Token (token, using_moodle) -> Some (token, using_moodle)
                       | _ -> None)
                      (fun (token, using_moodle) -> Token (token, using_moodle));
-                   case (tup3 Token.enc string string)
+                   case (tup4 Token.enc string string (option string))
                      (function
-                      | Password (token, username, passwd) ->
-                         Some (token, username, passwd)
+                      | Password (token, username, passwd, verify_email) ->
+                         Some (token, username, passwd, verify_email)
                       | _ -> None)
-                     (fun (token, username, passwd) ->
-                       Password (token, username, passwd))]))
+                     (fun (token, username, passwd, verify_email) ->
+                       Password (token, username, passwd, verify_email))]))
 
   let parse = Json_codec.decode enc
   let serialise = Json_codec.encode ~minify:false enc
@@ -332,7 +332,7 @@ module BaseUserIndex (RW: IndexRW) = struct
           | AuthToken token, Token (found_tok, use_moodle)
                when not use_moodle && found_tok = token ->
              Some (token)
-          | Passwd (name, passwd), Password (token, found_name, found_passwd)
+          | Passwd (name, passwd), Password (token, found_name, found_passwd, _)
                when found_name = name && Bcrypt.verify passwd (Bcrypt.hash_of_string found_passwd) ->
              Some (token)
           | _ ->
@@ -342,25 +342,27 @@ module BaseUserIndex (RW: IndexRW) = struct
   let exists sync_dir name =
     get_data sync_dir >|=
       List.exists (function
-          | Password (_token, found_name, _passwd) -> found_name = name
+          | Password (_token, found_name, _passwd, None) -> found_name = name
+          | Password (_token, found_name, _passwd, Some verify_email) ->
+             found_name = name || verify_email = name
           | _ -> false)
 
   let add sync_dir auth =
     get_data sync_dir >>= fun users ->
     let new_user = match auth with
       | Token _ -> auth
-      | Password (token, name, passwd) ->
+      | Password (token, name, passwd, verify_email) ->
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-         Password (token, name, hash) in
+         Password (token, name, hash, verify_email) in
     RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
   let upgrade sync_dir token name passwd =
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
-             Password (token, name, passwd)
-          | Password (found_token, name, _passwd) when found_token = token ->
-             Password (token, name, passwd)
+             Password (token, name, passwd, Some(name))
+          | Password (found_token, name, _passwd, verify) when found_token = token ->
+             Password (token, name, passwd, verify)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
