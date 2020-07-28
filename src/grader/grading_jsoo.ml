@@ -14,29 +14,25 @@ open Lwt.Infix
 
 
 
-let raml_analysis_thread solution = 
+let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) = 
 	let open Learnocaml_report in
 	let worker_file = "/js/raml_worker.js" in 
 	let t,u = Lwt.task () in
-(*(apply (func_of_name "foo")  [|unsafe_coerce str|])
-	let _ = Lwt.wakeup u [Message ([Text "A resource bound could not be derived, hello from a woken thread"],Informative)] in 
-	t
-	*)
 	let worker = Worker.create worker_file in 
 	let _ = Lwt.on_cancel t (fun () -> worker##terminate) in 
-	let onmessage1 (ev) = 
+	let onmessage ev = 
 		begin
 			let str = Js.to_string ev##.data in
 			let raml_report : Learnocaml_report.t = 
-					match (Resource_analysis.report_of_string str) with
+					match Resource_analysis.report_of_string str with
 					| Some report -> report 
-					| None -> [Message ([Text (( "<<") ^ str ^ ">>" ^ "A resource bound could not be derived")],Informative)] in 
+					| None -> [Message ([Text ("A resource bound could not be derived")],Informative)] in 
 			let _ = worker##terminate in 
 			let _ = Lwt.wakeup u raml_report in 
 			Js._true 
 		end in
-	let _ = worker##.onmessage := Dom.handler onmessage1 in 
-	let _ = worker##(postMessage (Js.string "23098098")) in
+	let _ = worker##.onmessage := Dom.handler onmessage in 
+	let _ = worker##(postMessage (Js.string ((Learnocaml_exercise.get_prelude exercise) ^ solution ))) in
 	t 
 
 
@@ -55,7 +51,7 @@ let get_grade
       | Answer (report, stdout, stderr, outcomes) ->
           worker##terminate ;
 	let open Learnocaml_report in 
-          Lwt.wakeup u ([Message ([Text "A resource bound could not be derived"],Informative)] @ report, stdout, stderr, outcomes)
+          Lwt.wakeup u (report, stdout, stderr, outcomes)
     end ;
     Js._true
   in
@@ -63,7 +59,7 @@ let get_grade
   Lwt.return @@
   fun solution ->
     let req = { exercise ; solution } in
-    let combined_result = (raml_analysis_thread solution) >>= (fun raml_report ->
+    let combined_result = (raml_analysis_thread solution exercise) >>= (fun raml_report ->
 			t >>= (fun (report,stdout,stderr,outcomes) -> 
 			Lwt.return (raml_report @ report,stdout,stderr,outcomes))) in  
 

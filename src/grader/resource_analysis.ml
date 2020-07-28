@@ -1,61 +1,7 @@
 
 module Serialize = struct 
 	open Core_kernel
-	(*
-	Duplicate learnocaml_report type definition
-	 as the required ppx, core_kernel dependencies broke learn-ocaml when used directly
-	 *)
 
-(*
-	type t = item list
-
-	and item =
-	   | Section of text * t
-	   | SectionMin of text * t * int
-	   | Message of text * status
-
-	 and status =
-	   | Success of int | Penalty of int | Failure
-	   | Warning | Informative | Important
-
-	 and text = inline list
-
-	 and inline =
-	   | Text of string
-	   | Break
-	   | Code of string
-	   | Output of string [@@deriving sexp]
-
-	let rec map f xs = match xs with 	
-				| [] -> []
-				| x :: xs -> (f x) :: (map f xs);;
-
-
-	let rec convert_t : t -> Learnocaml_report.t = (fun s -> map convert_item s)
-	and convert_item : item -> Learnocaml_report.item = 
-		(fun s -> 	match s with 
-				| Section (text,t) -> Learnocaml_report.Section (convert_text text,convert_t t)
-				| SectionMin (text,t,n) -> Learnocaml_report.SectionMin (convert_text text,convert_t t,n)
-				| Message (text,status) -> Learnocaml_report.Message (convert_text text,convert_status status))
-	and convert_status : status -> Learnocaml_report.status = 
-		(fun s -> 	match s with 
-				| Success n -> Learnocaml_report.Success n 
-				| Penalty n -> Learnocaml_report.Penalty n 
-				| Failure -> Learnocaml_report.Failure 
-				| Warning -> Learnocaml_report.Warning 
-				| Informative -> Learnocaml_report.Informative 
-				| Important -> Learnocaml_report.Important)
-	and convert_text : text -> Learnocaml_report.text = map convert_inline 
-	and convert_inline : inline -> Learnocaml_report.inline = 
-		(fun s -> 	match s with 
-				| Text s -> Learnocaml_report.Text s 
-				| Break -> Learnocaml_report.Break 
-				| Code s -> Learnocaml_report.Code s
-				| Output s -> Learnocaml_report.Output s)
-			
-	
-
-  	*)
 
 	let (>>) f g = (fun x -> g (f x)) (* Function compostion left to right*)
 
@@ -187,6 +133,6 @@ let sample_tree = (gen_tree 2)
 
 let show_tree t = t |> (sexp_of_tree int_helper.sexp_of_c) |> to_string
 
-
+let package s = s |> (string_helper.sexp_of_c) |> to_string
 
 

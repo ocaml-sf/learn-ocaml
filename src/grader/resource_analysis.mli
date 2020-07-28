@@ -8,3 +8,5 @@ val show_tree : int tree -> string
 val sample_tree : int tree
 
 val report_of_string : string -> Learnocaml_report.t option
+
+val package : string -> string
