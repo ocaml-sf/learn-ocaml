@@ -542,7 +542,14 @@ let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
 let can_show_token () =
-  Learnocaml_local_storage.(retrieve can_show_token)
+  try
+    Lwt.return Learnocaml_local_storage.(retrieve can_show_token)
+  with Not_found ->
+        Server_caller.request (Learnocaml_api.Can_login (get_stored_token ())) >|= function
+        | Error _ -> false
+        | Ok res ->
+           Learnocaml_local_storage.(store can_show_token) res;
+           res
 
 let sync () = sync (get_stored_token ())
 
@@ -557,13 +564,12 @@ let token_disp_div token =
   ] ()
 
 let show_token_dialog token =
-  if can_show_token () then
-    ext_alert ~title:[%i"Your Learn-OCaml token"] [
-        H.p [H.txt [%i"Your token is displayed below. It identifies you and \
-                          allows to share your workspace between devices."]];
-        H.p [H.txt [%i"Please write it down."]];
-        H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
-      ]
+  ext_alert ~title:[%i"Your Learn-OCaml token"] [
+      H.p [H.txt [%i"Your token is displayed below. It identifies you and \
+                     allows to share your workspace between devices."]];
+      H.p [H.txt [%i"Please write it down."]];
+      H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
+    ]
 
 let init_token_dialog () =
   let open El.Login_overlay in
@@ -933,12 +939,13 @@ let () =
     Lwt.return_unit
   in
   let logout_dialog () =
+    can_show_token () >>= fun show_token ->
     Server_caller.request
       (Learnocaml_api.Update_save
          (get_stored_token (), get_state_as_save_file ()))
     >|= (function
-        | Ok _ ->
-            if can_show_token () then
+         | Ok _ ->
+            if show_token then
               [%i"Be sure to write down your token before logging out:"]
             else
               [%i"Are you sure you want to logout?"]
@@ -949,7 +956,7 @@ let () =
     >|= fun s ->
     let dialog_content =
       (H.p [H.txt s]) ::
-        if can_show_token () then
+        if show_token then
           [H.div ~a:[H.a_style "text-align: center;"]
              [token_disp_div (get_stored_token ())]]
         else
@@ -1020,7 +1027,8 @@ let () =
     (function
      | Ok _ ->
         init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
-        if not (can_show_token ()) then
+        can_show_token () >>= fun show_token ->
+        if not show_token then
           disable_button show_token_button_state;
         Lwt.return tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
