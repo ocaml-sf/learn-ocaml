@@ -39,6 +39,7 @@ depends: [
   "conf-pkg-config" {= "1.2"}
   "conf-which" {= "1"}
   "cppo" {= "1.6.6"}
+  "cryptokit" {= "1.14"}
   "cstruct" {= "5.0.0"}
   "decompress" {= "0.8.1"}
   "digestif" {= "0.8.0-1"}
@@ -69,6 +70,7 @@ depends: [
   "mmap" {= "1.1.0"}
   "num" {= "0"}
   "ocaml" {= "4.05.0"}
+  "ocamlnet" {= "4.1.7"}
   "ocaml-compiler-libs" {= "v0.9.0"}
   "ocaml-migrate-parsetree" {= "1.7.3"}
   "ocaml-secondary-compiler" {= "4.08.1-1"}
@@ -101,6 +103,7 @@ depends: [
   "result" {= "1.5"}
   "rresult" {= "0.6.0"}
   "seq" {= "0.2.2"}
+  "safepass" {= "3.0"}
   "sexplib" {= "v0.9.3"}
   "ssl" {= "0.5.5"}
   "stdio" {= "v0.9.1"}
