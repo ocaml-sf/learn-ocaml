@@ -88,6 +88,34 @@ module Args_create_token = struct
   let term = Term.(const apply $ nickname $ secret)
 end
 
+module Args_create_user = struct
+  type t = {
+      email : string;
+      password : string;
+      nickname : string option;
+      secret : string option;
+    }
+
+  let email =
+    value & pos 0 string "" & info [] ~docv:"EMAIL" ~doc:
+      "The email."
+
+  let password =
+    value & pos 1 string "" & info [] ~docv:"PASSWORD" ~doc:
+      "The password."
+
+  let nickname =
+    value & pos 2 (some string) None & info [] ~docv:"NICKNAME" ~doc:
+      "The desired nickname."
+
+  let secret =
+    value & pos 3 (some string) None & info [] ~docv:"SECRET" ~doc:
+      "The secret. If not provided, use \"\" as a secret."
+
+  let apply email password nickname secret = {email; password; nickname; secret}
+  let term = Term.(const apply $ email $ password $ nickname $ secret)
+end
+
 module Args_exercise_id = struct
   let id =
     value & pos 0 (some string) None & info [] ~docv:"ID" ~doc:
@@ -551,6 +579,51 @@ let get_nonce_and_create_token server nickname secret_candidate =
   fetch server
     (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
 
+let get_nonce_and_create_user server email password nickname secret_candidate =
+  let secret_candidate = Sha.sha512 secret_candidate in
+  fetch server (Api.Nonce ())
+  >>= fun nonce ->
+  fetch server
+    (Api.Create_user (email, nickname, password, Sha.sha512 (nonce ^ secret_candidate)))
+
+let user_login server email password =
+  fetch server (Api.Login (email, password))
+
+let init ?(local=false) ?server ?token () =
+  let path = if local then ConfigFile.local_path else ConfigFile.user_path in
+  let server = get_server server in
+  let get_new_token nickname =
+    Printf.printf "Please provide the secret: ";
+    match Console.input ~default:None (fun s -> Some s) with
+    | Some secret_candidate ->
+       get_nonce_and_create_token server nickname secret_candidate
+    | None -> failwith "Please provide a secret"
+  in
+  let get_token () =
+    match token with
+    | Some t -> Lwt.return t
+    | None ->
+        Printf.eprintf
+          "Please provide your user token on %s (leave empty to generate one): %!"
+          (Uri.to_string server);
+        match
+          Console.input ~default:None
+            (fun s -> Some (Token.parse s))
+        with
+        | Some t -> Lwt.return t
+        | None ->
+            Printf.eprintf "Please enter a nickname: %!";
+            get_new_token
+              (Console.input
+                 (fun s -> if String.length s < 2 then None else Some s))
+  in
+  check_server_version server >>= fun _ ->
+  get_token () >>= fun token ->
+  let config = { ConfigFile. server; token=Some(token) } in
+  ConfigFile.write path config >|= fun () ->
+  Printf.eprintf "Configuration written to %s\n%!" path;
+  config
+
 let get_config_option ?local ?(save_back=false) ?(allow_static=false) server_opt token_opt =
   match ConfigFile.path ?local () with
   | Some f ->
@@ -600,7 +673,7 @@ let get_config_o ?save_back ?(allow_static=false) o =
 module Init = struct
   open Args_global
   open Args_create_token
-     
+
   let init global_args create_token_args =
     let path = if global_args.local then ConfigFile.local_path else ConfigFile.user_path in
     let get_token server =
@@ -639,7 +712,57 @@ module Init = struct
       ~doc:"Initialize the configuration file."
       "init"
 end
-  
+
+module Init_user = struct
+  open Args_global
+  open Args_create_user
+
+  let init global_args create_user_args =
+    let path = if global_args.local then ConfigFile.local_path else ConfigFile.user_path in
+    let get_token server =
+      match global_args.token with
+      | Some token -> Lwt.return token
+      | None ->
+         match create_user_args with
+         | {email; password; nickname=None; secret=None} ->
+            user_login server email password
+         | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
+            if String.length email < 5 || not (String.contains email '@') then
+              Lwt.fail_with "Invalid email address"
+            else if String.length password < 8 then
+              Lwt.fail_with "Password must be at least 8 characters long"
+            else
+              get_nonce_and_create_user server email password nickname secret
+         | _ ->
+            Lwt.fail_with "You must provide an email address, a password, a nickname and a secret."
+    in
+    let get_server () =
+      match global_args.server_url with
+      | None -> Lwt.fail_with "You must provide a server."
+      | Some s -> Lwt.return s
+    in
+    get_server () >>= fun server ->
+    check_server_version server >>= fun _ ->
+    get_token server >>= fun token ->
+    let config = { ConfigFile. server; token=Some(token) } in
+    ConfigFile.write path config >|= fun () ->
+    Printf.eprintf "Configuration written to %s.\n%!" path;
+    0
+
+  let man = man "Initialize the configuration file with the server, \
+                 and a token, or login with an email+password pair, or \
+                 create an account with an email, a password, a \
+                 nickname and a secret."
+
+  let cmd =
+    Term.(
+      const (fun go co -> Pervasives.exit (Lwt_main.run (init go co)))
+      $ Args_global.term $ Args_create_user.term),
+    Term.info ~man
+      ~doc:"Initialize the configuration file."
+      "init-user"
+end
+
 module Grade = struct
   open Args_exercises
   let grade go eo =
@@ -755,17 +878,17 @@ module Print_server = struct
     >>= fun config ->
     Lwt_io.printl (Uri.to_string config.ConfigFile.server)
     >|= fun () -> 0
-                
+
   let explanation = "Just print the configured server."
-                  
+
   let man = man explanation
-          
+
   let cmd =
     use_global print_server,
     Term.info ~man ~doc:explanation "print-server"
-    
+
 end
-                    
+
 module Set_options = struct
   let set_opts o =
     get_config_o ~save_back:true ~allow_static:true o
@@ -926,7 +1049,7 @@ module Template = struct
       ~doc:"Get the template of a given exercise."
       "template"
 end
-                
+
 module Exercise_list = struct
   let doc= "Get a structured json containing a list of the exercises of the server"
 
@@ -942,19 +1065,19 @@ module Exercise_list = struct
     in
     let json =
            match ezjsonm with
-           | `O _ | `A _ as json -> json 
+           | `O _ | `A _ as json -> json
            | _ -> assert false
     in
     Ezjsonm.to_channel ~minify:false stdout json;
     Lwt.return 0;)
 
   let man = man doc
-          
+
   let cmd =
     use_global exercise_list,
     Term.info ~man ~doc:doc "exercise-list"
 end
-                
+
 module Main = struct
   let man =
     man
@@ -969,6 +1092,7 @@ end
 let () =
   match Term.eval_choice ~catch:false Main.cmd
           [ Init.cmd
+          ; Init_user.cmd
           ; Grade.cmd
           ; Print_token.cmd
           ; Set_options.cmd
