@@ -4,6 +4,10 @@ open Learnocaml_data
 let ( / ) dir f = if dir = "" then f else Filename.concat dir f
 let indexes_subdir = "data"
 
+let generate_random_hex len =
+  Cryptokit.Random.string Cryptokit.Random.secure_rng len
+  |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
+
 module J = Json_encoding
 
 module Json_codec = struct
@@ -62,8 +66,8 @@ module BaseTokenIndex (RW: IndexRW) = struct
   let enc = J.list Token.enc
 
   let parse = Json_codec.decode enc
-  let serialise_str = Json_codec.encode ?minify:(Some(false)) J.(list string)
-  let serialise = Json_codec.encode ?minify:(Some(false)) enc
+  let serialise_str = Json_codec.encode ~minify:false J.(list string)
+  let serialise = Json_codec.encode ~minify:false enc
 
   let create_index sync_dir =
     let found_indexes =
@@ -128,7 +132,7 @@ module BaseMoodleIndex (RW: IndexRW) = struct
   let enc = J.assoc Token.enc
 
   let parse = Json_codec.decode enc
-  let serialise = Json_codec.encode ?minify:(Some(false)) enc
+  let serialise = Json_codec.encode ~minify:false enc
 
   let create_index sync_dir =
     RW.write rw (sync_dir / indexes_subdir / file) serialise []
@@ -165,16 +169,10 @@ module BaseOauthIndex (RW: IndexRW) = struct
   let enc = J.(assoc (list string))
 
   let parse = Json_codec.decode enc
-  let serialise = Json_codec.encode ?minify:(Some(false)) enc
-
-   (* Copyright https://github.com/astrada/gapi-ocaml
-      Return a secret hexa encoded *)
-  let gen_secret len =
-    Cryptokit.Random.string Cryptokit.Random.secure_rng len
-    |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
+  let serialise = Json_codec.encode ~minify:false enc
 
   let create_index sync_dir =
-    let secret = gen_secret 32 in
+    let secret = generate_random_hex 32 in
     RW.write rw (sync_dir / indexes_subdir / file) serialise [(secret, [])] >|= fun () ->
     secret
 
@@ -202,7 +200,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
     let oauth =
       match oauth with
       | (secret, nonces) :: r -> (secret, nonce :: nonces) :: r
-      | [] -> [(gen_secret 32, [nonce])] in
+      | [] -> [(generate_random_hex 32, [nonce])] in
     RW.write rw (sync_dir / indexes_subdir / file) serialise oauth
 
   let check_nonce sync_dir nonce =
@@ -374,3 +372,54 @@ module BaseUserIndex (RW: IndexRW) = struct
 end
 
 module UserIndex = BaseUserIndex (IndexFile)
+
+module BaseUpgradeIndex (RW: IndexRW) = struct
+  let rw = RW.init ()
+  let file = "upgrade.json"
+
+  type t =
+    | ChangeEmail
+    | ResetPassword
+
+  let enc = J.(
+      assoc (tup2 Token.enc (string_enum ["change_email", ChangeEmail;
+                                          "reset_password", ResetPassword])))
+
+  let parse = Json_codec.decode enc
+  let serialise = Json_codec.encode ~minify:false enc
+
+  let create_index sync_dir =
+    RW.write rw (sync_dir / indexes_subdir / file) serialise [] >|= fun () ->
+    []
+
+  let get_data sync_dir =
+    Lwt.catch
+      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
+      (fun _exn -> create_index sync_dir)
+
+  let create_upgrade_operation kind sync_dir token =
+    get_data sync_dir >>= fun operations ->
+    let id = generate_random_hex 32 in
+    (id, (token, kind)) :: operations
+    |> RW.write rw (sync_dir / indexes_subdir / file) serialise >|= fun () ->
+    id
+
+  let change_email = create_upgrade_operation ChangeEmail
+  let reset_password = create_upgrade_operation ResetPassword
+
+  let check_upgrade_operation kind sync_dir handle =
+    get_data sync_dir >|= fun operations ->
+    match List.assoc_opt handle operations with
+    | Some (token, found_kind) when found_kind = kind -> Some token
+    | _ -> None
+
+  let can_change_email = check_upgrade_operation ChangeEmail
+  let can_reset_password = check_upgrade_operation ResetPassword
+
+  let revoke_operation sync_dir handle =
+    get_data sync_dir >|=
+    List.filter (fun (found_handle, _operation) -> found_handle <> handle) >>=
+    RW.write rw (sync_dir / indexes_subdir / file) serialise
+end
+
+module UpgradeIndex = BaseUpgradeIndex (IndexFile)

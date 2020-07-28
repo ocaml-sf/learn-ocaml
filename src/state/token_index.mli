@@ -73,3 +73,15 @@ module UserIndex: sig
   val upgrade : string -> Learnocaml_data.Token.t -> string -> string -> unit Lwt.t
   val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
 end
+
+module UpgradeIndex: sig
+  (* returns a handle *)
+  val change_email : string -> Learnocaml_data.Token.t -> string Lwt.t
+  val reset_password : string -> Learnocaml_data.Token.t -> string Lwt.t
+
+  (* takes a handle *)
+  val can_change_email : string -> string -> Learnocaml_data.Token.t option Lwt.t
+  val can_reset_password : string -> string -> Learnocaml_data.Token.t option Lwt.t
+
+  val revoke_operation : string -> string -> unit Lwt.t
+end
