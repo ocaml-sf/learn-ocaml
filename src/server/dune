@@ -16,6 +16,7 @@
             learnocaml_data
             learnocaml_api
             learnocaml_store
+            learnocaml_sendmail
             token_index
             learnocaml_partition_create
             cryptokit

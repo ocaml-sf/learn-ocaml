@@ -208,10 +208,13 @@ let create_student conn (config: Learnocaml_data.Server.config) cache
         | None -> Lwt.return_unit
         | Some nickname -> Save.set tok Save.{empty with nickname})
        >>= fun () ->
-       let auth =
-         (match base_auth with
-          | `Token use_moodle -> Token_index.Token (tok, use_moodle)
-          | `Password (email, password) -> Token_index.Password (tok, email, password, Some(email))) in
+       (match base_auth with
+        | `Token use_moodle ->
+           Lwt.return (Token_index.Token (tok, use_moodle))
+        | `Password (email, password) ->
+           Token_index.UpgradeIndex.change_email !sync_dir tok >|= (fun handle ->
+            Learnocaml_sendmail.confirm_email ~url:("http://localhost:8080/confirm/" ^ handle) email;
+            Token_index.Password (tok, email, password, Some(email)))) >>= fun auth ->
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
        respond_json cache tok
 
@@ -656,6 +659,19 @@ module Request_handler = struct
            >>= respond_json cache
            )
            (fun exn -> (`Not_found, Printexc.to_string exn))
+
+      | Api.Confirm_email handle when config.ServerData.use_passwd ->
+         Token_index.UpgradeIndex.can_change_email !sync_dir handle >>=
+           (function
+            | Some token ->
+               Token_index.UserIndex.confirm_email !sync_dir token >>= fun () ->
+               Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
+               respond_json cache "Ok."
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
+
+      | Api.Confirm_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)

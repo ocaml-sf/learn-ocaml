@@ -78,6 +78,9 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Confirm_email:
+      string -> string request
+
   | Invalid_request:
       string -> string request
 
@@ -166,6 +169,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
       | Partition _ ->
           json Partition.enc
+
+      | Confirm_email _ -> str
 
       | Invalid_request _ ->
           str
@@ -285,6 +290,9 @@ module Conversions (Json: JSON_CODEC) = struct
     | Partition (token, eid, fid, prof) ->
         get ~token
           ["partition"; eid; fid; string_of_int prof]
+
+    | Confirm_email _ ->
+        assert false (* Reserved for a link *)
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -437,6 +445,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["partition"; eid; fid; prof], Some token
         when Token.is_teacher token ->
           Partition (token, eid, fid, int_of_string prof) |> k
+
+      | `GET, ["confirm"; handle], _ ->
+          Confirm_email handle |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->

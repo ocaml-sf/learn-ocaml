@@ -358,9 +358,19 @@ module BaseUserIndex (RW: IndexRW) = struct
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
-             Password (token, name, passwd, Some(name))
+             let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
+             Password (token, name, hash, Some(name))
           | Password (found_token, name, _passwd, verify) when found_token = token ->
-             Password (token, name, passwd, verify)
+             let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
+             Password (token, name, hash, verify)
+          | elt -> elt) >>=
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
+
+  let confirm_email sync_dir token =
+    get_data sync_dir >|=
+      List.map (function
+          | Password (found_token, _name, passwd, Some verify) when found_token = token ->
+             Password (found_token, verify, passwd, None)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 

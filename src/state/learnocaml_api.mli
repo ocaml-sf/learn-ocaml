@@ -97,6 +97,9 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Confirm_email:
+      string -> string request
+
   | Invalid_request:
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case

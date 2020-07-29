@@ -71,6 +71,7 @@ module UserIndex: sig
   val exists : string -> string -> bool Lwt.t
   val add : string -> user -> unit Lwt.t
   val upgrade : string -> Learnocaml_data.Token.t -> string -> string -> unit Lwt.t
+  val confirm_email : string -> Learnocaml_data.Token.t -> unit Lwt.t
   val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
 end
 
