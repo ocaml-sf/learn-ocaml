@@ -681,10 +681,63 @@ module Request_handler = struct
                  respond_json cache ()
                end
             | None -> lwt_fail (`Not_found, "Unknown user."))
+      | Api.Reset_password handle when config.ServerData.use_passwd ->
+         Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
+           (function
+            | Some _token ->
+               let csrf_token = generate_csrf_token 32 in
+               let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 3600))
+                                ~path:"/" ~http_only:true
+                                ("csrf", csrf_token)] in
+               read_static_file ["reset.html"] >>= fun s ->
+               let contents =
+                 Markup.string s
+                 |> Markup.parse_html
+                 |> Markup.signals
+                 |> Markup.map (function
+                        | `Start_element ((e, "input"), attrs) as elt ->
+                           (match List.assoc_opt ("", "type") attrs,
+                                  List.assoc_opt ("", "name") attrs with
+                            | Some "hidden", Some "csrf" ->
+                               `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                            | Some "hidden", Some "handle" ->
+                               `Start_element ((e, "input"), (("", "value"), handle) :: attrs)
+                            | _ -> elt)
+                        | t -> t)
+                 |> Markup.pretty_print
+                 |> Markup.write_html
+                 |> Markup.to_string in
+               lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
+      | Api.Do_reset_password body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let handle = List.assoc "handle" params in
+         Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
+           (function
+            | Some token ->
+               let passwd = List.assoc "passwd" params and
+                   cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/"
+                                ~http_only:true ("csrf", "expired")] in
+               if String.length passwd < 8 then
+                 lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
+               else
+                 Token_index.UserIndex.upgrade !sync_dir token "" passwd >>= fun () ->
+                 Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
+                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
 
       | Api.Confirm_email _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Send_reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Do_reset_password _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
       | Api.Invalid_request body ->

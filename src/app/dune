@@ -162,6 +162,21 @@
   (javascript_files ../ace-lib/ace_bindings.js))
 )
 
+(executable
+ (name learnocaml_reset_main)
+ (modes byte)
+ (flags :standard -warn-error -6-9-27-33-39)
+ (libraries ace
+            learnocaml_app_common
+            js_of_ocaml.ppx
+            ocplib_i18n)
+ (modules Learnocaml_reset_main)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+ (js_of_ocaml
+  (flags :standard +cstruct/cstruct.js)
+  (javascript_files ../ace-lib/ace_bindings.js))
+)
+
 (install
  (package learn-ocaml)
  (section share)
@@ -171,6 +186,7 @@
         (learnocaml_description_main.bc.js as www/js/learnocaml-description.js)
         (learnocaml_partition_view.bc.js as www/js/learnocaml-partition-view.js)
         (learnocaml_playground_main.bc.js as www/js/learnocaml-playground.js)
-        (learnocaml_lti_main.bc.js as www/js/learnocaml-lti.js))
+        (learnocaml_lti_main.bc.js as www/js/learnocaml-lti.js)
+        (learnocaml_reset_main.bc.js as www/js/learnocaml-reset.js))
 )
 
