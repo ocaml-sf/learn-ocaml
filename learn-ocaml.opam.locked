@@ -25,6 +25,7 @@ depends: [
   "base64" {= "2.3.0"}
   "bigarray-compat" {= "1.0.0"}
   "biniou" {= "1.2.1"}
+  "cairo2" {= "0.6.1"}
   "checkseum" {= "0.1.0"}
   "cmdliner" {= "1.0.4"}
   "cohttp" {= "1.1.1"}
@@ -33,6 +34,7 @@ depends: [
   "conduit" {= "1.3.0"}
   "conduit-lwt" {= "1.3.0"}
   "conduit-lwt-unix" {= "1.3.0"}
+  "conf-cairo" {= "1"}
   "conf-git" {= "1.0"}
   "conf-libssl" {= "1"}
   "conf-m4" {= "1"}
@@ -43,12 +45,14 @@ depends: [
   "decompress" {= "0.8.1"}
   "digestif" {= "0.8.0-1"}
   "dune" {= "2.0.1"}
+  "dune-configurator" {= "1.11.4"}
   "easy-format" {= "1.3.2"}
   "eqaf" {= "0.7"}
   "ezjsonm" {= "1.1.0"}
   "fieldslib" {= "v0.9.0"}
   "fmt" {= "0.8.8"}
   "fpath" {= "0.7.2"}
+  "gg" {= "0.9.3"}
   "hex" {= "1.4.0"}
   "ipaddr" {= "2.8.0"}
   "jbuilder" {= "1.0+beta20.2"}
@@ -61,6 +65,7 @@ depends: [
   "jsonm" {= "1.0.1"}
   "logs" {= "0.7.0"}
   "lwt" {= "4.2.1"}
+  "lwt_log" {= "1.1.1"}
   "lwt_react" {= "1.1.3"}
   "lwt_ssl" {= "1.1.3"}
   "magic-mime" {= "1.1.2"}
@@ -110,8 +115,11 @@ depends: [
   "uchar" {= "0.0.2"}
   "uri" {= "1.9.7"}
   "uutf" {= "1.0.2"}
+  "vg" {= "dev"}
   "yojson" {= "1.7.0"}
-  "vg" {= "0.9.3"}
+]
+pin-depends: [
+  "vg.dev" "git+https://github.com/maiste/vg#ocaml_rendering"
 ]
 build: [
   [make "static"]

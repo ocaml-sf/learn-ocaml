@@ -40,6 +40,9 @@ depends: [
   "ppx_sexp_conv" {= "v0.9.0"}
   "ppx_fields_conv" {= "v0.9.0"}
 ]
+pin-depends: [
+  "vg.dev" "git+https://github.com/maiste/vg#ocaml_rendering"
+]
 build: [
   ["dune" "build" "@install" "-p" name "-j" jobs]
 ]
