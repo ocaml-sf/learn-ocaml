@@ -379,6 +379,13 @@ module BaseUserIndex (RW: IndexRW) = struct
       List.find_opt (function
           | Token (found_token, use_moodle) -> found_token = token && not use_moodle
           | _ -> false) users <> None
+
+  let token_of_email sync_dir email =
+    RW.read (sync_dir / indexes_subdir / file) parse >|=
+    List.fold_left (fun res elt ->
+        match res, elt with
+        | None, Password (token, found_email, _, _) when found_email = email -> Some token
+        | _ -> res) None
 end
 
 module UserIndex = BaseUserIndex (IndexFile)

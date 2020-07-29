@@ -99,6 +99,8 @@ type _ request =
 
   | Confirm_email:
       string -> string request
+  | Send_reset_password:
+      string -> unit request
 
   | Invalid_request:
       string -> string request

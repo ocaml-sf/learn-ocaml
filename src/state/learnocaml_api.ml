@@ -80,6 +80,8 @@ type _ request =
 
   | Confirm_email:
       string -> string request
+  | Send_reset_password:
+      string -> unit request
 
   | Invalid_request:
       string -> string request
@@ -171,6 +173,7 @@ module Conversions (Json: JSON_CODEC) = struct
           json Partition.enc
 
       | Confirm_email _ -> str
+      | Send_reset_password _ -> json J.unit
 
       | Invalid_request _ ->
           str
@@ -293,6 +296,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Confirm_email _ ->
         assert false (* Reserved for a link *)
+    | Send_reset_password address ->
+        post ["send_reset"] (Json.encode J.(tup1 string) address)
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -448,6 +453,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET, ["confirm"; handle], _ ->
           Confirm_email handle |> k
+      | `POST body, ["send_reset"], _ ->
+          (match Json.decode J.(tup1 string) body with
+           | address -> Send_reset_password address |> k
+           | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->

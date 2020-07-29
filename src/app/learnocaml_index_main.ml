@@ -57,6 +57,7 @@ module El = struct
     let button_new_id, button_new = id "login-new-button"
     let login_input_email_id, login_input_email = id "login-email-input"
     let login_input_password_id, login_input_password = id "login-password-input"
+    let login_forgotten_id, login_forgotten = id "txt_login_forgotten"
     let button_connect_id, button_connect = id "login-connect-button"
     let login_input_token_id, login_input_token = id "login-token-input"
     let button_token_connect_id, button_token_connect = id "login-token-button"
@@ -697,6 +698,29 @@ let init_token_dialog () =
                  [%i"Cancel"], (fun () -> Lwt.return_none);
                ]
   in
+  let rec reset_password () =
+    if get_opt config##.enablePasswd then
+      let email = Manip.value login_input_email in
+      Server_caller.request (Learnocaml_api.Send_reset_password email) >>= function
+      | Ok () ->
+         alert ~title:[%i"RESET REQUEST SENT"]
+           [%i"A reset link has been sent to the specified address."];
+         Lwt.return_none
+      | Error (`Not_found _) ->
+         alert ~title:[%i"USER NOT FOUND"]
+           [%i"The entered email couldn't be recognised."];
+         Lwt.return_none
+      | Error e ->
+         lwt_alert ~title:[%i"REQUEST ERROR"] [
+             H.p [H.pcdata [%i"Could not retrieve data from server"]];
+             H.code [H.pcdata (Server_caller.string_of_error e)];
+           ] ~buttons:[
+             [%i"Retry"], (fun () -> reset_password ());
+             [%i"Cancel"], (fun () -> Lwt.return_none);
+           ]
+    else
+      Lwt.return_none
+  in
   let handler f t = fun _ ->
     Lwt.async (fun () ->
         f () >|= function
@@ -710,6 +734,7 @@ let init_token_dialog () =
   Manip.Ev.onreturn reg_input_nick (handler create_token ());
   Manip.Ev.onclick button_connect (handler login_passwd false);
   Manip.Ev.onreturn login_input_password (handler login_passwd ());
+  Manip.Ev.onclick login_forgotten (handler reset_password false);
   Manip.Ev.onclick button_token_connect (handler login_token false);
   Manip.Ev.onreturn login_input_token (handler login_token ());
   get_token >|= fun (token, nickname) ->

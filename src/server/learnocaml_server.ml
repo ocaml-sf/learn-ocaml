@@ -669,8 +669,22 @@ module Request_handler = struct
                respond_json cache "Ok."
             | None ->
                lwt_fail (`Forbidden, "Nothing to do."))
+      | Api.Send_reset_password address when config.ServerData.use_passwd ->
+         Token_index.UserIndex.token_of_email !sync_dir address >>=
+           (function
+            | Some token ->
+               Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
+               begin
+                 Learnocaml_sendmail.reset_password
+                   ~url:("http://localhost:8080/reset_password/" ^ handle)
+                   address;
+                 respond_json cache ()
+               end
+            | None -> lwt_fail (`Not_found, "Unknown user."))
 
       | Api.Confirm_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Send_reset_password _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
       | Api.Invalid_request body ->
