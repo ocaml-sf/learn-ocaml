@@ -218,6 +218,13 @@ let create_student conn (config: Learnocaml_data.Server.config) cache
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
        respond_json cache tok
 
+let initiate_password_change token address cache =
+  Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
+  Learnocaml_sendmail.reset_password
+    ~url:("http://localhost:8080/reset_password/" ^ handle)
+    address;
+  respond_json cache ()
+
 module Memory_cache = struct
 
   let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
@@ -296,27 +303,28 @@ module Request_handler = struct
                                   ("token", Token.to_string token)] in
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
                else
-                 (Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
-                  let hmac = generate_hmac secret csrf_token id in
-                  read_static_file ["lti.html"] >|= fun s ->
-                  Markup.string s
-                  |> Markup.parse_html
-                  |> Markup.signals
-                  |> Markup.map (function
-                         | `Start_element ((e, "input"), attrs) ->
-                            (match List.assoc_opt ("", "type") attrs,
-                                   List.assoc_opt ("", "name") attrs with
-                             | Some "hidden", Some "csrf" ->
-                                `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
-                             | Some "hidden", Some "user-id" ->
-                                `Start_element ((e, "input"), (("", "value"), id) :: attrs)
-                             | Some "hidden", Some "hmac" ->
-                                `Start_element ((e, "input"), (("", "value"), hmac) :: attrs)
-                             | _ -> `Start_element ((e, "input"), attrs))
-                         | t -> t)
-                  |> Markup.pretty_print
-                  |> Markup.write_html
-                  |> Markup.to_string) >>= fun contents ->
+                 Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+                 let hmac = generate_hmac secret csrf_token id in
+                 read_static_file ["lti.html"] >>= fun s ->
+                 let contents =
+                   Markup.string s
+                   |> Markup.parse_html
+                   |> Markup.signals
+                   |> Markup.map (function
+                          | `Start_element ((e, "input"), attrs) as elt ->
+                             (match List.assoc_opt ("", "type") attrs,
+                                    List.assoc_opt ("", "name") attrs with
+                              | Some "hidden", Some "csrf" ->
+                                 `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                              | Some "hidden", Some "user-id" ->
+                                 `Start_element ((e, "input"), (("", "value"), id) :: attrs)
+                              | Some "hidden", Some "hmac" ->
+                                 `Start_element ((e, "input"), (("", "value"), hmac) :: attrs)
+                              | _ -> elt)
+                          | t -> t)
+                   |> Markup.pretty_print
+                   |> Markup.write_html
+                   |> Markup.to_string in
                  lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
             | Error e -> lwt_fail (`Forbidden, e))
       | Api.Launch_login body when config.ServerData.use_moodle ->
@@ -375,7 +383,7 @@ module Request_handler = struct
              MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
              UserIndex.add !sync_dir auth) >>= fun () ->
            let cookies = [make_cookie ("token", Token.to_string token);
-                          make_cookie ("csrf", "expired")] in
+                          make_cookie ~http_only:true ("csrf", "expired")] in
            lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Launch _ ->
          lwt_fail (`Forbidden, "LTI is disabled on this instance.")
@@ -673,13 +681,13 @@ module Request_handler = struct
          Token_index.UserIndex.token_of_email !sync_dir address >>=
            (function
             | Some token ->
-               Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
-               begin
-                 Learnocaml_sendmail.reset_password
-                   ~url:("http://localhost:8080/reset_password/" ^ handle)
-                   address;
-                 respond_json cache ()
-               end
+               initiate_password_change token address cache
+            | None -> lwt_fail (`Not_found, "Unknown user."))
+      | Api.Change_password token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.email_of_token !sync_dir token >>=
+           (function
+            | Some address ->
+               initiate_password_change token address cache
             | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Reset_password handle when config.ServerData.use_passwd ->
          Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
@@ -735,9 +743,17 @@ module Request_handler = struct
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Send_reset_password _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Change_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Reset_password _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Do_reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+
+      | Api.Is_account token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.email_of_token !sync_dir token >>= fun email ->
+         respond_json cache (email <> None)
+      | Api.Is_account _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
       | Api.Invalid_request body ->

@@ -101,10 +101,15 @@ type _ request =
       string -> string request
   | Send_reset_password:
       string -> unit request
+  | Change_password:
+      Token.t -> unit request
   | Reset_password:
       string -> string request
   | Do_reset_password:
       string -> string request
+
+  | Is_account:
+      Token.t -> bool request
 
   | Invalid_request:
       string -> string request
