@@ -689,7 +689,7 @@ module Request_handler = struct
             | Some token ->
                Token_index.UserIndex.confirm_email !sync_dir token >>= fun () ->
                Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
-               respond_json cache "Ok."
+               respond_static cache ["validate.html"]
             | None ->
                lwt_fail (`Forbidden, "Nothing to do."))
       | Api.Send_reset_password address when config.ServerData.use_passwd ->
