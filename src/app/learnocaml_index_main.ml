@@ -35,6 +35,9 @@ module El = struct
   let tab_buttons_container_id, tab_buttons_container =
     id "learnocaml-tab-buttons-container"
 
+  let op_buttons_container_id, op_buttons_container =
+    id "learnocaml-op-buttons-container"
+
   let sync_buttons_id, sync_buttons = id "learnocaml-sync-buttons"
 
   let show_panel_id, show_panel = id "learnocaml-show-panel"
@@ -572,6 +575,24 @@ let show_token_dialog token =
       H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
     ]
 
+let complete_reset_password cb = function
+  | Ok () ->
+     alert ~title:[%i"RESET REQUEST SENT"]
+       [%i"A reset link has been sent to the specified address."];
+     Lwt.return_none
+  | Error (`Not_found _) ->
+     alert ~title:[%i"USER NOT FOUND"]
+       [%i"The entered email couldn't be recognised."];
+     Lwt.return_none
+  | Error e ->
+     lwt_alert ~title:[%i"REQUEST ERROR"] [
+         H.p [H.pcdata [%i"Could not retrieve data from server"]];
+         H.code [H.pcdata (Server_caller.string_of_error e)];
+       ] ~buttons:[
+         [%i"Retry"], (fun () -> cb ());
+         [%i"Cancel"], (fun () -> Lwt.return_none);
+       ]
+
 let init_token_dialog () =
   let open El.Login_overlay in
   Manip.SetCss.display login_overlay "block";
@@ -701,23 +722,8 @@ let init_token_dialog () =
   let rec reset_password () =
     if get_opt config##.enablePasswd then
       let email = Manip.value login_input_email in
-      Server_caller.request (Learnocaml_api.Send_reset_password email) >>= function
-      | Ok () ->
-         alert ~title:[%i"RESET REQUEST SENT"]
-           [%i"A reset link has been sent to the specified address."];
-         Lwt.return_none
-      | Error (`Not_found _) ->
-         alert ~title:[%i"USER NOT FOUND"]
-           [%i"The entered email couldn't be recognised."];
-         Lwt.return_none
-      | Error e ->
-         lwt_alert ~title:[%i"REQUEST ERROR"] [
-             H.p [H.pcdata [%i"Could not retrieve data from server"]];
-             H.code [H.pcdata (Server_caller.string_of_error e)];
-           ] ~buttons:[
-             [%i"Retry"], (fun () -> reset_password ());
-             [%i"Cancel"], (fun () -> Lwt.return_none);
-           ]
+      Server_caller.request (Learnocaml_api.Send_reset_password email)
+      >>= complete_reset_password reset_password
     else
       Lwt.return_none
   in
@@ -855,6 +861,33 @@ let () =
     Manip.removeChildren El.content ;
     Manip.appendChild El.content div ;
     delete_arg "activity"
+  in
+  let init_op kind =
+    let buttons =
+      (match kind with
+       | `Logged ->
+          let rec change_password () =
+            Server_caller.request (Learnocaml_api.Change_password
+                                     Learnocaml_local_storage.(retrieve sync_token))
+            >>= complete_reset_password change_password in
+          let rec change_email () =
+            ask_string ~title:[%i"New email address"]
+              [H.txt [%i"Enter your new email address: "]] >>= fun address ->
+              Server_caller.request
+                (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
+                                              address))
+            >>= complete_reset_password change_email in
+          [[%i"Change password"], change_password;
+           [%i"Change email"], change_email]
+       | `With_token ->
+          let upgrade_account () = Lwt.return_none in
+          [[%i"Upgrade account"], upgrade_account]) in
+    let container = El.op_buttons_container in
+    Manip.removeChildren container;
+    List.iter (fun (name, callback) ->
+        let btn = Tyxml_js.Html5.(button [txt name]) in
+        Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
+        Manip.appendChild container btn) buttons
   in
   let init_tabs token =
     let tabs =
@@ -1053,8 +1086,16 @@ let () =
      | Ok _ ->
         init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
         can_show_token () >>= fun show_token ->
-        if not show_token then
-          disable_button show_token_button_state;
+        (if not show_token then
+           Server_caller.request (Learnocaml_api.Is_account (get_stored_token ())) >|=
+             (function
+              | Ok true -> init_op `Logged
+              | _ -> init_op `With_token) >|= fun () ->
+           disable_button show_token_button_state
+         else if get_opt config##.enablePasswd then
+           Lwt.return @@ init_op `With_token
+         else
+           Lwt.return_unit) >>= fun () ->
         Lwt.return tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
