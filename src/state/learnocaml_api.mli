@@ -97,6 +97,8 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Change_email:
+      (Token.t * string) -> unit request
   | Confirm_email:
       string -> string request
   | Send_reset_password:

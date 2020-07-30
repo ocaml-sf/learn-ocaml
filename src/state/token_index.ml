@@ -393,6 +393,14 @@ module BaseUserIndex (RW: IndexRW) = struct
         match res, elt with
         | None, Password (found_token, email, _, _) when found_token = token -> Some email
         | _ -> res) None
+
+  let change_email sync_dir token email =
+    RW.read (sync_dir / indexes_subdir / file) parse >|=
+      List.map (function
+          | Password (found_token, name, passwd, _) when found_token = token ->
+             Password (found_token, name, passwd, Some email)
+          | elt -> elt) >>=
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
 
 module UserIndex = BaseUserIndex (IndexFile)

@@ -78,6 +78,8 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Change_email:
+      (Token.t * string) -> unit request
   | Confirm_email:
       string -> string request
   | Send_reset_password:
@@ -181,6 +183,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Partition _ ->
           json Partition.enc
 
+      | Change_email _ -> json J.unit
       | Confirm_email _ -> str
       | Send_reset_password _ -> json J.unit
       | Change_password _ -> json J.unit
@@ -308,6 +311,8 @@ module Conversions (Json: JSON_CODEC) = struct
         get ~token
           ["partition"; eid; fid; string_of_int prof]
 
+    | Change_email (token, address) ->
+        post ~token ["change_email"] (Json.encode J.(tup1 string) address)
     | Confirm_email _ ->
         assert false (* Reserved for a link *)
     | Send_reset_password address ->
@@ -474,6 +479,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         when Token.is_teacher token ->
           Partition (token, eid, fid, int_of_string prof) |> k
 
+      | `POST body, ["change_email"], Some token ->
+         (match Json.decode J.(tup1 string) body with
+          | address -> Change_email (token, address) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
       | `GET, ["confirm"; handle], _ ->
           Confirm_email handle |> k
       | `POST body, ["send_reset"], _ ->

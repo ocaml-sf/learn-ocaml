@@ -668,6 +668,21 @@ module Request_handler = struct
            )
            (fun exn -> (`Not_found, Printexc.to_string exn))
 
+      | Api.Change_email (token, address) when config.ServerData.use_passwd ->
+         Token_index.UserIndex.email_of_token !sync_dir token >>=
+           (function
+            | Some old_address ->
+               Token_index.UserIndex.exists !sync_dir address >>= fun exists ->
+               if exists then
+                 lwt_fail (`Forbidden, "Address already in use.")
+               else
+                 Token_index.UserIndex.change_email !sync_dir token address >>= fun () ->
+                 Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+                 Learnocaml_sendmail.change_email
+                   ~url:("http://localhost:8080/confirm/" ^ handle)
+                   old_address address;
+                 respond_json cache ()
+            | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Confirm_email handle when config.ServerData.use_passwd ->
          Token_index.UpgradeIndex.can_change_email !sync_dir handle >>=
            (function
@@ -739,6 +754,8 @@ module Request_handler = struct
             | None ->
                lwt_fail (`Forbidden, "Nothing to do."))
 
+      | Api.Change_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Confirm_email _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Send_reset_password _ ->
