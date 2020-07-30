@@ -773,6 +773,64 @@ module Request_handler = struct
       | Api.Is_account _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
+      | Api.Upgrade_form body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let token = Token.parse @@ List.assoc "token" params in
+         Token_index.UserIndex.email_of_token !sync_dir token >>=
+           (function
+            | None ->
+               let csrf_token = generate_csrf_token 32 in
+               let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 3600))
+                                ~path:"/" ~http_only:true ("csrf", csrf_token)] in
+               read_static_file ["upgrade.html"] >>= fun s ->
+               let contents =
+                 Markup.string s
+                 |> Markup.parse_html
+                 |> Markup.signals
+                 |> Markup.map (function
+                        | `Start_element ((e, "input"), attrs) as elt ->
+                           (match List.assoc_opt ("", "type") attrs,
+                                  List.assoc_opt ("", "name") attrs with
+                            | Some "hidden", Some "csrf" ->
+                               `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                            | Some "hidden", Some "token" ->
+                               `Start_element ((e, "input"), (("", "value"), Token.to_string token) :: attrs)
+                            | _ -> elt)
+                        | t -> t)
+                 |> Markup.pretty_print
+                 |> Markup.write_html
+                 |> Markup.to_string in
+               lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | Some _ -> lwt_fail (`Forbidden, "Already an account."))
+      | Api.Upgrade body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let token = Token.parse @@ List.assoc "token" params in
+         Token_index.UserIndex.email_of_token !sync_dir token >>=
+           (function
+            | None ->
+               let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                                   ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+               let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
+                   email = List.assoc "email" params and
+                   passwd = List.assoc "passwd" params in
+               if String.(length email < 5 || length passwd < 8 || not @@ contains email '@') then
+                 lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
+               else
+                 let cookies = make_cookie ("token", Token.to_string token) :: cookies in
+                 Token_index.UserIndex.upgrade !sync_dir token email passwd >>= fun () ->
+                 Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+                 Learnocaml_sendmail.confirm_email ~url:("http://localhost:8080/confirm/" ^ handle) email;
+                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+            | Some _ -> lwt_fail (`Forbidden, "Already an account."))
+
+      | Api.Upgrade_form _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Upgrade _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 

@@ -768,7 +768,9 @@ let delete_cookie name =
 let init_sync_token button_group =
   catch
     (fun () ->
-       begin try
+      begin try
+           if get_cookie "token" <> None then
+             Learnocaml_local_storage.(store can_show_token) false;
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found ->
                match get_cookie "token" with
@@ -816,6 +818,7 @@ let set_string_translations () =
     "txt_returning_with_token", [%i"Login with a token"];
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];
+    "txt_upgrade", [%i"Upgrade account"];
   ] in
   List.iter
     (fun (id, text) ->
@@ -862,26 +865,26 @@ let () =
     Manip.appendChild El.content div ;
     delete_arg "activity"
   in
-  let init_op kind =
-    let buttons =
-      (match kind with
-       | `Logged ->
-          let rec change_password () =
-            Server_caller.request (Learnocaml_api.Change_password
-                                     Learnocaml_local_storage.(retrieve sync_token))
-            >>= complete_reset_password change_password in
-          let rec change_email () =
-            ask_string ~title:[%i"New email address"]
-              [H.txt [%i"Enter your new email address: "]] >>= fun address ->
-              Server_caller.request
-                (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
-                                              address))
-            >>= complete_reset_password change_email in
-          [[%i"Change password"], change_password;
-           [%i"Change email"], change_email]
-       | `With_token ->
-          let upgrade_account () = Lwt.return_none in
-          [[%i"Upgrade account"], upgrade_account]) in
+  let show_upgrade_button () =
+    let token = Learnocaml_local_storage.(retrieve sync_token) and
+        input = Js.Unsafe.coerce @@ H.toelt (find_component "upgrade-token") in
+    input##.value := Js.string @@ Token.to_string token;
+    Manip.SetCss.display (find_component "learnocaml-upgrade-container") "block"
+  in
+  let init_op () =
+    let rec change_password () =
+      Server_caller.request (Learnocaml_api.Change_password
+                               Learnocaml_local_storage.(retrieve sync_token))
+      >>= complete_reset_password change_password in
+    let rec change_email () =
+      ask_string ~title:[%i"New email address"]
+        [H.txt [%i"Enter your new email address: "]] >>= fun address ->
+      Server_caller.request
+        (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
+                                      address))
+      >>= complete_reset_password change_email in
+    let buttons = [[%i"Change password"], change_password;
+                   [%i"Change email"], change_email] in
     let container = El.op_buttons_container in
     Manip.removeChildren container;
     List.iter (fun (name, callback) ->
@@ -1089,11 +1092,11 @@ let () =
         (if not show_token then
            Server_caller.request (Learnocaml_api.Is_account (get_stored_token ())) >|=
              (function
-              | Ok true -> init_op `Logged
-              | _ -> init_op `With_token) >|= fun () ->
+              | Ok true -> init_op ()
+              | _ -> show_upgrade_button ()) >|= fun () ->
            disable_button show_token_button_state
          else if get_opt config##.enablePasswd then
-           Lwt.return @@ init_op `With_token
+           Lwt.return @@ show_upgrade_button ()
          else
            Lwt.return_unit) >>= fun () ->
         Lwt.return tabs

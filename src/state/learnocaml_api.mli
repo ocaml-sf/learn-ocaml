@@ -113,6 +113,11 @@ type _ request =
   | Is_account:
       Token.t -> bool request
 
+  | Upgrade_form:
+      string -> string request
+  | Upgrade:
+      string -> string request
+
   | Invalid_request:
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case

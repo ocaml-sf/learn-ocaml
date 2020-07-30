@@ -100,12 +100,12 @@ body {
 //  box-shadow: 0 0 10px 0px #9bd, inset 5px 5px 10px 2px rgba(0,0,0,0.2) ;
   text-align: center;
 }
-#learnocaml-main-panel > div.tabs {
+#learnocaml-main-panel div.tabs {
   margin: 10px 0 5px 0;
   display: flex;
   flex-direction: column;
 }
-#learnocaml-main-panel > div.tabs > button {
+#learnocaml-main-panel div.tabs > button {
   flex: 0 0 auto;
   display: block;
   left:0; right:0;
@@ -121,14 +121,14 @@ body {
   margin: 0;
   box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
 }
-#learnocaml-main-panel > div.tabs > button + button {
+#learnocaml-main-panel div.tabs > button + button {
   margin: 10px 0 0 0;
 }
-#learnocaml-main-panel > div.tabs > button.active {
+#learnocaml-main-panel div.tabs > button.active {
   background: linear-gradient(to bottom, #f29100 0%, #ec670f 100%);
 }
-#learnocaml-main-panel > div.tabs > button::before,
-#learnocaml-main-panel > div.tabs > button::after {
+#learnocaml-main-panel div.tabs > button::before,
+#learnocaml-main-panel div.tabs > button::after {
   border-radius: 5px;
 }
 #learnocaml-main-panel > .footer {
@@ -291,7 +291,7 @@ body {
   #learnocaml-main-toolbar > button > .label {
     display: none;
   }
-  #learnocaml-main-panel > div.tabs > button {
+  #learnocaml-main-panel div.tabs > button {
     padding: 5px;
     font-size: 18px;
     line-height: 22px;
@@ -1065,4 +1065,7 @@ div#logout-overlay button {
   margin-right: auto;
   text-align: center;
   font-family: 'Inconsolata';
+}
+#learnocaml-upgrade-container {
+  display: none;
 }

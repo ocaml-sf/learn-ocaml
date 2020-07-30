@@ -94,6 +94,11 @@ type _ request =
   | Is_account:
       Token.t -> bool request
 
+  | Upgrade_form:
+      string -> string request
+  | Upgrade:
+      string -> string request
+
   | Invalid_request:
       string -> string request
 
@@ -191,6 +196,9 @@ module Conversions (Json: JSON_CODEC) = struct
       | Do_reset_password _ -> str
 
       | Is_account _ -> json J.bool
+
+      | Upgrade_form _ -> str
+      | Upgrade _ -> str
 
       | Invalid_request _ ->
           str
@@ -326,6 +334,11 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Is_account token ->
         get ~token ["is_account"]
+
+    | Upgrade_form _ ->
+        assert false (* Reserved for a link *)
+    | Upgrade _ ->
+        assert false (* Reserved for a form *)
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -498,6 +511,11 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET, ["is_account"], Some token ->
           Is_account token |> k
+
+      | `POST body, ["upgrade"], _ ->
+          Upgrade_form body |> k
+      | `POST body, ["do_upgrade"], _ ->
+          Upgrade body |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
