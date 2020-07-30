@@ -77,7 +77,7 @@ LABEL org.label-schema.build-date="${BUILD_DATE}" \
   org.label-schema.schema-version="1.0"
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init git \
+  && apk add ncurses-libs libev gmp dumb-init git \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 
