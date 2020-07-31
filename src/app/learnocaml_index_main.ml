@@ -885,12 +885,15 @@ let () =
                                Learnocaml_local_storage.(retrieve sync_token))
       >>= complete_reset_password change_password in
     let rec change_email () =
-      ask_string ~title:[%i"New email address"]
-        [H.txt [%i"Enter your new email address: "]] >>= fun address ->
-      Server_caller.request
-        (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
-                                      address))
-      >>= complete_reset_password change_email in
+      Lwt.catch
+        (fun () ->
+          ask_string ~title:[%i"New email address"]
+            [H.txt [%i"Enter your new email address: "]] >>= fun address ->
+          Server_caller.request
+            (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
+                                          address))
+          >>= complete_reset_password change_email)
+        (fun _exn -> Lwt.return_none) in
     let buttons = [[%i"Change password"], change_password;
                    [%i"Change email"], change_email] in
     let container = El.op_buttons_container in
