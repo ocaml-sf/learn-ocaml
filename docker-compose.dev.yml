@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  learnocaml:
+    container_name: backend
+    # image: ocamlsf/learn-ocaml:0.13
+    build: .
+    ports:
+      - '8080:8080'
+    environment:
+      # (ocaml variable) <container_name>.<network_name>:
+      FROM_DOMAIN: "backend.localdomain"
+      # (alpine msmtp variable) hostname of the SMTP server:
+      SMTPSERVER: "maildev"
+      # SMTPSERVER: "postfix"
+      # (ocaml + alpine msmtp variable) Reply-To = Return-Path:
+      EMAIL: "noreply@example.com"
+    depends_on:
+      - maildev
+      # - postfix
+    volumes:
+      - ./demo-repository:/repository:ro
+      - ./sync:/sync
+    networks:
+      - learnocaml-net
+    restart: unless-stopped
+    networks:
+      - learnocaml-net
+
+# To uncomment for prod
+#  postfix:
+#    # container_name: postfix
+#    image: juanluisbaptiste/postfix
+#    environment:
+#      # (postfix variables) remote MTA credentials:
+#      SMTP_SERVER: "smtp.example.com"
+#      SMTP_USERNAME: "user@example.com"
+#      SMTP_PASSWORD_FILE: "/secrets/smtp_password"
+#      # (postfix variable) DNS of myself, the server sending mails:
+#      SERVER_HOSTNAME: "mail.localdomain"
+#    volumes:
+#      - "./secrets:/secrets"
+#    # DO NOT EXPOSE THESE PORTS!
+#    # ports:
+#    #   - "25:25"
+#    networks:
+#      - learnocaml-net
+
+  # Only useful for dev
+  maildev:
+    image: maildev/maildev
+    ports:
+      - "1080:80"
+    networks:
+      - learnocaml-net
+
+networks:
+  learnocaml-net:
+    driver: bridge
+    name: localdomain
