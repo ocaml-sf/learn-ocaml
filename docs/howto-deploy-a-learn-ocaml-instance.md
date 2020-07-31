@@ -68,3 +68,29 @@ make && make opaminstall
 ```
 learn-ocaml serve --port 8080
 ```
+
+## Enabling passwords
+
+By default, authentication is performed with a token instead of a more
+traditionnal email/password pair, but this can now be enabled by
+setting the `use_passwd` option to `true` (by default, it is set to
+`false`).
+
+## Integration with Moodle and other teaching tools
+
+If you enabled passwords, you can also enable LTI, enabling to login
+in Learn-OCaml from Moodle and other teaching tools.
+
+> *Warning*
+>
+> Passwords must be enabled to use the LTI integration.
+
+The option `use_moodle` must be set to `true` in the config file (by
+default, it is set to `false`).  When running `learn-ocaml build`,
+Learn-OCaml generate a private key for LTI authentication if there is
+none yet, and print it to the standard output.
+
+This key can be then inserted as the secret in the LTI-compatible
+application (eg. Moodle).  You can set any value you want as the
+consumer key, but take care to not reuse the value between multiple
+applications.
