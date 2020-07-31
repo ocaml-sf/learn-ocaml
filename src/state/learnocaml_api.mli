@@ -125,6 +125,7 @@ type _ request =
 
 type http_request = {
   meth: [ `GET | `POST of string];
+  host: string;
   path: string list;
   args: (string * string) list;
 }
@@ -140,7 +141,7 @@ module type REQUEST_HANDLER = sig
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
   val callback: Conduit.endp ->
-                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+                Learnocaml_data.Server.config -> http_request -> 'resp request -> 'resp ret
 end
 
 module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig

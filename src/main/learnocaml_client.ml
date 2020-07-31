@@ -463,9 +463,9 @@ let fetch server_url req =
   let open Cohttp in
   let open Cohttp_lwt_unix in
   let do_req = function
-    | { Learnocaml_api.meth = `GET; path; args } ->
+    | { Learnocaml_api.meth = `GET; path; args; _ } ->
         Client.get (url path args)
-    | { Learnocaml_api.meth = `POST body; path; args } ->
+    | { Learnocaml_api.meth = `POST body; path; args; _ } ->
         Client.post ~body:(Cohttp_lwt.Body.of_string body) (url path args)
   in
   Api_client.make_request

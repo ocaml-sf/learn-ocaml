@@ -187,7 +187,7 @@ let generate_hmac secret csrf user_id =
   Cryptokit.hash_string hmac (csrf ^ user_id)
   |> Cryptokit.transform_string encoder
 
-let create_student conn (config: Learnocaml_data.Server.config) cache
+let create_student conn (config: Learnocaml_data.Server.config) cache req
       nonce_req secret_candidate nick base_auth =
   let module ServerData = Learnocaml_data.Server in
   lwt_option_fail
@@ -213,15 +213,15 @@ let create_student conn (config: Learnocaml_data.Server.config) cache
            Lwt.return (Token_index.Token (tok, use_moodle))
         | `Password (email, password) ->
            Token_index.UpgradeIndex.change_email !sync_dir tok >|= (fun handle ->
-            Learnocaml_sendmail.confirm_email ~url:("http://localhost:8080/confirm/" ^ handle) email;
+            Learnocaml_sendmail.confirm_email ~url:(req.Api.host ^ "/confirm/" ^ handle) email;
             Token_index.Password (tok, email, password, Some(email)))) >>= fun auth ->
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
        respond_json cache tok
 
-let initiate_password_change token address cache =
+let initiate_password_change token address cache req =
   Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
   Learnocaml_sendmail.reset_password
-    ~url:("http://localhost:8080/reset_password/" ^ handle)
+    ~url:(req.Api.host ^ "/reset_password/" ^ handle)
     address;
   respond_json cache ()
 
@@ -276,10 +276,10 @@ module Request_handler = struct
       lwt_ok
 
   let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
-                    caching -> resp Api.request ->
+                    caching -> Api.http_request -> resp Api.request ->
                     (resp response, error) result Lwt.t
     = let module ServerData = Learnocaml_data.Server in
-      fun conn config cache -> function
+      fun conn config cache req -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
       | Api.Launch body when config.ServerData.use_moodle ->
@@ -291,7 +291,7 @@ module Request_handler = struct
                           ("csrf", csrf_token)] in
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
-         Token_index.check_oauth !sync_dir "http://localhost:8080/launch" params >>=
+         Token_index.check_oauth !sync_dir (req.Api.host ^ "/launch") params >>=
            (function
             | Ok id ->
                Token_index.MoodleIndex.user_exists !sync_dir id >>= fun exists ->
@@ -409,7 +409,7 @@ module Request_handler = struct
       | Api.Create_token (secret_candidate, None, nick) ->
          valid_string_of_endp conn
          >?= fun conn ->
-         create_student conn config cache nonce_req secret_candidate nick (`Token false)
+         create_student conn config cache req nonce_req secret_candidate nick (`Token false)
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
          lwt_catch_fail
             (fun () -> Token.register token >>= fun () ->
@@ -435,7 +435,7 @@ module Request_handler = struct
          else if String.length password < 8 then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else
-           create_student conn config cache nonce_req secret (Some nick) (`Password (email, password))
+           create_student conn config cache req nonce_req secret (Some nick) (`Password (email, password))
       | Api.Login (nick, password) when config.ServerData.use_passwd ->
          Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
            (function
@@ -679,7 +679,7 @@ module Request_handler = struct
                  Token_index.UserIndex.change_email !sync_dir token address >>= fun () ->
                  Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
                  Learnocaml_sendmail.change_email
-                   ~url:("http://localhost:8080/confirm/" ^ handle)
+                   ~url:(req.Api.host ^ "/confirm/" ^ handle)
                    old_address address;
                  respond_json cache ()
             | None -> lwt_fail (`Not_found, "Unknown user."))
@@ -696,13 +696,13 @@ module Request_handler = struct
          Token_index.UserIndex.token_of_email !sync_dir address >>=
            (function
             | Some token ->
-               initiate_password_change token address cache
+               initiate_password_change token address cache req
             | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Change_password token when config.ServerData.use_passwd ->
          Token_index.UserIndex.email_of_token !sync_dir token >>=
            (function
             | Some address ->
-               initiate_password_change token address cache
+               initiate_password_change token address cache req
             | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Reset_password handle when config.ServerData.use_passwd ->
          Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
@@ -822,7 +822,7 @@ module Request_handler = struct
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in
                  Token_index.UserIndex.upgrade !sync_dir token email passwd >>= fun () ->
                  Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
-                 Learnocaml_sendmail.confirm_email ~url:("http://localhost:8080/confirm/" ^ handle) email;
+                 Learnocaml_sendmail.confirm_email ~url:(req.Api.host ^ "/confirm/" ^ handle) email;
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
             | Some _ -> lwt_fail (`Forbidden, "Already an account."))
 
@@ -836,12 +836,13 @@ module Request_handler = struct
 
   let callback: type resp. Conduit.endp ->
                            Learnocaml_data.Server.config ->
+                           Api.http_request ->
                            resp Api.request -> resp ret
-  = fun conn config req ->
+  = fun conn config http_req req ->
     let cache = caching req in
     let respond () =
       Lwt.catch
-        (fun () -> callback_raw conn config cache req)
+        (fun () -> callback_raw conn config cache http_req req)
         (function
           | Not_found ->
               lwt_fail (`Not_found, "Component not found")
@@ -885,6 +886,18 @@ let last_modified = (* server startup time *)
      | 10 -> "Nov" | 11 -> "Dec" | _ -> assert false)
     (tm.tm_year + 1900)
     tm.tm_hour tm.tm_min tm.tm_sec
+
+let get_base_url req =
+  let uri = Request.uri req in
+  match Uri.(scheme uri, host uri, port uri) with
+  | Some ("http" as scheme), Some host, Some 80
+  | Some ("https" as scheme), Some host, Some 443 ->
+     Uri.to_string @@ Uri.make ~scheme ~host ()
+  | Some scheme, Some host, Some port -> Uri.to_string @@ Uri.make ~scheme ~host ~port ()
+  | _, Some host, Some 80 -> Uri.to_string @@ Uri.make ~scheme:("http") ~host ()
+  | _, Some host, Some 443 -> Uri.to_string @@ Uri.make ~scheme:("https") ~host ()
+  | _, Some host, Some port -> Uri.to_string @@ Uri.make ~scheme:("http") ~host ~port ()
+  | _ -> failwith "Bad request"
 
 (* Taken from the source of "decompress", from bin/easy.ml *)
 let compress ?(level = 4) data =
@@ -1013,7 +1026,7 @@ let launch () =
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> lwt_ok {Api.meth = `GET; path; args}
+     | `GET -> lwt_ok {Api.meth = `GET; host = get_base_url req; path; args}
      | `POST ->
         begin
           Cohttp_lwt.Body.to_string body
@@ -1027,11 +1040,11 @@ let launch () =
                   List.assoc_opt "csrf" cookies with
             | Some (param_csrf :: _), Some cookie_csrf ->
                if Eqaf.equal param_csrf cookie_csrf then
-                 lwt_ok {Api.meth = `POST params; path; args}
+                 lwt_ok {Api.meth = `POST params; host = get_base_url req; path; args}
                else
                  lwt_fail (`Forbidden, "CSRF token mismatch")
             | None, None | None, Some _ ->
-               lwt_ok {Api.meth = `POST params; path; args}
+               lwt_ok {Api.meth = `POST params; host = get_base_url req; path; args}
             | _, _ ->
                lwt_fail (`Forbidden, "Bad CSRF token")
         end
