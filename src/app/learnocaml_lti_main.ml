@@ -22,6 +22,7 @@ let reg_input_email_id, reg_input_email = id "register-email-input"
 let reg_input_nick_id, reg_input_nick = id "register-nick-input"
 let reg_input_password_id, reg_input_password = id "register-password-input"
 let input_secret_id, input_secret = id "register-secret-input"
+let input_consent_id, input_consent = id "first-connection-consent"
 let login_new_button_id, login_new_button = id "login-new-button"
 
 let login_email_input_id, login_email_input = id "login-email-input"
@@ -58,18 +59,23 @@ let send_sync_request () =
 
 let create_token () =
   let email = Manip.value reg_input_email and
-      password = Manip.value reg_input_password in
+      password = Manip.value reg_input_password and
+      consent = Manip.checked input_consent and
+      consent_label = find_component "txt_first_connection_consent" in
   (* 5 for a character, @, character, dot, character. *)
   let email_criteria = String.length email < 5 || not (String.contains email '@') and
       passwd_criteria = String.length password < 8 in
   Manip.SetCss.borderColor reg_input_email "";
   Manip.SetCss.borderColor reg_input_password "";
-  if email_criteria || passwd_criteria then
+  Manip.SetCss.fontWeight consent_label "";
+  if email_criteria || passwd_criteria || not consent then
     begin
       if email_criteria then
         Manip.SetCss.borderColor reg_input_email "#f44";
       if passwd_criteria then
         Manip.SetCss.borderColor reg_input_password "#f44";
+      if not consent then
+        Manip.SetCss.fontWeight consent_label "bold";
       Lwt.return_none
     end
   else
