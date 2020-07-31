@@ -812,6 +812,8 @@ let set_string_translations () =
     "txt_first_connection_nickname", [%i"Nickname"];
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
+    "txt_secret_label", [%i"The secret is the passphrase provided by \
+                            your teacher to sign-up."];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
     "txt_returning_email", [%i"Email address"];

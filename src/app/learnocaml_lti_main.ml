@@ -112,6 +112,8 @@ let () =
       "txt_first_connection_nickname", [%i"Nickname"];
       "txt_first_connection_password", [%i"Password"];
       "txt_first_connection_secret", [%i"Enter the secret"];
+      "txt_secret_label", [%i"The secret is the passphrase provided by \
+                            your teacher to sign-up."];
       "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                           information entered will be used in the \
                                           context of the Learn-OCaml plateform."];

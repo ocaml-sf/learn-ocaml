@@ -917,6 +917,9 @@ body {
     z-index: 22220;
     overflow: auto;
 }
+#login-overlay > div > span {
+    text-align: center;
+}
 div#login-overlay > h1 {
     text-align: center;
     margin-bottom: 50px;
