@@ -1,7 +1,7 @@
 (install
  (package learn-ocaml)
  (section share)
- (files (app.js as www/js/app.js))
+ (files (get-eval.js as www/js/get-eval.js))
 )
 
 (library

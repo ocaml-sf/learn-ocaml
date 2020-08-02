@@ -65,6 +65,12 @@ let display_report exo report =
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
+let send_to_server ace editor set_class =
+  let myscript = Dom_html.createScript Dom_html.document in
+    myscript##._type := Js.string "text/javascript";
+    myscript##.src := Js.string "/js/get-local-changes.js";
+    Dom.appendChild Dom_html.document##.head myscript
+
 module Exercise_link =
   struct
     let exercise_link ?(cl = []) id content =
@@ -205,6 +211,7 @@ let () =
   in
   begin toolbar_button
       ~icon: "typecheck" [%i"Compile"] @@ fun () ->
+    send_to_server top ace editor ;
     typecheck true
   end;
   begin toolbar_button
