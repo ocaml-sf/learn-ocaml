@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  learn-ocaml-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # args:
+      #   - TZ=${TZ}
+    env_file:
+      - .env
+    # links:
+    #   - db
+    #   - solr
+    #   - redis
+    #   - datapusher
+    ports:
+      - "0.0.0.0:${LEARNOCAML_PORT}:8080"
+    volumes:
+      - ${REPOSITORY}:/repository:ro
+      - learn-ocaml-sync:/sync
+    
+
+  mongodb_container:
+    image: mongo:latest
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+
+
+volumes:
+  repository:
+  sync:
+  learn-ocaml-sync:
+  mongodb_data_container:
