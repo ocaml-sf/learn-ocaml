@@ -31,6 +31,15 @@ services:
     volumes:
       - mongodb_data_container:/data/db
 
+  nodejs:
+    build: 
+      context: node/
+    ports: 
+      - 8000:8000
+    volumes:
+      - ./node:/node/app
+      - /node/app/node_modules
+
 
 volumes:
   repository:
