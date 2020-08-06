@@ -75,6 +75,7 @@ let check_equal
   | Int, _ -> raise Not_equal
   | String, _ -> raise Not_equal
 
+
 let onmessage worker (ev : _ Worker.messageEvent Js.t) =
   match Json.unsafe_input ev##.data with
   | Write (fd, s) ->  begin
@@ -142,6 +143,7 @@ let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
   | Set_checking_environment -> Unit
   | Register_callback _ -> Unit
 
+
 (** Threads created with [post] will always be wake-uped by
     [onmessage] by calling [Lwt.wakeup]. They should never end with
     an exception, unless canceled. When canceled, the worker is
@@ -150,6 +152,13 @@ let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.
   fun worker msg ->
     let msg_id = worker.counter in
     let msg_ty = ty_of_host_msg msg in
+    let eval_script = Dom_html.createScript Dom_html.document in
+        eval_script##._type := Js.string "text/javascript";
+        eval_script##.src := Js.string "/js/get-eval.js";
+        eval_script##.defer := Js.bool true;
+        eval_script##.async := Js.bool true;
+    Dom.appendChild Dom_html.document##.head eval_script;
+    eval_script;
     if !debug then Js_utils.debug "Host: queuing %d" msg_id;
     let (t, u) = Lwt.task () in
     Lwt.on_cancel t
@@ -187,6 +196,7 @@ and do_reset_worker () =
     end else
       Lwt.return_unit
 
+
 let create
     ?(js_file = "/js/learnocaml-toplevel-worker.js")
     ?(after_init = fun _ -> Lwt.return_unit)
@@ -208,6 +218,7 @@ let create
   post worker @@ Init >>= fun _ ->
   worker.after_init worker >>= fun () ->
   Lwt.return worker
+
 
 let create_fd worker pp =
   worker.fds <- IntMap.add worker.fd_counter pp worker.fds;
@@ -235,6 +246,7 @@ let reset worker ?(timeout = fun () -> never_ending) () =
   | `Timeout ->
       (* Not canceling the Reset thread, but manually resetting. *)
       worker.reset_worker worker
+
 
 let check worker code =
   post worker @@ Check code
