@@ -5,7 +5,6 @@ const database = process.env.DB_CONN;
 const port = process.env.PORT;
 const compile_collection = process.env.COMP_COLLECTION;
 const eval_collection = process.env.EVAL_COLLECTION;
-// const port = 8000;
 const mongoose = require('mongoose');
 
 app.use(bodyParser.text({ type: "application/json" }));
@@ -18,8 +17,9 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 // Access Control
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+        res.setHeader('Access-Control-Allow-Headers', '*');
     next();
   });
 
