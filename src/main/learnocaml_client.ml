@@ -175,7 +175,7 @@ module ConfigFile = struct
 
   type t = {
     server: Uri.t;
-    token: Token.t;
+    token: Token.t option;
   }
 
   let local_path, user_path =
@@ -197,7 +197,7 @@ module ConfigFile = struct
       (fun (server, token) -> {server; token}) @@
     obj2
       (req "server" (conv Uri.to_string Uri.of_string string))
-      (req "token" Token.(conv to_string parse string))
+      (req "token" (option Token.(conv to_string parse string)))
 
   let read file =
     Lwt_io.with_file ~mode:Lwt_io.Input file Lwt_io.read >|=
@@ -210,7 +210,6 @@ module ConfigFile = struct
     Json_encoding.construct enc t |> function
     | `O _ | `A _ as json -> Lwt_io.write oc (Ezjsonm.to_string json)
     | _ -> assert false
-
 end
 
 module Console = struct
@@ -503,20 +502,27 @@ let upload_report server token ex solution report =
         (Token.to_string token)
   | e -> Lwt.fail e
 
-let check_server_version server =
+let check_server_version ?(allow_static=false) server =
   Lwt.catch (fun () ->
       fetch server (Api.Version ()) >|= fun (server_version,_) ->
       if server_version <> Api.version then
         (Printf.eprintf "API version mismatch: client v.%s and server v.%s\n"
            Api.version server_version;
-         exit 1))
+         exit 1)
+      else
+        true)
   @@ fun e ->
-  Printf.eprintf "[ERROR] Could not reach server: %s\n"
-    (match e with
-     | Unix.Unix_error (err, _, _) -> Unix.error_message err
-     | Failure m -> m
-     | e -> Printexc.to_string e);
-  exit 1
+     if not allow_static then
+       begin
+         Printf.eprintf "[ERROR] Could not reach server: %s\n"
+           (match e with
+            | Unix.Unix_error (err, _, _) -> Unix.error_message err
+            | Failure m -> m
+            | e -> Printexc.to_string e);
+         exit 1
+       end
+     else
+       Lwt.return_false
 
 let get_server =
   let default_server = Uri.of_string "http://learn-ocaml.org" in
@@ -545,55 +551,18 @@ let get_nonce_and_create_token server nickname secret_candidate =
   fetch server
     (Api.Create_token (Sha.sha512 (nonce ^ secret_candidate), None, nickname))
 
-let init ?(local=false) ?server ?token () =
-  let path = if local then ConfigFile.local_path else ConfigFile.user_path in
-  let server = get_server server in
-  let get_new_token nickname =
-    Printf.printf "Please provide the secret: ";
-    match Console.input ~default:None (fun s -> Some s) with
-    | Some secret_candidate ->
-       get_nonce_and_create_token server nickname secret_candidate
-    | None -> failwith "Please provide a secret"
-  in
-  let get_token () =
-    match token with
-    | Some t -> Lwt.return t
-    | None ->
-        Printf.eprintf
-          "Please provide your user token on %s (leave empty to generate one): %!"
-          (Uri.to_string server);
-        match
-          Console.input ~default:None
-            (fun s -> Some (Token.parse s))
-        with
-        | Some t -> Lwt.return t
-        | None ->
-            Printf.eprintf "Please enter a nickname: %!";
-            get_new_token
-              (Console.input
-                 (fun s -> if String.length s < 2 then None else Some s))
-  in
-  check_server_version server >>=
-  get_token >>= fun token ->
-  let config = { ConfigFile. server; token } in
-  ConfigFile.write path config >|= fun () ->
-  Printf.eprintf "Configuration written to %s\n%!" path;
-  config
-
-let get_config_option ?local ?(save_back=false) server_opt token_opt =
+let get_config_option ?local ?(save_back=false) ?(allow_static=false) server_opt token_opt =
   match ConfigFile.path ?local () with
   | Some f ->
       ConfigFile.read f >>= fun c ->
-      let c = match server_opt with
-        | None -> c
-        | Some server -> { c with ConfigFile.server }
+      let c = match server_opt, token_opt with
+        | Some server, Some _ -> { ConfigFile.server=server; ConfigFile.token=token_opt }
+        | Some server, None -> { c with ConfigFile.server }
+        | None, Some _ -> { c with ConfigFile.token=token_opt}
+        | None, None -> c
       in
-      let c = match token_opt with
-        | None -> c
-        | Some token -> { c with ConfigFile.token}
-      in
-      check_server_version c.ConfigFile.server
-      >>= fun () ->
+      check_server_version ~allow_static c.ConfigFile.server
+      >>= fun _ ->
       (
         if save_back
         then
@@ -605,8 +574,8 @@ let get_config_option ?local ?(save_back=false) server_opt token_opt =
       >|= fun () -> Some c
   | None -> Lwt.return_none
 
-let get_config ?local ?(save_back=false) server_opt token_opt =
-  get_config_option ?local ~save_back server_opt token_opt
+let get_config ?local ?(save_back=false) ?(allow_static=false) server_opt token_opt =
+  get_config_option ?local ~save_back ~allow_static server_opt token_opt
   >>= function
   | Some c -> Lwt.return c
   | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
@@ -624,9 +593,9 @@ let man p = [
         $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
   ]
 
-let get_config_o ?save_back o =
+let get_config_o ?save_back ?(allow_static=false) o =
   let open Args_global in
-  get_config ~local:o.local ?save_back o.server_url o.token
+  get_config ~local:o.local ?save_back ~allow_static o.server_url o.token
 
 module Init = struct
   open Args_global
@@ -648,9 +617,13 @@ module Init = struct
       | Some s -> Lwt.return s
     in
     get_server () >>= fun server ->
-    check_server_version server >>= fun () ->
-    get_token server >>= fun token ->
-    let config = { ConfigFile. server; token } in
+    check_server_version ~allow_static:true server >>= fun has_server ->
+    let token = if has_server then
+                  get_token server >>= Lwt.return_some
+                else
+                  Lwt.return_none in
+    token >>= fun token ->
+    let config = { ConfigFile. server; token=token } in
     ConfigFile.write path config >|= fun () ->
     Printf.eprintf "Configuration written to %s.\n%!" path;
     0
@@ -672,7 +645,7 @@ module Grade = struct
   let grade go eo =
     Console.enable_colors := eo.color;
     Console.enable_utf8 := eo.color;
-    get_config_o go
+    get_config_o ~allow_static:true go
     >>= fun { ConfigFile.server; token } ->
     let status_line =
       if eo.verbosity >= 2 then Printf.eprintf "%s..\n" else Console.status_line
@@ -733,9 +706,11 @@ module Grade = struct
          (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
           Lwt.return 1)
        else
-         upload_report server token exercise solution report >>= fun _ ->
-         Printf.eprintf "Results saved to server\n";
-         Lwt.return 0
+         match token with
+         | Some token ->
+            upload_report server token exercise solution report >>= fun _ ->
+            Printf.eprintf "Results saved to server\n"; Lwt.return 0
+         | None -> Lwt.return 0
 
   let man =
     man
@@ -760,7 +735,9 @@ module Print_token = struct
   let print_tok o =
     get_config_o o
     >>= fun config ->
-    Lwt_io.print (Token.to_string config.ConfigFile.token ^ "\n")
+    (match config.ConfigFile.token with
+     | Some token -> Lwt_io.print (Token.to_string token ^ "\n")
+     | None -> Lwt_io.print "Static server -- no token\n")
     >|= fun () -> 0
 
   let explanation = "Just print the configured user token."
@@ -791,7 +768,7 @@ end
                     
 module Set_options = struct
   let set_opts o =
-    get_config_o ~save_back:true o
+    get_config_o ~save_back:true ~allow_static:true o
     >|= fun _ -> 0
 
   let man =
@@ -864,8 +841,9 @@ module Fetch = struct
   let fetch o lst =
     get_config_o o
     >>= fun { ConfigFile.server; token } ->
-    fetch_save server token
-    >>= write_save_files lst
+    match token with
+    | Some token -> fetch_save server token >>= write_save_files lst
+    | None -> Lwt.return 0
 
   let man =
     man
@@ -927,7 +905,7 @@ module Template = struct
     | None -> Lwt.fail_with "You must provide an exercise id"
               >|= fun () -> 2
     | Some exercise_id ->
-       get_config_o o
+       get_config_o ~allow_static:true o
        >>= fun { server; token } ->
        fetch_exercise server token exercise_id
        >>= fun (_meta, exercise, _deadline) ->
@@ -953,9 +931,9 @@ module Exercise_list = struct
   let doc= "Get a structured json containing a list of the exercises of the server"
 
   let exercise_list o  =
-    get_config_o o
+    get_config_o ~allow_static:true o
     >>= fun {ConfigFile.server;token} ->
-    fetch server (Learnocaml_api.Exercise_index (token))
+    fetch server (Learnocaml_api.Exercise_index token)
     >>= (fun index->
     let open Json_encoding in
     let ezjsonm = (Json_encoding.construct

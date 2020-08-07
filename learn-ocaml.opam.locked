@@ -59,6 +59,7 @@ depends: [
   "js_of_ocaml-toplevel" {= "3.3.0"}
   "js_of_ocaml-tyxml" {= "3.3.0"}
   "jsonm" {= "1.0.1"}
+  "markup-lwt" {= "0.5.0"}
   "logs" {= "0.7.0"}
   "lwt" {= "4.2.1"}
   "lwt_react" {= "1.1.3"}

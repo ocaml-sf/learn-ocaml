@@ -39,6 +39,7 @@ depends: [
   "ssl" {= "0.5.5"}
   "magic-mime"
   "markup"
+  "markup-lwt"
   "ocaml" {= "4.05.0"}
   "ocamlfind" {build}
   "ocp-indent-nlfork"

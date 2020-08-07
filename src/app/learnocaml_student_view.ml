@@ -347,7 +347,7 @@ let stats_tab assignments answers =
   ]
 
 let init_exercises_and_stats_tabs teacher_token student_token answers =
-  retrieve (Learnocaml_api.Exercise_index teacher_token)
+  retrieve (Learnocaml_api.Exercise_index (Some teacher_token))
   >>= fun (index, _) ->
   retrieve (Learnocaml_api.Exercise_status_index teacher_token)
   >>= fun status ->
@@ -483,7 +483,7 @@ let () =
     | None -> ()
     | Some ex_id ->
         Lwt.async @@ fun () ->
-        retrieve (Learnocaml_api.Exercise (teacher_token, ex_id))
+        retrieve (Learnocaml_api.Exercise (Some teacher_token, ex_id))
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in

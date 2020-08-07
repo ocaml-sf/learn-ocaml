@@ -180,6 +180,11 @@ module Args = struct
       value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
         "Number of building jobs to run in parallel"
 
+    let root =
+      value & opt string "" & info ["root"] ~docv:"ROOT" ~doc:
+        "Set the root of all documents.  Use only for static deployment.\
+         Should not end with a trailing slash."
+
     type t = {
       contents_dir: string;
       try_ocaml: bool option;
@@ -187,14 +192,15 @@ module Args = struct
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
+      root: string
     }
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+        contents_dir try_ocaml lessons exercises playground toplevel root
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; root }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel)
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $root)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -239,6 +245,30 @@ module Args = struct
 end
 
 open Args
+
+let process_html_file orig_file dest_file root =
+  let transform_tag e tag attrs attr =
+    let attr_pair = ("", attr) in
+    match List.assoc_opt attr_pair attrs with
+    | Some url -> `Start_element ((e, tag), (attr_pair, root ^ url) :: (List.remove_assoc attr_pair attrs))
+    | None -> `Start_element ((e, tag), attrs) in
+  Lwt_io.open_file ~mode:Lwt_io.Input orig_file >>= fun ofile ->
+  Lwt_io.open_file ~mode:Lwt_io.Output dest_file >>= fun wfile ->
+  let document = Markup_lwt.lwt_stream (Lwt_io.read_chars ofile) in
+  Markup.parse_html document
+  |> Markup.signals
+  |> Markup.map (function
+         | `Start_element ((e, "link"), attrs) -> transform_tag e "link" attrs "href"
+         | `Start_element ((e, "script"), attrs) -> transform_tag e "script" attrs "src"
+         | `Start_element ((e, "img"), attrs) -> transform_tag e "img" attrs "src"
+         | `Start_element ((e, "a"), attrs) -> transform_tag e "a" attrs "href"
+         | t -> t)
+  |> Markup.pretty_print
+  |> Markup.write_html
+  |> Markup_lwt.to_lwt_stream
+  |> Lwt_io.write_chars wfile >>= fun () ->
+  Lwt_io.close ofile >>= fun () ->
+  Lwt_io.close wfile
 
 let main o =
   Printf.printf "Learnocaml v.%s running.\n" Learnocaml_api.version;
@@ -292,6 +322,13 @@ let main o =
          let json_config = ServerData.build_config preconfig in
          Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
+       Lwt_unix.files_of_directory o.builder.Builder.contents_dir
+       |> Lwt_stream.iter_s (fun file ->
+              if Filename.extension file = ".html" then
+                process_html_file (o.builder.Builder.contents_dir/file)
+                  (o.app_dir/file) o.builder.Builder.root
+              else
+                Lwt.return_unit) >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
                Lwt.catch (fun () ->
@@ -325,13 +362,15 @@ let main o =
               \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
-              \  enableToplevel: %b\n\
+              \  enableToplevel: %b,\n\
+              \  root: \"%s\"\n\
                }\n"
               (tutorials_ret <> None)
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
-              (o.builder.Builder.toplevel <> Some false) >>= fun () ->
+              (o.builder.Builder.toplevel <> Some false)
+              o.builder.Builder.root >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true

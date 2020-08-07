@@ -11,24 +11,28 @@ open Js_utils
 open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
 let init_tabs, select_tab =
   mk_tab_handlers "text"  [ "toplevel" ; "report" ; "editor"; "meta" ]
 
-let check_if_need_refresh () =
-  let local_server_id = Learnocaml_local_storage.(retrieve server_id) in
-  retrieve @@ Learnocaml_api.Version ()
-  >|= fun (_, server_id) ->
-  if local_server_id <> server_id then
-    let title = [%i "WARNING: You have an older grader version than the server"]
-    and ok_label = [%i "Refresh the page"]
-    and refresh () = Dom_html.window##.location##reload
-    and cancel_label = [%i "I will do it myself!"]
-    and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
-    let contents = [ H.p [H.txt (String.trim message) ] ] in
-  confirm ~title ~ok_label ~cancel_label contents refresh
+let check_if_need_refresh has_server =
+  if has_server then
+    let local_server_id = Learnocaml_local_storage.(retrieve server_id) in
+    retrieve @@ Learnocaml_api.Version ()
+    >|= (fun (_, server_id) ->
+    if local_server_id <> server_id then
+      let title = [%i "WARNING: You have an older grader version than the server"]
+      and ok_label = [%i "Refresh the page"]
+      and refresh () = Dom_html.window##.location##reload
+      and cancel_label = [%i "I will do it myself!"]
+      and message = [%i "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."] in
+      let contents = [ H.p [H.txt (String.trim message) ] ] in
+      confirm ~title ~ok_label ~cancel_label contents refresh)
+  else
+    Lwt.return_unit
 
 let get_grade =
   let get_worker = get_worker_code "learnocaml-grader-worker.js" in
@@ -91,11 +95,11 @@ let () =
   run_async_with_log @@ fun () ->
   set_string_translations_exercises ();
   Learnocaml_local_storage.init ();
-  retrieve (Learnocaml_api.Version ())
-  >|= fun (_,server_id) ->
-    Learnocaml_local_storage.(store server_id) server_id;
-  let token = get_token ()
-    
+  Server_caller.request (Learnocaml_api.Version ()) >>=
+    (function
+     | Ok (_, server_id) -> Learnocaml_local_storage.(store server_id) server_id; Lwt.return_true
+     | Error _ -> Lwt.return_false) >>= fun has_server ->
+  let token = get_token ~has_server ()
   in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
@@ -195,7 +199,7 @@ let () =
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
     Dom_html.window##.location##assign
-      (Js.string "/index.html#activity=exercises") ;
+      (Js.string (api_server ^ "/index.html#activity=exercises")) ;
     Lwt.return ()
   end ;
   let messages = Tyxml_js.Html5.ul [] in
@@ -209,9 +213,8 @@ let () =
     typecheck true
   end;
   begin toolbar_button
-      ~icon: "reload" [%i"Grade!"] @@ fun () ->
-    check_if_need_refresh ()
-    >>= fun () ->
+          ~icon: "reload" [%i"Grade!"] @@ fun () ->
+    check_if_need_refresh has_server >>= fun () ->
     let aborted, abort_message =
       let t, u = Lwt.task () in
       let btn = Tyxml_js.Html5.(button [ txt [%i"abort"] ]) in
@@ -286,4 +289,3 @@ let () =
   typecheck false >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()
-;;

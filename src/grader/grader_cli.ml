@@ -47,7 +47,7 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade ?(print_result=false) ?dirname exercise output_json =
+let grade ?(print_result=false) ?dirname meta exercise output_json =
   Lwt.catch
     (fun () ->
        let code_to_grade = match !grade_student with
@@ -150,8 +150,8 @@ let grade ?(print_result=false) ?dirname exercise output_json =
                  Lwt.return (Ok ())
              | Some json_file ->
                  let json =
-                   Json_encoding.construct Learnocaml_exercise.encoding
-                     Learnocaml_exercise.(update File.max_score max exercise)
+                   Json_encoding.(construct (tup3 Learnocaml_data.Exercise.Meta.enc Learnocaml_exercise.encoding (option float)))
+                     (meta, Learnocaml_exercise.(update File.max_score max exercise), None)
                  in
                  let json = match json with
                    | `A _ | `O _ as d -> d
@@ -178,4 +178,9 @@ let grade ?(print_result=false) ?dirname exercise output_json =
 let grade_from_dir ?(print_result=false) exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
-  grade ~print_result ~dirname:exercise_dir exo output_json
+  Lwt_io.(with_file ~mode:Input (String.concat Filename.dir_sep [exercise_dir; "meta.json"]) read) >>= fun content ->
+  let meta = (match content with
+              | "" -> `O []
+              | s -> Ezjsonm.from_string s)
+             |> Json_encoding.destruct Learnocaml_data.Exercise.Meta.enc in
+  grade ~print_result ~dirname:exercise_dir meta exo output_json

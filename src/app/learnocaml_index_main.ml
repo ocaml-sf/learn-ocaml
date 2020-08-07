@@ -11,6 +11,7 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 
 module H = Tyxml_js.Html5
 
@@ -61,6 +62,11 @@ end
 
 let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [txt msg]]]
 
+let get_url token dynamic_url static_url id =
+  match token with
+  | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
+  | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
+
 let exercises_tab token _ _ () =
   show_loading [%i"Loading exercises"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -107,7 +113,7 @@ let exercises_tab token _ _ () =
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in
-              a ~a:[ a_href ("/exercises/" ^ Url.urlencode exercise_id ^ "/") ;
+              a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] (
                   h1 [ txt title ] ::
@@ -149,7 +155,7 @@ let exercises_tab token _ _ () =
     Manip.appendChild El.content list_div;
     Lwt.return list_div
 
-let playground_tab _ _ () =
+let playground_tab token _ _ () =
   show_loading [%i"Loading playground"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
   retrieve (Learnocaml_api.Playground_index ())
@@ -159,7 +165,7 @@ let playground_tab _ _ () =
       let open Tyxml_js.Html5 in
       let title = pmeta.Playground.Meta.title in
       let short_description = pmeta.Playground.Meta.short_description in
-      a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
+      a ~a:[ a_href (get_url token "/playground/" "playground.html#id=" id) ;
              a_class [ "exercise" ] ] [
           div ~a:[ a_class [ "descr" ] ] (
               h1 [ txt title ] ::
@@ -591,28 +597,16 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "none";
   token
 
-let init_sync_token button_state =
+let init_sync_token button_group =
   catch
     (fun () ->
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found -> init_token_dialog ()
        end >>= fun token ->
-       enable_button button_state ;
+       enable_button_group button_group ;
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
-
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
-  method enableLessons: bool Js.optdef_prop
-  method enableExercises: bool Js.optdef_prop
-  method enableToplevel: bool Js.optdef_prop
-  method enablePlayground: bool Js.optdef_prop
-  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
-  method txtNickname: Js.js_string Js.t Js.optdef_prop
-end
-
-let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
 
 let set_string_translations () =
   let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in
@@ -667,8 +661,8 @@ let () =
     Js.string ("Learn OCaml" ^ " v."^Learnocaml_api.version);
   Manip.setInnerText El.version ("v."^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
-  let sync_button_state = button_state () in
-  disable_button sync_button_state ;
+  let sync_button_group = button_group () in
+  disable_button_group sync_button_group;
   let menu_hidden = ref true in
   let no_tab_selected () =
     Manip.removeChildren El.content ;
@@ -686,13 +680,13 @@ let () =
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
       (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-      (match token, get_opt config##.enableExercises with
-       | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
-       | _ -> []) @
+        (if get_opt config##.enableExercises then
+           ["exercises", ([%i"Exercises"], exercises_tab token)]
+        else []) @
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
-       then [ "playground", ([%i"Playground"], playground_tab) ] else []) @
+       then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
            [ "teacher", ([%i"Teach"], teacher_tab t) ]
@@ -810,7 +804,7 @@ let () =
          Lwt.return_unit)
   in
   List.iter (fun (text, icon, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~icon text f)
+      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
     [
       [%i"Show token"], "token", (fun () ->
           show_token_dialog (get_stored_token ());
@@ -861,7 +855,10 @@ let () =
       xset El.content (fun s -> s##.style##.left := Js.string "");
       Manip.SetCss.display El.show_panel "none";
       true);
-  init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
+  Server_caller.request (Learnocaml_api.Version ()) >>=
+    (function
+     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
+     | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
     let (_, select) = List.assoc activity tabs in

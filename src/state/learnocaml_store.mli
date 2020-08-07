@@ -83,6 +83,7 @@ module Exercise: sig
 
   module Index: sig
     include module type of struct include Exercise.Index end
+    val get_from_index: t -> t Lwt.t
     val get: unit -> t Lwt.t
     val reload: unit -> unit Lwt.t
   end

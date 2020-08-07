@@ -1317,7 +1317,7 @@ let rec teacher_tab token _select _params () =
     ]
   in
   let fetch_exercises =
-    retrieve (Learnocaml_api.Exercise_index token)
+    retrieve (Learnocaml_api.Exercise_index (Some token))
     >|= fun (index, _) ->
     exercises_index := index
   in

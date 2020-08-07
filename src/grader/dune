@@ -142,7 +142,8 @@
             ocplib-ocamlres
             ezjsonm
             lwt_utils
-            learnocaml_report)
+            learnocaml_report
+            learnocaml_data)
  (modules Grading_cli Grader_cli)
 )
 

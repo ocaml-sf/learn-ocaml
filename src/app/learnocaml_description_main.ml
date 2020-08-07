@@ -30,7 +30,7 @@ let () =
      try begin
          let token = Learnocaml_data.Token.parse (arg "token") in
          let exercise_fetch =
-           retrieve (Learnocaml_api.Exercise (token, id))
+           retrieve (Learnocaml_api.Exercise (Some token, id))
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
@@ -47,7 +47,7 @@ let () =
              d##write (Js.string (exercise_text ex_meta exo));
              d##close) ;
          (* display meta *)
-         display_meta token ex_meta id
+         display_meta (Some token) ex_meta id
        end
      with Not_found ->
        Lwt.return @@

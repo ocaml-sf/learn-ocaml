@@ -10,6 +10,7 @@ open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
@@ -172,7 +173,7 @@ let show_loading ?(id = "ocp-loading-layer") contents f =
     Manip.(removeClass elt "loaded") ;
     Manip.(addClass elt "loading") ;
     let chamo_src =
-      "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
+      api_server ^ "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
     Manip.replaceChildren elt
       H.[
         div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -287,7 +288,7 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     H.(button [
-        img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         txt " " ;
         span ~a:[ a_class [ "label" ] ] [ txt lbl ]
       ]) in
@@ -386,7 +387,7 @@ let extract_text_from_rich_text text =
 let set_state_from_save_file ?token save =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
-  match token with None -> () | Some t -> store sync_token t;
+  (match token with None -> () | Some t -> store sync_token t);
   store nickname save.nickname;
   store all_exercise_states
     (SMap.merge (fun _ ans edi ->
@@ -455,6 +456,24 @@ let rec sync_save token save_file =
 let sync token = sync_save token (get_state_as_save_file ())
 
 let sync_exercise token ?answer ?editor id =
+  let handle_serverless () =
+    (* save the text at least locally (but not the report & grade, that could
+       be misleading) *)
+    let txt = match editor, answer with
+      | Some t, _ -> Some t
+      | _, Some a -> Some a.Answer.solution
+      | _ -> None
+    in
+    match txt with
+    | Some txt ->
+       let key = Learnocaml_local_storage.exercise_state id in
+       let a0 = Learnocaml_local_storage.retrieve key in
+       Learnocaml_local_storage.store key
+         {a0 with Answer.
+          solution = txt;
+          mtime = gettimeofday () }
+    | None -> ()
+  in
   let nickname = Learnocaml_local_storage.(retrieve nickname) in
   let toplevel_history =
     SMap.find_opt id Learnocaml_local_storage.(retrieve all_toplevel_histories)
@@ -471,26 +490,15 @@ let sync_exercise token ?answer ?editor id =
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = opt_to_map toplevel_history;
   } in
-  Lwt.catch (fun () -> sync_save token save_file)
-    (fun e ->
-       (* save the text at least locally (but not the report & grade, that could
-          be misleading) *)
-       let txt = match editor, answer with
-         | Some t, _ -> Some t
-         | _, Some a -> Some a.Answer.solution
-         | _ -> None
-       in
-       (match txt with
-        | Some txt ->
-            let key = Learnocaml_local_storage.exercise_state id in
-            let a0 = Learnocaml_local_storage.retrieve key in
-            Learnocaml_local_storage.store key
-              {a0 with Answer.
-                    solution = txt;
-                    mtime = gettimeofday () }
-        | None -> ());
-       raise e)
-
+  match token with
+  | Some token ->
+     Lwt.catch (fun () -> sync_save token save_file)
+       (fun e ->
+         handle_serverless ();
+         raise e)
+  | None -> set_state_from_save_file save_file;
+            handle_serverless ();
+            Lwt.return save_file
 
 let string_of_seconds seconds =
   let days = seconds / 24 / 60 / 60 in
@@ -531,13 +539,13 @@ let stars_div stars =
     let num = 5 * int_of_float (stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-    let src = Format.asprintf "/icons/stars_%02d.svg" num in
+    let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
     H.img ~alt ~src ()
   ]
 
 let exercise_text ex_meta exo =
   let mathjax_url =
-    "/js/mathjax/MathJax.js?delayStartupUntil=configured"
+    api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
   in
   let mathjax_config =
     "MathJax.Hub.Config({\n\
@@ -572,7 +580,7 @@ let exercise_text ex_meta exo =
      <html><head>\
      <title>%s - exercise text</title>\
      <meta charset='UTF-8'>\
-     <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
+     <link rel='stylesheet' href='%s/css/learnocaml_standalone_description.css'>\
      <script type='text/x-mathjax-config'>%s</script>
             <script type='text/javascript' src='%s'></script>\
      </head>\
@@ -582,6 +590,7 @@ let exercise_text ex_meta exo =
      <script type='text/javascript'>MathJax.Hub.Configured()</script>\
      </html>"
     ex_meta.Exercise.Meta.title
+    api_server
     mathjax_config
     mathjax_url
     descr
@@ -970,23 +979,26 @@ let setup_prelude_pane ace prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
-
-let get_token () =
-  try
-    Learnocaml_local_storage.(retrieve sync_token) |>
-      Lwt.return
-  with Not_found ->
-    retrieve (Learnocaml_api.Nonce ())
-    >>= fun nonce ->
-    ask_string ~title:"Secret"
-      [H.txt [%i"Enter the secret"]]
-    >>= fun secret ->
-    retrieve
-      (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
-    >|= fun token ->
-    Learnocaml_local_storage.(store sync_token) token;
-    token
-
+    
+let get_token ?(has_server = true) () =
+  if not has_server then
+    Lwt.return None
+  else
+    try
+      Some Learnocaml_local_storage.(retrieve sync_token) |>
+        Lwt.return
+    with Not_found ->
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
+      ask_string ~title:"Secret"
+        [H.txt [%i"Enter the secret"]]
+      >>= fun secret ->
+      retrieve
+        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
+      >|= fun token ->
+      Learnocaml_local_storage.(store sync_token) token;
+      Some token
+      
 module Display_exercise =
   functor (
     Q: sig
@@ -1014,7 +1026,7 @@ module Display_exercise =
         let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
         let num = max (min num 40) 0 in
         let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-        let src = Format.asprintf "/icons/stars_%02d.svg" num in
+        let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
         img ~alt ~src ()
       in
       div ~a:[ a_class [ "stars" ] ] [
@@ -1062,7 +1074,7 @@ module Display_exercise =
 
     let get_skill_index token =
       let index = lazy (
-                      retrieve (Learnocaml_api.Exercise_index token)
+                      retrieve (Learnocaml_api.Exercise_index (Some token))
     >|= fun (index, _) ->
                       Exercise.Index.fold_exercises (fun (req, focus) id meta ->
                           let add sk id map =
