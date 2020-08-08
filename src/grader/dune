@@ -218,34 +218,12 @@
  (preprocess (pps ppx_jane))
 )
 
-(executable
- (name raml_worker)
- (modes byte)
- (flags :standard -warn-error -9-27)
- (libraries toploop_jsoo
-            grading
-	resource_analysis
-            ocplib-json-typed.browser
-            ocplib_i18n
-            js_of_ocaml
-            js_of_ocaml-ppx
-           js_of_ocaml.ppx
-            jsutils
-            learnocaml_report
-   )
- (modules Raml_worker)
-(preprocess (pps js_of_ocaml.ppx))
- (js_of_ocaml (flags :standard --toplevel --nocmis
-                     +cstruct/cstruct.js +dynlink.js +toplevel.js ))
-)
-
-
 
 
 (install
  (package learn-ocaml)
  (section share)
- (files (raml_worker.bc.js as www/js/raml_worker.js))
+ (files (raml_worker.js as www/js/raml_worker.js))
 )
 
 

@@ -12,6 +12,11 @@ open Grader_jsoo_messages
 open Lwt.Infix
 
 
+let report_of_string s = try 
+				let json = Ezjsonm.value_from_string s in 
+				Some (Json_encoding.destruct Learnocaml_report.enc json)
+			with 
+			| _ -> None
 
 
 let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) = 
@@ -24,7 +29,7 @@ let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) =
 		begin
 			let str = Js.to_string ev##.data in
 			let raml_report : Learnocaml_report.t = 
-					match Resource_analysis.report_of_string str with
+					match report_of_string str with
 					| Some report -> report 
 					| None -> [Message ([Text ("A resource bound could not be derived")],Informative)] in 
 			let _ = worker##terminate in 
@@ -59,9 +64,11 @@ let get_grade
   Lwt.return @@
   fun solution ->
     let req = { exercise ; solution } in
-    let combined_result = (raml_analysis_thread solution exercise) >>= (fun raml_report ->
-			t >>= (fun (report,stdout,stderr,outcomes) -> 
-			Lwt.return (raml_report @ report,stdout,stderr,outcomes))) in  
+
+	let combined_result = (raml_analysis_thread solution exercise) >>= (fun raml_report ->
+				t >>= (fun (report,stdout,stderr,outcomes) -> 
+				Lwt.return (raml_report @ report,stdout,stderr,outcomes))) 
+        in  
 
  
     let json = Json_repr_browser.Json_encoding.construct to_worker_enc req in
