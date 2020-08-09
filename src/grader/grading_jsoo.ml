@@ -10,6 +10,10 @@ exception Timeout
 
 open Grader_jsoo_messages
 open Lwt.Infix
+open Js_of_ocaml
+
+
+let eval (s:string) = Js.Unsafe.js_expr s;;
 
 
 let report_of_string s = try 
@@ -17,7 +21,6 @@ let report_of_string s = try
 				Some (Json_encoding.destruct Learnocaml_report.enc json)
 			with 
 			| _ -> None
-
 
 let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) = 
 	let open Learnocaml_report in
@@ -36,8 +39,15 @@ let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) =
 			let _ = Lwt.wakeup u raml_report in 
 			Js._true 
 		end in
-	let _ = worker##.onmessage := Dom.handler onmessage in 
-	let _ = worker##(postMessage (Js.string ((Learnocaml_exercise.get_prelude exercise) ^ solution ))) in
+	let _ = worker##.onmessage := Dom.handler onmessage in
+	let url = Js.string @@	Js.to_string (eval "window.location.protocol") ^
+				"//" ^
+				Js.to_string (eval "window.location.hostname") in 
+	let student_code = Js.string ((Learnocaml_exercise.get_prelude exercise) ^ solution ) in
+	let args  = new%js Js.array_length (2) in
+	let _ = Js.array_set args 0 student_code in
+	let _ = Js.array_set args 1 url in   
+	let _ = worker##(postMessage args) in
 	t 
 
 
@@ -64,11 +74,9 @@ let get_grade
   Lwt.return @@
   fun solution ->
     let req = { exercise ; solution } in
-
-	let combined_result = (raml_analysis_thread solution exercise) >>= (fun raml_report ->
-				t >>= (fun (report,stdout,stderr,outcomes) -> 
-				Lwt.return (raml_report @ report,stdout,stderr,outcomes))) 
-        in  
+    let combined_result = (raml_analysis_thread solution exercise) >>= (fun raml_report ->
+			t >>= (fun (report,stdout,stderr,outcomes) -> 
+			Lwt.return (raml_report @ report,stdout,stderr,outcomes))) in  
 
  
     let json = Json_repr_browser.Json_encoding.construct to_worker_enc req in

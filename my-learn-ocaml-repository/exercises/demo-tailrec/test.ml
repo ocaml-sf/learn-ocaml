@@ -1,6 +1,8 @@
 open Test_lib
 open Report
 
+
+
 let sample_natural () = sample_int () + 5 (* sample_int generates -5 to 5 *)
 let sample_natural_pair () = (sample_natural (), sample_natural ())
 

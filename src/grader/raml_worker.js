@@ -2,7 +2,6 @@
 onmessage = function (e){
 	try {
 		
-		console.log("Domi1n:,end ");
 		
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
@@ -11,15 +10,14 @@ onmessage = function (e){
 		       postMessage(xhttp.responseText);
 		    }
 		};
-		xhttp.open("POST", "http://192.168.203.213:5000/", false);
+		xhttp.open("POST", e.data[1] + ":5000/", false);
 		xhttp.overrideMimeType("text/html");
 		xhttp.setRequestHeader('Content-Type', 'text/plain')
-		xhttp.send(e.data);
+		xhttp.send(e.data[0]);
 	}catch (e) {
 		postMessage('(fail')
 	}
 
-	console.log(e.data);
 
 
 }
