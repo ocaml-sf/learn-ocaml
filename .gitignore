@@ -33,3 +33,8 @@ static/dune
 
 translations/*.pot
 **/.merlin
+
+node_modules/
+*.DS_Store
+
+.env
