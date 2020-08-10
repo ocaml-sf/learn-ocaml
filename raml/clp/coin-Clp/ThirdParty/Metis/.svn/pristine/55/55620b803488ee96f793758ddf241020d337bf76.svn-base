@@ -1,0 +1,61 @@
+#!/bin/sh
+
+set -e
+
+wgetcmd=wget
+wgetcount=`which wget 2>/dev/null | wc -l`
+if test ! $wgetcount = 1; then
+  echo "Utility wget not found in your PATH."
+  if test `uname` = Darwin; then
+    wgetcmd="curl -L -O"
+    echo "Using curl instead."
+  elif test `uname` = FreeBSD; then
+    wgetcmd=fetch
+    echo "Using fetch instead."
+  else
+    exit -1
+  fi
+fi
+
+echo " "
+echo "Running script for downloading the source code for the METIS"
+echo " "
+
+rm -f metis-4.0.3.tar.gz
+
+echo "Downloading the source code from coin-or-tools.github.io..."
+if $wgetcmd http://coin-or-tools.github.io/ThirdParty-Metis/metis-4.0.3.tar.gz ;
+then
+  echo "Download finished."
+else
+  echo
+  echo "Downloading from COIN-OR failed, trying glaros.dtc.umn.edu..."
+  if $wgetcmd http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz ;
+  then
+    echo "Download finished."
+  else
+    echo "Download failed...exiting"
+  fi
+fi
+
+rm -rf metis-4.0
+
+echo "Uncompressing the tarball..."
+gunzip metis-4.0.3.tar.gz
+
+echo "Unpacking the source code..."
+tar xf metis-4.0.3.tar
+
+echo "Applying a patch..."
+patch -p0 < metis.patch
+
+echo "Renaming directory to match source code name..."
+mv metis-4.0.? metis-4.0
+
+echo "Deleting the tar file..."
+rm metis-4.0.3.tar
+
+echo " "
+echo "Done downloading the source code for METIS."
+echo " "
+

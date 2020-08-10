@@ -1,0 +1,11 @@
+lib: [
+  "_build/install/default/lib/learn-ocaml-client/META" {"META"}
+  "_build/install/default/lib/learn-ocaml-client/opam" {"opam"}
+]
+bin: [
+  "_build/install/default/bin/learn-ocaml-client" {"learn-ocaml-client"}
+]
+doc: [
+  "_build/install/default/doc/learn-ocaml-client/LICENSE"
+  "_build/install/default/doc/learn-ocaml-client/README.md"
+]

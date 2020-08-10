@@ -8,7 +8,7 @@ services:
       # args:
       #   - TZ=${TZ}
     env_file:
-      - .env
+      - .env.example
     # links:
     #   - db
     #   - solr
@@ -39,6 +39,13 @@ services:
     volumes:
       - ./node:/node/app
       - /node/app/node_modules
+
+  raml:
+    build: 
+      context: raml/
+      dockerfile: Dockerfile
+    ports: 
+      - 5000:5000
 
 
 volumes:

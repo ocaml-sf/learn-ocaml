@@ -1,0 +1,4 @@
+# Customize these two to your needs
+LIBDIRS=$(HOME)/Library/Bin/coin-Clp/lib
+INCDIRS=$(HOME)/Library/Bin/coin-Clp/include
+

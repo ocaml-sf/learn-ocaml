@@ -1,0 +1,60 @@
+#!/bin/sh
+
+set -e
+
+# Script to compile the Ampl Solver Library using cl/link. Why this approach?
+# Well, we don't want to get into the business of creating (and maintaining)
+# the full set of autotools source files for the ASL. This approach tries to
+# leverage makefile.vc, which comes with ASL.
+
+# To support VPATH builds, the strategy is to copy the sources to the build
+# directory, build, and then erase the sources when we're done. Start by
+# copying the sources.
+
+# set -x
+mkinstalldirs="@install_sh@ -d"
+abs_source_dir=@abs_source_dir@
+compdir=compdir
+
+rm -rf $compdir
+$mkinstalldirs $compdir
+files=`cd $abs_source_dir/solvers; ls *.[chs] *.[ch]0 *.hd arith.* makefile* *.bat amplsolv.lbc`
+cd $compdir
+for file in $files
+do
+  cp $abs_source_dir/solvers/$file $file;\
+done
+
+# Acquire the cl version and create details.c
+# (This is not doing to right thing if we are using the Microsoft compiler)
+
+clver=`cl 2>&1 | egrep '^Microsoft' | sed -e 's/.*Version \(.*\)/\1/'`
+clver="Microsoft cl $clver"
+
+sed -e "s/System_details/$clver/" details.c0 > details.c
+
+# Adjust solvers/makefile.vc for the situation at hand. When building with cl
+# under cygwin, we can't execute comptry.bat. The sole purpose of comptry.bat
+# is to retry the compile with -DNO_LONG_LONG in an environment where long long
+# does not exist. Since we've already tested for long long in configure and set
+# ASLMAKEFLAGS accordingly, we can discard comptry.bat without worry.
+
+sed -e 's/comptry\.bat \$(CC)/$(CC)/' makefile.vc > makefile.coin
+
+# Do the build. CFLAGS specified on the command line (as a result of autoconf
+# replacing ASLMAKEFLAGS) will override the specs in makefile.vc, ensuring that
+# ASL is built with the same compiler flags as other code. Makefile.vc also
+# forces CC=cl, but since Coin only uses makefile.vc for the cl compiler,
+# there's no need to override it here.
+
+# It turns out that Gnu make always sets MAKEFLAGS to --unix, and nmake tries
+# to process this, resulting in error U1065. Clear MAKEFLAGS to fix the
+# problem.
+
+libampl=@AMPLSOLVER_A@
+MAKEFLAGS=
+nmake -f makefile.coin @ASLMAKEFLAGS@ CC="@CC@"
+mv amplsolv.lib ../$libampl
+mv stdio1.h arith.h funcadd0.obj ..
+cd ..
+rm -rf $compdir

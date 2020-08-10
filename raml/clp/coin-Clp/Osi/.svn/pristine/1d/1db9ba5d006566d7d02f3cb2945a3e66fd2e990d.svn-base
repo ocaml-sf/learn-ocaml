@@ -1,0 +1,10 @@
+prefix=@prefix@
+libdir=@ABSBUILDDIR@/src/OsiXpr
+
+Name: OsiXpress
+Description: COIN-OR Open Solver Interface for Xpress
+URL: https://projects.coin-or.org/Osi
+Version: @PACKAGE_VERSION@
+Libs: ${libdir}/libOsiXpr.la @XPRLIB@
+Cflags: -I@abs_source_dir@/src/OsiXpr -I@XPRINCDIR@
+Requires: osi

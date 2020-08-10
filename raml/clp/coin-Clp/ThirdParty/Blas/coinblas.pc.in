@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+
+Name: Blas
+Description: Basic linear algebra package
+URL: https://projects.coin-or.org/BuildTools
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lcoinblas @BLAS_PCLIBS@
+Cflags:

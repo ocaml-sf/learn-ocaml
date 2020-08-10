@@ -6,8 +6,8 @@
  (wrapped false)
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
- (preprocess (pps ppx_jane ppx_ocplib_i18n ))
- (libraries ocplib-json-typed ocplib_i18n core_kernel)
+ (preprocess (pps ppx_ocplib_i18n ))
+ (libraries ocplib-json-typed ocplib_i18n)
 )
 
 
@@ -176,7 +176,6 @@
             js_of_ocaml-lwt
             js_of_ocaml-ppx
             ezjsonm
-		resource_analysis
             ocplib-json-typed.browser
             learnocaml_repository
             learnocaml_report
@@ -207,18 +206,6 @@
  (js_of_ocaml (flags :standard --toplevel --nocmis
                      +cstruct/cstruct.js +dynlink.js +toplevel.js))
 )
-
-(library
- (name resource_analysis)
- (wrapped false)
- (modes byte)
- (libraries core_kernel
-            learnocaml_report)
- (modules Resource_analysis)
- (preprocess (pps ppx_jane))
-)
-
-
 
 (install
  (package learn-ocaml)

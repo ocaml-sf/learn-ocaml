@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# Copyright (C) 2007  International Business Machines.
+# All Rights Reserved.
+# This file is distributed under the Eclipse Public License.
+# It is part of the BuildTools project in COIN-OR (www.coin-or.org)
+#
+## $Id: compile_f2c 1950 2010-12-22 15:31:49Z andreasw $
+#
+# Author: Andreas Waechter     IBM      2007-06-09
+
+
+########################################################################
+# Replace the following to the location of your vcf2c.lib library
+# Note that there must be no space before and after "="
+
+f2clibdir=/usr/local/lib/libf2c
+
+#You should not have to change anything below this line
+########################################################################
+
+#Find out what the 
+if test `which cygpath | wc -l` -eq 0; then
+  CYGPATH_W=echo
+else
+  CYGPATH_W='cygpath -w'
+fi
+
+if test "$F2C_CC" = ""; then
+  F2C_CC=cl
+fi
+
+f2clib=`$CYGPATH_W $f2clibdir/vcf2c.lib`
+mainobj=`$CYGPATH_W $f2clibdir/main.obj`
+
+# Get rid of the \
+f2clib=`echo $f2clib | sed -e s'!\\\\!/!g'`
+mainobj=`echo $mainobj | sed -e s'!\\\\!/!g'`
+
+
+if test "$#" -eq 1 && test "$1" = "-FLIBS"; then
+  echo $f2clibdir/vcf2c.lib
+  exit 0
+fi
+
+cincs="-I`$CYGPATH_W $f2clibdir`"
+
+options=
+makedll=
+linkflags=
+incs=
+fsrc=
+objs=
+outfile=
+while test "$#" -gt 0
+do
+  arg="$1"
+  shift
+  if test "$outfile" = next; then
+    outfile="$arg"
+  else
+
+    case "$arg" in
+      -I*)
+        incs="$incs $arg"
+        ;;
+      -o)
+        if test "$outfile" != ""; then
+          echo "There are more than two -o options"
+          exit 1
+        fi 
+        outfile=next
+        ;;
+      -c)
+        options="$options $arg"
+        f2clib=
+        mainobj=
+        ;;
+      -shared)
+        makedll=yes
+        linkflags="$linkflags -dll"
+        ;;
+      -def:*)
+        linkflags="$linkflags $arg"
+        ;;
+      -*)
+        options="$options $arg"
+        ;;
+      *.[fF])
+        fsrc="$fsrc $arg"
+        ;;
+      *)
+        objs="$objs $arg"
+        ;;
+    esac
+  fi
+done
+
+if test "$fsrc" = "" && test "$objs" = "" ; then
+  echo "No source or object files given"
+  exit 1
+fi
+
+csrc=
+if test "$fsrc" != ""; then
+  for f in $fsrc; do
+    cf=`echo $f | sed -e 's|.[fF]$|.c|' -e 's|.*/||'`
+    csrc="$csrc $cf"
+  done
+
+  echo f2c $incs $fsrc
+  f2c $incs $fsrc
+  f2c_status=$?
+  if test $f2c_status != 0; then
+    rm -f $csrc
+    exit $f2c_status
+  fi
+fi
+
+
+if test "$outfile"; then
+  cout="-o `$CYGPATH_W $outfile`"
+fi
+
+if test x$makedll = xyes; then
+  echo $F2C_CC $options $cincs $csrc $objs $cout $f2clib -link $linkflags
+
+  $F2C_CC $options $cincs $csrc $objs $cout $f2clib -link $linkflags
+else
+  echo $F2C_CC $options $cincs $csrc $objs $cout $mainobj $f2clib
+
+  $F2C_CC $options $cincs $csrc $objs $cout $mainobj $f2clib
+fi
+cl_status=$?
+
+rm -f $csrc
+
+exit $cl_status

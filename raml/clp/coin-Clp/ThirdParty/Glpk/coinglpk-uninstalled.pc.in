@@ -1,0 +1,9 @@
+prefix=@prefix@
+libdir=@ABSBUILDDIR@
+
+Name: Glpk
+Description: Gnu Linear Programming Kit
+URL: https://projects.coin-or.org/BuildTools
+Version: @PACKAGE_VERSION@
+Libs: ${libdir}/libcoinglpk.la @GLPK_PCLIBS@
+Cflags: -I@ABSBUILDDIR@ -I@abs_source_dir@/glpk/src -I@abs_source_dir@/glpk/src/amd

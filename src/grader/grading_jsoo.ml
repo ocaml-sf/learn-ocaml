@@ -17,7 +17,7 @@ let eval (s:string) = Js.Unsafe.js_expr s;;
 
 
 let report_of_string s = try 
-				let json = Ezjsonm.value_from_string s in 
+				let json =  Ezjsonm.unwrap @@ Ezjsonm.from_string s in 
 				Some (Json_encoding.destruct Learnocaml_report.enc json)
 			with 
 			| _ -> None

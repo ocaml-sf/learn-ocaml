@@ -1,0 +1,187 @@
+#!/bin/sh
+
+# Copyright (C) 2007 International Business Machines and
+# Copyright (c) 2009 Lehigh University
+# All Rights Reserved.
+# This file is distributed under the Eclipse Public License.
+# It is part of the BuildTools project in COIN-OR (www.coin-or.org)
+#
+# $Id$
+#
+
+# Adapted from prepare_new_release by Ted Ralphs, Lehigh Univ., 2009-07-07
+# Modified:     Lou Hafer    SFU    2010-06-02
+
+#set -x -v
+set -e
+
+# Know thy self. If there are no '/' chars in the command name, we're running
+# in the currrent directory. Otherwise, strip the command name, leaving the
+# prefix.  Coin-functions is expected to live in the same directory.
+
+if expr "$0" : '.*/.*' >/dev/null 2>&1 ; then
+  cmdDir=`echo $0 | sed -e 's,\(.*\)/[^/]*,\1,'`
+else
+  cmdDir='.'
+fi
+if test -r $cmdDir/coin-functions ; then
+  . $cmdDir/coin-functions
+else
+  echo "Cannot find utility functions file coin-functions; exiting."
+fi
+
+
+printHelp=0
+exitValue=0
+depFile=
+
+# stableExternals specifies externals which we do not want to convert to
+# releases, for whatever reason.
+
+stableExternals=
+
+if test "$#" -eq 0; then
+  printHelp=1
+else
+
+# Process the parameters. A parameter without an opening `-' is assumed to be
+# the dependency file.
+
+  while test $# -gt 0 && test $exitValue = 0 && test $printHelp = 0 ; do
+    case "$1" in
+      -h* | --h*) printHelp=1 ;;
+      -s* | --s*)
+	   if expr "$1" : '.*-s.*=.*' 2>&1 >/dev/null ; then
+	     stableExternals=`echo $1 | sed -n -e 's/[^=]*=\(.*\)/\1/p'`
+	   else
+	     shift
+	     stableExternals=$1
+	   fi
+	   ;;
+       -*) echo "$0: unrecognised command line switch '"$1"'."
+	   printHelp=1
+	   exitValue=1
+	   ;;
+	*) depFile=$1
+	   ;;
+    esac
+    shift
+  done
+fi
+
+# Find the most recent release for each stable external. Allow for the
+# possibility that a stable branch has no associated release, or that the
+# user has asked to keep the stable external.
+
+if test $printHelp = 0 && test $exitValue = 0; then
+  if test -r $depFile; then
+
+    rm -f Externals.releases
+
+    echo ''
+    echo '===> Converting stable externals to releases ...'
+    echo ''
+
+    ext_name=
+    ext_url=
+    for i in `cat $depFile`; do
+      if test "$ext_name" = ""; then
+        ext_name="$i"
+      else
+        ext_url=$i
+        if expr "$ext_name" : '#.*' >/dev/null 2>&1 ; then
+          echo "Skipping $ext_name."
+          ext_name=
+          continue
+        fi                                    
+	if expr "$stableExternals" : '.*'"$ext_name"'.*' 2>&1 >/dev/null ; then
+	  echo "    $ext_name $ext_url unchanged"
+	else
+	  extType=`extractTypeFromURL $ext_url`
+	  if test "$extType" = invalid ; then
+	    echo ''
+	    echo "The external URL $ext_url appears to be invalid. Exiting."
+	    echo ''
+	    exit 3
+	  fi
+
+	  if test "$extType" = stable ; then
+	    ext_majVer=`extractMajorFromURL $ext_url`
+	    ext_minVer=`extractMinorFromURL $ext_url`
+	    ext_rel_url=`bestRelease $ext_url $ext_majVer $ext_minVer`
+	    if test -z "$ext_rel_url" ; then
+	      echo "There is no release for $ext_url"
+	      echo "Keeping $ext_url"
+	    else
+	      # Normal (not BuildTools/ThirdParty/Data) need a directory name,
+	      # and it may differ from the project name. Carefully preserve it.
+	      # ThirdParty URLs include BuildTools ; both named for emphasis
+	      case $ext_rel_url in
+		*/BuildTools/* | */ThirdParty/* | */Data/* ) ;;
+		*) ext_tail=`extractTailFromExt $ext_url`
+		   ext_rel_url=${ext_rel_url}${ext_tail}
+		   ;;
+	      esac
+	      echo "Replacing $ext_url with $ext_rel_url"
+	      ext_url=$ext_rel_url
+	    fi
+	  else
+	    echo "Keeping $ext_url"
+	  fi
+	fi
+
+        echo "$ext_name  $ext_url" >>Externals.releases
+        ext_name=
+      fi
+    done
+
+    echo ''
+    echo '===> Updating svn:externals property...'
+    echo ''
+
+    svn propset svn:externals -F Externals.releases .
+    svn propget svn:externals .
+    
+    rm Externals.releases
+
+  else # if test -r depFile
+    echo ""
+    echo "Dependency file does not exist or is unspecified..."
+    echo ""
+    printHelp=1
+    exitvalue=2
+  fi
+fi
+
+if test $printHelp = 1 ; then
+  cat <<EOF
+Usage: set_externals <Dependency File> 
+
+Options:
+  -s <projectlist>      Suppress conversion from stable to release for the
+			listed externals (comma-separated list of project
+			names, e.g., -s Osi,Cbc).
+
+This script takes as input a dependency file containing a list of stable
+versions of COIN projects on separate lines in the form
+
+ <name> <URL of stable version>
+
+Recommended practice is to keep the set of stable externals in a file
+called "Dependencies" in the project's root directory. A temporary file
+called "Externals.releases" in the same form, but with the URL of each
+stable version replaced by the URL of the latest associated release is
+produced. From this file, the script will set the svn:externals variable. It
+does not do an update or commit the change. After the script runs, do an
+update and test build, then commit the change if you are happy.
+
+EOF
+else
+cat <<EOF 
+Externals set successfully. Please verify that the change is OK and then 
+commit to make the change permanent.
+EOF
+
+fi
+
+exit $exitValue

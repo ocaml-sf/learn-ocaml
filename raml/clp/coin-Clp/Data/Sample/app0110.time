@@ -1,0 +1,6 @@
+TIME          APP                                                               
+PERIODS       LP                                                                
+    X00101    K01                      ROOT                                     
+    I00102    D00102                   STAGE-2                                  
+    I00103    D00103                   STAGE-3                                  
+ENDATA                                                                          
