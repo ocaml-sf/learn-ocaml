@@ -243,7 +243,7 @@ let gen_func_learnocaml_report ?(simple_name=false) ?(indent="")=
 		let lines s= String.split_on_chars ~on:['\n'] s in
 
 
-		let buf = Buffer.create 10000 in
+		let buf = Buffer.create 20000 in
 		let f = Format.formatter_of_buffer buf in
 		let string_of_buf () = 
 					let s = Buffer.contents buf in
@@ -286,10 +286,7 @@ let gen_func_learnocaml_report ?(simple_name=false) ?(indent="")=
 
 	  in
 				let desc = if List.length descs > 0 then
-							let title_where = string_of_buf (fprintf f "\n %swhere" indent) in
-							let desc = string_of_buf (Pprint.fprint_pol_desc f descs) in
-							let _ = fprintf f "\n" in 
-							[Text title_where] @ (weave Break (List.map (lines desc) (fun x -> Text x)))
+							[Break;Text "where";Break] @ (weave Break (List.map (descs) (fun x -> Text x)))
 						      else
 							[]
 				in
@@ -383,6 +380,7 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
 		let form = Format.formatter_of_buffer buf in
                 printf "\n%!";
                 let _ = Pprint.print_anno_funtype ~output:(form) ~indent:("  ") (f_name, atarg, atres) in
+		let _ = Pprint.print_anno_funtype ~indent:("  ") (f_name, atarg, atres) in
 		let report_A : Learnocaml_report.t = gen_func_learnocaml_report ~indent:("  ") (f_name, atarg, atres) in
                 let constr = Clp.get_num_constraints () in
                 let time = sys_time () -. start_time in
@@ -885,7 +883,7 @@ let main argv =
 	
 
                 ignore @@ Lwt_main.run @@ server 
-			(fun s -> let _ = log s in 
+			(fun s -> 
 				 try 
 					let report :Learnocaml_report.t = (analyze_code s) in
 					let json: Json_repr.ezjsonm = (Json_encoding.construct enc report) in 
