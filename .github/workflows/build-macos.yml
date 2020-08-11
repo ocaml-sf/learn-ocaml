@@ -1,0 +1,20 @@
+name: macOS
+
+on:
+  push:
+    branches:
+      # TODO: Update
+      - staging
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: Build learn-ocaml on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Build learn-ocaml
+        run: 'sh .ci-macosx.sh'
