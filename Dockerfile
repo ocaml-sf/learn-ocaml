@@ -24,6 +24,7 @@ COPY dune dune
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
+RUN cat /proc/cpuinfo /proc/meminfo
 RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
