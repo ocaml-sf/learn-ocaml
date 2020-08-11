@@ -11,11 +11,15 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Get tag name
+        run: tag="${{ github.ref }}"; echo "::set-output name=tag::${tag#refs/tags/}"
+        id: tag
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
           always_pull: true
           add_git_labels: true
+          labels: "org.opencontainers.image.version=${{ steps.tag.outputs.tag }}"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           # TODO: Update
@@ -28,11 +32,15 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Get tag name
+        run: tag="${{ github.ref }}"; echo "::set-output name=tag::${tag#refs/tags/}"
+        id: tag
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
           always_pull: true
           add_git_labels: true
+          labels: "org.opencontainers.image.version=${{ steps.tag.outputs.tag }}"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           # TODO: Update

@@ -17,6 +17,8 @@ jobs:
         with:
           always_pull: true
           add_git_labels: true
+          # TODO: Update
+          labels: "org.opencontainers.image.version=staging"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           # TODO: Update
@@ -34,6 +36,8 @@ jobs:
         with:
           always_pull: true
           add_git_labels: true
+          # TODO: Update
+          labels: "org.opencontainers.image.version=staging"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           # TODO: Update
