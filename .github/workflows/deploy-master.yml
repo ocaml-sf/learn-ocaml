@@ -1,0 +1,43 @@
+# Note: you may want to update this file and deploy-tags.yml at once
+name: Publish dev (Docker image of master)
+on:
+  push:
+    branches:
+      # TODO: Update
+      - staging
+jobs:
+  push_server:
+    name: Push learn-ocaml image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v1
+        with:
+          always_pull: true
+          add_git_labels: true
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          # TODO: Update
+          repository: pfitaxel/learn-ocaml
+          # TODO: Update
+          tags: staging
+  push_client:
+    name: Push learn-ocaml-client image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v1
+        with:
+          always_pull: true
+          add_git_labels: true
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          # TODO: Update
+          repository: pfitaxel/learn-ocaml-client
+          target: client
+          # TODO: Update
+          tags: staging
