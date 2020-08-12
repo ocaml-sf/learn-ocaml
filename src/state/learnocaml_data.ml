@@ -1370,4 +1370,32 @@ type exercise =
          (J.req "exercise" exercise_encoding)
          (J.req "metadata" Exercise.Meta.enc))
 
+  type editor_template =
+    { name : string;
+      template : string}
+
+  let editor_template_enc =
+    J.conv
+      (fun {name; template } ->
+        (name, template))
+      (fun (name, template) ->
+        {name; template})
+      (J.obj2
+         (J.req "name" J.string)
+         (J.req "template" J.string))
+        
+
+  module IMap = struct
+
+    include Map.Make(struct type t = int let compare (x:t) y = compare x y end)
+
+    (** Useful for serialization *)
+    let string_of_int_map iv =
+      
+      fold (fun i v sv -> SMap.add (string_of_int i) v sv) iv SMap.empty
+      
+    let int_of_string_map iv =
+      SMap.fold (fun s v iv -> add (int_of_string s) v iv) iv empty
+  end
+              
 end

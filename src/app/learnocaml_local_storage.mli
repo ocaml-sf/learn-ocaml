@@ -50,3 +50,4 @@ val nickname : string storage_key
 
 val editor_index : Editor.editor_state SMap.t storage_key
   
+val editor_templates : Editor.editor_template list storage_key

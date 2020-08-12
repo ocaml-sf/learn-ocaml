@@ -111,13 +111,13 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
         Manip.(appendChild Elt.body) div;
         div in
   Manip.replaceChildren div [
-    H.div [
-      H.h3 [ H.pcdata title ];
-      H.div message;
-      H.div ~a:[ H.a_class ["buttons"] ] buttons;
+      H.div [
+          H.h3 [ H.pcdata title ];
+          H.div message;
+          H.div ~a:[ H.a_class ["buttons"] ] buttons;
+        ]
     ]
-  ]
-
+  
 let lwt_alert ~title ~buttons message =
   let waiter, wakener = Lwt.task () in
   let buttons =

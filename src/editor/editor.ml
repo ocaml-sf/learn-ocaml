@@ -18,9 +18,10 @@ open Js_of_ocaml
 open Editor_lib
 open Dom_html
 open Test_spec
-
+open Editor_components
 module H = Tyxml_js.Html
 
+                           
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -85,7 +86,8 @@ let onchange ace_list =
       (fun _ -> activate_before_unload ();) in
   List.iter (fun ace -> add_change_listener ace) ace_list 
 
-          
+let recovering_callback = ref (fun () -> ()) 
+  
 let () =
   run_async_with_log @@ fun () ->
                (*set_string_translations ();*)
@@ -330,10 +332,108 @@ let () =
             end
           else (select_tab "toplevel" ; Lwt.return ())
   end;
+  
+  (* templates *)
+  let default_templates =
+    Templates.init();
+    Templates.give_first_templates () 
+    |> List.map (Templates.template_to_a_elt ace_t)
+  in
 
+  let config_editor_div  = H.(div ~a: [ a_class ["config-editor"]] []) in
+                         
+  
+  let config_editor_ace = config_editor_div
+                        |> Tyxml_js.To_dom.of_div
+                        |> Ace.create_editor
+  in
+  Ace.set_font_size config_editor_ace 18;
+  Ace.set_mode config_editor_ace "ace/mode/ocaml";
+  
+  let configuration =
+    let save () =
+      run_async_with_log @@
+        fun () ->
+        Ace.get_contents config_editor_ace
+        |> Templates.from_string
+        |> Templates.save
+        |> !recovering_callback
+        |> Lwt.return
+    in
+    H.(a ~a: [ a_onclick (fun _ ->
+                   let div = 
+                     ace_editor_container
+                       ~box_title: "Template Configuration"
+                       ~box_header:  "The three first templates will be visible in the menu"
+                       ~size: ("90%","80%")
+                       ~save
+                       ~editor: config_editor_div
+                   in
+                   Manip.appendToBody div;
+                   Templates.give_templates ()
+                   |> Templates.to_string
+                   |> Ace.set_contents config_editor_ace;
+                   true )]
+         [pcdata "Configuration"])
+  in
+
+  let all_templates =
+    H.(a ~a:[a_class [ "editor-template"];
+             a_onclick (fun _ ->
+                 let content =
+                   Templates.give_templates ()
+                   |> List.map (Templates.template_to_a_elt ace_t)
+                 in
+                  
+                 let input_elt =
+                   (H.input ())
+                 in
+
+                                               
+                 let div =
+                   all_templates_container
+                     ~box_title: "All templates"
+                     ~size: ("90%","80%")
+                     ~elements: content
+                     ~box_header: input_elt
+                 in
+                 Manip.appendToBody div;
+                 let to_change =
+                   match Manip.by_classname "templates-to-change" with
+                   | [] -> H.div []
+                   | div :: _ -> div
+                 in
+                 Manip.Ev.oninput input_elt
+                   (fun _ -> let value = Manip.value input_elt in
+                             let content =
+                               Templates.give_templates ()
+                               |> List.filter ( fun Editor.{name; _ } ->
+                                                let reg_exp = Regexp.regexp value in
+                                                match Regexp.string_match reg_exp name 0 with
+                                                | None -> false
+                                                | Some _ -> true)
+                             |> List.map (Templates.template_to_a_elt ace_t)
+                             in
+                             Manip.removeChild Manip.Elt.body div;
+                             Manip.replaceChildren to_change content;true); 
+                                                
+                   true)]
+         [pcdata "All templates"])
+  in
+    
+  let templates =
+    dropup
+      ~icon:"sync"
+      ~theme:"light"
+      "Templates"
+      (configuration :: all_templates :: default_templates) 
+  in
+  Manip.appendChild test_toolbar templates;
+(* end templates *)
+  
   let typecheck_testml () =
     let prelprep = (Ace.get_contents ace_prel ^ "\n"
-                    ^ Ace.get_contents ace_prep ^ "\n") in
+                     ^ Ace.get_contents ace_prep ^ "\n") in
     Editor_lib.typecheck true ace_t editor_t top prelprep ~mock:true
       ~onpasterr:(fun () -> select_tab "prepare"; typecheck_prepare ())
       (Ace.get_contents ace_t) in
@@ -397,6 +497,7 @@ let () =
     let old_state = get_editor_state id in
     let new_state = {metadata=old_state.metadata;exercise} in
     update_index new_state in
+  recovering_callback:= recovering;
   begin editor_button
       ~icon: "save" [%i"Save"] @@ fun () ->
     recovering ();

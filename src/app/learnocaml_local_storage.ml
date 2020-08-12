@@ -265,3 +265,14 @@ let editor_index=
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
   
+let editor_templates =
+  let key = mangle [ "editor-templates" ] in
+  let enc = Json_encoding.list Editor.editor_template_enc in
+  let store value = store_single key enc value
+  and retrieve () =
+    try retrieve_single key enc () with Not_found -> []
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+    
+              

@@ -14,10 +14,12 @@ open Learnocaml_common
 open Learnocaml_index
 open Lwt.Infix
 open Js_utils
-open Tyxml_js.Html5
 open Dom_html
 open Editor
 open Exercise.Meta
+
+module H = Tyxml_js.Html
+ 
 (* Internationalization *)
 
 let get_editor_state id=
@@ -313,12 +315,11 @@ let exo_creator proper_id =
 (* TODO look for the record type of res to make the message more understandable *)
 let typecheck_dialog_box div_id res =
   let result,ok =
-    let open Toploop_results in
     match res with
-    | Ok _ ->  [%i"Your question does typecheck. "],true
-    | Error (err,_) ->
+    | Toploop_results.Ok _ ->  [%i"Your question does typecheck. "],true
+    | Toploop_results.Error (err,_) ->
        [%i"Your question does not typecheck. "]
-       ^ err.msg ,false in
+       ^ err.Toploop_results.msg ,false in
   if ok then
     begin
       let messages = Tyxml_js.Html5.ul [] in
@@ -464,4 +465,187 @@ module Editor_io = struct
               [| Js.Unsafe.inject file ;
                  Js.Unsafe.inject callback|]
           in Lwt.return_unit) 
+end
+
+module Templates = struct
+  
+  let give_templates () =
+    Learnocaml_local_storage.(retrieve editor_templates)
+    
+  (*gives the first 3 templates to show *)
+  let give_first_templates () =
+    let templates =
+      give_templates ()
+    in
+    match templates with
+    | [] -> []
+    | hd :: [] -> [hd] 
+    | hd :: snd :: [] -> [hd; snd]
+    | hd :: snd :: thrd :: _ -> [ hd; snd; thrd]
+
+  (* WARNING very important that |} is without indenitng and in a new line 
+     if not there will be a bug for the first edition of the templates in the editor:
+     add templates after the last template is not possible if you don't know the trick.
+     The trick is to remove the new line of the last template and then manually type return in the keyboard *)
+  let against_solution_template =
+    { name = "Against solution"; 
+      template = {|
+     let q_plus =
+       let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (* type: int-> int -> int *)  
+       test_function_against_solution ~gen:(10) prot (*10 random tests *)
+          "plus"                                (* function name = plus *)
+          [1 @:!! 4 ; 3 @:!! 3 ];;    (* compare (plus 1 4) and 
+                                         (plus 3 3) against professor\'s solution *)
+|}
+    }
+    
+  let test_suite_template =
+    { name = "Test Suite"; 
+    template = {|
+     let q_plus2 =
+       let prot = arg_ty [%ty:int] (last_ty [%ty: int] [%ty: int ]) in (*type : int -> int ->int *)
+       test_function prot
+         (lookup_student (ty_of_prot prot) "plus")  (*function name :"plus" *)
+         [5 @:!! 4  ==> 9;                         (* plus 5 4 = 9 *)
+         5 @:!! 5 ==> 10;                         
+         1 @:!! 1 ==> 2;
+         0 @:!! 0 ==> 0];;
+|}
+    }
+                          
+  let save templates =
+    Learnocaml_local_storage.(store editor_templates templates) 
+
+  (* adding default templates if empty *)
+  let init () = let templates = give_templates () in
+                if  templates = [] then                  
+                   [against_solution_template;
+                   test_suite_template]
+                  |> save
+                
+  let to_string templates =
+    let rec aux acc = function
+      | [] -> acc
+      | Editor.{name; template} :: l ->
+         let new_acc = acc ^ "#"
+                       ^ name ^ "\n" ^ template
+         in
+         aux new_acc l
+    in
+    aux "" templates
+    
+  let from_string string =
+    let extract =
+      Regexp.(split (regexp_with_flag "^#+\\s*(.*)\n" "m")) string
+    in
+
+    let rec aux acc = function
+      | name :: template :: l -> aux ({name;template}:: acc) l
+      | _ -> acc
+    in
+    match extract with
+    | [] -> []
+    |  _ ::l -> List.rev (aux [] l)
+
+  let template_to_a_elt ace_t Editor.{name; template = templ}  =
+    H.(a ~a:[ a_onclick (fun _ ->
+                  let position = Ace.get_cursor_position ace_t in
+                  Ace.insert ace_t position templ; true);
+         a_class ["editor-template"]]
+         [pcdata name])
+end
+
+module Editor_components = struct
+  let dropup ~icon ~theme name items = 
+    let dropup_content =
+      H.(div ~a:[a_class ["dropup-content"]] items)
+    in
+    let drop_button =
+      H.(button ~a:[a_class ["dropbtn"]] [ 
+             img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+             pcdata " " ;
+             span ~a:[ a_class [ "label" ] ] [ pcdata name ]
+      ])
+    in
+    Manip.Ev.onclick drop_button
+      (fun _ -> Manip.toggleClass dropup_content "show");
+    (* TODO translate it to js_of_ocaml *)
+    let _ =
+      Js.Unsafe.js_expr " //Close the dropdown menu if the user clicks outside of it\nwindow.onclick = function(event) {\n  if (!event.target.matches(\'.dropbtn\')) {\n    var dropdowns = document.getElementsByClassName(\"dropup-content\");\n    var i;\n    for (i = 0; i < dropdowns.length; i++) {\n      var openDropdown = dropdowns[i];\n      if (openDropdown.classList.contains(\'show\')) {\n        openDropdown.classList.remove(\'show\');\n      }\n    }\n  }\n} " in ();
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          H.(div ~a:[a_class ["dropup"]] [drop_button; dropup_content])
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+  let editor_overlay () =
+    H.(div ~a:[a_class ["learnocaml-dialog-overlay"; "config-editor-overlay"] ]
+         [])
+    
+
+  let editor_container ~size ~contents ~buttons ~box_title ~box_header =   
+    let container =
+      H.(div
+           [
+             h3 [pcdata box_title];
+             div [box_header];
+             contents;
+             div ~a:[a_class ["buttons"] ] buttons
+           ]
+      )
+    in
+    let (width, height) = size in  
+    Manip.SetCss.width container width;
+    Manip.SetCss.height container height;
+    container
+    
+
+  let ace_editor_container ~save ~size ~editor ~box_title ~box_header =
+    let overlay = editor_overlay () in 
+    let close_btn =
+      H.(button ~a:[ a_onclick (fun _ ->
+                         Manip.removeChild Manip.Elt.body overlay;false
+           )] [pcdata "Cancel"])
+    in
+    let save_btn  =
+      H.(button ~a:[ a_onclick (fun _ ->
+                         save();
+                         reload(); false
+           )] [pcdata "Save"])
+    in
+    let container = editor_container
+                      ~size
+                      ~contents: editor
+                      ~buttons: [close_btn;save_btn]
+                      ~box_title
+                      ~box_header: (H.pcdata box_header)
+    in
+    Manip.replaceChildren overlay [container];
+    overlay
+
+  let all_templates_container ~size ~elements ~box_title ~box_header =
+    let overlay = editor_overlay () in
+    let close () =  Manip.removeChild Manip.Elt.body overlay in
+    let ok_btn =
+      H.(button ~a:[ a_onclick (fun _ ->
+                         close ();false
+           )] [pcdata "Ok"])
+    in
+
+    List.iter
+      (fun elt ->
+        let dom_elt = Tyxml_js.To_dom.of_a elt in
+        Dom_html.addEventListener dom_elt Dom_html.Event.click
+          (Dom_html.handler ( fun _ -> close ();Js._true ))
+          Js._true
+        |> ignore) 
+      elements;
+    let contents = H.(div ~a: [a_style "overflow:auto";
+                               a_class["templates-to-change"]] elements)
+    in 
+    let container = editor_container
+                      ~size
+                      ~contents
+                      ~buttons: [ok_btn]
+                      ~box_title
+                      ~box_header
+    in
+    Manip.replaceChildren overlay [container];
+    overlay
 end

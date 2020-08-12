@@ -11,6 +11,8 @@
 
 open Learnocaml_data
 open Editor
+module H = Tyxml_js.Html
+
 val update_index : Editor.editor_state -> unit
 
 (** Getters of an editor exercise
@@ -117,4 +119,45 @@ module Editor_io : sig
   val download : Learnocaml_data.SMap.key -> unit
   val upload : unit -> unit
   val download_all : unit -> unit
+end
+
+module Templates : sig
+  val give_templates : unit -> Learnocaml_data.Editor.editor_template list
+  val give_first_templates :
+    unit -> Learnocaml_data.Editor.editor_template list
+  val against_solution_template : Learnocaml_data.Editor.editor_template
+  val test_suite_template : Learnocaml_data.Editor.editor_template
+  val save : Learnocaml_data.Editor.editor_template list -> unit
+  val init : unit -> unit
+  val to_string : Learnocaml_data.Editor.editor_template list -> string
+  val from_string : string -> Learnocaml_data.Editor.editor_template list
+  val template_to_a_elt : 'a Ace.editor -> Learnocaml_data.Editor.editor_template ->
+                          [> [> Html_types.pcdata ] Html_types.a ] H.elt
+end
+
+module Editor_components : sig
+
+  val dropup :
+    icon:string ->
+    theme:string ->
+    string H.wrap ->
+    [< Html_types.div_content_fun ] H.elt H.list_wrap ->
+    [> Html_types.div ] H.elt
+
+  val editor_overlay : unit -> [> Html_types.div ] H.elt
+
+  val ace_editor_container :
+    save:(unit -> 'a) ->
+    size:string * string ->
+    editor:[< Html_types.div_content_fun > `Div `H3 ] H.elt ->
+    box_title:string H.wrap ->
+    box_header:string H.wrap -> [> Html_types.div ] H.elt
+
+  val all_templates_container :
+    size:string * string ->
+    elements:[< `A of Html_types.flow5_without_interactive & 'a ] H.elt
+             H.list_wrap ->
+    box_title:string H.wrap ->
+    box_header:[< Html_types.div_content_fun ] H.elt ->
+    [> Html_types.div ] H.elt
 end
