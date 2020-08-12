@@ -36,6 +36,11 @@ services:
       context: node/
     ports: 
       - 8000:8000
+    environment: 
+      - 'PORT=8000'
+      - 'DB_CONN=mongodb://mongodb_container:27017/learn-ocaml-code'
+      - 'COMP_COLLECTION=compile-code'
+      - 'EVAL_COLLECTION:eval-code'
     volumes:
       - ./node:/node/app
       - /node/app/node_modules
