@@ -28,10 +28,6 @@ let limit_fun : int -> ('a -> 'b) -> ('a -> 'b option)=
 
 
 
-
-
-
-
 open Core
 
 open Format
@@ -76,25 +72,25 @@ let print_module print_types form m =
 
 
 let tcheck_prog e env =
-  printf "Typechecking expression ...\n"
-  ; Typecheck.typecheck ~linear:false e env
-  ; printf "  Typecheck successful.\n"
+  (*printf "Typechecking expression ...\n"
+  ;*) Typecheck.typecheck ~linear:false e env
+  (*; printf "  Typecheck successful.\n"*)
   ; ignore @@ Typecheck.typecheck_stack ~linear:false e env
-  ; printf "  Stack-based typecheck successful.\n@."
+  (*; printf "  Stack-based typecheck successful.\n@."*)
 
 
 let tcheck_module m env =
-  printf "Typechecking module ...\n"
-  ; let f (g,e) =
+  (*printf "Typechecking module ...\n"
+  ; *)let f (g,e) =
       Typecheck.typecheck ~linear:false e env
     in
     List.iter ~f m
-  ; printf "  Typecheck successful.\n"
-  ; let f (g,e) = 
+  ; (*printf "  Typecheck successful.\n"
+  ;*) let f (g,e) = 
       ignore @@ Typecheck.typecheck_stack ~linear:false e env
     in
     List.iter ~f m
-  ; printf "  Stack-based typecheck successful.\n@."
+  (*; printf "  Stack-based typecheck successful.\n@."*)
 
 
 let eval ?(cost_only=false) e =
@@ -277,10 +273,20 @@ let gen_func_learnocaml_report ?(simple_name=false) ?(indent="")=
  arrow_type) in 
 				let line1 = "Non-zero annotations of the argument:" in
 
-				let anno_desc : inline list = weave Break @@ List.map (lines @@ string_of_buf @@ fprintf f "%a" Pprint.fprint_type_anno atanno) (fun x -> Text ("   "^ x)) in(*
-				let line2 = string_of_buf (fprintf f "\n%sNon-zero annotations of result"
-      indent) in 
-				let bound_desc : inline list = weave Break @@ List.map (lines @@ string_of_buf @@ fprintf f "%a" Pprint.fprint_type_anno rtanno) (fun x -> Text ("   "^ x)) in *)
+				let anno_desc : inline list = weave Break @@ List.map (lines @@ string_of_buf @@ fprintf f "%a" Pprint.fprint_type_anno atanno) (fun x -> Text ("   "^ x)) in
+
+				let line2 = "Non-zero annotations of result" in 
+				let bound_desc : inline list = 
+				let s = string_of_buf @@ fprintf f "%a" Pprint.fprint_type_anno rtanno in 
+				weave Break @@ List.map (lines s) (fun x -> Text ("   "^ x)) in 
+
+				let non_zero_annot = 
+					match bound_desc with 
+					| []  -> []
+					| Text x :: _ -> [] 
+					| _ -> [separator;Break;Text line2;Break] @ bound_desc @ [Break] in 
+							
+
 				let bound_title = "Simplified bound: " in
 				let polynomial = weave Break @@ List.map (lines @@ string_of_buf (Pprint.fprint_polynomial f pol)) (fun x -> Text ("   "^ x))
 
@@ -304,9 +310,9 @@ let gen_func_learnocaml_report ?(simple_name=false) ?(indent="")=
 					;Text line1
 					; Break]
 					@ anno_desc @
-					[
-					 (*Text line2*)
-						separator 
+					 (*non_zero_annot @*)
+					
+						[separator 
 					;Break
 					 ;Text bound_title
 					; Break
@@ -332,11 +338,11 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
     let start_time = sys_time () in
     let e_normal = Shareletnormal.share_let_normal "#" e in
     let e_normal_stack = Typecheck.typecheck_stack ~linear:true e_normal env in
-    let () = printf "Analyzing function %s ...\n" f_name in
+    (*let () = printf "Analyzing function %s ...\n" f_name in*)
     let rec analyze_f deg deg_max =
       assert (deg <= deg_max);
       assert (deg >= 1);
-      printf "%i" deg;
+      ();
       let module Clp = (
         
         val (
@@ -364,7 +370,7 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
             if deg < deg_max then
               analyze_f (deg+1) deg_max
             else
-		
+		(*
               let _ = begin
                 let _ = (printf) "\n  A bound for %s could not be derived. The linear program is infeasible.\n" f_name in
                 let constr = Clp.get_num_constraints () in
@@ -372,7 +378,7 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
                 printf "\n--";
                 print_data amode_name m_name deg time constr;
                 printf "====\n\n"; "Not found";
-	        end in 
+	        end in*) 
 		[]
       | Some (atarg,atres,fun_type_list) ->
               begin
@@ -380,10 +386,10 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
 		let form = Format.formatter_of_buffer buf in
                 printf "\n%!";
                 let _ = Pprint.print_anno_funtype ~output:(form) ~indent:("  ") (f_name, atarg, atres) in
-		let _ = Pprint.print_anno_funtype ~indent:("  ") (f_name, atarg, atres) in
+		(*let _ = Pprint.print_anno_funtype ~indent:("  ") (f_name, atarg, atres) in*)
 		let report_A : Learnocaml_report.t = gen_func_learnocaml_report ~indent:("  ") (f_name, atarg, atres) in
                 let constr = Clp.get_num_constraints () in
-                let time = sys_time () -. start_time in
+                let time = sys_time () -. start_time in(*
                 let _ = printf "--" in
                 (*print_data amode_name m_name deg time constr;*)
 			let repB = ref [] in 
@@ -397,18 +403,18 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
 		            | _ ->
 		                let () = printf "-- Function types:\n" in
 		                let print_fun_types atype =
-		                  Pprint.print_anno_funtype ~output:(form)  ~indent:("  ") ~simple_name:true atype
+		                  Pprint.print_anno_funtype   ~indent:("  ") ~simple_name:true atype
 		                in
 				
 		                let _ = List.iter fun_type_list print_fun_types in
 		                let _ = printf "====\n\n" in
 		                ()
 
-                    in
+                    in*)
                          report_A
 	           end
     in
-    let _ = printf "\n  Trying degree: " in
+    (*let _ = printf "\n  Trying degree: " in*)
     analyze_f deg1 deg2
   in
 
@@ -435,10 +441,7 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
                           | (Some t) :: xs -> t :: (process xs)
   in
 
-    process (List.map m (fun x -> print_string "checking \n" ; join (f x)))
-
-
-
+    process (List.map m (fun x -> join (f x)))
 
 
 
@@ -494,86 +497,6 @@ and interface sourcefile env_inital =
 and gen_pervasives sourcefile = interface sourcefile Env.initial
 and gen_runtime sourcefile = interface sourcefile (initial_env ())
 
-
-
-
-
-
-let analyze_module_learn_ocaml analysis_mode m_name metric deg1 deg2 collect_fun_types m env =
-  let amode_name =
-    match analysis_mode with
-    | Mupper -> "upper"
-    | Mlower -> "lower"
-    | Mconstant -> "constant"
-  in
-
-  let analyze_fun f_name e =
-    let e_normal = Shareletnormal.share_let_normal "#" e in
-    let e_normal_stack = Typecheck.typecheck_stack ~linear:true e_normal env in
-    let () = printf "Analyzing function %s ...\n" f_name in
-    let rec analyze_f deg deg_max =
-      assert (deg <= deg_max);
-      assert (deg >= 1);
-      printf "%i" deg;
-      let module Clp = (
-        val (
-          match analysis_mode with
-          | Mlower -> (
-              module Solver.Clp( Solver.Clp_std_maximize )
-            )
-          | Mupper
-          | Mconstant -> (
-              module Solver.Clp( Solver.Clp_std_options )
-            )
-        ) : Solver.SOLVER
-      )
-      in
-      let module Amode =
-      struct
-        let mode = analysis_mode
-      end
-      in
-      let module Analysis = Analysis.Make( Clp )(Amode) in
-      (*Try to derive bound with deg, increase deg in attempt to derive bound so long as you are below deg_max *)
-      match Analysis.analyze_function e_normal_stack ~metric ~degree:deg ~collect_fun_types with
-      | None ->
-            let _ = if deg < deg_max then printf ", %!" else printf "\n%!" in
-            if deg < deg_max then
-              analyze_f (deg+1) deg_max
-            else
-              None
-      | Some (atarg,atres,fun_type_list) ->Some (f_name,atarg,atres,fun_type_list)
-                        
-	            
-    in
-    analyze_f deg1 deg2
-  in
-  let _ = print_string "starting typecheck \n" in
-  let () = tcheck_module m env in
-  let _ = print_string "typecheck done \n" in
-  
-  (* FLAG 
-    Actual code that runs the analysis of an individual function, limit execution time to 3 seconds
-  *)
-  let f  =
-    limit_fun 1
-    (fun (f_name,e) ->
-      match e.Expressions.exp_type with
-      | Rtypes.Tarrow _ -> Some (analyze_fun f_name e)
-      | _ -> None
-    )
-  in
-    let join x = match x with 
-                | Some s -> s
-                | None -> None
-  in 
-    let rec process lst = match lst with 
-                          | [] -> []
-                          | None :: xs -> process xs 
-                          | (Some t) :: xs -> t :: (process xs)
-  in
-
-    process (List.map m (fun x -> print_string "checking \n" ; join (f x)))
 
 
 let enc =
@@ -818,24 +741,6 @@ module Serialize = struct
   end 
 
 
-
-		(*
-		            let analyze_m = analyze_module_learn_ocaml analysis_mode m_name metric deg1 deg2 pmode in
-		            let buf = Lexing.from_channel In_channel.stdin in
-		            let _ = Location.init buf "<stdin>" in  (* read from stdin *)
-		           
-		            let	(e, env) = Parseraml.parse_raml_module "./tests/analyze_array.raml" in 
-				
-	(*
-			let (e, env) = Parseraml.parse_raml (Lexing.from_string "./tests/analyze_array.raml") in 
-*)
-
-		             let lst = analyze_m e env in  ()(*   (f_name * atarg * atres * fun_type_list) list   
-                    () *) in 
-
-		*)
-
-
 open Serialize
     
 
@@ -883,17 +788,13 @@ let main argv =
 	
 
                 ignore @@ Lwt_main.run @@ server 
-			(fun s -> 
-				 try 
-					let report :Learnocaml_report.t = (analyze_code s) in
-					let json: Json_repr.ezjsonm = (Json_encoding.construct enc report) in 
-					(Ezjsonm.to_string @@ Ezjsonm.wrap json)
+			(fun s -> let _ = print_string "Received request" in
+				 	try 
+						let report :Learnocaml_report.t = (analyze_code s) in
+						let json: Json_repr.ezjsonm = (Json_encoding.construct enc report) in 
+						(Ezjsonm.to_string  @@ Ezjsonm.wrap  json)
 					with
 					| _ -> "fail"  )
-
-
-
-
 
 
                     
