@@ -887,7 +887,7 @@ let main argv =
 				 try 
 					let report :Learnocaml_report.t = (analyze_code s) in
 					let json: Json_repr.ezjsonm = (Json_encoding.construct enc report) in 
-					(Ezjsonm.value_to_string json)
+					(Ezjsonm.to_string @@ Ezjsonm.wrap json)
 					with
 					| _ -> "fail"  )
 

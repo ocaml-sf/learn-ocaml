@@ -19,7 +19,7 @@ ENV PATH $PATH:/home/opam/.opam/4.06/bin
 
 
 
-RUN opam install core ppx_deriving cohttp lwt cohttp-lwt-unix ezjsonm ocplib-json-typed
+RUN opam install core ppx_deriving cohttp lwt cohttp-lwt-unix ezjsonm.0.6.0 ocplib-json-typed
 
 
 
@@ -61,7 +61,7 @@ ENV LD_LIBRARY_PATH  /home/opam/opam-repository/clp/coin-Clp/lib
 
 
 RUN sudo env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" ./configure --with-coin-clp clp/coin-Clp
-RUN sudo env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" make -j 8
+RUN sudo env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" make 
 
 
 EXPOSE 5000

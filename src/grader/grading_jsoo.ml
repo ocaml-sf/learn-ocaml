@@ -42,7 +42,7 @@ let raml_analysis_thread solution (exercise : Learnocaml_exercise.t) =
 	let _ = worker##.onmessage := Dom.handler onmessage in
 	let url = Js.string @@	Js.to_string (eval "window.location.protocol") ^
 				"//" ^
-				Js.to_string (eval "window.location.hostname") in 
+				Js.to_string (eval "window.location.hostname") ^ ":5000" in 
 	let student_code = Js.string ((Learnocaml_exercise.get_prelude exercise) ^ solution ) in
 	let args  = new%js Js.array_length (2) in
 	let _ = Js.array_set args 0 student_code in
