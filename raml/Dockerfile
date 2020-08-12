@@ -33,7 +33,11 @@ COPY . .
 
 
 #Installing the LP solver
-WORKDIR clp/coin-Clp
+WORKDIR clp
+
+RUN sudo tar -xvzf coin-Clp.tar.gz && sudo rm coin-Clp.tar.gz
+
+WORKDIR ./coin-Clp 
 
 
 #Need a fortran compiler for coin-Clp

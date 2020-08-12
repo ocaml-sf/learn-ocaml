@@ -1,8 +1,0 @@
-datadir=@ABSBUILDDIR@
-
-Name: Sample
-Description: Sample models
-URL: https://projects.coin-or.org/svn/Data/Sample
-Version: @PACKAGE_VERSION@
-Libs:
-Cflags:

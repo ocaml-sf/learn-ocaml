@@ -1,9 +1,0 @@
-prefix=@prefix@
-datadir=@datadir@/coin/Data/Netlib
-
-Name: Netlib
-Description: Netlib models
-URL: https://projects.coin-or.org/svn/Data/Netlib
-Version: @PACKAGE_VERSION@
-Libs:
-Cflags:
