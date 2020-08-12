@@ -3,8 +3,7 @@ name: Publish dev (Docker image of master)
 on:
   push:
     branches:
-      # TODO: Update
-      - staging
+      - master
 jobs:
   push_server:
     name: Push learn-ocaml image to Docker Hub
@@ -17,14 +16,11 @@ jobs:
         with:
           always_pull: true
           add_git_labels: true
-          # TODO: Update
-          labels: "org.opencontainers.image.version=staging"
+          labels: "org.opencontainers.image.version=master"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          # TODO: Update
-          repository: pfitaxel/learn-ocaml
-          # TODO: Update
-          tags: staging
+          repository: ocamlsf/learn-ocaml
+          tags: master
   push_client:
     name: Push learn-ocaml-client image to Docker Hub
     runs-on: ubuntu-latest
@@ -36,12 +32,9 @@ jobs:
         with:
           always_pull: true
           add_git_labels: true
-          # TODO: Update
-          labels: "org.opencontainers.image.version=staging"
+          labels: "org.opencontainers.image.version=master"
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          # TODO: Update
-          repository: pfitaxel/learn-ocaml-client
+          repository: ocamlsf/learn-ocaml-client
           target: client
-          # TODO: Update
-          tags: staging
+          tags: master
