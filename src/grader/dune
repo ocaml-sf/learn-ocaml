@@ -1,6 +1,3 @@
-(ignored_subdirs (raml-1.4.2  ))
-
-
 (library
  (name learnocaml_report)
  (wrapped false)
