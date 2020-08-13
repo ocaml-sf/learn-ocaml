@@ -8,7 +8,7 @@ services:
       # args:
       #   - TZ=${TZ}
     env_file:
-      - .env.example
+      - .env
     # links:
     #   - db
     #   - solr
