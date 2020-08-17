@@ -9,41 +9,53 @@ services:
       #   - TZ=${TZ}
     env_file:
       - .env
-    # links:
-    #   - db
+    links:
+      - nodejs
     #   - solr
     #   - redis
     #   - datapusher
     ports:
-      - "0.0.0.0:${LEARNOCAML_PORT}:8080"
+      - "0.0.0.0:80:${LEARNOCAML_PORT}"
+    expose:
+      - "8080"
     volumes:
       - ${REPOSITORY}:/repository:ro
       - learn-ocaml-sync:/sync
     
 
-  mongodb_container:
+  mongodb:
     image: mongo:latest
-    # environment:
-    #   MONGO_INITDB_ROOT_USERNAME: root
-    #   MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    environment:
+      # MONGO_INITDB_ROOT_USERNAME: root
+      # MONGO_INITDB_ROOT_PASSWORD: rootpassword
+      MONGO_INITDB_DATABASE: learn-ocaml-code
     ports:
-      - 27017:27017
+      - "27017:27017"
+    expose:
+      - "27017"
     volumes:
-      - mongodb_data_container:/data/db
+      - mongodb_data_container:/etc/mongod.conf
+      - mongodb_data_container:/docker-entrypoint-initdb.d/
+      - mongodb_data_container:/data/db/
+      - mongodb_data_container:/var/log/mongodb/
+
 
   nodejs:
     build: 
       context: node/
     ports: 
-      - 8000:8000
+      - "8000:8000"
+    expose:
+      - "8000"
     environment: 
-      - 'PORT=8000'
-      - 'DB_CONN=mongodb://mongodb_container:27017/learn-ocaml-code'
+      - 'DB_CONN=mongodb://mongodb:27017/learn-ocaml-code'
       - 'COMP_COLLECTION=compile-code'
-      - 'EVAL_COLLECTION:eval-code'
+      - 'EVAL_COLLECTION=eval-code'
     volumes:
       - ./node:/node/app
       - /node/app/node_modules
+    depends_on:
+      - mongodb
 
   raml:
     build: 
