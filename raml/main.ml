@@ -3,12 +3,13 @@ let sys_time = Sys.time;;
 let foldl = List.fold_left
 
 exception Timeout
-(* I suspect that Core shadows the std sys module*)
+
 module Sys_std = Sys
 
-(* Note Does not work if we pause because of Unix.sleep 
+(* 
+   Note Does not work if we pause because of Unix.sleep 
 
-Tries to run function for atmost t seconds, returns None if computation time exceeds t
+   Tries to run function for atmost t seconds, returns None if computation time exceeds t
 *)
 
 let limit_fun : int -> ('a -> 'b) -> ('a -> 'b option)=
@@ -310,9 +311,7 @@ let gen_func_learnocaml_report ?(simple_name=false) ?(indent="")=
 					;Text line1
 					; Break]
 					@ anno_desc @
-					 (*non_zero_annot @*)
-					
-						[separator 
+					[separator 
 					;Break
 					 ;Text bound_title
 					; Break
@@ -338,7 +337,6 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
     let start_time = sys_time () in
     let e_normal = Shareletnormal.share_let_normal "#" e in
     let e_normal_stack = Typecheck.typecheck_stack ~linear:true e_normal env in
-    (*let () = printf "Analyzing function %s ...\n" f_name in*)
     let rec analyze_f deg deg_max =
       assert (deg <= deg_max);
       assert (deg >= 1);
@@ -370,15 +368,6 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
             if deg < deg_max then
               analyze_f (deg+1) deg_max
             else
-		(*
-              let _ = begin
-                let _ = (printf) "\n  A bound for %s could not be derived. The linear program is infeasible.\n" f_name in
-                let constr = Clp.get_num_constraints () in
-                let time = sys_time () -. start_time in
-                printf "\n--";
-                print_data amode_name m_name deg time constr;
-                printf "====\n\n"; "Not found";
-	        end in*) 
 		[]
       | Some (atarg,atres,fun_type_list) ->
               begin
@@ -386,43 +375,17 @@ let analyze_module analysis_mode m_name metric deg1 deg2 collect_fun_types m env
 		let form = Format.formatter_of_buffer buf in
                 printf "\n%!";
                 let _ = Pprint.print_anno_funtype ~output:(form) ~indent:("  ") (f_name, atarg, atres) in
-		(*let _ = Pprint.print_anno_funtype ~indent:("  ") (f_name, atarg, atres) in*)
 		let report_A : Learnocaml_report.t = gen_func_learnocaml_report ~indent:("  ") (f_name, atarg, atres) in
                 let constr = Clp.get_num_constraints () in
-                let time = sys_time () -. start_time in(*
-                let _ = printf "--" in
-                (*print_data amode_name m_name deg time constr;*)
-			let repB = ref [] in 
-                      let () =
-                        if List.length fun_type_list = 0 then
-                          printf "====\n\n" 
-                        else
-		
-		            match fun_type_list with
-		            | [] -> ()
-		            | _ ->
-		                let () = printf "-- Function types:\n" in
-		                let print_fun_types atype =
-		                  Pprint.print_anno_funtype   ~indent:("  ") ~simple_name:true atype
-		                in
-				
-		                let _ = List.iter fun_type_list print_fun_types in
-		                let _ = printf "====\n\n" in
-		                ()
-
-                    in*)
+                let time = sys_time () -. start_time in
                          report_A
 	           end
     in
-    (*let _ = printf "\n  Trying degree: " in*)
     analyze_f deg1 deg2
   in
 
   let () = tcheck_module m env in
   
-  (* FLAG 
-    Actual code that runs the analysis of an individual function, limit execution time to 3 seconds
-  *)
   let f  =
     limit_fun 3 (*Caps runtime to 3 seconds*)
     (fun (f_name,e) ->
