@@ -45,6 +45,13 @@ services:
       - ./node:/node/app
       - /node/app/node_modules
 
+  raml:
+    build: 
+      context: raml/
+      dockerfile: Dockerfile
+    ports: 
+      - 5000:5000
+
 
 volumes:
   repository:

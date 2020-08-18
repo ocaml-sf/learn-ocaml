@@ -3,9 +3,10 @@
  (wrapped false)
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
- (preprocess (pps ppx_ocplib_i18n))
+ (preprocess (pps ppx_ocplib_i18n ))
  (libraries ocplib-json-typed ocplib_i18n)
 )
+
 
 (rule
  (targets learnocaml_report.odoc)
@@ -163,6 +164,7 @@
  (modules Grader_jsoo_messages)
 )
 
+
 (library
  (name grading_jsoo)
  (wrapped false)
@@ -201,6 +203,14 @@
  (js_of_ocaml (flags :standard --toplevel --nocmis
                      +cstruct/cstruct.js +dynlink.js +toplevel.js))
 )
+
+(install
+ (package learn-ocaml)
+ (section share)
+ (files (raml_worker.js as www/js/raml_worker.js))
+)
+
+
 
 (install
  (package learn-ocaml)

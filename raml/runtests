@@ -1,0 +1,163 @@
+#!/bin/bash
+#
+# Compares two raml versions on all available examples.
+#
+# Usage: compare bin1 bin2 options
+
+
+UNIT_TEST="./unit_test.opt"
+TEST_DIR="tests"
+EXAMPLE_DIR="examples"
+OPTIONS="all"
+
+SIMPLE="firsttest.raml built_in_ops.raml lets.raml tuples.raml conditional.raml same_names.raml references.raml exn.raml functions.raml ref_fun.raml"
+NAT_ARRAY="nat.raml nat_arith.raml array.raml"
+REC="poly.raml stack_types.raml partialapp.raml"
+DATA="option.raml btree.raml user_types.raml user_types_func.raml"
+
+ANALYZE="analyze_nat.raml analyze_nat2.raml analyze_ind.raml analyze_tick.raml analyze_ref.raml analyze_tuple.raml analyze_higher.raml"
+
+LIST="list_map.raml list_misc.raml list_fold.raml"
+
+DATA2="binary_counter.raml user_defined_list.raml booleans.raml"
+
+EVAL_ONLY="$NAT_ARRAY recursion.raml mutual_rec.raml"
+
+ANALYSIS_TESTS_1="$SIMPLE $REC $ANALYZE $DATA"
+
+ANALYSIS_TESTS_2="$LIST $DATA2 raml1_bfs.raml analyze_array.raml array_fun.raml"
+
+ANALYSIS_TESTS_3="list_share.raml analyze_polyrec.raml"
+
+ANALYSIS_TESTS_4="raml1_append_all.raml analyze_nat3.raml"
+
+EXAMPLES_2="list_map.raml bigints.raml mergesort.raml list_rev.raml subsequence.raml"
+
+EXAMPLES_3="aws_avarage.raml calculator.raml echelon_form.raml isort.raml quicksort.raml"
+
+EXAMPLES_4="avanzini.raml power_radio.raml"
+
+EXAMPLES="$EXAMPLES_2 $EXAMPLES_3 $EXAMPLES_4"
+
+EVAL_TESTS="$EVAL_ONLY $ANALYSIS_TESTS_1 $ANALYSIS_TESTS_2 $ANALYSIS_TESTS_3 $ANALYSIS_TESTS_4"
+
+NESTED_PATTERN_TESTS="analyze_ind.raml analyze_polyrec.raml binary_counter.raml booleans.raml raml1_bfs.raml raml1_listsort.raml rec_scheme.raml redblacktree.raml stack_types.raml tuples.raml user_types_func.raml"
+
+PATTERN_TESTS="or.raml"
+
+
+
+if [ $# -ge 2 ] ; then
+  echo "Usage: $0 [eval | analyze | all]"
+  exit
+fi
+
+
+if [ $# -ge 1 ] ; then
+  OPTIONS=$1
+fi
+
+
+ERRORS=""
+
+function check_exit_code {
+    OUT=$?
+    if [ $OUT -ne 0 ];then
+	ERRORS="$ERRORS $1"
+    fi
+}
+
+
+
+echo "-----TESTING-----"
+
+if [ $OPTIONS == "pattern" ] || [ $OPTIONS == "all" ] ; then
+
+  for file in $NESTED_PATTERN_TESTS
+  do
+    $UNIT_TEST "eval" $TEST_DIR/"patterns"/"nested_"$file
+    check_exit_code $file
+  done
+
+  for file in $PATTERN_TESTS
+  do
+    $UNIT_TEST "eval" $TEST_DIR/"patterns"/$file
+    check_exit_code $file
+  done
+
+fi
+
+if [ $OPTIONS == "eval" ] || [ $OPTIONS == "all" ] ; then
+
+  for file in $EVAL_TESTS
+  do
+    $UNIT_TEST "eval" $TEST_DIR/$file
+    check_exit_code $file
+  done
+
+  for file in $EXAMPLES
+  do
+    $UNIT_TEST "eval" $EXAMPLE_DIR/$file
+    check_exit_code $file
+  done
+
+fi
+
+
+if [ $OPTIONS == "analyze" ] || [ $OPTIONS == "all" ] ; then
+
+  for file in $ANALYSIS_TESTS_1
+  do
+    $UNIT_TEST "analyze" "1" $TEST_DIR/$file
+    check_exit_code $file
+  done
+
+  for file in $ANALYSIS_TESTS_2
+  do
+    $UNIT_TEST "analyze" "2" $TEST_DIR/$file
+    check_exit_code $file
+  done
+
+  for file in $ANALYSIS_TESTS_3
+  do
+    $UNIT_TEST "analyze" "3" $TEST_DIR/$file
+    check_exit_code $file
+  done
+
+
+  for file in $ANALYSIS_TESTS_4
+  do
+    $UNIT_TEST "analyze" "4" $TEST_DIR/$file
+    check_exit_code $file
+  done
+
+
+  for file in $EXAMPLES_2
+  do
+    $UNIT_TEST "analyze" "2" $EXAMPLE_DIR/$file
+    check_exit_code $file
+  done
+
+  for file in $EXAMPLES_3
+  do
+    $UNIT_TEST "analyze" "3" $EXAMPLE_DIR/$file
+    check_exit_code $file
+  done
+
+  for file in $EXAMPLES_4
+  do
+    $UNIT_TEST "analyze" "4" $EXAMPLE_DIR/$file
+    check_exit_code $file
+  done
+
+fi
+
+
+echo "------DONE-------"
+
+if [ "$ERRORS" == "" ] ; then
+    echo "All tests passed."
+else
+    echo "ERRORS: $ERRORS"
+fi
+echo "-----------------"

@@ -1,0 +1,224 @@
+# The config.mk file must contain cruft
+# to build against Clp
+# (set LIBDIRS and INCDIRS)
+include config/clp_paths.mk
+
+include config/Makefile
+
+CAMLC=ocamlc
+CAMLOPT=ocamlopt
+CAMLFINDC=ocamlfind ocamlc -g -linkpkg -thread -rectypes -package ocplib-json-typed,ezjsonm,cohttp-lwt-unix,lwt,core,sexplib,bin_prot,ppx_sexp_conv,ppx_compare,fieldslib,variantslib
+CAMLFINDOPT=ocamlfind ocamlopt -linkpkg -thread -rectypes -package ocplib-json-typed,ezjsonm,cohttp-lwt-unix,lwt,core,sexplib,bin_prot,ppx_sexp_conv,ppx_compare,fieldslib,variantslib
+COMPFLAGS=-strict-sequence -w +33..39 -warn-error -A $(INCLUDES)
+LINKFLAGS=-cclib "-L$(LIBDIRS) -lClp -lCoinUtils"
+CFLAGS=-O2 -Wall -I$(INCDIRS) \
+      -I$(shell $(CAMLC) -config | awk '{if ($$1 ~ "standard_library:") print $$2}')
+
+CAMLYACC=ocamlyacc
+CAMLLEX=ocamllex
+
+CAMLDEP=ocamldep
+CAMLFINDDEP=ocamlfind ocamldep -package core,sexplib,bin_prot,ppx_sexp_conv,ppx_compare,fieldslib,variantslib
+DEPFLAGS=$(INCLUDES)
+
+INCLUDES=-I utils -I parsing -I typing -I clp -I raml
+# -I bytecomp -I asmcomp -I driver -I toplevel
+
+UTILS=utils/misc.cmo utils/tbl.cmo utils/config.cmo \
+  utils/clflags.cmo utils/terminfo.cmo utils/warnings.cmo \
+  utils/consistbl.cmo
+  # utils/ccomp.cmo
+
+PARSING=parsing/location.cmo parsing/longident.cmo \
+  parsing/syntaxerr.cmo parsing/parser.cmo \
+  parsing/lexer.cmo parsing/parse.cmo parsing/printast.cmo \
+  parsing/pprintast.cmo \
+  parsing/ast_mapper.cmo
+
+TYPING=typing/ident.cmo typing/path.cmo \
+  typing/primitive.cmo typing/types.cmo \
+  typing/btype.cmo typing/oprint.cmo \
+  typing/subst.cmo typing/predef.cmo \
+  typing/datarepr.cmo typing/cmi_format.cmo typing/env.cmo \
+  typing/typedtree.cmo typing/printtyped.cmo typing/ctype.cmo \
+  typing/printtyp.cmo typing/includeclass.cmo \
+  typing/mtype.cmo typing/envaux.cmo typing/includecore.cmo \
+  typing/includemod.cmo typing/typetexp.cmo typing/parmatch.cmo \
+  typing/typedtreeIter.cmo typing/typedtreeMap.cmo typing/cmt_format.cmo \
+  typing/stypes.cmo typing/typecore.cmo \
+  typing/typedecl.cmo typing/typeclass.cmo \
+  typing/typemod.cmo
+
+CLP=clp/clp.cmo clp/clp_stubs.o
+
+RAML=raml/toolbox.cmo raml/rpath.cmo raml/rconfig.cmo raml/rtypes.cmo \
+  raml/expressions.cmo raml/metric.cmo \
+  raml/eval.cmo raml/shareletnormal.cmo raml/patterns.cmo  raml/simplify.cmo \
+  raml/solver.cmo raml/indices.cmo raml/sharingcoef.cmo raml/annotations.cmo \
+  raml/polynomials.cmo raml/pprint.cmo raml/analysis.cmo raml/typecheck.cmo \
+  raml/parseraml.cmo
+
+RAML_RUNTIME=raml_runtime/rnat.ml raml_runtime/rarray.ml raml_runtime/raml.ml raml_runtime/pervasives.ml
+RAML_RUNTIME_CMI=$(RAML_RUNTIME:.ml=.cmi)
+
+COMMON=$(UTILS) $(PARSING) $(TYPING) utils/errors.cmo $(CLP) $(RAML)
+
+MAIN=main
+
+TEST=unit_test
+
+all: $(MAIN) $(MAIN).opt $(TEST) $(TEST).opt runtime
+
+clean:: partialclean
+
+compilerlibs/ocamlcommon.cma: $(COMMON)
+	@mkdir -p compilerlibs
+	$(CAMLC) -a $(COMMON) -o $@ -custom $(LINKFLAGS)
+
+partialclean::
+	rm -f compilerlibs/ocamlcommon.cma
+
+compilerlibs/ocamlcommon.cmxa: $(COMMON:.cmo=.cmx)
+	@mkdir -p compilerlibs
+	$(CAMLOPT) -a $(COMMON:.cmo=.cmx) -o $@ $(LINKFLAGS)
+
+partialclean::
+	rm -f compilerlibs/ocamlcommon.cmxa compilerlibs/ocamlcommon.a
+
+$(MAIN): $(MAIN).cmo compilerlibs/ocamlcommon.cma
+	$(CAMLFINDC) compilerlibs/ocamlcommon.cma $(MAIN).cmo -o $@
+
+# this will run gen-runime three times in a parallel make
+$(RAML_RUNTIME_CMI): $(RAML_RUNTIME) $(MAIN)
+	./$(MAIN) gen-runtime
+
+runtime: $(RAML_RUNTIME_CMI)
+
+partialclean::
+	rm -f $(MAIN)
+
+$(MAIN).opt: $(MAIN).cmx compilerlibs/ocamlcommon.cmxa
+	$(CAMLFINDOPT) compilerlibs/ocamlcommon.cmxa $(MAIN).cmx -o $@
+
+partialclean::
+	rm -f $(MAIN).opt
+
+# Unit tests
+
+$(TEST): $(TEST).cmo compilerlibs/ocamlcommon.cma
+	$(CAMLFINDC) compilerlibs/ocamlcommon.cma $(TEST).cmo -o $@
+
+partialclean::
+	rm -f $(TEST)
+
+$(TEST).opt: $(TEST).cmx compilerlibs/ocamlcommon.cmxa
+	$(CAMLFINDOPT) compilerlibs/ocamlcommon.cmxa $(TEST).cmx -o $@
+
+partialclean::
+	rm -f $(TEST).opt
+
+# The parser
+
+parsing/parser.mli parsing/parser.ml: parsing/parser.mly
+	$(CAMLYACC) $(YACCFLAGS) parsing/parser.mly
+
+partialclean::
+	rm -f parsing/parser.mli parsing/parser.ml parsing/parser.output
+
+beforedepend:: parsing/parser.mli parsing/parser.ml
+
+# The lexer
+
+parsing/lexer.ml: parsing/lexer.mll
+	$(CAMLLEX) parsing/lexer.mll
+
+partialclean::
+	rm -f parsing/lexer.ml
+
+beforedepend:: parsing/lexer.ml
+
+# The configuration file
+
+raml/rpath.ml: raml/rpath.mlp config/Makefile
+	@rm -f raml/rpath.ml
+	sed -e 's|%%DESTDIR%%|$(shell pwd)|' \
+	    raml/rpath.mlp > raml/rpath.ml
+	@chmod -w raml/rpath.ml
+
+utils/config.ml: utils/config.mlp config/Makefile
+	@rm -f utils/config.ml
+	sed -e 's|%%LIBDIR%%|$(shell $(CAMLC) -config | awk '{if ($$1 ~ "standard_library:") print $$2}')|' \
+	    -e 's|%%BYTERUN%%|$(shell $(CAMLC) -config | awk '{if ($$1 ~ "standard_runtime:") print $$2}')|' \
+	    -e 's|%%HOST_CMI_MAGIC_NUMBER%%|$(shell $(CAMLC) -config | awk '{if ($$1 ~ "cmi_magic_number:") print $$2}')|' \
+	    -e 's|%%CCOMPTYPE%%|cc|' \
+	    -e 's|%%BYTECC%%|$(BYTECC) $(BYTECCCOMPOPTS) $(SHAREDCCCOMPOPTS)|' \
+	    -e 's|%%NATIVECC%%|$(NATIVECC) $(NATIVECCCOMPOPTS)|' \
+	    -e 's|%%PACKLD%%|$(PACKLD)|' \
+	    -e 's|%%BYTECCLIBS%%|$(BYTECCLIBS)|' \
+	    -e 's|%%NATIVECCLIBS%%|$(NATIVECCLIBS)|' \
+	    -e 's|%%RANLIBCMD%%|$(RANLIBCMD)|' \
+	    -e 's|%%ARCMD%%|$(ARCMD)|' \
+	    -e 's|%%CC_PROFILE%%|$(CC_PROFILE)|' \
+	    -e 's|%%ARCH%%|$(ARCH)|' \
+	    -e 's|%%MODEL%%|$(MODEL)|' \
+	    -e 's|%%SYSTEM%%|$(SYSTEM)|' \
+	    -e 's|%%EXT_OBJ%%|.o|' \
+	    -e 's|%%EXT_ASM%%|.s|' \
+	    -e 's|%%EXT_LIB%%|.a|' \
+	    -e 's|%%EXT_DLL%%|.so|' \
+	    -e 's|%%SYSTHREAD_SUPPORT%%|$(SYSTHREAD_SUPPORT)|' \
+	    -e 's|%%ASM%%|$(ASM)|' \
+	    -e 's|%%ASM_CFI_SUPPORTED%%|$(ASM_CFI_SUPPORTED)|' \
+	    -e 's|%%WITH_FRAME_POINTERS%%|$(WITH_FRAME_POINTERS)|' \
+	    -e 's|%%MKDLL%%|$(MKDLL)|' \
+	    -e 's|%%MKEXE%%|$(MKEXE)|' \
+	    -e 's|%%MKMAINDLL%%|$(MKMAINDLL)|' \
+	    utils/config.mlp > utils/config.ml
+	@chmod -w utils/config.ml
+
+partialclean::
+	rm -f utils/config.ml
+
+# Default rules
+
+.SUFFIXES: .ml .mli .cmo .cmi .cmx .o
+
+.ml.cmo:
+	$(CAMLFINDC) $(COMPFLAGS) -c $<
+
+.mli.cmi:
+	$(CAMLFINDC) $(COMPFLAGS) -c $<
+
+.ml.cmx:
+	$(CAMLFINDOPT) $(COMPFLAGS) -c $<
+
+.c.o:
+	$(NATIVECC) $(CFLAGS) -c $< -o $@
+
+partialclean::
+	for d in utils parsing typing . raml clp raml_runtime; \
+	  do rm -f $$d/*.cm[iox] $$d/*.annot $$d/*.[so] $$d/*~; done
+	rm -f *~
+
+depend: beforedepend
+	@echo This may take a while, please be patient
+	@(for d in utils parsing typing; \
+	  do printf "Working on '%s' ... " $$d >&2; \
+	     $(CAMLDEP) $(DEPFLAGS) $$d/*.mli $$d/*.ml; \
+	     echo done >&2; \
+	  done; \
+	  for d in raml_runtime; \
+	  do printf "Working on '%s' ... " $$d >&2; \
+	     $(CAMLDEP) -I raml_runtime $$d/*.mli $$d/*.ml; \
+	     echo done >&2; \
+	  done; \
+	  for d in . raml; \
+	  do printf "Working on '%s' ... " $$d >&2; \
+	     $(CAMLFINDDEP) $(DEPFLAGS) $$d/*.mli $$d/*.ml; \
+	     echo done >&2; \
+	  done) > .depend
+
+.PHONY: all ocamlyacc
+
+include .depend
+# DO NOT DELETE

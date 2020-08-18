@@ -1,0 +1,34 @@
+== Verion 1.4.1, July 2018
+
+- Support for nested pattern matches
+- Lower bounds work with the heap metric
+- RaML generates the cmi for its runtime libraray
+  and thus does not rely on OCaml 4.02.0 anymore
+- Switch to Core v0.11.1 and PPX
+
+== Verion 1.3.1, July 2016
+
+- New analysis for lower bounds
+- New analysis for constant resource usage
+- Many new examples
+- Better support for natural numbers
+
+== Verion 1.2.1, March 2016
+
+- Better support for patterns in function definitions
+
+- Fixed a bug that prevented the use of the match construct with
+  tuples
+
+== Verion 1.1.1, December 2015
+
+- More tests and example program
+
+- By default the degree is no increased successively till the max
+  degree is reached
+
+== Verion 1.1, November 2015
+
+Bugfixes. Better support for reference and arrays.
+
+== Verion 1.0, July 2015

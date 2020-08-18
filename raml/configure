@@ -1,0 +1,74 @@
+#!/bin/bash
+
+CLP_PREFIX=
+GIT_VERSION="no"
+
+while [[ $# > 0 ]]; do
+  case $1 in
+    --with-coin-clp)
+      CLP_PREFIX="$2"
+      shift # past argument
+    ;;
+    -h|--help|*)
+      cat <<USAGE
+Usage: $0 [-h | --help] [--with-coin-clp PREFIX]"
+
+  -h | --help               Dsplay this message
+  --with-coin-clp PREFIX    Add PREFIX/lib and PREFIX/include to linking and
+                            header file paths
+USAGE
+      exit 0
+    ;;
+  esac
+
+  shift # past option
+done
+
+function execute() {
+  MSG="$1"
+  CMD="$2"
+
+  /bin/echo -n "$MSG..."
+  if $CMD; then
+    /bin/echo " done"
+  else
+    /bin/echo " failed"
+    exit 1
+  fi
+}
+
+function extract_ocaml() {
+  tar zxf ocaml-4.01.0.tar.gz --strip-components 1 \
+          ocaml-4.01.0/parsing ocaml-4.01.0/typing ocaml-4.01.0/utils && \
+  tar zxf ocaml-4.01.0.tar.gz --strip-components 2 -C utils \
+          ocaml-4.01.0/driver/errors.ml{,i}
+}
+
+function setup_clp_config() {
+  if [ "x$CLP_PREFIX" = "x" ]; then
+    cp config/clp_paths.sample config/clp_paths.mk
+  else
+    cat <<CLP_CONFIG > config/clp_paths.mk
+LIBDIRS=$CLP_PREFIX/lib
+INCDIRS=$CLP_PREFIX/include
+CLP_CONFIG
+  fi
+}
+
+if [ "$GIT_VERSION" == "yes" ] ; then
+
+    /bin/echo "Git version: Skipping extraction and patching of OCaml."
+    
+else
+    
+    execute "Extracting OCaml components" extract_ocaml
+
+    execute "Patching OCaml components" "patch -p 1" < ocaml-tree.patch
+
+    execute "Fixing Makefile" "cp Makefile.in Makefile"
+
+fi
+
+execute "Setup clp config" setup_clp_config
+
+/bin/echo "Configured successfully, run make to start building RAML2"

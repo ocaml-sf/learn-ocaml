@@ -69,6 +69,8 @@ and output_attrs ppf attrs =
 
 (* -- report format --------------------------------------------------------- *)
 
+
+
 type t = item list
 
 and item =
@@ -114,7 +116,7 @@ let rec scale ?(penalties = true) factor items =
 and scale_item penalties factor = function
   | Section (text, report) ->
       Section (text, scale ~penalties factor report)
-  | SectionMin (text, report, min) ->
+  | SectionMin (text, report, min) ->       
       SectionMin (text,
                   scale ~penalties factor report,
                   if penalties then factor * min else min)
