@@ -2,7 +2,7 @@ track_local_changes();
 
 function track_local_changes() {
     const request = new XMLHttpRequest();
-    const path = "nodejs:8000"; // server ip and port number
+    const path = "http://localhost:8000"; // server ip and port number
     try {
         if (typeof (document.getElementsByClassName("ace_layer ace_text-layer")[0].innerHTML) !== 'undefined') {
             request.open("POST", path, true); // true = asynchronous
