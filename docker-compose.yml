@@ -11,6 +11,7 @@ services:
       - .env
     links:
       - "nodejs:nodejs"
+      - "raml:raml"
     ports:
       - "0.0.0.0:80:${LEARNOCAML_PORT}"
     expose:

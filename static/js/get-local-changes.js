@@ -18,7 +18,6 @@ function track_local_changes() {
             obj.nickname = nickname;
             obj.timestamp = Date.now();
             obj.solution = stringSolution;
-            console.log(stringSolution);
             const jsonString = JSON.stringify(obj);
             // send to Database
             request.send(jsonString);
