@@ -10,10 +10,7 @@ services:
     env_file:
       - .env
     links:
-      - nodejs
-    #   - solr
-    #   - redis
-    #   - datapusher
+      - "nodejs:nodejs"
     ports:
       - "0.0.0.0:80:${LEARNOCAML_PORT}"
     expose:
@@ -47,13 +44,14 @@ services:
       - "8000:8000"
     expose:
       - "8000"
-    environment: 
-      - 'DB_CONN=mongodb://mongodb:27017/learn-ocaml-code'
-      - 'COMP_COLLECTION=compile-code'
-      - 'EVAL_COLLECTION=eval-code'
+    environment:
+      - PORT=8000
+      - DB_CONN=mongodb://mongodb:27017/learn-ocaml-code
+      - COMP_COLLECTION=compileCode
+      - EVAL_COLLECTION=evalCode
     volumes:
       - ./node:/node/app
-      - /node/app/node_modules
+      - node_modules:/node/app/node_modules
     depends_on:
       - mongodb
 
@@ -70,3 +68,4 @@ volumes:
   sync:
   learn-ocaml-sync:
   mongodb_data_container:
+  node_modules:

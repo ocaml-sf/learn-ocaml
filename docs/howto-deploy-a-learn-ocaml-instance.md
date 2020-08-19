@@ -51,9 +51,23 @@ If you have multiple dependencies (external projects), consider using Docker Com
 * In your project root, `cp .env.example .env`
 * Change the `REPOSITORY` variable on `.env` to point to the directory with your exercises
 
-Build and start the environment with `build with docker-compose -f docker-compose.yml up --build`.
+Build and start the environment with build with `docker-compose -f docker-compose.yml up --build`.
 
-Now, access `localhost:8080`.
+Now, access `localhost`.
+
+### Useful Docker commands
+
+`docker ps -a ` lists all the containers
+`docker logs -f CONT_ID` Logs for a specific container
+`docker restart CONT_ID` Restarts a container
+
+`docker stop $(docker ps -aq)` - stops all running containers
+`docker-compose -f docker-compose.yml up --build -d` - starts all containers in detached mode
+`docker exec -it CONT_ID bash` - allows you to access the service (i.e. MongoDB) that is running 
+in a container
+
+
+
 
 ## Manual compilation
 
