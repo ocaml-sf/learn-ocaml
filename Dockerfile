@@ -46,4 +46,4 @@ WORKDIR /home/learn-ocaml
 COPY --from=compilation /home/opam/install-prefix /usr
 
 CMD ["build","serve"]
-ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
+ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository", "--enable-playground"]
