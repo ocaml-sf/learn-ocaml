@@ -56,13 +56,6 @@ services:
     depends_on:
       - mongodb
 
-  raml:
-    build: 
-      context: raml/
-      dockerfile: Dockerfile
-    ports: 
-      - 5000:5000
-
 
 volumes:
   repository:

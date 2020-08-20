@@ -453,6 +453,3 @@ let read_lwt = LwtReaderAnddWriter.read
 let write_lwt = LwtReaderAnddWriter.write
 
 let enc = encoding
-
-
-let get_prelude x = x.prelude
