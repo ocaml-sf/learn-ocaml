@@ -11,7 +11,6 @@ services:
       - .env
     links:
       - "nodejs:nodejs"
-      - "raml:raml"
     ports:
       - "0.0.0.0:80:${LEARNOCAML_PORT}"
     expose:
@@ -55,13 +54,6 @@ services:
       - node_modules:/node/app/node_modules
     depends_on:
       - mongodb
-
-  raml:
-    build: 
-      context: raml/
-      dockerfile: Dockerfile
-    ports: 
-      - 5000:5000
 
 
 volumes:

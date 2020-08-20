@@ -123,7 +123,3 @@ val write_lwt:
 
 (** JSON serializer, with {!id} file included *)
 val enc : t Json_encoding.encoding
-
-val get_prelude : t -> string
-
-
