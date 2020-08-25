@@ -1,7 +1,10 @@
 get_eval();
 function get_eval() {
     const request = new XMLHttpRequest();
-    const path = "http://localhost:8000/eval"; // server ip and port number
+    const protocol = window.location.protocol
+    const host = window.location.hostname
+    const hostname = host.split('/')[0]
+    const path = protocol + "//" + hostname + ":8000/eval"; // server ip and port number
         try {
             if (typeof (document.getElementsByClassName("ace_layer ace_text-layer")[0].innerHTML) !== 'undefined') {
             request.open("POST", path, true); // true = asynchronous

@@ -65,11 +65,28 @@ let display_report exo report =
     (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
   grade
 
-let send_to_server ace editor set_class =
-  let myscript = Dom_html.createScript Dom_html.document in
-    myscript##._type := Js.string "text/javascript";
-    myscript##.src := Js.string "/js/get-local-changes.js";
-    Dom.appendChild Dom_html.document##.head myscript
+
+type mongo_solution = 
+  { student_id : string; 
+    timestamp : string; 
+    student_solution : string }
+
+let eval_unsafe s = Js.Unsafe.js_expr s
+let send_to_server top ace editor =
+  let stId = match Learnocaml_local_storage.(retrieve nickname) with
+    | nickname -> nickname
+    | exception Not_found -> ""
+  in
+  let solution = Ace.get_contents ace in
+  let url = Js.string @@  Js.to_string (eval_unsafe "window.location.protocol") ^
+        "//" ^
+        Js.to_string (eval_unsafe "window.location.hostname") ^ ":8000" in 
+  let current_time = string_of_float(Unix.time ()) in 
+  let student_json = Json.output {student_id = stId; timestamp = current_time; student_solution = solution} in
+  let nodeRequest = XmlHttpRequest.create () in
+    nodeRequest ## _open (Js.string "POST") (url) (Js.bool true);
+    nodeRequest ## setRequestHeader (Js.string "Content-Type") (Js.string "application/json; charset=UTF-8"); 
+    nodeRequest ## send (Js.some student_json);
 
 module Exercise_link =
   struct
@@ -211,7 +228,7 @@ let () =
   in
   begin toolbar_button
       ~icon: "typecheck" [%i"Compile"] @@ fun () ->
-    send_to_server top ace editor ;
+    send_to_server top ace editor;
     typecheck true
   end;
   begin toolbar_button

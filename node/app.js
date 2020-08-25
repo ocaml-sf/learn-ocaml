@@ -29,7 +29,15 @@ app.post("/", function (req, res)
 {
   if (req.body)
   {
-    const solution = JSON.parse( req.body ); // parse req.body as an object
+    const raw_array = req.body;
+    const split_array = raw_array.split(",");
+    const parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
+    const obj = new Object();
+    obj.studentId = split_array[1];
+    obj.timestamp = Date.now();
+    obj.solution = parsedSolStr;
+    const jsonString = JSON.stringify(obj);
+    const solution = JSON.parse( jsonString ); // parse req.body as an object
     db.collection(compile_collection).insertOne(solution);
     console.log(solution);
     res.sendStatus(200); // success status
