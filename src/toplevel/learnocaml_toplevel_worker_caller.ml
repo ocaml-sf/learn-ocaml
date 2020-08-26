@@ -152,13 +152,6 @@ let rec post : type a. t -> a host_msg -> a Toploop_results.toplevel_result Lwt.
   fun worker msg ->
     let msg_id = worker.counter in
     let msg_ty = ty_of_host_msg msg in
-    let eval_script = Dom_html.createScript Dom_html.document in
-        eval_script##._type := Js.string "text/javascript";
-        eval_script##.src := Js.string "/js/get-eval.js";
-        eval_script##.defer := Js.bool true;
-        eval_script##.async := Js.bool true;
-    Dom.appendChild Dom_html.document##.head eval_script;
-    eval_script;
     if !debug then Js_utils.debug "Host: queuing %d" msg_id;
     let (t, u) = Lwt.task () in
     Lwt.on_cancel t

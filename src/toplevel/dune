@@ -1,9 +1,3 @@
-(install
- (package learn-ocaml)
- (section share)
- (files (get-eval.js as www/js/get-eval.js))
-)
-
 (library
  (name learnocaml_toplevel_worker_messages)
  (wrapped false)
