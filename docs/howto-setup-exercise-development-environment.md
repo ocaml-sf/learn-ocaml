@@ -103,3 +103,7 @@ machine.
 
 You are now ready to write your first exercise! Please proceed to
 the next tutorial [How to write exercises?](../howto-write-exercises)
+
+
+### Issues
+After major changes, you might need to reinstall the dependencies. Use `opam switch reinstall`.
