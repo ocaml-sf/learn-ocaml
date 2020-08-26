@@ -27,7 +27,9 @@ services:
     networks:
       - learnocaml-net
 
-# To uncomment for prod
+# To uncomment for prod, see also:
+# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
+#
 #  postfix:
 #    container_name: postfix
 #    image: juanluisbaptiste/postfix
