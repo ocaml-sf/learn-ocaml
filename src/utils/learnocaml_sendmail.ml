@@ -8,6 +8,7 @@
  * included LICENSE file for details. *)
 
 open Netsendmail
+(* href: https://gitlab.com/gerdstolpmann/lib-ocamlnet3/-/blob/master/code/src/netstring/netsendmail_tut.txt *)
 
 let smtp_enabled_returnpath_email =
   match Sys.getenv_opt "SMTPSERVER" with
@@ -17,13 +18,15 @@ let smtp_enabled_returnpath_email =
      | None -> None
      | Some email -> Some email
 
-(* Don't use /usr/sbin/sendmail but msmtp *)
-
+(* We don't use /usr/sbin/sendmail but msmtp (alpine package) *)
 let mailer =  "/usr/bin/msmtp" ^
                 begin match Sys.getenv_opt "FROM_DOMAIN" with
                 | Some domain -> " --domain " ^ domain
                 | None -> ""
                 end
+
+(* XXX The following format strings must not contain unsafe HTML chars
+   ('<', '>', '"', '&'), as they are not escaped *)
 
 let hello : (string -> string, unit, string) format =
   {|Hello%s,
@@ -77,28 +80,73 @@ let closing : string =
   {|
 The Learn-OCaml server.|}
 
+(***************************************************************)
+(* Now the following helper strings & functions deal with HTML *)
+
+let encode_html_utf8 =
+  Netencoding.Html.encode
+    ~in_enc:`Enc_utf8
+    ~out_enc:`Enc_utf8
+    ~prefer_name:true
+    ~unsafe_chars:Netencoding.Html.unsafe_chars_html4 ()
+
+(* If need be
+let encode_url = Netencoding.Url.encode ~plus:false *)
+
+let link_format : (string -> string -> string, unit, string) format =
+  {|<a href="%s">%s</a>|}
+
+(* XXX The message language is hardcoded here: "en" *)
+let html_format : (string -> string -> string, unit, string) format =
+  {|<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>%s</title></head>
+<body>
+<p>%s</p>
+</body>
+</html>|}
+
+let wrap_url url =
+  Format.sprintf link_format url (encode_html_utf8 url)
+
+let wrap_html ~title text =
+  let lines = Str.global_replace (Str.regexp "$") "<br>" text in
+  Format.sprintf html_format ((*encode_html_utf8*) title) lines
+
 let send_email
       ?(from_name="Learn-OCaml")
       ~(nick : string option) ~to_addr ~subject
       ?(hello=hello) ?(pretext="") ~text ?(posttext=closing) url =
   let padding, nickname =
     match nick with
-    | None -> "", ""
+    | None | Some "" -> "", ""
     | Some nickname -> " ", nickname
   in
   match smtp_enabled_returnpath_email with
   | Some returnpath_email ->
-     let str = Format.sprintf hello (padding ^ nickname)
-               ^ pretext
-               ^ Format.sprintf text url
-               ^ posttext in
-    let body = wrap_attachment
-                 ~content_disposition:("inline", [])
-                 ~content_type: ("text/plain",
-                                 ["charset", Netmime_string.mk_param "utf-8"])
-                 (new Netmime.memory_mime_body str) in
+     let str_plain = Format.sprintf hello (padding ^ nickname)
+                     ^ pretext
+                     ^ Format.sprintf text url
+                     ^ posttext in
+     let str_html =
+       wrap_html ~title:subject
+         (Format.sprintf hello (padding ^ nickname)
+          ^ pretext
+          ^ Format.sprintf text (wrap_url url)
+          ^ posttext) in
+     let charset = ["charset", Netmime_string.mk_param "utf-8"] in
+     let body =
+       (wrap_parts
+          ~content_type:("multipart/alternative", [])
+          [ wrap_attachment
+              ~content_type: ("text/plain", charset)
+              (new Netmime.memory_mime_body str_plain);
+            wrap_attachment
+              ~content_type: ("text/html", charset)
+              (new Netmime.memory_mime_body str_html)
+       ]) in
     let mail = wrap_mail
-                 (* REM: as Netsendmail doesn't support Reply-To, we use From *)
+                 (* XXX as Netsendmail doesn't support Reply-To, we use From *)
                  ~from_addr: (from_name, returnpath_email)
                  ~to_addrs: [(nickname, to_addr)]
                  ~subject
@@ -127,7 +175,7 @@ let change_email ~(nick:string option) ~(url:string) old_email new_email =
   send_email ~nick ~to_addr:old_email
     ~subject:change_old_subject
     ~pretext:(Printf.sprintf change_common old_email new_email)
-    ~text:change_old new_email
+    ~text:change_old ("mailto:" ^ new_email)
 
 let reset_password ~(nick:string option) ~(url:string) to_addr =
   send_email ~nick ~to_addr ~subject:reset_subject
