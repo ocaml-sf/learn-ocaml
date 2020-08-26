@@ -235,7 +235,7 @@ let initiate_password_change token address cache req =
     ~nick
     ~url:(req.Api.host ^ "/reset_password/" ^ handle)
     address;
-  respond_json cache ()
+  respond_json cache address
 
 module Memory_cache = struct
 

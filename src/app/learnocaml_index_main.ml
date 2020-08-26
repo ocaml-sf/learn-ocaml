@@ -577,13 +577,33 @@ let show_token_dialog token =
     ]
 
 let complete_reset_password cb = function
-  | Ok () ->
+  | Ok email ->
      alert ~title:[%i"RESET REQUEST SENT"]
-       [%i"A reset link has been sent to the specified address."];
+       ([%i"A reset link has been sent to the following address: "]
+       ^ email);
      Lwt.return_none
   | Error (`Not_found _) ->
      alert ~title:[%i"USER NOT FOUND"]
-       [%i"The entered email couldn't be recognised."];
+       [%i"The entered e-mail couldn't be recognised."];
+     Lwt.return_none
+  | Error e ->
+     lwt_alert ~title:[%i"REQUEST ERROR"] [
+         H.p [H.pcdata [%i"Could not retrieve data from server"]];
+         H.code [H.pcdata (Server_caller.string_of_error e)];
+       ] ~buttons:[
+         [%i"Retry"], (fun () -> cb ());
+         [%i"Cancel"], (fun () -> Lwt.return_none);
+       ]
+
+let complete_change_email cb new_email = function
+  | Ok () ->
+     alert ~title:[%i"RESET REQUEST SENT"]
+       ([%i"A confirmation e-mail has been sent to the address: "]
+       ^ new_email);
+     Lwt.return_none
+  | Error (`Not_found _) ->
+     alert ~title:[%i"USER NOT FOUND"]
+       [%i"The entered e-mail couldn't be recognised."];
      Lwt.return_none
   | Error e ->
      lwt_alert ~title:[%i"REQUEST ERROR"] [
@@ -892,7 +912,7 @@ let () =
           Server_caller.request
             (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
                                           address))
-          >>= complete_reset_password change_email)
+          >>= complete_change_email change_email address)
         (fun _exn -> Lwt.return_none) in
     let buttons = [[%i"Change password"], change_password;
                    [%i"Change email"], change_email] in

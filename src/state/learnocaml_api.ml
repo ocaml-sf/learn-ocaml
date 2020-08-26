@@ -82,10 +82,12 @@ type _ request =
       (Token.t * string) -> unit request
   | Confirm_email:
       string -> string request
-  | Send_reset_password:
-      string -> unit request
   | Change_password:
-      Token.t -> unit request
+      Token.t -> string request
+      (* change password and return the current email *)
+  | Send_reset_password:
+      string -> string request
+      (* idem (change password and return the current email) *)
   | Reset_password:
       string -> string request
   | Do_reset_password:
@@ -191,8 +193,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
       | Change_email _ -> json J.unit
       | Confirm_email _ -> str
-      | Send_reset_password _ -> json J.unit
-      | Change_password _ -> json J.unit
+      | Change_password _ -> str
+      | Send_reset_password _ -> str
       | Reset_password _ -> str
       | Do_reset_password _ -> str
 
@@ -326,10 +328,10 @@ module Conversions (Json: JSON_CODEC) = struct
         post ~token ["change_email"] (Json.encode J.(tup1 string) address)
     | Confirm_email _ ->
         assert false (* Reserved for a link *)
-    | Send_reset_password address ->
-        post ["send_reset"] (Json.encode J.(tup1 string) address)
     | Change_password token ->
         get ~token ["send_reset"]
+    | Send_reset_password address ->
+        post ["send_reset"] (Json.encode J.(tup1 string) address)
     | Reset_password _ ->
         assert false (* Reserved for a link *)
     | Do_reset_password _ ->

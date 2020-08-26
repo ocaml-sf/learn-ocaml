@@ -101,10 +101,12 @@ type _ request =
       (Token.t * string) -> unit request
   | Confirm_email:
       string -> string request
-  | Send_reset_password:
-      string -> unit request
   | Change_password:
-      Token.t -> unit request
+      Token.t -> string  request
+      (* change password and return the current email *)
+  | Send_reset_password:
+      string -> string request
+      (* idem (change password and return the current email) *)
   | Reset_password:
       string -> string request
   | Do_reset_password:
