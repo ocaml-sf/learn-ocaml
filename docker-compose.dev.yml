@@ -29,7 +29,7 @@ services:
 
 # To uncomment for prod
 #  postfix:
-#    # container_name: postfix
+#    container_name: postfix
 #    image: juanluisbaptiste/postfix
 #    environment:
 #      # (postfix variables) remote MTA credentials:
@@ -38,6 +38,7 @@ services:
 #      SMTP_PASSWORD_FILE: "/secrets/smtp_password"
 #      # (postfix variable) DNS of myself, the server sending mails:
 #      SERVER_HOSTNAME: "mail.localdomain"
+#      ALWAYS_ADD_MISSING_HEADERS: "yes"
 #    volumes:
 #      - "./secrets:/secrets"
 #    # DO NOT EXPOSE THESE PORTS!
