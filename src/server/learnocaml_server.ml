@@ -213,14 +213,26 @@ let create_student conn (config: Learnocaml_data.Server.config) cache req
            Lwt.return (Token_index.Token (tok, use_moodle))
         | `Password (email, password) ->
            Token_index.UpgradeIndex.change_email !sync_dir tok >|= (fun handle ->
-            Learnocaml_sendmail.confirm_email ~url:(req.Api.host ^ "/confirm/" ^ handle) email;
+            Learnocaml_sendmail.confirm_email
+              ~nick
+              ~url:(req.Api.host ^ "/confirm/" ^ handle)
+              email;
             Token_index.Password (tok, email, password, Some(email)))) >>= fun auth ->
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
        respond_json cache tok
 
+(** [get_nickname] is used to show the user name in emails openings.
+    (Cost some filesystem read; we might want to always return None) *)
+let get_nickname token =
+  Save.get token >>= function
+    | None -> Lwt.return_none
+    | Some save -> Lwt.return_some save.Save.nickname
+
 let initiate_password_change token address cache req =
   Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
+  get_nickname token >>= fun nick ->
   Learnocaml_sendmail.reset_password
+    ~nick
     ~url:(req.Api.host ^ "/reset_password/" ^ handle)
     address;
   respond_json cache ()
@@ -678,7 +690,9 @@ module Request_handler = struct
                else
                  Token_index.UserIndex.change_email !sync_dir token address >>= fun () ->
                  Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+                 get_nickname token >>= fun nick ->
                  Learnocaml_sendmail.change_email
+                   ~nick
                    ~url:(req.Api.host ^ "/confirm/" ^ handle)
                    old_address address;
                  respond_json cache ()
@@ -822,7 +836,11 @@ module Request_handler = struct
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in
                  Token_index.UserIndex.upgrade !sync_dir token email passwd >>= fun () ->
                  Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
-                 Learnocaml_sendmail.confirm_email ~url:(req.Api.host ^ "/confirm/" ^ handle) email;
+                 get_nickname token >>= fun nick ->
+                 Learnocaml_sendmail.confirm_email
+                   ~nick
+                   ~url:(req.Api.host ^ "/confirm/" ^ handle)
+                   email;
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
             | Some _ -> lwt_fail (`Forbidden, "Already an account."))
 

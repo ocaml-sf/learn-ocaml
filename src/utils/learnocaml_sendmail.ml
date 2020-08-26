@@ -7,6 +7,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Netsendmail
+
 let smtp_enabled_returnpath_email =
   match Sys.getenv_opt "SMTPSERVER" with
   | None -> None
@@ -23,15 +25,73 @@ let mailer =  "/usr/bin/msmtp" ^
                 | None -> ""
                 end
 
-open Netsendmail
+let hello : (string -> string, unit, string) format =
+  {|Hello%s,
+|}
 
-(* todo: replace to_name with the Nickname *)
+let confirm : (string -> string, unit, string) format =
+  {|
+Please follow the link below to confirm your e-mail address:
+
+%s
+|}
+
+let confirm_subject = "Confirm your e-mail address"
+let change_new_subject = "Confirm your new e-mail address"
+let change_old_subject = "Changing your e-mail address"
+
+let change_common : (string -> string -> string, unit, string) format =
+  {|
+You requested to change your e-mail address on the server.
+Old address: %s
+New address: %s
+|}
+
+let change_old : (string -> string, unit, string) format =
+  {|
+An e-mail has been sent to the new address for you to confirm it.
+Please check your corresponding mailbox (%s).
+|}
+
+let change_new : (string -> string, unit, string) format =
+  {|
+Please follow the link below to confirm this change:
+
+%s
+|}
+
+let reset : (string -> string, unit, string) format =
+  {|
+Someone (probably you) requested changing your Learn-OCaml password.
+
+Please follow the following link to do so:
+
+%s
+
+Otherwise, no further action is required.
+|}
+
+let reset_subject = "Change your password"
+
+let closing : string =
+  {|
+The Learn-OCaml server.|}
+
 let send_email
-      ?(from_name="Learn-OCaml") ?(to_name="")
-      ~to_addr ~subject ?(pretext="") ~text (url:string) =
+      ?(from_name="Learn-OCaml")
+      ~(nick : string option) ~to_addr ~subject
+      ?(hello=hello) ?(pretext="") ~text ?(posttext=closing) url =
+  let padding, nickname =
+    match nick with
+    | None -> "", ""
+    | Some nickname -> " ", nickname
+  in
   match smtp_enabled_returnpath_email with
   | Some returnpath_email ->
-     let str = pretext ^ Format.sprintf text url in
+     let str = Format.sprintf hello (padding ^ nickname)
+               ^ pretext
+               ^ Format.sprintf text url
+               ^ posttext in
     let body = wrap_attachment
                  ~content_disposition:("inline", [])
                  ~content_type: ("text/plain",
@@ -40,7 +100,7 @@ let send_email
     let mail = wrap_mail
                  (* REM: as Netsendmail doesn't support Reply-To, we use From *)
                  ~from_addr: (from_name, returnpath_email)
-                 ~to_addrs: [(to_name, to_addr)]
+                 ~to_addrs: [(nickname, to_addr)]
                  ~subject
                  body in
     sendmail ~mailer ~crlf:false mail
@@ -55,66 +115,20 @@ let check_email email =
   | Netaddress.Parse_error (_i, str) -> invalid_arg ("check_email: " ^ str)
  *)
 
-let confirm_text : (string -> string, unit, string) format =
-  {|Hello,
+let confirm_email ~(nick:string option) ~(url:string) to_addr =
+  send_email ~nick ~to_addr ~subject:confirm_subject
+    ~text:confirm url
 
-Please follow the link below to confirm your e-mail address:
+let change_email ~(nick:string option) ~(url:string) old_email new_email =
+  send_email ~nick ~to_addr:new_email
+    ~subject:change_new_subject
+    ~pretext:(Printf.sprintf change_common old_email new_email)
+    ~text:change_new url;
+  send_email ~nick ~to_addr:old_email
+    ~subject:change_old_subject
+    ~pretext:(Printf.sprintf change_common old_email new_email)
+    ~text:change_old new_email
 
-%s
-
-The Learn-OCaml server.|}
-
-let change_common : (string -> string -> string, unit, string) format =
-  {|Hello,
-
-You requested to change your e-mail address on the server.
-Old address: %s
-New address: %s
-|}
-
-let change_old : (string -> string, unit, string) format =
-  {|
-An e-mail has been sent to the new address for you to confirm it.
-Please check your corresponding mailbox (%s).
-
-The Learn-OCaml server.|}
-
-let change_new : (string -> string, unit, string) format =
-  {|
-Please follow the link below to confirm this change:
-
-%s
-
-The Learn-OCaml server.|}
-
-let reset_text : (string -> string, unit, string) format =
-  {|Hello,
-
-Someone (probably you) requested changing your Learn-OCaml password.
-
-Please follow the following link to do so:
-
-%s
-
-Otherwise, no further action is required.
-
-The Learn-OCaml server.|}
-
-let confirm_email ~(url:string) to_addr =
-  send_email ~to_addr ~subject:"Confirm your e-mail address"
-    ~text:confirm_text url
-
-let change_email ~(url:string) old_email new_email =
-  let () = send_email ~to_addr:new_email
-             ~subject:"Confirm your new e-mail address"
-             ~pretext:(Printf.sprintf change_common old_email new_email)
-             ~text:change_new url in
-  let () = send_email ~to_addr:old_email
-             ~subject:"Changing your e-mail address"
-             ~pretext:(Printf.sprintf change_common old_email new_email)
-             ~text:change_old new_email in
-  ()
-
-let reset_password ~(url:string) to_addr =
-  send_email ~to_addr ~subject:"Change your password"
-    ~text:reset_text url
+let reset_password ~(nick:string option) ~(url:string) to_addr =
+  send_email ~nick ~to_addr ~subject:reset_subject
+    ~text:reset url
