@@ -19,10 +19,10 @@ let () =
     Manip.SetCss.display (find_component "login-overlay") "block";
     set_string_translations [
         "txt_upgrade", [%i"Upgrade account"];
-        "txt_upgrade_email", [%i"Email address"];
+        "txt_upgrade_email", [%i"E-mail address"];
         "txt_upgrade_password", [%i"Password"];
         "txt_do_upgrade", [%i"Upgrade"];
-        "txt_info", [%i"An email will be sent to your address to confirm it."];
+        "txt_info", [%i"An e-mail will be sent to your address to confirm it."];
       ]
   with Not_found ->
     Learnocaml_common.alert ~title:[%i"NO TOKEN"] [%i"You are not logged in"]

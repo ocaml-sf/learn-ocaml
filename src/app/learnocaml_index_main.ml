@@ -828,7 +828,7 @@ let set_string_translations () =
     "txt_token_secret", [%i"Enter the secret"];
     "txt_token_new", [%i"Create new token"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_email", [%i"Email address"];
+    "txt_first_connection_email", [%i"E-mail address"];
     "txt_first_connection_nickname", [%i"Nickname"];
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
@@ -836,7 +836,7 @@ let set_string_translations () =
                             your teacher to sign-up."];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
-    "txt_returning_email", [%i"Email address"];
+    "txt_returning_email", [%i"E-mail address"];
     "txt_returning_password", [%i"Password"];
     "txt_login_returning",  [%i"Connect"];
     "txt_login_forgotten", [%i"Forgot your password?"];
@@ -907,15 +907,15 @@ let () =
     let rec change_email () =
       Lwt.catch
         (fun () ->
-          ask_string ~title:[%i"New email address"]
-            [H.txt [%i"Enter your new email address: "]] >>= fun address ->
+          ask_string ~title:[%i"New e-mail address"]
+            [H.txt [%i"Enter your new e-mail address: "]] >>= fun address ->
           Server_caller.request
             (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
                                           address))
           >>= complete_change_email change_email address)
         (fun _exn -> Lwt.return_none) in
     let buttons = [[%i"Change password"], change_password;
-                   [%i"Change email"], change_email] in
+                   [%i"Change e-mail"], change_email] in
     let container = El.op_buttons_container in
     Manip.removeChildren container;
     List.iter (fun (name, callback) ->

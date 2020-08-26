@@ -728,13 +728,13 @@ module Init_user = struct
             user_login server email password
          | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
             if String.length email < 5 || not (String.contains email '@') then
-              Lwt.fail_with "Invalid email address"
+              Lwt.fail_with "Invalid e-mail address"
             else if String.length password < 8 then
               Lwt.fail_with "Password must be at least 8 characters long"
             else
               get_nonce_and_create_user server email password nickname secret
          | _ ->
-            Lwt.fail_with "You must provide an email address, a password, a nickname and a secret."
+            Lwt.fail_with "You must provide an e-mail address, a password, a nickname and a secret."
     in
     let get_server () =
       match global_args.server_url with

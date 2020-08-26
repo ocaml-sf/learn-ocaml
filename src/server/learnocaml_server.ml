@@ -443,7 +443,7 @@ module Request_handler = struct
          if exists then
            lwt_fail (`Forbidden, "User already exists")
          else if String.length email < 5 || not (String.contains email '@') then
-           lwt_fail (`Bad_request, "Invalid email address")
+           lwt_fail (`Bad_request, "Invalid e-mail address")
          else if String.length password < 8 then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else

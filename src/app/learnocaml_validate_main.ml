@@ -10,4 +10,4 @@ open Learnocaml_common
 
 let () =
   (match Js_utils.get_lang () with Some l -> Ocplib_i18n.set_lang l | None -> ());
-  alert ~title:[%i"EMAIL CONFIRMED"] [%i"Your email address has been confirmed"]
+  alert ~title:[%i"EMAIL CONFIRMED"] [%i"Your e-mail address has been confirmed."]

@@ -108,7 +108,7 @@ let () =
   init_dialogs ();
   set_string_translations [
       "txt_first_connection", [%i"First connection"];
-      "txt_first_connection_email", [%i"Email address"];
+      "txt_first_connection_email", [%i"E-mail address"];
       "txt_first_connection_nickname", [%i"Nickname"];
       "txt_first_connection_password", [%i"Password"];
       "txt_first_connection_secret", [%i"Enter the secret"];
@@ -119,7 +119,7 @@ let () =
                                           context of the Learn-OCaml plateform."];
       "txt_login_new", [%i"Create new token"];
       "txt_returning", [%i"Returning user"];
-      "txt_returning_email", [%i"Email address"];
+      "txt_returning_email", [%i"E-mail address"];
       "txt_returning_password", [%i"Password"];
       "txt_login_returning", [%i"Connect"];
       "txt_login_forgotten", [%i"Forgot your password?"];
