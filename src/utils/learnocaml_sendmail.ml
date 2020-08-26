@@ -107,11 +107,11 @@ let html_format : (string -> string -> string, unit, string) format =
 </html>|}
 
 let wrap_url url =
-  Format.sprintf link_format url (encode_html_utf8 url)
+  Printf.sprintf link_format url (encode_html_utf8 url)
 
 let wrap_html ~title text =
   let lines = Str.global_replace (Str.regexp "$") "<br>" text in
-  Format.sprintf html_format ((*encode_html_utf8*) title) lines
+  Printf.sprintf html_format ((*encode_html_utf8*) title) lines
 
 let send_email
       ?(from_name="Learn-OCaml")
@@ -120,19 +120,18 @@ let send_email
   let padding, nickname =
     match nick with
     | None | Some "" -> "", ""
-    | Some nickname -> " ", nickname
-  in
+    | Some nickname -> " ", nickname in
+  let str_plain = Printf.sprintf hello (padding ^ nickname)
+                  ^ pretext
+                  ^ Printf.sprintf text url
+                  ^ posttext in
   match smtp_enabled_returnpath_email with
   | Some returnpath_email ->
-     let str_plain = Format.sprintf hello (padding ^ nickname)
-                     ^ pretext
-                     ^ Format.sprintf text url
-                     ^ posttext in
      let str_html =
        wrap_html ~title:subject
-         (Format.sprintf hello (padding ^ nickname)
+         (Printf.sprintf hello (padding ^ nickname)
           ^ pretext
-          ^ Format.sprintf text (wrap_url url)
+          ^ Printf.sprintf text (wrap_url url)
           ^ posttext) in
      let charset = ["charset", Netmime_string.mk_param "utf-8"] in
      let body =
@@ -145,14 +144,22 @@ let send_email
               ~content_type: ("text/html", charset)
               (new Netmime.memory_mime_body str_html)
        ]) in
-    let mail = wrap_mail
-                 (* XXX as Netsendmail doesn't support Reply-To, we use From *)
-                 ~from_addr: (from_name, returnpath_email)
-                 ~to_addrs: [(nickname, to_addr)]
-                 ~subject
-                 body in
-    sendmail ~mailer ~crlf:false mail
-  | None -> Printf.printf "mailto:%s?subject=%s (%s)\n%!" to_addr subject url
+     let mail = wrap_mail
+                  (* XXX as Netsendmail doesn't support Reply-To, we use From *)
+                  ~from_addr: (from_name, returnpath_email)
+                  ~to_addrs: [(nickname, to_addr)]
+                  ~subject
+                  body in
+     sendmail ~mailer ~crlf:false mail;
+     Printf.printf {|(* INFO => mailto:%s?subject="%s" *)
+%!|} to_addr subject
+  | None ->
+     Printf.printf {|
+(* WARNING => environment variables SMTPSERVER and EMAIL must be set!
+Can't mailto:%s?subject="%s" with body """
+%s
+""" *)
+%!|} to_addr subject str_plain
 
 (* If need be
 let check_email email =
