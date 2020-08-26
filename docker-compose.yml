@@ -1,3 +1,7 @@
+# Note: this file is dev-specific.
+# To deploy learn-ocaml, see e.g.:
+# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
+
 version: '3.7'
 
 services:
@@ -56,6 +60,46 @@ services:
       - "1080:80"
     networks:
       - learnocaml-net
+
+# BEGIN https://github.com/bitnami/bitnami-docker-moodle/blob/ffa8007ebb0ebc501eeeba62804d10b0efef3673/docker-compose.yml
+
+  mariadb:
+    image: 'docker.io/bitnami/mariadb:10.3-debian-10'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+  moodle:
+    image: 'docker.io/bitnami/moodle:3-debian-10'
+    ports:
+      - '9090:8080'
+      # - '80:8080'
+      # - '443:8443'
+    environment:
+      - MOODLE_DATABASE_HOST=mariadb
+      - MOODLE_DATABASE_PORT_NUMBER=3306
+      - MOODLE_DATABASE_USER=bn_moodle
+      - MOODLE_DATABASE_NAME=bitnami_moodle
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - 'moodle_data:/bitnami/moodle'
+      - 'moodledata_data:/bitnami/moodledata'
+    depends_on:
+      - mariadb
+
+volumes:
+  mariadb_data:
+    driver: local
+  moodle_data:
+    driver: local
+  moodledata_data:
+    driver: local
+
+# END https://github.com/bitnami/bitnami-docker-moodle/blob/ffa8007ebb0ebc501eeeba62804d10b0efef3673/docker-compose.yml
+# @ https://github.com/bitnami/bitnami-docker-moodle#readme
+# @ https://github.com/bitnami/bitnami-docker-moodle#configuration
 
 networks:
   learnocaml-net:
