@@ -583,7 +583,7 @@ let complete_reset_password cb = function
        ^ email);
      Lwt.return_none
   | Error (`Not_found _) ->
-     alert ~title:[%i"USER NOT FOUND"]
+     alert ~title:[%i"ERROR"]
        [%i"The entered e-mail couldn't be recognised."];
      Lwt.return_none
   | Error e ->
@@ -602,7 +602,7 @@ let complete_change_email cb new_email = function
        ^ new_email);
      Lwt.return_none
   | Error (`Not_found _) ->
-     alert ~title:[%i"USER NOT FOUND"]
+     alert ~title:[%i"ERROR"]
        [%i"The entered e-mail couldn't be recognised."];
      Lwt.return_none
   | Error e ->
@@ -843,7 +843,7 @@ let set_string_translations () =
     "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                        information entered will be used in the \
                                         context of the Learn-OCaml plateform."];
-    "txt_returning_with_token", [%i"Login with a token"];
+    "txt_returning_with_token", [%i"Login with a legacy token"];
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];
     "txt_upgrade", [%i"Upgrade account"];
