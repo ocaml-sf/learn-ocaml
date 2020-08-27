@@ -15,6 +15,10 @@ open Arg
 
 let version = Api.version
 
+let check_email_ml email =
+  let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
+  Str.string_match regexp email 0
+
 let url_conv =
   conv ~docv:"URL" (
       (fun s ->
@@ -727,7 +731,7 @@ module Init_user = struct
          | {email; password; nickname=None; secret=None} ->
             user_login server email password
          | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
-            if String.length email < 5 || not (String.contains email '@') then
+            if not (check_email_ml email) then
               Lwt.fail_with "Invalid e-mail address"
             else if String.length password < 8 then
               Lwt.fail_with "Password must be at least 8 characters long"

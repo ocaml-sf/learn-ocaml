@@ -9,6 +9,10 @@
 open Learnocaml_data
 open Learnocaml_store
 
+let check_email_ml email =
+  let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
+  Str.string_match regexp email 0
+
 let port = ref 8080
 
 let cert_key_files = ref None
@@ -442,7 +446,7 @@ module Request_handler = struct
          Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
          if exists then
            lwt_fail (`Forbidden, "User already exists")
-         else if String.length email < 5 || not (String.contains email '@') then
+         else if not (check_email_ml email) then
            lwt_fail (`Bad_request, "Invalid e-mail address")
          else if String.length password < 8 then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
@@ -830,7 +834,7 @@ module Request_handler = struct
                let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
                    email = List.assoc "email" params and
                    passwd = List.assoc "passwd" params in
-               if String.(length email < 5 || length passwd < 8 || not @@ contains email '@') then
+               if String.length passwd < 8 || not (check_email_ml email) then
                  lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
                else
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in

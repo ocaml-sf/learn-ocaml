@@ -6,6 +6,13 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(** Regexp strings compatible with:
+ * https://ocsigen.org/js_of_ocaml/3.1.0/api/Regexp
+ * https://caml.inria.fr/pub/docs/manual-ocaml/libref/Str.html
+ *)
+val email_regexp_js : string
+val email_regexp_ml : string
+
 module SMap: sig
 
   include Map.S with type key = string

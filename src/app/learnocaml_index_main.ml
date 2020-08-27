@@ -614,6 +614,21 @@ let complete_change_email cb new_email = function
          [%i"Cancel"], (fun () -> Lwt.return_none);
        ]
 
+let check_email_js email =
+  let re = Regexp.regexp Learnocaml_data.email_regexp_js in
+  match Regexp.string_match re email 0 with
+  | Some _ -> true
+  | None -> false
+
+let validate_email email =
+  if check_email_js email then Lwt.return_some email
+  (* FIXME: the dialog does not show up *)
+  else begin
+      alert ~title:[%i"ERROR"]
+        ([%i"The entered e-mail is invalid: "] ^ email);
+      Lwt.return_none
+    end
+
 let init_token_dialog () =
   let open El.Login_overlay in
   Manip.SetCss.display login_overlay "block";
@@ -653,8 +668,7 @@ let init_token_dialog () =
           password = Manip.value reg_input_password and
           consent = Manip.checked input_consent and
           consent_label = find_component "txt_first_connection_consent" in
-      (* 5 for a character, @, character, dot, character. *)
-      let email_criteria = String.length email < 5 || not (String.contains email '@') and
+      let email_criteria = not (check_email_js email) and
           passwd_criteria = String.length password < 8 in
       Manip.SetCss.borderColor reg_input_email "";
       Manip.SetCss.borderColor reg_input_password "";
@@ -908,11 +922,15 @@ let () =
       Lwt.catch
         (fun () ->
           ask_string ~title:[%i"New e-mail address"]
-            [H.txt [%i"Enter your new e-mail address: "]] >>= fun address ->
-          Server_caller.request
-            (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
-                                          address))
-          >>= complete_change_email change_email address)
+            [H.txt [%i"Enter your new e-mail address: "]]
+          >>= validate_email
+          >>= function
+          | Some address ->
+             Server_caller.request
+               (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
+                                             address))
+             >>= complete_change_email change_email address
+          | None -> Lwt.return_none)
         (fun _exn -> Lwt.return_none) in
     let buttons = [[%i"Change password"], change_password;
                    [%i"Change e-mail"], change_email] in

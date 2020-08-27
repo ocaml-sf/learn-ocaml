@@ -12,6 +12,10 @@ open Learnocaml_common
 
 module H = Tyxml_js.Html5
 
+let check_email_ml email =
+  let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
+  Str.string_match regexp email 0
+
 let id s = s, find_component s
 
 let login_overlay_id, login_overlay = id "login-overlay"
@@ -63,7 +67,7 @@ let create_token () =
       consent = Manip.checked input_consent and
       consent_label = find_component "txt_first_connection_consent" in
   (* 5 for a character, @, character, dot, character. *)
-  let email_criteria = String.length email < 5 || not (String.contains email '@') and
+  let email_criteria = not (check_email_ml email) and
       passwd_criteria = String.length password < 8 in
   Manip.SetCss.borderColor reg_input_email "";
   Manip.SetCss.borderColor reg_input_password "";

@@ -6,6 +6,16 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(* Regexp strings compatible with:
+ * https://ocsigen.org/js_of_ocaml/3.1.0/api/Regexp
+ * https://caml.inria.fr/pub/docs/manual-ocaml/libref/Str.html
+(* inspired from https://www.w3.org/TR/html52/sec-forms.html#valid-e-mail-address *)
+ *)
+let email_regexp_js =
+  "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$"
+let email_regexp_ml =
+  "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\(\\.[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\)+$"
+
 module J = Json_encoding
 
 module SMap = struct
