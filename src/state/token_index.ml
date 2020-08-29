@@ -277,6 +277,11 @@ let check_oauth sync_dir url args =
   with Not_found ->
     Lwt.return (Error "Missing args")
 
+(** Invariants:
+  * [Password (_, email, _, Some email)]: init state, unverified email
+  * [Password (_, email, _, None)]: verified email
+  * [Password (_, email, _, Some other_email)]: pending email change
+  *)
 type user =
   | Token of (Token.t * bool)
   | Password of (Token.t * string * string * string option)
@@ -287,6 +292,9 @@ type authentication =
 
 module BaseUserIndex (RW: IndexRW) = struct
   let rw = RW.init ()
+
+  (** Invariant: all emails are pairwise different (except possibly in
+      the initial account state: [Password (_, email, _, Some email)]). *)
   let file = "user.json"
 
   let enc = J.(
@@ -366,6 +374,9 @@ module BaseUserIndex (RW: IndexRW) = struct
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let upgrade sync_dir token name passwd =
+    (exists sync_dir name >|= fun exists ->
+     if exists then failwith "BaseUserIndex.upgrade: duplicate email")
+    >>= fun () ->
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
@@ -405,6 +416,9 @@ module BaseUserIndex (RW: IndexRW) = struct
         | _ -> res) None
 
   let change_email sync_dir token email =
+    (exists sync_dir email >|= fun exists ->
+     if exists then failwith "BaseUserIndex.change_email: duplicate email")
+    >>= fun () ->
     RW.read (sync_dir / indexes_subdir / file) parse >|=
       List.map (function
           | Password (found_token, name, passwd, _) when found_token = token ->
