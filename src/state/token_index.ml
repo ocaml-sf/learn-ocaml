@@ -354,15 +354,25 @@ module BaseUserIndex (RW: IndexRW) = struct
          Password (token, name, hash, verify_email) in
     RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
+  let update sync_dir token passwd =
+    get_data sync_dir >|=
+      List.map (function
+          | Token (found_token, _use_moodle) when found_token = token ->
+             failwith "BaseUserIndex.update: invalid action"
+          | Password (found_token, name, _passwd, verify) when found_token = token ->
+             let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
+             Password (token, name, hash, verify)
+          | elt -> elt) >>=
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
+
   let upgrade sync_dir token name passwd =
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
              let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
              Password (token, name, hash, Some(name))
-          | Password (found_token, name, _passwd, verify) when found_token = token ->
-             let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-             Password (token, name, hash, verify)
+          | Password (found_token, _name, _passwd, _verify) when found_token = token ->
+             failwith "BaseUserIndex.upgrade: invalid action"
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 

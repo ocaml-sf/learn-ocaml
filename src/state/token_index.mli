@@ -70,7 +70,13 @@ module UserIndex: sig
   val authenticate : string -> authentication -> Learnocaml_data.Token.t option Lwt.t
   val exists : string -> string -> bool Lwt.t
   val add : string -> user -> unit Lwt.t
+
+  (** Upgrade account from TOKEN to password *)
   val upgrade : string -> Learnocaml_data.Token.t -> string -> string -> unit Lwt.t
+
+  (** Update password *)
+  val update : string -> Learnocaml_data.Token.t -> string -> unit Lwt.t
+
   val confirm_email : string -> Learnocaml_data.Token.t -> unit Lwt.t
   val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
   val token_of_email : string -> string -> Learnocaml_data.Token.t option Lwt.t

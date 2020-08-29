@@ -766,7 +766,7 @@ module Request_handler = struct
                if String.length passwd < 8 then
                  lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
                else
-                 Token_index.UserIndex.upgrade !sync_dir token "" passwd >>= fun () ->
+                 Token_index.UserIndex.update !sync_dir token passwd >>= fun () ->
                  Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
             | None ->
