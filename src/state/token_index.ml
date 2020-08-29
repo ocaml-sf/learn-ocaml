@@ -305,11 +305,11 @@ module BaseUserIndex (RW: IndexRW) = struct
                      (fun (token, using_moodle) -> Token (token, using_moodle));
                    case (tup4 Token.enc string string (option string))
                      (function
-                      | Password (token, username, passwd, verify_email) ->
-                         Some (token, username, passwd, verify_email)
+                      | Password (token, email, passwd, verify_email) ->
+                         Some (token, email, passwd, verify_email)
                       | _ -> None)
-                     (fun (token, username, passwd, verify_email) ->
-                       Password (token, username, passwd, verify_email))]))
+                     (fun (token, email, passwd, verify_email) ->
+                       Password (token, email, passwd, verify_email))]))
 
   let parse = Json_codec.decode enc
   let serialise = Json_codec.encode ~minify:false enc
@@ -338,28 +338,28 @@ module BaseUserIndex (RW: IndexRW) = struct
           | AuthToken token, Token (found_tok, use_moodle)
                when not use_moodle && found_tok = token ->
              Some (token)
-          | Passwd (name, passwd), Password (token, found_name, found_passwd, _)
-               when found_name = name && Bcrypt.verify passwd (Bcrypt.hash_of_string found_passwd) ->
+          | Passwd (email, passwd), Password (token, found_email, found_passwd, _)
+               when found_email = email && Bcrypt.verify passwd (Bcrypt.hash_of_string found_passwd) ->
              Some (token)
           | _ ->
              None
         else res) None
 
-  let exists sync_dir name =
+  let exists sync_dir email =
     get_data sync_dir >|=
       List.exists (function
-          | Password (_token, found_name, _passwd, None) -> found_name = name
-          | Password (_token, found_name, _passwd, Some verify_email) ->
-             found_name = name || verify_email = name
+          | Password (_token, found_email, _passwd, None) -> found_email = email
+          | Password (_token, found_email, _passwd, Some verify_email) ->
+             found_email = email || verify_email = email
           | _ -> false)
 
   let add sync_dir auth =
     get_data sync_dir >>= fun users ->
     let new_user = match auth with
       | Token _ -> auth
-      | Password (token, name, passwd, verify_email) ->
+      | Password (token, email, passwd, verify_email) ->
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-         Password (token, name, hash, verify_email) in
+         Password (token, email, hash, verify_email) in
     RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
   let update sync_dir token passwd =
@@ -367,22 +367,23 @@ module BaseUserIndex (RW: IndexRW) = struct
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
              failwith "BaseUserIndex.update: invalid action"
-          | Password (found_token, name, _passwd, verify) when found_token = token ->
+          | Password (found_token, email, _passwd, verify) when found_token = token ->
              let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-             Password (token, name, hash, verify)
+             Password (token, email, hash, verify)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
-  let upgrade sync_dir token name passwd =
-    (exists sync_dir name >|= fun exists ->
+  let upgrade sync_dir token email passwd =
+    (exists sync_dir email >|= fun exists ->
      if exists then failwith "BaseUserIndex.upgrade: duplicate email")
     >>= fun () ->
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
              let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-             Password (token, name, hash, Some(name))
-          | Password (found_token, _name, _passwd, _verify) when found_token = token ->
+             Password (token, email, hash, Some(email))
+          | Password (found_token, _email, _passwd, _verify)
+               when found_token = token ->
              failwith "BaseUserIndex.upgrade: invalid action"
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
@@ -390,7 +391,8 @@ module BaseUserIndex (RW: IndexRW) = struct
   let confirm_email sync_dir token =
     get_data sync_dir >|=
       List.map (function
-          | Password (found_token, _name, passwd, Some verify) when found_token = token ->
+          | Password (found_token, _email, passwd, Some verify)
+               when found_token = token ->
              Password (found_token, verify, passwd, None)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
@@ -415,14 +417,14 @@ module BaseUserIndex (RW: IndexRW) = struct
         | None, Password (found_token, email, _, _) when found_token = token -> Some email
         | _ -> res) None
 
-  let change_email sync_dir token email =
-    (exists sync_dir email >|= fun exists ->
+  let change_email sync_dir token new_email =
+    (exists sync_dir new_email >|= fun exists ->
      if exists then failwith "BaseUserIndex.change_email: duplicate email")
     >>= fun () ->
     RW.read (sync_dir / indexes_subdir / file) parse >|=
       List.map (function
-          | Password (found_token, name, passwd, _) when found_token = token ->
-             Password (found_token, name, passwd, Some email)
+          | Password (found_token, email, passwd, _) when found_token = token ->
+             Password (found_token, email, passwd, Some new_email)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
