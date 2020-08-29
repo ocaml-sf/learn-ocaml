@@ -151,11 +151,11 @@ let send_email
                   ~subject
                   body in
      sendmail ~mailer ~crlf:false mail;
-     Printf.printf {|(* INFO => mailto:%s?subject="%s" *)
+     Printf.printf {|[INFO] mailto:%s?subject="%s"
 %!|} to_addr subject
   | None ->
      Printf.printf {|
-(* WARNING => environment variables SMTPSERVER and EMAIL must be set!
+[WARNING] Environment variables SMTPSERVER and EMAIL must be set! (*
 Can't mailto:%s?subject="%s" with body """
 %s
 """ *)
