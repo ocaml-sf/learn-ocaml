@@ -834,7 +834,9 @@ module Request_handler = struct
                let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
                    email = List.assoc "email" params and
                    passwd = List.assoc "passwd" params in
-               if String.length passwd < 8 || not (check_email_ml email) then
+               Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
+               if exists then lwt_fail (`Forbidden, "E-mail already used")
+               else if String.length passwd < 8 || not (check_email_ml email) then
                  lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
                else
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in
