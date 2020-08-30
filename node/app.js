@@ -31,10 +31,10 @@ app.post("/", function (req, res)
   {
     const raw_array = req.body;
     const split_array = raw_array.split(",");
-    const parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
+    let parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
     const obj = new Object();
     obj.studentId = split_array[1];
-    obj.timestamp = Date.now();
+    obj.timestamp = new Date().toString();
     obj.solution = parsedSolStr;
     const jsonString = JSON.stringify(obj);
     const solution = JSON.parse( jsonString ); // parse req.body as an object
@@ -57,7 +57,7 @@ app.post("/eval", function (req, res)
     const parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
     const obj = new Object();
     obj.studentId = split_array[1];
-    obj.timestamp = Date.now();
+    obj.timestamp = new Date().toString();
     obj.solution = parsedSolStr;
     const jsonString = JSON.stringify(obj);
     const solution = JSON.parse( jsonString ); // parse req.body as an object
