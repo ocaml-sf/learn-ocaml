@@ -616,9 +616,10 @@ let complete_change_email cb new_email = function
 
 let check_email_js email =
   let re = Regexp.regexp Learnocaml_data.email_regexp_js in
-  match Regexp.string_match re email 0 with
-  | Some _ -> true
-  | None -> false
+  Learnocaml_data.email_check_length email
+  && match Regexp.string_match re email 0 with
+     | Some _ -> true
+     | None -> false
 
 let validate_email email =
   if check_email_js email then Lwt.return_some email

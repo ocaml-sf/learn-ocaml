@@ -13,6 +13,9 @@
 val email_regexp_js : string
 val email_regexp_ml : string
 
+(** "local-part@domain" must have upto 254 chars, "local-part" upto 64 chars. *)
+val email_check_length : string -> bool
+
 module SMap: sig
 
   include Map.S with type key = string

@@ -14,7 +14,8 @@ module H = Tyxml_js.Html5
 
 let check_email_ml email =
   let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
-  Str.string_match regexp email 0
+  Learnocaml_data.email_check_length email
+  && Str.string_match regexp email 0
 
 let id s = s, find_component s
 

@@ -15,6 +15,8 @@ let email_regexp_js =
   "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$"
 let email_regexp_ml =
   "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\(\\.[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\)+$"
+let email_check_length email =
+  String.length email <= 254 && try String.index email '@' <= 64 with _ -> false
 
 module J = Json_encoding
 

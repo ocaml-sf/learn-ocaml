@@ -17,7 +17,8 @@ let version = Api.version
 
 let check_email_ml email =
   let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
-  Str.string_match regexp email 0
+  Learnocaml_data.email_check_length email
+  && Str.string_match regexp email 0
 
 let url_conv =
   conv ~docv:"URL" (
