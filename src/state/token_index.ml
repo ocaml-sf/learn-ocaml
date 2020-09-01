@@ -47,12 +47,7 @@ module IndexFile: IndexRW = struct
 
   let write mutex filename serialise data =
     Lwt_mutex.lock mutex >>= fun () ->
-    let path = Filename.dirname filename in
-    Lwt_utils.is_directory path >>= fun is_directory ->
-    (if is_directory then
-       Lwt.return_unit
-     else
-       Lwt_unix.mkdir path 0o755) >>= fun () ->
+    Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname filename) >>= fun () ->
     Lwt_io.open_file ~mode:Lwt_io.Output filename >>= fun channel ->
     Lwt_io.write channel (serialise data) >>= fun () ->
     Lwt_io.close channel >>= fun () ->
@@ -109,7 +104,7 @@ module BaseTokenIndex (RW: IndexRW) = struct
         (fun () -> RW.read filename parse)
         (fun _exn ->
            (* Note: this error handler may be adapted later to be more conservative?
-              it does not matter now as sync/token.json is not a critical file, and
+              it does not matter now as sync/data/token.json is not a critical file, and
               can be regenerated. *)
            create ())
     else
