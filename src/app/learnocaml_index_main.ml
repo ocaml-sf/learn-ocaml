@@ -838,14 +838,15 @@ let set_string_translations () =
     "txt_token_first_connection", [%i"First connection"];
     "txt_token_first_connection_dialog", [%i"Choose a nickname"];
     "txt_token_secret", [%i"Enter the secret"];
-    "txt_token_new", [%i"Create new token"];
+    "txt_token_new", [%i"Create account"];
     "txt_first_connection", [%i"First connection"];
     "txt_first_connection_email", [%i"E-mail address"];
     "txt_first_connection_nickname", [%i"Nickname"];
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
-    "txt_secret_label", [%i"The secret is the passphrase provided by \
-                            your teacher to sign-up (if applicable)."];
+    "txt_secret_label", [%i"The secret is an optional passphrase \
+                            provided by your teacher. It may be \
+                            required to create an account."];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
     "txt_returning_email", [%i"E-mail address"];
