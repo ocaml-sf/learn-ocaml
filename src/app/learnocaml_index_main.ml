@@ -583,6 +583,10 @@ let complete_reset_password ?(sayif = true) cb = function
         ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
                   else "");
      Lwt.return_none
+  | Error (`Http_error (400, _)) ->
+     alert ~title:[%i"ERROR"]
+       [%i"The entered e-mail was invalid."];
+     Lwt.return_none
   | Error e ->
      lwt_alert ~title:[%i"REQUEST ERROR"] [
          H.p [H.pcdata [%i"Could not retrieve data from server"]];

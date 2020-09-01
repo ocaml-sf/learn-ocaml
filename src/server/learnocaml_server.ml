@@ -715,7 +715,9 @@ module Request_handler = struct
             | None ->
                lwt_fail (`Forbidden, "Nothing to do."))
       | Api.Send_reset_password address when config.ServerData.use_passwd ->
-         Token_index.UserIndex.token_of_email !sync_dir address >>=
+         if not (check_email_ml address) then
+           lwt_fail (`Bad_request, "Invalid e-mail address")
+         else Token_index.UserIndex.token_of_email !sync_dir address >>=
            (function
             | Some token ->
                initiate_password_change token address cache req
