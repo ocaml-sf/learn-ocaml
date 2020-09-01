@@ -393,7 +393,7 @@ module BaseUserIndex (RW: IndexRW) = struct
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let can_login sync_dir token =
-    RW.read (sync_dir / indexes_subdir / file) parse >|= fun users ->
+    get_data sync_dir >|= fun users ->
       List.find_opt (function
           | Token (found_token, use_moodle) -> found_token = token && not use_moodle
           | _ -> false) users <> None
