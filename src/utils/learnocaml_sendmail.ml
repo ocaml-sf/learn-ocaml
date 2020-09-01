@@ -154,8 +154,7 @@ let send_email
      Printf.printf {|[INFO] mailto:%s?subject="%s"
 %!|} to_addr subject
   | None ->
-     Printf.printf {|
-[WARNING] Environment variables SMTPSERVER and EMAIL must be set! (*
+     Printf.printf {|[WARNING] Environment variables SMTPSERVER and EMAIL must be set! (*
 Can't mailto:%s?subject="%s" with body """
 %s
 """ *)

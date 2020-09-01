@@ -457,7 +457,10 @@ module Request_handler = struct
          Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
            (function
             | Some token -> respond_json cache token
-            | _ -> lwt_fail (`Forbidden, "bad login/password"))
+            | _ ->
+               Lwt.return (Printf.printf "[WARNING] Bad login or password for: %s\n%!" nick)
+               >>= fun () ->
+               lwt_fail (`Forbidden, "Bad login or password"))
       | Api.Create_user _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Login _ ->
@@ -716,7 +719,12 @@ module Request_handler = struct
            (function
             | Some token ->
                initiate_password_change token address cache req
-            | None -> lwt_fail (`Not_found, "Unknown user."))
+            | None ->
+               Lwt.return
+                 (Printf.printf "[INFO] attempt to reset password for unknown email: %s\n%!"
+                    address)
+               >>= fun () ->
+               respond_json cache address)
       | Api.Change_password token when config.ServerData.use_passwd ->
          Token_index.UserIndex.email_of_token !sync_dir token >>=
            (function

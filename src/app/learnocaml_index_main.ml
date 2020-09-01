@@ -576,15 +576,12 @@ let show_token_dialog token =
       H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
     ]
 
-let complete_reset_password cb = function
+let complete_reset_password ?(sayif = true) cb = function
   | Ok email ->
-     alert ~title:[%i"RESET REQUEST SENT"]
-       ([%i"A reset link has been sent to the following address: "]
-       ^ email);
-     Lwt.return_none
-  | Error (`Not_found _) ->
-     alert ~title:[%i"ERROR"]
-       [%i"The entered e-mail couldn't be recognised."];
+     alert ~title:[%i"RESET REQUEST"]
+       ([%i"A reset link was sent to the address: "]
+        ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
+                  else "");
      Lwt.return_none
   | Error e ->
      lwt_alert ~title:[%i"REQUEST ERROR"] [
@@ -603,7 +600,7 @@ let complete_change_email cb new_email = function
      Lwt.return_none
   | Error (`Not_found _) ->
      alert ~title:[%i"ERROR"]
-       [%i"The entered e-mail couldn't be recognised."];
+       [%i"The entered e-mail couldn't be recognized."];
      Lwt.return_none
   | Error e ->
      lwt_alert ~title:[%i"REQUEST ERROR"] [
@@ -716,7 +713,7 @@ let init_token_dialog () =
             Lwt.return_some (token, save.Save.nickname)
          | Error (`Not_found _) ->
             alert ~title:[%i"TOKEN NOT FOUND"]
-              [%i"The entered token couldn't be recognised."];
+              [%i"The entered token couldn't be recognized."];
             Lwt.return_none
          | Error e ->
             lwt_alert ~title:[%i"REQUEST ERROR"] [
@@ -739,7 +736,7 @@ let init_token_dialog () =
        Server_caller.request (Learnocaml_api.Can_login token) >>= function
        | Error _ | Ok false ->
           alert ~title:[%i"TOKEN NOT FOUND"]
-            [%i"The entered token couldn't be recognised."];
+            [%i"The entered token couldn't be recognized."];
           Lwt.return_none
        | _ ->
           Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
@@ -749,7 +746,7 @@ let init_token_dialog () =
              Lwt.return_some (token, save.Save.nickname)
           | Error (`Not_found _) ->
              alert ~title:[%i"TOKEN NOT FOUND"]
-               [%i"The entered token couldn't be recognised."];
+               [%i"The entered token couldn't be recognized."];
              Lwt.return_none
           | Error e ->
              lwt_alert ~title:[%i"REQUEST ERROR"] [
@@ -848,7 +845,7 @@ let set_string_translations () =
     "txt_first_connection_password", [%i"Password"];
     "txt_first_connection_secret", [%i"Secret"];
     "txt_secret_label", [%i"The secret is the passphrase provided by \
-                            your teacher to sign-up."];
+                            your teacher to sign-up (if applicable)."];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
     "txt_returning_email", [%i"E-mail address"];
@@ -918,7 +915,7 @@ let () =
     let rec change_password () =
       Server_caller.request (Learnocaml_api.Change_password
                                Learnocaml_local_storage.(retrieve sync_token))
-      >>= complete_reset_password change_password in
+      >>= complete_reset_password ~sayif:false change_password in
     let rec change_email () =
       Lwt.catch
         (fun () ->
