@@ -22,7 +22,7 @@ type _ request =
   | Create_teacher_token:
       teacher token -> teacher token request
   | Create_user:
-      string * string * string * string -> student token request
+      string * string * string * string -> unit request
   | Login:
       string * string -> student token request
   | Can_login:
@@ -142,8 +142,7 @@ module Conversions (Json: JSON_CODEC) = struct
           json J.(obj1 (req "token" string)) +>
             Token.(to_string, parse)
       | Create_user _ ->
-          json J.(obj1 (req "token" string)) +>
-            Token.(to_string, parse)
+          json J.unit
       | Login _ ->
            json J.(obj1 (req "token" string)) +>
             Token.(to_string, parse)

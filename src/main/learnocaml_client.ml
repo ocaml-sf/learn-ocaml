@@ -724,22 +724,11 @@ module Init_user = struct
 
   let init global_args create_user_args =
     let path = if global_args.local then ConfigFile.local_path else ConfigFile.user_path in
-    let get_token server =
-      match global_args.token with
-      | Some token -> Lwt.return token
-      | None ->
-         match create_user_args with
-         | {email; password; nickname=None; secret=None} ->
-            user_login server email password
-         | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
-            if not (check_email_ml email) then
-              Lwt.fail_with "Invalid e-mail address"
-            else if String.length password < 8 then
-              Lwt.fail_with "Password must be at least 8 characters long"
-            else
-              get_nonce_and_create_user server email password nickname secret
-         | _ ->
-            Lwt.fail_with "You must provide an e-mail address, a password, a nickname and a secret."
+    let save_token server token =
+      let config = { ConfigFile. server; token=Some(token)} in
+      ConfigFile.write path config >|= fun () ->
+      Printf.eprintf "Configuration written to %s.\n%!" path;
+      0
     in
     let get_server () =
       match global_args.server_url with
@@ -748,11 +737,24 @@ module Init_user = struct
     in
     get_server () >>= fun server ->
     check_server_version server >>= fun _ ->
-    get_token server >>= fun token ->
-    let config = { ConfigFile. server; token=Some(token) } in
-    ConfigFile.write path config >|= fun () ->
-    Printf.eprintf "Configuration written to %s.\n%!" path;
-    0
+    match global_args.token with
+    | Some token -> save_token server token
+    | None ->
+       match create_user_args with
+       | {email; password; nickname=None; secret=None} ->
+          user_login server email password >>=
+            save_token server
+       | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
+         if not (check_email_ml email) then
+           Lwt.fail_with "Invalid e-mail address"
+         else if String.length password < 8 then
+           Lwt.fail_with "Password must be at least 8 characters long"
+         else
+           get_nonce_and_create_user server email password nickname secret >>= fun () ->
+           Printf.eprintf "A confirmation e-mail has been sent to your address.";
+           Lwt.return 0
+       | _ ->
+          Lwt.fail_with "You must provide an e-mail address, a password, a nickname and a secret."
 
   let man = man "Initialize the configuration file with the server, \
                  and a token, or login with an email+password pair, or \

@@ -35,7 +35,7 @@ type _ request =
   | Create_teacher_token:
       teacher token -> teacher token request
   | Create_user:
-      string * string * string * string -> student token request
+      string * string * string * string -> unit request
   | Login:
       string * string -> student token request
   | Can_login:

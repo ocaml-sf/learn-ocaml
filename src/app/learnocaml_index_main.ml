@@ -694,10 +694,9 @@ let init_token_dialog () =
         (Learnocaml_local_storage.(store nickname) nickname;
          retrieve
            (Learnocaml_api.Create_user (email, nickname, password, secret))
-         >>= fun token ->
-         Learnocaml_local_storage.(store sync_token) token;
-         Learnocaml_local_storage.(store can_show_token) false;
-         Lwt.return_some (token, nickname))
+         >>= fun () ->
+         alert ~title:[%i"VALIDATION REQUIRED"] [%i"A confirmation e-mail has been sent to your address."];
+         Lwt.return_none)
     else
       Lwt.return_none
   in

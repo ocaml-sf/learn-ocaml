@@ -333,6 +333,9 @@ module BaseUserIndex (RW: IndexRW) = struct
           | AuthToken token, Token (found_tok, use_moodle)
                when not use_moodle && found_tok = token ->
              Some (token)
+          | Passwd (email, _), Password (_, found_email, _, Some new_email)
+               when found_email = email && found_email = new_email ->
+             None
           | Passwd (email, passwd), Password (token, found_email, found_passwd, _)
                when found_email = email && Bcrypt.verify passwd (Bcrypt.hash_of_string found_passwd) ->
              Some (token)

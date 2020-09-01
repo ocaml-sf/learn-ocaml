@@ -12,10 +12,12 @@ open Learnocaml_common
 
 module H = Tyxml_js.Html5
 
-let check_email_ml email =
-  let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
+let check_email_js email =
+  let re = Regexp.regexp Learnocaml_data.email_regexp_js in
   Learnocaml_data.email_check_length email
-  && Str.string_match regexp email 0
+  && match Regexp.string_match re email 0 with
+     | Some _ -> true
+     | None -> false
 
 let id s = s, find_component s
 
@@ -68,7 +70,7 @@ let create_token () =
       consent = Manip.checked input_consent and
       consent_label = find_component "txt_first_connection_consent" in
   (* 5 for a character, @, character, dot, character. *)
-  let email_criteria = not (check_email_ml email) and
+  let email_criteria = not (check_email_js email) and
       passwd_criteria = String.length password < 8 in
   Manip.SetCss.borderColor reg_input_email "";
   Manip.SetCss.borderColor reg_input_password "";
@@ -81,7 +83,7 @@ let create_token () =
         Manip.SetCss.borderColor reg_input_password "#f44";
       if not consent then
         Manip.SetCss.fontWeight consent_label "bold";
-      Lwt.return_none
+      Lwt.return_unit
     end
   else
     let nickname = String.trim (Manip.value reg_input_nick) and
@@ -91,21 +93,14 @@ let create_token () =
     let secret = Sha.sha512 (nonce ^ secret) in
     (Learnocaml_local_storage.(store nickname) nickname;
      retrieve
-       (Learnocaml_api.Create_user (email, nickname, password, secret))
-     >>= fun token ->
-     Learnocaml_local_storage.(store sync_token) token;
-     Lwt.return_some (token, nickname))
+       (Learnocaml_api.Create_user (email, nickname, password, secret)) >>= fun () ->
+     alert ~title:[%i"VALIDATION REQUIRED"] [%i"A confirmation e-mail has been sent to your address."];
+     Lwt.return_unit)
 
 let init_dialogs () =
   Manip.SetCss.display login_overlay "block";
   Manip.Ev.onclick login_new_button (fun _ ->
-      Lwt.async (fun _ ->
-          create_token () >>= function
-          | Some (_token, _nickname) ->
-             send_sync_request ();
-             Dom_html.window##.location##assign (Js.string "/");
-             Lwt.return ()
-          | None -> Lwt.return_unit);
+      Lwt.async create_token;
       true)
 
 let () =

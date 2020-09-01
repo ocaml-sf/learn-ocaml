@@ -192,7 +192,7 @@ let generate_hmac secret csrf user_id =
   Cryptokit.hash_string hmac (csrf ^ user_id)
   |> Cryptokit.transform_string encoder
 
-let create_student conn (config: Learnocaml_data.Server.config) cache req
+let create_student conn (config: Learnocaml_data.Server.config) req
       nonce_req secret_candidate nick base_auth =
   let module ServerData = Learnocaml_data.Server in
   lwt_option_fail
@@ -224,7 +224,7 @@ let create_student conn (config: Learnocaml_data.Server.config) cache req
               email;
             Token_index.Password (tok, email, password, Some(email)))) >>= fun auth ->
        Token_index.UserIndex.add !sync_dir auth >>= fun () ->
-       respond_json cache tok
+       lwt_ok tok
 
 (** [get_nickname] is used to show the user name in emails openings.
     (Cost some filesystem read; we might want to always return None) *)
@@ -426,7 +426,8 @@ module Request_handler = struct
       | Api.Create_token (secret_candidate, None, nick) ->
          valid_string_of_endp conn
          >?= fun conn ->
-         create_student conn config cache req nonce_req secret_candidate nick (`Token false)
+         create_student conn config req nonce_req secret_candidate nick (`Token false) >?=
+         respond_json cache
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
          lwt_catch_fail
             (fun () -> Token.register token >>= fun () ->
@@ -452,7 +453,9 @@ module Request_handler = struct
          else if String.length password < 8 then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else
-           create_student conn config cache req nonce_req secret (Some nick) (`Password (email, password))
+           create_student conn config req nonce_req secret (Some nick) (`Password (email, password)) >?= fun _ ->
+           respond_json cache ()
+
       | Api.Login (nick, password) when config.ServerData.use_passwd ->
          Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
            (function
