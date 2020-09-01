@@ -624,7 +624,6 @@ let check_email_js email =
 
 let validate_email email =
   if check_email_js email then Lwt.return_some email
-  (* FIXME: the dialog does not show up *)
   else begin
       alert ~title:[%i"ERROR"]
         ([%i"The entered e-mail is invalid: "] ^ email);

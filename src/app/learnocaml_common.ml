@@ -92,10 +92,14 @@ let dialog_layer_id = "ocp-dialog-layer"
 let box_button txt f =
   H.button ~a: [
     H.a_onclick (fun _ ->
+        begin
+          match Manip.by_id dialog_layer_id with
+          | Some div -> Manip.removeChild Manip.Elt.body div
+          | None -> ()
+        end;
         f ();
-        match Manip.by_id dialog_layer_id with
-        | Some div -> Manip.removeChild Manip.Elt.body div; false
-        | None -> (); false)
+        false
+      )
   ] [ H.txt txt ]
 
 let close_button txt =
