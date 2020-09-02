@@ -808,24 +808,30 @@ let delete_cookie name =
 let init_sync_token button_group =
   catch
     (fun () ->
-      begin try
-           if get_cookie "token" <> None then
-             Learnocaml_local_storage.(store can_show_token) false;
-           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
-         with Not_found ->
-               match get_cookie "token" with
-               | None -> init_token_dialog ()
-               | Some token ->
-                  let token = Learnocaml_data.Token.parse token in
-                  Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
-                  | Ok save ->
-                     set_state_from_save_file ~token save;
-                     Learnocaml_local_storage.(store can_show_token) false;
-                     Lwt.return token
-                  | Error _ -> init_token_dialog ()
-       end >>= fun token ->
-       enable_button_group button_group ;
-       Lwt.return (Some token))
+      begin
+        match get_cookie "token" with
+        | None ->
+           begin
+             try Lwt.return Learnocaml_local_storage.(retrieve sync_token)
+             with Not_found -> init_token_dialog ()
+           end
+        | Some token ->
+           let token = Learnocaml_data.Token.parse token in
+           Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+           | Ok save ->
+              set_state_from_save_file ~token save;
+              Learnocaml_local_storage.(store can_show_token) false;
+              Lwt.return token
+           | Error _ -> init_token_dialog ()
+      end >>= fun token ->
+      enable_button_group button_group;
+      begin
+        try
+          let nickname = Learnocaml_local_storage.(retrieve nickname) in
+          (Tyxml_js.To_dom.of_input El.nickname_field)##.value := Js.string nickname
+        with _ -> ()
+      end;
+      Lwt.return (Some token))
     (fun _ -> Lwt.return None)
 
 let set_string_translations () =
