@@ -438,8 +438,9 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
     | ResetPassword
 
   let enc = J.(
-      assoc (tup2 Token.enc (string_enum ["change_email", ChangeEmail;
-                                          "reset_password", ResetPassword])))
+      assoc (tup3 Token.enc float
+               (string_enum ["change_email", ChangeEmail;
+                             "reset_password", ResetPassword])))
 
   let parse = Json_codec.decode enc
   let serialise = Json_codec.encode ~minify:false enc
@@ -456,7 +457,7 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
   let create_upgrade_operation kind sync_dir token =
     get_data sync_dir >>= fun operations ->
     let id = generate_random_hex 32 in
-    (id, (token, kind)) :: operations
+    (id, (token, Unix.time (), kind)) :: operations
     |> RW.write rw (sync_dir / indexes_subdir / file) serialise >|= fun () ->
     id
 
@@ -465,8 +466,14 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
 
   let check_upgrade_operation kind sync_dir handle =
     get_data sync_dir >|= fun operations ->
+    let expiration_threshold, _ =
+      Unix.(
+        let dt = localtime @@ time () in
+        mktime {dt with tm_hour = dt.tm_hour + 4}) in
     match List.assoc_opt handle operations with
-    | Some (token, found_kind) when found_kind = kind -> Some token
+    | Some (token, date, ResetPassword)
+         when kind = ResetPassword && date >= expiration_threshold -> Some token
+    | Some (token, _date, ChangeEmail) when kind = ChangeEmail -> Some token
     | _ -> None
 
   let can_change_email = check_upgrade_operation ChangeEmail
