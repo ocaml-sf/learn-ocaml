@@ -266,7 +266,7 @@ let check_oauth sync_dir url args =
         OauthIndex.get_current_secret sync_dir >|=
           signature_oauth args "post" url >>= fun s ->
         if Eqaf.equal s oauth_args.signature then
-          Lwt.return (Ok (oauth_args.consumer_key ^ (List.assoc "user_id" args)))
+          Lwt.return (Ok (oauth_args.consumer_key ^ ":" ^ (List.assoc "user_id" args)))
         else
           Lwt.return (Error "Wrong signature")
   with Not_found ->
