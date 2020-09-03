@@ -387,13 +387,17 @@ module Request_handler = struct
                              ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
          let user_id = List.assoc "user-id" params and
              csrf = List.assoc "csrf" params and
-             hmac = List.assoc "hmac" params in
+             hmac = List.assoc "hmac" params and
+             nickname = List.assoc "nick" params in
          Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
          let new_hmac = generate_hmac secret csrf user_id in
          if not (Eqaf.equal hmac new_hmac) then
            lwt_fail (`Forbidden, "bad hmac")
          else
            Token.create_student () >>= fun token ->
+           (if nickname = "" then Lwt.return_unit
+            else Save.set token Save.{empty with nickname})
+           >>= fun () ->
            let auth = Token_index.Token (token, true) in
            Token_index.(
              TokenIndex.add_token !sync_dir token >>= fun () ->

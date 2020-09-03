@@ -111,9 +111,10 @@ let () =
       "txt_first_connection_email", [%i"E-mail address"];
       "txt_first_connection_nickname", [%i"Nickname"];
       "txt_first_connection_password", [%i"Password"];
-      "txt_first_connection_secret", [%i"Enter the secret"];
-      "txt_secret_label", [%i"The secret is the passphrase provided by \
-                            your teacher to sign-up."];
+      "txt_first_connection_secret", [%i"Secret"];
+      "txt_secret_label", [%i"The secret is an optional passphrase \
+                              provided by your teacher. It may be \
+                              required to create an account."];
       "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                           information entered will be used in the \
                                           context of the Learn-OCaml plateform."];
@@ -123,6 +124,10 @@ let () =
       "txt_returning_password", [%i"Password"];
       "txt_login_returning", [%i"Connect"];
       "txt_login_forgotten", [%i"Forgot your password?"];
+      "txt_direct_login_nickname", [%i"Choose a nickname"];
       "txt_direct_login", [%i"Direct login"];
+      "txt_indirect_label", [%i"Or to be able to login independently of Moodle, \
+                                you might want to setup a password below \
+                                (or upgrade your account later)"];
       "txt_button_direct_login", [%i"Direct login"];
     ]

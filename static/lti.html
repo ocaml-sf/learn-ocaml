@@ -16,6 +16,22 @@
   </head>
   <body>
     <div id="login-overlay">
+      <form method="post" action="/launch/direct">
+	<div id="login-token">
+          <h4 id="txt_direct_login"><!-- Direct login --></h4>
+          <div>
+            <div id="txt_direct_login_nickname"><!-- Nickname --></div>
+            <div class="filler_h"></div>
+            <input id="login-direct-nick-input" type="text" name="nick" minlength="2" autocomplete="off"></input>
+          </div>
+	  <input type="hidden" name="csrf">
+	  <input type="hidden" name="user-id">
+	  <input type="hidden" name="hmac">
+          <button id="login-direct-login" type="submit"><span id="txt_button_direct_login"><!-- Direct login --></span></button>
+	  <div id="txt_indirect_label"><!-- to be able to login independently of Moodle --></div>
+	  <span><!-- Workaround(last-child) --></span>
+	</div>
+      </form>
       <div id="login-new">
         <h4 id="txt_first_connection"><!-- First connection --></h4>
         <div>
@@ -26,7 +42,7 @@
         <div>
           <div id="txt_first_connection_nickname"><!-- Nickname --></div>
           <div class="filler_h"></div>
-          <input id="register-nick-input" type="text">
+          <input id="register-nick-input" type="text" minlength="2" autocomplete="off"></input>
         </div>
         <div>
           <div id="txt_first_connection_password"><!-- Password --></div>
@@ -51,12 +67,12 @@
           <div>
             <div id="txt_returning_email"><!-- Email address --></div>
             <div class="filler_h"></div>
-            <input type="email" id="login-email-input" name="email">
+            <input type="email" id="login-email-input" name="email" minlength="5">
           </div>
           <div>
             <div id="txt_returning_password"><!-- Password --></div>
             <div class="filler_h"></div>
-            <input type="password" id="login-password-input" name="passwd">
+          <input id="login-password-input" type="password" minlength="1" name="passwd">
           </div>
           <input type="hidden" id="login-csrf-input" name="csrf">
           <input type="hidden" id="login-id-input" name="user-id">
@@ -66,15 +82,6 @@
           </div>
           <a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
         </div>
-      </form>
-      <form method="post" action="/launch/direct">
-	<div id="login-token">
-          <h4 id="txt_direct_login"><!-- Direct login --></h4>
-	  <input type="hidden" name="csrf">
-	  <input type="hidden" name="user-id">
-	  <input type="hidden" name="hmac">
-          <button id="login-direct-login" type="submit"><span id="txt_button_direct_login"><!-- Direct login --></span></button>
-	</div>
       </form>
     </div>
   </body>
