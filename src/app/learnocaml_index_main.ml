@@ -723,8 +723,11 @@ let init_token_dialog () =
     | token ->
        Server_caller.request (Learnocaml_api.Can_login token) >>= function
        | Error _ | Ok false ->
-          alert ~title:[%i"TOKEN NOT FOUND"]
-            [%i"The entered token couldn't be recognized."];
+          alert ~title:[%i"INVALID TOKEN"] @@
+            Printf.sprintf [%if"This token is associated to an upgraded \
+                                account, which only allows \
+                                password-based%s authentication."]
+            (if get_opt config##.enableMoodle then [%i" or Moodle/LTI"] else "");
           Lwt.return_none
        | _ ->
           Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
