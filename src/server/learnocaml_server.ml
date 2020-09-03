@@ -1105,6 +1105,12 @@ let launch () =
     | Some (crt, key) ->
         `TLS (`Crt_file_path crt, `Key_file_path key, `No_password, `Port !port)
   in
+  begin
+    if config.Learnocaml_data.Server.use_passwd then
+      Token_index.UpgradeIndex.filter_old_operations !sync_dir
+    else
+      Lwt.return_unit
+  end >>= fun () ->
   init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
       Server.create

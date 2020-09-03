@@ -94,4 +94,5 @@ module UpgradeIndex: sig
   val can_reset_password : string -> string -> Learnocaml_data.Token.t option Lwt.t
 
   val revoke_operation : string -> string -> unit Lwt.t
+  val filter_old_operations : string -> unit Lwt.t
 end

@@ -483,6 +483,16 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
     get_data sync_dir >|=
     List.filter (fun (found_handle, _operation) -> found_handle <> handle) >>=
     RW.write rw (sync_dir / indexes_subdir / file) serialise
+
+  let filter_old_operations sync_dir =
+    get_data sync_dir >>= fun operations ->
+    let expiration_threshold, _ =
+      Unix.(
+        let dt = localtime @@ time () in
+        mktime {dt with tm_mon = dt.tm_mon + 1}) in
+    List.filter (fun (_id, (_token, date, operation)) ->
+        operation = ChangeEmail || date >= expiration_threshold) operations
+    |> RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
 
 module UpgradeIndex = BaseUpgradeIndex (IndexFile)
