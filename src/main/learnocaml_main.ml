@@ -331,7 +331,7 @@ let main o =
                 Lwt.return_unit) >>= fun () ->
          (if preconfig.ServerData.use_moodle then
             Token_index.OauthIndex.get_first_oauth o.server.Server.sync_dir >>= fun (secret, _) ->
-            Lwt_io.printf "OAuth token: %s\n" secret
+            Lwt_io.printf "LTI shared secret: %s\n" secret
           else
             Lwt.return_unit)
        >>= fun () ->
