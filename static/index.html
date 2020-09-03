@@ -97,12 +97,12 @@
         <div>
           <div id="txt_returning_email"><!-- Email address --></div>
           <div class="filler_h"></div>
-          <input type="email" id="login-email-input">
+          <input id="login-email-input" type="email" minlength="5">
         </div>
         <div>
           <div id="txt_returning_password"><!-- Password --></div>
           <div class="filler_h"></div>
-          <input type="password" id="login-password-input">
+          <input id="login-password-input" type="password" minlength="1">
         </div>
         <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
         <a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
@@ -117,7 +117,7 @@
         <div>
           <div id="txt_first_connection_nickname"><!-- Nickname --></div>
           <div class="filler_h"></div>
-          <input id="register-nick-input" type="text">
+          <input id="register-nick-input" type="text" minlength="2" autocomplete="off"></input>
         </div>
         <div>
           <div id="txt_first_connection_password"><!-- Password --></div>
