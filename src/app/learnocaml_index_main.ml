@@ -77,20 +77,6 @@ module El = struct
   end
 end
 
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
-  method enableLessons: bool Js.optdef_prop
-  method enableExercises: bool Js.optdef_prop
-  method enableToplevel: bool Js.optdef_prop
-  method enablePasswd: bool Js.optdef_prop
-  method enablePlayground: bool Js.optdef_prop
-  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
-  method txtNickname: Js.js_string Js.t Js.optdef_prop
-end
-
-let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
-let get_opt o = Js.Optdef.get o (fun () -> false)
-
 let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [txt msg]]]
 
 let get_url token dynamic_url static_url id =
