@@ -762,6 +762,13 @@ let init_token_dialog () =
   let rec reset_password () =
     if get_opt config##.enablePasswd then
       let email = Manip.value login_input_email in
+      let email_criteria = not (check_email_js email) in
+      Manip.SetCss.borderColor login_input_email "";
+      if email_criteria then begin
+          Manip.SetCss.borderColor login_input_email "#f44";
+          alert ~title:[%i"ERROR"] [%i"The entered e-mail was invalid."];
+          Lwt.return_none end
+      else
       Server_caller.request (Learnocaml_api.Send_reset_password email)
       >>= complete_reset_password reset_password
     else
