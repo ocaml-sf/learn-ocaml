@@ -401,6 +401,11 @@ module Server = struct
     | Some b -> b
     | None -> false
 
+  let errorable_bool =
+    J.(union [case bool (fun b -> Some b) (fun b -> b);
+              case string (fun s -> Some (string_of_bool s))
+                (fun s -> bool_of_option @@ bool_of_string_opt s)])
+
   let preconfig_enc =
     J.conv (fun (c : preconfig) ->
         (c.secret, Some(c.use_moodle), Some(c.use_passwd)))
@@ -409,8 +414,8 @@ module Server = struct
          use_moodle = bool_of_option use_moodle;
          use_passwd = bool_of_option use_passwd}) @@
       J.obj3 (J.opt "secret" J.string)
-        (J.opt "use_moodle" J.bool)
-        (J.opt "use_passwd" J.bool)
+        (J.opt "use_moodle" errorable_bool)
+        (J.opt "use_passwd" errorable_bool)
 
   type config = {
     secret : string option;
@@ -440,8 +445,8 @@ module Server = struct
          use_passwd = bool_of_option use_passwd;
          server_id}) @@
       J.obj4 (J.opt "secret" J.string)
-        (J.opt "use_moodle" J.bool)
-        (J.opt "use_passwd" J.bool)
+        (J.opt "use_moodle" errorable_bool)
+        (J.opt "use_passwd" errorable_bool)
         (J.req "server_id" J.int)
 end
 
