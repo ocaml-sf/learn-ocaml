@@ -456,6 +456,8 @@ module Request_handler = struct
            lwt_fail (`Bad_request, "Invalid e-mail address")
          else if not (Learnocaml_data.passwd_check_length password) then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
+         else if not (Learnocaml_data.passwd_check_strength password) then
+           lwt_fail (`Bad_request, "Password too weak")
          else
            create_student conn config req nonce_req secret (Some nick) (`Password (email, password)) >?= fun _ ->
            respond_json cache ()
@@ -783,6 +785,8 @@ module Request_handler = struct
                                 ~http_only:true ("csrf", "expired")] in
                if not (Learnocaml_data.passwd_check_length password) then
                  lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
+               else if not (Learnocaml_data.passwd_check_strength password) then
+                 lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
                else
                  Token_index.UserIndex.update !sync_dir token password >>= fun () ->
                  Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
@@ -855,6 +859,7 @@ module Request_handler = struct
                Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
                if exists then lwt_fail (`Forbidden, "E-mail already used")
                else if not (Learnocaml_data.passwd_check_length password)
+                       || not (Learnocaml_data.passwd_check_strength password)
                        || not (check_email_ml email) then
                  lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
                else

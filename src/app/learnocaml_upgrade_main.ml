@@ -18,6 +18,10 @@ let () =
   try
     Manip.SetCss.display (find_component "login-overlay") "block";
     set_string_translations [
+        "txt_password_length", [%i"Password must be at least 8 characters long"];
+        "txt_password_strength", [%i"Password must contain at least one digit, \
+                                     one lower and upper letter, \
+                                     and one non-alphanumeric char."];
         "txt_upgrade", [%i"Upgrade account"];
         "txt_upgrade_email", [%i"E-mail address"];
         "txt_upgrade_password", [%i"Password"];
