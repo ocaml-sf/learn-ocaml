@@ -565,8 +565,8 @@ let show_token_dialog token =
 let complete_reset_password ?(sayif = true) cb = function
   | Ok email ->
      alert ~title:[%i"RESET REQUEST"]
-       ([%i"A reset link was sent to the address: "]
-        ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
+       ([%i"A reset link was sent to the address:"]
+        ^ " " ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
                   else "");
      Lwt.return_none
   | Error (`Http_error (400, _)) ->
@@ -585,8 +585,8 @@ let complete_reset_password ?(sayif = true) cb = function
 let complete_change_email cb new_email = function
   | Ok () ->
      alert ~title:[%i"RESET REQUEST SENT"]
-       ([%i"A confirmation e-mail has been sent to the address: "]
-       ^ new_email);
+       ([%i"A confirmation e-mail has been sent to the address:"]
+       ^ " " ^ new_email);
      Lwt.return_none
   | Error (`Not_found _) ->
      alert ~title:[%i"ERROR"]
@@ -942,7 +942,7 @@ let () =
       Lwt.catch
         (fun () ->
           ask_string ~title:[%i"New e-mail address"]
-            [H.txt [%i"Enter your new e-mail address: "]]
+            [H.txt [%i"Enter your new e-mail address:"]]
           >>= validate_email
           >>= function
           | Some address ->

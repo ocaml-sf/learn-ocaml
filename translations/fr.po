@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-08 23:02+0200\n"
+"PO-Revision-Date: 2020-09-08 23:10+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -655,25 +655,25 @@ msgstr "Notez-le !"
 msgid "RESET REQUEST"
 msgstr "REQUÊTE DE RÉINITIALISATION ENVOYÉE"
 
-#: src/app/learnocaml_index_main.ml:568,11--51
-msgid "A reset link was sent to the address: "
-msgstr "Un lien de réinitialisation a été envoyé à l'adresse : "
+#: src/app/learnocaml_index_main.ml:568,11--50
+msgid "A reset link was sent to the address:"
+msgstr "Un lien de réinitialisation a été envoyé à l'adresse :"
 
-#: src/app/learnocaml_index_main.ml:569,35--76
+#: src/app/learnocaml_index_main.ml:569,41--82
 msgid ""
 "\n"
 "(if it is associated with an account)"
 msgstr ""
 "\n"
-"(s'il est associé à un compte)"
+"(si elle est associée à un compte)"
 
 #: src/app/learnocaml_index_main.ml:587,21--41
 msgid "RESET REQUEST SENT"
 msgstr "REQUÊTE DE RÉINITIALISATION ENVOYÉE"
 
-#: src/app/learnocaml_index_main.ml:588,11--65
-msgid "A confirmation e-mail has been sent to the address: "
-msgstr "Un lien de confirmation a été envoyé à l'adresse : "
+#: src/app/learnocaml_index_main.ml:588,11--64
+msgid "A confirmation e-mail has been sent to the address:"
+msgstr "Un lien de confirmation a été envoyé à l'adresse :"
 
 #: src/app/learnocaml_index_main.ml:593,10--54
 msgid "The entered e-mail couldn't be recognized."
@@ -747,9 +747,9 @@ msgstr "Sélectionnez une activité."
 msgid "New e-mail address"
 msgstr "Nouvelle adresse e-mail"
 
-#: src/app/learnocaml_index_main.ml:945,22--55
-msgid "Enter your new e-mail address: "
-msgstr "Entrez votre nouvelle adresse e-mail : "
+#: src/app/learnocaml_index_main.ml:945,22--54
+msgid "Enter your new e-mail address:"
+msgstr "Entrez votre nouvelle adresse e-mail :"
 
 #: src/app/learnocaml_index_main.ml:955,22--39
 msgid "Change password"
