@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-03 22:46+0200\n"
+"PO-Revision-Date: 2020-09-08 23:02+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -24,11 +24,17 @@ msgid "OK"
 msgstr "OK"
 
 #: src/app/learnocaml_common.ml:139,21--28
+#: src/app/learnocaml_lti_main.ml:88,26--33
+#: src/app/learnocaml_lti_main.ml:94,26--33
+#: src/app/learnocaml_lti_main.ml:98,26--33
 #: src/app/learnocaml_index_main.ml:573,21--28
 #: src/app/learnocaml_index_main.ml:592,21--28
 #: src/app/learnocaml_index_main.ml:614,22--29
-#: src/app/learnocaml_index_main.ml:694,25--32
-#: src/app/learnocaml_index_main.ml:758,26--33
+#: src/app/learnocaml_index_main.ml:673,30--37
+#: src/app/learnocaml_index_main.ml:679,30--37
+#: src/app/learnocaml_index_main.ml:683,30--37
+#: src/app/learnocaml_index_main.ml:711,25--32
+#: src/app/learnocaml_index_main.ml:775,26--33
 msgid "ERROR"
 msgstr "ERREUR"
 
@@ -37,24 +43,24 @@ msgstr "ERREUR"
 #: src/app/learnocaml_common.ml:423,12--20
 #: src/app/learnocaml_index_main.ml:582,12--20
 #: src/app/learnocaml_index_main.ml:601,12--20
-#: src/app/learnocaml_index_main.ml:712,19--27
-#: src/app/learnocaml_index_main.ml:748,20--28
+#: src/app/learnocaml_index_main.ml:729,19--27
+#: src/app/learnocaml_index_main.ml:765,20--28
 msgid "Cancel"
 msgstr "Annuler"
 
 #: src/app/learnocaml_common.ml:415,26--41
 #: src/app/learnocaml_index_main.ml:577,25--40
 #: src/app/learnocaml_index_main.ml:596,25--40
-#: src/app/learnocaml_index_main.ml:707,32--47
-#: src/app/learnocaml_index_main.ml:743,33--48
+#: src/app/learnocaml_index_main.ml:724,32--47
+#: src/app/learnocaml_index_main.ml:760,33--48
 msgid "REQUEST ERROR"
 msgstr "ERREUR DE REQUÊTE"
 
 #: src/app/learnocaml_common.ml:416,22--59
 #: src/app/learnocaml_index_main.ml:578,26--63
 #: src/app/learnocaml_index_main.ml:597,26--63
-#: src/app/learnocaml_index_main.ml:708,30--67
-#: src/app/learnocaml_index_main.ml:744,34--71
+#: src/app/learnocaml_index_main.ml:725,30--67
+#: src/app/learnocaml_index_main.ml:761,34--71
 msgid "Could not retrieve data from server"
 msgstr "Échec lors du téléchargement des données du serveur"
 
@@ -62,8 +68,8 @@ msgstr "Échec lors du téléchargement des données du serveur"
 #: src/app/learnocaml_common.ml:459,11--18
 #: src/app/learnocaml_index_main.ml:581,12--19
 #: src/app/learnocaml_index_main.ml:600,12--19
-#: src/app/learnocaml_index_main.ml:711,19--26
-#: src/app/learnocaml_index_main.ml:747,20--27
+#: src/app/learnocaml_index_main.ml:728,19--26
+#: src/app/learnocaml_index_main.ml:764,20--27
 msgid "Retry"
 msgstr "Réessayer"
 
@@ -139,7 +145,7 @@ msgid "Editor"
 msgstr "Éditeur"
 
 #: src/app/learnocaml_common.ml:787,41--51
-#: src/app/learnocaml_index_main.ml:957,30--40
+#: src/app/learnocaml_index_main.ml:974,30--40
 msgid "Toplevel"
 msgstr "Toplevel"
 
@@ -177,7 +183,7 @@ msgstr "Statistiques"
 
 #: src/app/learnocaml_common.ml:799,37--48
 #: src/app/learnocaml_exercise_main.ml:200,23--34
-#: src/app/learnocaml_index_main.ml:954,29--40
+#: src/app/learnocaml_index_main.ml:971,29--40
 #: src/app/learnocaml_teacher_tab.ml:328,18--29
 msgid "Exercises"
 msgstr "Exercices"
@@ -223,7 +229,7 @@ msgid "Show"
 msgstr "Montrer"
 
 #: src/app/learnocaml_common.ml:1001,18--36
-#: src/app/learnocaml_index_main.ml:844,27--45
+#: src/app/learnocaml_index_main.ml:861,27--45
 msgid "Enter the secret"
 msgstr "Entrez le secret"
 
@@ -365,7 +371,7 @@ msgstr "Actualiser la page"
 
 #: src/app/learnocaml_exercise_main.ml:30,29--51
 msgid "I will do it myself!"
-msgstr "Je sais le faire moi-même!"
+msgstr "Je sais le faire moi-même !"
 
 #: src/app/learnocaml_exercise_main.ml:31,24--180
 msgid ""
@@ -414,7 +420,7 @@ msgstr "abandonner"
 
 #: src/app/learnocaml_exercise_main.ml:224,35--70
 msgid "Grading is taking a lot of time, "
-msgstr "La notation prend longtemps, "
+msgstr "La notation prend beaucoup de temps, "
 
 #: src/app/learnocaml_exercise_main.ml:230,35--57
 msgid "Launching the grader"
@@ -430,11 +436,12 @@ msgstr "Erreur dans le code."
 
 #: src/app/learnocaml_exercise_main.ml:275,27--85
 msgid "Cannot start the grader if your code does not typecheck."
-msgstr "La notation ne peut être lancée si le code ne type pas."
+msgstr ""
+"La notation ne peut être lancée si le code n'est pas correctement typé."
 
 #: src/grader/grader_jsoo_worker.ml:51,17--44
 msgid "Error in your solution:\n"
-msgstr "Erreur dans votre solution:\n"
+msgstr "Erreur dans votre solution :\n"
 
 #: src/grader/grader_jsoo_worker.ml:53,17--41
 msgid "Error in the exercise "
@@ -450,66 +457,88 @@ msgstr ""
 
 #: src/grader/grader_jsoo_worker.ml:57,17--38
 msgid "Unexpected error:\n"
-msgstr "Erreur inattendue:\n"
+msgstr "Erreur inattendue :\n"
 
-#: src/app/learnocaml_lti_main.ml:97,21--42
-#: src/app/learnocaml_index_main.ml:683,25--46
+#: src/app/learnocaml_lti_main.ml:89,15--48
+#: src/app/learnocaml_index_main.ml:574,10--43
+#: src/app/learnocaml_index_main.ml:674,19--52
+#: src/app/learnocaml_index_main.ml:775,38--71
+msgid "The entered e-mail was invalid."
+msgstr "L'e-mail entré est invalide."
+
+#: src/app/learnocaml_lti_main.ml:95,15--60
+#: src/app/learnocaml_index_main.ml:680,19--64
+#: src/app/learnocaml_reset_main.ml:20,32--77
+#: src/app/learnocaml_upgrade_main.ml:21,34--79
+msgid "Password must be at least 8 characters long"
+msgstr "Le mot de passe doit comporter au moins 8 caractères"
+
+#: src/app/learnocaml_lti_main.ml:99,15--153
+#: src/app/learnocaml_index_main.ml:684,19--165
+#: src/app/learnocaml_reset_main.ml:21,34--210
+#: src/app/learnocaml_upgrade_main.ml:22,36--216
+msgid ""
+"Password must contain at least one digit, one lower and upper letter, and "
+"one non-alphanumeric char."
+msgstr ""
+"Le mot de passe doit contenir au moins un chiffre, une lettre minuscule et "
+"majuscule, et un caractère non-alphanumérique."
+
+#: src/app/learnocaml_lti_main.ml:114,21--42
+#: src/app/learnocaml_index_main.ml:700,25--46
 msgid "VALIDATION REQUIRED"
 msgstr "VALIDATION REQUISE"
 
-#: src/app/learnocaml_lti_main.ml:97,47--101
-#: src/app/learnocaml_index_main.ml:683,51--105
-#, fuzzy
+#: src/app/learnocaml_lti_main.ml:114,47--101
+#: src/app/learnocaml_index_main.ml:700,51--105
 msgid "A confirmation e-mail has been sent to your address."
-msgstr "Un courriel sera envoyé à votre adresse pour la confirmer."
+msgstr "Un courriel a été envoyé à votre adresse pour la confirmer."
 
-#: src/app/learnocaml_lti_main.ml:110,33--51
-#: src/app/learnocaml_index_main.ml:842,37--55
-#: src/app/learnocaml_index_main.ml:846,31--49
+#: src/app/learnocaml_lti_main.ml:127,33--51
+#: src/app/learnocaml_index_main.ml:859,37--55
+#: src/app/learnocaml_index_main.ml:863,31--49
 msgid "First connection"
 msgstr "Première connexion"
 
-#: src/app/learnocaml_lti_main.ml:111,39--55
-#: src/app/learnocaml_lti_main.ml:123,32--48
-#: src/app/learnocaml_index_main.ml:847,37--53
-#: src/app/learnocaml_index_main.ml:856,30--46
-#: src/app/learnocaml_upgrade_main.ml:22,32--48
-#, fuzzy
+#: src/app/learnocaml_lti_main.ml:128,39--55
+#: src/app/learnocaml_lti_main.ml:140,32--48
+#: src/app/learnocaml_index_main.ml:864,37--53
+#: src/app/learnocaml_index_main.ml:873,30--46
+#: src/app/learnocaml_upgrade_main.ml:26,32--48
 msgid "E-mail address"
-msgstr "Adresse email"
+msgstr "Adresse e-mail"
 
-#: src/app/learnocaml_lti_main.ml:112,42--52
-#: src/app/learnocaml_index_main.ml:848,40--50
-#: src/app/learnocaml_index_main.ml:874,9--19
+#: src/app/learnocaml_lti_main.ml:129,42--52
+#: src/app/learnocaml_index_main.ml:865,40--50
+#: src/app/learnocaml_index_main.ml:891,9--19
 #: src/app/learnocaml_teacher_tab.ml:557,22--32
 msgid "Nickname"
 msgstr "Pseudonyme"
 
-#: src/app/learnocaml_lti_main.ml:113,42--52
-#: src/app/learnocaml_lti_main.ml:124,35--45
-#: src/app/learnocaml_index_main.ml:849,40--50
-#: src/app/learnocaml_index_main.ml:857,33--43
-#: src/app/learnocaml_upgrade_main.ml:23,35--45
+#: src/app/learnocaml_lti_main.ml:130,42--52
+#: src/app/learnocaml_lti_main.ml:141,35--45
+#: src/app/learnocaml_index_main.ml:866,40--50
+#: src/app/learnocaml_index_main.ml:874,33--43
+#: src/app/learnocaml_upgrade_main.ml:27,35--45
 msgid "Password"
 msgstr "Mot de passe"
 
-#: src/app/learnocaml_lti_main.ml:114,40--48
-#: src/app/learnocaml_index_main.ml:850,38--46
+#: src/app/learnocaml_lti_main.ml:131,40--48
+#: src/app/learnocaml_index_main.ml:867,38--46
 msgid "Secret"
 msgstr "Secret"
 
-#: src/app/learnocaml_lti_main.ml:115,29--198
-#: src/app/learnocaml_index_main.ml:851,27--192
-#, fuzzy
+#: src/app/learnocaml_lti_main.ml:132,29--198
+#: src/app/learnocaml_index_main.ml:868,27--192
 msgid ""
 "The secret is an optional passphrase provided by your teacher. It may be "
 "required to create an account."
 msgstr ""
-"Le secret est une phrase de passe fournie par votre enseignant au moment de "
-"l'inscription."
+"Le secret est une phrase de passe pouvant être fournie par votre enseignant. "
+"Celle-ci est alors requise pour s'inscrire."
 
-#: src/app/learnocaml_lti_main.ml:118,41--251
-#: src/app/learnocaml_index_main.ml:860,39--244
+#: src/app/learnocaml_lti_main.ml:135,41--251
+#: src/app/learnocaml_index_main.ml:877,39--244
 msgid ""
 "By submitting this form, I accept that the information entered will be used "
 "in the context of the Learn-OCaml plateform."
@@ -517,45 +546,44 @@ msgstr ""
 "En validant ce formulaire, j'accepte que les informations entrées puissent "
 "être utilisées dans le contexte de la plateforme Learn-OCaml."
 
-#: src/app/learnocaml_lti_main.ml:121,26--44
-#: src/app/learnocaml_index_main.ml:854,24--42
+#: src/app/learnocaml_lti_main.ml:138,26--44
+#: src/app/learnocaml_index_main.ml:871,24--42
 msgid "Create new token"
 msgstr "Nouveau token"
 
-#: src/app/learnocaml_lti_main.ml:122,26--42
-#: src/app/learnocaml_index_main.ml:855,24--40
+#: src/app/learnocaml_lti_main.ml:139,26--42
+#: src/app/learnocaml_index_main.ml:872,24--40
 msgid "Returning user"
 msgstr "Utilisateur existant"
 
-#: src/app/learnocaml_lti_main.ml:125,32--41
-#: src/app/learnocaml_index_main.ml:858,31--40
-#: src/app/learnocaml_index_main.ml:865,30--39
+#: src/app/learnocaml_lti_main.ml:142,32--41
+#: src/app/learnocaml_index_main.ml:875,31--40
+#: src/app/learnocaml_index_main.ml:882,30--39
 msgid "Connect"
 msgstr "Se connecter"
 
-#: src/app/learnocaml_lti_main.ml:126,32--55
-#: src/app/learnocaml_index_main.ml:859,30--53
+#: src/app/learnocaml_lti_main.ml:143,32--55
+#: src/app/learnocaml_index_main.ml:876,30--53
 msgid "Forgot your password?"
 msgstr "Mot de passe oublié ?"
 
-#: src/app/learnocaml_lti_main.ml:127,38--57
-#: src/app/learnocaml_index_main.ml:843,44--63
+#: src/app/learnocaml_lti_main.ml:144,38--57
+#: src/app/learnocaml_index_main.ml:860,44--63
 msgid "Choose a nickname"
 msgstr "Choisissez un identifiant"
 
-#: src/app/learnocaml_lti_main.ml:128,29--43
-#: src/app/learnocaml_lti_main.ml:132,36--50
+#: src/app/learnocaml_lti_main.ml:145,29--43
+#: src/app/learnocaml_lti_main.ml:149,36--50
 msgid "Direct login"
 msgstr "Connexion directe"
 
-#: src/app/learnocaml_lti_main.ml:129,31--221
+#: src/app/learnocaml_lti_main.ml:146,31--221
 msgid ""
 "Or to be able to login independently of Moodle, you might want to setup a "
 "password below (or upgrade your account later)"
 msgstr ""
-"Ou pour pouvoir vous connecter sans passer par Moodle, vous pouvez "
-"créer un compte avec un mot de passe en dessous (ou en définir un plus "
-"tard)"
+"Ou pour pouvoir vous connecter sans passer par Moodle, vous pouvez créer un "
+"compte avec un mot de passe ci-dessous (ou en définir un plus tard)"
 
 #: src/app/learnocaml_index_main.ml:88,18--37
 msgid "Loading exercises"
@@ -624,14 +652,12 @@ msgid "Please write it down."
 msgstr "Notez-le !"
 
 #: src/app/learnocaml_index_main.ml:567,21--36
-#, fuzzy
 msgid "RESET REQUEST"
 msgstr "REQUÊTE DE RÉINITIALISATION ENVOYÉE"
 
 #: src/app/learnocaml_index_main.ml:568,11--51
-#, fuzzy
 msgid "A reset link was sent to the address: "
-msgstr "Un lien de réinitialisation a été envoyé à l'adresse spécifiée."
+msgstr "Un lien de réinitialisation a été envoyé à l'adresse : "
 
 #: src/app/learnocaml_index_main.ml:569,35--76
 msgid ""
@@ -639,142 +665,126 @@ msgid ""
 "(if it is associated with an account)"
 msgstr ""
 "\n"
-"(si il est associé à un compte)"
-
-#: src/app/learnocaml_index_main.ml:574,10--43
-#: src/app/learnocaml_index_main.ml:758,38--71
-#, fuzzy
-msgid "The entered e-mail was invalid."
-msgstr "Le token entré n'a pas été reconnu."
+"(s'il est associé à un compte)"
 
 #: src/app/learnocaml_index_main.ml:587,21--41
 msgid "RESET REQUEST SENT"
 msgstr "REQUÊTE DE RÉINITIALISATION ENVOYÉE"
 
 #: src/app/learnocaml_index_main.ml:588,11--65
-#, fuzzy
 msgid "A confirmation e-mail has been sent to the address: "
-msgstr "Un lien de réinitialisation a été envoyé à l'adresse spécifiée."
+msgstr "Un lien de confirmation a été envoyé à l'adresse : "
 
 #: src/app/learnocaml_index_main.ml:593,10--54
-#, fuzzy
 msgid "The entered e-mail couldn't be recognized."
-msgstr "Le token entré n'a pas été reconnu."
+msgstr "L'e-mail entré n'a pas été reconnu."
 
 #: src/app/learnocaml_index_main.ml:615,12--45
-#, fuzzy
 msgid "The entered e-mail is invalid: "
-msgstr "Le token entré n'a pas été reconnu."
+msgstr "L'e-mail entré est invalide."
 
-#: src/app/learnocaml_index_main.ml:703,28--45
-#: src/app/learnocaml_index_main.ml:739,29--46
+#: src/app/learnocaml_index_main.ml:720,28--45
+#: src/app/learnocaml_index_main.ml:756,29--46
 msgid "TOKEN NOT FOUND"
 msgstr "TOKEN NON TROUVÉ"
 
-#: src/app/learnocaml_index_main.ml:704,17--60
-#: src/app/learnocaml_index_main.ml:740,18--61
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:721,17--60
+#: src/app/learnocaml_index_main.ml:757,18--61
 msgid "The entered token couldn't be recognized."
 msgstr "Le token entré n'a pas été reconnu."
 
-#: src/app/learnocaml_index_main.ml:726,26--41
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:743,26--41
 msgid "INVALID TOKEN"
 msgstr "PSEUDONYME INVALIDE"
 
-#: src/app/learnocaml_index_main.ml:727,31--200
+#: src/app/learnocaml_index_main.ml:744,31--200
 msgid ""
 "This token is associated to an upgraded account, which only allows password-"
 "based%s authentication."
 msgstr ""
-"Ce token est associé à un compte, autorisant uniquement "
-"l'authentification par mot de passe%s."
+"Ce token est associé à un compte, autorisant uniquement l'authentification "
+"par mot de passe%s."
 
-#: src/app/learnocaml_index_main.ml:730,54--70
+#: src/app/learnocaml_index_main.ml:747,54--70
 msgid " or Moodle/LTI"
 msgstr " ou avec Moodle/LTI"
 
-#: src/app/learnocaml_index_main.ml:837,7--21
+#: src/app/learnocaml_index_main.ml:854,7--21
 msgid "Connected as"
 msgstr "Connecté en tant que"
 
-#: src/app/learnocaml_index_main.ml:839,7--19
+#: src/app/learnocaml_index_main.ml:856,7--19
 msgid "Activities"
 msgstr "Activités"
 
-#: src/app/learnocaml_index_main.ml:841,9--33
+#: src/app/learnocaml_index_main.ml:858,9--33
 msgid "Welcome to Learn OCaml"
 msgstr "Bienvenue sur Learn OCaml"
 
-#: src/app/learnocaml_index_main.ml:845,24--40
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:862,24--40
 msgid "Create account"
-msgstr "Passer à un compte"
+msgstr "Créer un compte"
 
-#: src/app/learnocaml_index_main.ml:863,35--62
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:880,35--62
 msgid "Login with a legacy token"
-msgstr "Connexion avec un token"
+msgstr "Connexion avec un ancien token"
 
-#: src/app/learnocaml_index_main.ml:864,30--37
+#: src/app/learnocaml_index_main.ml:881,30--37
 #: src/app/learnocaml_teacher_tab.ml:559,22--29
 msgid "Token"
 msgstr "Token"
 
-#: src/app/learnocaml_index_main.ml:866,22--39
-#: src/app/learnocaml_upgrade_main.ml:21,26--43
+#: src/app/learnocaml_index_main.ml:883,22--39
+#: src/app/learnocaml_upgrade_main.ml:25,26--43
 msgid "Upgrade account"
 msgstr "Passer à un compte"
 
-#: src/app/learnocaml_index_main.ml:908,38--59
+#: src/app/learnocaml_index_main.ml:925,38--59
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."
 
-#: src/app/learnocaml_index_main.ml:927,31--51
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:944,31--51
 msgid "New e-mail address"
-msgstr "Nouvelle adresse email"
+msgstr "Nouvelle adresse e-mail"
 
-#: src/app/learnocaml_index_main.ml:928,22--55
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:945,22--55
 msgid "Enter your new e-mail address: "
-msgstr "Entrez votre nouvelle adresse email :"
+msgstr "Entrez votre nouvelle adresse e-mail : "
 
-#: src/app/learnocaml_index_main.ml:938,22--39
+#: src/app/learnocaml_index_main.ml:955,22--39
 msgid "Change password"
 msgstr "Changer de mot de passe"
 
-#: src/app/learnocaml_index_main.ml:939,22--37
-#, fuzzy
+#: src/app/learnocaml_index_main.ml:956,22--37
 msgid "Change e-mail"
-msgstr "Changer d'adresse email"
+msgstr "Changer d'adresse e-mail"
 
-#: src/app/learnocaml_index_main.ml:950,30--41
+#: src/app/learnocaml_index_main.ml:967,30--41
 msgid "Try OCaml"
 msgstr "Try OCaml"
 
-#: src/app/learnocaml_index_main.ml:952,29--38
+#: src/app/learnocaml_index_main.ml:969,29--38
 msgid "Lessons"
 msgstr "Cours"
 
-#: src/app/learnocaml_index_main.ml:959,32--44
+#: src/app/learnocaml_index_main.ml:976,32--44
 #: src/app/learnocaml_playground_main.ml:72,23--35
 msgid "Playground"
 msgstr "Bac-à-sable"
 
-#: src/app/learnocaml_index_main.ml:962,28--35
+#: src/app/learnocaml_index_main.ml:979,28--35
 msgid "Teach"
 msgstr "Enseignement"
 
-#: src/app/learnocaml_index_main.ml:1062,17--71
+#: src/app/learnocaml_index_main.ml:1079,17--71
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token :"
 
-#: src/app/learnocaml_index_main.ml:1064,17--51
+#: src/app/learnocaml_index_main.ml:1081,17--51
 msgid "Are you sure you want to logout?"
 msgstr "Êtes-vous sûr de vouloir vous déconnecter ?"
 
-#: src/app/learnocaml_index_main.ml:1066,15--186
+#: src/app/learnocaml_index_main.ml:1083,15--186
 msgid ""
 "WARNING: the data could not be synchronised with the server. Logging out "
 "will lose your local changes, be sure you exported a backup."
@@ -783,33 +793,33 @@ msgstr ""
 "En vous déconnectant, vous perdrez tous les changements locaux, à moins "
 "d'avoir exporté votre espace de travail au préalable."
 
-#: src/app/learnocaml_index_main.ml:1077,22--30
-#: src/app/learnocaml_index_main.ml:1077,45--53
-#: src/app/learnocaml_index_main.ml:1099,9--17
+#: src/app/learnocaml_index_main.ml:1094,22--30
+#: src/app/learnocaml_index_main.ml:1094,45--53
+#: src/app/learnocaml_index_main.ml:1116,9--17
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: src/app/learnocaml_index_main.ml:1090,9--21
+#: src/app/learnocaml_index_main.ml:1107,9--21
 msgid "Show token"
 msgstr "Afficher le token"
 
-#: src/app/learnocaml_index_main.ml:1093,9--25
+#: src/app/learnocaml_index_main.ml:1110,9--25
 msgid "Sync workspace"
 msgstr "Synchroniser"
 
-#: src/app/learnocaml_index_main.ml:1096,9--25
+#: src/app/learnocaml_index_main.ml:1113,9--25
 msgid "Export to file"
 msgstr "Exporter vers un fichier"
 
-#: src/app/learnocaml_index_main.ml:1097,9--17
+#: src/app/learnocaml_index_main.ml:1114,9--17
 msgid "Import"
 msgstr "Importer"
 
-#: src/app/learnocaml_index_main.ml:1098,9--36
+#: src/app/learnocaml_index_main.ml:1115,9--36
 msgid "Download all source files"
 msgstr "Télécharger tous les fichiers sources"
 
-#: src/app/learnocaml_index_main.ml:1104,38--44
+#: src/app/learnocaml_index_main.ml:1121,38--44
 msgid "Menu"
 msgstr "Menu"
 
@@ -824,7 +834,7 @@ msgid ""
 "\n"
 "write it down."
 msgstr ""
-"Nouveau token prof. créé:\n"
+"Nouveau token prof. créé :\n"
 "%s\n"
 "\n"
 "Notez-le !"
@@ -931,15 +941,15 @@ msgstr "Exporter les données étudiants en CSV"
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
-#: src/app/learnocaml_reset_main.ml:20,29--45
+#: src/app/learnocaml_reset_main.ml:24,29--45
 msgid "Reset password"
 msgstr "Réinitialiser le mot de passe"
 
-#: src/app/learnocaml_reset_main.ml:21,27--41
+#: src/app/learnocaml_reset_main.ml:25,27--41
 msgid "New password"
 msgstr "Nouveau mot de passe"
 
-#: src/app/learnocaml_reset_main.ml:22,23--31
+#: src/app/learnocaml_reset_main.ml:26,23--31
 msgid "Submit"
 msgstr "Envoyer"
 
@@ -1013,23 +1023,21 @@ msgstr "Aucun rapport"
 
 #: src/app/learnocaml_student_view.ml:473,8--29
 msgid "Status of student: "
-msgstr "Suivi étudiant: "
+msgstr "Suivi étudiant : "
 
-#: src/app/learnocaml_upgrade_main.ml:24,29--38
-#, fuzzy
+#: src/app/learnocaml_upgrade_main.ml:28,29--38
 msgid "Upgrade"
 msgstr "Noter!"
 
-#: src/app/learnocaml_upgrade_main.ml:25,23--78
-#, fuzzy
+#: src/app/learnocaml_upgrade_main.ml:29,23--78
 msgid "An e-mail will be sent to your address to confirm it."
 msgstr "Un courriel sera envoyé à votre adresse pour la confirmer."
 
-#: src/app/learnocaml_upgrade_main.ml:28,38--48
+#: src/app/learnocaml_upgrade_main.ml:32,38--48
 msgid "NO TOKEN"
 msgstr "PAS DE TOKEN"
 
-#: src/app/learnocaml_upgrade_main.ml:28,53--76
+#: src/app/learnocaml_upgrade_main.ml:32,53--76
 msgid "You are not logged in"
 msgstr "Vous n'êtes pas connecté"
 
@@ -1038,9 +1046,8 @@ msgid "EMAIL CONFIRMED"
 msgstr "ADRESSE EMAIL CONFIRMÉE"
 
 #: src/app/learnocaml_validate_main.ml:13,40--81
-#, fuzzy
 msgid "Your e-mail address has been confirmed."
-msgstr "Votre adresse email a été confirmée"
+msgstr "Votre adresse e-mail a été confirmée."
 
 #: src/grader/learnocaml_report.ml:240,50--66
 #: src/grader/learnocaml_report.ml:595,59--75
@@ -1269,5 +1276,3 @@ msgstr "lors du test de la solution utilisateur"
 
 #~ msgid "This session has been closed. You can close this tab."
 #~ msgstr "La session a été fermée. Vous pouvez fermer cet onglet."
-
-
