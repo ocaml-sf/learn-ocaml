@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-08 23:10+0200\n"
+"PO-Revision-Date: 2020-09-08 23:29+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -734,10 +734,10 @@ msgstr "Connexion avec un ancien token"
 msgid "Token"
 msgstr "Token"
 
-#: src/app/learnocaml_index_main.ml:883,22--39
-#: src/app/learnocaml_upgrade_main.ml:25,26--43
-msgid "Upgrade account"
-msgstr "Passer à un compte"
+#: src/app/learnocaml_index_main.ml:883,22--40
+#: src/app/learnocaml_upgrade_main.ml:25,26--44
+msgid "Setup a password"
+msgstr "Définir un mot de passe"
 
 #: src/app/learnocaml_index_main.ml:925,38--59
 msgid "Choose an activity."
@@ -1027,7 +1027,7 @@ msgstr "Suivi étudiant : "
 
 #: src/app/learnocaml_upgrade_main.ml:28,29--38
 msgid "Upgrade"
-msgstr "Noter!"
+msgstr "Mettre à jour"
 
 #: src/app/learnocaml_upgrade_main.ml:29,23--78
 msgid "An e-mail will be sent to your address to confirm it."

@@ -880,7 +880,7 @@ let set_string_translations () =
     "txt_returning_with_token", [%i"Login with a legacy token"];
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];
-    "txt_upgrade", [%i"Upgrade account"];
+    "txt_upgrade", [%i"Setup a password"];
   ] in
   List.iter
     (fun (id, text) ->

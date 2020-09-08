@@ -22,7 +22,7 @@ let () =
         "txt_password_strength", [%i"Password must contain at least one digit, \
                                      one lower and upper letter, \
                                      and one non-alphanumeric char."];
-        "txt_upgrade", [%i"Upgrade account"];
+        "txt_upgrade", [%i"Setup a password"];
         "txt_upgrade_email", [%i"E-mail address"];
         "txt_upgrade_password", [%i"Password"];
         "txt_do_upgrade", [%i"Upgrade"];
