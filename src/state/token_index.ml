@@ -466,13 +466,11 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
 
   let check_upgrade_operation kind sync_dir handle =
     get_data sync_dir >|= fun operations ->
-    let expiration_threshold, _ =
-      Unix.(
-        let dt = localtime @@ time () in
-        mktime {dt with tm_hour = dt.tm_hour + 4}) in
+    (* expires after 4 hours *)
+    let expiration_threshold = floor (Unix.time ()) +. 4. *. 3600. in
     match List.assoc_opt handle operations with
     | Some (token, date, ResetPassword)
-         when kind = ResetPassword && date >= expiration_threshold -> Some token
+         when kind = ResetPassword && date <= expiration_threshold -> Some token
     | Some (token, _date, ChangeEmail) when kind = ChangeEmail -> Some token
     | _ -> None
 
@@ -486,12 +484,10 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
 
   let filter_old_operations sync_dir =
     get_data sync_dir >>= fun operations ->
-    let expiration_threshold, _ =
-      Unix.(
-        let dt = localtime @@ time () in
-        mktime {dt with tm_mon = dt.tm_mon + 1}) in
+    (* expires after 4 weeks *)
+    let expiration_threshold = floor (Unix.time ()) +. 4. *. 604800. in
     List.filter (fun (_id, (_token, date, operation)) ->
-        operation = ChangeEmail || date >= expiration_threshold) operations
+        operation = ChangeEmail || date <= expiration_threshold) operations
     |> RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
 
