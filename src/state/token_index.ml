@@ -1,3 +1,11 @@
+(* This file is part of Learn-OCaml.
+ *
+ * Copyright (C) 2019-2020 OCaml Software Foundation.
+ * Copyright (C) 2016-2018 OCamlPro.
+ *
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
 open Lwt
 open Learnocaml_data
 
@@ -54,14 +62,31 @@ module IndexFile: IndexRW = struct
     Lwt.return @@ Lwt_mutex.unlock mutex
 end
 
+(* inspired from learnocaml_data.ml *)
+let enc_check_version_1 file enc =
+  J.conv
+    (fun data -> ("1", data))
+    (fun (version, data) ->
+       begin
+         match version with
+         | "1" -> ()
+         | _ ->
+             let msg = Format.asprintf "%s: unknown version %s" file version in
+             raise (J.Cannot_destruct ([], Failure msg))
+       end ;
+       data)
+    (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string))
+       (J.obj1 (J.req file enc)))
+
 module BaseTokenIndex (RW: IndexRW) = struct
   let rw = RW.init ()
   let file = "token.json"
 
-  let enc = J.list Token.enc
+  let enc = enc_check_version_1 file @@ J.list Token.enc
 
   let parse = Json_codec.decode enc
-  let serialise_str = Json_codec.encode ~minify:false J.(list string)
+  let serialise_str = Json_codec.encode ~minify:false
+                        (enc_check_version_1 file J.(list string))
   let serialise = Json_codec.encode ~minify:false enc
 
   let create_index sync_dir =
@@ -124,7 +149,7 @@ module BaseMoodleIndex (RW: IndexRW) = struct
   let rw = RW.init ()
   let file = "moodle_user.json"
 
-  let enc = J.assoc Token.enc
+  let enc = enc_check_version_1 file @@ J.assoc Token.enc
 
   let parse = Json_codec.decode enc
   let serialise = Json_codec.encode ~minify:false enc
@@ -161,7 +186,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
   let rw = RW.init ()
   let file = "oauth.json"
 
-  let enc = J.(assoc (list string))
+  let enc = enc_check_version_1 file @@ J.(assoc (list string))
 
   let parse = Json_codec.decode enc
   let serialise = Json_codec.encode ~minify:false enc
@@ -296,7 +321,9 @@ module BaseUserIndex (RW: IndexRW) = struct
       associated with some Moodle credential: [Token (_, false)]. *)
   let file = "user.json"
 
-  let enc = J.(
+  let enc =
+    enc_check_version_1 file
+    @@ J.(
       list (union [case (tup2 Token.enc bool)
                      (function
                       | Token (token, using_moodle) -> Some (token, using_moodle)
@@ -441,7 +468,9 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
     | ChangeEmail
     | ResetPassword
 
-  let enc = J.(
+  let enc =
+    enc_check_version_1 file
+    @@ J.(
       assoc (tup3 Token.enc float
                (string_enum ["change_email", ChangeEmail;
                              "reset_password", ResetPassword])))
