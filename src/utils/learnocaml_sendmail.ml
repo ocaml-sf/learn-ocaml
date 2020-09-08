@@ -72,6 +72,8 @@ Please follow the following link to do so:
 %s
 
 Otherwise, no further action is required.
+
+Note: the reset link will expire in 4 hours.
 |}
 
 let reset_subject = "Change your password"
