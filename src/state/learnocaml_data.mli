@@ -16,6 +16,15 @@ val email_regexp_ml : string
 (** "local-part@domain" must have upto 254 chars, "local-part" upto 64 chars. *)
 val email_check_length : string -> bool
 
+(** Passwords must have at least 8 chars. Return false if this doesn't hold.
+    Function used in frontend/backend. *)
+val passwd_check_length : string -> bool
+
+(** Naive evaluation of password strength, independently of its length
+    (require at least one digit, lower, upper, non-alphanumeric char).
+    Especially intended to be used in frontend. *)
+val passwd_check_strength : string -> bool
+
 module SMap: sig
 
   include Map.S with type key = string

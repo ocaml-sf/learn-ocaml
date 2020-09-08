@@ -18,6 +18,27 @@ let email_regexp_ml =
 let email_check_length email =
   String.length email <= 254 && try String.index email '@' <= 64 with _ -> false
 
+let passwd_check_length passwd =
+  String.length passwd >= 8
+
+let passwd_check_strength passwd =
+  let digit c = '0' <= c && c <= '9' in
+  let upper c = 'A' <= c && c <= 'Z' in
+  let lower c = 'a' <= c && c <= 'z' in
+  let other c = (not @@ digit c) && (not @@ upper c) && (not @@ lower c) in
+  let one_digit = ref false in
+  let one_upper = ref false in
+  let one_lower = ref false in
+  let one_other = ref false in
+  let inspect c = begin
+      if digit c then one_digit := true;
+      if upper c then one_upper := true;
+      if lower c then one_lower := true;
+      if other c then one_other := true
+    end in
+  let () = String.iter inspect passwd in
+  !one_digit && !one_upper && !one_lower && !one_other
+
 module J = Json_encoding
 
 module SMap = struct

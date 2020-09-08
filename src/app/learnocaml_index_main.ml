@@ -656,18 +656,35 @@ let init_token_dialog () =
           consent = Manip.checked input_consent and
           consent_label = find_component "txt_first_connection_consent" in
       let email_criteria = not (check_email_js email) and
-          passwd_criteria = String.length password < 8 in
+          passwd_crit1 = not (Learnocaml_data.passwd_check_length password) and
+          passwd_crit2 = not (Learnocaml_data.passwd_check_strength password) in
       Manip.SetCss.borderColor reg_input_email "";
       Manip.SetCss.borderColor reg_input_password "";
       Manip.SetCss.fontWeight consent_label "";
-      if email_criteria || passwd_criteria || not consent then
+      if email_criteria || passwd_crit1 || passwd_crit2 || not consent then
         begin
           if email_criteria then
             Manip.SetCss.borderColor reg_input_email "#f44";
-          if passwd_criteria then
+          if passwd_crit1 || passwd_crit2 then
             Manip.SetCss.borderColor reg_input_password "#f44";
           if not consent then
             Manip.SetCss.fontWeight consent_label "bold";
+          if email_criteria then begin
+              alert ~title:[%i"ERROR"]
+                [%i"The entered e-mail was invalid."];
+            (* ; we could also do [Manip.focus reg_input_email]
+               but this would be broken when closing the dialog. *)
+            end
+          else if passwd_crit1 then begin
+              alert ~title:[%i"ERROR"]
+                [%i"Password must be at least 8 characters long"];
+            end
+          else if passwd_crit2 then begin
+              alert ~title:[%i"ERROR"]
+                [%i"Password must contain at least one digit, \
+                    one lower and upper letter, \
+                    and one non-alphanumeric char."];
+            end;
           Lwt.return_none
         end
       else

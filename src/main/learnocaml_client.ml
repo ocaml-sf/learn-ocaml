@@ -747,8 +747,12 @@ module Init_user = struct
        | {email; password; nickname=Some(nickname); secret=Some(secret)} ->
          if not (check_email_ml email) then
            Lwt.fail_with "Invalid e-mail address"
-         else if String.length password < 8 then
+         else if not (Learnocaml_data.passwd_check_length password) then
            Lwt.fail_with "Password must be at least 8 characters long"
+         else if not (Learnocaml_data.passwd_check_strength password) then
+           Lwt.fail_with "Password must contain at least one digit, \
+                          one lower and upper letter, \
+                          and one non-alphanumeric char."
          else
            get_nonce_and_create_user server email password nickname secret >>= fun () ->
            Printf.eprintf "A confirmation e-mail has been sent to your address.";

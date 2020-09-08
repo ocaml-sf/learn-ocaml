@@ -352,11 +352,11 @@ module Request_handler = struct
                           ~path:"/" ~http_only:true
                           ("csrf", "expired")] in
          let email = List.assoc "email" params and
-             passwd = List.assoc "passwd" params and
+             password = List.assoc "passwd" params and
              user_id = List.assoc "user-id" params and
              csrf = List.assoc "csrf" params and
              hmac = List.assoc "hmac" params in
-         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (email, passwd)) >>=
+         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (email, password)) >>=
            (function
             | None -> lwt_fail (`Forbidden, "incorrect password")
             | Some token ->
@@ -454,7 +454,7 @@ module Request_handler = struct
            lwt_fail (`Forbidden, "User already exists")
          else if not (check_email_ml email) then
            lwt_fail (`Bad_request, "Invalid e-mail address")
-         else if String.length password < 8 then
+         else if not (Learnocaml_data.passwd_check_length password) then
            lwt_fail (`Bad_request, "Password must be at least 8 characters long")
          else
            create_student conn config req nonce_req secret (Some nick) (`Password (email, password)) >?= fun _ ->
@@ -777,14 +777,14 @@ module Request_handler = struct
          Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
            (function
             | Some token ->
-               let passwd = List.assoc "passwd" params and
+               let password = List.assoc "passwd" params and
                    cookies = [Cohttp.Cookie.Set_cookie_hdr.make
                                 ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/"
                                 ~http_only:true ("csrf", "expired")] in
-               if String.length passwd < 8 then
+               if not (Learnocaml_data.passwd_check_length password) then
                  lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
                else
-                 Token_index.UserIndex.update !sync_dir token passwd >>= fun () ->
+                 Token_index.UserIndex.update !sync_dir token password >>= fun () ->
                  Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
                  lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
             | None ->
@@ -851,14 +851,15 @@ module Request_handler = struct
                                    ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
                let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
                    email = List.assoc "email" params and
-                   passwd = List.assoc "passwd" params in
+                   password = List.assoc "passwd" params in
                Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
                if exists then lwt_fail (`Forbidden, "E-mail already used")
-               else if String.length passwd < 8 || not (check_email_ml email) then
+               else if not (Learnocaml_data.passwd_check_length password)
+                       || not (check_email_ml email) then
                  lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
                else
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in
-                 Token_index.UserIndex.upgrade !sync_dir token email passwd >>= fun () ->
+                 Token_index.UserIndex.upgrade !sync_dir token email password >>= fun () ->
                  Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
                  get_nickname token >>= fun nick ->
                  Learnocaml_sendmail.confirm_email
