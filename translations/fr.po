@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-08 23:29+0200\n"
+"PO-Revision-Date: 2020-09-08 23:37+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -546,10 +546,10 @@ msgstr ""
 "En validant ce formulaire, j'accepte que les informations entrées puissent "
 "être utilisées dans le contexte de la plateforme Learn-OCaml."
 
-#: src/app/learnocaml_lti_main.ml:138,26--44
-#: src/app/learnocaml_index_main.ml:871,24--42
-msgid "Create new token"
-msgstr "Nouveau token"
+#: src/app/learnocaml_lti_main.ml:138,26--46
+#: src/app/learnocaml_index_main.ml:871,24--44
+msgid "Create new account"
+msgstr "Créer un compte"
 
 #: src/app/learnocaml_lti_main.ml:139,26--42
 #: src/app/learnocaml_index_main.ml:872,24--40
@@ -721,9 +721,9 @@ msgstr "Activités"
 msgid "Welcome to Learn OCaml"
 msgstr "Bienvenue sur Learn OCaml"
 
-#: src/app/learnocaml_index_main.ml:862,24--40
-msgid "Create account"
-msgstr "Créer un compte"
+#: src/app/learnocaml_index_main.ml:862,24--42
+msgid "Create new token"
+msgstr "Nouveau token"
 
 #: src/app/learnocaml_index_main.ml:880,35--62
 msgid "Login with a legacy token"
@@ -1175,6 +1175,9 @@ msgstr "lors du chargement des dépendances"
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
 
+#~ msgid "Create account"
+#~ msgstr "Créer un compte"
+
 #, fuzzy
 #~ msgid "USER NOT FOUND"
 #~ msgstr "TOKEN NON TROUVÉ"
@@ -1276,3 +1279,4 @@ msgstr "lors du test de la solution utilisateur"
 
 #~ msgid "This session has been closed. You can close this tab."
 #~ msgstr "La session a été fermée. Vous pouvez fermer cet onglet."
+

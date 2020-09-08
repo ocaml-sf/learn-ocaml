@@ -135,7 +135,7 @@ let () =
       "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                           information entered will be used in the \
                                           context of the Learn-OCaml plateform."];
-      "txt_login_new", [%i"Create new token"];
+      "txt_login_new", [%i"Create new account"];
       "txt_returning", [%i"Returning user"];
       "txt_returning_email", [%i"E-mail address"];
       "txt_returning_password", [%i"Password"];
