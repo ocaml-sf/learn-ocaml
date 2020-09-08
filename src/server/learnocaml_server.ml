@@ -469,7 +469,7 @@ module Request_handler = struct
             | _ ->
                Lwt.return (Printf.printf "[WARNING] Bad login or password for: %s\n%!" nick)
                >>= fun () ->
-               lwt_fail (`Forbidden, "Bad login or password"))
+               lwt_fail (`Forbidden, "Bad login or password (or e-mail not confirmed)"))
       | Api.Create_user _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Login _ ->

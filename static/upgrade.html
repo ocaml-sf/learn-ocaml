@@ -22,6 +22,7 @@
       <form method="post" action="/do_upgrade">
 	<div id="login-new">
           <h4 id="txt_upgrade"><!-- Upgrade account --></h4>
+	  <div id="txt_info"><!-- An email will be sent to your address to confirm it. --></div>
           <div>
             <div id="txt_upgrade_email"><!-- Email address --></div>
             <div class="filler_h"></div>
@@ -36,7 +37,6 @@
 	    <li><div id="txt_password_length"><!-- remark 1 --></div></li>
 	    <li><div id="txt_password_strength"><!-- remark 2 --></div></li>
 	  </ul>
-	  <span id="txt_info"><!-- An email will be sent to your address to confirm it. --></span>
 	  <input type="hidden" name="csrf">
 	  <input id="input-token" type="hidden" name="token">
           <button id="upgrade-button"><span id="txt_do_upgrade"><!-- Upgrade --></span></button>
