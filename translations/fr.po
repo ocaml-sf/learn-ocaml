@@ -1046,8 +1046,8 @@ msgid "EMAIL CONFIRMED"
 msgstr "ADRESSE EMAIL CONFIRMÉE"
 
 #: src/app/learnocaml_validate_main.ml:13,40--81
-msgid "Your e-mail address has been confirmed."
-msgstr "Votre adresse e-mail a été confirmée."
+msgid "Your e-mail address has been confirmed. You can now login."
+msgstr "Votre adresse e-mail a été confirmée. Vous pouvez maintenant vous connecter."
 
 #: src/grader/learnocaml_report.ml:240,50--66
 #: src/grader/learnocaml_report.ml:595,59--75
