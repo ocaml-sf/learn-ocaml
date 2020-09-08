@@ -289,7 +289,11 @@ module BaseUserIndex (RW: IndexRW) = struct
   let rw = RW.init ()
 
   (** Invariant: all emails are pairwise different (except possibly in
-      the initial account state: [Password (_, email, _, Some email)]). *)
+      the initial account state: [Password (_, email, _, Some email)]).
+
+      Also, users can login directly with their (legacy) token only if
+      a password is not yet defined, and the token has not yet been
+      associated with some Moodle credential: [Token (_, false)]. *)
   let file = "user.json"
 
   let enc = J.(
