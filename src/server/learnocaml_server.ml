@@ -193,7 +193,7 @@ let generate_hmac secret csrf user_id =
   |> Cryptokit.transform_string encoder
 
 let create_student conn (config: Learnocaml_data.Server.config) req
-      nonce_req secret_candidate nick base_auth =
+      nonce_req secret_candidate ?(post_check = Lwt.return_ok ()) nick base_auth =
   let module ServerData = Learnocaml_data.Server in
   lwt_option_fail
     (Hashtbl.find_opt nonce_req conn)
@@ -207,6 +207,8 @@ let create_student conn (config: Learnocaml_data.Server.config) req
      if not know_secret
      then lwt_fail (`Forbidden, "Bad secret")
      else
+       post_check
+       >?= fun () ->
        Token.create_student ()
        >>= fun tok ->
        (match nick with
@@ -449,17 +451,19 @@ module Request_handler = struct
       | Api.Create_user (email, nick, password, secret) when config.ServerData.use_passwd ->
          valid_string_of_endp conn
          >?= fun conn ->
-         Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
-         if exists then
-           lwt_fail (`Forbidden, "User already exists")
-         else if not (check_email_ml email) then
-           lwt_fail (`Bad_request, "Invalid e-mail address")
-         else if not (Learnocaml_data.passwd_check_length password) then
-           lwt_fail (`Bad_request, "Password must be at least 8 characters long")
-         else if not (Learnocaml_data.passwd_check_strength password) then
-           lwt_fail (`Bad_request, "Password too weak")
-         else
-           create_student conn config req nonce_req secret (Some nick) (`Password (email, password)) >?= fun _ ->
+             Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
+             let post_check =
+               if exists then
+                 lwt_fail (`Forbidden, "User already exists")
+               else if not (check_email_ml email) then
+                 lwt_fail (`Bad_request, "Invalid e-mail address")
+               else if not (Learnocaml_data.passwd_check_length password) then
+                 lwt_fail (`Bad_request, "Password must be at least 8 characters long")
+               else if not (Learnocaml_data.passwd_check_strength password) then
+                 lwt_fail (`Bad_request, "Password too weak")
+               else
+                 lwt_ok () in
+             create_student conn config req nonce_req secret ~post_check (Some nick) (`Password (email, password)) >?= fun _ ->
            respond_json cache ()
 
       | Api.Login (nick, password) when config.ServerData.use_passwd ->
