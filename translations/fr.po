@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-13 01:39+0200\n"
+"PO-Revision-Date: 2020-09-13 01:57+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -741,7 +741,7 @@ msgstr "Le token entré n'a pas été reconnu."
 
 #: src/app/learnocaml_index_main.ml:781,26--41
 msgid "INVALID TOKEN"
-msgstr "PSEUDONYME INVALIDE"
+msgstr "TOKEN INVALIDE"
 
 #: src/app/learnocaml_index_main.ml:782,31--200
 msgid ""
