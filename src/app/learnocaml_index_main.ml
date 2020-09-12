@@ -533,6 +533,7 @@ let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
 let can_show_token () =
+  (* Is this localStorage caching really useful? *)
   try
     Lwt.return Learnocaml_local_storage.(retrieve can_show_token)
   with Not_found ->
@@ -541,6 +542,18 @@ let can_show_token () =
         | Ok res ->
            Learnocaml_local_storage.(store can_show_token) res;
            res
+
+let has_moodle () =
+  (* could be put in localStorage, but a server change wouldn't be propagated *)
+  Server_caller.request (Learnocaml_api.Is_moodle_account (get_stored_token ())) >|= function
+  | Error _ -> false
+  | Ok res -> res
+
+let get_emails () =
+  (* could be put in localStorage, but a server change wouldn't be propagated *)
+  Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >|= function
+  | Error _ -> None
+  | Ok res -> res
 
 let sync () = sync (get_stored_token ())
 
@@ -565,7 +578,26 @@ let show_token_dialog token =
           H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
         ]
   else
-    Lwt.return_unit
+    begin if get_opt config##.enableMoodle
+          then has_moodle () >>= fun moodle ->
+               if moodle then return [[%i"Moodle/LTI authentication is enabled for your account."]]
+               else return [[%i"You might also want to associate your account with Moodle/LTI. Ask your teacher if need be."]]
+          else return []
+    end >>= fun end_lines ->
+    begin get_emails () >|= function
+          | None -> [[%i"No e-mail registered."]]
+          | Some (email, None) ->
+             [[%i"Your e-mail:"] ^ " " ^ email]
+          | Some (email, Some email2) when email = email2 ->
+             [[%i"Your e-mail:"] ^ " " ^ email ^ " " ^ [%i"(to be confirmed)"]]
+          | Some (email, Some email2) ->
+             [[%i"Your e-mail:"] ^ " " ^ email;
+              [%i"Pending change:"] ^ " " ^ email2 ^ " " ^ [%i"(to be confirmed)"]]
+    end >>= fun begin_lines ->
+    let lines = begin_lines @ end_lines in
+    Lwt.return @@
+      ext_alert ~title:[%i"Your Learn-OCaml login"]
+        (List.map (fun para -> H.p [H.txt para]) lines)
 
 let complete_reset_password ?(sayif = true) cb = function
   | Ok email ->
@@ -1165,9 +1197,9 @@ let () =
         init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
         can_show_token () >>= fun show_token ->
         (if not show_token then
-           Server_caller.request (Learnocaml_api.Is_account (get_stored_token ())) >|=
+           Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >|=
              (function
-              | Ok true -> init_op ()
+              | Ok (Some _) -> init_op ()
               | _ -> show_upgrade_button ())
          else if get_opt config##.enablePasswd then
            Lwt.return @@ show_upgrade_button ()

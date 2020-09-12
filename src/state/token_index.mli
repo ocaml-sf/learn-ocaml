@@ -43,6 +43,7 @@ module MoodleIndex: sig
 
   val get_users : string -> (string * Learnocaml_data.Token.t) list Lwt.t
   val user_exists : string -> string -> bool Lwt.t
+  val token_exists : string -> Learnocaml_data.Token.t -> bool Lwt.t
 end
 
 module OauthIndex: sig
@@ -80,7 +81,14 @@ module UserIndex: sig
   val confirm_email : string -> Learnocaml_data.Token.t -> unit Lwt.t
   val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
   val token_of_email : string -> string -> Learnocaml_data.Token.t option Lwt.t
-  val email_of_token : string -> Learnocaml_data.Token.t  -> string option Lwt.t
+
+  (** Four cases for the result:
+   * [None]: not found
+   * [Some (email, Some email)]: init state, unverified email
+   * [Some (email, None)]: verified email
+   * [Some (email, Some other_email)]: pending email change
+   *)
+  val emails_of_token : string -> Learnocaml_data.Token.t  -> ((string * string option) option) Lwt.t
   val change_email : string -> Learnocaml_data.Token.t -> string -> unit Lwt.t
 end
 

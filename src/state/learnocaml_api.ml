@@ -78,6 +78,8 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Is_moodle_account:
+      Token.t -> bool request
   | Change_email:
       (Token.t * string) -> unit request
   | Confirm_email:
@@ -93,8 +95,14 @@ type _ request =
   | Do_reset_password:
       string -> string request
 
-  | Is_account:
-      Token.t -> bool request
+  | Get_emails:
+      Token.t -> (string * string option) option request
+      (* Four cases for the result (see token_index.mli):
+       * [None]: not found
+       * [Some (email, Some email)]: init state, unverified email
+       * [Some (email, None)]: verified email
+       * [Some (email, Some other_email)]: pending email change
+       *)
 
   | Upgrade_form:
       string -> string request
@@ -190,6 +198,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Partition _ ->
           json Partition.enc
 
+      | Is_moodle_account _ -> json J.bool
       | Change_email _ -> json J.unit
       | Confirm_email _ -> str
       | Change_password _ -> str
@@ -197,7 +206,9 @@ module Conversions (Json: JSON_CODEC) = struct
       | Reset_password _ -> str
       | Do_reset_password _ -> str
 
-      | Is_account _ -> json J.bool
+      | Get_emails _ -> json J.(obj1 (opt "email"
+                                        (tup2 string
+                                           (obj1 (opt "pending" string)))))
 
       | Upgrade_form _ -> str
       | Upgrade _ -> str
@@ -323,6 +334,8 @@ module Conversions (Json: JSON_CODEC) = struct
         get ~token
           ["partition"; eid; fid; string_of_int prof]
 
+    | Is_moodle_account token ->
+       get ~token ["is_moodle_account"]
     | Change_email (token, address) ->
         post ~token ["change_email"] (Json.encode J.(tup1 string) address)
     | Confirm_email _ ->
@@ -336,8 +349,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Do_reset_password _ ->
         assert false (* Reserved for a link *)
 
-    | Is_account token ->
-        get ~token ["is_account"]
+    | Get_emails token ->
+        get ~token ["get_emails"]
 
     | Upgrade_form _ ->
         assert false (* Reserved for a link *)
@@ -496,6 +509,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         when Token.is_teacher token ->
           Partition (token, eid, fid, int_of_string prof) |> k
 
+      | `GET, ["is_moodle_account"], Some token ->
+         Is_moodle_account token |> k
       | `POST body, ["change_email"], Some token ->
          (match Json.decode J.(tup1 string) body with
           | address -> Change_email (token, address) |> k
@@ -513,8 +528,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `POST body, ["reset_password"], _ ->
           Do_reset_password body |> k
 
-      | `GET, ["is_account"], Some token ->
-          Is_account token |> k
+      | `GET, ["get_emails"], Some token ->
+          Get_emails token |> k
 
       | `POST body, ["upgrade"], _ ->
           Upgrade_form body |> k

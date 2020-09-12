@@ -97,6 +97,8 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Is_moodle_account:
+      Token.t -> bool request
   | Change_email:
       (Token.t * string) -> unit request
   | Confirm_email:
@@ -112,8 +114,8 @@ type _ request =
   | Do_reset_password:
       string -> string request
 
-  | Is_account:
-      Token.t -> bool request
+  | Get_emails:
+      Token.t -> (string * string option) option request
 
   | Upgrade_form:
       string -> string request

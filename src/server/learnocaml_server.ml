@@ -701,10 +701,16 @@ module Request_handler = struct
            )
            (fun exn -> (`Not_found, Printexc.to_string exn))
 
+      | Api.Is_moodle_account token when config.ServerData.use_moodle ->
+         Token_index.MoodleIndex.token_exists !sync_dir token >>= fun has_moodle ->
+         respond_json cache has_moodle
+      | Api.Is_moodle_account _ ->
+         lwt_fail (`Forbidden, "LTI disabled on this instance.")
+
       | Api.Change_email (token, address) when config.ServerData.use_passwd ->
-         Token_index.UserIndex.email_of_token !sync_dir token >>=
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
            (function
-            | Some old_address ->
+            | Some (old_address, _pending) ->
                Token_index.UserIndex.exists !sync_dir address >>= fun exists ->
                if exists then
                  lwt_fail (`Forbidden, "Address already in use.")
@@ -741,9 +747,9 @@ module Request_handler = struct
                >>= fun () ->
                respond_json cache address)
       | Api.Change_password token when config.ServerData.use_passwd ->
-         Token_index.UserIndex.email_of_token !sync_dir token >>=
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
            (function
-            | Some address ->
+            | Some (address, _pending) ->
                initiate_password_change token address cache req
             | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Reset_password handle when config.ServerData.use_passwd ->
@@ -811,17 +817,17 @@ module Request_handler = struct
       | Api.Do_reset_password _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
-      | Api.Is_account token when config.ServerData.use_passwd ->
-         Token_index.UserIndex.email_of_token !sync_dir token >>= fun email ->
-         respond_json cache (email <> None)
-      | Api.Is_account _ ->
+      | Api.Get_emails token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>= fun emails ->
+         respond_json cache emails
+      | Api.Get_emails _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
       | Api.Upgrade_form body when config.ServerData.use_passwd ->
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
          let token = Token.parse @@ List.assoc "token" params in
-         Token_index.UserIndex.email_of_token !sync_dir token >>=
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
            (function
             | None ->
                let csrf_token = generate_csrf_token 32 in
@@ -852,7 +858,7 @@ module Request_handler = struct
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
          let token = Token.parse @@ List.assoc "token" params in
-         Token_index.UserIndex.email_of_token !sync_dir token >>=
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
            (function
             | None ->
                let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make

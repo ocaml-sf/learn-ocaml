@@ -166,6 +166,10 @@ module BaseMoodleIndex (RW: IndexRW) = struct
     get_users sync_dir >|=
     List.exists (fun (rid, _token) -> rid = id)
 
+  let token_exists sync_dir token =
+    get_users sync_dir >|=
+    List.exists (fun (_id, rtoken) -> rtoken = token)
+
   let add_user sync_dir id token =
     get_users sync_dir >>= fun users ->
     if List.exists (fun (rid, _token) -> rid = id) users then
@@ -439,11 +443,12 @@ module BaseUserIndex (RW: IndexRW) = struct
         | None, Password (token, found_email, _, _) when found_email = email -> Some token
         | _ -> res) None
 
-  let email_of_token sync_dir token =
+  let emails_of_token sync_dir token =
     RW.read (sync_dir / indexes_subdir / file) parse >|=
     List.fold_left (fun res elt ->
         match res, elt with
-        | None, Password (found_token, email, _, _) when found_token = token -> Some email
+        | None, Password (found_token, email, _, pending) when found_token = token ->
+           Some (email, pending)
         | _ -> res) None
 
   let change_email sync_dir token new_email =
