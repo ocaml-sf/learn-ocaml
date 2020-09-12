@@ -555,12 +555,17 @@ let token_disp_div token =
   ] ()
 
 let show_token_dialog token =
-  ext_alert ~title:[%i"Your Learn-OCaml token"] [
-      H.p [H.txt [%i"Your token is displayed below. It identifies you and \
-                     allows to share your workspace between devices."]];
-      H.p [H.txt [%i"Please write it down."]];
-      H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
-    ]
+  can_show_token () >>= fun show_token ->
+  if show_token then
+    Lwt.return @@
+      ext_alert ~title:[%i"Your Learn-OCaml token"] [
+          H.p [H.txt [%i"Your token is displayed below. It identifies you and \
+                         allows to share your workspace between devices."]];
+          H.p [H.txt [%i"Please write it down."]];
+          H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
+        ]
+  else
+    Lwt.return_unit
 
 let complete_reset_password ?(sayif = true) cb = function
   | Ok email ->
@@ -644,7 +649,8 @@ let init_token_dialog () =
          >>= fun token ->
          Learnocaml_local_storage.(store sync_token) token;
          Learnocaml_local_storage.(store can_show_token) true;
-         show_token_dialog token;
+         show_token_dialog token
+         >>= fun () ->
          Lwt.return_some (token, nickname))
     else
       Lwt.return_none
@@ -1100,20 +1106,20 @@ let () =
          reload ();
          Lwt.return_unit)
   in
-  let show_token_button_state = button_state () in
-  List.iter (fun (text, icon, state, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ?state:state ~icon text f)
+  List.iter (fun (text, icon, f) ->
+      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
     [
-      [%i"Show token"], "token", Some show_token_button_state, (fun () ->
-          show_token_dialog (get_stored_token ());
-          Lwt.return_unit);
-      [%i"Sync workspace"], "sync", None, (fun () ->
+      (if get_opt config##.enablePasswd
+       then [%i"Show login"]
+       else [%i"Show token"]), "token", (fun () ->
+          show_token_dialog (get_stored_token ()));
+      [%i"Sync workspace"], "sync", (fun () ->
           catch_with_alert @@ fun () ->
           sync () >>= fun _ -> Lwt.return_unit);
-      [%i"Export to file"], "download", None, download_save;
-      [%i"Import"], "upload", None, import_save;
-      [%i"Download all source files"], "download", None, download_all;
-      [%i"Logout"], "logout", None,
+      [%i"Export to file"], "download", download_save;
+      [%i"Import"], "upload", import_save;
+      [%i"Download all source files"], "download", download_all;
+      [%i"Logout"], "logout",
       (fun () -> Lwt.async logout_dialog; Lwt.return_unit);
     ];
   begin button
@@ -1162,8 +1168,7 @@ let () =
            Server_caller.request (Learnocaml_api.Is_account (get_stored_token ())) >|=
              (function
               | Ok true -> init_op ()
-              | _ -> show_upgrade_button ()) >|= fun () ->
-           disable_button show_token_button_state
+              | _ -> show_upgrade_button ())
          else if get_opt config##.enablePasswd then
            Lwt.return @@ show_upgrade_button ()
          else

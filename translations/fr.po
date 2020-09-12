@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-08 23:37+0200\n"
+"PO-Revision-Date: 2020-09-12 18:08+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -795,31 +795,35 @@ msgstr ""
 
 #: src/app/learnocaml_index_main.ml:1094,22--30
 #: src/app/learnocaml_index_main.ml:1094,45--53
-#: src/app/learnocaml_index_main.ml:1116,9--17
+#: src/app/learnocaml_index_main.ml:1117,9--17
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: src/app/learnocaml_index_main.ml:1107,9--21
+#: src/app/learnocaml_index_main.ml:1107,15--27
+msgid "Show login"
+msgstr "Afficher votre login"
+
+#: src/app/learnocaml_index_main.ml:1108,15--27
 msgid "Show token"
 msgstr "Afficher le token"
 
-#: src/app/learnocaml_index_main.ml:1110,9--25
+#: src/app/learnocaml_index_main.ml:1111,9--25
 msgid "Sync workspace"
 msgstr "Synchroniser"
 
-#: src/app/learnocaml_index_main.ml:1113,9--25
+#: src/app/learnocaml_index_main.ml:1114,9--25
 msgid "Export to file"
 msgstr "Exporter vers un fichier"
 
-#: src/app/learnocaml_index_main.ml:1114,9--17
+#: src/app/learnocaml_index_main.ml:1115,9--17
 msgid "Import"
 msgstr "Importer"
 
-#: src/app/learnocaml_index_main.ml:1115,9--36
+#: src/app/learnocaml_index_main.ml:1116,9--36
 msgid "Download all source files"
 msgstr "Télécharger tous les fichiers sources"
 
-#: src/app/learnocaml_index_main.ml:1121,38--44
+#: src/app/learnocaml_index_main.ml:1122,38--44
 msgid "Menu"
 msgstr "Menu"
 
@@ -1045,9 +1049,10 @@ msgstr "Vous n'êtes pas connecté"
 msgid "EMAIL CONFIRMED"
 msgstr "ADRESSE EMAIL CONFIRMÉE"
 
-#: src/app/learnocaml_validate_main.ml:13,40--81
+#: src/app/learnocaml_validate_main.ml:13,40--100
 msgid "Your e-mail address has been confirmed. You can now login."
-msgstr "Votre adresse e-mail a été confirmée. Vous pouvez maintenant vous connecter."
+msgstr ""
+"Votre adresse e-mail a été confirmée. Vous pouvez maintenant vous connecter."
 
 #: src/grader/learnocaml_report.ml:240,50--66
 #: src/grader/learnocaml_report.ml:595,59--75
@@ -1279,4 +1284,3 @@ msgstr "lors du test de la solution utilisateur"
 
 #~ msgid "This session has been closed. You can close this tab."
 #~ msgstr "La session a été fermée. Vous pouvez fermer cet onglet."
-
