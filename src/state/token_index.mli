@@ -72,6 +72,9 @@ module UserIndex: sig
   val exists : string -> string -> bool Lwt.t
   val add : string -> user -> unit Lwt.t
 
+  (** Upgrade account from TOKEN to Moodle/LTI *)
+  val upgrade_moodle : string -> Learnocaml_data.Token.t -> unit Lwt.t
+
   (** Upgrade account from TOKEN to password *)
   val upgrade : string -> Learnocaml_data.Token.t -> string -> string -> unit Lwt.t
 

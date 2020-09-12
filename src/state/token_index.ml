@@ -406,6 +406,17 @@ module BaseUserIndex (RW: IndexRW) = struct
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
+  let upgrade_moodle sync_dir token =
+    get_data sync_dir >|=
+      List.map (function
+          | Token (found_token, _use_moodle) when found_token = token ->
+             Token (token, true)
+          | Password (found_token, _email, _passwd, _verify)
+               when found_token = token ->
+             failwith "BaseUserIndex.upgrade_moodle: invalid action"
+          | elt -> elt) >>=
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
+
   let upgrade sync_dir token email passwd =
     (exists sync_dir email >|= fun exists ->
      if exists then failwith "BaseUserIndex.upgrade: duplicate email")

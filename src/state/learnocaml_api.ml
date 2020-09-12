@@ -36,6 +36,8 @@ type _ request =
   | Git: 'a token * string list -> string request
   | Launch:
       string -> string request
+  | Launch_token:
+      string -> string request
   | Launch_login:
       string -> string request
   | Launch_direct:
@@ -163,6 +165,7 @@ module Conversions (Json: JSON_CODEC) = struct
           json Save.enc
       | Git _ -> str
       | Launch _ -> str
+      | Launch_token _ -> str
       | Launch_login _ -> str
       | Launch_direct _ -> str
       | Students_list _ ->
@@ -267,6 +270,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Git _ ->
        assert false (* Reserved for the [git] client *)
     | Launch _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_token _ ->
        assert false (* Reserved for an LTI application *)
     | Launch_login _ ->
        assert false (* Reserved for an LTI application *)
@@ -466,6 +471,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `POST body, ["launch"], _token ->
          Launch body |> k
+
+      | `POST body, ["launch"; "token"], _ ->
+         Launch_token body |> k
 
       | `POST body, ["launch"; "login"], _token ->
          Launch_login body |> k

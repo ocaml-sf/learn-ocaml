@@ -17,7 +17,7 @@
   <body>
     <div id="login-overlay">
       <form method="post" action="/launch/direct">
-	<div id="login-token">
+	<div id="login-direct">
           <h4 id="txt_direct_login"><!-- Direct login --></h4>
           <div>
             <div id="txt_direct_login_nickname"><!-- Nickname --></div>
@@ -28,6 +28,24 @@
 	  <input type="hidden" name="user-id">
 	  <input type="hidden" name="hmac">
           <button id="login-direct-login" type="submit"><span id="txt_button_direct_login"><!-- Direct login --></span></button>
+	</div>
+      </form>
+      <form method="post" action="/launch/token">
+	<div id="login-token">
+          <h4 id="txt_returning_with_token"><!-- Login with a token --></h4>
+          <div>
+            <div id="txt_returning_token"><!-- Token --></div>
+            <div class="filler_h"></div>
+            <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                   pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                   id="login-token-input"
+                   name="token"
+                   autocomplete="off">
+          </div>
+	  <input type="hidden" id="token-csrf-input" name="csrf">
+	  <input type="hidden" id="token-id-input" name="user-id">
+	  <input type="hidden" id="token-hamc-input" name="hmac">
+          <button id="login-token-button" type="submit"><span id="txt_token_returning"><!-- Connect --></span></button>
 	  <div id="txt_indirect_label"><!-- to be able to login independently of Moodle --></div>
 	  <span><!-- Workaround(last-child) --></span>
 	</div>

@@ -346,6 +346,32 @@ module Request_handler = struct
                    |> Markup.to_string in
                  lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
             | Error e -> lwt_fail (`Forbidden, e))
+      | Api.Launch_token body when config.ServerData.use_moodle ->
+         (* code similar to:
+            | Api.Launch_direct body when config.ServerData.use_moodle
+            | Api.Upgrade body when config.ServerData.use_passwd *)
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params and
+             token = Token.parse @@ List.assoc "token" params in
+         Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+         let new_hmac = generate_hmac secret csrf user_id in
+         if not (Eqaf.equal hmac new_hmac) then
+           lwt_fail (`Forbidden, "bad hmac")
+         else
+           Token_index.UserIndex.can_login !sync_dir token >>= fun canlogin ->
+           if not canlogin then
+             lwt_fail (`Forbidden, "Bad token (or token already used by an upgraded account)")
+           else
+             Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+             Token_index.UserIndex.upgrade_moodle !sync_dir token >>= fun () ->
+             let cookies = [make_cookie ("token", Token.to_string token);
+                            make_cookie ~http_only:true ("csrf", "expired")] in
+             lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Launch_login body when config.ServerData.use_moodle ->
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
@@ -384,8 +410,8 @@ module Request_handler = struct
                    lwt_ok @@ Redirect { code=`See_other; url="/"; cookies })
       | Api.Launch_direct body when config.ServerData.use_moodle ->
          let params = Uri.query_of_encoded body
-                      |> List.map (fun (a, b) -> a, String.concat "," b) and
-             make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
                              ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
          let user_id = List.assoc "user-id" params and
              csrf = List.assoc "csrf" params and
@@ -409,6 +435,8 @@ module Request_handler = struct
                           make_cookie ~http_only:true ("csrf", "expired")] in
            lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Launch _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_token _ ->
          lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Launch_login _ ->
          lwt_fail (`Forbidden, "LTI is disabled on this instance.")

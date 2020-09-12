@@ -50,6 +50,8 @@ type _ request =
       'a token * string list -> string request
   | Launch:
       string -> string request
+  | Launch_token:
+      string -> string request
   | Launch_login:
       string -> string request
   | Launch_direct:

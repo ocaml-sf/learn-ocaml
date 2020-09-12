@@ -21,6 +21,7 @@ let check_email_js email =
 
 let id s = s, find_component s
 
+(* XXX there is dead code among these variables *)
 let login_overlay_id, login_overlay = id "login-overlay"
 let login_new_id, login_new = id "login-new"
 let login_returning_id, login_returning = id "login-returning"
@@ -40,6 +41,8 @@ let login_hmac_input_id, login_hmac_input = id "login-hmac-input"
 let login_connect_button_id, login_connect_button = id "login-connect-button"
 
 let login_direct_button_id, login_direct_button = id "login-direct-login"
+
+let login_token_button_id, login_token_button = id "login-token-button"
 
 let set_string_translations =
   List.iter
@@ -147,4 +150,7 @@ let () =
                                 you might want to setup a password below \
                                 (or upgrade your account later)"];
       "txt_button_direct_login", [%i"Direct login"];
+      "txt_token_returning", [%i"Connect"];
+      "txt_returning_with_token", [%i"Reuse an account with a legacy token"];
+      "txt_returning_token", [%i"Token"];
     ]
