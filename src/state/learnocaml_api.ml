@@ -206,9 +206,7 @@ module Conversions (Json: JSON_CODEC) = struct
       | Reset_password _ -> str
       | Do_reset_password _ -> str
 
-      | Get_emails _ -> json J.(obj1 (opt "email"
-                                        (tup2 string
-                                           (obj1 (opt "pending" string)))))
+      | Get_emails _ -> json J.(option (tup2 string (option string)))
 
       | Upgrade_form _ -> str
       | Upgrade _ -> str
