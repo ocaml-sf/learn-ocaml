@@ -708,20 +708,21 @@ let init_token_dialog () =
           if not consent then
             Manip.SetCss.fontWeight consent_label "bold";
           if email_criteria then begin
-              alert ~title:[%i"ERROR"]
-                [%i"The entered e-mail was invalid."];
-            (* ; we could also do [Manip.focus reg_input_email]
-               but this would be broken when closing the dialog. *)
+              cb_alert ~title:[%i"ERROR"]
+                [%i"The entered e-mail was invalid."]
+                (fun () -> Manip.focus reg_input_email)
             end
           else if passwd_crit1 then begin
-              alert ~title:[%i"ERROR"]
-                [%i"Password must be at least 8 characters long"];
+              cb_alert ~title:[%i"ERROR"]
+                [%i"Password must be at least 8 characters long"]
+                (fun () -> Manip.focus reg_input_password)
             end
           else if passwd_crit2 then begin
-              alert ~title:[%i"ERROR"]
+              cb_alert ~title:[%i"ERROR"]
                 [%i"Password must contain at least one digit, \
                     one lower and upper letter, \
-                    and one non-alphanumeric char."];
+                    and one non-alphanumeric char."]
+                (fun () -> Manip.focus reg_input_password)
             end;
           Lwt.return_none
         end
@@ -811,7 +812,8 @@ let init_token_dialog () =
       Manip.SetCss.borderColor login_input_email "";
       if email_criteria then begin
           Manip.SetCss.borderColor login_input_email "#f44";
-          alert ~title:[%i"ERROR"] [%i"The entered e-mail was invalid."];
+          cb_alert ~title:[%i"ERROR"] [%i"The entered e-mail was invalid."]
+            (fun () -> Manip.focus login_input_email);
           Lwt.return_none end
       else
       Server_caller.request (Learnocaml_api.Send_reset_password email)
