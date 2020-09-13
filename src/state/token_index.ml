@@ -12,6 +12,10 @@ open Learnocaml_data
 let ( / ) dir f = if dir = "" then f else Filename.concat dir f
 let indexes_subdir = "data"
 
+let logfailwith str arg =
+  Printf.printf "[WARNING] %s (%s)\n%!" str arg;
+  failwith str
+
 let generate_random_hex len =
   Cryptokit.Random.string Cryptokit.Random.secure_rng len
   |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
@@ -404,7 +408,7 @@ module BaseUserIndex (RW: IndexRW) = struct
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
          (token, Password (token, email, hash, verify_email)) in
     if exists_token token users then
-      failwith "BaseUserIndex.add: duplicate token"
+      logfailwith "BaseUserIndex.add: duplicate token" (Token.to_string token)
     else
       RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
@@ -412,7 +416,7 @@ module BaseUserIndex (RW: IndexRW) = struct
     get_data sync_dir >|=
       List.map (function
           | Token (found_token, _use_moodle) when found_token = token ->
-             failwith "BaseUserIndex.update: invalid action"
+             logfailwith "BaseUserIndex.update: invalid action" (Token.to_string token)
           | Password (found_token, email, _passwd, verify) when found_token = token ->
              let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
              Password (token, email, hash, verify)
@@ -426,13 +430,14 @@ module BaseUserIndex (RW: IndexRW) = struct
              Token (token, true)
           | Password (found_token, _email, _passwd, _verify)
                when found_token = token ->
-             failwith "BaseUserIndex.upgrade_moodle: invalid action"
+             logfailwith "BaseUserIndex.upgrade_moodle: invalid action" (Token.to_string token)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let upgrade sync_dir token email passwd =
     (exists sync_dir email >|= fun exists ->
-     if exists then failwith "BaseUserIndex.upgrade: duplicate email")
+     if exists then
+        logfailwith "BaseUserIndex.upgrade: duplicate email" email)
     >>= fun () ->
     get_data sync_dir >|=
       List.map (function
@@ -441,7 +446,7 @@ module BaseUserIndex (RW: IndexRW) = struct
              Password (token, email, hash, Some(email))
           | Password (found_token, _email, _passwd, _verify)
                when found_token = token ->
-             failwith "BaseUserIndex.upgrade: invalid action"
+             logfailwith "BaseUserIndex.upgrade: invalid action" (Token.to_string token)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
@@ -477,7 +482,8 @@ module BaseUserIndex (RW: IndexRW) = struct
 
   let change_email sync_dir token new_email =
     (exists sync_dir new_email >|= fun exists ->
-     if exists then failwith "BaseUserIndex.change_email: duplicate email")
+     if exists then
+       logfailwith "BaseUserIndex.change_email: duplicate email" new_email)
     >>= fun () ->
     RW.read (sync_dir / indexes_subdir / file) parse >|=
       List.map (function
@@ -493,7 +499,7 @@ module BaseUserIndex (RW: IndexRW) = struct
                when found_token = token && email <> pending ->
              Password (found_token, email, passwd, None)
           | Token (found_token, _moodle) when found_token = token ->
-             failwith "BaseUserIndex.abort_email_change: invalid action"
+             logfailwith "BaseUserIndex.abort_email_change: invalid action" (Token.to_string token)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
