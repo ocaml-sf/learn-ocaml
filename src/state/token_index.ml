@@ -472,6 +472,17 @@ module BaseUserIndex (RW: IndexRW) = struct
              Password (found_token, email, passwd, Some new_email)
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
+
+  let abort_email_change sync_dir token =
+    RW.read (sync_dir / indexes_subdir / file) parse >|=
+      List.map (function
+          | Password (found_token, email, passwd, Some pending)
+               when found_token = token && email <> pending ->
+             Password (found_token, email, passwd, None)
+          | Token (found_token, _moodle) when found_token = token ->
+             failwith "BaseUserIndex.abort_email_change: invalid action"
+          | elt -> elt) >>=
+      RW.write rw (sync_dir / indexes_subdir / file) serialise
 end
 
 module UserIndex = BaseUserIndex (IndexFile)
@@ -538,6 +549,12 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
          Printf.printf {|[WARNING] several ChangeEmail handles for %s|}
            (Token.to_string token);
          Lwt.return_some handle
+
+  let abort_email_change sync_dir token =
+    get_data sync_dir >>= fun operations ->
+    List.filter (fun (_handle, (found_token, _date, operation)) ->
+        operation = ResetPassword || token <> found_token) operations
+    |> RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let revoke_operation sync_dir handle =
     get_data sync_dir >|=

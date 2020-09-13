@@ -601,7 +601,7 @@ let show_token_dialog token =
 
 let complete_reset_password ?(sayif = true) cb = function
   | Ok email ->
-     alert ~title:[%i"RESET REQUEST"]
+     alert ~title:[%i"RESET REQUEST SENT"]
        ([%i"A reset link was sent to the address:"]
         ^ " " ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
                   else "");
@@ -621,9 +621,10 @@ let complete_reset_password ?(sayif = true) cb = function
 
 let complete_change_email cb new_email = function
   | Ok () ->
-     alert ~title:[%i"RESET REQUEST SENT"]
+     cb_alert ~title:[%i"RESET REQUEST SENT"]
        ([%i"A confirmation e-mail has been sent to the address:"]
-       ^ " " ^ new_email);
+        ^ " " ^ new_email)
+       Js_utils.reload;
      Lwt.return_none
   | Error (`Not_found _) ->
      alert ~title:[%i"ERROR"]
@@ -986,6 +987,10 @@ let () =
       Server_caller.request (Learnocaml_api.Change_password
                                Learnocaml_local_storage.(retrieve sync_token))
       >>= complete_reset_password ~sayif:false change_password in
+    let abort_email_change () =
+      Server_caller.request
+        (Learnocaml_api.Abort_email_change (Learnocaml_local_storage.(retrieve sync_token)))
+      >>= fun _ -> Lwt_js.sleep 1.0 >>= fun () -> Js_utils.reload (); Lwt.return_none in
     let rec change_email () =
       Lwt.catch
         (fun () ->
@@ -1000,14 +1005,25 @@ let () =
              >>= complete_change_email change_email address
           | None -> Lwt.return_none)
         (fun _exn -> Lwt.return_none) in
-    let buttons = [[%i"Change password"], change_password;
-                   [%i"Change e-mail"], change_email] in
-    let container = El.op_buttons_container in
-    Manip.removeChildren container;
-    List.iter (fun (name, callback) ->
-        let btn = Tyxml_js.Html5.(button [txt name]) in
-        Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
-        Manip.appendChild container btn) buttons
+    get_emails () >>= fun res ->
+      let buttons =
+        match res with
+        | Some (cur_email, Some new_email) when cur_email <> new_email ->
+          [[%i"Change password"], change_password;
+           [%i"Abort e-mail change"], abort_email_change]
+        | Some (_email, Some _) ->
+           [[%i"Change password"], change_password]
+        | Some (_email, None) ->
+          [[%i"Change password"], change_password;
+           [%i"Change e-mail"], change_email]
+        | None -> [] in
+      let container = El.op_buttons_container in
+      Manip.removeChildren container;
+      List.iter (fun (name, callback) ->
+          let btn = Tyxml_js.Html5.(button [txt name]) in
+          Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
+          Manip.appendChild container btn) buttons;
+      Lwt.return_unit
   in
   let init_tabs token =
     let tabs =
@@ -1207,10 +1223,10 @@ let () =
         init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
         can_show_token () >>= fun show_token ->
         (if not show_token then
-           Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >|=
+           Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >>=
              (function
               | Ok (Some _) -> init_op ()
-              | _ -> show_upgrade_button ())
+              | _ -> Lwt.return @@ show_upgrade_button ())
          else if get_opt config##.enablePasswd then
            Lwt.return @@ show_upgrade_button ()
          else

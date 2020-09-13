@@ -84,6 +84,8 @@ type _ request =
       Token.t -> bool request
   | Change_email:
       (Token.t * string) -> unit request
+  | Abort_email_change:
+      Token.t -> unit request
   | Confirm_email:
       string -> string request
   | Change_password:
@@ -203,6 +205,7 @@ module Conversions (Json: JSON_CODEC) = struct
 
       | Is_moodle_account _ -> json J.bool
       | Change_email _ -> json J.unit
+      | Abort_email_change _ -> json J.unit
       | Confirm_email _ -> str
       | Change_password _ -> str
       | Send_reset_password _ -> str
@@ -341,6 +344,8 @@ module Conversions (Json: JSON_CODEC) = struct
        get ~token ["is_moodle_account"]
     | Change_email (token, address) ->
         post ~token ["change_email"] (Json.encode J.(tup1 string) address)
+    | Abort_email_change token ->
+       post ~token ["abort_email_change"] ""
     | Confirm_email _ ->
         assert false (* Reserved for a link *)
     | Change_password token ->
@@ -521,6 +526,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
          (match Json.decode J.(tup1 string) body with
           | address -> Change_email (token, address) |> k
           | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `POST _body, ["abort_email_change"], Some token ->
+         Abort_email_change token |> k
       | `GET, ["confirm"; handle], _ ->
           Confirm_email handle |> k
       | `POST body, ["send_reset"], _ ->

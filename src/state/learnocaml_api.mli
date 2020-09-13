@@ -103,6 +103,8 @@ type _ request =
       Token.t -> bool request
   | Change_email:
       (Token.t * string) -> unit request
+  | Abort_email_change:
+      Token.t -> unit request
   | Confirm_email:
       string -> string request
   | Change_password:

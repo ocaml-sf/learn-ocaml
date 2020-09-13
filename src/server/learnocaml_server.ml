@@ -764,6 +764,17 @@ module Request_handler = struct
                    old_address address;
                  respond_json cache ()
             | None -> lwt_fail (`Not_found, "Unknown user."))
+
+      | Api.Abort_email_change token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
+           (function
+            | Some (cur_email, Some new_email) when cur_email <> new_email ->
+               Token_index.UserIndex.abort_email_change !sync_dir token >>= fun () ->
+               Token_index.UpgradeIndex.abort_email_change !sync_dir token >>= fun () ->
+               respond_json cache ()
+            | Some _ -> lwt_fail (`Forbidden, "Invalid action.")
+            | None -> lwt_fail (`Not_found, "Unknown user."))
+
       | Api.Confirm_email handle when config.ServerData.use_passwd ->
          Token_index.UpgradeIndex.can_change_email !sync_dir handle >>=
            (function
@@ -858,6 +869,8 @@ module Request_handler = struct
                lwt_fail (`Forbidden, "Nothing to do."))
 
       | Api.Change_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Abort_email_change _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Confirm_email _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")

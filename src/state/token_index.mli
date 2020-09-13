@@ -93,6 +93,7 @@ module UserIndex: sig
    *)
   val emails_of_token : string -> Learnocaml_data.Token.t  -> ((string * string option) option) Lwt.t
   val change_email : string -> Learnocaml_data.Token.t -> string -> unit Lwt.t
+  val abort_email_change : string -> Learnocaml_data.Token.t -> unit Lwt.t
 end
 
 module UpgradeIndex: sig
@@ -109,4 +110,5 @@ module UpgradeIndex: sig
 
   val revoke_operation : string -> string -> unit Lwt.t
   val filter_old_operations : string -> unit Lwt.t
+  val abort_email_change : string -> Learnocaml_data.Token.t -> unit Lwt.t
 end
