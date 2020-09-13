@@ -140,7 +140,10 @@ module BaseTokenIndex (RW: IndexRW) = struct
 
   let add_token sync_dir token =
     get_tokens sync_dir >>= fun tokens ->
-    RW.write rw (sync_dir / indexes_subdir / file) serialise (token :: tokens)
+    if not (List.exists (fun found_token -> found_token = token) tokens) then
+      RW.write rw (sync_dir / indexes_subdir / file) serialise (token :: tokens)
+    else
+      Lwt.return_unit
 end
 
 module TokenIndex = BaseTokenIndex (IndexFile)
