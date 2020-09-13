@@ -526,6 +526,19 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
   let can_change_email = check_upgrade_operation ChangeEmail
   let can_reset_password = check_upgrade_operation ResetPassword
 
+  let ongoing_change_email sync_dir token =
+    get_data sync_dir >>= fun operations ->
+    List.map fst @@
+      List.filter (fun (_handle, (found_token, _date, operation)) ->
+          operation = ChangeEmail && token = found_token) operations
+    |> function
+      | [] -> Lwt.return_none
+      | handle :: [] -> Lwt.return_some handle
+      | handle :: _ ->
+         Printf.printf {|[WARNING] several ChangeEmail handles for %s|}
+           (Token.to_string token);
+         Lwt.return_some handle
+
   let revoke_operation sync_dir handle =
     get_data sync_dir >|=
     List.filter (fun (found_handle, _operation) -> found_handle <> handle) >>=

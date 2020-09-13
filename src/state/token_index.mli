@@ -100,6 +100,9 @@ module UpgradeIndex: sig
   val change_email : string -> Learnocaml_data.Token.t -> string Lwt.t
   val reset_password : string -> Learnocaml_data.Token.t -> string Lwt.t
 
+  (* return a ChangeEmail handle if it exists *)
+  val ongoing_change_email : string -> Learnocaml_data.Token.t -> string option Lwt.t
+
   (* takes a handle *)
   val can_change_email : string -> string -> Learnocaml_data.Token.t option Lwt.t
   val can_reset_password : string -> string -> Learnocaml_data.Token.t option Lwt.t

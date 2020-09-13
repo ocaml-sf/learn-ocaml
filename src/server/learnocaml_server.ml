@@ -235,6 +235,18 @@ let get_nickname token =
     | None -> Lwt.return_none
     | Some save -> Lwt.return_some save.Save.nickname
 
+let resend_confirmation_email token email req =
+  begin Token_index.UpgradeIndex.ongoing_change_email !sync_dir token >>= function
+        | Some handle -> Lwt.return handle
+        | None -> Token_index.UpgradeIndex.change_email !sync_dir token
+  end >>= fun handle ->
+  get_nickname token >>= fun nick ->
+  Learnocaml_sendmail.confirm_email
+    ~nick
+    ~url:(req.Api.host ^ "/confirm/" ^ handle)
+    email;
+  Lwt.return_unit
+
 let initiate_password_change token address cache req =
   Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
   get_nickname token >>= fun nick ->
@@ -767,7 +779,16 @@ module Request_handler = struct
          else Token_index.UserIndex.token_of_email !sync_dir address >>=
            (function
             | Some token ->
-               initiate_password_change token address cache req
+               Token_index.UserIndex.emails_of_token !sync_dir token >>=
+                 (function
+                  | Some (address, pending) ->
+                     begin if pending = Some address (* same email -> unconfirmed *)
+                           then resend_confirmation_email token address req
+                           else Lwt.return_unit
+                     end >>= fun () ->
+                     initiate_password_change token address cache req
+                  | None ->
+                     initiate_password_change token address cache req)
             | None ->
                Lwt.return
                  (Printf.printf "[INFO] attempt to reset password for unknown email: %s\n%!"
@@ -777,8 +798,12 @@ module Request_handler = struct
       | Api.Change_password token when config.ServerData.use_passwd ->
          Token_index.UserIndex.emails_of_token !sync_dir token >>=
            (function
-            | Some (address, _pending) ->
-               initiate_password_change token address cache req
+            | Some (address, pending) ->
+               begin if pending = Some address (* same email -> unconfirmed *)
+                     then resend_confirmation_email token address req
+                     else Lwt.return_unit
+               end >>= fun () ->
+                     initiate_password_change token address cache req
             | None -> lwt_fail (`Not_found, "Unknown user."))
       | Api.Reset_password handle when config.ServerData.use_passwd ->
          Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
