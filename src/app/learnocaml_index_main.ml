@@ -532,16 +532,17 @@ let teacher_tab token a b () =
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
-let can_show_token () =
+let can_show_token ?(force=false) () =
   (* Is this localStorage caching really useful? *)
-  try
-    Lwt.return Learnocaml_local_storage.(retrieve can_show_token)
-  with Not_found ->
-        Server_caller.request (Learnocaml_api.Can_login (get_stored_token ())) >|= function
-        | Error _ -> false
-        | Ok res ->
-           Learnocaml_local_storage.(store can_show_token) res;
-           res
+  let do_request () =
+    Server_caller.request (Learnocaml_api.Can_login (get_stored_token ())) >|= function
+    | Error _ -> false
+    | Ok res ->
+       Learnocaml_local_storage.(store can_show_token) res;
+       res in
+  if force then do_request ()
+  else try Lwt.return Learnocaml_local_storage.(retrieve can_show_token)
+  with Not_found -> do_request ()
 
 let has_moodle () =
   (* could be put in localStorage, but a server change wouldn't be propagated *)
@@ -568,7 +569,7 @@ let token_disp_div token =
   ] ()
 
 let show_token_dialog token =
-  can_show_token () >>= fun show_token ->
+  can_show_token ~force:true () >>= fun show_token ->
   if show_token then
     Lwt.return @@
       ext_alert ~title:[%i"Your Learn-OCaml token"] [
@@ -584,15 +585,19 @@ let show_token_dialog token =
                else return [[%i"You might also want to associate your account with Moodle/LTI. Ask your teacher if need be."]]
           else return []
     end >>= fun end_lines ->
-    begin get_emails () >|= function
-          | None -> [[%i"No e-mail registered."]]
-          | Some (email, None) ->
-             [[%i"Your e-mail:"] ^ " " ^ email]
-          | Some (email, Some email2) when email = email2 ->
-             [[%i"Your e-mail:"] ^ " " ^ email ^ " " ^ [%i"(to be confirmed)"]]
-          | Some (email, Some email2) ->
-             [[%i"Your e-mail:"] ^ " " ^ email;
-              [%i"Pending change:"] ^ " " ^ email2 ^ " " ^ [%i"(to be confirmed)"]]
+    begin if get_opt config##.enablePasswd
+          then get_emails () >|= function
+               | None -> [[%i"No e-mail registered."]]
+               | Some (email, None) ->
+                  [[%i"Your e-mail:"] ^ " " ^ email]
+               | Some (email, Some email2) when email = email2 ->
+                  [[%i"Your e-mail:"] ^ " " ^ email ^ " " ^ [%i"(to be confirmed)"]]
+               | Some (email, Some email2) ->
+                  [[%i"Your e-mail:"] ^ " " ^ email;
+                   [%i"Pending change:"] ^ " " ^ email2 ^ " " ^ [%i"(to be confirmed)"]]
+          else
+            (* shouldn't occur, because use_passwd=false -> can_show_token=true *)
+            return []
     end >>= fun begin_lines ->
     let lines = begin_lines @ end_lines in
     Lwt.return @@
