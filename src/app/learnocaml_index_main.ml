@@ -736,7 +736,9 @@ let init_token_dialog () =
          retrieve
            (Learnocaml_api.Create_user (email, nickname, password, secret))
          >>= fun () ->
-         alert ~title:[%i"VALIDATION REQUIRED"] [%i"A confirmation e-mail has been sent to your address."];
+         cb_alert ~title:[%i"VALIDATION REQUIRED"]
+           [%i"A confirmation e-mail has been sent to your address."]
+           Js_utils.reload;
          Lwt.return_none)
     else
       Lwt.return_none
