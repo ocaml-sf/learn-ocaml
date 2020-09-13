@@ -981,10 +981,13 @@ let () =
     Manip.appendChild El.content div ;
     delete_arg "activity"
   in
-  let show_upgrade_button () =
+  let show_upgrade_button ?(critical=true) () =
     let token = Learnocaml_local_storage.(retrieve sync_token) and
         input = Js.Unsafe.coerce @@ H.toelt (find_component "upgrade-token") in
     input##.value := Js.string @@ Token.to_string token;
+    if critical
+    then Manip.addClass (find_component "upgrade-button") "active"
+    else Manip.removeClass (find_component "upgrade-button") "active";
     Manip.SetCss.display (find_component "learnocaml-upgrade-container") "block"
   in
   let init_op () =
@@ -1010,31 +1013,31 @@ let () =
              >>= complete_change_email change_email address
           | None -> Lwt.return_none)
         (fun _exn -> Lwt.return_none) in
-    can_show_token () >>= fun show_token ->
-    if show_token then
-      if get_opt config##.enablePasswd
+    if get_opt config##.enablePasswd then
+      can_show_token () >>= fun show_token ->
+      if show_token
       then Lwt.return @@ show_upgrade_button ()
-      else Lwt.return_unit
-    else
-      get_emails () >>= fun emails ->
-      let buttons =
-        match emails with
-        | Some (cur_email, Some new_email) when cur_email <> new_email ->
-          [[%i"Change password"], change_password;
-           [%i"Abort e-mail change"], abort_email_change]
-        | Some (_email, Some _) ->
-           [[%i"Change password"], change_password]
-        | Some (_email, None) ->
-          [[%i"Change password"], change_password;
-           [%i"Change e-mail"], change_email]
-        | None -> [] in
-      let container = El.op_buttons_container in
-      Manip.removeChildren container;
-      List.iter (fun (name, callback) ->
-          let btn = Tyxml_js.Html5.(button [txt name]) in
-          Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
-          Manip.appendChild container btn) buttons;
-      Lwt.return_unit
+      else get_emails () >>= fun emails ->
+           let buttons =
+             match emails with
+             | Some (cur_email, Some new_email) when cur_email <> new_email ->
+                [[%i"Change password"], change_password;
+                 [%i"Abort e-mail change"], abort_email_change]
+             | Some (_email, Some _) ->
+                [[%i"Change password"], change_password]
+             | Some (_email, None) ->
+                [[%i"Change password"], change_password;
+                 [%i"Change e-mail"], change_email]
+             | None -> (* Upgrade is not critical as the user logged-in by LTI *)
+                show_upgrade_button ~critical:false (); [] in
+           let container = El.op_buttons_container in
+           Manip.removeChildren container;
+           List.iter (fun (name, callback) ->
+               let btn = Tyxml_js.Html5.(button [txt name]) in
+               Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
+               Manip.appendChild container btn) buttons;
+           Lwt.return_unit
+    else Lwt.return_unit
   in
   let init_tabs token =
     let tabs =
