@@ -28,7 +28,4 @@ let () =
   (match Js_utils.get_lang () with Some l -> Ocplib_i18n.set_lang l | None -> ());
   let message =
     [%i"Your e-mail address has been confirmed. You can now login."] in
-  let module H =Tyxml_js.Html in
-  ext_alert ~title:[%i"EMAIL CONFIRMED"]
-    ~buttons: [box_button [%i"OK"] @@ redirect]
-    [ H.p [H.txt (String.trim message)] ]
+  cb_alert ~title:[%i"EMAIL CONFIRMED"] message redirect

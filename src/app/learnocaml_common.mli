@@ -23,6 +23,8 @@ val fatal : ?title: string -> string -> unit
 
 val alert : ?title: string -> ?buttons: Html_types.div_content Tyxml_js.Html.elt list -> string -> unit
 
+val cb_alert :?title:string -> string -> (unit -> 'a) -> unit
+
 val box_button : string Tyxml_js.Html.wrap -> (unit -> 'a) -> [> Html_types.button ] Tyxml_js.Html.elt
 
 (* [close_button txt] is defined as [box_button txt @@ fun () -> ()] *)

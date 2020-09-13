@@ -139,6 +139,10 @@ let lwt_alert ~title ~buttons message =
 let alert ?(title=[%i"ERROR"]) ?buttons message =
   ext_alert ~title ?buttons [ H.p [H.txt (String.trim message)] ]
 
+let cb_alert ?(title=[%i"ERROR"]) message f =
+  ext_alert ~title ~buttons:[box_button [%i"OK"] @@ f]
+    [ H.p [H.txt (String.trim message)] ]
+
 let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
   ext_alert ~title contents ~buttons:[
     box_button ok_label f;
