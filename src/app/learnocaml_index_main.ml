@@ -1005,9 +1005,15 @@ let () =
              >>= complete_change_email change_email address
           | None -> Lwt.return_none)
         (fun _exn -> Lwt.return_none) in
-    get_emails () >>= fun res ->
+    can_show_token () >>= fun show_token ->
+    if show_token then
+      if get_opt config##.enablePasswd
+      then Lwt.return @@ show_upgrade_button ()
+      else Lwt.return_unit
+    else
+      get_emails () >>= fun emails ->
       let buttons =
-        match res with
+        match emails with
         | Some (cur_email, Some new_email) when cur_email <> new_email ->
           [[%i"Change password"], change_password;
            [%i"Abort e-mail change"], abort_email_change]
@@ -1221,16 +1227,7 @@ let () =
     (function
      | Ok _ ->
         init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
-        can_show_token () >>= fun show_token ->
-        (if not show_token then
-           Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >>=
-             (function
-              | Ok (Some _) -> init_op ()
-              | _ -> Lwt.return @@ show_upgrade_button ())
-         else if get_opt config##.enablePasswd then
-           Lwt.return @@ show_upgrade_button ()
-         else
-           Lwt.return_unit) >>= fun () ->
+        init_op () >>= fun () ->
         Lwt.return tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
