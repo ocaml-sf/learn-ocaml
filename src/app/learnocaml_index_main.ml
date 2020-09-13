@@ -741,10 +741,11 @@ let init_token_dialog () =
       Lwt.return_none
   in
   let rec login_passwd () =
-    let input = Manip.value login_input_email and
+    let email = Manip.value login_input_email and
         password = Manip.value login_input_password in
     if get_opt config##.enablePasswd then
-      Server_caller.request (Learnocaml_api.Login (input, password)) >>= function
+      validate_email email >>= fun _email ->
+      Server_caller.request (Learnocaml_api.Login (email, password)) >>= function
       | Error e ->
          alert ~title:[%i"ERROR"] (Server_caller.string_of_error e);
          Lwt.return_none
