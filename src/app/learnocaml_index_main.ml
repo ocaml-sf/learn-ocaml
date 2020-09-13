@@ -919,6 +919,11 @@ let set_string_translations () =
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];
     "txt_upgrade", [%i"Setup a password"];
+    "txt_moodle_label", (if get_opt config##.enableMoodle
+                         then [%i"Or you may want to login \
+                                  directly from Moodle \
+                                  (ask your teacher for details)"]
+                         else "");
   ] in
   List.iter
     (fun (id, text) ->

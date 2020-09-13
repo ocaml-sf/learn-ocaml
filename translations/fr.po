@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2020-09-13 01:57+0200\n"
+"PO-Revision-Date: 2020-09-13 02:10+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -145,7 +145,7 @@ msgid "Editor"
 msgstr "Éditeur"
 
 #: src/app/learnocaml_common.ml:787,41--51
-#: src/app/learnocaml_index_main.ml:1012,30--40
+#: src/app/learnocaml_index_main.ml:1017,30--40
 msgid "Toplevel"
 msgstr "Toplevel"
 
@@ -183,7 +183,7 @@ msgstr "Statistiques"
 
 #: src/app/learnocaml_common.ml:799,37--48
 #: src/app/learnocaml_exercise_main.ml:200,23--34
-#: src/app/learnocaml_index_main.ml:1009,29--40
+#: src/app/learnocaml_index_main.ml:1014,29--40
 #: src/app/learnocaml_teacher_tab.ml:328,18--29
 msgid "Exercises"
 msgstr "Exercices"
@@ -510,7 +510,7 @@ msgstr "Adresse e-mail"
 
 #: src/app/learnocaml_lti_main.ml:132,42--52
 #: src/app/learnocaml_index_main.ml:903,40--50
-#: src/app/learnocaml_index_main.ml:929,9--19
+#: src/app/learnocaml_index_main.ml:934,9--19
 #: src/app/learnocaml_teacher_tab.ml:557,22--32
 msgid "Nickname"
 msgstr "Pseudonyme"
@@ -780,52 +780,57 @@ msgstr "Connexion avec un ancien token"
 msgid "Setup a password"
 msgstr "Définir un mot de passe"
 
-#: src/app/learnocaml_index_main.ml:963,38--59
+#: src/app/learnocaml_index_main.ml:923,33--183
+msgid ""
+"Or you may want to login directly from Moodle (ask your teacher for details)"
+msgstr "Ou vous pouvez vous connecter directement depuis Moodle (demandez à votre enseignant pour plus de détails)"
+
+#: src/app/learnocaml_index_main.ml:968,38--59
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."
 
-#: src/app/learnocaml_index_main.ml:982,31--51
+#: src/app/learnocaml_index_main.ml:987,31--51
 msgid "New e-mail address"
 msgstr "Nouvelle adresse e-mail"
 
-#: src/app/learnocaml_index_main.ml:983,22--54
+#: src/app/learnocaml_index_main.ml:988,22--54
 msgid "Enter your new e-mail address:"
 msgstr "Entrez votre nouvelle adresse e-mail :"
 
-#: src/app/learnocaml_index_main.ml:993,22--39
+#: src/app/learnocaml_index_main.ml:998,22--39
 msgid "Change password"
 msgstr "Changer de mot de passe"
 
-#: src/app/learnocaml_index_main.ml:994,22--37
+#: src/app/learnocaml_index_main.ml:999,22--37
 msgid "Change e-mail"
 msgstr "Changer d'adresse e-mail"
 
-#: src/app/learnocaml_index_main.ml:1005,30--41
+#: src/app/learnocaml_index_main.ml:1010,30--41
 msgid "Try OCaml"
 msgstr "Try OCaml"
 
-#: src/app/learnocaml_index_main.ml:1007,29--38
+#: src/app/learnocaml_index_main.ml:1012,29--38
 msgid "Lessons"
 msgstr "Cours"
 
-#: src/app/learnocaml_index_main.ml:1014,32--44
+#: src/app/learnocaml_index_main.ml:1019,32--44
 #: src/app/learnocaml_playground_main.ml:72,23--35
 msgid "Playground"
 msgstr "Bac-à-sable"
 
-#: src/app/learnocaml_index_main.ml:1017,28--35
+#: src/app/learnocaml_index_main.ml:1022,28--35
 msgid "Teach"
 msgstr "Enseignement"
 
-#: src/app/learnocaml_index_main.ml:1117,17--71
+#: src/app/learnocaml_index_main.ml:1122,17--71
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token :"
 
-#: src/app/learnocaml_index_main.ml:1119,17--51
+#: src/app/learnocaml_index_main.ml:1124,17--51
 msgid "Are you sure you want to logout?"
 msgstr "Êtes-vous sûr de vouloir vous déconnecter ?"
 
-#: src/app/learnocaml_index_main.ml:1121,15--186
+#: src/app/learnocaml_index_main.ml:1126,15--186
 msgid ""
 "WARNING: the data could not be synchronised with the server. Logging out "
 "will lose your local changes, be sure you exported a backup."
@@ -834,37 +839,37 @@ msgstr ""
 "En vous déconnectant, vous perdrez tous les changements locaux, à moins "
 "d'avoir exporté votre espace de travail au préalable."
 
-#: src/app/learnocaml_index_main.ml:1132,22--30
-#: src/app/learnocaml_index_main.ml:1132,45--53
-#: src/app/learnocaml_index_main.ml:1154,9--17
+#: src/app/learnocaml_index_main.ml:1137,22--30
+#: src/app/learnocaml_index_main.ml:1137,45--53
+#: src/app/learnocaml_index_main.ml:1159,9--17
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: src/app/learnocaml_index_main.ml:1145,15--27
+#: src/app/learnocaml_index_main.ml:1150,15--27
 msgid "Show login"
 msgstr "Afficher votre login"
 
-#: src/app/learnocaml_index_main.ml:1146,15--27
+#: src/app/learnocaml_index_main.ml:1151,15--27
 msgid "Show token"
 msgstr "Afficher le token"
 
-#: src/app/learnocaml_index_main.ml:1148,9--25
+#: src/app/learnocaml_index_main.ml:1153,9--25
 msgid "Sync workspace"
 msgstr "Synchroniser"
 
-#: src/app/learnocaml_index_main.ml:1151,9--25
+#: src/app/learnocaml_index_main.ml:1156,9--25
 msgid "Export to file"
 msgstr "Exporter vers un fichier"
 
-#: src/app/learnocaml_index_main.ml:1152,9--17
+#: src/app/learnocaml_index_main.ml:1157,9--17
 msgid "Import"
 msgstr "Importer"
 
-#: src/app/learnocaml_index_main.ml:1153,9--36
+#: src/app/learnocaml_index_main.ml:1158,9--36
 msgid "Download all source files"
 msgstr "Télécharger tous les fichiers sources"
 
-#: src/app/learnocaml_index_main.ml:1159,38--44
+#: src/app/learnocaml_index_main.ml:1164,38--44
 msgid "Menu"
 msgstr "Menu"
 
