@@ -389,14 +389,24 @@ module BaseUserIndex (RW: IndexRW) = struct
              found_email = email || verify_email = email
           | _ -> false)
 
+  (* private function; might be exposed in the .mli if need be *)
+  let exists_token token user_list =
+    List.exists (function
+        | Token (found_token, _moodle) -> found_token = token
+        | Password (found_token, _email, _passwd, _pending) -> found_token = token)
+    user_list
+
   let add sync_dir auth =
     get_data sync_dir >>= fun users ->
-    let new_user = match auth with
-      | Token _ -> auth
+    let token, new_user = match auth with
+      | Token (token, _) -> (token, auth)
       | Password (token, email, passwd, verify_email) ->
          let hash = Bcrypt.string_of_hash @@ Bcrypt.hash passwd in
-         Password (token, email, hash, verify_email) in
-    RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
+         (token, Password (token, email, hash, verify_email)) in
+    if exists_token token users then
+      failwith "BaseUserIndex.add: duplicate token"
+    else
+      RW.write rw (sync_dir / indexes_subdir / file) serialise (new_user :: users)
 
   let update sync_dir token passwd =
     get_data sync_dir >|=

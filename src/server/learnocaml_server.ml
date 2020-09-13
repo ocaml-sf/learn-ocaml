@@ -438,11 +438,9 @@ module Request_handler = struct
            (if nickname = "" then Lwt.return_unit
             else Save.set token Save.{empty with nickname})
            >>= fun () ->
-           let auth = Token_index.Token (token, true) in
            Token_index.(
-             TokenIndex.add_token !sync_dir token >>= fun () ->
              MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
-             UserIndex.add !sync_dir auth) >>= fun () ->
+             UserIndex.upgrade_moodle !sync_dir token) >>= fun () ->
            let cookies = [make_cookie ("token", Token.to_string token);
                           make_cookie ~http_only:true ("csrf", "expired")] in
            lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
