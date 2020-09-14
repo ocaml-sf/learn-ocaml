@@ -329,12 +329,6 @@ let main o =
                   (o.app_dir/file) o.builder.Builder.root
               else
                 Lwt.return_unit) >>= fun () ->
-         (if preconfig.ServerData.use_moodle then
-            Token_index.OauthIndex.get_first_oauth o.server.Server.sync_dir >>= fun (secret, _) ->
-            Lwt_io.printf "LTI shared secret: %s\n" secret
-          else
-            Lwt.return_unit)
-       >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
                Lwt.catch (fun () ->

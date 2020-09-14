@@ -1057,15 +1057,22 @@ let compress ?(level = 4) data =
 let launch () =
   Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
-  if config.Learnocaml_data.Server.use_moodle
-     && not config.Learnocaml_data.Server.use_passwd then
+  let module ServerData = Learnocaml_data.Server in
+  if config.ServerData.use_moodle
+     && not config.ServerData.use_passwd then
     failwith "Cannot enable Moodle/LTI without enabling passwords."
-  else if not config.Learnocaml_data.Server.use_passwd then
+  else if not config.ServerData.use_passwd then
     print_endline "[INFO] You may want to enable passwords and LTI \
                    with the config options `use_passwd' and `use_moodle'."
-  else if not config.Learnocaml_data.Server.use_moodle then
+  else if not config.ServerData.use_moodle then
     print_endline "[INFO] You may want to enable LTI with the config \
                    option `use_moodle'.";
+  (if config.ServerData.use_moodle then
+    Token_index.OauthIndex.get_first_oauth !sync_dir >>= fun (secret, _) ->
+    Lwt_io.printf "LTI shared secret: %s\n" secret
+  else
+    Lwt.return_unit)
+  >>= fun () ->
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
