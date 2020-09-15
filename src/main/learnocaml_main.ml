@@ -181,7 +181,8 @@ module Args = struct
         "Number of building jobs to run in parallel"
 
     let root_url =
-      value & opt string "" & info ["root-url"] ~docv:"ROOT_URL" ~doc:
+      value & opt string "" &
+      info ["root-url"] ~docv:"ROOT_URL" ~env:(Arg.env_var "LEARNOCAML_ROOT_URL") ~doc:
         "Set the root URL of all documents. Use only for static deployment. \
          Should not end with a trailing slash."
 
