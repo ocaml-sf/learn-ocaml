@@ -397,7 +397,7 @@ let main o =
         in
         Unix.execv native_server (Array.of_list (native_server::server_args))
       else
-      Printf.printf {|ROOT_URL: "%s"\n%!|} o.builder.Builder.root_url;
+      Printf.printf "ROOT_URL: \"%s\"\n%!" o.builder.Builder.root_url;
       Printf.printf "Starting server on port %d\n%!"
           !Learnocaml_server.port;
       Learnocaml_server.launch ()

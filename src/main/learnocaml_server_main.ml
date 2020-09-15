@@ -22,7 +22,7 @@ let signal_waiter =
   waiter
 
 let main o =
-  Printf.printf {|ROOT_URL: "%s"\n%!|} o.root_url;
+  Printf.printf "ROOT_URL: \"%s\"\n%!" o.root_url;
   Printf.printf "Learnocaml server v.%s starting on port %d\n%!"
     Learnocaml_api.version o.port;
   let rec run () =
