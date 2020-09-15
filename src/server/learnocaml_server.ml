@@ -20,11 +20,17 @@ let cert_key_files = ref None
 
 let log_channel = ref (Some stdout)
 
+let root_url = ref ""
+
 let args = Arg.align @@
   [ "-static-dir", Arg.Set_string static_dir,
     "PATH where static files should be found (./www)" ;
     "-sync-dir", Arg.Set_string sync_dir,
     "PATH where sync tokens are stored (./sync)" ;
+    "-root-url", Arg.Set_string root_url,
+    "ROOT_URL of the website. \
+     Should not end with a trailing slash.
+     Mandatory when the site is not hosted in path '/'." ;
     "-port", Arg.Set_int port,
     "PORT the TCP port (8080)" ]
 
@@ -1011,18 +1017,6 @@ let last_modified = (* server startup time *)
     (tm.tm_year + 1900)
     tm.tm_hour tm.tm_min tm.tm_sec
 
-let get_base_url req =
-  let uri = Request.uri req in
-  match Uri.(scheme uri, host uri, port uri) with
-  | Some ("http" as scheme), Some host, Some 80
-  | Some ("https" as scheme), Some host, Some 443 ->
-     Uri.to_string @@ Uri.make ~scheme ~host ()
-  | Some scheme, Some host, Some port -> Uri.to_string @@ Uri.make ~scheme ~host ~port ()
-  | _, Some host, Some 80 -> Uri.to_string @@ Uri.make ~scheme:("http") ~host ()
-  | _, Some host, Some 443 -> Uri.to_string @@ Uri.make ~scheme:("https") ~host ()
-  | _, Some host, Some port -> Uri.to_string @@ Uri.make ~scheme:("http") ~host ~port ()
-  | _ -> failwith "Bad request"
-
 (* Taken from the source of "decompress", from bin/easy.ml *)
 let compress ?(level = 4) data =
   let input_buffer = Bytes.create 0xFFFF in
@@ -1157,7 +1151,7 @@ let launch () =
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> lwt_ok {Api.meth = `GET; host = get_base_url req; path; args}
+     | `GET -> lwt_ok {Api.meth = `GET; host = !root_url; path; args}
      | `POST ->
         begin
           Cohttp_lwt.Body.to_string body
@@ -1171,11 +1165,11 @@ let launch () =
                   List.assoc_opt "csrf" cookies with
             | Some (param_csrf :: _), Some cookie_csrf ->
                if Eqaf.equal param_csrf cookie_csrf then
-                 lwt_ok {Api.meth = `POST params; host = get_base_url req; path; args}
+                 lwt_ok {Api.meth = `POST params; host = !root_url; path; args}
                else
                  lwt_fail (`Forbidden, "CSRF token mismatch")
             | None, None | None, Some _ ->
-               lwt_ok {Api.meth = `POST params; host = get_base_url req; path; args}
+               lwt_ok {Api.meth = `POST params; host = !root_url; path; args}
             | _, _ ->
                lwt_fail (`Forbidden, "Bad CSRF token")
         end
