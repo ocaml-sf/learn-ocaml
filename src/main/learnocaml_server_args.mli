@@ -8,8 +8,9 @@
 
 type t = {
   sync_dir: string;
-  cert: string option;
+  root_url: string;
   port: int;
+  cert: string option;
 }
 
-val term: string Cmdliner.Term.t -> t Cmdliner.Term.t
+val term: string Cmdliner.Term.t -> string Cmdliner.Term.t -> t Cmdliner.Term.t

@@ -34,12 +34,13 @@ let port =
 
 type t = {
   sync_dir: string;
-  cert: string option;
+  root_url: string;
   port: int;
+  cert: string option;
 }
 
-let term app_dir =
-  let apply app_dir sync_dir port cert =
+let term app_dir root_url =
+  let apply app_dir sync_dir root_url port cert =
     Learnocaml_store.static_dir := app_dir;
     Learnocaml_store.sync_dir := sync_dir;
     let port = match port, cert with
@@ -52,8 +53,9 @@ let term app_dir =
        | Some base -> Some (base ^ ".pem", base ^ ".key");
        | None -> None);
     Learnocaml_server.port := port;
-    { sync_dir; port; cert }
+    Learnocaml_server.root_url := root_url;
+    { sync_dir; root_url; port; cert }
   in
   (* warning: if you add any options here, remember to pass them through when
      calling the native server from learn-ocaml main *)
-  Term.(const apply $app_dir $sync_dir $port $cert)
+  Term.(const apply $ app_dir $ sync_dir $ root_url $ port $ cert)

@@ -47,6 +47,14 @@ module Args = struct
       "Directory where the app should be generated for the $(i,build) command, \
        and from where it is served by the $(i,serve) command."
 
+  let root_url =
+    value & opt string "" &
+      info ["root-url"] ~docv:"ROOT_URL" ~env:(Arg.env_var "LEARNOCAML_ROOT_URL") ~doc:
+        "Set the root URL of the website. \
+         Should not end with a trailing slash. \
+         Mandatory when the site is not hosted in path '/', \
+         which typically occurs for static deployment."
+
   module Grader = struct
     let info = info ~docs:"GRADER OPTIONS"
 
@@ -180,12 +188,6 @@ module Args = struct
       value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
         "Number of building jobs to run in parallel"
 
-    let root_url =
-      value & opt string "" &
-      info ["root-url"] ~docv:"ROOT_URL" ~env:(Arg.env_var "LEARNOCAML_ROOT_URL") ~doc:
-        "Set the root URL of all documents. Use only for static deployment. \
-         Should not end with a trailing slash."
-
     type t = {
       contents_dir: string;
       try_ocaml: bool option;
@@ -242,7 +244,7 @@ module Args = struct
       { commands; app_dir; repo_dir; grader; builder; server }
     in
     Term.(const apply $commands $app_dir $repo_dir
-          $Grader.term $Builder.term $Server.term app_dir)
+          $Grader.term $Builder.term $Server.term app_dir root_url)
 end
 
 open Args
@@ -384,11 +386,13 @@ let main o =
           let open Server in
           ("--app-dir="^o.app_dir) ::
           ("--sync-dir="^o.server.sync_dir) ::
+          ("--root-url="^o.builder.Builder.root_url) ::
           ("--port="^string_of_int o.server.port) ::
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
         Unix.execv native_server (Array.of_list (native_server::server_args))
       else
+        Printf.printf {|Root URL: "%s"\n%!|} o.builder.Builder.root_url;
         Printf.printf "Starting server on port %d\n%!"
           !Learnocaml_server.port;
       Learnocaml_server.launch ()
