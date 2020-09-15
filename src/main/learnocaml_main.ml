@@ -180,9 +180,9 @@ module Args = struct
       value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
         "Number of building jobs to run in parallel"
 
-    let root =
-      value & opt string "" & info ["root"] ~docv:"ROOT" ~doc:
-        "Set the root of all documents.  Use only for static deployment.\
+    let root_url =
+      value & opt string "" & info ["root-url"] ~docv:"ROOT_URL" ~doc:
+        "Set the root URL of all documents. Use only for static deployment. \
          Should not end with a trailing slash."
 
     type t = {
@@ -192,15 +192,15 @@ module Args = struct
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
-      root: string
+      root_url: string
     }
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel root
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; root }
+        contents_dir try_ocaml lessons exercises playground toplevel root_url
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; root_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $root)
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $root_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -246,11 +246,11 @@ end
 
 open Args
 
-let process_html_file orig_file dest_file root =
+let process_html_file orig_file dest_file root_url =
   let transform_tag e tag attrs attr =
     let attr_pair = ("", attr) in
     match List.assoc_opt attr_pair attrs with
-    | Some url -> `Start_element ((e, tag), (attr_pair, root ^ url) :: (List.remove_assoc attr_pair attrs))
+    | Some url -> `Start_element ((e, tag), (attr_pair, root_url ^ url) :: (List.remove_assoc attr_pair attrs))
     | None -> `Start_element ((e, tag), attrs) in
   Lwt_io.open_file ~mode:Lwt_io.Input orig_file >>= fun ofile ->
   Lwt_io.open_file ~mode:Lwt_io.Output dest_file >>= fun wfile ->
@@ -326,7 +326,7 @@ let main o =
        |> Lwt_stream.iter_s (fun file ->
               if Filename.extension file = ".html" then
                 process_html_file (o.builder.Builder.contents_dir/file)
-                  (o.app_dir/file) o.builder.Builder.root
+                  (o.app_dir/file) o.builder.Builder.root_url
               else
                 Lwt.return_unit) >>= fun () ->
        let if_enabled opt dir f = (match opt with
@@ -363,14 +363,14 @@ let main o =
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
               \  enableToplevel: %b,\n\
-              \  root: \"%s\"\n\
+              \  rootUrl: \"%s\"\n\
                }\n"
               (tutorials_ret <> None)
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
               (o.builder.Builder.toplevel <> Some false)
-              o.builder.Builder.root >>= fun () ->
+              o.builder.Builder.root_url >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true

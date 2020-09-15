@@ -17,7 +17,7 @@ class type learnocaml_config = object
   method enablePlayground: bool Js.optdef_prop
   method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
   method txtNickname: Js.js_string Js.t Js.optdef_prop
-  method root: Js.js_string Js.t Js.optdef_prop
+  method rootUrl: Js.js_string Js.t Js.optdef_prop
 end
 
 val config : learnocaml_config Js.t
