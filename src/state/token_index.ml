@@ -13,7 +13,7 @@ let ( / ) dir f = if dir = "" then f else Filename.concat dir f
 let indexes_subdir = "data"
 
 let logfailwith str arg =
-  Printf.printf "[WARNING] %s (%s)\n%!" str arg;
+  Printf.printf "[ERROR] %s (%s)\n%!" str arg;
   failwith str
 
 let generate_random_hex len =
@@ -120,7 +120,7 @@ module BaseTokenIndex (RW: IndexRW) = struct
           else
             Lwt.return acc
         ) "" [] in
-    Lwt_io.printl "Regenerating the token index..." >>= fun () ->
+    Lwt_io.printl "[INFO] Regenerating the token index..." >>= fun () ->
     found_indexes >>= RW.write rw (sync_dir / indexes_subdir / file) serialise_str
 
   let get_file sync_dir name =
@@ -363,6 +363,7 @@ module BaseUserIndex (RW: IndexRW) = struct
       (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
       (fun _exn ->
         TokenIndex.get_tokens sync_dir >>= fun tokens ->
+        Lwt_io.printl "[INFO] Generating the user index from token index..." >>= fun () ->
         let users = token_list_to_users tokens in
         RW.write rw (sync_dir / indexes_subdir / file) serialise users >|= fun () ->
         users)
@@ -565,8 +566,8 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
       | [] -> Lwt.return_none
       | handle :: [] -> Lwt.return_some handle
       | handle :: _ ->
-         Printf.printf {|[WARNING] several ChangeEmail handles for %s|}
-           (Token.to_string token);
+         Lwt_io.printlf "[WARNING] several ChangeEmail handles for %s"
+           (Token.to_string token) >>= fun () ->
          Lwt.return_some handle
 
   let abort_email_change sync_dir token =
