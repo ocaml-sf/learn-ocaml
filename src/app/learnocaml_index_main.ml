@@ -926,7 +926,9 @@ let set_string_translations () =
     "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
                                        information entered will be used in the \
                                         context of the Learn-OCaml plateform."];
-    "txt_returning_with_token", [%i"Login with a legacy token"];
+    "txt_returning_with_token", (if get_opt config##.enablePasswd
+                                 then [%i"Login with a legacy token"]
+                                 else [%i"Login with a token"]);
     "txt_returning_token", [%i"Token"];
     "txt_token_returning", [%i"Connect"];
     "txt_upgrade", [%i"Setup a password"];
