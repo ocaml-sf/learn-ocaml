@@ -995,9 +995,19 @@ let init_teacher_token () =
   Token.Index.get () >>= function tokens ->
     match List.filter Token.is_teacher tokens with
     | [] ->
-        Token.create_teacher () >|= fun token ->
-        Printf.printf "Initial teacher token created: %s\n%!"
-          (Token.to_string token)
+       Token_index.UserIndex.create_index !sync_dir >>= fun _users ->
+       (* call [UserIndex.create_index] first as it will rely on
+          [TokenIndex.get_tokens] to populate the [UserIndex] (with no
+          tokens at that point) before calling [Token.create_teacher],
+          otherwise we would get:
+          [ERROR] BaseUserIndex.add: duplicate token (X-…-…-…-…) *)
+       Token.create_teacher () >>= fun token ->
+       let auth = Token_index.Token (token, false) in
+       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+       Printf.printf "Initial teacher token created: %s\n%!"
+         (Token.to_string token);
+       Lwt.return_unit
+
     | teachers ->
         Printf.printf "Found the following teacher tokens:\n  - %s\n%!"
           (String.concat "\n  - " (List.map Token.to_string teachers));

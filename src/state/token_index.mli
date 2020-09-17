@@ -67,7 +67,11 @@ type authentication =
   | Passwd of (string * string)
 
 module UserIndex: sig
-  val create_index : string -> Learnocaml_data.Token.t list -> unit Lwt.t
+
+  (* If [tokens = None], generate the index from [TokenIndex.get_tokens];
+   * If [tokens = Some []], write the index with an empty list of users. *)
+  val create_index : ?tokens:(Learnocaml_data.Token.t list) -> string -> user list Lwt.t
+
   val authenticate : string -> authentication -> Learnocaml_data.Token.t option Lwt.t
   val exists : string -> string -> bool Lwt.t
   val add : string -> user -> unit Lwt.t

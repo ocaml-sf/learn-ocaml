@@ -354,19 +354,23 @@ module BaseUserIndex (RW: IndexRW) = struct
   let token_list_to_users =
     List.map (fun token -> Token (token, false))
 
-  let create_index sync_dir tokens =
-    token_list_to_users tokens
-    |> RW.write rw (sync_dir / indexes_subdir / file) serialise
+  let create_index ?(tokens) sync_dir =
+    match tokens with
+    | Some tokens ->
+       let users = token_list_to_users tokens in
+       RW.write rw (sync_dir / indexes_subdir / file) serialise users >|= fun () ->
+       users
+    | None ->
+       TokenIndex.get_tokens sync_dir >>= fun tokens ->
+       Lwt_io.printl "[INFO] Generating the user index from token index..." >>= fun () ->
+       let users = token_list_to_users tokens in
+       RW.write rw (sync_dir / indexes_subdir / file) serialise users >|= fun () ->
+       users
 
   let get_data sync_dir =
     Lwt.catch
       (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
-      (fun _exn ->
-        TokenIndex.get_tokens sync_dir >>= fun tokens ->
-        Lwt_io.printl "[INFO] Generating the user index from token index..." >>= fun () ->
-        let users = token_list_to_users tokens in
-        RW.write rw (sync_dir / indexes_subdir / file) serialise users >|= fun () ->
-        users)
+      (fun _exn -> create_index sync_dir)
 
   let authenticate sync_dir auth =
     get_data sync_dir >|=
