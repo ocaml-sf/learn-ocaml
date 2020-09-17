@@ -789,8 +789,9 @@ let init_token_dialog () =
        Server_caller.request (Learnocaml_api.Can_login token) >>= function
        | Error _ | Ok false ->
           alert ~title:[%i"INVALID TOKEN"] @@
-            Printf.sprintf [%if"This token is associated to an upgraded \
-                                account, which only allows \
+            Printf.sprintf [%if"This token is invalid, \
+                                or associated to an upgraded account \
+                                that only allows \
                                 password-based%s authentication."]
             (if get_opt config##.enableMoodle then [%i" or Moodle/LTI"] else "");
           Lwt.return_none
