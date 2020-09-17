@@ -490,8 +490,10 @@ module Request_handler = struct
       | Api.Create_teacher_token token ->
          verify_teacher_token token
          >?= fun () ->
-         Token.create_teacher ()
-         >>= respond_json cache
+             Token.create_teacher () >>= fun token ->
+             let auth = Token_index.Token (token, false) in
+             Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+             respond_json cache token
       | Api.Create_user (email, nick, password, secret) when config.ServerData.use_passwd ->
          valid_string_of_endp conn
          >?= fun conn ->
