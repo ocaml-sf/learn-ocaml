@@ -464,11 +464,13 @@ module BaseUserIndex (RW: IndexRW) = struct
           | elt -> elt) >>=
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
-  let can_login sync_dir token =
+  let can_login ?(use_passwd = true) ?(use_moodle = true) sync_dir token =
     get_data sync_dir >|= fun users ->
       List.find_opt (function
-          | Token (found_token, use_moodle) -> found_token = token && not use_moodle
-          | _ -> false) users <> None
+          | Token (found_token, moodle_account)
+            -> found_token = token && not (use_moodle && moodle_account)
+          | Password (found_token, _email, _passwd, _verify) ->
+             found_token = token && not use_passwd) users <> None
 
   let token_of_email sync_dir email =
     RW.read (sync_dir / indexes_subdir / file) parse >|=

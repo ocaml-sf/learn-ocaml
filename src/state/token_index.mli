@@ -86,7 +86,9 @@ module UserIndex: sig
   val update : string -> Learnocaml_data.Token.t -> string -> unit Lwt.t
 
   val confirm_email : string -> Learnocaml_data.Token.t -> unit Lwt.t
-  val can_login : string -> Learnocaml_data.Token.t -> bool Lwt.t
+  val can_login :
+    ?use_passwd:bool -> ?use_moodle:bool ->
+    string -> Learnocaml_data.Token.t -> bool Lwt.t
   val token_of_email : string -> string -> Learnocaml_data.Token.t option Lwt.t
 
   (** Four cases for the result:

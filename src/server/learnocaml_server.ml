@@ -381,7 +381,8 @@ module Request_handler = struct
          if not (Eqaf.equal hmac new_hmac) then
            lwt_fail (`Forbidden, "bad hmac")
          else
-           Token_index.UserIndex.can_login !sync_dir token >>= fun canlogin ->
+           Token_index.UserIndex.can_login ~use_passwd:true ~use_moodle:true
+             !sync_dir token >>= fun canlogin ->
            if not canlogin then
              lwt_fail (`Forbidden, "Bad token (or token already used by an upgraded account)")
            else
@@ -525,11 +526,11 @@ module Request_handler = struct
       | Api.Login _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Can_login token ->
-         if config.ServerData.use_passwd then
-           Token_index.UserIndex.can_login !sync_dir token >>=
-             respond_json cache
-         else
-           respond_json cache true
+         Token_index.UserIndex.can_login
+           ~use_passwd:config.ServerData.use_passwd
+           ~use_moodle:config.ServerData.use_moodle
+           !sync_dir token >>=
+           respond_json cache
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
