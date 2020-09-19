@@ -30,30 +30,6 @@ services:
     networks:
       - learnocaml-net
     restart: unless-stopped
-    networks:
-      - learnocaml-net
-
-# To uncomment for prod, see also:
-# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
-#
-#  postfix:
-#    container_name: postfix
-#    image: juanluisbaptiste/postfix
-#    environment:
-#      # (postfix variables) remote MTA credentials:
-#      SMTP_SERVER: "smtp.example.com"
-#      SMTP_USERNAME: "user@example.com"
-#      SMTP_PASSWORD_FILE: "/secrets/smtp_password"
-#      # (postfix variable) DNS of myself, the server sending mails:
-#      SERVER_HOSTNAME: "mail.localdomain"
-#      ALWAYS_ADD_MISSING_HEADERS: "yes"
-#    volumes:
-#      - "./secrets:/secrets"
-#    # DO NOT EXPOSE THESE PORTS!
-#    # ports:
-#    #   - "25:25"
-#    networks:
-#      - learnocaml-net
 
   # Only useful for dev
   maildev:
@@ -62,6 +38,9 @@ services:
       - "1080:80"
     networks:
       - learnocaml-net
+
+# For a prod configuration, see also:
+# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
 
 # BEGIN https://github.com/bitnami/bitnami-docker-moodle/blob/ffa8007ebb0ebc501eeeba62804d10b0efef3673/docker-compose.yml
 
@@ -73,6 +52,8 @@ services:
       - MARIADB_DATABASE=bitnami_moodle
     volumes:
       - 'mariadb_data:/bitnami/mariadb'
+    networks:
+      - moodle-net
   moodle:
     image: 'docker.io/bitnami/moodle:3-debian-10'
     ports:
@@ -88,6 +69,8 @@ services:
     volumes:
       - 'moodle_data:/bitnami/moodle'
       - 'moodledata_data:/bitnami/moodledata'
+    networks:
+      - moodle-net
     depends_on:
       - mariadb
 
@@ -107,3 +90,5 @@ networks:
   learnocaml-net:
     driver: bridge
     name: localdomain
+  moodle-net:
+    driver: bridge
