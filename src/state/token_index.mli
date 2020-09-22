@@ -13,7 +13,7 @@ module type IndexRW = sig
   type t
 
   val init : unit -> t
-  val read : string -> (string -> 'a) -> 'a Lwt.t
+  val read : t -> string -> (string -> 'a) -> 'a Lwt.t
   val write : t -> string -> ('a -> string) -> 'a -> unit Lwt.t
 end
 

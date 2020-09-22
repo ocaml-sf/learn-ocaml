@@ -41,7 +41,7 @@ module type IndexRW = sig
   type t
 
   val init : unit -> t
-  val read : string -> (string -> 'a) -> 'a Lwt.t
+  val read : t -> string -> (string -> 'a) -> 'a Lwt.t
   val write : t -> string -> ('a -> string) -> 'a -> unit Lwt.t
 end
 
@@ -51,19 +51,21 @@ module IndexFile: IndexRW = struct
   (* Unlocked by default *)
   let init = Lwt_mutex.create
 
-  let read filename parse =
-    Lwt_io.open_file ~mode:Lwt_io.Input filename >>= fun channel ->
-    Lwt_io.read channel >>= fun data ->
-    Lwt_io.close channel >>= fun () ->
-    Lwt.return @@ parse data
+  let read mutex filename parse =
+    Lwt_mutex.with_lock mutex @@
+      fun () ->
+      Lwt_io.with_file ~mode:Lwt_io.Input filename @@
+        fun channel ->
+        Lwt_io.read channel >>= fun data ->
+        Lwt.return @@ parse data
 
   let write mutex filename serialise data =
-    Lwt_mutex.lock mutex >>= fun () ->
-    Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname filename) >>= fun () ->
-    Lwt_io.open_file ~mode:Lwt_io.Output filename >>= fun channel ->
-    Lwt_io.write channel (serialise data) >>= fun () ->
-    Lwt_io.close channel >>= fun () ->
-    Lwt.return @@ Lwt_mutex.unlock mutex
+    Lwt_mutex.with_lock mutex @@
+      fun () ->
+      Lwt_utils.mkdir_p ~perm:0o700 (Filename.dirname filename) >>= fun () ->
+      Lwt_io.with_file ~mode:Lwt_io.Output filename @@
+        fun channel ->
+        Lwt_io.write channel (serialise data)
 end
 
 (* inspired from learnocaml_data.ml *)
@@ -127,10 +129,10 @@ module BaseTokenIndex (RW: IndexRW) = struct
     let filename = (sync_dir / indexes_subdir / name) in
     let create () =
           create_index sync_dir >>= fun () ->
-          RW.read filename parse in
+          RW.read rw filename parse in
     if Sys.file_exists filename then
       Lwt.catch
-        (fun () -> RW.read filename parse)
+        (fun () -> RW.read rw filename parse)
         (fun _exn ->
            (* Note: this error handler may be adapted later to be more conservative?
               it does not matter now as sync/data/token.json is not a critical file, and
@@ -166,7 +168,7 @@ module BaseMoodleIndex (RW: IndexRW) = struct
 
   let get_users sync_dir =
     Lwt.catch
-      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
+      (fun () -> RW.read rw (sync_dir / indexes_subdir / file) parse)
       (fun _exn -> Lwt.return [])
 
   let user_exists sync_dir id =
@@ -213,7 +215,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
       (secret, []) in
     Lwt.catch
       (fun () ->
-         RW.read (sync_dir / indexes_subdir / file) parse >>= function
+         RW.read rw (sync_dir / indexes_subdir / file) parse >>= function
          | oauth :: _ -> Lwt.return oauth
          | [] -> create ())
       (fun _exn -> create ())
@@ -227,7 +229,7 @@ module BaseOauthIndex (RW: IndexRW) = struct
     RW.write rw (sync_dir / indexes_subdir / file) serialise [oauth]
 
   let add_nonce sync_dir nonce =
-    RW.read (sync_dir / indexes_subdir / file) parse >>= fun oauth ->
+    RW.read rw (sync_dir / indexes_subdir / file) parse >>= fun oauth ->
     let oauth =
       match oauth with
       | (secret, nonces) :: r -> (secret, nonce :: nonces) :: r
@@ -369,7 +371,7 @@ module BaseUserIndex (RW: IndexRW) = struct
 
   let get_data sync_dir =
     Lwt.catch
-      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
+      (fun () -> RW.read rw (sync_dir / indexes_subdir / file) parse)
       (fun _exn -> create_index sync_dir)
 
   let authenticate sync_dir auth =
@@ -473,14 +475,14 @@ module BaseUserIndex (RW: IndexRW) = struct
              found_token = token && not use_passwd) users <> None
 
   let token_of_email sync_dir email =
-    RW.read (sync_dir / indexes_subdir / file) parse >|=
+    RW.read rw (sync_dir / indexes_subdir / file) parse >|=
     List.fold_left (fun res elt ->
         match res, elt with
         | None, Password (token, found_email, _, _) when found_email = email -> Some token
         | _ -> res) None
 
   let emails_of_token sync_dir token =
-    RW.read (sync_dir / indexes_subdir / file) parse >|=
+    RW.read rw (sync_dir / indexes_subdir / file) parse >|=
     List.fold_left (fun res elt ->
         match res, elt with
         | None, Password (found_token, email, _, pending) when found_token = token ->
@@ -492,7 +494,7 @@ module BaseUserIndex (RW: IndexRW) = struct
      if exists then
        logfailwith "BaseUserIndex.change_email: duplicate email" new_email)
     >>= fun () ->
-    RW.read (sync_dir / indexes_subdir / file) parse >|=
+    RW.read rw (sync_dir / indexes_subdir / file) parse >|=
       List.map (function
           | Password (found_token, email, passwd, _) when found_token = token ->
              Password (found_token, email, passwd, Some new_email)
@@ -500,7 +502,7 @@ module BaseUserIndex (RW: IndexRW) = struct
       RW.write rw (sync_dir / indexes_subdir / file) serialise
 
   let abort_email_change sync_dir token =
-    RW.read (sync_dir / indexes_subdir / file) parse >|=
+    RW.read rw (sync_dir / indexes_subdir / file) parse >|=
       List.map (function
           | Password (found_token, email, passwd, Some pending)
                when found_token = token && email <> pending ->
@@ -537,7 +539,7 @@ module BaseUpgradeIndex (RW: IndexRW) = struct
 
   let get_data sync_dir =
     Lwt.catch
-      (fun () -> RW.read (sync_dir / indexes_subdir / file) parse)
+      (fun () -> RW.read rw (sync_dir / indexes_subdir / file) parse)
       (fun _exn -> create_index sync_dir)
 
   let create_upgrade_operation kind sync_dir token =
