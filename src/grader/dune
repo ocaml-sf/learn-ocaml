@@ -9,7 +9,7 @@
 
 (rule
  (targets learnocaml_report.odoc)
- (deps .learnocaml_report.objs/learnocaml_report.cmti)
+ (deps .learnocaml_report.objs/byte/learnocaml_report.cmti)
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
@@ -39,7 +39,7 @@
 
 (rule
  (targets test_lib.odoc)
- (deps .testing.objs/test_lib.cmti)
+ (deps .testing.objs/byte/test_lib.cmti)
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
@@ -112,15 +112,14 @@
         %{ocaml-config:standard_library}/compiler-libs/path.cmi
         %{ocaml-config:standard_library}/compiler-libs/ident.cmi)
        (:generated-cmis
-        ../ppx-metaquot/.ty.objs/ty.cmi
-        ../ppx-metaquot/.fun_ty.objs/fun_ty.cmi
-        .testing.objs/introspection_intf.cmi
-        .learnocaml_report.objs/learnocaml_report.cmi
-        .testing.objs/test_lib.cmi
-        .testing.objs/typed_ast.cmi
-        .testing.objs/typed_ast_lib.cmi
-        .testing.objs/style_checking.cmi
-        .testing.objs/mutation_test.cmi))
+        ../ppx-metaquot/.ty.objs/byte/ty.cmi
+        ../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi
+        .testing.objs/byte/introspection_intf.cmi
+        .learnocaml_report.objs/byte/learnocaml_report.cmi
+        .testing.objs/byte/test_lib.cmi
+        .testing.objs/byte/typed_ast_lib.cmi
+        .testing.objs/byte/style_checking.cmi
+        .testing.objs/byte/mutation_test.cmi))
  (action (with-stdout-to %{targets}
            (run ocp-ocamlres -format ocamlres %{compiler-cmis} %{generated-cmis})))
 )
@@ -141,6 +140,7 @@
  (preprocess (per_module ((pps ppx_ocplib_i18n learnocaml_ppx_metaquot) Grading)))
 )
 
+
 (library
  (name grading_cli)
  (wrapped false)
@@ -150,7 +150,8 @@
             ocplib-ocamlres
             ezjsonm
             lwt_utils
-            learnocaml_report)
+            learnocaml_report
+            learnocaml_data)
  (modules Grading_cli Grader_cli)
 )
 

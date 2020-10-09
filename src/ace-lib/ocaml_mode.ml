@@ -7,7 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_utils
-
+open Js_of_ocaml
 open Lwt.Infix
 
 let debug_indent = ref 0

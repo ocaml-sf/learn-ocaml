@@ -24,7 +24,30 @@ COPY dune dune
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
+RUN cat /proc/cpuinfo /proc/meminfo
 RUN opam install . --destdir /home/opam/install-prefix --locked
+
+
+FROM alpine:3.7 as client
+
+RUN apk update \
+  && apk add ncurses-libs libev dumb-init \
+  && addgroup learn-ocaml \
+  && adduser learn-ocaml -DG learn-ocaml
+
+VOLUME ["/learnocaml"]
+
+USER learn-ocaml
+WORKDIR /learnocaml
+
+COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bin
+
+ENTRYPOINT ["dumb-init","learn-ocaml-client"]
+
+LABEL org.opencontainers.image.title="learn-ocaml-client"
+LABEL org.opencontainers.image.description="learn-ocaml command-line client"
+LABEL org.opencontainers.image.url="https://ocaml-sf.org/"
+LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
 
 
 FROM alpine:3.7 as program
@@ -45,5 +68,10 @@ WORKDIR /home/learn-ocaml
 
 COPY --from=compilation /home/opam/install-prefix /usr
 
+ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
-ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository", "--enable-playground"]
+
+LABEL org.opencontainers.image.title="learn-ocaml"
+LABEL org.opencontainers.image.description="learn-ocaml app manager"
+LABEL org.opencontainers.image.url="https://ocaml-sf.org/"
+LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"

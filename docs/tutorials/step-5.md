@@ -41,15 +41,15 @@ ones:
 ### Signature for unary function
 ```ocaml
   val test_function_1_against_solution :
-	?gen: int ->
-	?test: 'b tester ->
-	?test_stdout: io_tester ->
-	?test_stderr: io_tester ->
-	?before_reference : ('a -> unit) ->
-	?before_user : ('a -> unit) ->
-	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-	?sampler : (unit -> 'a) ->
-	('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
+  ?gen: int ->
+  ?test: 'b tester ->
+  ?test_stdout: io_tester ->
+  ?test_stderr: io_tester ->
+  ?before_reference : ('a -> unit) ->
+  ?before_user : ('a -> unit) ->
+  ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
+  ?sampler : (unit -> 'a) ->
+  ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.item
 ```
 
 ### Mandatory arguments
@@ -70,12 +70,12 @@ ones:
 
 ```ocaml
   val test_function_1 :
-	?test: 'b tester ->
-	?test_stdout: io_tester ->
-	?test_stderr: io_tester ->
-	?before : ('a -> unit) ->
-	?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
-	('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.item
+  ?test: 'b tester ->
+  ?test_stdout: io_tester ->
+  ?test_stderr: io_tester ->
+  ?before : ('a -> unit) ->
+  ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.report) ->
+  ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.item
 ```
 
 ### Mandatory arguments
@@ -98,16 +98,16 @@ ones:
 ## Optional arguments of grading functions
 
 * `gen`: number of automatically generated tests. See
-  [step-3](../tutorials/step-3)
+  [step-3](step-3.md)
   and
-  [step-4](../tutorials/step-4)
+  [step-4](step-4.md)
   for more information.
 
 * `sampler`: used to define sampler for automatically generating
   inputs for tests. See
-  [step-3](../tutorials/step-3)
+  [step-3](step-3.md)
   and
-  [step-4](../tutorials/step-4)
+  [step-4](step-4.md)
   for more information.
 
 * `test`: is used to redefine the function which compare the output of
@@ -154,21 +154,21 @@ This is a classical example of an unary function, with a user-defined sampler.
 
 ```ocaml
 let exercise_1 =
-	test_function_1_against_solution
-	[%ty: int -> int]
-	"identity"
-	~gen:10
-	~sampler:(fun () -> Random.int 42)
-	[0 ; 42]
+  test_function_1_against_solution
+  [%ty: int -> int]
+  "identity"
+  ~gen:10
+  ~sampler:(fun () -> Random.int 42)
+  [0 ; 42]
 ```
 With `test_function_1`:
 ```ocaml
 let exercise_2 =
-	test_function_1
-		[%ty: int -> int]
-		"identity"
-		[0, 0, "", "" ;
-		42, 42, "", ""]  (* List of tests *)
+  test_function_1
+    [%ty: int -> int]
+    "identity"
+    [0, 0, "", "" ;
+    42, 42, "", ""]  (* List of tests *)
 ```
 
 Note that since the default comparison function for standard output
@@ -186,23 +186,23 @@ different from the solution ones without causing a failure).
 
 ```ocaml
 let exercise_2 =
-	test_function_1_against_solution
-		[%ty: unit -> unit]
-		~test:test_ignore
-		~test_stdout:io_test_equals
-		"hello"
-		~gen:0
-		[()]
+  test_function_1_against_solution
+    [%ty: unit -> unit]
+    ~test:test_ignore
+    ~test_stdout:io_test_equals
+    "hello"
+    ~gen:0
+    [()]
 ```
 
 ```ocaml
 let exercise_4 =
-	test_function_1
-	[%ty: unit -> unit]
-	~test:test_ignore
-	~test_stdout:io_test_equals
-	"hello"
-	[(), (), "Hello world!", ""]
+  test_function_1
+  [%ty: unit -> unit]
+  ~test:test_ignore
+  ~test_stdout:io_test_equals
+  "hello"
+  [(), (), "Hello world!", ""]
 ```
 
 The function `test_ignore` for optional argument `test` enables to

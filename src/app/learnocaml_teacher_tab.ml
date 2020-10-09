@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -35,7 +36,7 @@ let filter_input input_id list_id apply_fun =
           apply_fun "";
           true);
     ]
-      [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
+      [H.txt "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
   ]
 
 let tag_addremove list_id placeholder add_fun remove_fun =
@@ -57,13 +58,13 @@ let tag_addremove list_id placeholder add_fun remove_fun =
       H.a_onclick (fun _ev ->
           add_fun (get_input_list ());
           true)
-    ] [ H.pcdata "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
+    ] [ H.txt "\xe2\x9e\x95" (* U+2795 heavy plus sign *) ];
     H.button ~a:[
       H.a_class ["addremove"];
       H.a_onclick (fun _ev ->
           remove_fun (get_input_list ());
           true);
-    ] [ H.pcdata "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
+    ] [ H.txt "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
   ]
 
 let rec teacher_tab token _select _params () =
@@ -196,7 +197,7 @@ let rec teacher_tab token _select _params () =
               ] [
                 H.td [];
                 H.th ~a:[H.a_colspan 10; indent_style group_level]
-                  [H.pcdata g.Exercise.Index.title];
+                  [H.txt g.Exercise.Index.title];
               ] :: acc
             in
             mk_table (group_level + 1) acc status g.Exercise.Index.contents)
@@ -210,7 +211,7 @@ let rec teacher_tab token _select _params () =
             let open_partition_ () =
               Lwt.async (fun () ->
                 ask_string ~title:"Choose a function name"
-                  [H.pcdata @@ "Choose a function name to partition codes from "^ id ^": "]
+                  [H.txt @@ "Choose a function name to partition codes from "^ id ^": "]
                 >|= fun funname ->
                 let _win =
                   window_open
@@ -238,11 +239,11 @@ let rec teacher_tab token _select _params () =
             ] [
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
-                [ H.pcdata meta.Exercise.Meta.title ];
+                [ H.txt meta.Exercise.Meta.title ];
               H.td ~a:[H.a_class ["skills-prereq"]]
                 (List.map tag_span skills_prereq @
                  if skills_prereq <> [] || skills_focus <> []
-                 then [H.pcdata "\xe2\x87\xa2"]
+                 then [H.txt "\xe2\x87\xa2"]
                  (* U+21E2, rightwards dashed arrow *)
                  else []);
               H.td ~a:[H.a_class ["skills-focus"]]
@@ -257,7 +258,7 @@ let rec teacher_tab token _select _params () =
                     | ES.Assigned _ -> "exo_assigned", [%i"Assigned"]
                   else "exo_assigned", [%i"Assigned"]
                 in
-                H.span ~a:[H.a_class [cls]] [H.pcdata text]
+                H.span ~a:[H.a_class [cls]] [H.txt text]
               ];
             ] :: acc)
           acc exlist
@@ -315,7 +316,7 @@ let rec teacher_tab token _select _params () =
       !toggle_selected_exercises ~force:false ~update:true hidden
   in
   let exercises_list_div =
-    H.div ~a:[H.a_id "exercises_list"] [H.pcdata [%i"Loading..."]]
+    H.div ~a:[H.a_id "exercises_list"] [H.txt [%i"Loading..."]]
   in
   let exercise_skills_list_id = "exercise_skills_list" in
   let exercises_div =
@@ -324,7 +325,7 @@ let rec teacher_tab token _select _params () =
         H.a_onclick (fun _ ->
             !toggle_selected_exercises (all_exercises !exercises_index);
             true);
-      ] [H.pcdata [%i"Exercises"]; H.pcdata " \xe2\x98\x90" (* U+2610 *)]
+      ] [H.txt [%i"Exercises"]; H.txt " \xe2\x98\x90" (* U+2610 *)]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
@@ -335,7 +336,7 @@ let rec teacher_tab token _select _params () =
     ]
   in
   let students_list_div =
-    H.div ~a:[H.a_id "students_list"] [H.pcdata [%i"Loading..."]];
+    H.div ~a:[H.a_id "students_list"] [H.txt [%i"Loading..."]];
   in
   let student_tags_list_id = "student_tags_list" in
   let sort_type = [`Nick; `Token; `Date; `Tags] in
@@ -357,7 +358,7 @@ let rec teacher_tab token _select _params () =
   in
   let html_token tk =
     H.span ~a:[H.a_class ["learnocaml_token"]]
-      [H.pcdata (Token.to_string tk)]
+      [H.txt (Token.to_string tk)]
   in
   let make_student_line ?(selected=false) st contents =
     let open_student_tab =
@@ -389,7 +390,7 @@ let rec teacher_tab token _select _params () =
   let anystudents_line =
     make_student_line `Any [
       H.td ~a:[H.a_colspan 10; H.a_class ["future_students"]] [
-        H.pcdata [%i"any future students"]
+        H.txt [%i"any future students"]
       ];
     ]
   in
@@ -435,7 +436,7 @@ let rec teacher_tab token _select _params () =
             (`Token  st.Student.token) [
             H.td [html_token st.Student.token];
             H.td (match st.Student.nickname with
-                | Some n -> [H.pcdata n]
+                | Some n -> [H.txt n]
                 | _ -> []);
             H.td (List.map tag_span (SSet.elements st.Student.tags));
             try find_component (student_progression_id st.Student.token)
@@ -453,7 +454,7 @@ let rec teacher_tab token _select _params () =
     Manip.replaceSelf (find_component student_tags_list_id)
       (H.datalist ~a:[H.a_id student_tags_list_id] ~children:(
           `Options
-            (SSet.fold (fun tag acc -> H.option (H.pcdata tag) :: acc)
+            (SSet.fold (fun tag acc -> H.option (H.txt tag) :: acc)
                !all_student_tags []
             ))
           ())
@@ -537,8 +538,8 @@ let rec teacher_tab token _select _params () =
             !toggle_selected_students all;
             true
           );
-      ] [H.pcdata [%i"Students"];
-         H.pcdata " \xe2\x98\x90" (* U+2610 ballot box *)]
+      ] [H.txt [%i"Students"];
+         H.txt " \xe2\x98\x90" (* U+2610 ballot box *)]
     in
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
@@ -547,19 +548,19 @@ let rec teacher_tab token _select _params () =
           student_tags_list_id set_student_filtering;
         H.div ~a:[H.a_class ["filler_h"]] [];
         H.label ~a:[H.a_label_for "student_sort"]
-          [H.pcdata [%i"Sort by"]];
+          [H.txt [%i"Sort by"]];
         H.select ~a:[
           H.a_id "student_sort";
           H.a_oninput (fun _ev -> fill_students_pane (); true);
         ] [
           H.option ~a:[H.a_value (sort_to_str `Nick); H.a_selected ()]
-            (H.pcdata [%i"Nickname"]);
+            (H.txt [%i"Nickname"]);
           H.option ~a:[H.a_value (sort_to_str `Token)]
-            (H.pcdata [%i"Token"]);
+            (H.txt [%i"Token"]);
           H.option ~a:[H.a_value (sort_to_str `Date)]
-            (H.pcdata [%i"Creation date"]);
+            (H.txt [%i"Creation date"]);
           H.option ~a:[H.a_value (sort_to_str `Tags)]
-            (H.pcdata [%i"Tags"]);
+            (H.txt [%i"Tags"]);
         ]
       ];
       H.fieldset ~legend [ students_list_div ];
@@ -586,7 +587,7 @@ let rec teacher_tab token _select _params () =
     Manip.replaceSelf (find_component exercise_skills_list_id)
       (H.datalist ~a:[H.a_id exercise_skills_list_id] ~children:(
           `Options
-            (SSet.fold (fun skill acc -> H.option (H.pcdata skill) :: acc)
+            (SSet.fold (fun skill acc -> H.option (H.txt skill) :: acc)
                !all_exercise_skills []
             ))
           ());
@@ -661,11 +662,11 @@ let rec teacher_tab token _select _params () =
     ] [
       H.td [date ("start_"^hid) id start];
       H.td [date ("stop_"^hid) id stop];
-      H.td [H.pcdata n_exos];
-      H.td [H.pcdata n_students];
+      H.td [H.txt n_exos];
+      H.td [H.txt n_students];
       H.td ~a:[H.a_onclick (fun _ -> !assignment_remove id; false);
                H.a_class ["remove-cross"]]
-        [H.pcdata "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
+        [H.txt "\xe2\x9c\x96" (* U+2716 heavy multiplication x *)];
       (* todo: add common tags *)
     ]
   in
@@ -713,7 +714,7 @@ let rec teacher_tab token _select _params () =
       assignment_line id
     in
     let new_assg_id = "new_assignment" in
-    let new_assg_button = H.button [H.pcdata [%i"New assignment"]] in
+    let new_assg_button = H.button [H.txt [%i"New assignment"]] in
     let table = H.table [] in
     let new_assg_line =
       H.tr ~a:[
@@ -816,7 +817,7 @@ let rec teacher_tab token _select _params () =
           in
           !exercise_status_change (htbl_keys selected_exercises) fstat;
           true)
-    ] [H.pcdata [%i"Open/Close"]];
+    ] [H.txt [%i"Open/Close"]];
   in
   let exercise_control_div =
     H.div ~a:[H.a_id "exercise_controls"] [
@@ -825,7 +826,7 @@ let rec teacher_tab token _select _params () =
       tag_addremove exercise_skills_list_id [%i"required skills"]
         (add_requirements) (remove_requirements);
       H.div ~a:[H.a_id "skills-arrow"]
-        [H.pcdata "\xe2\x87\xa2"]; (* U+21E2, rightwards dashed arrow *)
+        [H.txt "\xe2\x87\xa2"]; (* U+21E2, rightwards dashed arrow *)
       tag_addremove exercise_skills_list_id [%i"trained skills"]
         (add_focus) (remove_focus);
     ]
@@ -835,7 +836,7 @@ let rec teacher_tab token _select _params () =
   let control_div =
     H.div ~a:[H.a_id "control_pane"] [
       H.fieldset
-        ~legend:(H.legend [H.pcdata [%i"Assignments"]])
+        ~legend:(H.legend [H.txt [%i"Assignments"]])
         [assignments_div];
     ]
   in
@@ -918,13 +919,13 @@ let rec teacher_tab token _select _params () =
         H.a_id "button_apply";
         (* H.a_disabled (); *)
         H.a_onclick (fun _ -> apply_changes (); true);
-      ] [H.pcdata [%i"Apply"]];
-      dropdown ~id:"teacher-actions" ~title:[H.pcdata [%i"Actions"]] [
+      ] [H.txt [%i"Apply"]];
+      dropdown ~id:"teacher-actions" ~title:[H.txt [%i"Actions"]] [
         H.ul [
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
-            [ H.pcdata [%i"Create new teacher token"] ];
+            [ H.txt [%i"Create new teacher token"] ];
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
-            [ H.pcdata [%i"Download student data as CSV"] ];
+            [ H.txt [%i"Download student data as CSV"] ];
         ]
       ];
     ]
@@ -1096,7 +1097,7 @@ let rec teacher_tab token _select _params () =
       (Manip.replaceChildren status_text_div [];
        Manip.removeClass status_text_div "warning")
     else
-      (Manip.replaceChildren status_text_div [H.pcdata [%i"Unsaved changes"]];
+      (Manip.replaceChildren status_text_div [H.txt [%i"Unsaved changes"]];
        Manip.addClass status_text_div "warning")
   end;
   toggle_selected_exercises := begin
@@ -1316,7 +1317,7 @@ let rec teacher_tab token _select _params () =
     ]
   in
   let fetch_exercises =
-    retrieve (Learnocaml_api.Exercise_index token)
+    retrieve (Learnocaml_api.Exercise_index (Some token))
     >|= fun (index, _) ->
     exercises_index := index
   in

@@ -107,3 +107,4 @@ the next tutorial [How to write exercises?](../howto-write-exercises)
 
 ### Issues
 After major changes, you might need to reinstall the dependencies. Use `opam switch reinstall`.
+the next tutorial [How to write exercises?](howto-write-exercises.md)

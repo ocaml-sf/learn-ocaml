@@ -1,3 +1,4 @@
+open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
@@ -29,14 +30,14 @@ let () =
      try begin
          let token = Learnocaml_data.Token.parse (arg "token") in
          let exercise_fetch =
-           retrieve (Learnocaml_api.Exercise (token, id))
+           retrieve (Learnocaml_api.Exercise (Some token, id))
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
          (* display exercise questions *)
          let text_iframe = Dom_html.createIframe Dom_html.document in
          Manip.replaceChildren text_container
-           Tyxml_js.Html5.[ h1 [ pcdata ex_meta.title ] ;
+           Tyxml_js.Html5.[ h1 [ txt ex_meta.title ] ;
                             Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
          Js.Opt.case
            (text_iframe##.contentDocument)
@@ -46,9 +47,9 @@ let () =
              d##write (Js.string (exercise_text ex_meta exo));
              d##close) ;
          (* display meta *)
-         display_meta token ex_meta id
+         display_meta (Some token) ex_meta id
        end
      with Not_found ->
        Lwt.return @@
          Manip.replaceChildren text_container
-           Tyxml_js.Html5.[ h1 [ pcdata "Error: Missing token" ] ]
+           Tyxml_js.Html5.[ h1 [ txt "Error: Missing token" ] ]
