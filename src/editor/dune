@@ -127,6 +127,7 @@
 
 (install
  (section share)
+ (package learn-ocaml)
  (files (editor.bc.js as www/js/editor.js)
         (new_exercise.bc.js as www/js/new_exercise.js)))
 
