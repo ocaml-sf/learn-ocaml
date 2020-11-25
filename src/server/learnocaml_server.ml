@@ -15,16 +15,16 @@ let cert_key_files = ref None
 
 let log_channel = ref (Some stdout)
 
-let root_url = ref ""
+let base_url = ref ""
 
 let args = Arg.align @@
   [ "-static-dir", Arg.Set_string static_dir,
     "PATH where static files should be found (./www)" ;
     "-sync-dir", Arg.Set_string sync_dir,
     "PATH where sync tokens are stored (./sync)" ;
-    "-root-url", Arg.Set_string root_url,
-    "ROOT_URL of the website. \
-     Should not end with a trailing slash.
+    "-base-url", Arg.Set_string base_url,
+    "BASE_URL of the website. \
+     Should not end with a trailing slash. \
      Mandatory when the site is not hosted in path '/'." ;
     "-port", Arg.Set_int port,
     "PORT the TCP port (8080)" ]

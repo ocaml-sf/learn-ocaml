@@ -10,7 +10,7 @@
 
 val port: int ref
 val cert_key_files: (string * string) option ref
-val root_url: string ref
+val base_url: string ref
 
 val args: (Arg.key * Arg.spec * Arg.doc) list
 
