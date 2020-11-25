@@ -52,7 +52,8 @@ module Args = struct
       info ["base-url"] ~docv:"BASE_URL" ~env:(Arg.env_var "LEARNOCAML_BASE_URL") ~doc:
         "Set the base URL of the website. \
          Should not end with a trailing slash. \
-         Mandatory when the site is not hosted in path '/', \
+         Currently, this has no effect on the backend - '$(b,learn-ocaml serve)'. \
+         Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
          which typically occurs for static deployment."
 
   module Grader = struct

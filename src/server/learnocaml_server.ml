@@ -25,7 +25,9 @@ let args = Arg.align @@
     "-base-url", Arg.Set_string base_url,
     "BASE_URL of the website. \
      Should not end with a trailing slash. \
-     Mandatory when the site is not hosted in path '/'." ;
+     Currently, this has no effect on the native backend. \
+     Mandatory for 'learn-ocaml build' if the site is not hosted in path '/', \
+     which typically occurs for static deployment." ;
     "-port", Arg.Set_int port,
     "PORT the TCP port (8080)" ]
 

@@ -76,8 +76,9 @@ let base_url =
     info ["base-url"] ~docv:"BASE_URL" ~env:(env_var "LEARNOCAML_BASE_URL") ~doc:
       "Set the base URL of the website. \
        Should not end with a trailing slash. \
-       Mandatory when the site is not hosted in path '/' \
-       or when use_moodle=true."
+       Currently, this has no effect on the backend - '$(b,learn-ocaml serve)'. \
+       Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
+       which typically occurs for static deployment."
 
 let main_cmd =
   Cmdliner.Term.(const main $ Learnocaml_server_args.term app_dir base_url),
