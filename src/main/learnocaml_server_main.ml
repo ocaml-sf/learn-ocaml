@@ -22,9 +22,10 @@ let signal_waiter =
   waiter
 
 let main o =
-  Printf.printf {|Base URL: "%s"\n%!|} o.base_url;
   Printf.printf "Learnocaml server v.%s starting on port %d\n%!"
     Learnocaml_api.version o.port;
+  if o.base_url <> "" then
+    Printf.printf "Base URL: %s\n%!" o.base_url;
   let rec run () =
     let minimum_duration = 15. in
     let t0 = Unix.time () in

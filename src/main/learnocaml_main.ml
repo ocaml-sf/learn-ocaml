@@ -391,11 +391,13 @@ let main o =
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
         Unix.execv native_server (Array.of_list (native_server::server_args))
-      else
-        Printf.printf {|Base URL: "%s"\n%!|} o.builder.Builder.base_url;
-        Printf.printf "Starting server on port %d\n%!"
-          !Learnocaml_server.port;
-      Learnocaml_server.launch ()
+      else begin
+          Printf.printf "Starting server on port %d\n%!"
+            !Learnocaml_server.port;
+          if o.builder.Builder.base_url <> "" then
+            Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
+          Learnocaml_server.launch ()
+        end
     else
       Lwt.return true
   in
