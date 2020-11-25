@@ -326,6 +326,8 @@ let main o =
          let json_config = ServerData.build_config preconfig in
          Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
+         if o.builder.Builder.base_url <> "" then
+           Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
        Lwt_unix.files_of_directory o.builder.Builder.contents_dir
        |> Lwt_stream.iter_s (fun file ->
               if Filename.extension file = ".html" then
