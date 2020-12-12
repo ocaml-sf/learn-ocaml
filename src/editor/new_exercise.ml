@@ -14,9 +14,10 @@ open Dom_html
 open Js_utils
 open Learnocaml_common
 open Editor_lib
+open Learnocaml_config
 open Learnocaml_data
-open Learnocaml_data.Editor   
-open Learnocaml_data.Exercise.Meta 
+open Learnocaml_data.Editor
+open Learnocaml_data.Exercise.Meta
 
 module StringMap = Map.Make (String)
 (*
@@ -223,7 +224,7 @@ let _ =
     begin
       store metadata;
       Dom_html.window##.location##assign
-        (Js.string ("editor.html#id=" ^ id));
+        (Js.string (api_server ^ "/editor.html#id=" ^ id));
  
     end;
   Js._true);

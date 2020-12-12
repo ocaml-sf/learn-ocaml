@@ -13,15 +13,16 @@ open Js_utils
 open Lwt.Infix
 open Learnocaml_common
 open Grade_exercise
+open Learnocaml_config
 open Learnocaml_data
 open Js_of_ocaml
 open Editor_lib
 open Dom_html
 open Test_spec
 open Editor_components
+
 module H = Tyxml_js.Html
 
-                           
 (*----------------------------------------------------------------------*)
 
 let init_tabs, select_tab =
@@ -537,24 +538,23 @@ let () =
   begin toolbar_button
       ~icon: "left" [%i"Metadata"] @@ fun () ->
       Dom_html.window##.location##assign
-        (Js.string ("new_exercise.html#id=" ^ id ^ "&action=open"));
+        (Js.string (api_server ^ "/new_exercise.html#id=" ^ id ^ "&action=open"));
     Lwt.return ()
   end;
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
       Dom_html.window##.location##assign
-        (Js.string "index.html#activity=editor"); 
+        (* FIXME/TODO: Test! *)
+        (Js.string (api_server ^ "/index.html#activity=editor"));
     Lwt.return ()
-  end ;
-
+  end;
   begin toolbar_button
           ~icon: "upload" [%i"Experiment"] @@
           fun ()->
           Dom_html.window##.location##assign
-            (Js.string ("exercise.html#id=." ^ id));
+            (Js.string (api_server ^ "/exercise.html#id=." ^ id));
           Lwt.return_unit
   end;
- 
 
   (* TODO : factorize somehow this with 
  src/app/learnocaml_exercise_main grade to learnocaml_common *)
