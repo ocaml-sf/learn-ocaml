@@ -694,9 +694,12 @@ let () =
        then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
-          [ "teacher", ([%i"Teach"], teacher_tab t);"editor",([%i"Editor"], editor_tab )]
-       | _ -> []) 
-        
+          [ "teacher", ([%i"Teach"], teacher_tab t);
+            "editor", ([%i"Editor"], editor_tab) ]
+       | None ->
+          (* FIXME: could be enabled only if desired at build time *)
+          [ "editor", ([%i"Editor"], editor_tab) ]
+       | _ -> [])
     in
     let container = El.tab_buttons_container in
     let current_btn = ref None in
