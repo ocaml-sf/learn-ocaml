@@ -59,6 +59,7 @@
 )
 
 (install
+ (package learn-ocaml)
  (section share)
  (files (learnocaml_toplevel_worker_main.bc.js as www/js/learnocaml-toplevel-worker.js))
 )

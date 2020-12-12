@@ -6,10 +6,12 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 
 module H = Tyxml_js.Html5
 
@@ -58,7 +60,12 @@ module El = struct
   end
 end
 
-let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [pcdata msg]]]
+let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [txt msg]]]
+
+let get_url token dynamic_url static_url id =
+  match token with
+  | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
+  | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
 
 let exercises_tab token _ _ () =
   show_loading [%i"Loading exercises"] @@ fun () ->
@@ -106,25 +113,25 @@ let exercises_tab token _ _ () =
                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
                     | Some _ -> [ "stats" ; "partial" ])
                   pct_signal in
-              a ~a:[ a_href ("/exercises/" ^ Url.urlencode exercise_id ^ "/") ;
+              a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
                      a_class [ "exercise" ] ] [
                 div ~a:[ a_class [ "descr" ] ] (
-                  h1 [ pcdata title ] ::
+                  h1 [ txt title ] ::
                   begin match short_description with
                     | None -> []
-                    | Some text -> [ pcdata text ]
+                    | Some text -> [ txt text ]
                   end
                 );
-                div ~a:[ a_class [ "time-left" ] ] [H.pcdata time_left];
+                div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
                 div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
                   stars_div stars;
                   div ~a:[ a_class [ "length" ] ] [
                     match kind with
-                    | Exercise.Meta.Project -> pcdata [%i"project"]
-                    | Exercise.Meta.Problem -> pcdata [%i"problem"]
-                    | Exercise.Meta.Exercise -> pcdata [%i"exercise"] ] ;
+                    | Exercise.Meta.Project -> txt [%i"project"]
+                    | Exercise.Meta.Problem -> txt [%i"problem"]
+                    | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
                   div ~a:[ a_class [ "score" ] ] [
-                    Tyxml_js.R.Html5.pcdata pct_text_signal
+                    Tyxml_js.R.Html5.txt pct_text_signal
                   ]
                 ] ] ::
               acc)
@@ -134,7 +141,7 @@ let exercises_tab token _ _ () =
           List.fold_left
             (fun acc (_, Exercise.Index.{ title ; contents }) ->
                format_contents (succ lvl)
-                 (h ~a:[ a_class [ "pack" ] ] [ pcdata title ] :: acc)
+                 (h ~a:[ a_class [ "pack" ] ] [ txt title ] :: acc)
                  contents)
             acc groups in
     List.rev (format_contents 1 [] index) in
@@ -142,13 +149,13 @@ let exercises_tab token _ _ () =
     match format_exercise_list
             Learnocaml_local_storage.(retrieve all_exercise_states)
     with
-    | [] -> H.div [H.pcdata [%i"No open exercises at the moment"]]
+    | [] -> H.div [H.txt [%i"No open exercises at the moment"]]
     | l -> H.div ~a:[H.a_id El.Dyn.exercise_list_id] l
   in
     Manip.appendChild El.content list_div;
     Lwt.return list_div
 
-let playground_tab _ _ () =
+let playground_tab token _ _ () =
   show_loading [%i"Loading playground"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
   retrieve (Learnocaml_api.Playground_index ())
@@ -158,13 +165,13 @@ let playground_tab _ _ () =
       let open Tyxml_js.Html5 in
       let title = pmeta.Playground.Meta.title in
       let short_description = pmeta.Playground.Meta.short_description in
-      a ~a:[ a_href ("/playground/" ^ Url.urlencode id ^ "/") ;
+      a ~a:[ a_href (get_url token "/playground/" "playground.html#id=" id) ;
              a_class [ "exercise" ] ] [
           div ~a:[ a_class [ "descr" ] ] (
-              h1 [ pcdata title ] ::
+              h1 [ txt title ] ::
                 begin match short_description with
                 | None -> []
-                | Some text -> [ pcdata text ]
+                | Some text -> [ txt text ]
                 end
             );
         ]
@@ -187,7 +194,7 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
       (fun (lesson_id, lesson_title) ->
          lesson_id,
          Tyxml_js.Html5.
-           (option ~a: [ a_value lesson_id ] (pcdata lesson_title)))
+           (option ~a: [ a_value lesson_id ] (txt lesson_title)))
       index in
   let prev_and_next id =
     let rec loop = function
@@ -336,7 +343,7 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
       (fun { Tutorial.Index.name; title } ->
          name,
          H.option ~a: [ H.a_value name ]
-           (H.pcdata (extract_text_from_rich_text title)))
+           (H.txt (extract_text_from_rich_text title)))
       index in
   let selector =
     Tyxml_js.Html5.(select (snd (List.split options))) in
@@ -418,7 +425,7 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
                 Tyxml_js.Html5.p
                   (render_rich_text ~on_runnable_clicked text)
             | Code_block { code ; runnable } ->
-                let elt = Tyxml_js.Html.pre [ Tyxml_js.Html.pcdata code ] in
+                let elt = Tyxml_js.Html.pre [ Tyxml_js.Html.txt code ] in
                 if runnable then begin
                   Manip.addClass elt "runnable" ;
                   Manip.Ev.onclick elt (fun _ -> on_runnable_clicked code ; true)
@@ -527,9 +534,9 @@ let token_disp_div token =
 
 let show_token_dialog token =
   ext_alert ~title:[%i"Your Learn-OCaml token"] [
-    H.p [H.pcdata [%i"Your token is displayed below. It identifies you and \
+    H.p [H.txt [%i"Your token is displayed below. It identifies you and \
                       allows to share your workspace between devices."]];
-    H.p [H.pcdata [%i"Please write it down."]];
+    H.p [H.txt [%i"Please write it down."]];
     H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
   ]
 
@@ -572,8 +579,8 @@ let init_token_dialog () =
             Lwt.return_none
         | Error e ->
             lwt_alert ~title:[%i"REQUEST ERROR"] [
-              H.p [H.pcdata [%i"Could not retrieve data from server"]];
-              H.code [H.pcdata (Server_caller.string_of_error e)];
+              H.p [H.txt [%i"Could not retrieve data from server"]];
+              H.code [H.txt (Server_caller.string_of_error e)];
             ] ~buttons:[
               [%i"Retry"], (fun () -> login_token ());
               [%i"Cancel"], (fun () -> Lwt.return_none);
@@ -595,28 +602,16 @@ let init_token_dialog () =
   Manip.SetCss.display login_overlay "none";
   token
 
-let init_sync_token button_state =
+let init_sync_token button_group =
   catch
     (fun () ->
        begin try
            Lwt.return Learnocaml_local_storage.(retrieve sync_token)
          with Not_found -> init_token_dialog ()
        end >>= fun token ->
-       enable_button button_state ;
+       enable_button_group button_group ;
        Lwt.return (Some token))
     (fun _ -> Lwt.return None)
-
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
-  method enableLessons: bool Js.optdef_prop
-  method enableExercises: bool Js.optdef_prop
-  method enableToplevel: bool Js.optdef_prop
-  method enablePlayground: bool Js.optdef_prop
-  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
-  method txtNickname: Js.js_string Js.t Js.optdef_prop
-end
-
-let config : learnocaml_config Js.t = Js.Unsafe.js_expr "learnocaml_config"
 
 let set_string_translations () =
   let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in
@@ -671,14 +666,14 @@ let () =
     Js.string ("Learn OCaml" ^ " v."^Learnocaml_api.version);
   Manip.setInnerText El.version ("v."^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
-  let sync_button_state = button_state () in
-  disable_button sync_button_state ;
+  let sync_button_group = button_group () in
+  disable_button_group sync_button_group;
   let menu_hidden = ref true in
   let no_tab_selected () =
     Manip.removeChildren El.content ;
     let div =
       Tyxml_js.Html5.(div ~a: [ a_class [ "placeholder" ] ])
-        Tyxml_js.Html5.[ div [ pcdata [%i"Choose an activity."] ]] in
+        Tyxml_js.Html5.[ div [ txt [%i"Choose an activity."] ]] in
     Manip.removeChildren El.content ;
     Manip.appendChild El.content div ;
     delete_arg "activity"
@@ -690,13 +685,13 @@ let () =
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
       (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
-      (match token, get_opt config##.enableExercises with
-       | Some token, true -> [ "exercises", ([%i"Exercises"], exercises_tab token) ]
-       | _ -> []) @
+        (if get_opt config##.enableExercises then
+           ["exercises", ([%i"Exercises"], exercises_tab token)]
+        else []) @
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
-       then [ "playground", ([%i"Playground"], playground_tab) ] else []) @
+       then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
           [ "teacher", ([%i"Teach"], teacher_tab t);"editor",([%i"Editor"], editor_tab )]
@@ -710,7 +705,7 @@ let () =
     Manip.removeChildren container ;
     List.map
       (fun (id, (name, callback)) ->
-         let btn = Tyxml_js.Html5.(button [ pcdata name]) in
+         let btn = Tyxml_js.Html5.(button [ txt name]) in
          let div = ref None in
          let args = ref [] in
          let rec select () =
@@ -805,7 +800,7 @@ let () =
                 a backup."])
     >|= fun s ->
     confirm ~title:[%i"Logout"] ~ok_label:[%i"Logout"]
-      [H.p [H.pcdata s];
+      [H.p [H.txt s];
        H.div ~a:[H.a_style "text-align: center;"]
          [token_disp_div (get_stored_token ())]]
       (fun () ->
@@ -817,7 +812,7 @@ let () =
          Lwt.return_unit)
   in
   List.iter (fun (text, icon, f) ->
-      button ~container:El.sync_buttons ~theme:"white" ~icon text f)
+      button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
     [
       [%i"Show token"], "token", (fun () ->
           show_token_dialog (get_stored_token ());
@@ -868,7 +863,10 @@ let () =
       xset El.content (fun s -> s##.style##.left := Js.string "");
       Manip.SetCss.display El.show_panel "none";
       true);
-  init_sync_token sync_button_state >|= init_tabs >>= fun tabs ->
+  Server_caller.request (Learnocaml_api.Version ()) >>=
+    (function
+     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
+     | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
     let (_, select) = List.assoc activity tabs in

@@ -33,3 +33,5 @@ static/dune
 
 translations/*.pot
 **/.merlin
+
+tests/corpuses/*

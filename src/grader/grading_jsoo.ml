@@ -10,6 +10,7 @@ exception Timeout
 
 open Grader_jsoo_messages
 open Lwt.Infix
+open Js_of_ocaml
 
 let get_grade
     ?(worker_js_file = "/js/learnocaml-grader-worker.js")

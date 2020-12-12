@@ -265,9 +265,9 @@ let make_timeout_popup
   let countdown = ref countdown in
   let btn_continue =
     let label = Format.asprintf [%if"%d seconds!"] refill_step in
-    button [ pcdata label ] in
+    button [ txt label ] in
   let btn_stop =
-    button [ pcdata [%i"Kill it!"] ] in
+    button [ txt [%i"Kill it!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> countdown := !countdown + refill_step ; true) ;
   Manip.Ev.onclick btn_stop
@@ -277,15 +277,15 @@ let make_timeout_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata [%i"Infinite loop?"] ] ;
+          [ h1 [ txt [%i"Infinite loop?"] ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata [%i"The toplevel has not been responding for "] ;
+              [ txt [%i"The toplevel has not been responding for "] ;
                 clock_span ;
-                pcdata [%i" seconds."] ;
+                txt [%i" seconds."] ;
                 br () ;
-                pcdata [%i"It will be killed in "] ;
+                txt [%i"It will be killed in "] ;
                 countdown_span ;
-                pcdata [%i" seconds."] ] ;
+                txt [%i" seconds."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Lwt.catch
@@ -295,9 +295,9 @@ let make_timeout_popup
        let rec loop () =
          let elapsed = int_of_float (Sys.time () -. t0) in
          Manip.replaceChildren clock_span
-           [ pcdata (string_of_int elapsed) ] ;
+           [ txt (string_of_int elapsed) ] ;
          Manip.replaceChildren countdown_span
-           [ pcdata (string_of_int (!countdown - elapsed)) ] ;
+           [ txt (string_of_int (!countdown - elapsed)) ] ;
          if elapsed >= !countdown then begin
            Manip.removeChild container dialog ;
            Lwt.return ()
@@ -314,9 +314,9 @@ let make_flood_popup
   let open Tyxml_js.Html5 in
   let answer = ref None in
   let btn_continue =
-    button [ pcdata [%i"Show anyway!"] ] in
+    button [ txt [%i"Show anyway!"] ] in
   let btn_stop =
-    button [ pcdata [%i"Hide output!"] ] in
+    button [ txt [%i"Hide output!"] ] in
   Manip.Ev.onclick btn_continue
     (fun _ -> answer := Some false ; true) ;
   Manip.Ev.onclick btn_stop
@@ -325,21 +325,21 @@ let make_flood_popup
   let dialog =
     div ~a: [ a_class [ "dialog-container" ] ]
       [ div ~a: [ a_class [ "dialog" ] ]
-          [ h1 [ pcdata [%i"Flooded output!"] ] ;
+          [ h1 [ txt [%i"Flooded output!"] ] ;
             div ~a: [ a_class [ "message" ] ]
-              [ pcdata (Printf.sprintf
+              [ txt (Printf.sprintf
                           [%if"Your code is flooding the %s channel."] name) ;
                 br ();
-                pcdata [%i"It has already printed "] ;
+                txt [%i"It has already printed "] ;
                 qty_span ;
-                pcdata [%i" bytes."] ] ;
+                txt [%i" bytes."] ] ;
             div ~a: [ a_class [ "buttons" ] ]
               [ btn_continue ; btn_stop ] ] ] in
   Manip.appendChild container dialog ;
   on_show () ;
   let rec loop () =
     Manip.replaceChildren qty_span
-      [ pcdata (string_of_int (amount ())) ] ;
+      [ txt (string_of_int (amount ())) ] ;
     match !answer with
     | Some ans ->
         Manip.removeChild container dialog ;

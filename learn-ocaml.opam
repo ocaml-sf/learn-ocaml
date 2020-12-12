@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml"
-version: "0.11"
+version: "0.12"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
@@ -8,41 +8,44 @@ authors: [
   "Louis Gesbert (OCamlPro)"
   "Pierrick Couderc (OCamlPro)"
 ]
-maintainer: "Louis Gesbert"
+maintainer: "Yann Régis-Gianas"
 license: "MIT"
 homepage: "https://github.com/ocaml-sf/learn-ocaml"
 bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 dev-repo: "git+https://github.com/ocaml-sf/learn-ocaml"
 depends: [
-  "base" {= "v0.9.4"}
+  "base" {>= "v0.9.4"}
   "base64"
   "cmdliner"
-  "cohttp" {>= "1.0.0"}
-  "cohttp-lwt-unix" {>= "1.0.0"}
+  "cohttp" {>= "1.0.0" & < "2.0.0"}
+  "cohttp-lwt" {>= "1.0.0" & < "2.0.0"}
+  "cohttp-lwt-unix" {>= "1.0.0" & < "2.0.0"}
   "conf-git"
   "decompress" {= "0.8.1"}
   "digestif" {>= "0.7.1"}
-  "dune" {build & >= "1.1.1"}
+  "dune" {= "2.0.1"}
   "easy-format" {>= "1.3.0" }
   "ipaddr" {= "2.8.0" }
   "ezjsonm"
   "js_of_ocaml" {>= "3.3.0"}
-  "js_of_ocaml-compiler" {= "3.3.0"}
+  "js_of_ocaml-compiler" {>= "3.3.0"}
   "js_of_ocaml-lwt"
   "js_of_ocaml-ppx"
   "js_of_ocaml-toplevel"
   "js_of_ocaml-tyxml"
-  "lwt" {>= "3.2.0" & < "4.0.0"}
+  "lwt" {>= "4.0.0"}
   "lwt_react"
   "lwt_ssl"
+  "ssl" {= "0.5.5"}
   "magic-mime"
   "markup"
-  "ocaml" {>= "4.05.0"}
+  "markup-lwt"
+  "ocaml" {= "4.05.0"}
   "ocamlfind" {build}
   "ocp-indent-nlfork"
-  "ocp-ocamlres" {= "0.4"}
+  "ocp-ocamlres" {>= "0.4"}
   "ocplib-json-typed" {= "0.6"}
-  "odoc" {build & = "1.3.0"}
+  "odoc" {build & >= "1.3.0"}
   "omd"
   "pprint"
   "ppx_cstruct"
@@ -53,7 +56,7 @@ depends: [
 ]
 build: [
   [make "static"]
-  ["dune" "build" "-p" name]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 install: [
   ["mkdir" "-p" "%{_:share}%"]

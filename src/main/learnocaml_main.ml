@@ -47,6 +47,15 @@ module Args = struct
       "Directory where the app should be generated for the $(i,build) command, \
        and from where it is served by the $(i,serve) command."
 
+  let base_url =
+    value & opt string "" &
+      info ["base-url"] ~docv:"BASE_URL" ~env:(Arg.env_var "LEARNOCAML_BASE_URL") ~doc:
+        "Set the base URL of the website. \
+         Should not end with a trailing slash. \
+         Currently, this has no effect on the backend - '$(b,learn-ocaml serve)'. \
+         Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
+         which typically occurs for static deployment."
+
   module Grader = struct
     let info = info ~docs:"GRADER OPTIONS"
 
@@ -187,14 +196,15 @@ module Args = struct
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
+      base_url: string
     }
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel }
+        contents_dir try_ocaml lessons exercises playground toplevel base_url
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; base_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel)
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -235,10 +245,34 @@ module Args = struct
       { commands; app_dir; repo_dir; grader; builder; server }
     in
     Term.(const apply $commands $app_dir $repo_dir
-          $Grader.term $Builder.term $Server.term app_dir)
+          $Grader.term $Builder.term $Server.term app_dir base_url)
 end
 
 open Args
+
+let process_html_file orig_file dest_file base_url =
+  let transform_tag e tag attrs attr =
+    let attr_pair = ("", attr) in
+    match List.assoc_opt attr_pair attrs with
+    | Some url -> `Start_element ((e, tag), (attr_pair, base_url ^ url) :: (List.remove_assoc attr_pair attrs))
+    | None -> `Start_element ((e, tag), attrs) in
+  Lwt_io.open_file ~mode:Lwt_io.Input orig_file >>= fun ofile ->
+  Lwt_io.open_file ~mode:Lwt_io.Output dest_file >>= fun wfile ->
+  let document = Markup_lwt.lwt_stream (Lwt_io.read_chars ofile) in
+  Markup.parse_html document
+  |> Markup.signals
+  |> Markup.map (function
+         | `Start_element ((e, "link"), attrs) -> transform_tag e "link" attrs "href"
+         | `Start_element ((e, "script"), attrs) -> transform_tag e "script" attrs "src"
+         | `Start_element ((e, "img"), attrs) -> transform_tag e "img" attrs "src"
+         | `Start_element ((e, "a"), attrs) -> transform_tag e "a" attrs "href"
+         | t -> t)
+  |> Markup.pretty_print
+  |> Markup.write_html
+  |> Markup_lwt.to_lwt_stream
+  |> Lwt_io.write_chars wfile >>= fun () ->
+  Lwt_io.close ofile >>= fun () ->
+  Lwt_io.close wfile
 
 let main o =
   Printf.printf "Learnocaml v.%s running.\n" Learnocaml_api.version;
@@ -292,6 +326,15 @@ let main o =
          let json_config = ServerData.build_config preconfig in
          Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
+         if o.builder.Builder.base_url <> "" then
+           Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
+       Lwt_unix.files_of_directory o.builder.Builder.contents_dir
+       |> Lwt_stream.iter_s (fun file ->
+              if Filename.extension file = ".html" then
+                process_html_file (o.builder.Builder.contents_dir/file)
+                  (o.app_dir/file) o.builder.Builder.base_url
+              else
+                Lwt.return_unit) >>= fun () ->
        let if_enabled opt dir f = (match opt with
            | None ->
                Lwt.catch (fun () ->
@@ -325,13 +368,15 @@ let main o =
               \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
-              \  enableToplevel: %b\n\
+              \  enableToplevel: %b,\n\
+              \  baseUrl: \"%s\"\n\
                }\n"
               (tutorials_ret <> None)
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
-              (o.builder.Builder.toplevel <> Some false) >>= fun () ->
+              (o.builder.Builder.toplevel <> Some false)
+              o.builder.Builder.base_url >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true
@@ -344,14 +389,18 @@ let main o =
           let open Server in
           ("--app-dir="^o.app_dir) ::
           ("--sync-dir="^o.server.sync_dir) ::
+          ("--base-url="^o.builder.Builder.base_url) ::
           ("--port="^string_of_int o.server.port) ::
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
         Unix.execv native_server (Array.of_list (native_server::server_args))
-      else
-        Printf.printf "Starting server on port %d\n%!"
-          !Learnocaml_server.port;
-      Learnocaml_server.launch ()
+      else begin
+          Printf.printf "Starting server on port %d\n%!"
+            !Learnocaml_server.port;
+          if o.builder.Builder.base_url <> "" then
+            Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
+          Learnocaml_server.launch ()
+        end
     else
       Lwt.return true
   in

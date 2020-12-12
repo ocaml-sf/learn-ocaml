@@ -7,6 +7,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Learnocaml_data
 
 type 'a storage_key =

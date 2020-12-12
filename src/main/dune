@@ -6,6 +6,7 @@
 )
 
 (executable
+ (package learn-ocaml)
  (public_name learn-ocaml)
  (name learnocaml_main)
  (modes byte)
@@ -14,6 +15,8 @@
  (modules Learnocaml_main)
  (libraries cmdliner
             sha
+            markup
+            markup-lwt
             learnocaml_process_repository_lib
             learnocaml_server_lib
             learnocaml_server_args
@@ -21,6 +24,7 @@
 )
 
 (executable
+ (package learn-ocaml-client)
  (public_name learn-ocaml-client)
  (name learnocaml_client)
  (modes byte)
@@ -39,6 +43,7 @@
 )
 
 (executable
+ (package learn-ocaml)
  (public_name learn-ocaml-server)
  (name learnocaml_server_main)
  (modules learnocaml_server_main)
