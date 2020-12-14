@@ -429,7 +429,7 @@ let man = [
   `P "The repository specified by $(b,--repo) is expected to contain \
       sub-directories $(b,lessons), $(b,tutorials), $(b,playground) and $(b,exercises).";
   `S "AUTHORS";
-  `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
+  `P "The original authors are Benjamin Canou, \
       Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
       the MIT License.";
   `S "BUGS";
