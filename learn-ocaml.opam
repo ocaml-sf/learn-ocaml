@@ -57,7 +57,7 @@ depends: [
 ]
 build: [
   [make "static"]
-  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "build" "-p" name "-j" 1 "--debug-backtraces" "--verbose"]
 ]
 install: [
   ["mkdir" "-p" "%{_:share}%"]
