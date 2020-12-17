@@ -117,6 +117,7 @@
         .testing.objs/byte/introspection_intf.cmi
         .learnocaml_report.objs/byte/learnocaml_report.cmi
         .testing.objs/byte/test_lib.cmi
+        .testing.objs/byte/typed_ast.cmi
         .testing.objs/byte/typed_ast_lib.cmi
         .testing.objs/byte/style_checking.cmi
         .testing.objs/byte/mutation_test.cmi))
