@@ -894,19 +894,27 @@ module Editor_button (E : Editor_info) = struct
   type mongo_solution = 
   { student_id : string; 
     timestamp : string; 
-    student_solution : string }
+    collection : string;
+    student_solution : string
+  }
 
   let eval_unsafe s = Js.Unsafe.js_expr s
-  let send_to_server solution =
+  let send_to_server solution event =
     let stId = match Learnocaml_local_storage.(retrieve nickname) with
       | nickname -> nickname
       | exception Not_found -> ""
     in
+    let exercise_id = match Url.Current.path with
+      | "" :: "exercises" :: p | "exercises" :: p ->
+          String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
+      | _ -> arg "id"
+    in
     let url = Js.string @@  Js.to_string (eval_unsafe "window.location.protocol") ^
           "//" ^
-          Js.to_string (eval_unsafe "window.location.hostname") ^ ":8000/eval" in 
+          Js.to_string (eval_unsafe "window.location.hostname") ^ ":8000/" ^ event in 
     let current_time = string_of_float(Unix.time ()) in 
-    let student_json = Json.output {student_id = stId; timestamp = current_time; student_solution = solution} in
+    let collection_name = event ^ "Code" ^ exercise_id in
+    let student_json = Json.output {student_id = stId; timestamp = current_time; collection = collection_name; student_solution = solution} in
     let nodeRequest = XmlHttpRequest.create () in
       nodeRequest ## _open (Js.string "POST") (url) (Js.bool true);
       nodeRequest ## setRequestHeader (Js.string "Content-Type") (Js.string "application/json; charset=UTF-8"); 
@@ -915,7 +923,7 @@ module Editor_button (E : Editor_info) = struct
   let eval top select_tab =
     editor_button
       ~icon: "run" [%i"Eval code"] @@ fun () ->
-      send_to_server (Ace.get_contents E.ace);
+      send_to_server (Ace.get_contents E.ace) "eval";
       Learnocaml_toplevel.execute_phrase top (Ace.get_contents E.ace) >>= fun _ ->
       select_tab "toplevel";
       Lwt.return_unit
