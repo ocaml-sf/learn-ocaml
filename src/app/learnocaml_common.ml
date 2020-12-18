@@ -6,9 +6,11 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
@@ -80,8 +82,8 @@ let fatal ?(title=[%i"INTERNAL ERROR"]) message =
         div in
   Manip.replaceChildren div [
     H.div [
-      H.h3 [ H.pcdata titletext ];
-      H.div [ H.p [ H.pcdata (String.trim message) ] ];
+      H.h3 [ H.txt titletext ];
+      H.div [ H.p [ H.txt (String.trim message) ] ];
     ]
   ]
 
@@ -94,7 +96,7 @@ let box_button txt f =
         match Manip.by_id dialog_layer_id with
         | Some div -> Manip.removeChild Manip.Elt.body div; false
         | None -> (); false)
-  ] [ H.pcdata txt ]
+  ] [ H.txt txt ]
 
 let close_button txt =
   box_button txt @@ fun () -> ()
@@ -112,7 +114,7 @@ let ext_alert ~title ?(buttons = [close_button [%i"OK"]]) message =
         div in
   Manip.replaceChildren div [
     H.div [
-      H.h3 [ H.pcdata title ];
+      H.h3 [ H.txt title ];
       H.div message;
       H.div ~a:[ H.a_class ["buttons"] ] buttons;
     ]
@@ -131,7 +133,7 @@ let lwt_alert ~title ~buttons message =
   waiter
 
 let alert ?(title=[%i"ERROR"]) ?buttons message =
-  ext_alert ~title ?buttons [ H.p [H.pcdata (String.trim message)] ]
+  ext_alert ~title ?buttons [ H.p [H.txt (String.trim message)] ]
 
 let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
   ext_alert ~title contents ~buttons:[
@@ -171,7 +173,7 @@ let show_loading ?(id = "ocp-loading-layer") contents f =
     Manip.(removeClass elt "loaded") ;
     Manip.(addClass elt "loading") ;
     let chamo_src =
-      "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
+      api_server ^ "/icons/tryocaml_loading_" ^ string_of_int (Random.int 9 + 1) ^ ".gif" in
     Manip.replaceChildren elt
       H.[
         div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -286,9 +288,9 @@ let button ~container ~theme ?group ?state ~icon lbl cb =
     | Some group -> group in
   let button =
     H.(button [
-        img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
-        pcdata " " ;
-        span ~a:[ a_class [ "label" ] ] [ pcdata lbl ]
+        img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+        txt " " ;
+        span ~a:[ a_class [ "label" ] ] [ txt lbl ]
       ]) in
   Manip.Ev.onclick button
     (fun _ ->
@@ -329,7 +331,7 @@ let dropdown ~id ~title items =
     in
     H.div ~a: [H.a_class ["dropdown_btn"]] [
       H.button ~a: [H.a_onclick toggle]
-        (title @ [H.pcdata " \xe2\x96\xb4" (* U+25B4 *)]);
+        (title @ [H.txt " \xe2\x96\xb4" (* U+25B4 *)]);
       H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
     ]
 
@@ -343,10 +345,10 @@ let render_rich_text ?on_runnable_clicked text =
     | [] -> List.rev acc
     | Text text :: rest ->
         render
-          (H.pcdata text :: acc)
+          (H.txt text :: acc)
           rest
     | Code { code ; runnable } :: rest ->
-        let elt = H.code [ H.pcdata code ] in
+        let elt = H.code [ H.txt code ] in
         (match runnable, on_runnable_clicked with
          | true, Some cb ->
              Manip.addClass elt "runnable" ;
@@ -360,7 +362,7 @@ let render_rich_text ?on_runnable_clicked text =
     | Image _ :: _ -> assert false
     | Math code :: rest ->
         render
-          (H.pcdata ("`" ^ code ^ "`") :: acc)
+          (H.txt ("`" ^ code ^ "`") :: acc)
           rest in
   (render [] text
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] H.elt list)
@@ -385,7 +387,7 @@ let extract_text_from_rich_text text =
 let set_state_from_save_file ?token save =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
-  match token with None -> () | Some t -> store sync_token t;
+  (match token with None -> () | Some t -> store sync_token t);
   store nickname save.nickname;
   store all_exercise_states
     (SMap.merge (fun _ ans edi ->
@@ -404,8 +406,8 @@ let rec retrieve ?ignore req =
   | Ok x -> Lwt.return x
   | Error e ->
       lwt_alert ~title:[%i"REQUEST ERROR"] [
-        H.p [H.pcdata [%i"Could not retrieve data from server"]];
-        H.code [H.pcdata (Server_caller.string_of_error e)];
+        H.p [H.txt [%i"Could not retrieve data from server"]];
+        H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:(
         ([%i"Retry"], (fun () -> retrieve req)) ::
         (match ignore with
@@ -444,8 +446,8 @@ let rec sync_save token save_file =
       Lwt.return save
   | Error e ->
       lwt_alert ~title:[%i"SYNC FAILED"] [
-        H.p [H.pcdata [%i"Could not synchronise save with the server"]];
-        H.code [H.pcdata (Server_caller.string_of_error e)];
+        H.p [H.txt [%i"Could not synchronise save with the server"]];
+        H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:[
         [%i"Retry"], (fun () -> sync_save token save_file);
         [%i"Ignore"], (fun () -> Lwt.return save_file);
@@ -454,6 +456,24 @@ let rec sync_save token save_file =
 let sync token = sync_save token (get_state_as_save_file ())
 
 let sync_exercise token ?answer ?editor id =
+  let handle_serverless () =
+    (* save the text at least locally (but not the report & grade, that could
+       be misleading) *)
+    let txt = match editor, answer with
+      | Some t, _ -> Some t
+      | _, Some a -> Some a.Answer.solution
+      | _ -> None
+    in
+    match txt with
+    | Some txt ->
+       let key = Learnocaml_local_storage.exercise_state id in
+       let a0 = Learnocaml_local_storage.retrieve key in
+       Learnocaml_local_storage.store key
+         {a0 with Answer.
+          solution = txt;
+          mtime = gettimeofday () }
+    | None -> ()
+  in
   let nickname = Learnocaml_local_storage.(retrieve nickname) in
   let toplevel_history =
     SMap.find_opt id Learnocaml_local_storage.(retrieve all_toplevel_histories)
@@ -470,26 +490,15 @@ let sync_exercise token ?answer ?editor id =
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = opt_to_map toplevel_history;
   } in
-  Lwt.catch (fun () -> sync_save token save_file)
-    (fun e ->
-       (* save the text at least locally (but not the report & grade, that could
-          be misleading) *)
-       let txt = match editor, answer with
-         | Some t, _ -> Some t
-         | _, Some a -> Some a.Answer.solution
-         | _ -> None
-       in
-       (match txt with
-        | Some txt ->
-            let key = Learnocaml_local_storage.exercise_state id in
-            let a0 = Learnocaml_local_storage.retrieve key in
-            Learnocaml_local_storage.store key
-              {a0 with Answer.
-                    solution = txt;
-                    mtime = gettimeofday () }
-        | None -> ());
-       raise e)
-
+  match token with
+  | Some token ->
+     Lwt.catch (fun () -> sync_save token save_file)
+       (fun e ->
+         handle_serverless ();
+         raise e)
+  | None -> set_state_from_save_file save_file;
+            handle_serverless ();
+            Lwt.return save_file
 
 let string_of_seconds seconds =
   let days = seconds / 24 / 60 / 60 in
@@ -530,13 +539,13 @@ let stars_div stars =
     let num = 5 * int_of_float (stars *. 2.) in
     let num = max (min num 40) 0 in
     let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-    let src = Format.asprintf "/icons/stars_%02d.svg" num in
+    let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
     H.img ~alt ~src ()
   ]
 
 let exercise_text ex_meta exo =
   let mathjax_url =
-    "/js/mathjax/MathJax.js?delayStartupUntil=configured"
+    api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
   in
   let mathjax_config =
     "MathJax.Hub.Config({\n\
@@ -571,7 +580,7 @@ let exercise_text ex_meta exo =
      <html><head>\
      <title>%s - exercise text</title>\
      <meta charset='UTF-8'>\
-     <link rel='stylesheet' href='/css/learnocaml_standalone_description.css'>\
+     <link rel='stylesheet' href='%s/css/learnocaml_standalone_description.css'>\
      <script type='text/x-mathjax-config'>%s</script>
             <script type='text/javascript' src='%s'></script>\
      </head>\
@@ -581,6 +590,7 @@ let exercise_text ex_meta exo =
      <script type='text/javascript'>MathJax.Hub.Configured()</script>\
      </html>"
     ex_meta.Exercise.Meta.title
+    api_server
     mathjax_config
     mathjax_url
     descr
@@ -663,7 +673,7 @@ let string_of_date ?(time=false) t =
 let date ?(time=false) t =
   let date = new%js Js.date_fromTimeValue (t *. 1000.) in
   H.time ~a:[ H.a_datetime (Js.to_string date##toISOString) ] [
-    H.pcdata
+    H.txt
       (Js.to_string (if time then date##toLocaleString
                      else date##toLocaleDateString))
   ]
@@ -674,7 +684,7 @@ let tag_span tag =
   in
   H.span ~a:[H.a_class ["tag"];
              H.a_style ("background-color: "^color)]
-    [H.pcdata tag]
+    [H.txt tag]
 
 let get_worker_code name =
   let worker_url = ref None in
@@ -868,7 +878,7 @@ module Editor_button (E : Editor_info) = struct
   editor_button
     ~icon: "cleanup" [%i"Reset"] @@ fun () ->
     confirm ~title:[%i"START FROM SCRATCH"]
-      [H.pcdata [%i"This will discard all your edits. Are you sure?"]]
+      [H.txt [%i"This will discard all your edits. Are you sure?"]]
       (fun () ->
          Ace.set_contents E.ace template);
     Lwt.return ()
@@ -965,21 +975,21 @@ let setup_prelude_pane ace prelude =
          | "hidden" -> false
          | _ -> failwith "Bad format for argument prelude.") in
   let prelude_btn = button [] in
-  let prelude_title = h1 [ pcdata [%i"OCaml prelude"] ;
+  let prelude_title = h1 [ txt [%i"OCaml prelude"] ;
                            prelude_btn ] in
   let prelude_container =
     pre ~a: [ a_class [ "toplevel-code" ] ]
       (Learnocaml_toplevel_output.format_ocaml_code prelude) in
   let update () =
     if !state then begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↳ "^[%i"Hide"]) ] ;
+        Manip.replaceChildren prelude_btn [ txt ("↳ "^[%i"Hide"]) ] ;
         Manip.SetCss.display prelude_container "" ;
         Manip.SetCss.top editor_pane "193px" ; (* 150 + 43 *)
         Manip.SetCss.bottom editor_pane "40px" ;
         Ace.resize ace true;
         set_arg "prelude" "shown"
       end else begin
-        Manip.replaceChildren prelude_btn [ pcdata ("↰ "^[%i"Show"]) ] ;
+        Manip.replaceChildren prelude_btn [ txt ("↰ "^[%i"Show"]) ] ;
         Manip.SetCss.display prelude_container "none" ;
         Manip.SetCss.top editor_pane "43px" ;
         Manip.SetCss.bottom editor_pane "40px" ;
@@ -991,23 +1001,26 @@ let setup_prelude_pane ace prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
-
-let get_token () =
-  try
-    Learnocaml_local_storage.(retrieve sync_token) |>
-      Lwt.return
-  with Not_found ->
-    retrieve (Learnocaml_api.Nonce ())
-    >>= fun nonce ->
-    ask_string ~title:"Secret"
-      [H.pcdata [%i"Enter the secret"]]
-    >>= fun secret ->
-    retrieve
-      (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
-    >|= fun token ->
-    Learnocaml_local_storage.(store sync_token) token;
-    token
-
+    
+let get_token ?(has_server = true) () =
+  if not has_server then
+    Lwt.return None
+  else
+    try
+      Some Learnocaml_local_storage.(retrieve sync_token) |>
+        Lwt.return
+    with Not_found ->
+      retrieve (Learnocaml_api.Nonce ())
+      >>= fun nonce ->
+      ask_string ~title:"Secret"
+        [H.txt [%i"Enter the secret"]]
+      >>= fun secret ->
+      retrieve
+        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
+      >|= fun token ->
+      Learnocaml_local_storage.(store sync_token) token;
+      Some token
+      
 module Display_exercise =
   functor (
     Q: sig
@@ -1024,8 +1037,8 @@ module Display_exercise =
       | Some descr ->
          div ~a:[ a_class [ "descr" ] ] [
              h2 ~a:[ a_class [ "learnocaml-exo-meta-category" ] ]
-               [ pcdata ex_meta.Meta.title ] ;
-             p [ pcdata descr ]
+               [ txt ex_meta.Meta.title ] ;
+             p [ txt descr ]
            ]
 
     let display_stars ex_meta =
@@ -1035,13 +1048,13 @@ module Display_exercise =
         let num = 5 * int_of_float (ex_meta.Meta.stars *. 2.) in
         let num = max (min num 40) 0 in
         let alt = Format.asprintf [%if"difficulty: %d / 40"] num in
-        let src = Format.asprintf "/icons/stars_%02d.svg" num in
+        let src = Format.asprintf "%s/icons/stars_%02d.svg" api_server num in
         img ~alt ~src ()
       in
       div ~a:[ a_class [ "stars" ] ] [
           p [
-              pcdata [%i "Difficulty:"] ;
-              pcdata " "; (* Put no whitespace in translation strings
+              txt [%i "Difficulty:"] ;
+              txt " "; (* Put no whitespace in translation strings
                              (the colon is mandatory, though, given
                              the conventions are different in English
                              and French, for example). *)
@@ -1054,7 +1067,7 @@ module Display_exercise =
       let open Learnocaml_data.Exercise in
       let kind_repr = string_of_exercise_kind ex_meta.Meta.kind in
       div ~a:[ a_class [ "length" ] ] [
-          p [ pcdata (Format.sprintf [%if "Kind: %s"] kind_repr) ]
+          p [ txt (Format.sprintf [%if "Kind: %s"] kind_repr) ]
         ]
 
     let display_exercise_meta id meta content_id =
@@ -1071,10 +1084,10 @@ module Display_exercise =
       Manip.replaceChildren content [ descr ];
       Lwt.return ()
 
-    let display_list ?(sep=Tyxml_js.Html5.pcdata ", ") l =
+    let display_list ?(sep=Tyxml_js.Html5.txt ", ") l =
       let open Tyxml_js.Html5 in
       let rec gen acc = function
-        | [] -> [ pcdata "" ]
+        | [] -> [ txt "" ]
         | a :: [] -> a :: acc
         | a :: ((_ :: _) as rem) ->
            gen (sep :: (a  :: acc)) rem
@@ -1083,7 +1096,7 @@ module Display_exercise =
 
     let get_skill_index token =
       let index = lazy (
-                      retrieve (Learnocaml_api.Exercise_index token)
+                      retrieve (Learnocaml_api.Exercise_index (Some token))
     >|= fun (index, _) ->
                       Exercise.Index.fold_exercises (fun (req, focus) id meta ->
                           let add sk id map =
@@ -1109,7 +1122,7 @@ module Display_exercise =
       Manip.replaceChildren content
         (display_list @@
            List.map (fun ex_id ->
-               exercise_link ex_id [Tyxml_js.Html5.pcdata ex_id]) exs);
+               exercise_link ex_id [Tyxml_js.Html5.txt ex_id]) exs);
       Lwt.return ()
 
     let display_link onclick content_id value =
@@ -1124,15 +1137,15 @@ module Display_exercise =
         else
           ignore (onclick cid);
         Manip.removeChildren exp;
-        Manip.appendChild exp (pcdata (if !displayed then "[-]" else "[+]"));
+        Manip.appendChild exp (txt (if !displayed then "[-]" else "[+]"));
         displayed := not !displayed;
         true
       in
       div [ p ~a:[ a_class [ "learnocaml-exo-expandable-link" ] ;
                    a_onclick onclick ] [
                 span ~a:[ a_id expand_id ;
-                          a_class ["expand-sign"] ] [ pcdata "[+]" ] ;
-                pcdata value ] ;
+                          a_class ["expand-sign"] ] [ txt "[+]" ] ;
+                txt value ] ;
             div ~a:[ a_id cid ;
                      a_class [ "learnocaml-exo-meta-category" ] ]
               []
@@ -1148,12 +1161,12 @@ module Display_exercise =
     let display_authors caption_text authors =
       let open Tyxml_js.Html5 in
       let author (name, mail) =
-        span [ pcdata name ;
-               pcdata " <" ;
-               a ~a:[ a_href ("mailto:" ^ mail) ] [ pcdata mail ] ;
-               pcdata ">" ;
+        span [ txt name ;
+               txt " <" ;
+               a ~a:[ a_href ("mailto:" ^ mail) ] [ txt mail ] ;
+               txt ">" ;
           ] in
-      span [ pcdata caption_text; pcdata " " ]
+      span [ txt caption_text; txt " " ]
       :: (display_list @@ List.map author authors)
 
     let add_map_set sk id map =
@@ -1174,7 +1187,7 @@ module Display_exercise =
       | [] -> None
       | skills ->
          Some (caption,
-               display_list ~sep:(H.pcdata "") @@
+               display_list ~sep:(H.txt "") @@
                  List.map (fun s ->
                      display_skill_link
                        (try SSet.elements (SMap.find s map) with Not_found -> [])
@@ -1191,7 +1204,7 @@ module Display_exercise =
         (List.rev exos)
       |> function
         | [] -> None
-        | l -> Some (caption, display_list ~sep:(H.pcdata "") l)
+        | l -> Some (caption, display_list ~sep:(H.txt "") l)
 
     let display_meta token ex_meta id =
       let open Learnocaml_data.Exercise in
@@ -1222,19 +1235,19 @@ module Display_exercise =
       Manip.replaceChildren tab @@
         Tyxml_js.Html5.([
               h1 ~a:[ a_class [ "learnocaml-exo-meta-title" ] ]
-                [ pcdata [%i "Metadata" ] ] ;
+                [ txt [%i "Metadata" ] ] ;
               div ~a:[ a_id "learnocaml-exo-content-meta" ] @@
                 [ display_descr ex_meta ;
                   display_stars ex_meta ;
                   display_kind ex_meta ;
-                  p [ pcdata ident ] ;
+                  p [ txt ident ] ;
                   (match authors with Some a -> p a | None -> div [])
                 ] @ List.map
                       (function
                        | Some (title, values) ->
                           div (h2 ~a:[ a_class
                                          [ "learnocaml-exo-meta-category-title" ] ]
-                                 [ pcdata title ] :: values)
+                                 [ txt title ] :: values)
                        | None -> div [])
                       [ focus ; requirements ; backward ; forward ]
         ])

@@ -8,6 +8,8 @@
 
 (** Types of the messages exchanged with a toplevel in a Web Worker. *)
 
+open Js_of_ocaml
+
 type _ host_msg =
   | Init : unit host_msg
   | Reset : unit host_msg

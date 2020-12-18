@@ -6,10 +6,12 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
+open Learnocaml_config
 
 module H = Tyxml_js.Html
 
@@ -69,7 +71,7 @@ let main () =
   begin toolbar_button
       ~icon: "list" [%i"Playground"] @@ fun () ->
     Dom_html.window##.location##assign
-      (Js.string "/index.html#activity=playground") ;
+      (Js.string (api_server ^ "/index.html#activity=playground")) ;
     Lwt.return ()
   end ;
   let typecheck = typecheck top ace editor in

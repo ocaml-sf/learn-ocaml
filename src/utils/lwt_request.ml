@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
+
 exception Request_failed of (int * string)
 
 let url_encode_list l =
@@ -20,7 +22,7 @@ let get ?(headers=[]) ~url ~args =
     | _ -> url ^ "?" ^ (url_encode_list args) in
   req##(_open (Js.string "GET") (Js.string url) (Js._true));
   req##(setRequestHeader (Js.string "Content-type")
-			 (Js.string "application/x-www-form-urlencoded"));
+       (Js.string "application/x-www-form-urlencoded"));
   List.iter (fun (n, v) -> req##(setRequestHeader (Js.string n) (Js.string v)))
     headers;
   let callback () =
@@ -29,11 +31,11 @@ let get ?(headers=[]) ~url ~args =
     | 204 -> Lwt.wakeup w ""
     | code (* including 0 *) ->
         Lwt.wakeup_exn w
-	        (Request_failed (code, Js.to_string req##.responseText)) in
+          (Request_failed (code, Js.to_string req##.responseText)) in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with
-	     XmlHttpRequest.DONE -> callback ()
-	   | _ -> ()));
+       XmlHttpRequest.DONE -> callback ()
+     | _ -> ()));
   req##(send (Js.null));
   Lwt.on_cancel res (fun () -> req##abort);
   res
@@ -46,7 +48,7 @@ let post ?(headers=[]) ?(get_args=[]) ~url ~body =
     | _ -> url ^ "?" ^ (url_encode_list get_args) in
   req##(_open (Js.string "POST") (Js.string url) (Js._true));
   req##(setRequestHeader (Js.string "Content-type")
-			 (Js.string "application/x-www-form-urlencoded"));
+       (Js.string "application/x-www-form-urlencoded"));
   List.iter (fun (n, v) -> req##(setRequestHeader (Js.string n) (Js.string v)))
     headers;
   let callback () =
@@ -54,12 +56,12 @@ let post ?(headers=[]) ?(get_args=[]) ~url ~body =
     | 200 -> Lwt.wakeup w (Js.to_string req##.responseText)
     | 204 -> Lwt.wakeup w ""
     | code (* including 0 *) -> Lwt.wakeup_exn w
-	  (Request_failed (code, Js.to_string req##.responseText))
+    (Request_failed (code, Js.to_string req##.responseText))
   in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with
-	     XmlHttpRequest.DONE -> callback ()
-	   | _ -> ()));
+       XmlHttpRequest.DONE -> callback ()
+     | _ -> ()));
   let body = Js.Opt.map (Js.Opt.option body) Js.string in
   req##(send body);
   Lwt.on_cancel res (fun () -> req##abort);

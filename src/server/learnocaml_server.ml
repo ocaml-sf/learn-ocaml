@@ -415,7 +415,7 @@ module Request_handler = struct
                       content_type = "text/csv";
                       caching = Nocache}
 
-      | Api.Exercise_index token ->
+      | Api.Exercise_index (Some token) ->
           Exercise.Index.get () >>= fun index ->
           Token.check_teacher token >>= (function
               | true -> Lwt.return (index, [])
@@ -431,7 +431,10 @@ module Request_handler = struct
                            k true)
                     index (fun index -> Lwt.return (index, !deadlines)))
           >>= respond_json cache
-      | Api.Exercise (token, id) ->
+      | Api.Exercise_index None ->
+         lwt_fail (`Forbidden, "Forbidden")
+
+      | Api.Exercise (Some token, id) ->
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
@@ -440,7 +443,9 @@ module Request_handler = struct
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
-              lwt_fail (`Forbidden, "Exercise closed"))
+             lwt_fail (`Forbidden, "Exercise closed"))
+      | Api.Exercise (None, _) ->
+         lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Lesson_index () ->
           Lesson.Index.get () >>= respond_json cache

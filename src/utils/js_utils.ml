@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU Library General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
+open Js_of_ocaml
+
 let doc = Dom_html.document
 let window = Dom_html.window
 (* let loc = Js.Unsafe.variable "location" *)
@@ -423,9 +425,9 @@ module Manip = struct
       elt##.onscroll := (bool_cb f)
     let onreturn elt f =
       let f ev =
-	let key = ev##.keyCode in
-	if key = 13 then f ev;
-	true in
+  let key = ev##.keyCode in
+  if key = 13 then f ev;
+  true in
       onkeydown elt f
     let onchange elt f =
       let elt = get_elt_input "Ev.onchange" elt in
@@ -1226,6 +1228,6 @@ let worker_with_code code =
   let url = Dom_html.window##._URL##createObjectURL blob in
   Worker.create (Js.to_string url)
 
-let worker url =
+let _worker url =
   let open Lwt.Infix in
   Lwt_request.get ?headers:None ~url ~args:[] >|= worker_with_code

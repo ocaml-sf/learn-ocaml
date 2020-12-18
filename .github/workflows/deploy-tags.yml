@@ -1,0 +1,48 @@
+# Note: you may want to update this file and deploy-master.yml at once
+name: Publish latest (Docker image of tags)
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  push_server:
+    name: Push learn-ocaml image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Get tag name
+        run: tag="${{ github.ref }}"; echo "::set-output name=tag::${tag#refs/tags/}"
+        id: tag
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v1
+        with:
+          always_pull: true
+          add_git_labels: true
+          labels: "org.opencontainers.image.version=${{ steps.tag.outputs.tag }}"
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ocamlsf/learn-ocaml
+          tags: latest
+          tag_with_ref: true
+  push_client:
+    name: Push learn-ocaml-client image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Get tag name
+        run: tag="${{ github.ref }}"; echo "::set-output name=tag::${tag#refs/tags/}"
+        id: tag
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v1
+        with:
+          always_pull: true
+          add_git_labels: true
+          labels: "org.opencontainers.image.version=${{ steps.tag.outputs.tag }}"
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ocamlsf/learn-ocaml-client
+          target: client
+          tags: latest
+          tag_with_ref: true

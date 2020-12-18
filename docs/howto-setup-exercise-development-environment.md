@@ -17,7 +17,7 @@ GNU/Linux and MacOS X are supported.
 >       -v $REPOSITORY:/repository:ro \
 >       -v learn-ocaml-sync:/sync \
 >       -p 80:8080 --name learn-ocaml-server \
->       teachingfp/learn-ocaml:latest
+>       ocamlsf/learn-ocaml:master
 >
 > This will start an instance of the learn-ocaml server on port 80 (ignore the
 > message about 8080, this is the port used internally).
@@ -107,3 +107,4 @@ the next tutorial [How to write exercises?](../howto-write-exercises)
 
 ### Issues
 After major changes, you might need to reinstall the dependencies. Use `opam switch reinstall`.
+the next tutorial [How to write exercises?](howto-write-exercises.md)

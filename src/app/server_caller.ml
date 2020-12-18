@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml
 open Lwt.Infix
 
 (*
@@ -71,9 +72,8 @@ let () =
               (Printexc.to_string e))
   | _ -> None
 
-let urlpath =
-  let api_server = "" in
-  fun p -> String.concat "/" (api_server::p)
+let urlpath p =
+  String.concat "/" (Learnocaml_config.api_server :: p)
 
 let request req =
   let do_req = function

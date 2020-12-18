@@ -7,6 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml_compiler
+open Js_of_ocaml
 
 let split_primitives p =
   let len = String.length p in

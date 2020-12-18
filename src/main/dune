@@ -15,6 +15,8 @@
  (modules Learnocaml_main)
  (libraries cmdliner
             sha
+            markup
+            markup-lwt
             learnocaml_process_repository_lib
             learnocaml_server_lib
             learnocaml_server_args
