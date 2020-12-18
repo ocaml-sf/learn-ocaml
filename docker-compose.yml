@@ -44,8 +44,6 @@ services:
     environment:
       - PORT=8000
       - DB_CONN=mongodb://mongodb:27017/learn-ocaml-code
-      - COMP_COLLECTION=compileCode
-      - EVAL_COLLECTION=evalCode
     volumes:
       - ./node:/node/app
       - node_modules:/node/app/node_modules

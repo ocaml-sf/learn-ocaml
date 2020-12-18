@@ -24,21 +24,47 @@ app.use(function(req, res, next) {
   });
 
 
-// receive the POST from the client javascript file
-app.post("/", function (req, res)
+app.post("/grade", function (req, res)
 {
   if (req.body)
   {
     const raw_array = req.body;
     const split_array = raw_array.split(",");
-    let parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
+    const collection = JSON.parse(split_array[3]);
+    let parsedSolStr = split_array.slice(4).join(' ').slice(0, -1);
     const obj = new Object();
     obj.studentId = split_array[1];
     obj.timestamp = new Date().toString();
     obj.solution = parsedSolStr;
     const jsonString = JSON.stringify(obj);
     const solution = JSON.parse( jsonString ); // parse req.body as an object
-    db.collection(compile_collection).insertOne(solution);
+    db.collection(collection).insertOne(solution);
+    console.log(solution);
+    res.sendStatus(200); // success status
+  }
+  else
+  {
+    res.sendStatus(400); // error status
+  }
+});
+
+
+// receive the POST from the client javascript file
+app.post("/compile", function (req, res)
+{
+  if (req.body)
+  {
+    const raw_array = req.body;
+    const split_array = raw_array.split(",");
+    const collection = JSON.parse(split_array[3]);
+    let parsedSolStr = split_array.slice(4).join(' ').slice(0, -1);
+    const obj = new Object();
+    obj.studentId = split_array[1];
+    obj.timestamp = new Date().toString();
+    obj.solution = parsedSolStr;
+    const jsonString = JSON.stringify(obj);
+    const solution = JSON.parse( jsonString ); // parse req.body as an object
+    db.collection(collection).insertOne(solution);
     console.log(solution);
     res.sendStatus(200); // success status
   }
@@ -54,14 +80,16 @@ app.post("/eval", function (req, res)
   {
     const raw_array = req.body;
     const split_array = raw_array.split(",");
-    const parsedSolStr = split_array.slice(3).join(' ').slice(0, -1);
+    const collection = JSON.parse(split_array[3]);
+    const parsedSolStr = split_array.slice(4).join(' ').slice(0, -1);
     const obj = new Object();
     obj.studentId = split_array[1];
     obj.timestamp = new Date().toString();
     obj.solution = parsedSolStr;
+
     const jsonString = JSON.stringify(obj);
     const solution = JSON.parse( jsonString ); // parse req.body as an object
-    db.collection(eval_collection).insertOne(solution);
+    db.collection(collection).insertOne(solution);
     console.log(solution);
     res.sendStatus(200); // success status
   }
