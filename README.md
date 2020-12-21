@@ -60,11 +60,11 @@ to redistribute it. See (http://www.exljbris.com/eula.html). You will
 optionally have to procure the files by yourself while building the
 app. If not, the CSS provides a reasonable fallback font.
 
-Contributions to this repository are placed under the BSD
+Contributions to this repository are placed under the MIT
 license. This means that we can merge them with the same license as
 the rest of the codebase, while you keep all the rights on your code.
 And we will not have to bother you with any future license update.
-See (https://opensource.org/licenses/BSD-3-Clause).
+See (https://opensource.org/licenses/MIT).
 
 Authors and Acknowledgements
 ----------------------------
