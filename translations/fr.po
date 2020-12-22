@@ -1,4 +1,5 @@
 # LEARN-OCAML FRENCH TRANSLATION
+# Copyright (C) 2020 OCaml Software Foundation.
 # Copyright (C) 2018 OCamlPro
 # Louis Gesbert <louis.gesbert@ocamlpro.com>, 2018.
 #
@@ -941,6 +942,14 @@ msgstr "lors du test de la solution utilisateur"
 #~ msgstr ""
 #~ "Le téléchargement de l'archive a échoué. Veuillez réessayer "
 #~ "ulterieurement!"
+
+msgid "Do you want to save your work before closing?"
+msgstr "Souhaitez-vous enregistrer votre travail avant de quitter?"
+
+msgid "A more recent answer exists on the server. Do you want to update the current one?"
+msgstr ""
+"Une version plus récente de cette réponse existe sur le serveur."
+"Voulez-vous la télécharger?"
 
 #~ msgid "No description available."
 #~ msgstr "Aucune description."
