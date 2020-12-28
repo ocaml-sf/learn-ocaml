@@ -15,11 +15,19 @@ let cert_key_files = ref None
 
 let log_channel = ref (Some stdout)
 
+let base_url = ref ""
+
 let args = Arg.align @@
   [ "-static-dir", Arg.Set_string static_dir,
     "PATH where static files should be found (./www)" ;
     "-sync-dir", Arg.Set_string sync_dir,
     "PATH where sync tokens are stored (./sync)" ;
+    "-base-url", Arg.Set_string base_url,
+    "BASE_URL of the website. \
+     Should not end with a trailing slash. \
+     Currently, this has no effect on the native backend. \
+     Mandatory for 'learn-ocaml build' if the site is not hosted in path '/', \
+     which typically occurs for static deployment." ;
     "-port", Arg.Set_int port,
     "PORT the TCP port (8080)" ]
 
