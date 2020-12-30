@@ -69,7 +69,7 @@ See (https://opensource.org/licenses/MIT).
 Authors and Acknowledgements
 ----------------------------
 
-Learn-OCaml is a free software by the [OCaml Software Foundation](http://ocaml-sf.org).
+Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 
