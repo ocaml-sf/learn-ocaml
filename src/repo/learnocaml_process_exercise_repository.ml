@@ -237,8 +237,7 @@ let main dest_dir =
                  let d = Filename.concat ex_dir base in
                  let dst = String.concat Filename.dir_sep [dst_ex_dir; base] in
                  if Sys.is_directory d && base.[0] <> '.' then
-                   (Lwt_utils.mkdir_p (Filename.dirname dst) >>= fun () ->
-                    Lwt_utils.copy_tree d dst)
+                    Lwt_utils.copy_tree d dst
                  else Lwt.return_unit)
                  (Lwt_unix.files_of_directory ex_dir) >>= fun () ->
                if not changed then begin
