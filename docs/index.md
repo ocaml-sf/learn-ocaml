@@ -19,6 +19,7 @@ Howtos
 * [How to write exercises?](./howto-write-exercises.md)
 * [How to submit an exercise to the global corpus?](./howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](./howto-deploy-a-learn-ocaml-instance.md)
+* [How to deploy Learn-OCaml statically?](./howto-deploy-learn-ocaml-statically.md)
 
 Contacts
 --------

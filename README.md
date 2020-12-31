@@ -19,6 +19,7 @@ Howtos
 * [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
 * [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-a-learn-ocaml-instance.md)
+* [How to deploy Learn-OCaml statically?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-learn-ocaml-statically.md)
 
 Contacts
 --------
