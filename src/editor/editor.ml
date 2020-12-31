@@ -545,7 +545,12 @@ let () =
   let callback text =
     Manip.appendChild messages Tyxml_js.Html5.(li [ pcdata text ]) in
 
-  let worker () = ref (Grading_jsoo.get_grade ~callback (exo_creator id)  ) in
+  let reset_worker () :
+    (string ->
+      (Learnocaml_report.item list * string * string * string) Lwt.t) Lwt.t =
+    Lwt.return (fun _s -> failwith "no worker") in
+  let gen_worker () = Grading_jsoo.get_grade ~callback (exo_creator id) in
+  let worker = ref (reset_worker ()) in
   let grade () =
     let aborted, abort_message =
       let t, u = Lwt.task () in
@@ -561,6 +566,7 @@ let () =
     Manip.replaceChildren messages
       Tyxml_js.Html5.[ li [ pcdata [%i"Launching the grader"] ] ] ;
     show_load "learnocaml-exo-loading" [ messages ; abort_message ];
+    worker := gen_worker () ;
     Lwt_js.sleep 1. >>= fun () ->
     let prelprep = (Ace.get_contents ace_prel ^ "\n" ^ Ace.get_contents ace_prep ^ "\n") in
     let solution = Ace.get_contents ace in
@@ -570,12 +576,12 @@ let () =
         let grading =
           Lwt.finalize
             (fun () ->
-               !(worker ()) >>= fun w ->
+               !worker >>= fun w ->
                w solution >>= fun (report, _, _, _) ->
                Lwt.return report)
             (fun () ->
-               (worker ()) := get_grade ~callback (exo_creator id);
-               Lwt.return_unit)
+              worker := reset_worker () ;
+              Lwt.return_unit)
         in
        let abortion =
          Lwt_js.sleep 5. >>= fun () ->
@@ -585,13 +591,13 @@ let () =
              ([ Text [%i"Grading aborted by user."] ], Failure) ] in
        Lwt.pick [ grading ; abortion ] >>= fun report ->
        let _grade =  display_report (exo_creator id) report in
-       (worker() ) := Grading_jsoo.get_grade ~callback (exo_creator id) ;
        select_tab "report" ;
        Lwt_js.yield () >>= fun () ->
        hide_loading ~id:"learnocaml-exo-loading" () ;
        Lwt.return ()
     | Toploop_results.Error _ ->
        select_tab "report" ;
+       worker := reset_worker () ;
        Lwt_js.yield () >>= fun () ->
        hide_loading ~id:"learnocaml-exo-loading" () ;
        typecheck_editor () in
