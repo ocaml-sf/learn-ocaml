@@ -5,7 +5,7 @@ This is Learn-OCaml, a platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-A demo is available at: [http://learn-ocaml.hackojo.org/](http://learn-ocaml.hackojo.org/).
+A demo is available at [https://ocaml-sf.org/learn-ocaml-public/](online).
 
 [![CI](https://github.com/ocaml-sf/learn-ocaml/workflows/CI/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3ACI)
 [![macOS](https://github.com/ocaml-sf/learn-ocaml/workflows/macOS/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3AmacOS)
