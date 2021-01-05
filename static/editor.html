@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
     <title>Learn OCaml by OCamlPro - Editor</title>
-    <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
-    <!--[if IE]><link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico"     /><![endif]-->
+    <link rel="icon" type="image/x-icon" href="/icons/favicon.ico" />
+    <!--[if IE]><link rel="shortcut icon" type="image/x-icon" href="/icons/favicon.ico"     /><![endif]-->
     <link rel="stylesheet" href="/css/learnocaml_common.css">
     <link rel="stylesheet" href="/css/learnocaml_editor.css">
     <link rel="stylesheet" href="/css/learnocaml_report.css">
@@ -47,13 +47,13 @@
     </div>
     <script language="JavaScript">
         var n = Math.floor(Math.random() * 9) + 1;
-        document.getElementById('chamo-img').src = '/icons/tryocaml_loading_' + n + '.gif';
+        document.getElementById('chamo-img').src = learnocaml_config.baseUrl + '/icons/tryocaml_loading_' + n + '.gif';
     </script>
     <div id="learnocaml-loading" class="loading-layer loaded">
     </div>
     <!-- Anything below could be recreated dynamically, but IDs must be kept. -->
     <div id="learnocaml-exo-toolbar">
-        <a href="./">
+        <a href="/">
             <div class="logo">
                 <img src="/icons/logo_ocaml.svg">
                 <span>Learn OCaml</span>
@@ -62,7 +62,7 @@
         </a>
         <!--
       <button id="learnocaml-exo-button-grade">
-        <img src="icons/icon_reload_light.svg">
+        <img src="/icons/icon_reload_light.svg">
         <span class="label">Grade!</span>
       </button>
       -->
@@ -103,19 +103,19 @@
                 <!-- Any button can be added.
                Structure: button>img, button>span.label. -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_typecheck_light.svg"> -->
+                <!--   <img src="/icons/icon_typecheck_light.svg"> -->
                 <!--   <span class="label">Typecheck</span> -->
                 <!-- </button> -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_cleanup_light.svg"> -->
+                <!--   <img src="/icons/icon_cleanup_light.svg"> -->
                 <!--   <span class="label">Reset</span> -->
                 <!-- </button> -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_download_light.svg"> -->
+                <!--   <img src="/icons/icon_download_light.svg"> -->
                 <!--   <span class="label">Download</span> -->
                 <!-- </button> -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_save_light.svg"> -->
+                <!--   <img src="/icons/icon_save_light.svg"> -->
                 <!--   <span class="label">Save</span> -->
                 <!-- </button> -->
             </div>
@@ -132,15 +132,15 @@
                 <!-- Any button can be added.
                Structure: button>img, button>span.label. -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_run_dark.svg"> -->
+                <!--   <img src="/icons/icon_run_dark.svg"> -->
                 <!--   <span class="label">Reset &amp; Run</span> -->
                 <!-- </button> -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_cleanup_dark.svg"> -->
+                <!--   <img src="/icons/icon_cleanup_dark.svg"> -->
                 <!--   <span class="label">Reset</span> -->
                 <!-- </button> -->
                 <!-- <button> -->
-                <!--   <img src="icons/icon_download_dark.svg"> -->
+                <!--   <img src="/icons/icon_download_dark.svg"> -->
                 <!--   <span class="label">Download</span> -->
                 <!-- </button> -->
             </div>
@@ -148,7 +148,7 @@
 
         <div id="learnocaml-exo-tab-report">
             <!-- Using an iframe is the easiest way to isolate the CSSs. -->
-            <!-- <iframe src="mockup_report.html"></iframe> -->
+            <!-- <iframe src="/mockup_report.html"></iframe> -->
             <img src="/icons/icon_reload_dark.svg" style="position: absolute; top: 50%; left: 50%;
                     margin: -100px 0 0 -100px; width: 200px;
                     opacity: 0.2">
