@@ -602,8 +602,10 @@ let () =
        hide_loading ~id:"learnocaml-exo-loading" () ;
        typecheck_editor () in
   begin toolbar_button
+          ~group: toplevel_buttons_group
+          (* so "Check" disables "Save&Grade!" and conversely *)
           ~icon: "reload" [%i"Save&Grade!"] @@ fun () ->
-                                     recovering ();            
+                                     recovering ();
                                      grade ();
   end ;
   onchange [ace_temp; ace_t; ace_prep; ace_prel; ace_quest; ace ];
