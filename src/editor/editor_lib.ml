@@ -11,6 +11,7 @@
 
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 open Learnocaml_index
 open Lwt.Infix
 open Js_utils
@@ -96,7 +97,7 @@ let show_load id contents =
   Manip.(removeClass elt "loaded") ;
   Manip.(addClass elt "loading") ;
   let chamo_src =
-    "icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
+    api_server ^ "/icons/tryocaml_loading_" ^ string_of_int (Random.int 8 + 1) ^ ".gif" in
   Manip.replaceChildren elt
     Tyxml_js.Html.[
       div ~a: [ a_id "chamo" ] [ img ~alt: "loading" ~src: chamo_src () ] ;
@@ -562,7 +563,7 @@ module Editor_components = struct
     in
     let drop_button =
       H.(button ~a:[a_class ["dropbtn"]] [ 
-             img ~alt:"" ~src:("/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
+             img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
              pcdata " " ;
              span ~a:[ a_class [ "label" ] ] [ pcdata name ]
       ])
