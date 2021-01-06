@@ -13,8 +13,9 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 open Editor
-open Editor_lib   
+open Editor_lib
 open Tyxml_js.Html5
 
 
@@ -90,12 +91,12 @@ let editor_tab  _ _ () =
         (fun exercise_id editor_sate acc ->
           div ~a:[a_id "toolbar"; a_class ["button"]] [
               (let button = button ~a:[a_id exercise_id]
-                              [img ~src:"icons/icon_cleanup_dark.svg"
+                              [img ~src:(api_server ^ "/icons/icon_cleanup_dark.svg")
                                  ~alt:"" () ; pcdata "" ] in
                Manip.Ev.onclick button
                  (delete_button_handler exercise_id); button);
               (let download_button = button ~a:[a_id exercise_id]
-                              [img ~src:"icons/icon_download_dark.svg"
+                              [img ~src:(api_server ^ "/icons/icon_download_dark.svg")
                                  ~alt:"" () ; pcdata "" ] in
                Manip.Ev.onclick download_button
                  (fun _ ->  Editor_io.download exercise_id; true) ;download_button
@@ -117,7 +118,7 @@ let editor_tab  _ _ () =
                    let alt =
                      Format.asprintf "difficulty: %d / 40" num in
                    let src =
-                     Format.asprintf "icons/stars_%02d.svg" num in
+                     api_server ^ (Format.asprintf "/icons/stars_%02d.svg" num) in
                    img ~alt ~src ()
                  ] ;
                div ~a:[ a_class [ "length" ] ] [
