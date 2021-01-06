@@ -12,7 +12,6 @@
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
-open Grade_exercise
 open Learnocaml_config
 open Learnocaml_data
 open Js_of_ocaml
@@ -20,6 +19,7 @@ open Editor_lib
 open Dom_html
 open Test_spec
 open Editor_components
+open Grade_exercise
 
 module H = Tyxml_js.Html
 
@@ -147,9 +147,9 @@ let () =
       ~on_update
       ~max_size: 99
       ~snapshot () in
-
+  get_worker_code "learnocaml-toplevel-worker.js" () >>= fun worker_js_file ->
   let toplevel_launch =
-    Learnocaml_toplevel.create
+    Learnocaml_toplevel.create ~worker_js_file
       ~after_init ~timeout_prompt ~flood_prompt
       ~on_disable_input: (fun _ -> disable_button_group toplevel_buttons_group)
       ~on_enable_input: (fun _ -> enable_button_group toplevel_buttons_group)
@@ -548,7 +548,7 @@ let () =
     (string ->
       (Learnocaml_report.item list * string * string * string) Lwt.t) Lwt.t =
     Lwt.return (fun _s -> failwith "no worker") in
-  let gen_worker () = Grading_jsoo.get_grade ~callback (exo_creator id) in
+  let gen_worker () = get_grade ~callback (exo_creator id) in
   let worker = ref (reset_worker ()) in
   let grade () =
     let aborted, abort_message =
