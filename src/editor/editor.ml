@@ -117,6 +117,7 @@ let () =
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
 
+  (* TODO/FIXME: Extend and Use Learnocaml_common.toplevel_launch *)
   let after_init top =
     begin
        Lwt.return true
@@ -126,6 +127,7 @@ let () =
     if not r1 || not r2 then failwith [%i"unexpected error"];
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
+
   let timeout_prompt =
     Learnocaml_toplevel.make_timeout_popup
       ~on_show: (fun () -> select_tab "toplevel")
