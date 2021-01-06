@@ -220,7 +220,7 @@ let () =
         begin toolbar_button
        ~icon: "upload" [%i"Edit"] @@ fun ()->
        Dom_html.window##.location##assign
-       (Js.string ("editor.html#id=" ^ id ^ "&action=open"));
+       (Js.string (api_server ^ "/editor.html#id=" ^ id ^ "&action=open"));
        Lwt.return_unit
         end;
       end

@@ -527,7 +527,6 @@ let () =
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
       Dom_html.window##.location##assign
-        (* FIXME/TODO: Test! *)
         (Js.string (api_server ^ "/index.html#activity=editor"));
     Lwt.return ()
   end;
