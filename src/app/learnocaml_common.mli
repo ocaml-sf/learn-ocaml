@@ -23,6 +23,14 @@ val fatal : ?title: string -> string -> unit
 
 val alert : ?title: string -> ?buttons: Html_types.div_content Tyxml_js.Html.elt list -> string -> unit
 
+val box_button :
+  string Tyxml_js.Html5.wrap -> (unit -> 'a) ->
+  [> Html_types.button ] Tyxml_js.Html5.elt
+
+val close_button :
+  string Tyxml_js.Html5.wrap ->
+  [> Html_types.button ] Tyxml_js.Html5.elt
+
 val ext_alert :
   title: string ->
   ?buttons: Html_types.div_content_fun Tyxml_js.Html.elt list ->
