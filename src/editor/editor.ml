@@ -260,7 +260,7 @@ let () =
   let old_text = ref "" in
 
   let onload () =
-   let rec dyn_preview =
+   let dyn_preview =
      let text = Ace.get_contents ace_quest in
      let question = Omd.to_html ~override:override_url (Omd.of_string text) in
       if text <> !old_text then begin
