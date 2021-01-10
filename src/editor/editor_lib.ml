@@ -293,18 +293,21 @@ let genTemplate top ?(on_err = fun () -> ()) sol =
     else Lwt.return (let () = on_err () in "")
 
 (* ---- create an exo ------------------------------------------------------- *)
+
 let exo_creator proper_id =
   let exercise = (get_editor_state proper_id).exercise in
   let read_field field =
       match field with
-      | "id"-> Some exercise.id
+      | "id" -> Some exercise.id (* XXX = proper_id *)
       | "prelude.ml" -> Some exercise.prelude
       | "template.ml" -> Some exercise.template
-      | "descr.md" -> Some exercise.descr
+      | "descr.md" -> (* FIXME: SHOULD BE 'Some exercise.descr' *)
+         Some "<p>Note: question export disabled for the time being; otherwise descrs_from_string raises a Stack_overflow on strings of size 14000.</p>"
       | "prepare.ml" -> Some exercise.prepare
-      | "test.ml" -> Some exercise.test
       | "solution.ml" -> Some exercise.solution
-      |  "max_score" -> Some (string_of_int exercise.max_score)
+      | "test.ml" -> Some exercise.test
+      | "max_score.txt" -> Some (string_of_int exercise.max_score)
+      | "depend.txt" -> None (* TODO: Add support *)
       | _ -> None
   in
   Learnocaml_exercise.read

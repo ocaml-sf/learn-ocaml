@@ -90,18 +90,24 @@ let () =
 
   (* if we came from a true exercise we search in the server.
    In the other case we get the exercise information from the Local storage *)
+  (* FIXME: for debug purposes; to be removed:
+  let ok str = lwt_alert ~title:"TEST1" ~buttons:["OK", (fun () -> Lwt.return_unit)]
+                [ H.p [H.txt (String.trim str)] ] in *)
   let exercise_fetch = match idEditor id with
     | false -> token >>= fun token ->
                retrieve (Learnocaml_api.Exercise (token, id))
 
     | true -> let proper_id = String.sub id 1 ((String.length id)-1) in
-              Lwt.return ((Editor_lib.get_editor_state proper_id).Editor.metadata,
-                          (Editor_lib.exo_creator proper_id ),
-                          None)
+              let state = Editor_lib.get_editor_state proper_id in
+              (* FIXME: for debug purposes; to be removed:
+              ok state.Editor.metadata.title >>= fun () -> *)
+              let exo = Editor_lib.exo_creator proper_id in
+              Lwt.return (state.Editor.metadata, exo, None)
   in
 
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
+
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
