@@ -31,7 +31,7 @@ RUN opam install . --destdir /home/opam/install-prefix --locked
 FROM alpine:3.7 as client
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init \
+  && apk add ncurses-libs libev dumb-init openssl \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 
@@ -53,7 +53,7 @@ LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
 FROM alpine:3.7 as program
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init git \
+  && apk add ncurses-libs libev dumb-init git openssl \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 
