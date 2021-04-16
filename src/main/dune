@@ -48,4 +48,11 @@
  (name learnocaml_server_main)
  (modules learnocaml_server_main)
  (libraries learnocaml_server_args)
+ (flags       (:standard
+               (:include linking.sexp)))
 )
+
+(rule
+  (targets linking.sexp)
+  (mode    fallback)
+  (action  (with-stdout-to %{targets} (echo "()"))))
