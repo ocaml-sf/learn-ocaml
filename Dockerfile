@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.7 as compilation
+FROM ocaml/opam:alpine-3.13-ocaml-4.05 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR learn-ocaml
@@ -28,7 +28,7 @@ RUN cat /proc/cpuinfo /proc/meminfo
 RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
-FROM alpine:3.7 as client
+FROM alpine:3.13 as client
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init openssl \
@@ -50,7 +50,7 @@ LABEL org.opencontainers.image.url="https://ocaml-sf.org/"
 LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
 
 
-FROM alpine:3.7 as program
+FROM alpine:3.13 as program
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init git openssl \
