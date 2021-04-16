@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  schedule:
+    # deploy master every Saturday at 08:00 UTC
+    - cron: '0 8 * * 6'
 jobs:
   push_server:
     name: Push learn-ocaml image to Docker Hub
