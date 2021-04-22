@@ -47,14 +47,6 @@ let read_range range =
   ((range##.start##.row, range##.start##.column),
    (range##.end_##.row, range##.end_##.column))
 
-let get_contents ?range {editor} =
-  let document = (editor##getSession)##getDocument in
-  match range with
-  | None ->
-      Js.to_string @@ document##getValue
-  | Some r ->
-      Js.to_string @@ document##(getTextRange r)
-
 let set_contents ?(reset_undo=false) {editor} code =
   let session = editor##getSession in
   session##getDocument##setValue (Js.string code);
@@ -70,6 +62,24 @@ let get_selection {editor} =
 let get_line {editor} line =
   let document = (editor##getSession)##getDocument in
   Js.to_string @@ document##(getLine line)
+
+let get_contents ?range e =
+  let {editor} = e in
+  let document = (editor##getSession)##getDocument in
+  match range with
+  | None ->
+      Js.to_string @@ document##getValue
+  | Some r ->
+      (* Bytes range to utf8 string range conversion *)
+      let (r1,c1), (r2, c2) = read_range r in
+      let l1, l2 = get_line e r1, get_line e r2 in
+      let c1, c2 =
+        min (String.length l1) c1, min (String.length l2) c2
+      in
+      let c1 = (Js.string (String.sub l1 0 c1))##.length in
+      let c2 = (Js.string (String.sub l2 0 c2))##.length in
+      let r = create_range (create_position r1 c1) (create_position r2 c2) in
+      Js.to_string @@ document##(getTextRange r)
 
 let create_editor editor_div =
   let editor = edit editor_div in
@@ -122,7 +132,28 @@ let set_mark editor ?loc ?(type_ = Message) msg =
     | Some { loc_start = (sr, sc) ; loc_end = (er, ec) } ->
         let sr = sr - 1 in
         let er = er - 1 in
+        (* Corrects column positions for unicode strings *)
+        let line = Js.string (get_line editor sr) in
+        let unicode_arr = Js.Unsafe.fun_call
+            (Js.Unsafe.eval_string "Array.from")
+            (Array.make 1 (Js.Unsafe.inject line))
+        in
+        let unicode_list = Array.to_list (
+          Array.map (fun c -> String.length (Js.to_string c), c##.length)
+            (Js.to_array unicode_arr)
+        ) in
+        let rec aux before c i acc = function
+          | [] -> i
+          | (x, di)::q ->
+            let acc' = acc + x in
+            if (before && (acc' > c)) || ((not before) && (acc >= c))
+              then i else aux before c (i+di) acc' q
+        in
+        let sc = aux true sc 0 0 unicode_list in
+        let ec = aux false ec 0 0 unicode_list in
+        (* end position corrections *)
       sr, sc, Some (range sr sc er ec) in
+
   let annot : annotation Js.t = Js.Unsafe.obj [||] in
   annot##.row := sr;
   annot##.column := sc;
@@ -203,8 +234,10 @@ type token = Ace_types.token Js.t
 let token ~type_ value =
   let obj : Ace_types.token Js.t = Js.Unsafe.obj [||] in
   obj##.value := Js.string value;
+  obj##._val := value;
   obj##._type := Js.string type_;
   obj
+let get_token_val token = token##._val
 
 type doc = Ace_types.document Js.t
 
