@@ -11,7 +11,8 @@
  (name learnocaml_main)
  (modes byte)
  (ocamlc_flags :standard -custom)
- (flags :standard -linkall)
+ (flags (:standard -linkall
+         (:include linking_main.sexp)))
  (modules Learnocaml_main)
  (libraries cmdliner
             sha
@@ -29,7 +30,8 @@
  (name learnocaml_client)
  (modes byte)
  (ocamlc_flags :standard -custom)
- (flags :standard -linkall)
+ (flags (:standard -linkall
+         (:include linking_client.sexp)))
  (modules Learnocaml_client)
  (libraries cmdliner
  	    sha
@@ -49,10 +51,18 @@
  (modules learnocaml_server_main)
  (libraries learnocaml_server_args)
  (flags       (:standard
-               (:include linking.sexp)))
+               (:include linking_server.sexp)))
 )
 
 (rule
-  (targets linking.sexp)
+  (targets linking_main.sexp)
+  (mode    fallback)
+  (action  (with-stdout-to %{targets} (echo "()"))))
+(rule
+  (targets linking_client.sexp)
+  (mode    fallback)
+  (action  (with-stdout-to %{targets} (echo "()"))))
+(rule
+  (targets linking_server.sexp)
   (mode    fallback)
   (action  (with-stdout-to %{targets} (echo "()"))))
