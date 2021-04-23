@@ -64,8 +64,7 @@ let get_line {editor} line =
   Js.to_string @@ document##(getLine line)
 
 let get_contents ?range e =
-  let {editor} = e in
-  let document = (editor##getSession)##getDocument in
+  let document = (e.editor##getSession)##getDocument in
   match range with
   | None ->
       Js.to_string @@ document##getValue
@@ -133,15 +132,19 @@ let set_mark editor ?loc ?(type_ = Message) msg =
         let sr = sr - 1 in
         let er = er - 1 in
         (* Corrects column positions for unicode strings *)
-        let line = Js.string (get_line editor sr) in
-        let unicode_arr = Js.Unsafe.fun_call
-            (Js.Unsafe.eval_string "Array.from")
-            (Array.make 1 (Js.Unsafe.inject line))
+        let char_reg =
+          new%js Js.regExp_withFlags (Js.string ".") (Js.string "gu") in
+        let unicode_chars r =
+          let line = Js.string (get_line editor r) in
+          Js.Opt.case (line##_match char_reg) (fun () -> []) (fun x ->
+            let x = Js.match_result x in
+            List.init (x##.length) (fun i ->
+              let c = Js.Optdef.get (Js.array_get x i)
+                        (fun _ -> failwith "index error") in
+              (String.length (Js.to_string c), c##.length)
+            )
+          )
         in
-        let unicode_list = Array.to_list (
-          Array.map (fun c -> String.length (Js.to_string c), c##.length)
-            (Js.to_array unicode_arr)
-        ) in
         let rec aux before c i acc = function
           | [] -> i
           | (x, di)::q ->
@@ -149,8 +152,8 @@ let set_mark editor ?loc ?(type_ = Message) msg =
             if (before && (acc' > c)) || ((not before) && (acc >= c))
               then i else aux before c (i+di) acc' q
         in
-        let sc = aux true sc 0 0 unicode_list in
-        let ec = aux false ec 0 0 unicode_list in
+        let sc = aux true sc 0 0 (unicode_chars sr) in
+        let ec = aux false ec 0 0 (unicode_chars er) in
         (* end position corrections *)
       sr, sc, Some (range sr sc er ec) in
 
