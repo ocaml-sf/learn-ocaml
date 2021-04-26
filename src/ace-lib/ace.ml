@@ -132,28 +132,10 @@ let set_mark editor ?loc ?(type_ = Message) msg =
         let sr = sr - 1 in
         let er = er - 1 in
         (* Corrects column positions for unicode strings *)
-        let char_reg =
-          new%js Js.regExp_withFlags (Js.string ".") (Js.string "gu") in
-        let unicode_chars r =
-          let line = Js.string (get_line editor r) in
-          Js.Opt.case (line##_match char_reg) (fun () -> []) (fun x ->
-            let x = Js.match_result x in
-            List.init (x##.length) (fun i ->
-              let c = Js.Optdef.get (Js.array_get x i)
-                        (fun _ -> failwith "index error") in
-              (String.length (Js.to_string c), c##.length)
-            )
-          )
-        in
-        let rec aux before c i acc = function
-          | [] -> i
-          | (x, di)::q ->
-            let acc' = acc + x in
-            if (before && (acc' > c)) || ((not before) && (acc >= c))
-              then i else aux before c (i+di) acc' q
-        in
-        let sc = aux true sc 0 0 (unicode_chars sr) in
-        let ec = aux false ec 0 0 (unicode_chars er) in
+        let sline = get_line editor sr in
+        let eline = get_line editor er in
+        let sc = Js_utils.pos8_to_pos16 sline sc in
+        let ec = Js_utils.pos8_to_pos16 ~stop_before:false eline ec in
         (* end position corrections *)
       sr, sc, Some (range sr sc er ec) in
 
