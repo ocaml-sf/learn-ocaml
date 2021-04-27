@@ -298,12 +298,14 @@ let get_line_tokens line st row doc =
         if !debug_indent > 1 && tok.token <> EOL && tok.token <> ESCAPED_EOL then
           IndentBlock.dump block;
         let st = { block; lex_ctxt; } in
+        let type_ = token_type tok.token in
         match tok.token, tokens with
         | ILLEGAL_CHAR c, t::toks ->
-          let type_ = "error" in
           let t = Ace.token ~type_ ((Ace.get_token_val t)^(String.make 1 c)) in
           iter st offset stream (t :: toks)
-
+        | STRING_CONTENT, t::toks ->
+          let t = Ace.token ~type_ ((Ace.get_token_val t)^tok.between^tok.substr) in
+          iter st offset stream (t :: toks)
         | EOL, _ | ESCAPED_EOL, _ ->
             (* FIXME some spaces ??? *)
             (st, List.rev tokens)

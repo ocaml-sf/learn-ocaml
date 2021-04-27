@@ -72,11 +72,8 @@ let get_contents ?range e =
       (* Bytes range to utf8 string range conversion *)
       let (r1,c1), (r2, c2) = read_range r in
       let l1, l2 = get_line e r1, get_line e r2 in
-      let c1, c2 =
-        min (String.length l1) c1, min (String.length l2) c2
-      in
-      let c1 = (Js.string (String.sub l1 0 c1))##.length in
-      let c2 = (Js.string (String.sub l2 0 c2))##.length in
+      let c1 = Js_utils.pos8_to_pos16 l1 c1 in
+      let c2 = Js_utils.pos8_to_pos16 l2 c2 in
       let r = create_range (create_position r1 c1) (create_position r2 c2) in
       Js.to_string @@ document##(getTextRange r)
 
