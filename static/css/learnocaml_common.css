@@ -210,7 +210,6 @@ button[disabled]::before {
   -khtml-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  cursor: default;
 }
 @media (max-width: 549px) {
   .logo {
