@@ -250,7 +250,7 @@ end
 
 open Args
 
-let process_html_file orig_file dest_file base_url =
+let process_html_file orig_file dest_file base_url no_secret =
   let transform_tag e tag attrs attr =
     let attr_pair = ("", attr) in
     match List.assoc_opt attr_pair attrs with
@@ -266,6 +266,9 @@ let process_html_file orig_file dest_file base_url =
          | `Start_element ((e, "script"), attrs) -> transform_tag e "script" attrs "src"
          | `Start_element ((e, "img"), attrs) -> transform_tag e "img" attrs "src"
          | `Start_element ((e, "a"), attrs) -> transform_tag e "a" attrs "href"
+         | `Start_element ((e, "div"),attrs)
+              when no_secret && List.mem (("", "id"), "secret-section") attrs ->
+            `Start_element ((e, "div"), (("", "style"), "display:none")::attrs)
          | t -> t)
   |> Markup.pretty_print
   |> Markup.write_html
@@ -330,9 +333,10 @@ let main o =
            Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
        Lwt_unix.files_of_directory o.builder.Builder.contents_dir
        |> Lwt_stream.iter_s (fun file ->
+              let config_secret = json_config.ServerData.secret in
               if Filename.extension file = ".html" then
-                process_html_file (o.builder.Builder.contents_dir/file)
-                  (o.app_dir/file) o.builder.Builder.base_url
+                  process_html_file (o.builder.Builder.contents_dir/file)
+                    (o.app_dir/file) o.builder.Builder.base_url (config_secret = None)
               else
                 Lwt.return_unit) >>= fun () ->
        let if_enabled opt dir f = (match opt with
