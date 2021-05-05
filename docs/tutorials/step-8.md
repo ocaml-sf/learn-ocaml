@@ -1,10 +1,10 @@
 # Step 8: Reusing the grader code
 
 This step explains how to separate the grader code, and eventually reuse it in
-other exercises. 
+other exercises.
 
 During the grading, the file **test.ml** is evaluated in an environment that
-contains notably: 
+contains notably:
 - **prelude.ml** and **prepare.ml** ;
 - the student code isolated in a module `Code` ;
 - **solution.ml** in a module `Solution` ;
@@ -23,7 +23,7 @@ By default each dependency *foo.ml* is isolated in a module *Foo*, which can be
 constrained by the content of an optional signature file *foo.mli*. Furthermore,
 an annotation `[@@@included]` can be used at the beginning of a file *foo.ml* to
 denote that all the bindings of *foo.ml* are evaluated in the toplevel
-environment (and not in a module *Foo*). 
+environment (and not in a module *Foo*).
 
 Dependencies that are not defined at the root of the exercise repository are
 ignored by the build system: therefore, if you modify them, do not forget to
@@ -58,6 +58,7 @@ the exercise:
 │   │   ├── depend.txt
 │   │   │ ...
 ```
+
 The exercise **peano** follows the classical format : **prelude.ml**,
 **prepare.ml**, **solution.ml**, **template.ml** and **test.ml**.
 It also includes several dependencies (**check.ml**, **samples.ml**, **add.ml**
@@ -70,35 +71,35 @@ and **odd_even.ml**) which are declared as follows in **depend.txt**:
 tests/samples.ml
 tests/add.ml
 tests/odd_even.ml
-``` 
+```
 
 Here is in details the source code of the exercise :
 
-- **descr.md**
+- **descr.md**:
 
-> * implement the function `add : peano -> peano -> peano` ; 
+> * implement the function `add : peano -> peano -> peano` ;
 > * implement the functions `odd : peano -> bool` and `even : peano -> bool`.
 
-- **prelude.ml**
+- **prelude.ml**:
 ```ocaml
 type peano = Z | S of peano
 ```
 
-- **solution.ml**
+- **solution.ml**:
 ```ocaml
 let rec add n = function
 | Z -> n
 | S m -> S (add n m)
 
 let rec odd = function
-| Z -> false 
+| Z -> false
 | S n -> even n
 and even = function
 | Z -> true
 | S n -> odd n
 ```
 
-- **test.ml**
+- **test.ml**:
 ```ocaml
 let () =
 Check.safe_set_result [ Add.test ; Odd_even.test ]
@@ -115,28 +116,30 @@ open Report
 let safe_set_result tests =
 set_result @@
 ast_sanity_check code_ast @@ fun () ->
-List.mapi (fun i test -> 
+List.mapi (fun i test ->
 Section ([ Text ("Question " ^ string_of_int i ^ ":") ],
 test ())) tests
 ```
+
 - **../lib/check.mli**:
 ```ocaml
 val safe_set_result : (unit -> Report.t) list -> unit
 ```
 
-- **tests/add.ml**: 
+- **tests/add.ml**:
 ```ocaml
 let test () =
 Test_lib.test_function_2_against_solution
 [%ty : peano -> peano -> peano ] "add"
 [ (Z, Z) ; (S(Z), S(S(Z))) ]
 ```
-- **tests/odd_even.ml** :
+
+- **tests/odd_even.ml**:
 ```ocaml
 let test () =
 Test_lib.test_function_1_against_solution
 [%ty : peano -> bool ] "odd"
-[ Z ; S(Z) ; S(S(Z)) ] 
+[ Z ; S(Z) ; S(S(Z)) ]
 @
 Test_lib.test_function_1_against_solution
 [%ty : peano -> bool ] "even"
@@ -147,6 +150,7 @@ Remember that **Test_lib** internally requires a user-defined sampler
 has to be present in the toplevel environment -- and not in a module -- in order
 to be found by the introspection primitives during grading. Therefore,
 we define this sampler in a file starting with the annotation `[@@@included]`.
+
 - **tests/samples.ml**:
 ```ocaml
 [@@@included]
@@ -154,7 +158,7 @@ we define this sampler in a file starting with the annotation `[@@@included]`.
 let sample_peano () =
 let rec aux = function
 | 0 -> Z
-| n -> S (aux (n-1)) 
+| n -> S (aux (n-1))
 in aux (Random.int 42)
 ```
 
@@ -184,7 +188,5 @@ module Add : sig val test : unit -> Report.t end
 module Odd_even : sig val test : unit -> Report.t end
 ```
 
-In the end, this feature can provide an increased comfort for writing large a
-utomated graders and for reusing them in other exercises.
-
-
+In the end, this feature can provide an increased comfort for writing large
+automated graders and for reusing them in other exercises.

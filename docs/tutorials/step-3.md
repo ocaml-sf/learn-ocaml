@@ -84,7 +84,7 @@ let exercise_3 =
   `exercises/advanced-examples-step-3` directory (branch: step-3).
 
 There is nothing new to learn in this part, there are only more
-examples of how to build a sampler for more complexed types. In
+examples of how to build a sampler for more complexe types. In
 particular, there are examples with:
 
 * list
@@ -104,7 +104,6 @@ let exercise_2 =
     ~sampler:(fun () -> (Random.int 10, Random.int 10))
     []
 ```
-
 * type option
 ```ocaml
 let exercise_3 =
@@ -124,9 +123,7 @@ let exercise_4 =
     ~sampler:sampler_4
     []
 ```
-
 * functional type
-
 ```ocaml
 let sampler_5 () =
   let sampler_f () = match Random.int 3 with
@@ -144,9 +141,7 @@ let exercise_5 =
     []
 
 ```
-
 * array
-
 ```ocaml
 let sampler_6 =
   sample_array ~min_size:1 ~max_size:10 sample_int
@@ -158,7 +153,3 @@ let exercise_6 =
     ~sampler:sampler_6
     []
 ```
-
-
-
-

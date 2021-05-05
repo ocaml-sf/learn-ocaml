@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
+  schedule:
+    # test master every Saturday at 08:00 UTC
+    - cron: '0 8 * * 6'
+
+jobs:
+  build_test_server:
+    name: Build learn-ocaml and run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Build Docker images
+        run: "make docker-images"
+      - name: Run learn-ocaml build on demo-repository
+        run: "docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build"
+      - name: Clone learn-ocaml-corpus
+        run: "mkdir tests/corpuses && cd tests/corpuses && git clone --depth=1 https://github.com/ocaml-sf/learn-ocaml-corpus.git && cd ../.."
+      - name: Run learn-ocaml build on learn-ocaml-corpus
+        run: "cd tests && bash -c ./runtests.sh"
+
+  build_extra_tests:
+    name: Run dockerized tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - 'Dockerfile.test-client'
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Run docker build
+        run: 'file=${{ matrix.dockerfile }} && docker build -t "learn-ocaml-${file#*.}" -f "$file" .'
+
+# The Gitter webhook https://webhooks.gitter.im/e/f9e05a2b18ee814cbde2
+# was not ported to GitHub Actions syntax.

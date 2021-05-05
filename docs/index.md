@@ -5,9 +5,12 @@ This is Learn-OCaml, a platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-A demo is available at: [http://learn-ocaml.hackojo.org/](http://learn-ocaml.hackojo.org/).
+A demo is available [online](https://ocaml-sf.org/learn-ocaml-public/).
 
-![Build status logo](https://travis-ci.org/ocaml-sf/learn-ocaml.svg)
+[![CI](https://github.com/ocaml-sf/learn-ocaml/workflows/CI/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3ACI)
+[![macOS](https://github.com/ocaml-sf/learn-ocaml/workflows/macOS/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3AmacOS)
+[![learn-ocaml](https://img.shields.io/badge/docker-ocamlsf%2Flearn--ocaml-blue.svg)](https://hub.docker.com/r/ocamlsf/learn-ocaml "Docker image of learn-ocaml")
+[![learn-ocaml-client](https://img.shields.io/badge/docker-ocamlsf%2Flearn--ocaml--client-blue.svg)](https://hub.docker.com/r/ocamlsf/learn-ocaml-client "Docker image of learn-ocaml-client")
 
 Howtos
 ------
@@ -16,6 +19,7 @@ Howtos
 * [How to write exercises?](./howto-write-exercises.md)
 * [How to submit an exercise to the global corpus?](./howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](./howto-deploy-a-learn-ocaml-instance.md)
+* [How to deploy Learn-OCaml statically?](./howto-deploy-learn-ocaml-statically.md)
 
 Contacts
 --------
@@ -66,7 +70,7 @@ See [https://opensource.org/licenses/BSD-3-Clause](https://opensource.org/licens
 Authors and Acknowledgements
 ----------------------------
 
-Learn-OCaml is a software by OCamlPro.
+Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 

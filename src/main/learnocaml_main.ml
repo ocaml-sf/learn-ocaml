@@ -47,14 +47,14 @@ module Args = struct
       "Directory where the app should be generated for the $(i,build) command, \
        and from where it is served by the $(i,serve) command."
 
-  let root_url =
+  let base_url =
     value & opt string "" &
-      info ["root-url"] ~docv:"ROOT_URL" ~env:(Arg.env_var "LEARNOCAML_ROOT_URL") ~doc:
-        "Set the root URL of the website. \
+      info ["base-url"] ~docv:"BASE_URL" ~env:(Arg.env_var "LEARNOCAML_BASE_URL") ~doc:
+        "Set the base URL of the website. \
          Should not end with a trailing slash. \
-         Mandatory when the site is not hosted in path '/', \
-         which typically occurs for static deployment, \
-         or when use_moodle=true."
+         Currently, this has no effect on the backend - '$(b,learn-ocaml serve)'. \
+         Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
+         which typically occurs for static deployment."
 
   module Grader = struct
     let info = info ~docs:"GRADER OPTIONS"
@@ -196,15 +196,15 @@ module Args = struct
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
-      root_url: string
+      base_url: string
     }
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel root_url
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; root_url }
+        contents_dir try_ocaml lessons exercises playground toplevel base_url
+        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; base_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $root_url)
+      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -245,16 +245,16 @@ module Args = struct
       { commands; app_dir; repo_dir; grader; builder; server }
     in
     Term.(const apply $commands $app_dir $repo_dir
-          $Grader.term $Builder.term $Server.term app_dir root_url)
+          $Grader.term $Builder.term $Server.term app_dir base_url)
 end
 
 open Args
 
-let process_html_file orig_file dest_file root_url =
+let process_html_file orig_file dest_file base_url no_secret =
   let transform_tag e tag attrs attr =
     let attr_pair = ("", attr) in
     match List.assoc_opt attr_pair attrs with
-    | Some url -> `Start_element ((e, tag), (attr_pair, root_url ^ url) :: (List.remove_assoc attr_pair attrs))
+    | Some url -> `Start_element ((e, tag), (attr_pair, base_url ^ url) :: (List.remove_assoc attr_pair attrs))
     | None -> `Start_element ((e, tag), attrs) in
   Lwt_io.open_file ~mode:Lwt_io.Input orig_file >>= fun ofile ->
   Lwt_io.open_file ~mode:Lwt_io.Output dest_file >>= fun wfile ->
@@ -266,6 +266,9 @@ let process_html_file orig_file dest_file root_url =
          | `Start_element ((e, "script"), attrs) -> transform_tag e "script" attrs "src"
          | `Start_element ((e, "img"), attrs) -> transform_tag e "img" attrs "src"
          | `Start_element ((e, "a"), attrs) -> transform_tag e "a" attrs "href"
+         | `Start_element ((e, "div"),attrs)
+              when no_secret && List.mem (("", "id"), "secret-section") attrs ->
+            `Start_element ((e, "div"), (("", "style"), "display:none")::attrs)
          | t -> t)
   |> Markup.pretty_print
   |> Markup.write_html
@@ -326,11 +329,14 @@ let main o =
          let json_config = ServerData.build_config preconfig in
          Learnocaml_store.write_to_file ServerData.config_enc json_config www_server_config
        >>= fun () ->
+         if o.builder.Builder.base_url <> "" then
+           Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
        Lwt_unix.files_of_directory o.builder.Builder.contents_dir
        |> Lwt_stream.iter_s (fun file ->
+              let config_secret = json_config.ServerData.secret in
               if Filename.extension file = ".html" then
-                process_html_file (o.builder.Builder.contents_dir/file)
-                  (o.app_dir/file) o.builder.Builder.root_url
+                  process_html_file (o.builder.Builder.contents_dir/file)
+                    (o.app_dir/file) o.builder.Builder.base_url (config_secret = None)
               else
                 Lwt.return_unit) >>= fun () ->
        let if_enabled opt dir f = (match opt with
@@ -367,7 +373,7 @@ let main o =
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
               \  enableToplevel: %b,\n\
-              \  rootUrl: \"%s\",\n\
+              \  baseUrl: \"%s\",\n\
               \  enablePasswd: %b,\n\
               \  enableMoodle: %b\n\
                }\n"
@@ -376,7 +382,7 @@ let main o =
               (lessons_ret <> None)
               (exercises_ret <> None)
               (o.builder.Builder.toplevel <> Some false)
-              o.builder.Builder.root_url
+              o.builder.Builder.base_url
               preconfig.ServerData.use_passwd
               preconfig.ServerData.use_moodle >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
@@ -391,16 +397,18 @@ let main o =
           let open Server in
           ("--app-dir="^o.app_dir) ::
           ("--sync-dir="^o.server.sync_dir) ::
-          ("--root-url="^o.builder.Builder.root_url) ::
+          ("--base-url="^o.builder.Builder.base_url) ::
           ("--port="^string_of_int o.server.port) ::
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
         Unix.execv native_server (Array.of_list (native_server::server_args))
-      else
-      Printf.printf "ROOT_URL: \"%s\"\n%!" o.builder.Builder.root_url;
-      Printf.printf "Starting server on port %d\n%!"
-          !Learnocaml_server.port;
-      Learnocaml_server.launch ()
+      else begin
+          Printf.printf "Starting server on port %d\n%!"
+            !Learnocaml_server.port;
+          if o.builder.Builder.base_url <> "" then
+            Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
+          Learnocaml_server.launch ()
+        end
     else
       Lwt.return true
   in
@@ -439,7 +447,7 @@ let man = [
   `P "The repository specified by $(b,--repo) is expected to contain \
       sub-directories $(b,lessons), $(b,tutorials), $(b,playground) and $(b,exercises).";
   `S "AUTHORS";
-  `P "Learn OCaml is written by OCamlPro. Its main authors are Benjamin Canou, \
+  `P "The original authors are Benjamin Canou, \
       Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
       the MIT License.";
   `S "BUGS";

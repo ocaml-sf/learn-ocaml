@@ -8,7 +8,7 @@
 
 type t = {
   sync_dir: string;
-  root_url: string;
+  base_url: string;
   port: int;
   cert: string option;
 }
