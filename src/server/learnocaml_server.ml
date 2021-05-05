@@ -1166,7 +1166,7 @@ let launch () =
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> lwt_ok {Api.meth = `GET; host = !root_url; path; args}
+     | `GET -> lwt_ok {Api.meth = `GET; host = !base_url; path; args}
      | `POST ->
         begin
           Cohttp_lwt.Body.to_string body
@@ -1180,11 +1180,11 @@ let launch () =
                   List.assoc_opt "csrf" cookies with
             | Some (param_csrf :: _), Some cookie_csrf ->
                if Eqaf.equal param_csrf cookie_csrf then
-                 lwt_ok {Api.meth = `POST params; host = !root_url; path; args}
+                 lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
                else
                  lwt_fail (`Forbidden, "CSRF token mismatch")
             | None, None | None, Some _ ->
-               lwt_ok {Api.meth = `POST params; host = !root_url; path; args}
+               lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
             | _, _ ->
                lwt_fail (`Forbidden, "Bad CSRF token")
         end
