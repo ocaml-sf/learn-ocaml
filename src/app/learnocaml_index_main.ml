@@ -908,7 +908,7 @@ let set_string_translations () =
       [%i"Welcome to Learn OCaml"];
     "txt_token_first_connection", [%i"First connection"];
     "txt_token_first_connection_dialog", [%i"Choose a nickname"];
-    "txt_token_secret", [%i"Enter the secret"];
+    "txt_first_connection_secret", [%i"Enter the secret"];
     "txt_token_new", [%i"Create new token"];
     "txt_first_connection", [%i"First connection"];
     "txt_first_connection_email", [%i"E-mail address"];
