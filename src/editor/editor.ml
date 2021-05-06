@@ -95,8 +95,6 @@ let () =
   Learnocaml_local_storage.init () ;
 
   (* ---- launch everything --------------------------------------------- *)
-  let id =  arg "id"
-  in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
@@ -111,6 +109,13 @@ let () =
   let template_button = button ~container: template_toolbar ~theme: "light" in
   let prelude_button = button ~container: prelude_toolbar ~theme: "light" in
   let prepare_button = button ~container: prepare_toolbar ~theme: "light" in
+  let id = match Url.Current.path with
+    | "" :: "exercises" :: p | "exercises" :: p ->
+        String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
+    | _ -> arg "id"
+  in
+  Dom_html.document##.title :=
+    Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
 
   let after_init top =
     begin
