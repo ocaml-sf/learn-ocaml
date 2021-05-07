@@ -2,6 +2,13 @@
 # To deploy learn-ocaml, see e.g.:
 # https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
 
+# Note: regarding the very first run (sudo docker-compose up --build),
+# the setup of the moodle container ("Running Moodle install script")
+# may take a long time (up to 18').
+# Do NOT stop the docker-compose app too early, otherwise the database
+# would be in a broken state, leading to a systematic error at further
+# runs ("learn-ocaml_moodle_1 exited with code 1").
+
 version: '3.7'
 
 services:
@@ -50,6 +57,7 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
       - MARIADB_USER=bn_moodle
       - MARIADB_DATABASE=bitnami_moodle
+      # - BITNAMI_DEBUG=true
     volumes:
       - 'mariadb_data:/bitnami/mariadb'
     networks:
@@ -66,6 +74,7 @@ services:
       - MOODLE_DATABASE_USER=bn_moodle
       - MOODLE_DATABASE_NAME=bitnami_moodle
       - ALLOW_EMPTY_PASSWORD=yes
+      # - BITNAMI_DEBUG=true
     volumes:
       - 'moodle_data:/bitnami/moodle'
       - 'moodledata_data:/bitnami/moodledata'
