@@ -217,18 +217,20 @@ let () =
   end;
 
   (*-------question pane  -------------------------------------------------*)
-
+  let open Omd_representation in
   let override_url = function
-    | Omd_representation.Url(href,[Omd_representation.Text(text)],title) ->
-          Some ( let title_url = if title <> "" then
-                              String.concat " " [" title='";title;"'"]
-            else "" in
-            let url =
-              String.concat
-                ""
-                ["<a href='";href;"' target='_blank'";title_url;">";text;"</a>"]
-                 in url)
-  | _ -> None in
+    | Url(href,s,title) ->
+       Some ( let title_url = if title <> "" then
+                                String.concat " " [" title='";title;"'"]
+                              else "" in
+              let url =
+                String.concat
+                  ""
+                  ["<a href='";
+                   href;"' target='_blank' rel='noopener noreferrer'";
+                   title_url;">";Omd_backend.html_of_md s;"</a>"]
+              in url)
+    | _ -> None in
   let editor_question = find_component "learnocaml-exo-question-mark" in
   let ace_quest = Ace.create_editor (Tyxml_js.To_dom.of_div editor_question ) in
    let question =
