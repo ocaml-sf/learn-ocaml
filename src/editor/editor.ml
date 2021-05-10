@@ -217,6 +217,18 @@ let () =
   end;
 
   (*-------question pane  -------------------------------------------------*)
+
+  let override_url = function
+    | Omd_representation.Url(href,[Omd_representation.Text(text)],title) ->
+          Some ( let title_url = if title <> "" then
+                              String.concat " " [" title='";title;"'"]
+            else "" in
+            let url =
+              String.concat
+                ""
+                ["<a href='";href;"' target='_blank'";title_url;">";text;"</a>"]
+                 in url)
+  | _ -> None in
   let editor_question = find_component "learnocaml-exo-question-mark" in
   let ace_quest = Ace.create_editor (Tyxml_js.To_dom.of_div editor_question ) in
    let question =
@@ -230,7 +242,7 @@ let () =
   Ace.set_font_size ace_quest 18;
 
   let question = get_question id in
-  let question =Omd.to_html (Omd.of_string question) in
+  let question = Omd.to_html ~override:override_url (Omd.of_string question) in
 
   let text_container = find_component "learnocaml-exo-question-html" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -281,7 +293,7 @@ let () =
             </body>\
             </html>"
            (get_titre id)
-           (Omd.to_html (Omd.of_string text)) in
+           (Omd.to_html ~override:override_url (Omd.of_string text)) in
        d##open_;
        d##write (Js.string html);
        d##close);
