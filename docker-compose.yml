@@ -20,7 +20,7 @@ services:
       - '8080:8080'
     environment:
       # (ocaml variable) root URL:
-      LEARNOCAML_ROOT_URL: "http://localhost:8080"
+      LEARNOCAML_BASE_URL: "http://localhost:8080"
       # (ocaml variable) <container_name>.<network_name>:
       FROM_DOMAIN: "backend.localdomain"
       # (alpine msmtp variable) hostname of the SMTP server:
