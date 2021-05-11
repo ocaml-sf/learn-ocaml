@@ -220,16 +220,14 @@ let () =
   let open Omd_representation in
   let override_url = function
     | Url(href,s,title) ->
-       Some ( let title_url = if title <> "" then
-                                String.concat " " [" title='";title;"'"]
-                              else "" in
-              let url =
-                String.concat
-                  ""
-                  ["<a href='";
-                   href;"' target='_blank' rel='noopener noreferrer'";
-                   title_url;">";Omd_backend.html_of_md s;"</a>"]
-              in url)
+       Some ( let title_url =
+                if title <> ""
+                then
+                  Printf.sprintf {| title="%s"|} title
+                else "" in
+              Printf.sprintf
+              {|<a href="%s" target="_blank" rel="noopener noreferrer"%s>%s</a>|}
+              href title_url (Omd_backend.html_of_md s))
     | _ -> None in
   let editor_question = find_component "learnocaml-exo-question-mark" in
   let ace_quest = Ace.create_editor (Tyxml_js.To_dom.of_div editor_question ) in
