@@ -1,7 +1,12 @@
+*{
+box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
   background: #666;
+overflow: hidden;
 }
 
 #learnocaml-main-loading {
@@ -690,10 +695,14 @@ div.config-editor-overlay > div::before, div.config-editor-overlay > div::after 
   border: none;
   overflow: auto;
   flex: 1 3 auto ;
+font-family: 'Fontin', 'Linux Biolinum', sans-serif;
 }
 
 #learnocaml-exo-question-html > div > pre {
   background: #ddd;
+line-height: 25px;
+overflow: auto;
+padding: 0 10px;
 }
 
 
