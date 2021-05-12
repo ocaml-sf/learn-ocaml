@@ -686,11 +686,22 @@ div.config-editor-overlay > div::before, div.config-editor-overlay > div::after 
 /* question tab */
 
 
-#learnocaml-exo-question-html > iframe {
+#learnocaml-exo-question-html > div {
   border: none;
   overflow: auto;
   flex: 1 3 auto ;
 }
+
+#learnocaml-exo-question-html > div > pre {
+  background: #ddd;
+}
+
+
+#learnocaml-exo-question-html > div > h2 { 
+  background: #ddd;
+line-height: 40px;
+}
+
 #learnocaml-exo-tab-question > .questions-mark {
   position: absolute;
   left: 0; top: 0; bottom: 50%; width: 100%;
@@ -703,12 +714,12 @@ div.config-editor-overlay > div::before, div.config-editor-overlay > div::after 
   position: absolute;
   left: 0; top: 50%; bottom: 0px; width: 100%;
   background: white;
-  color: #fff;
   z-index: 1002;
 }
 
 #learnocaml-exo-tab-question > .questions-html > * {
   position: absolute;
+	padding-left: 20px;
   left: 0; top: 0; bottom: 0px; width: 100%; height: 100%;
 }
 

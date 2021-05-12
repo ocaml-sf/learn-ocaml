@@ -245,58 +245,19 @@ let () =
   let question = Omd.to_html ~override:override_url (Omd.of_string question) in
 
   let text_container = find_component "learnocaml-exo-question-html" in
-  let text_iframe = Dom_html.createIframe Dom_html.document in
+  let text_iframe = Dom_html.createDiv Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
-  Js.Opt.case
-    (text_iframe##.contentDocument)
-    (fun () -> failwith "cannot edit iframe document")
-    (fun d ->
-       let html = Format.asprintf
-           "<!DOCTYPE html>\
-            <html><head>\
-            <title>%s - exercise text</title>\
-            <meta charset='UTF-8'>\
-            <link rel='stylesheet'\
-            href='css/learnocaml_standalone_description.css'>\
-            </head>\
-            <body>\
-            %s\
-            </body>\
-            </html>"
-           (get_titre id)
-           question in
-       d##open_;
-       d##write (Js.string html);
-       d##close);
+    Tyxml_js.Html5.[ Tyxml_js.Of_dom.of_div text_iframe ] ;
+  text_iframe##.innerHTML := (Js.string question);
 
   let old_text = ref "" in
 
   let onload () =
    let rec dyn_preview =
-    let text = Ace.get_contents ace_quest in
+     let text = Ace.get_contents ace_quest in
+     let question = Omd.to_html ~override:override_url (Omd.of_string text) in
       if text <> !old_text then begin
-       Js.Opt.case
-    (text_iframe##.contentDocument)
-    (fun () -> failwith "cannot edit iframe document")
-    (fun d ->
-       let html = Format.asprintf
-           "<!DOCTYPE html>\
-            <html><head>\
-            <title>%s - exercise text</title>\
-            <meta charset='UTF-8'>\
-            <link rel='stylesheet'\
-            href='css/learnocaml_standalone_description.css'>\
-            </head>\
-            <body>\
-            %s\
-            </body>\
-            </html>"
-           (get_titre id)
-           (Omd.to_html ~override:override_url (Omd.of_string text)) in
-       d##open_;
-       d##write (Js.string html);
-       d##close);
+       text_iframe##.innerHTML := (Js.string question);
        old_text := text
         end in
    dyn_preview; () in
