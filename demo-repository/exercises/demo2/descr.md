@@ -1,5 +1,5 @@
-[ceci est un lien](http://google.com)
-This exercise is just another demo for the exercise environment.
+The following example link will open another tab/window: [OCaml](https://ocaml.org/).  
+This exercise is just another demo for the exercise environment.  
 <a href="" onclick="top.location='/exercises/demo/';">Test</a>
 
 <details>

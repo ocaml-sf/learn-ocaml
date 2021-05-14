@@ -317,17 +317,20 @@ module File = struct
               descrs := (lang, f raw) :: !descrs;
               return ()
       in
-      let open Omd_representation in
-      let override_url = function
-    | Url(href,s,title) ->
-       Some ( let title_url =
-                if title <> ""
-                then
-                  Printf.sprintf {| title="%s"|} title
-                else "" in
-              Printf.sprintf
+  let override_url = function
+    | Omd_representation.Url(href,s,title) ->
+       if String.length href > 0 then
+         if Char.equal (String.get href 0) '#' then
+           None
+         else
+           let title_url =
+             if title <> "" then Printf.sprintf {| title="%s"|} title else "" in
+           let html =
+             Printf.sprintf
               {|<a href="%s" target="_blank" rel="noopener noreferrer"%s>%s</a>|}
-              href title_url (Omd_backend.html_of_md s))
+              href title_url (Omd_backend.html_of_md s) in
+           Some html
+         else None
     | _ -> None in
       let markdown_to_html md =
         Omd.(md |> of_string |> to_html ~override:override_url)
