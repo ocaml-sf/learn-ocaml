@@ -3,7 +3,7 @@
 (rule
  (targets VERSION)
  (action (with-stdout-to %{targets}
-           (run opam show ./%{dep:./learn-ocaml.opam} -f version --normalise)))
+           (run opam show --color=never ./%{dep:./learn-ocaml.opam} -f version --normalise)))
 )
 
 (env
