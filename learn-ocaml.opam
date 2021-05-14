@@ -46,7 +46,7 @@ depends: [
   "ocp-ocamlres" {>= "0.4"}
   "ocplib-json-typed" {= "0.6"}
   "odoc" {build & >= "1.3.0"}
-  "omd"
+  "omd" {<= "1.3.1"}
   "pprint"
   "ppx_cstruct"
   "ppx_tools"
