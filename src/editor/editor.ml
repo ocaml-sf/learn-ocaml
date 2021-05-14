@@ -217,17 +217,20 @@ let () =
   end;
 
   (*-------question pane  -------------------------------------------------*)
-  let open Omd_representation in
   let override_url = function
-    | Url(href,s,title) ->
-       Some ( let title_url =
-                if title <> ""
-                then
-                  Printf.sprintf {| title="%s"|} title
-                else "" in
-              Printf.sprintf
+    | Omd_representation.Url(href,s,title) ->
+       if String.length href > 0 then
+         if Char.equal (String.get href 0) '#' then
+           None
+         else
+           let title_url =
+             if title <> "" then Printf.sprintf {| title="%s"|} title else "" in
+           let html =
+             Printf.sprintf
               {|<a href="%s" target="_blank" rel="noopener noreferrer"%s>%s</a>|}
-              href title_url (Omd_backend.html_of_md s))
+              href title_url (Omd_backend.html_of_md s) in
+           Some html
+         else None
     | _ -> None in
   let editor_question = find_component "learnocaml-exo-question-mark" in
   let ace_quest = Ace.create_editor (Tyxml_js.To_dom.of_div editor_question ) in
@@ -245,10 +248,10 @@ let () =
   let question = Omd.to_html ~override:override_url (Omd.of_string question) in
 
   let text_container = find_component "learnocaml-exo-question-html" in
-  let text_iframe = Dom_html.createDiv Dom_html.document in
+  let text_div = Dom_html.createDiv Dom_html.document in
   Manip.replaceChildren text_container
-    Tyxml_js.Html5.[ Tyxml_js.Of_dom.of_div text_iframe ] ;
-  text_iframe##.innerHTML := (Js.string question);
+    Tyxml_js.Html5.[ Tyxml_js.Of_dom.of_div text_div ] ;
+  text_div##.innerHTML := (Js.string question);
 
   let old_text = ref "" in
 
@@ -257,7 +260,7 @@ let () =
      let text = Ace.get_contents ace_quest in
      let question = Omd.to_html ~override:override_url (Omd.of_string text) in
       if text <> !old_text then begin
-       text_iframe##.innerHTML := (Js.string question);
+       text_div##.innerHTML := (Js.string question);
        old_text := text
         end in
    dyn_preview; () in

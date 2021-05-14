@@ -703,6 +703,7 @@ font-family: 'Fontin', 'Linux Biolinum', sans-serif;
 line-height: 25px;
 overflow: auto;
 padding: 0 10px;
+border-radius : 8px;
 }
 
 
