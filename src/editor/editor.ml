@@ -224,11 +224,13 @@ let () =
            None
          else
            let title_url =
-             if title <> "" then Printf.sprintf {| title="%s"|} title else "" in
+             if title <> "" then Printf.sprintf {| title="%s"|}
+                               (Omd_utils.htmlentities ~md:true title) else "" in
            let html =
              Printf.sprintf
               {|<a href="%s" target="_blank" rel="noopener noreferrer"%s>%s</a>|}
-              href title_url (Omd_backend.html_of_md s) in
+              (Omd_utils.htmlentities ~md:true href) title_url
+                 (Omd_backend.html_of_md s) in
            Some html
          else None
     | _ -> None in
