@@ -1151,7 +1151,7 @@ module Display_exercise =
         else
           ignore (onclick cid);
         Manip.removeChildren exp;
-        Manip.appendChild exp (txt (if !displayed then "[-]" else "[+]"));
+        Manip.appendChild exp (txt (if !displayed then "[+]" else "[-]"));
         displayed := not !displayed;
         true
       in
