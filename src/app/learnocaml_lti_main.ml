@@ -29,6 +29,7 @@ let login_returning_id, login_returning = id "login-returning"
 let reg_input_email_id, reg_input_email = id "register-email-input"
 let reg_input_nick_id, reg_input_nick = id "register-nick-input"
 let reg_input_password_id, reg_input_password = id "register-password-input"
+let reg_input_confirmation_id, reg_input_confirmation = id "register-confirmation-input"
 let input_secret_id, input_secret = id "register-secret-input"
 let input_consent_id, input_consent = id "first-connection-consent"
 let login_new_button_id, login_new_button = id "login-new-button"
@@ -70,21 +71,25 @@ let send_sync_request () =
 let create_token () =
   let email = Manip.value reg_input_email and
       password = Manip.value reg_input_password and
+      password_confirmation = Manip.value reg_input_confirmation and
       consent = Manip.checked input_consent and
       consent_label = find_component "txt_first_connection_consent" in
   (* 5 for a character, @, character, dot, character. *)
   let email_criteria = not (check_email_js email) and
       passwd_crit1 = not (Learnocaml_data.passwd_check_length password) and
-      passwd_crit2 = not (Learnocaml_data.passwd_check_strength password) in
+      passwd_crit2 = not (Learnocaml_data.passwd_check_strength password) and
+      passwd_crit3 = not (password = password_confirmation) in
   Manip.SetCss.borderColor reg_input_email "";
   Manip.SetCss.borderColor reg_input_password "";
   Manip.SetCss.fontWeight consent_label "";
-  if email_criteria || passwd_crit1 || passwd_crit2 || not consent then
+  if email_criteria || passwd_crit1 || passwd_crit2 || passwd_crit3 ||  not consent then
     begin
       if email_criteria then
         Manip.SetCss.borderColor reg_input_email "#f44";
       if passwd_crit1 || passwd_crit2 then
         Manip.SetCss.borderColor reg_input_password "#f44";
+      if passwd_crit3 then
+            Manip.SetCss.borderColor reg_input_confirmation "#f44";
       if not consent then
         Manip.SetCss.fontWeight consent_label "bold";
       if email_criteria then begin
@@ -102,6 +107,11 @@ let create_token () =
             [%i"Password must contain at least one digit, \
                 one lower and upper letter, \
                 and one non-alphanumeric char."];
+        end
+      else if passwd_crit3 then begin
+              cb_alert ~title:[%i"ERROR"]
+                [%i"The password and its confirmation are not the same"]
+                (fun () -> Manip.focus reg_input_confirmation)
         end;
       Lwt.return_unit
     end
@@ -131,6 +141,7 @@ let () =
       "txt_first_connection_email", [%i"E-mail address"];
       "txt_first_connection_nickname", [%i"Nickname"];
       "txt_first_connection_password", [%i"Password"];
+      "txt_first_connection_confirmation", [%i"Password confirmation"];
       "txt_first_connection_secret", [%i"Secret"];
       "txt_secret_label", [%i"The secret is an optional passphrase \
                               provided by your teacher. It may be \
