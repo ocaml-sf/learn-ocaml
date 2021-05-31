@@ -25,7 +25,7 @@ let () =
         "txt_upgrade", [%i"Setup a password"];
         "txt_upgrade_email", [%i"E-mail address"];
         "txt_upgrade_password", [%i"Password"];
-        (*"txt_upgrade_password_confirmation", [%i"Confirm password"];*)
+        "txt_upgrade_password_confirmation", [%i"Confirm password"];
         "txt_do_upgrade", [%i"Upgrade"];
         "txt_info", [%i"An e-mail will be sent to your address to confirm it."];
       ]

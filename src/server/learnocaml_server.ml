@@ -942,12 +942,14 @@ module Request_handler = struct
                                    ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
                let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
                    email = List.assoc "email" params and
-                   password = List.assoc "passwd" params in
+                   password = List.assoc "passwd" params and
+                   confirmation = List.assoc "confirmation" params in
                Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
                if exists then lwt_fail (`Forbidden, "E-mail already used")
                else if not (Learnocaml_data.passwd_check_length password)
                        || not (Learnocaml_data.passwd_check_strength password)
-                       || not (check_email_ml email) then
+                       || not (check_email_ml email)
+                       || not (password = confirmation) then
                  lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
                else
                  let cookies = make_cookie ("token", Token.to_string token) :: cookies in
