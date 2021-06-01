@@ -131,12 +131,12 @@
           <div class="filler_h"></div>
           <input id="register-confirmation-input" type="password" minlength="1">
         </div>
-        <div>
+        <div id="secret-section">
           <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
           <div class="filler_h"></div>
-          <input id="register-secret-input" type="text" minlength="1" autocomplete="off">
+          <input id="register-secret-input" type="text" placeholder="Secret" minlength="1" autocomplete="off">
+	  <span id="txt_secret_label"><!-- The secret is the passphrase provided by your teacher to sign-up. --></span>
         </div>
-	<span id="txt_secret_label"><!-- The secret is the passphrase provided by your teacher to sign-up. --></span>
         <div>
           <input type="checkbox" id="first-connection-consent" autocomplete="off">
           <label for="first-connection-consent" id="txt_first_connection_consent"></label>
