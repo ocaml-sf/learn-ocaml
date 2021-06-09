@@ -935,39 +935,27 @@ module Request_handler = struct
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
          let token = Token.parse @@ List.assoc "token" params in
-         Token_index.UserIndex.emails_of_token !sync_dir token >>=
-           (function
-            | None ->
-               let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
-                                   ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
-               let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
-                   email = List.assoc "email" params and
-                   password = List.assoc "passwd" params and
-                   confirmation = List.assoc "confirmation" params in
-               Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
-               if exists then lwt_fail (`Forbidden, "E-mail already used")
-               else if not (Learnocaml_data.passwd_check_length password)
-                       || not (Learnocaml_data.passwd_check_strength password)
-                       || not (check_email_ml email)
-                       || not (password = confirmation) then
-                 lwt_ok @@ Redirect { code=`See_other; url="/upgrade"; cookies }
-               else
-                 let cookies = make_cookie ("token", Token.to_string token) :: cookies in
-                 Token_index.UserIndex.upgrade !sync_dir token email password >>= fun () ->
-                 Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
-                 get_nickname token >>= fun nick ->
-                 Learnocaml_sendmail.confirm_email
-                   ~nick
-                   ~url:(req.Api.host ^ "/confirm/" ^ handle)
-                   email;
-                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
-            | Some _ -> lwt_fail (`Forbidden, "Already an account."))
-
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
+             email = List.assoc "email" params and
+             password = List.assoc "passwd" params in
+         let  cookies = make_cookie ("token", Token.to_string token) :: cookies in
+         Token_index.UserIndex.upgrade !sync_dir token email password >>= fun () ->
+         Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+         get_nickname token >>= fun nick ->
+         Learnocaml_sendmail.confirm_email
+           ~nick
+           ~url:(req.Api.host ^ "/confirm/" ^ handle)
+           email;
+         lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
       | Api.Upgrade_form _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
       | Api.Upgrade _ ->
          lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
 
+      | Api.Server_config _ ->
+         lwt_fail (`Forbidden, "pas encore fait")
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 

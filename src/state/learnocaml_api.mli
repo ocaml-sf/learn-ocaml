@@ -126,6 +126,9 @@ type _ request =
   | Upgrade:
       string -> string request
 
+  | Server_config:
+      unit -> bool request
+
   | Invalid_request:
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case

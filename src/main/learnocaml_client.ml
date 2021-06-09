@@ -1089,6 +1089,33 @@ module Exercise_list = struct
     Term.info ~man ~doc:doc "exercise-list"
 end
 
+module Server_config = struct
+  let doc = "Get a structured json containing an information about the use_password compatibility"
+
+  let server_config o = (*get_config_o ~allow_static:true o
+    >>= fun {ConfigFile.server;token} ->
+    fetch server (Learnocaml_api.Server_config)
+    >>= (fun index->
+    let open Json_encoding in
+    let ezjsonm = (Json_encoding.construct
+                  (tup2 Exercise.Index.enc (assoc float))
+                  index)
+    in
+    let json =
+           match ezjsonm with
+           | `O _ | `A _ as json -> json
+           | _ -> assert false
+    in
+    Ezjsonm.to_channel ~minify:false stdout json;*)
+    Lwt.return 0(**) 
+
+  let man = man doc
+
+  let cmd =
+    use_global server_config,
+    Term.info ~man ~doc:doc "server-config"
+end
+
 module Main = struct
   let man =
     man
@@ -1111,7 +1138,8 @@ let () =
           ; Print_server.cmd
           ; Template.cmd
           ; Create_token.cmd
-          ; Exercise_list.cmd]
+          ; Exercise_list.cmd
+          ; Server_config.cmd]
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;

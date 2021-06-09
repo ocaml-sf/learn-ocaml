@@ -112,6 +112,8 @@ type _ request =
       string -> string request
   | Upgrade:
       string -> string request
+  | Server_config:
+      unit -> bool request
 
   | Invalid_request:
       string -> string request
@@ -216,6 +218,8 @@ module Conversions (Json: JSON_CODEC) = struct
 
       | Upgrade_form _ -> str
       | Upgrade _ -> str
+
+      | Server_config () -> json J.bool
 
       | Invalid_request _ ->
           str
@@ -362,8 +366,11 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Upgrade_form _ ->
         assert false (* Reserved for a link *)
-    | Upgrade _ ->
-        assert false (* Reserved for a form *)
+    | Upgrade body ->
+       post ["do_upgrade"] body
+
+    | Server_config () ->
+       get ["get_server_config"]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -547,7 +554,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `POST body, ["upgrade"], _ ->
           Upgrade_form body |> k
       | `POST body, ["do_upgrade"], _ ->
-          Upgrade body |> k
+         Upgrade body |> k
+
+      | `GET, ["get_server_config"], _ ->
+         Server_config () |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
