@@ -37,8 +37,8 @@ let encoding =
        (req "test" string)
        (req "solution" string)
        (req "max-score" int)
-       (req  "depend" (option string))
-       (req  "dependencies" (list string)))
+       (opt "depend" (string))
+       (dft "dependencies" (list string) []))
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
