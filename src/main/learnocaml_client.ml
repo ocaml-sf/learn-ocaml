@@ -32,6 +32,34 @@ let token_conv =
       (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
     )
 
+module Args_server = struct
+  (* Subset of Args_global, to be used if "--token" is irrelevant *)
+  type t = {
+      server_url: Uri.t option;
+      local: bool;
+    }
+
+  let server_url =
+    value & opt (some url_conv) None &
+    info ["s";"server"] ~docv:"URL" ~doc:
+      "The URL of the learn-ocaml server."
+      ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
+              "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
+  let local =
+    value & flag & info ["local"] ~doc:
+      "Use a configuration file local to the current directory, rather \
+       than user-wide."
+
+  let apply server_url local =
+    {server_url; local}
+
+  let term =
+    Term.(const apply $server_url $local)
+
+  let term_server =
+    Term.(const (fun x -> x) $ server_url)
+end
+
 module Args_global = struct
   type t = {
       server_url: Uri.t option;
@@ -623,6 +651,40 @@ let get_config_o ?save_back ?(allow_static=false) o =
   let open Args_global in
   get_config ~local:o.local ?save_back ~allow_static o.server_url o.token
 
+(* Likewise, but without dealing with tokens *)
+
+let get_config_option_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
+  match ConfigFile.path ?local () with
+  | Some f ->
+      ConfigFile.read f >>= fun c ->
+      let c = match server_opt with
+        | Some server -> { c with ConfigFile.server }
+        | None -> c
+      in
+      check_server_version ~allow_static c.ConfigFile.server
+      >>= fun _ ->
+      (
+        if save_back
+        then
+          ConfigFile.write f c >|= fun () ->
+          Printf.eprintf "Configuration written to %s\n%!" f
+        else
+          Lwt.return_unit
+      )
+      >|= fun () -> Some c
+  | None -> Lwt.return_none
+
+let get_config_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
+  get_config_option_server ?local ~save_back ~allow_static server_opt
+  >>= function
+  | Some c -> Lwt.return c
+  (* TODO: Make it possible to change this error message (from get_config_o_server) *)
+  | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
+
+let get_config_o_server ?save_back ?(allow_static=false) o =
+  let open Args_server in
+  get_config_server ~local:o.local ?save_back ~allow_static o.server_url
+
 module Init = struct
   open Args_global
   open Args_create_token
@@ -665,7 +727,7 @@ module Init = struct
       ~doc:"Initialize the configuration file."
       "init"
 end
-  
+
 module Grade = struct
   open Args_exercises
   let grade go eo =
@@ -813,10 +875,10 @@ module Server_version = struct
   open Args_server_version
   open Learnocaml_api
 
-  let server_version global_args server_version_args =
+  let server_version server_args server_version_args =
     Lwt.catch
       (fun () ->
-        get_config_o ~save_back:false ~allow_static:false global_args)
+        get_config_o_server ~save_back:false ~allow_static:false server_args)
       begin fun e ->
       Lwt_io.eprintf "[ERROR] Input error: %s\n"
         (match e with
@@ -875,7 +937,7 @@ module Server_version = struct
   let cmd =
     Term.(
       const (fun o l -> Stdlib.exit (Lwt_main.run (server_version o l)))
-      $ Args_global.term $ Args_server_version.term),
+      $ Args_server.term $ Args_server_version.term),
     Term.info ~man ~exits ~doc:explanation "server-version"
 end
 
@@ -1067,7 +1129,7 @@ module Exercise_list = struct
     use_global exercise_list,
     Term.info ~man ~doc:doc "exercise-list"
 end
-                
+
 module Main = struct
   let man =
     man
