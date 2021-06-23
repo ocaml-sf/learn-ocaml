@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+# Requirements: this script uses docker (and curl: see wait_for_it)
 
-count=0
+# Increase this timeout if ever one sub-repo build would last > 10s
+build_timeout=10
 
 # If the first argument is "set", the script will replace all the expected
 # answers by the response of the server. It is useful when you need to
@@ -11,9 +13,9 @@ count=0
 # instead of the mere learn-ocaml image. It is useful for testing
 # cross-version compatibility.
 
-srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
-
 SETTER=0
+srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
+count=0
 if [ "$1" == "set" ]; then SETTER=1; fi
 
 use_client_image () {
@@ -40,6 +42,27 @@ else
     green "Running tests with single image learn-ocaml"
 fi
 
+wait_for_it () {
+  local url="$1"
+  local seconds="$2"
+  shift 2  # "$@" => optional command to be run in case of success
+  local elapsed=0
+  green "waiting $seconds seconds for $url\\n"
+  while :; do
+      curl -fsS "$url" >/dev/null 2>/dev/null && break
+      [ "$elapsed" -ge "$seconds" ] &&
+          { red "timeout occurred after waiting $seconds seconds for $url\\n";
+            return 124; }
+      elapsed=$((elapsed + 1))
+      sleep 1s
+  done
+  green "$url available after $elapsed seconds"
+  if [ $# -gt 0 ]; then
+      ( set -x; "$@" )
+  fi
+  return 0
+}
+
 # run a server in a docker container
 run_server () {
     SYNC="$srcdir"/"$dir"/sync
@@ -56,7 +79,7 @@ run_server () {
         "learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 
     # Wait for the server to be initialized
-    if ! "$srcdir"/wait-for-it.sh localhost:8080 -s -t 10 -- sleep 1s ||
+    if ! wait_for_it "http://localhost:8080/version" "$build_timeout" sleep 1s ||
     [ "$(docker ps -q)" == "" ]; then
         red "PROBLEM, server is not running.\\n"
 
@@ -158,7 +181,7 @@ handle_subdir () {
 
     if [ -z "$token" ]; then
         red "Failed to get teacher token"
-        exit 1
+        clean_fail
     fi
 
     # init config
