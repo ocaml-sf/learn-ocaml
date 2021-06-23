@@ -16,8 +16,8 @@ let playground_index = ref None
 
 let errored exn =
   let print_unknown ppf = function
-    | Failure msg -> Format.fprintf ppf "Cannot process exercises: %s" msg
-    | exn -> Format.fprintf ppf "Cannot process exercises: %s"  (Printexc.to_string exn) in
+    | Failure msg -> Format.fprintf ppf "Cannot process exercises (playground): %s" msg
+    | exn -> Format.fprintf ppf "Cannot process exercises (playground): %s"  (Printexc.to_string exn) in
   Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
   Format.eprintf "@." ;
   Lwt.return false
