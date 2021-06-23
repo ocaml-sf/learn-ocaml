@@ -146,6 +146,7 @@ handle_file () {
 
 handle_subdir () {
     subdir="$(basename "$1")"
+    token="$2"
     pushd "$1" >/dev/null
 
     # init config
@@ -164,6 +165,14 @@ handle_subdir () {
     clean
 }
 
+# Get the token from the docker logs
+token=$(docker logs "$SERVERID" | grep -e 'Initial teacher token created:' | sed -e 's/^.*: //')
+
+if [ -n "$token" ]; then
+    red "Failed to get initial teacher token in time"
+    exit 1
+fi
+
 # For each subdirectory (except ./corpuses/*)
 while IFS= read -r dir;
 do
@@ -173,13 +182,10 @@ do
 
     echo "---> Entering $dir:"
 
-    # Get the token from the sync/ directory
-    token=$(find sync -maxdepth 5 -mindepth 5 | head -n 1 | sed 's|sync/||' | sed 's|/|-|g')
-
     # For each subdir (i.e. each exercice)
     while IFS= read -r subdir;
     do
-	handle_subdir "$subdir"
+        handle_subdir "$subdir" "$token"
     done < <(find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync)
 
     popd > /dev/null
