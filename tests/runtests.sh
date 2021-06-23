@@ -55,7 +55,8 @@ run_server () {
 learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 
     # Wait for the server to be initialized
-    sleep 2
+    ./wait-for-it.sh localhost:8080 -s -t 10 -- echo 'learn-ocaml started.'
+    # in case of timeout, return exit code 124 (<> 0)
 
     if [ "$(docker ps -q)" == "" ]; then
 	red "PROBLEM, server is not running.\n"
@@ -77,8 +78,6 @@ learn-ocaml --sync-dir=/sync --repo=/repository build serve")
           -v "$(pwd)"/"$dir":/home/learn-ocaml/actual \
           learn-ocaml-client /bin/sh)
 
-        # Wait for the client to be initialized
-        sleep 2
         if [ "$(docker ps -q -f name=client)" == "" ]; then
             red "PROBLEM, client is not running.\n"
 
