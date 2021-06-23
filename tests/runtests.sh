@@ -176,12 +176,16 @@ handle_subdir () {
 
     # Get the token from the docker logs
     token=$(docker logs "$SERVERID" | \
-                grep -A 1 -e 'teacher token.*:' | tail -n 1 | \
-                sed -e 's/^.*[:-] //')
-
+                grep -e 'Initial teacher token created:' | \
+                sed -e 's/^.*: //' | tr -d '[:space:]')
     if [ -z "$token" ]; then
-        red "Failed to get teacher token"
-        clean_fail
+        token=$(docker logs "$SERVERID" | \
+                grep -A 1 -e 'Found the following teacher tokens:' | tail -n 1 | \
+                sed -e 's/^.*- //' | tr -d '[:space:]')
+        if [ -z "$token" ]; then
+            red "Failed to get teacher token"
+            clean_fail
+        fi
     fi
 
     # init config
