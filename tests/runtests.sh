@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-let count=0
+count=0
 
 # If the first argument is "set", the script will replace all the expected
 # answers by the response of the server. It is useful when you need to
@@ -10,6 +10,8 @@ let count=0
 # the script will use both images learn-ocaml and learn-ocaml-client,
 # instead of the mere learn-ocaml image. It is useful for testing
 # cross-version compatibility.
+
+srcdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )
 
 SETTER=0
 if [ "$1" == "set" ]; then SETTER=1; fi
@@ -24,12 +26,12 @@ use_client_image () {
 
 # print in green $1
 green () {
-    echo -e "\e[32m$1\e[0m"
+    echo -e "\\e[32m$1\\e[0m"
 }
 
 # print in red $1
 red () {
-    echo -e "\e[31m$1\e[0m"
+    echo -e "\\e[31m$1\\e[0m"
 }
 
 if use_client_image; then
@@ -40,46 +42,43 @@ fi
 
 # run a server in a docker container
 run_server () {
-    SYNC="$(pwd)"/"$dir"/sync
-    REPO="$(pwd)"/"$dir"/repo
+    SYNC="$srcdir"/"$dir"/sync
+    REPO="$srcdir"/"$dir"/repo
 
-    mkdir "$dir"/sync 2>/dev/null
-    chmod o+w "$dir"/sync
+    mkdir "$SYNC" 2>/dev/null
+    chmod o+w "$SYNC"
 
     # Run the server in background
-    SERVERID=$(docker run --entrypoint '' -d -p 8080:8080 \
-      -v "$(pwd)"/"$dir":/home/learn-ocaml/actual \
+    SERVERID=$(set -x; docker run --entrypoint '' -d -p 8080:8080 \
+      -v "$srcdir/$dir":/home/learn-ocaml/actual \
       -v "$SYNC":/sync -v "$REPO":/repository \
-      learn-ocaml /bin/sh \
-        -c "learn-ocaml --sync-dir=/sync --repo=/repository build &&
-learn-ocaml --sync-dir=/sync --repo=/repository serve")
+      learn-ocaml /bin/sh -c \
+        "learn-ocaml --sync-dir=/sync --repo=/repository build serve")
 
     # Wait for the server to be initialized
-    ./wait-for-it.sh localhost:8080 -s -t 10 -- echo 'learn-ocaml started.'
-    # in case of timeout, return exit code 124 (<> 0)
+    if ! "$srcdir"/wait-for-it.sh localhost:8080 -s -t 10 -- sleep 1s ||
+    [ "$(docker ps -q)" == "" ]; then
+        red "PROBLEM, server is not running.\\n"
 
-    if [ "$(docker ps -q)" == "" ]; then
-	red "PROBLEM, server is not running.\n"
+        red "LS:"
+        ls -Rl "$dir"
+        echo ""
 
-	red "LS:"
-	ls -Rl "$dir"
-	echo ""
-
-	red "LOGS:"
-	docker logs "$SERVERID"
-	docker rm "$SERVERID" > /dev/null
-	exit 1
+        red "LOGS:"
+        docker logs "$SERVERID"
+        docker rm "$SERVERID" > /dev/null
+        exit 1
     fi
 
     if use_client_image; then
         # Run the client in background
-        CLIENTID=$(docker run --entrypoint '' -d -it --name=client \
+        CLIENTID=$(set -x; docker run --entrypoint '' -d -it --name=client \
           --add-host host.docker.internal:host-gateway \
-          -v "$(pwd)"/"$dir":/home/learn-ocaml/actual \
+          -v "$srcdir/$dir":/home/learn-ocaml/actual \
           learn-ocaml-client /bin/sh)
 
         if [ "$(docker ps -q -f name=client)" == "" ]; then
-            red "PROBLEM, client is not running.\n"
+            red "PROBLEM, client is not running.\\n"
 
             red "LOGS:"
             docker logs "$CLIENTID"
@@ -90,8 +89,11 @@ learn-ocaml --sync-dir=/sync --repo=/repository serve")
 }
 
 clean () {
-    popd > /dev/null
-    chmod o-w sync
+    if popd > /dev/null; then
+        chmod o-w "$SYNC"
+    else
+        red "popd failed"
+    fi
 
     docker kill "$SERVERID" > /dev/null
     docker rm   "$SERVERID" > /dev/null
@@ -111,15 +113,15 @@ handle_file () {
     subdir="$1"
     tosend="$(basename "$2")"
     # Grade file
-    args=(learn-ocaml-client grade --json --id="$subdir"
-          /home/learn-ocaml/actual/"$subdir"/"$tosend")
     if use_client_image; then
-        docker exec -i "$CLIENTID" "${args[@]}" > res.json 2> stderr.txt
+        args=(-i "$CLIENTID")
     else
-        docker exec -i "$SERVERID" "${args[@]}" > res.json 2> stderr.txt
+        args=(-i "$SERVERID")
     fi
-    if [ $? -ne 0 ]; then
-	red "NOT OK: $dir/$tosend"
+    args+=(learn-ocaml-client grade --json "--id=$subdir"
+           /home/learn-ocaml/actual/"$subdir"/"$tosend")
+    if ! docker exec "${args[@]}" > res.json 2> stderr.txt; then
+	red "NOT OK: $dir/$subdir/$tosend"
 	cat stderr.txt
 	clean_fail
     fi
@@ -131,33 +133,44 @@ handle_file () {
 	    red "$tosend.json does not exist"
 	    clean_fail
 	else
-	    diff res.json "$tosend.json"
-	    # If diff failed
-	    if [ $? -ne 0 ]; then
-		red "DIFF FAILED: $dir/$tosend"
+	    if ! diff res.json "$tosend.json"; then
+		red "DIFF FAILED: $dir/$subdir/$tosend"
 		clean_fail
 	    fi
 	fi
     fi
-    green "OK: $dir/$tosend"
+    green "OK: $dir/$subdir/$tosend"
     rm res.json stderr.txt
-    let count++
+    (( count++ ))
 }
 
 handle_subdir () {
     subdir="$(basename "$1")"
-    token="$2"
-    pushd "$1" >/dev/null
+    pushd "$1" >/dev/null || { red "pushd failed"; clean_fail; }
+    echo "--->---> Entering $subdir:"
+
+    run_server
+
+    # Get the token from the docker logs
+    token=$(docker logs "$SERVERID" | \
+                grep -A 1 -e 'teacher token.*:' | tail -n 1 | \
+                sed -e 's/^.*[:-] //')
+
+    if [ -z "$token" ]; then
+        red "Failed to get teacher token"
+        exit 1
+    fi
 
     # init config
-    args=(learn-ocaml-client init --token="$token")
+    args=(learn-ocaml-client init "--token=$token")
     if use_client_image; then
         docker exec -i "$CLIENTID" "${args[@]}" --server="http://host.docker.internal:8080"
     else
         docker exec -i "$SERVERID" "${args[@]}" --server="http://localhost:8080"
     fi
     # For each solution
-    for tosend in $(find . -name "*.ml" -type f -printf "%f\n")
+    # shellcheck disable=SC2044
+    for tosend in $(find . -name "*.ml" -type f -printf "%f\\n")
     do
 	handle_file "$subdir" "$tosend"
     done
@@ -165,47 +178,38 @@ handle_subdir () {
     clean
 }
 
-# Get the token from the docker logs
-token=$(docker logs "$SERVERID" | grep -e 'Initial teacher token created:' | sed -e 's/^.*: //')
-
-if [ -n "$token" ]; then
-    red "Failed to get initial teacher token in time"
-    exit 1
-fi
+echo
 
 # For each subdirectory (except ./corpuses/*)
 while IFS= read -r dir;
 do
-    run_server
-
-    pushd "$dir" > /dev/null
+    pushd "$dir" > /dev/null || { red "pushd failed"; clean_fail; }
 
     echo "---> Entering $dir:"
 
     # For each subdir (i.e. each exercice)
     while IFS= read -r subdir;
     do
-        handle_subdir "$subdir" "$token"
+        handle_subdir "$subdir"
     done < <(find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync)
 
-    popd > /dev/null
-done < <(find . -maxdepth 1 -type d ! -path . ! -path ./corpuses)
+    popd > /dev/null || { red "popd failed"; clean_fail; }
+done < <(find . -maxdepth 1 -type d ! -path . ! -path "$srcdir"/corpuses)
 
 #==============================================================================
 while IFS= read -r corpus;
 do
     echo "---> Testing corpus $corpus:"
 
-    docker run --entrypoint '' -v "$(realpath "$corpus")":/repository \
-	   learn-ocaml /bin/sh -c \
-	   "learn-ocaml --repo=/repository build"
-    if [ $? -ne 0 ]; then
-	red "Failed to build $corpus"
-	exit 1
+    if ! ( set -x; docker run --entrypoint '' \
+           -v "$(realpath "$corpus"):/repository" \
+           learn-ocaml /bin/sh -c "learn-ocaml --repo=/repository build" ); then
+        red "Failed to build $corpus"
+        exit 1
     fi
 
     green "OK: $corpus"
-    let count++
-done < <(find ./corpuses -mindepth 1 -maxdepth 1 -type d)
+    (( count++ ))
+done < <(find "$srcdir"/corpuses -mindepth 1 -maxdepth 1 -type d)
 
-green "\nALL $count TESTS PASSED\n"
+green "\\nALL $count TESTS PASSED\\n"
