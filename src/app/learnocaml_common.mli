@@ -143,7 +143,7 @@ val stars_div: float -> [> Html_types.div ] Tyxml_js.Html5.elt
 
 (** Returns an HTML string expected to be put in an iframe *)
 val exercise_text:
-  Exercise.Meta.t -> Exercise.t -> string
+  Exercise.Meta.t -> Learnocaml_exercise.t -> string
 
 val string_of_exercise_kind: Exercise.Meta.kind -> string
 

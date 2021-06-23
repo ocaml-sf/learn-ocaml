@@ -373,6 +373,34 @@ let enc_check_version_2 enc =
        exercise)
     (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
 
+let enc_check_version_3 enc =
+  J.conv
+    (fun exercise -> ("3", exercise))
+    (fun (version, exercise) ->
+       begin
+         match version with
+         | "1" | "2" | "3" -> ()
+         | _ ->
+             let msg = Format.asprintf "unknown version %s" version in
+             raise (J.Cannot_destruct ([], Failure msg))
+       end ;
+       exercise)
+    (J.merge_objs (J.obj1 (J.req "learnocaml_version" J.string)) enc)
+
+let enc_provide_version enc =
+  J.conv
+    (fun exercise -> ("2", exercise))
+    (fun (version, exercise) ->
+       begin
+         match version with
+         | "1" | "2" | "3" -> ()
+         | _ ->
+             let msg = Format.asprintf "unknown version %s" version in
+             raise (J.Cannot_destruct ([], Failure msg))
+       end ;
+       exercise)
+    (J.merge_objs (J.obj1 (J.dft "learnocaml_version" J.string "2")) enc)
+
 module Server = struct
   type preconfig = {
     secret : string option;
@@ -457,8 +485,8 @@ module Exercise = struct
       in
       let exercise_enc_v2 =
         J.(obj1
-             (opt "max_score" int))
-        (* deprecated & ignored *)
+             (opt "max_score" int) (* deprecated & ignored *)
+             )
       in
       J.conv
         (fun t ->
@@ -476,6 +504,187 @@ module Exercise = struct
               exercise_enc_v1
               exercise_enc_v2))
 
+    let sub_enc =
+      let kind_enc =
+        J.string_enum
+          [ "problem", Problem ;
+            "project", Project ;
+            "exercise", Exercise ]
+      in
+      let exercise_enc_v1 =
+        J.(obj10
+             (req "kind" kind_enc)
+             (dft "title" string "")
+             (opt "short_description" string)
+             (req "stars" float)
+             (opt "identifier" string)
+             (dft "authors" (list (tup2 string string)) [])
+             (dft "focus" (list string) [])
+             (dft "requirements" (list string) [])
+             (dft "forward_exercises" (list string) [])
+             (dft "backward_exercises" (list string) []))
+      in
+      let exercise_enc_v2 =
+        J.(obj1
+             (opt "max_score" int) (* deprecated & ignored *)
+             )
+      in
+      J.conv
+        (fun t ->
+           ((t.kind, t.title, t.short_description, t.stars, t.id,
+             t.author, t.focus, t.requirements, t.forward, t.backward),
+            None))
+        (fun ((kind, title, short_description, stars, id,
+               author, focus, requirements, forward, backward),
+              _max_score) ->
+          { kind; title; short_description; stars; id;
+            author; focus; requirements; forward; backward;
+          })
+        (enc_provide_version
+           (J.merge_objs
+              exercise_enc_v1
+              exercise_enc_v2))
+
+  end
+
+  module Subindex = struct
+
+    type meta = Meta.t
+
+    type part = {
+        subtitle: string;
+        subexercise: string;
+        student_hidden: bool;
+        student_weight: int;
+        teacher_weight: int
+        }
+
+    type t = {
+        meta : meta;
+        check_all_against: string option;
+        parts: part list;
+      }
+
+    let to_meta s =
+      s.meta
+    
+    let to_check s =
+      s.check_all_against
+
+    let to_part s =
+      s.parts
+
+    let get_part_field p =
+      let
+         {subtitle; subexercise; student_hidden;
+          student_weight; teacher_weight} = p
+      in (subtitle, subexercise, student_hidden,
+          student_weight, teacher_weight)
+
+    let to_subindex m c p =
+      let meta = m in
+      let check_all_against = c in
+      let parts = p in
+      {meta ; check_all_against ; parts}
+
+    let enc =
+      let meta_enc = Meta.sub_enc
+      in
+      let part_enc =
+        J.(obj5
+             (req "subtitle" string)
+             (req "subexercise" string)
+             (dft "student_hidden" bool false)
+             (dft "student_weight" int 1)
+             (dft "teacher_weight" int 1))
+      in
+      let exercise_enc =
+        J.(obj3
+             (req "meta" meta_enc)
+             (opt "check_all_against" string)
+             (req "parts" (list part_enc)))
+      in
+      J.conv
+        (fun {meta; check_all_against; parts} ->
+          let parts =
+            let rec aux = function
+              | [] -> []
+              | {subtitle; subexercise; student_hidden;
+                 student_weight; teacher_weight} :: l ->
+                 (subtitle, subexercise, student_hidden,
+                  student_weight, teacher_weight) :: (aux l)
+            in aux parts
+          in
+          (meta,
+           check_all_against,
+           parts))
+        (fun (meta,check_all_against, part) ->
+          let parts =
+            let rec aux = function
+              | [] -> []
+              | (subtitle, subexercise, student_hidden,
+                  student_weight, teacher_weight) :: l ->
+                 {subtitle; subexercise; student_hidden;
+                 student_weight; teacher_weight} :: (aux l)
+            in aux part
+          in
+          to_subindex meta check_all_against parts)
+        (enc_check_version_1 (exercise_enc))
+
+
+    let find t id =
+      let rec aux = function
+        | [] -> raise Not_found
+        | {subtitle; subexercise; student_hidden;
+           student_weight; teacher_weight}::l->
+           if id = subtitle then
+             {subtitle; subexercise; student_hidden;
+              student_weight; teacher_weight}
+           else
+             aux l
+      in
+      aux (to_part t)
+
+    let find_opt t id = try Some (find t id) with Not_found -> None
+
+    let rec map_exercises f l =
+           (List.map (function
+                | (id, Some ex) ->
+                   (id, Some (to_subindex
+                                (to_meta ex)
+                                (to_check ex)
+                                (f l (to_part ex))))
+                | x -> x)
+              l)
+
+(*
+    let rec mapk_exercises f t k =
+      let rec mapk_list acc f l k = match l with
+        | x::r -> f x (fun y -> mapk_list (y::acc) f r @@ k)
+        | [] -> List.rev acc |> k
+      in
+      match t with
+      | Groups gs ->
+         mapk_list [] (fun (id, (g: group)) k ->
+             mapk_exercises f g.contents
+             @@ fun contents -> (id, {g with contents}) |> k)
+           gs
+         @@ fun gs -> Groups gs |> k
+      | Exercises l ->
+         mapk_list [] (fun e k -> match e with
+                                  | (id, Some ex) ->
+                                     f id ex @@ fun ex -> (id, Some ex) |> k
+                                  | x -> x |> k)
+           l
+         @@ fun l -> Exercises l |> k
+      | Group_exercises l ->
+         mapk_list [] (fun e k -> match e with
+                                  | (id, Some ex) ->
+                                     (f id (Subindex.to_meta ex))
+                                     @@ fun ex -> (id, Some ex) |> k
+                                  | (id,None) -> (id,None)  |> k)
+           l
+         @@ fun l -> Group l |> k  *)
   end
 
   module Status = struct
@@ -711,7 +920,7 @@ module Exercise = struct
   module Index = struct
 
     type t =
-      | Exercises of (id * Meta.t option) list
+      | Exercises of (id * Meta.t option * Subindex.t option) list
       | Groups of (string * group) list
     and group =
       { title : string;
@@ -721,11 +930,16 @@ module Exercise = struct
       let exercise_enc =
         J.union [
           J.case J.string
-            (function id, None -> Some id | _ -> None)
-            (fun id -> id, None);
+            (function id, None, None -> Some id | _ -> None)
+            (fun id -> id, None, None);
           J.case J.(tup2 string Meta.enc)
-            (function id, Some meta -> Some (id, meta) | _ -> None)
-            (fun (id, meta) -> id, Some meta);
+            (function id, Some meta, None -> Some (id, meta) | _ -> None)
+            (fun (id, meta) -> id, Some meta, None);
+          J.case J.(tup2 string Subindex.enc)
+            (function
+             |id, None , Some subindex -> Some (id, subindex)
+             | _ -> None)
+            (fun (id ,subindex) -> id,None,  Some subindex)
         ]
       in
       let group_enc =
@@ -734,7 +948,7 @@ module Exercise = struct
           (fun (g : group) -> g.title, g.contents)
           (fun (title, contents) -> { title; contents }) @@
         J.union
-          [ J.case
+          [J.case
               J.(obj2
                    (req "title" string)
                    (req "exercises" (list exercise_enc)))
@@ -742,16 +956,17 @@ module Exercise = struct
                 | (title, Exercises map) -> Some (title, map)
                 | _ -> None)
               (fun (title, map) -> (title, Exercises map)) ;
-            J.case
+           J.case
               J.(obj2
                    (req "title" string)
                    (req "groups" (assoc group_enc)))
               (function
                 | (title, Groups map) -> Some (title, map)
                 | _ -> None)
-              (fun (title, map) -> (title, Groups map)) ]
+              (fun (title, map) -> (title, Groups map))
+            ]
       in
-      enc_check_version_2 @@
+      enc_check_version_3 @@
       J.union
         [ J.case
             J.(obj1 (req "exercises" (list exercise_enc)))
@@ -771,9 +986,17 @@ module Exercise = struct
         | Groups ((_, g)::r) ->
             (try aux g.contents with Not_found -> aux (Groups r))
         | Groups [] -> raise Not_found
-        | Exercises l -> (match List.assoc id l with
-            | None -> raise Not_found
-            | Some e -> e)
+        | Exercises l ->
+           let rec assoc_tup3 id = function
+             | [] -> raise Not_found
+             | (ex_id, meta, subindex) :: l ->
+                if compare ex_id id = 0 then (meta, subindex) else assoc_tup3 id l
+           in
+           (match assoc_tup3 id l with
+            | _ , Some subindex -> Subindex.to_meta subindex
+            | Some meta, _ -> meta
+            | None, _ -> raise Not_found)
+                                (* | Some meta, Some subindex -> meta *)
       in
       aux t
 
@@ -788,9 +1011,9 @@ module Exercise = struct
       | Exercises l ->
           Exercises
             (List.map (function
-                 | (id, Some ex) -> (id, Some (f id ex))
+                 | (id, Some ex, Some subindex) -> (id, Some (f id ex), Some subindex)
                  | x -> x)
-                l)
+               l)
 
     let rec mapk_exercises f t k =
       let rec mapk_list acc f l k = match l with
@@ -806,8 +1029,8 @@ module Exercise = struct
           @@ fun gs -> Groups gs |> k
       | Exercises l ->
           mapk_list [] (fun e k -> match e with
-              | (id, Some ex) ->
-                  f id ex @@ fun ex -> (id, Some ex) |> k
+              | (id, Some ex, Some subindex) ->
+                  f id ex @@ fun ex -> (id, Some ex, Some subindex) |> k
               | x -> x |> k)
             l
           @@ fun l -> Exercises l |> k
@@ -819,7 +1042,7 @@ module Exercise = struct
             acc gs
       | Exercises l ->
           List.fold_left (fun acc -> function
-              | (id, Some ex) -> f acc id ex
+              | (id, Some ex, Some _) -> f acc id ex
               | _ -> acc)
             acc l
 
@@ -838,11 +1061,11 @@ module Exercise = struct
           aux [] gs
       | Exercises l ->
           let rec aux acc = function
-            | (id, Some ex) :: r ->
+            | (id, Some ex, subindex) :: r ->
                 (f id ex @@ function
-                  | true -> aux ((id, Some ex) :: acc) r
+                  | true -> aux ((id, Some ex, subindex) :: acc) r
                   | false -> aux acc r)
-            | (_, None) :: r -> aux acc r
+            | (_, None, _) :: r -> aux acc r
             | [] -> k (Exercises (List.rev acc))
           in
           aux [] l

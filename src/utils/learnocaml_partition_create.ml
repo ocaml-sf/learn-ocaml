@@ -104,3 +104,4 @@ let partition exo_name fun_name prof =
   let by_grade = partition_by_grade fun_name lst in
   let bad_type,partition_by_grade = asak_partition prof fun_name solution by_grade in
   {not_graded; bad_type; partition_by_grade}
+

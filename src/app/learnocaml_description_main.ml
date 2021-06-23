@@ -15,10 +15,10 @@ module Exercise_link =
                              a_class cl ]
                         content)
   end
-  
-module Display = Display_exercise(Exercise_link)    
+
+module Display = Display_exercise(Exercise_link)
 open Display
-       
+
 let () =
   run_async_with_log @@ fun () ->
     let id = match Url.Current.path with
@@ -33,7 +33,14 @@ let () =
            retrieve (Learnocaml_api.Exercise (Some token, id))
          in
          init_tabs ();
-         exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
+         exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
+         let exo = match ex with
+           | Learnocaml_exercise.Subexercise (_,ex) ->
+              (match ex with
+              | [] -> raise Not_found
+              | ex1 :: _ -> Learnocaml_exercise.Exercise ex1)
+           | ex -> ex
+         in
          (* display exercise questions and prelude *)
          setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude exo);
          let prelude_container = find_component "learnocaml-exo-tab-text-prelude" in
