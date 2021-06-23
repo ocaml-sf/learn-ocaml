@@ -206,6 +206,7 @@ handle_subdir () {
 }
 
 echo
+cd "$srcdir"
 
 # For each subdirectory (except ./corpuses/*)
 while IFS= read -r dir;
@@ -221,9 +222,12 @@ do
     done < <(find . -maxdepth 1 -type d ! -path . ! -path ./repo ! -path ./sync)
 
     popd > /dev/null || { red "popd failed"; clean_fail; }
-done < <(find . -maxdepth 1 -type d ! -path . ! -path "$srcdir"/corpuses)
+done < <(find . -maxdepth 1 -type d ! -path . ! -path ./corpuses)
 
 #==============================================================================
+echo
+cd "$srcdir"
+
 while IFS= read -r corpus;
 do
     echo "---> Testing corpus $corpus:"
@@ -237,6 +241,6 @@ do
 
     green "OK: $corpus"
     (( count++ ))
-done < <(find "$srcdir"/corpuses -mindepth 1 -maxdepth 1 -type d)
+done < <(find ./corpuses -mindepth 1 -maxdepth 1 -type d)
 
 green "\\nALL $count TESTS PASSED\\n"
