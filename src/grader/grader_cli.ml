@@ -151,7 +151,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
              | Some json_file ->
                  let json =
                    Json_encoding.(construct (tup3 Learnocaml_data.Exercise.Meta.enc Learnocaml_exercise.encoding (option float)))
-                     (meta, Learnocaml_exercise.(update File.max_score max exercise), None)
+                     (meta, Learnocaml_exercise.Exercise (Learnocaml_exercise.(update File.max_score max exercise)), None)
                  in
                  let json = match json with
                    | `A _ | `O _ as d -> d
@@ -183,4 +183,4 @@ let grade_from_dir ?(print_result=false) exercise_dir output_json =
               | "" -> `O []
               | s -> Ezjsonm.from_string s)
              |> Json_encoding.destruct Learnocaml_data.Exercise.Meta.enc in
-  grade ~print_result ~dirname:exercise_dir meta exo output_json
+  grade ~print_result ~dirname:exercise_dir meta (Learnocaml_exercise.Exercise exo) output_json

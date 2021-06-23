@@ -8,7 +8,7 @@
 
 type id = string
 
-type t =
+type exercise =
   { id : id ;
     prelude : string ;
     template : string ;
@@ -21,24 +21,49 @@ type t =
     dependencies : string list;
   }
 
+
+type t =
+  | Subexercise of (id * exercise list)
+  | Exercise of exercise
+
 let encoding =
   let open Json_encoding in
-  conv
-    (fun { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
-       id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
-    (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
-       { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
-    (obj10
-       (req "id" string)
-       (req "prelude" string)
-       (req "template" string)
-       (req "descr" (list (tup2 string string)))
-       (req "prepare" string)
-       (req "test" string)
-       (req "solution" string)
-       (req "max-score" int)
-       (req  "depend" (option string))
-       (req  "dependencies" (list string)))
+  let exercise_enc =
+    conv
+      (fun { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
+        id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
+      (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
+        { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
+      (obj10
+         (req "id" string)
+         (req "prelude" string)
+         (req "template" string)
+         (req "descr" (list (tup2 string string)))
+         (req "prepare" string)
+         (req "test" string)
+         (req "solution" string)
+         (req "max-score" int)
+         (req  "depend" (option string))
+         (req  "dependencies" (list string)))
+  in
+  let subexercise_enc =
+      obj1
+      (req "subexercise" (tup2 string (list exercise_enc)))
+  in
+  union
+    [case
+       exercise_enc
+       (function
+        |Exercise map -> Some map
+        |_ -> None)
+     (fun map -> Exercise map );
+     case
+       subexercise_enc
+       (function
+        | Subexercise map -> Some map
+        | _ -> None)
+     (fun map -> Subexercise map)
+       ]
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
@@ -88,8 +113,8 @@ module File = struct
       ciphered : bool ;
       decode : string -> 'a ;
       encode : 'a -> string ;
-      field : t -> 'a ;
-      update : 'a -> t -> t ;
+      field : exercise -> 'a ;
+      update : 'a -> exercise -> exercise ;
     }
 
   exception Missing_file of string
@@ -367,30 +392,45 @@ module File = struct
   include MakeReader (Seq)
 end
 
-let access f ex =
-  f.File.field ex
+let access ?(subid="") f ex  =
+  match ex with
+  | Exercise exo -> f.File.field exo
+  | Subexercise (_, subexos) -> f.File.field @@ List.find (fun ex -> ex.id = subid) subexos
 
-let decipher f ex =
+
+let decipher ?(subid="") f ex =
+  let exo = match ex with
+    | Exercise exo -> exo
+    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+  in
   let open File in
-  let raw = f.field ex in
+  let raw = f.field exo in
   if f.ciphered then
     let prefix =
-      Digest.string (ex.id  ^ "_" ^ f.key) in
+      Digest.string (exo.id  ^ "_" ^ f.key) in
     f.decode (Learnocaml_xor.decode ~prefix raw)
   else
     f.decode raw
 
-let update f v ex =
-  f.File.update v ex
+let update ?(subid="") f v ex =
+  let exo = match ex with
+    | Exercise exo -> exo
+    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+  in
+  f.File.update v exo
 
-let cipher f v ex =
+let cipher ?(subid="") f v ex =
+  let exo = match ex with
+    | Exercise exo -> exo
+    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+  in
   let open File in
   if f.ciphered then
     let prefix =
-      Digest.string (ex.id  ^ "_" ^ f.key) in
-    f.update (Learnocaml_xor.encode ~prefix (f.encode v)) ex
+      Digest.string (exo.id  ^ "_" ^ f.key) in
+    f.update (Learnocaml_xor.encode ~prefix (f.encode v)) exo
   else
-    f.update (f.encode v) ex
+    f.update (f.encode v) exo
 
 let field_from_file file files =
   try File.(StringMap.find file.key files |> file.decode)
@@ -458,7 +498,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field test ;
         write_field depend ;
         (* write_field max_score *) ] 
-        @ (List.map write_field (dependencies (access depend ex))) )
+       @ (List.map write_field (dependencies (access depend (Exercise ex) ))) )
         >>= fun () ->
     return !acc
 end

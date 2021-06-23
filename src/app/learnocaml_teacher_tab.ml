@@ -203,7 +203,7 @@ let rec teacher_tab token _select _params () =
             mk_table (group_level + 1) acc status g.Exercise.Index.contents)
           acc groups_list
     | Exercise.Index.Exercises exlist ->
-        List.fold_left (fun acc (id, meta) ->
+        List.fold_left (fun acc (id, meta, subindex) ->
             let open_exercise_ () =
               let _win = window_open ("/exercises/"^id^"/") "_blank" in
               false
@@ -300,7 +300,7 @@ let rec teacher_tab token _select _params () =
               empty && empty0, List.rev_append hidden hidden0)
             (true, []) groups_list
       | Exercise.Index.Exercises l ->
-          List.fold_left (fun (empty, hidden) (id, ex) ->
+          List.fold_left (fun (empty, hidden) (id, ex, _subindex) ->
               let elt = find_component (exercise_line_id id) in
               match ex with
               | Some ex when matches id ex ->
