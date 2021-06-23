@@ -51,8 +51,8 @@ run_server () {
       -v "$(pwd)"/"$dir":/home/learn-ocaml/actual \
       -v "$SYNC":/sync -v "$REPO":/repository \
       learn-ocaml /bin/sh \
-        -c "learn-ocaml --sync-dir=/sync --repo=/repository build && 
-learn-ocaml --sync-dir=/sync --repo=/repository build serve")
+        -c "learn-ocaml --sync-dir=/sync --repo=/repository build &&
+learn-ocaml --sync-dir=/sync --repo=/repository serve")
 
     # Wait for the server to be initialized
     ./wait-for-it.sh localhost:8080 -s -t 10 -- echo 'learn-ocaml started.'
