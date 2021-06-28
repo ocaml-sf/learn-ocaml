@@ -180,6 +180,37 @@ let output_html ?phrase output html =
   Js_utils.Manip.appendChild output.container div ;
   insert output ?phrase (Html (html, div)) div
 
+let get_fresh_id =
+  let r = ref 0 in
+  fun () -> incr r ; !r
+
+(* It replaces markup field id by "id-<number>" to avoid interferences 
+   between svg images when they are inserted in the same DOM. 
+   In other words, we ensure that every identifier is unique. *)
+let replace_markup idx markup svg =
+  let open Re in
+  let f g = Format.sprintf " %s=\"%s-%d\"" markup (Group.get g 1) idx in
+  let regexp = Format.sprintf "[ ]+%s=\"(#?[A-Za-z0-9]+)\"" markup in
+  let regexp = Posix.compile_pat regexp in
+  replace ~f regexp svg
+
+(* It adapts link markup to be supported in web app. *)
+let replace_link svg =
+  let open Re in
+  let regexp = Posix.compile_pat "l:href" in
+  replace_string regexp ~by:"href" svg
+
+(* It cleans the svg string to be readable in the web app. *)
+let rewrite_svg svg =
+  let idx = get_fresh_id () in
+  replace_markup idx "id" svg
+  |> replace_markup idx "l:href"
+  |> replace_link
+
+let output_svg ?phrase output svg =
+  let svg = rewrite_svg svg  in
+  output_html ?phrase output svg
+
 let output_code ?phrase output code =
   let snapshot =
     let blocks = match phrase with
