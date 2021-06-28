@@ -21,6 +21,12 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
+  | Create_user:
+      string * string * string * string -> unit request
+  | Login:
+      string * string -> student token request
+  | Can_login:
+      student token -> bool request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -28,6 +34,14 @@ type _ request =
   | Update_save:
       'a token * Save.t -> Save.t request
   | Git: 'a token * string list -> string request
+  | Launch:
+      string -> string request
+  | Launch_token:
+      string -> string request
+  | Launch_login:
+      string -> string request
+  | Launch_direct:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request
@@ -66,12 +80,48 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Is_moodle_account:
+      Token.t -> bool request
+  | Change_email:
+      (Token.t * string) -> unit request
+  | Abort_email_change:
+      Token.t -> unit request
+  | Confirm_email:
+      string -> string request
+  | Change_password:
+      Token.t -> string request
+      (* change password and return the current email *)
+  | Send_reset_password:
+      string -> string request
+      (* idem (change password and return the current email) *)
+  | Reset_password:
+      string -> string request
+  | Do_reset_password:
+      string -> string request
+
+  | Get_emails:
+      Token.t -> (string * string option) option request
+      (* Four cases for the result (see token_index.mli):
+       * [None]: not found
+       * [Some (email, Some email)]: init state, unverified email
+       * [Some (email, None)]: verified email
+       * [Some (email, Some other_email)]: pending email change
+       *)
+
+  | Upgrade_form:
+      string -> string request
+  | Upgrade:
+      string -> string request
+  | Server_config:
+      unit -> bool request
+
   | Invalid_request:
       string -> string request
 
 
 type http_request = {
   meth: [ `GET | `POST of string];
+  host: string;
   path: string list;
   args: (string * string) list;
 }
@@ -104,7 +154,13 @@ module Conversions (Json: JSON_CODEC) = struct
           Token.(to_string, parse)
       | Create_teacher_token _ ->
           json J.(obj1 (req "token" string)) +>
-          Token.(to_string, parse)
+            Token.(to_string, parse)
+      | Create_user _ ->
+          json J.unit
+      | Login _ ->
+           json J.(obj1 (req "token" string)) +>
+            Token.(to_string, parse)
+      | Can_login _ -> json J.bool
       | Fetch_save _ ->
           json Save.enc
       | Archive_zip _ ->
@@ -112,6 +168,10 @@ module Conversions (Json: JSON_CODEC) = struct
       | Update_save _ ->
           json Save.enc
       | Git _ -> str
+      | Launch _ -> str
+      | Launch_token _ -> str
+      | Launch_login _ -> str
+      | Launch_direct _ -> str
       | Students_list _ ->
           json (J.list Student.enc)
       | Set_students_list _ ->
@@ -145,6 +205,22 @@ module Conversions (Json: JSON_CODEC) = struct
       | Partition _ ->
           json Partition.enc
 
+      | Is_moodle_account _ -> json J.bool
+      | Change_email _ -> json J.unit
+      | Abort_email_change _ -> json J.unit
+      | Confirm_email _ -> str
+      | Change_password _ -> str
+      | Send_reset_password _ -> str
+      | Reset_password _ -> str
+      | Do_reset_password _ -> str
+
+      | Get_emails _ -> json J.(option (tup2 string (option string)))
+
+      | Upgrade_form _ -> str
+      | Upgrade _ -> str
+
+      | Server_config () -> json J.bool
+
       | Invalid_request _ ->
           str
 
@@ -157,13 +233,15 @@ module Conversions (Json: JSON_CODEC) = struct
     =
     let get ?token path = {
       meth = `GET;
+      host = "";
       path;
       args = match token with None -> [] | Some t -> ["token", Token.to_string t];
     } in
-    let post ~token path body = {
+    let post ?token path body = {
       meth = `POST body;
+      host = "";
       path;
-      args = ["token", Token.to_string token];
+      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
     } in
     function
     | Static path ->
@@ -173,12 +251,22 @@ module Conversions (Json: JSON_CODEC) = struct
 
     | Nonce () ->
         get ["nonce"]
-    | Create_token (secret_candiate, token, nick) ->
-        get ?token (["sync"; "new"; secret_candiate] @
+    | Create_token (secret_candidate, token, nick) ->
+        get ?token (["sync"; "new"; secret_candidate] @
                     (match nick with None -> [] | Some n -> [n]))
     | Create_teacher_token token ->
         assert (Token.is_teacher token);
         get ~token ["teacher"; "new"]
+    | Create_user (email, nick, passwd, secret_candidate) ->
+        post (["sync"; "new_user"])
+          (Json.encode
+             J.(tup4 string string string string)
+             (email, nick, passwd, secret_candidate))
+    | Login (nick, passwd) ->
+        post (["sync"; "login"])
+          (Json.encode J.(tup2 string string) (nick, passwd))
+    | Can_login token ->
+       get ~token ["sync"; "canlogin"]
 
     | Fetch_save token ->
         get ~token ["save.json"]
@@ -187,7 +275,15 @@ module Conversions (Json: JSON_CODEC) = struct
     | Update_save (token, save) ->
         post ~token ["sync"] (Json.encode Save.enc save)
     | Git _ ->
-        assert false (* Reserved for the [git] client *)
+       assert false (* Reserved for the [git] client *)
+    | Launch _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_token _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_login _ ->
+       assert false (* Reserved for an LTI application *)
+    | Launch_direct _ ->
+       assert false (* Reserved for an LTI application *)
 
     | Students_list token ->
         assert (Token.is_teacher token);
@@ -248,6 +344,34 @@ module Conversions (Json: JSON_CODEC) = struct
         get ~token
           ["partition"; eid; fid; string_of_int prof]
 
+    | Is_moodle_account token ->
+       get ~token ["is_moodle_account"]
+    | Change_email (token, address) ->
+        post ~token ["change_email"] (Json.encode J.(tup1 string) address)
+    | Abort_email_change token ->
+       post ~token ["abort_email_change"] ""
+    | Confirm_email _ ->
+        assert false (* Reserved for a link *)
+    | Change_password token ->
+        get ~token ["send_reset"]
+    | Send_reset_password address ->
+        post ["send_reset"] (Json.encode J.(tup1 string) address)
+    | Reset_password _ ->
+        assert false (* Reserved for a link *)
+    | Do_reset_password _ ->
+        assert false (* Reserved for a link *)
+
+    | Get_emails token ->
+        get ~token ["get_emails"]
+
+    | Upgrade_form _ ->
+        assert false (* Reserved for a link *)
+    | Upgrade body ->
+       post ["do_upgrade"] body
+
+    | Server_config () ->
+       get ["get_server_config"]
+
     | Invalid_request s ->
         failwith ("Error request "^s)
 
@@ -258,7 +382,7 @@ module type REQUEST_HANDLER = sig
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
   val callback: Conduit.endp ->
-                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+                Learnocaml_data.Server.config -> http_request -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -270,7 +394,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
   let handler conn config request =
       let k req =
-        Rh.callback conn config req |> Rh.map_ret (C.response_encode req)
+        Rh.callback conn config request req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with
@@ -293,6 +417,18 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Create_token (secret_candidate, token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
           Create_teacher_token token |> k
+      | `POST body, ["sync"; "new_user"], _ ->
+         (match Json.decode J.(tup4 string string string string) body with
+          | email, nick, password, secret ->
+             Create_user (email, nick, password, secret) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `POST body, ["sync"; "login"], _ ->
+         (match Json.decode J.(tup2 string string) body with
+          | nick, password -> Login (nick, password) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
+
+      | `GET, ["sync"; "canlogin"], Some token ->
+         Can_login token |> k
 
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
@@ -344,7 +480,20 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
-      | `GET, ("description"::_), _token ->
+
+      | `POST body, ["launch"], _token ->
+         Launch body |> k
+
+      | `POST body, ["launch"; "token"], _ ->
+         Launch_token body |> k
+
+      | `POST body, ["launch"; "login"], _token ->
+         Launch_login body |> k
+
+      | `POST body, ["launch"; "direct"], _ ->
+         Launch_direct body |> k
+
+      | `GET, ("description"::_path), _token ->
          (* match token with
           | None -> Invalid_request "Missing token" |> k *)
           Static ["description.html"] |> k
@@ -378,6 +527,38 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         when Token.is_teacher token ->
           Partition (token, eid, fid, int_of_string prof) |> k
 
+      | `GET, ["is_moodle_account"], Some token ->
+         Is_moodle_account token |> k
+      | `POST body, ["change_email"], Some token ->
+         (match Json.decode J.(tup1 string) body with
+          | address -> Change_email (token, address) |> k
+          | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `POST _body, ["abort_email_change"], Some token ->
+         Abort_email_change token |> k
+      | `GET, ["confirm"; handle], _ ->
+          Confirm_email handle |> k
+      | `POST body, ["send_reset"], _ ->
+          (match Json.decode J.(tup1 string) body with
+           | address -> Send_reset_password address |> k
+           | exception e -> Invalid_request (Printexc.to_string e) |> k)
+      | `GET, ["send_reset"], Some token ->
+          Change_password token |> k
+      | `GET, ["reset_password"; handle], _ ->
+          Reset_password handle |> k
+      | `POST body, ["reset_password"], _ ->
+          Do_reset_password body |> k
+
+      | `GET, ["get_emails"], Some token ->
+          Get_emails token |> k
+
+      | `POST body, ["upgrade"], _ ->
+          Upgrade_form body |> k
+      | `POST body, ["do_upgrade"], _ ->
+         Upgrade body |> k
+
+      | `GET, ["get_server_config"], _ ->
+         Server_config () |> k
+
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
           Exercise_status_index token |> k
@@ -401,6 +582,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         | ["student-view.html"]
         | ["description.html"]
         | ["partition-view.html"]
+        | ["lti.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->
           Static path |> k

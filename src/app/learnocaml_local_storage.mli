@@ -46,4 +46,6 @@ val server_id : int storage_key
 
 val sync_token : Token.t storage_key
 
+val can_show_token : bool storage_key
+
 val nickname : string storage_key

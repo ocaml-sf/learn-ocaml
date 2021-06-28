@@ -1,0 +1,111 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml</title>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+    <script language="JavaScript" src="/js/learnocaml-lti.js" defer></script>
+    <style>
+      #login-overlay div > div:last-child {
+          padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-overlay">
+      <form method="post" action="/launch/direct">
+	<div id="login-direct">
+          <h4 id="txt_direct_login"><!-- Direct login --></h4>
+          <div>
+            <div id="txt_direct_login_nickname"><!-- Nickname --></div>
+            <div class="filler_h"></div>
+            <input id="login-direct-nick-input" type="text" name="nick" minlength="2" autocomplete="off"></input>
+          </div>
+	  <input type="hidden" name="csrf">
+	  <input type="hidden" name="user-id">
+	  <input type="hidden" name="hmac">
+          <button id="login-direct-login" type="submit"><span id="txt_button_direct_login"><!-- Direct login --></span></button>
+	</div>
+      </form>
+      <form method="post" action="/launch/token">
+	<div id="login-token">
+          <h4 id="txt_returning_with_token"><!-- Login with a token --></h4>
+          <div>
+            <div id="txt_returning_token"><!-- Token --></div>
+            <div class="filler_h"></div>
+            <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                   pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                   id="login-token-input"
+                   name="token"
+                   autocomplete="off">
+          </div>
+	  <input type="hidden" id="token-csrf-input" name="csrf">
+	  <input type="hidden" id="token-id-input" name="user-id">
+	  <input type="hidden" id="token-hamc-input" name="hmac">
+          <button id="login-token-button" type="submit"><span id="txt_token_returning"><!-- Connect --></span></button>
+	  <div id="txt_indirect_label"><!-- to be able to login independently of Moodle --></div>
+	  <span><!-- Workaround(last-child) --></span>
+	</div>
+      </form>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_email"><!-- Email address --></div>
+          <div class="filler_h"></div>
+          <input id="register-email-input" type="email" minlength="5" autocomplete="off">
+        </div>
+        <div>
+          <div id="txt_first_connection_nickname"><!-- Nickname --></div>
+          <div class="filler_h"></div>
+          <input id="register-nick-input" type="text" minlength="2" autocomplete="off"></input>
+        </div>
+        <div>
+          <div id="txt_first_connection_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="register-password-input" type="password" minlength="1">
+        </div>
+        <div>
+          <div id="txt_first_connection_confirmation"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="register-confirmation-input" type="password" minlength="1">
+        </div>
+        <div id="secret-section">
+          <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="register-secret-input" type="text" placeholder="Secret" minlength="1" autocomplete="off">
+        </div>
+	<span id="txt_secret_label"><!-- The secret is the passphrase provided by your teacher to sign-up. --></span>
+        <div>
+          <input type="checkbox" id="first-connection-consent">
+          <label for="first-connection-consent" id="txt_first_connection_consent"></label>
+        </div>
+        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+      </div>
+      <form method="post" action="/launch/login">
+        <div id="login-returning">
+          <h4 id="txt_returning"><!-- Returning user --></h4>
+          <div>
+            <div id="txt_returning_email"><!-- Email address --></div>
+            <div class="filler_h"></div>
+            <input type="email" id="login-email-input" name="email" minlength="5">
+          </div>
+          <div>
+            <div id="txt_returning_password"><!-- Password --></div>
+            <div class="filler_h"></div>
+          <input id="login-password-input" type="password" minlength="1" name="passwd">
+          </div>
+          <input type="hidden" id="login-csrf-input" name="csrf">
+          <input type="hidden" id="login-id-input" name="user-id">
+          <input type="hidden" id="login-hmac-input" name="hmac">
+          <div>
+            <button id="login-connect-button" type="submit"><span id="txt_login_returning"><!-- Connect --></span></button>
+          </div>
+          <a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

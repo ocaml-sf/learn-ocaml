@@ -53,7 +53,7 @@ LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
 FROM alpine:3.13 as program
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init git openssl \
+  && apk add ncurses-libs libev gmp dumb-init msmtp git openssl \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 

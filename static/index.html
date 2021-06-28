@@ -44,6 +44,15 @@
 -->
       </div>
       <hr class="line">
+      <div id="learnocaml-op-buttons-container" class="tabs">
+      </div>
+      <form id="learnocaml-upgrade-container" method="post" action="/upgrade">
+	<div class="tabs">
+	  <input type="hidden" id="upgrade-token" name="token">
+	  <button id="upgrade-button" type="submit"><span id="txt_upgrade"><!-- Upgrade account --></span></button>
+	</div>
+      </form>
+      <hr class="line">
       <hr class="glue">
       <div class="footer">
         <div id="learnocaml-version"></div>
@@ -66,34 +75,86 @@
       <!-- </div> -->
     </div>
     <div id="login-overlay">
-      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h3>
-      <div id="login-new">
-        <h4 id="txt_first_connection"><!-- First connection --></h4>
+      <h1 id="txt_login_welcome"><!-- Welcome to Learn OCaml --></h1>
+      <div id="login-new-token">
+        <h4 id="txt_token_first_connection"><!-- First connection --></h4>
         <div>
-          <div id="txt_first_connection_dialog"><!-- Choose a nickname --></div>
+          <div id="txt_token_first_connection_dialog"><!-- Choose a nickname --></div>
           <div class="filler_h"></div>
-          <input id="login-nickname-input" type="text" placeholder="Nickname"
+          <input id="token-nickname-input" type="text" placeholder="Nickname"
                  minlength="2" autocomplete="off"></input>
         </div>
 	<div id="secret-section">
 	  <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
           <div class="filler_h"></div>
-          <input id="login-secret-input" type="text" placeholder="Secret"
+          <input id="token-secret-input" type="text" placeholder="Secret"
                  minlength="1" autocomplete="off"></input>
         </div>
-        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+        <button id="token-new-button"><span id="txt_token_new"><!-- Create new token --></span></button>
       </div>
       <div id="login-returning">
         <h4 id="txt_returning"><!-- Returning user --></h4>
         <div>
-          <div id="txt_returning_dialog"><!-- Enter your token --></div>
+          <div id="txt_returning_email"><!-- Email address --></div>
           <div class="filler_h"></div>
-          <input type="text" placeholder="XXX-XXX-XXX-XXX" size="17" maxlength="17"
-                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
-                 id="login-token-input"
-                 autocomplete="off">
+          <input id="login-email-input" type="email" minlength="5">
+        </div>
+        <div>
+          <div id="txt_returning_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="login-password-input" type="password" minlength="1">
         </div>
         <button id="login-connect-button"><span id="txt_login_returning"><!-- Connect --></span></button>
+        <a href="#" id="txt_login_forgotten"><!-- Forgot your password? --></a>
+	<div id="txt_moodle_label"><!-- to be able to login from Moodle --></div>
+	<span><!-- Workaround(last-child) --></span>
+      </div>
+      <div id="login-new">
+        <h4 id="txt_first_connection"><!-- First connection --></h4>
+        <div>
+          <div id="txt_first_connection_email"><!-- Email address --></div>
+          <div class="filler_h"></div>
+          <input id="register-email-input" type="email" minlength="5" autocomplete="off">
+        </div>
+        <div>
+          <div id="txt_first_connection_nickname"><!-- Nickname --></div>
+          <div class="filler_h"></div>
+          <input id="register-nick-input" type="text" minlength="2" autocomplete="off"></input>
+        </div>
+        <div>
+          <div id="txt_first_connection_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="register-password-input" type="password" minlength="1">
+        </div>
+        <div>
+          <div id="txt_first_connection_confirmation"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="register-confirmation-input" type="password" minlength="1">
+        </div>
+        <div id="secret-section">
+          <div id="txt_first_connection_secret"><!-- Enter the secret --></div>
+          <div class="filler_h"></div>
+          <input id="register-secret-input" type="text" placeholder="Secret" minlength="1" autocomplete="off">
+	  <span id="txt_secret_label"><!-- The secret is the passphrase provided by your teacher to sign-up. --></span>
+        </div>
+        <div>
+          <input type="checkbox" id="first-connection-consent" autocomplete="off">
+          <label for="first-connection-consent" id="txt_first_connection_consent"></label>
+        </div>
+        <button id="login-new-button"><span id="txt_login_new"><!-- Create new token --></span></button>
+      </div>
+      <div id="login-token">
+        <h4 id="txt_returning_with_token"><!-- Login with a token --></h4>
+        <div>
+          <div id="txt_returning_token"><!-- Token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+                 pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}"
+                 id="login-token-input"
+                 name="token"
+                 autocomplete="off">
+        </div>
+        <button id="login-token-button"><span id="txt_token_returning"><!-- Connect --></span></button>
       </div>
     </div>
     <div id="learnocaml-main-loading" class="loaded"></div>

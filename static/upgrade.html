@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml</title>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+    <script language="JavaScript" src="/js/learnocaml-upgrade.js" defer></script>
+    <style>
+      #login-overlay div > div:last-child {
+          padding: 0;
+      }
+      form > div > span {
+	  text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-overlay">
+      <div id="login-new">
+        <h4 id="txt_upgrade"><!-- Upgrade account --></h4>
+	<div id="txt_info"><!-- An email will be sent to your address to confirm it. --></div>
+        <div>
+          <div id="txt_upgrade_email"><!-- Email address --></div>
+          <div class="filler_h"></div>
+          <input id="upgrade-email-input" name="email" type="email" minlength="5" autocomplete="off">
+        </div>
+        <div>
+          <div id="txt_upgrade_password"><!-- Password --></div>
+          <div class="filler_h"></div>
+          <input id="upgrade-password-input" name="passwd" type="password" minlength="8">
+        </div>
+        <div>
+          <div id="txt_upgrade_password_confirmation"><!-- Confirmation --></div>
+          <div class="filler_h"></div>
+          <input id="upgrade-confirmation-input" name="confirmation" type="password" minlength="8">
+        </div>
+	<ul>
+	  <li><div id="txt_password_length"><!-- remark 1 --></div></li>
+	  <li><div id="txt_password_strength"><!-- remark 2 --></div></li>
+	</ul>
+	<input type="hidden" name="csrf">
+	<input id="input-token" type="hidden" name="token">
+        <button id="upgrade-button"><span id="txt_do_upgrade"><!-- Upgrade --></span></button>
+      </div>
+    </div>
+  </body>
+</html>

@@ -9,6 +9,11 @@
 open Learnocaml_data
 open Learnocaml_store
 
+let check_email_ml email =
+  let regexp = Str.regexp Learnocaml_data.email_regexp_ml in
+  Learnocaml_data.email_check_length email
+  && Str.string_match regexp email 0
+
 let port = ref 8080
 
 let cert_key_files = ref None
@@ -76,12 +81,17 @@ type cached_response = {
   deflated_body: string option;
   content_type: string;
   caching: caching;
+  cookies: Cohttp.Cookie.Set_cookie_hdr.t list
 }
 
 type 'a response =
   | Response of { contents: 'a;
                   content_type: string;
-                  caching: caching }
+                  caching: caching;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
+  | Redirect of { code: Cohttp.Code.status_code;
+                  url: string;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
   | Cached of cached_response
 
 type error = (Cohttp.Code.status_code * string)
@@ -116,21 +126,22 @@ let lwt_option_fail x e f =
   | Some x -> f x
   | None -> lwt_fail e
 
-let respond_static caching path =
+let respond_static ?(cookies=[]) caching path =
   lwt_catch_fail
     (fun () ->
        read_static_file path >>= fun contents ->
        let content_type =
          Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)
        in
-       lwt_ok @@ Response { contents; content_type; caching })
+       lwt_ok @@ Response { contents; content_type; caching; cookies })
     (fun e -> (`Not_found, Printexc.to_string e))
 
-let respond_json caching contents =
+let respond_json ?(cookies=[]) caching contents =
   lwt_ok @@
     Response { contents;
                content_type = "application/json";
-               caching }
+               caching;
+               cookies }
 
 let verify_teacher_token token =
   Token.check_teacher token >>= function
@@ -176,6 +187,83 @@ let check_report exo report grade =
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade
 
+let generate_csrf_token length =
+  let random_bytes = Bytes.make length '\000' in
+  Cryptokit.Random.secure_rng#random_bytes random_bytes 0 length;
+  B64.encode (Bytes.to_string random_bytes)
+
+let generate_hmac secret csrf user_id =
+  let decoder = Cryptokit.Hexa.decode () in
+  let secret = Cryptokit.transform_string decoder secret in
+  let hmac = Cryptokit.MAC.hmac_sha256 secret and
+      encoder = Cryptokit.Hexa.encode () in
+  Cryptokit.hash_string hmac (csrf ^ user_id)
+  |> Cryptokit.transform_string encoder
+
+let create_student conn (config: Learnocaml_data.Server.config) req
+      nonce_req secret_candidate ?(post_check = Lwt.return_ok ()) nick base_auth =
+  let module ServerData = Learnocaml_data.Server in
+  lwt_option_fail
+    (Hashtbl.find_opt nonce_req conn)
+    (`Forbidden, "No registered token for your address")
+  @@ fun nonce ->
+     Hashtbl.remove nonce_req conn;
+     let know_secret =
+       match config.ServerData.secret with
+       | None -> true
+       | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
+     if not know_secret
+     then lwt_fail (`Forbidden, "Bad secret")
+     else
+       post_check
+       >?= fun () ->
+       Token.create_student ()
+       >>= fun tok ->
+       (match nick with
+        | None -> Lwt.return_unit
+        | Some nickname -> Save.set tok Save.{empty with nickname})
+       >>= fun () ->
+       (match base_auth with
+        | `Token use_moodle ->
+           Lwt.return (Token_index.Token (tok, use_moodle))
+        | `Password (email, password) ->
+           Token_index.UpgradeIndex.change_email !sync_dir tok >|= (fun handle ->
+            Learnocaml_sendmail.confirm_email
+              ~nick
+              ~url:(req.Api.host ^ "/confirm/" ^ handle)
+              email;
+            Token_index.Password (tok, email, password, Some(email)))) >>= fun auth ->
+       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+       lwt_ok tok
+
+(** [get_nickname] is used to show the user name in emails openings.
+    (Cost some filesystem read; we might want to always return None) *)
+let get_nickname token =
+  Save.get token >>= function
+    | None -> Lwt.return_none
+    | Some save -> Lwt.return_some save.Save.nickname
+
+let resend_confirmation_email token email req =
+  begin Token_index.UpgradeIndex.ongoing_change_email !sync_dir token >>= function
+        | Some handle -> Lwt.return handle
+        | None -> Token_index.UpgradeIndex.change_email !sync_dir token
+  end >>= fun handle ->
+  get_nickname token >>= fun nick ->
+  Learnocaml_sendmail.confirm_email
+    ~nick
+    ~url:(req.Api.host ^ "/confirm/" ^ handle)
+    email;
+  Lwt.return_unit
+
+let initiate_password_change token address cache req =
+  Token_index.UpgradeIndex.reset_password !sync_dir token >>= fun handle ->
+  get_nickname token >>= fun nick ->
+  Learnocaml_sendmail.reset_password
+    ~nick
+    ~url:(req.Api.host ^ "/reset_password/" ^ handle)
+    address;
+  respond_json cache address
+
 module Memory_cache = struct
 
   let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
@@ -196,6 +284,7 @@ module Request_handler = struct
   let map_ret f r =
     r >?= function
     | Response ({contents; _} as r) -> lwt_ok @@ Response {r with contents = f contents}
+    | (Redirect _) as r -> lwt_ok r
     | (Cached _) as r -> lwt_ok r
 
   let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -226,12 +315,152 @@ module Request_handler = struct
       lwt_ok
 
   let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
-                    caching -> resp Api.request ->
+                    caching -> Api.http_request -> resp Api.request ->
                     (resp response, error) result Lwt.t
     = let module ServerData = Learnocaml_data.Server in
-      fun conn config cache -> function
+      fun conn config cache req -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
+      | Api.Launch body when config.ServerData.use_moodle ->
+         (* 32 bytes of entropy, same as RoR as of 2020. *)
+         let csrf_token = generate_csrf_token 32 in
+         let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                          ~expiration:(`Max_age (Int64.of_int 3600))
+                          ~path:"/" ~http_only:true
+                          ("csrf", csrf_token)] in
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         Token_index.check_oauth !sync_dir (req.Api.host ^ "/launch") params >>=
+           (function
+            | Ok id ->
+               Token_index.MoodleIndex.user_exists !sync_dir id >>= fun exists ->
+               if exists then
+                 Token_index.MoodleIndex.get_user_token !sync_dir id >>= fun token ->
+                 let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                  ~expiration:(`Max_age (Int64.of_int 60))
+                                  ~path:"/"
+                                  ("token", Token.to_string token)] in
+                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+               else
+                 Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+                 let hmac = generate_hmac secret csrf_token id in
+                 read_static_file ["lti.html"] >>= fun s ->
+                 let contents =
+                   Markup.string s
+                   |> Markup.parse_html
+                   |> Markup.signals
+                   |> Markup.map (function
+                          | `Start_element ((e, "input"), attrs) as elt ->
+                             (match List.assoc_opt ("", "type") attrs,
+                                    List.assoc_opt ("", "name") attrs with
+                              | Some "hidden", Some "csrf" ->
+                                 `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                              | Some "hidden", Some "user-id" ->
+                                 `Start_element ((e, "input"), (("", "value"), id) :: attrs)
+                              | Some "hidden", Some "hmac" ->
+                                 `Start_element ((e, "input"), (("", "value"), hmac) :: attrs)
+                              | _ -> elt)
+                          | t -> t)
+                   |> Markup.pretty_print
+                   |> Markup.write_html
+                   |> Markup.to_string in
+                 lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | Error e -> lwt_fail (`Forbidden, e))
+      | Api.Launch_token body when config.ServerData.use_moodle ->
+         (* code similar to:
+            | Api.Launch_direct body when config.ServerData.use_moodle
+            | Api.Upgrade body when config.ServerData.use_passwd *)
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params and
+             token = Token.parse @@ List.assoc "token" params in
+         Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+         let new_hmac = generate_hmac secret csrf user_id in
+         if not (Eqaf.equal hmac new_hmac) then
+           lwt_fail (`Forbidden, "bad hmac")
+         else
+           Token_index.UserIndex.can_login ~use_passwd:true ~use_moodle:true
+             !sync_dir token >>= fun canlogin ->
+           if not canlogin then
+             lwt_fail (`Forbidden, "Bad token (or token already used by an upgraded account)")
+           else
+             Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+             Token_index.UserIndex.upgrade_moodle !sync_dir token >>= fun () ->
+             let cookies = [make_cookie ("token", Token.to_string token);
+                            make_cookie ~http_only:true ("csrf", "expired")] in
+             lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+      | Api.Launch_login body when config.ServerData.use_moodle ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                          ~expiration:(`Max_age (Int64.of_int 60))
+                          ~path:"/" ~http_only:true
+                          ("csrf", "expired")] in
+         let email = List.assoc "email" params and
+             password = List.assoc "passwd" params and
+             user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params in
+         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (email, password)) >>=
+           (function
+            | None -> lwt_fail (`Forbidden, "incorrect password")
+            | Some token ->
+               Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+               let new_hmac = generate_hmac secret csrf user_id in
+               if not (Eqaf.equal hmac new_hmac) then
+                 lwt_fail (`Forbidden, "bad hmac")
+               else
+                 Token_index.MoodleIndex.user_exists !sync_dir user_id >>= fun exists ->
+                 if exists then
+                   (* This can only happen if the user launched twice
+                      at the same time and completed the form twice,
+                      but as the CSRF in the cookies has changed twice
+                      (once for the second form, once for the
+                      invalidation), this should not happen at all. *)
+                   lwt_fail (`Forbidden, "user exists")
+                 else
+                   Token_index.MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+                   let cookies = (Cohttp.Cookie.Set_cookie_hdr.make
+                                    ~expiration:(`Max_age (Int64.of_int 60))
+                                    ~path:"/"
+                                    ("token", Token.to_string token)) :: cookies in
+                   lwt_ok @@ Redirect { code=`See_other; url="/"; cookies })
+      | Api.Launch_direct body when config.ServerData.use_moodle ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let user_id = List.assoc "user-id" params and
+             csrf = List.assoc "csrf" params and
+             hmac = List.assoc "hmac" params and
+             nickname = List.assoc "nick" params in
+         Token_index.OauthIndex.get_current_secret !sync_dir >>= fun secret ->
+         let new_hmac = generate_hmac secret csrf user_id in
+         if not (Eqaf.equal hmac new_hmac) then
+           lwt_fail (`Forbidden, "bad hmac")
+         else
+           Token.create_student () >>= fun token ->
+           (if nickname = "" then Lwt.return_unit
+            else Save.set token Save.{empty with nickname})
+           >>= fun () ->
+           Token_index.(
+             MoodleIndex.add_user !sync_dir user_id token >>= fun () ->
+             UserIndex.upgrade_moodle !sync_dir token) >>= fun () ->
+           let cookies = [make_cookie ("token", Token.to_string token);
+                          make_cookie ~http_only:true ("csrf", "expired")] in
+           lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+      | Api.Launch _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_token _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_login _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
+      | Api.Launch_direct _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Static path ->
          respond_static cache path
       | Api.Nonce () ->
@@ -245,39 +474,65 @@ module Request_handler = struct
               Hashtbl.add nonce_req conn nonce;
               nonce
          in respond_json cache nonce
+      | Api.Create_token _ when config.ServerData.use_passwd ->
+         lwt_fail (`Forbidden, "Creating a raw token is forbidden on this instance.")
       | Api.Create_token (secret_candidate, None, nick) ->
          valid_string_of_endp conn
          >?= fun conn ->
-         lwt_option_fail
-           (Hashtbl.find_opt nonce_req conn)
-           (`Forbidden, "No registered token for your address")
-         @@ fun nonce ->
-         Hashtbl.remove nonce_req conn;
-         let know_secret =
-           match config.ServerData.secret with
-           | None -> true
-           | Some x -> Sha.sha512 (nonce ^ x) = secret_candidate in
-         if not know_secret
-         then lwt_fail (`Forbidden, "Bad secret")
-         else
-           Token.create_student ()
-           >>= fun tok ->
-           (match nick with | None -> Lwt.return_unit
-                            | Some nickname ->
-                               Save.set tok Save.{empty with nickname})
-           >>= fun () -> respond_json cache tok
+         create_student conn config req nonce_req secret_candidate nick (`Token false) >?=
+         respond_json cache
       | Api.Create_token (_secret_candidate, Some token, _nick) ->
          lwt_catch_fail
-            (fun () -> Token.register token >>= fun () -> respond_json cache token)
+            (fun () -> Token.register token >>= fun () ->
+                       let auth = Token_index.Token (token, false) in
+                       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+                       respond_json cache token)
             (function
              | Failure body -> (`Bad_request, body)
              | exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Create_teacher_token token ->
          verify_teacher_token token
          >?= fun () ->
-         Token.create_teacher ()
-         >>= respond_json cache
+             Token.create_teacher () >>= fun token ->
+             let auth = Token_index.Token (token, false) in
+             Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+             respond_json cache token
+      | Api.Create_user (email, nick, password, secret) when config.ServerData.use_passwd ->
+         valid_string_of_endp conn
+         >?= fun conn ->
+             Token_index.UserIndex.exists !sync_dir email >>= fun exists ->
+             let post_check =
+               if exists then
+                 lwt_fail (`Forbidden, "User already exists")
+               else if not (check_email_ml email) then
+                 lwt_fail (`Bad_request, "Invalid e-mail address")
+               else if not (Learnocaml_data.passwd_check_length password) then
+                 lwt_fail (`Bad_request, "Password must be at least 8 characters long")
+               else if not (Learnocaml_data.passwd_check_strength password) then
+                 lwt_fail (`Bad_request, "Password too weak")
+               else
+                 lwt_ok () in
+             create_student conn config req nonce_req secret ~post_check (Some nick) (`Password (email, password)) >?= fun _ ->
+           respond_json cache ()
 
+      | Api.Login (nick, password) when config.ServerData.use_passwd ->
+         Token_index.UserIndex.authenticate !sync_dir (Token_index.Passwd (nick, password)) >>=
+           (function
+            | Some token -> respond_json cache token
+            | _ ->
+               Lwt.return (Printf.printf "[WARNING] Bad login or password for: %s\n%!" nick)
+               >>= fun () ->
+               lwt_fail (`Forbidden, "Bad login or password (or e-mail not confirmed)"))
+      | Api.Create_user _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Login _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Can_login token ->
+         Token_index.UserIndex.can_login
+           ~use_passwd:config.ServerData.use_passwd
+           ~use_moodle:config.ServerData.use_moodle
+           !sync_dir token >>=
+           respond_json cache
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
@@ -295,7 +550,8 @@ module Request_handler = struct
           Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
-                               caching = Nocache }
+                               caching = Nocache;
+                               cookies = [] }
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -334,7 +590,8 @@ module Request_handler = struct
               lwt_ok @@
                 Response { contents;
                            content_type = "application/octet-stream";
-                           caching = Nocache })
+                           caching = Nocache;
+                           cookies = [] })
             (fun e -> (`Not_found, Printexc.to_string e))
 
       | Api.Students_list token ->
@@ -421,7 +678,8 @@ module Request_handler = struct
           lwt_ok @@
             Response {contents = Buffer.contents buf;
                       content_type = "text/csv";
-                      caching = Nocache}
+                      caching = Nocache;
+                      cookies = []}
 
       | Api.Exercise_index (Some token) ->
           Exercise.Index.get () >>= fun index ->
@@ -494,17 +752,222 @@ module Request_handler = struct
            )
            (fun exn -> (`Not_found, Printexc.to_string exn))
 
+      | Api.Is_moodle_account token when config.ServerData.use_moodle ->
+         Token_index.MoodleIndex.token_exists !sync_dir token >>= fun has_moodle ->
+         respond_json cache has_moodle
+      | Api.Is_moodle_account _ ->
+         lwt_fail (`Forbidden, "LTI disabled on this instance.")
+
+      | Api.Change_email (token, address) when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
+           (function
+            | Some (old_address, _pending) ->
+               Token_index.UserIndex.exists !sync_dir address >>= fun exists ->
+               if exists then
+                 lwt_fail (`Forbidden, "Address already in use.")
+               else
+                 Token_index.UserIndex.change_email !sync_dir token address >>= fun () ->
+                 Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+                 get_nickname token >>= fun nick ->
+                 Learnocaml_sendmail.change_email
+                   ~nick
+                   ~url:(req.Api.host ^ "/confirm/" ^ handle)
+                   old_address address;
+                 respond_json cache ()
+            | None -> lwt_fail (`Not_found, "Unknown user."))
+
+      | Api.Abort_email_change token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
+           (function
+            | Some (cur_email, Some new_email) when cur_email <> new_email ->
+               Token_index.UserIndex.abort_email_change !sync_dir token >>= fun () ->
+               Token_index.UpgradeIndex.abort_email_change !sync_dir token >>= fun () ->
+               respond_json cache ()
+            | Some _ -> lwt_fail (`Forbidden, "Invalid action.")
+            | None -> lwt_fail (`Not_found, "Unknown user."))
+
+      | Api.Confirm_email handle when config.ServerData.use_passwd ->
+         Token_index.UpgradeIndex.can_change_email !sync_dir handle >>=
+           (function
+            | Some token ->
+               Token_index.UserIndex.confirm_email !sync_dir token >>= fun () ->
+               Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
+               respond_static cache ["validate.html"]
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
+      | Api.Send_reset_password address when config.ServerData.use_passwd ->
+         if not (check_email_ml address) then
+           lwt_fail (`Bad_request, "Invalid e-mail address")
+         else Token_index.UserIndex.token_of_email !sync_dir address >>=
+           (function
+            | Some token ->
+               Token_index.UserIndex.emails_of_token !sync_dir token >>=
+                 (function
+                  | Some (address, pending) ->
+                     begin if pending = Some address (* same email -> unconfirmed *)
+                           then resend_confirmation_email token address req
+                           else Lwt.return_unit
+                     end >>= fun () ->
+                     initiate_password_change token address cache req
+                  | None ->
+                     initiate_password_change token address cache req)
+            | None ->
+               Lwt.return
+                 (Printf.printf "[INFO] attempt to reset password for unknown email: %s\n%!"
+                    address)
+               >>= fun () ->
+               respond_json cache address)
+      | Api.Change_password token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
+           (function
+            | Some (address, pending) ->
+               begin if pending = Some address (* same email -> unconfirmed *)
+                     then resend_confirmation_email token address req
+                     else Lwt.return_unit
+               end >>= fun () ->
+                     initiate_password_change token address cache req
+            | None -> lwt_fail (`Not_found, "Unknown user."))
+      | Api.Reset_password handle when config.ServerData.use_passwd ->
+         Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
+           (function
+            | Some _token ->
+               let csrf_token = generate_csrf_token 32 in
+               let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 3600))
+                                ~path:"/" ~http_only:true
+                                ("csrf", csrf_token)] in
+               read_static_file ["reset.html"] >>= fun s ->
+               let contents =
+                 Markup.string s
+                 |> Markup.parse_html
+                 |> Markup.signals
+                 |> Markup.map (function
+                        | `Start_element ((e, "input"), attrs) as elt ->
+                           (match List.assoc_opt ("", "type") attrs,
+                                  List.assoc_opt ("", "name") attrs with
+                            | Some "hidden", Some "csrf" ->
+                               `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                            | Some "hidden", Some "handle" ->
+                               `Start_element ((e, "input"), (("", "value"), handle) :: attrs)
+                            | _ -> elt)
+                        | t -> t)
+                 |> Markup.pretty_print
+                 |> Markup.write_html
+                 |> Markup.to_string in
+               lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
+      | Api.Do_reset_password body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let handle = List.assoc "handle" params in
+         Token_index.UpgradeIndex.can_reset_password !sync_dir handle >>=
+           (function
+            | Some token ->
+               let password = List.assoc "passwd" params and
+                   cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/"
+                                ~http_only:true ("csrf", "expired")] in
+               if not (Learnocaml_data.passwd_check_length password) then
+                 lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
+               else if not (Learnocaml_data.passwd_check_strength password) then
+                 lwt_ok @@ Redirect { code=`See_other; url="/reset_password/" ^ handle; cookies }
+               else
+                 Token_index.UserIndex.update !sync_dir token password >>= fun () ->
+                 Token_index.UpgradeIndex.revoke_operation !sync_dir handle >>= fun () ->
+                 lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+            | None ->
+               lwt_fail (`Forbidden, "Nothing to do."))
+
+      | Api.Change_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Abort_email_change _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Confirm_email _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Send_reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Change_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Do_reset_password _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+
+      | Api.Get_emails token when config.ServerData.use_passwd ->
+         Token_index.UserIndex.emails_of_token !sync_dir token >>= fun emails ->
+         respond_json cache emails
+      | Api.Get_emails _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+
+      | Api.Upgrade_form body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let token = Token.parse @@ List.assoc "token" params in
+         Token_index.UserIndex.emails_of_token !sync_dir token >>=
+           (function
+            | None ->
+               let csrf_token = generate_csrf_token 32 in
+               let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 3600))
+                                ~path:"/" ~http_only:true ("csrf", csrf_token)] in
+               read_static_file ["upgrade.html"] >>= fun s ->
+               let contents =
+                 Markup.string s
+                 |> Markup.parse_html
+                 |> Markup.signals
+                 |> Markup.map (function
+                        | `Start_element ((e, "input"), attrs) as elt ->
+                           (match List.assoc_opt ("", "type") attrs,
+                                  List.assoc_opt ("", "name") attrs with
+                            | Some "hidden", Some "csrf" ->
+                               `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                            | Some "hidden", Some "token" ->
+                               `Start_element ((e, "input"), (("", "value"), Token.to_string token) :: attrs)
+                            | _ -> elt)
+                        | t -> t)
+                 |> Markup.pretty_print
+                 |> Markup.write_html
+                 |> Markup.to_string in
+               lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies }
+            | Some _ -> lwt_fail (`Forbidden, "Already an account."))
+      | Api.Upgrade body when config.ServerData.use_passwd ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         let token = Token.parse @@ List.assoc "token" params in
+         let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                             ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+         let cookies = [make_cookie ~http_only:true ("csrf", "expired")] and
+             email = List.assoc "email" params and
+             password = List.assoc "passwd" params in
+         let  cookies = make_cookie ("token", Token.to_string token) :: cookies in
+         Token_index.UserIndex.upgrade !sync_dir token email password >>= fun () ->
+         Token_index.UpgradeIndex.change_email !sync_dir token >>= fun handle ->
+         get_nickname token >>= fun nick ->
+         Learnocaml_sendmail.confirm_email
+           ~nick
+           ~url:(req.Api.host ^ "/confirm/" ^ handle)
+           email;
+         lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+      | Api.Upgrade_form _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+      | Api.Upgrade _ ->
+         lwt_fail (`Forbidden, "Users with passwords are disabled on this instance.")
+
+      | Api.Server_config _ ->
+         lwt_fail (`Forbidden, "pas encore fait")
       | Api.Invalid_request body ->
           lwt_fail (`Bad_request, body)
 
   let callback: type resp. Conduit.endp ->
                            Learnocaml_data.Server.config ->
+                           Api.http_request ->
                            resp Api.request -> resp ret
-  = fun conn config req ->
+  = fun conn config http_req req ->
     let cache = caching req in
     let respond () =
       Lwt.catch
-        (fun () -> callback_raw conn config cache req)
+        (fun () -> callback_raw conn config cache http_req req)
         (function
           | Not_found ->
               lwt_fail (`Not_found, "Component not found")
@@ -519,15 +982,25 @@ module Request_handler = struct
 
 end
 
-module Api_server = Api.Server (Json_codec) (Request_handler)
+module Api_server = Api.Server (Token_index.Json_codec) (Request_handler)
 
 let init_teacher_token () =
   Token.Index.get () >>= function tokens ->
     match List.filter Token.is_teacher tokens with
     | [] ->
-        Token.create_teacher () >|= fun token ->
-        Printf.printf "Initial teacher token created: %s\n%!"
-          (Token.to_string token)
+       Token_index.UserIndex.create_index !sync_dir >>= fun _users ->
+       (* call [UserIndex.create_index] first as it will rely on
+          [TokenIndex.get_tokens] to populate the [UserIndex] (with no
+          tokens at that point) before calling [Token.create_teacher],
+          otherwise we would get:
+          [ERROR] BaseUserIndex.add: duplicate token (X-…-…-…-…) *)
+       Token.create_teacher () >>= fun token ->
+       let auth = Token_index.Token (token, false) in
+       Token_index.UserIndex.add !sync_dir auth >>= fun () ->
+       Printf.printf "Initial teacher token created: %s\n%!"
+         (Token.to_string token);
+       Lwt.return_unit
+
     | teachers ->
         Printf.printf "Found the following teacher tokens:\n  - %s\n%!"
           (String.concat "\n  - " (List.map Token.to_string teachers));
@@ -583,6 +1056,22 @@ let compress ?(level = 4) data =
 let launch () =
   Random.self_init () ;
   Learnocaml_store.Server.get () >>= fun config ->
+  let module ServerData = Learnocaml_data.Server in
+  if config.ServerData.use_moodle
+     && not config.ServerData.use_passwd then
+    failwith "Cannot enable Moodle/LTI without enabling passwords."
+  else if not config.ServerData.use_passwd then
+    print_endline "[INFO] You may want to enable passwords and LTI \
+                   with the config options `use_passwd' and `use_moodle'."
+  else if not config.ServerData.use_moodle then
+    print_endline "[INFO] You may want to enable LTI with the config \
+                   option `use_moodle'.";
+  (if config.ServerData.use_moodle then
+    Token_index.OauthIndex.get_first_oauth !sync_dir >>= fun (secret, _) ->
+    Lwt_io.printf "LTI shared secret: %s\n" secret
+  else
+    Lwt.return_unit)
+  >>= fun () ->
   let callback conn req body =
     let uri = Request.uri req in
     let path = Uri.path uri in
@@ -603,8 +1092,8 @@ let launch () =
         (Cohttp.Header.get_acceptable_encodings req.Request.headers)
     in
     let respond = function
-      | Response {contents=body; content_type; caching; _}
-      | Cached {body; content_type; caching; _} as resp ->
+      | Response {contents=body; content_type; caching; cookies; _}
+      | Cached {body; content_type; caching; cookies; _} as resp ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
             | Longcache _ ->
@@ -619,10 +1108,12 @@ let launch () =
             | Nocache ->
                 Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
+          let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+          let headers = Cohttp.Header.add_list headers cookies_hdr in
           let resp = match resp, caching with
             | Response _, (Longcache key | Shortcache (Some key)) ->
                 let cached =
-                  {body; deflated_body = None; content_type; caching}
+                  {body; deflated_body = None; content_type; caching; cookies = []}
                 in
                 Memory_cache.add key cached;
                 Cached cached
@@ -654,19 +1145,38 @@ let launch () =
             (fun e ->
               Server.respond_error ~status:`Internal_server_error
                 ~body:(Printexc.to_string e) ())
+      | Redirect { code; url; cookies } ->
+         let headers = Cohttp.Header.init_with "Location" url in
+         let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+         let headers = Cohttp.Header.add_list headers cookies_hdr in
+         Server.respond_string ~headers ~status:code ~body:"" ()
     in
     if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
        Some last_modified
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> lwt_ok {Api.meth = `GET; path; args}
+     | `GET -> lwt_ok {Api.meth = `GET; host = !base_url; path; args}
      | `POST ->
         begin
-          string_of_stream (Cohttp_lwt.Body.to_stream body)
-          >>= function
-          | Some s -> lwt_ok {Api.meth = `POST s; path; args}
-          | None -> lwt_fail (`Bad_request, "Missing POST body")
+          Cohttp_lwt.Body.to_string body
+          >>= fun params ->
+          let param_list = Uri.query_of_encoded params in
+          if param_list = [] then
+            lwt_fail (`Bad_request, "Missing POST body")
+          else
+            let cookies = Cohttp.Cookie.Cookie_hdr.extract req.Request.headers in
+            match List.assoc_opt "csrf" param_list,
+                  List.assoc_opt "csrf" cookies with
+            | Some (param_csrf :: _), Some cookie_csrf ->
+               if Eqaf.equal param_csrf cookie_csrf then
+                 lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
+               else
+                 lwt_fail (`Forbidden, "CSRF token mismatch")
+            | None, None | None, Some _ ->
+               lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
+            | _, _ ->
+               lwt_fail (`Forbidden, "Bad CSRF token")
         end
      | _ -> lwt_fail (`Bad_request, "Unsupported method"))
     >?= (fun req ->
@@ -683,6 +1193,12 @@ let launch () =
     | Some (crt, key) ->
         `TLS (`Crt_file_path crt, `Key_file_path key, `No_password, `Port !port)
   in
+  begin
+    if config.Learnocaml_data.Server.use_passwd then
+      Token_index.UpgradeIndex.filter_old_operations !sync_dir
+    else
+      Lwt.return_unit
+  end >>= fun () ->
   init_teacher_token () >>= fun () ->
   Lwt.catch (fun () ->
       Server.create

@@ -6,6 +6,25 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(** Regexp strings compatible with:
+ * https://ocsigen.org/js_of_ocaml/3.1.0/api/Regexp
+ * https://caml.inria.fr/pub/docs/manual-ocaml/libref/Str.html
+ *)
+val email_regexp_js : string
+val email_regexp_ml : string
+
+(** "local-part@domain" must have upto 254 chars, "local-part" upto 64 chars. *)
+val email_check_length : string -> bool
+
+(** Passwords must have at least 8 chars. Return false if this doesn't hold.
+    Function used in frontend/backend. *)
+val passwd_check_length : string -> bool
+
+(** Naive evaluation of password strength, independently of its length
+    (require at least one digit, lower, upper, non-alphanumeric char).
+    Especially intended to be used in frontend. *)
+val passwd_check_strength : string -> bool
+
 module SMap: sig
 
   include Map.S with type key = string
@@ -125,6 +144,8 @@ module Server : sig
      where users can pre-set some of the server settings. *)
   type preconfig = {
     secret : string option;
+    use_moodle : bool;
+    use_passwd : bool;
   }
   val empty_preconfig : preconfig
 
@@ -132,6 +153,8 @@ module Server : sig
      from the preconfig during the 'build' stage. *)
   type config = {
     secret : string option; (* maybe a secret *)
+    use_moodle : bool;
+    use_passwd : bool;
     server_id : int; (* random integer generated each building time *)
   }
 

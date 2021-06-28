@@ -6,6 +6,39 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+(* Regexp strings compatible with:
+ * https://ocsigen.org/js_of_ocaml/3.1.0/api/Regexp
+ * https://caml.inria.fr/pub/docs/manual-ocaml/libref/Str.html
+(* inspired from https://www.w3.org/TR/html52/sec-forms.html#valid-e-mail-address *)
+ *)
+let email_regexp_js =
+  "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$"
+let email_regexp_ml =
+  "^[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\(\\.[a-zA-Z0-9]\\([a-zA-Z0-9-]*[a-zA-Z0-9]\\)?\\)+$"
+let email_check_length email =
+  String.length email <= 254 && try String.index email '@' <= 64 with _ -> false
+
+let passwd_check_length passwd =
+  String.length passwd >= 8
+
+let passwd_check_strength passwd =
+  let digit c = '0' <= c && c <= '9' in
+  let upper c = 'A' <= c && c <= 'Z' in
+  let lower c = 'a' <= c && c <= 'z' in
+  let other c = (not @@ digit c) && (not @@ upper c) && (not @@ lower c) in
+  let one_digit = ref false in
+  let one_upper = ref false in
+  let one_lower = ref false in
+  let one_other = ref false in
+  let inspect c = begin
+      if digit c then one_digit := true;
+      if upper c then one_upper := true;
+      if lower c then one_lower := true;
+      if other c then one_other := true
+    end in
+  let () = String.iter inspect passwd in
+  !one_digit && !one_upper && !one_lower && !one_other
+
 module J = Json_encoding
 
 module SMap = struct
@@ -376,18 +409,39 @@ let enc_check_version_2 enc =
 module Server = struct
   type preconfig = {
     secret : string option;
+    use_moodle : bool;
+    use_passwd : bool;
   }
   let empty_preconfig = {
     secret = None;
-  }
+    use_moodle = false;
+    use_passwd = false;
+    }
+
+  let bool_of_option = function
+    | Some b -> b
+    | None -> false
+
+  let errorable_bool =
+    J.(union [case bool (fun b -> Some b) (fun b -> b);
+              case string (fun s -> Some (string_of_bool s))
+                (fun s -> bool_of_option @@ bool_of_string_opt s)])
 
   let preconfig_enc =
-    J.conv (fun (c : preconfig) -> c.secret)
-           (fun secret : preconfig -> {secret}) @@
-      J.obj1 (J.opt "secret" J.string)
+    J.conv (fun (c : preconfig) ->
+        (c.secret, Some(c.use_moodle), Some(c.use_passwd)))
+      (fun (secret, use_moodle, use_passwd) ->
+        {secret;
+         use_moodle = bool_of_option use_moodle;
+         use_passwd = bool_of_option use_passwd}) @@
+      J.obj3 (J.opt "secret" J.string)
+        (J.opt "use_moodle" errorable_bool)
+        (J.opt "use_passwd" errorable_bool)
 
   type config = {
     secret : string option;
+    use_moodle : bool;
+    use_passwd : bool;
     server_id : int;
   }
 
@@ -398,13 +452,23 @@ module Server = struct
     let server_id = Random.bits () in
     {
       secret;
+      use_moodle = preconf.use_moodle;
+      use_passwd = preconf.use_passwd;
       server_id;
     }
 
   let config_enc =
-    J.conv (fun (c : config) -> (c.secret,c.server_id))
-           (fun (secret,server_id) : config -> {secret; server_id}) @@
-      J.obj2 (J.opt "secret" J.string) (J.req "server_id" J.int)
+    J.conv (fun (c : config) ->
+        (c.secret, Some(c.use_moodle), Some(c.use_passwd), c.server_id))
+      (fun (secret, use_moodle, use_passwd, server_id) ->
+        {secret;
+         use_moodle = bool_of_option use_moodle;
+         use_passwd = bool_of_option use_passwd;
+         server_id}) @@
+      J.obj4 (J.opt "secret" J.string)
+        (J.opt "use_moodle" errorable_bool)
+        (J.opt "use_passwd" errorable_bool)
+        (J.req "server_id" J.int)
 end
 
 module Exercise = struct

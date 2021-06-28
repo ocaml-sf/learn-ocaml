@@ -1,0 +1,103 @@
+# Note: this file is dev-specific.
+# To deploy learn-ocaml, see e.g.:
+# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
+
+# Note: regarding the very first run (sudo docker-compose up --build),
+# the setup of the moodle container ("Running Moodle install script")
+# may take a long time (up to 18').
+# Do NOT stop the docker-compose app too early, otherwise the database
+# would be in a broken state, leading to a systematic error at further
+# runs ("learn-ocaml_moodle_1 exited with code 1").
+
+version: '3.7'
+
+services:
+  learnocaml:
+    container_name: backend
+    # image: ocamlsf/learn-ocaml:0.13
+    build: .
+    ports:
+      - '8080:8080'
+    environment:
+      # (ocaml variable) root URL:
+      LEARNOCAML_BASE_URL: "http://localhost:8080"
+      # (ocaml variable) <container_name>.<network_name>:
+      FROM_DOMAIN: "backend.localdomain"
+      # (alpine msmtp variable) hostname of the SMTP server:
+      SMTPSERVER: "maildev"
+      # SMTPSERVER: "postfix"
+      # (ocaml + alpine msmtp variable) Reply-To = Return-Path:
+      EMAIL: "noreply@example.com"
+    depends_on:
+      - maildev
+      # - postfix
+    volumes:
+      - ./demo-repository:/repository:ro
+      - ./sync:/sync
+    networks:
+      - learnocaml-net
+    restart: unless-stopped
+
+  # Only useful for dev
+  maildev:
+    image: maildev/maildev
+    ports:
+      - "1080:80"
+    networks:
+      - learnocaml-net
+
+# For a prod configuration, see also:
+# https://github.com/pfitaxel/docker-learn-ocaml/blob/master/docker-compose.yml
+
+# BEGIN https://github.com/bitnami/bitnami-docker-moodle/blob/ffa8007ebb0ebc501eeeba62804d10b0efef3673/docker-compose.yml
+
+  mariadb:
+    image: 'docker.io/bitnami/mariadb:10.3-debian-10'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+      # - BITNAMI_DEBUG=true
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+    networks:
+      - moodle-net
+  moodle:
+    image: 'docker.io/bitnami/moodle:3-debian-10'
+    ports:
+      - '9090:8080'
+      # - '80:8080'
+      # - '443:8443'
+    environment:
+      - MOODLE_DATABASE_HOST=mariadb
+      - MOODLE_DATABASE_PORT_NUMBER=3306
+      - MOODLE_DATABASE_USER=bn_moodle
+      - MOODLE_DATABASE_NAME=bitnami_moodle
+      - ALLOW_EMPTY_PASSWORD=yes
+      # - BITNAMI_DEBUG=true
+    volumes:
+      - 'moodle_data:/bitnami/moodle'
+      - 'moodledata_data:/bitnami/moodledata'
+    networks:
+      - moodle-net
+    depends_on:
+      - mariadb
+
+volumes:
+  mariadb_data:
+    driver: local
+  moodle_data:
+    driver: local
+  moodledata_data:
+    driver: local
+
+# END https://github.com/bitnami/bitnami-docker-moodle/blob/ffa8007ebb0ebc501eeeba62804d10b0efef3673/docker-compose.yml
+# @ https://github.com/bitnami/bitnami-docker-moodle#readme
+# @ https://github.com/bitnami/bitnami-docker-moodle#configuration
+
+networks:
+  learnocaml-net:
+    driver: bridge
+    name: localdomain
+  moodle-net:
+    driver: bridge

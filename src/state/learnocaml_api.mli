@@ -34,6 +34,12 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token -> teacher token request
+  | Create_user:
+      string * string * string * string -> unit request
+  | Login:
+      string * string -> student token request
+  | Can_login:
+      student token -> bool request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -42,6 +48,14 @@ type _ request =
       'a token * Save.t -> Save.t request
   | Git:
       'a token * string list -> string request
+  | Launch:
+      string -> string request
+  | Launch_token:
+      string -> string request
+  | Launch_login:
+      string -> string request
+  | Launch_direct:
+      string -> string request
 
   | Students_list:
       teacher token -> Student.t list request
@@ -85,6 +99,36 @@ type _ request =
   | Partition:
       teacher token * Exercise.id * string * int -> Partition.t request
 
+  | Is_moodle_account:
+      Token.t -> bool request
+  | Change_email:
+      (Token.t * string) -> unit request
+  | Abort_email_change:
+      Token.t -> unit request
+  | Confirm_email:
+      string -> string request
+  | Change_password:
+      Token.t -> string  request
+      (* change password and return the current email *)
+  | Send_reset_password:
+      string -> string request
+      (* idem (change password and return the current email) *)
+  | Reset_password:
+      string -> string request
+  | Do_reset_password:
+      string -> string request
+
+  | Get_emails:
+      Token.t -> (string * string option) option request
+
+  | Upgrade_form:
+      string -> string request
+  | Upgrade:
+      string -> string request
+
+  | Server_config:
+      unit -> bool request
+
   | Invalid_request:
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case
@@ -92,6 +136,7 @@ type _ request =
 
 type http_request = {
   meth: [ `GET | `POST of string];
+  host: string;
   path: string list;
   args: (string * string) list;
 }
@@ -107,7 +152,7 @@ module type REQUEST_HANDLER = sig
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
   val callback: Conduit.endp ->
-                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+                Learnocaml_data.Server.config -> http_request -> 'resp request -> 'resp ret
 end
 
 module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig

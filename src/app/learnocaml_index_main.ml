@@ -35,6 +35,9 @@ module El = struct
   let tab_buttons_container_id, tab_buttons_container =
     id "learnocaml-tab-buttons-container"
 
+  let op_buttons_container_id, op_buttons_container =
+    id "learnocaml-op-buttons-container"
+
   let sync_buttons_id, sync_buttons = id "learnocaml-sync-buttons"
 
   let show_panel_id, show_panel = id "learnocaml-show-panel"
@@ -43,11 +46,26 @@ module El = struct
 
   module Login_overlay = struct
     let login_overlay_id, login_overlay = id "login-overlay"
-    let input_nick_id, input_nick = id "login-nickname-input"
-    let input_secret_id, input_secret = id "login-secret-input"
+    let login_new_token_id, login_new_token = id "login-new-token"
+    let login_new_id, login_new = id "login-new"
+    let login_returning_id, login_returning = id "login-returning"
+
+    let token_nickname_id, token_nickname = id "token-nickname-input"
+    let token_secret_id, token_secret = id "token-secret-input"
+    let token_new_button_id, token_new_button = id "token-new-button"
+    let reg_input_email_id, reg_input_email = id "register-email-input"
+    let reg_input_nick_id, reg_input_nick = id "register-nick-input"
+    let reg_input_password_id, reg_input_password = id "register-password-input"
+    let reg_input_confirmation_id, reg_input_confirmation = id "register-confirmation-input"
+    let input_secret_id, input_secret = id "register-secret-input"
+    let input_consent_id, input_consent = id "first-connection-consent"
     let button_new_id, button_new = id "login-new-button"
-    let input_tok_id, input_tok = id "login-token-input"
+    let login_input_email_id, login_input_email = id "login-email-input"
+    let login_input_password_id, login_input_password = id "login-password-input"
+    let login_forgotten_id, login_forgotten = id "txt_login_forgotten"
     let button_connect_id, button_connect = id "login-connect-button"
+    let login_input_token_id, login_input_token = id "login-token-input"
+    let button_token_connect_id, button_token_connect = id "login-token-button"
     let nickname_field_id, nickname_field = id "learnocaml-nickname"
   end
 
@@ -515,6 +533,30 @@ let teacher_tab token a b () =
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
 
+let can_show_token ?(force=false) () =
+  (* Is this localStorage caching really useful? *)
+  let do_request () =
+    Server_caller.request (Learnocaml_api.Can_login (get_stored_token ())) >|= function
+    | Error _ -> false
+    | Ok res ->
+       Learnocaml_local_storage.(store can_show_token) res;
+       res in
+  if force then do_request ()
+  else try Lwt.return Learnocaml_local_storage.(retrieve can_show_token)
+  with Not_found -> do_request ()
+
+let has_moodle () =
+  (* could be put in localStorage, but a server change wouldn't be propagated *)
+  Server_caller.request (Learnocaml_api.Is_moodle_account (get_stored_token ())) >|= function
+  | Error _ -> false
+  | Ok res -> res
+
+let get_emails () =
+  (* could be put in localStorage, but a server change wouldn't be propagated *)
+  Server_caller.request (Learnocaml_api.Get_emails (get_stored_token ())) >|= function
+  | Error _ -> None
+  | Ok res -> res
+
 let sync () = sync (get_stored_token ())
 
 let token_disp_div token =
@@ -528,58 +570,276 @@ let token_disp_div token =
   ] ()
 
 let show_token_dialog token =
-  ext_alert ~title:[%i"Your Learn-OCaml token"] [
-    H.p [H.txt [%i"Your token is displayed below. It identifies you and \
-                      allows to share your workspace between devices."]];
-    H.p [H.txt [%i"Please write it down."]];
-    H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
-  ]
+  can_show_token ~force:true () >>= fun show_token ->
+  if show_token then
+    Lwt.return @@
+      ext_alert ~title:[%i"Your Learn-OCaml token"] [
+          H.p [H.txt [%i"Your token is displayed below. It identifies you and \
+                         allows to share your workspace between devices."]];
+          H.p [H.txt [%i"Please write it down."]];
+          H.div ~a:[H.a_style "text-align: center;"] [token_disp_div token];
+        ]
+  else
+    begin if get_opt config##.enableMoodle
+          then has_moodle () >>= fun moodle ->
+               if moodle then return [[%i"Moodle/LTI authentication is enabled for your account."]]
+               else return [[%i"You might also want to associate your account with Moodle/LTI. Ask your teacher if need be."]]
+          else return []
+    end >>= fun end_lines ->
+    begin if get_opt config##.enablePasswd
+          then get_emails () >|= function
+               | None -> [[%i"No e-mail registered."]]
+               | Some (email, None) ->
+                  [[%i"Your e-mail:"] ^ " " ^ email]
+               | Some (email, Some email2) when email = email2 ->
+                  [[%i"Your e-mail:"] ^ " " ^ email ^ " " ^ [%i"(to be confirmed)"]]
+               | Some (email, Some email2) ->
+                  [[%i"Your e-mail:"] ^ " " ^ email;
+                   [%i"Pending change:"] ^ " " ^ email2 ^ " " ^ [%i"(to be confirmed)"]]
+          else
+            (* shouldn't occur, because use_passwd=false -> can_show_token=true *)
+            return []
+    end >>= fun begin_lines ->
+    let lines = begin_lines @ end_lines in
+    Lwt.return @@
+      ext_alert ~title:[%i"Your Learn-OCaml login"]
+        (List.map (fun para -> H.p [H.txt para]) lines)
+
+let complete_reset_password ?(sayif = true) cb = function
+  | Ok email ->
+     alert ~title:[%i"RESET REQUEST SENT"]
+       ([%i"A reset link was sent to the address:"]
+        ^ " " ^ email ^ if sayif then [%i"\n(if it is associated with an account)"]
+                  else "");
+     Lwt.return_none
+  | Error (`Http_error (400, _)) ->
+     alert ~title:[%i"ERROR"]
+       [%i"The entered e-mail was invalid."];
+     Lwt.return_none
+  | Error e ->
+     lwt_alert ~title:[%i"REQUEST ERROR"] [
+         H.p [H.pcdata [%i"Could not retrieve data from server"]];
+         H.code [H.pcdata (Server_caller.string_of_error e)];
+       ] ~buttons:[
+         [%i"Retry"], (fun () -> cb ());
+         [%i"Cancel"], (fun () -> Lwt.return_none);
+       ]
+
+let complete_change_email cb new_email = function
+  | Ok () ->
+     cb_alert ~title:[%i"RESET REQUEST SENT"]
+       ([%i"A confirmation e-mail has been sent to the address:"]
+        ^ " " ^ new_email)
+       Js_utils.reload;
+     Lwt.return_none
+  | Error (`Not_found _) ->
+     alert ~title:[%i"ERROR"]
+       [%i"The entered e-mail couldn't be recognized."];
+     Lwt.return_none
+  | Error e ->
+     lwt_alert ~title:[%i"REQUEST ERROR"] [
+         H.p [H.pcdata [%i"Could not retrieve data from server"]];
+         H.code [H.pcdata (Server_caller.string_of_error e)];
+       ] ~buttons:[
+         [%i"Retry"], (fun () -> cb ());
+         [%i"Cancel"], (fun () -> Lwt.return_none);
+       ]
+
+let check_email_js email =
+  let re = Regexp.regexp Learnocaml_data.email_regexp_js in
+  Learnocaml_data.email_check_length email
+  && match Regexp.string_match re email 0 with
+     | Some _ -> true
+     | None -> false
+
+let validate_email email =
+  if check_email_js email then Lwt.return_some email
+  else begin
+      alert ~title:[%i"ERROR"]
+        ([%i"The entered e-mail is invalid: "] ^ email);
+      Lwt.return_none
+    end
 
 let init_token_dialog () =
   let open El.Login_overlay in
   Manip.SetCss.display login_overlay "block";
+  if get_opt config##.enablePasswd then
+    Manip.SetCss.display login_new_token "none"
+  else
+    begin
+      Manip.SetCss.display login_new "none";
+      Manip.SetCss.display login_returning "none"
+    end;
   let get_token, got_token = Lwt.task () in
-  let create_token () =
-    let nickname = String.trim (Manip.value input_nick) in
-    if Token.check nickname || String.length nickname < 2 then
-      (Manip.SetCss.borderColor input_nick "#f44";
-       Lwt.return_none)
+  let create_raw_token () =
+    if not (get_opt config##.enablePasswd) then
+      let nickname = String.trim (Manip.value token_nickname) in
+      if Token.check nickname || String.length nickname < 2 then
+        (Manip.SetCss.borderColor token_nickname "#f44";
+         Lwt.return_none)
+      else
+        let secret = Sha.sha512 (String.trim (Manip.value token_secret)) in
+        retrieve (Learnocaml_api.Nonce ())
+        >>= fun nonce ->
+        let secret = Sha.sha512 (nonce ^ secret) in
+        (Learnocaml_local_storage.(store nickname) nickname;
+         retrieve
+           (Learnocaml_api.Create_token (secret, None, Some nickname))
+         >>= fun token ->
+         Learnocaml_local_storage.(store sync_token) token;
+         Learnocaml_local_storage.(store can_show_token) true;
+         show_token_dialog token
+         >>= fun () ->
+         Lwt.return_some (token, nickname))
     else
-      let secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
-      retrieve (Learnocaml_api.Nonce ())
-      >>= fun nonce ->
-      let secret = Sha.sha512 (nonce ^ secret) in
-      (Learnocaml_local_storage.(store nickname) nickname;
-       retrieve
-         (Learnocaml_api.Create_token (secret, None, Some nickname))
-       >>= fun token ->
-       Learnocaml_local_storage.(store sync_token) token;
-       show_token_dialog token;
-       Lwt.return_some (token, nickname))
+      Lwt.return_none
+  in
+  let create_token () =
+    if get_opt config##.enablePasswd then
+      let email = Manip.value reg_input_email and
+          password = Manip.value reg_input_password and
+          password_confirmation = Manip.value reg_input_confirmation and
+          consent = Manip.checked input_consent and
+          consent_label = find_component "txt_first_connection_consent" in
+      let email_criteria = not (check_email_js email) and
+          passwd_crit1 = not (Learnocaml_data.passwd_check_length password) and
+          passwd_crit2 = not (Learnocaml_data.passwd_check_strength password) and
+          passwd_crit3 = not (password = password_confirmation) in
+      Manip.SetCss.borderColor reg_input_email "";
+      Manip.SetCss.borderColor reg_input_password "";
+      Manip.SetCss.borderColor reg_input_confirmation "";
+      Manip.SetCss.fontWeight consent_label "";
+      if email_criteria || passwd_crit1 || passwd_crit2 || passwd_crit3 || not consent then
+        begin
+          if email_criteria then
+            Manip.SetCss.borderColor reg_input_email "#f44";
+          if passwd_crit1 || passwd_crit2 then
+            Manip.SetCss.borderColor reg_input_password "#f44";
+          if passwd_crit3 then
+            Manip.SetCss.borderColor reg_input_confirmation "#f44";
+          if not consent then
+            Manip.SetCss.fontWeight consent_label "bold";
+          if email_criteria then begin
+              cb_alert ~title:[%i"ERROR"]
+                [%i"The entered e-mail was invalid."]
+                (fun () -> Manip.focus reg_input_email)
+            end
+          else if passwd_crit1 then begin
+              cb_alert ~title:[%i"ERROR"]
+                [%i"Password must be at least 8 characters long"]
+                (fun () -> Manip.focus reg_input_password)
+            end
+          else if passwd_crit2 then begin
+              cb_alert ~title:[%i"ERROR"]
+                [%i"Password must contain at least one digit, \
+                    one lower and upper letter, \
+                    and one non-alphanumeric char."]
+                (fun () -> Manip.focus reg_input_password)
+            end
+          else if passwd_crit3 then begin
+              cb_alert ~title:[%i"ERROR"]
+                [%i"The password and its confirmation are not the same"]
+                (fun () -> Manip.focus reg_input_confirmation)
+            end;
+          Lwt.return_none
+        end
+      else
+        let nickname = String.trim (Manip.value reg_input_nick) and
+            secret = Sha.sha512 (String.trim (Manip.value input_secret)) in
+        retrieve (Learnocaml_api.Nonce ())
+        >>= fun nonce ->
+        let secret = Sha.sha512 (nonce ^ secret) in
+        (Learnocaml_local_storage.(store nickname) nickname;
+         retrieve
+           (Learnocaml_api.Create_user (email, nickname, password, secret))
+         >>= fun () ->
+         cb_alert ~title:[%i"VALIDATION REQUIRED"]
+           [%i"A confirmation e-mail has been sent to your address."]
+           Js_utils.reload;
+         Lwt.return_none)
+    else
+      Lwt.return_none
+  in
+  let rec login_passwd () =
+    let email = Manip.value login_input_email and
+        password = Manip.value login_input_password in
+    if get_opt config##.enablePasswd then
+      validate_email email >>= fun _email ->
+      Server_caller.request (Learnocaml_api.Login (email, password)) >>= function
+      | Error e ->
+         alert ~title:[%i"ERROR"] (Server_caller.string_of_error e);
+         Lwt.return_none
+      | Ok token ->
+         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+         | Ok save ->
+            set_state_from_save_file ~token save;
+            Learnocaml_local_storage.(store can_show_token) false;
+            Lwt.return_some (token, save.Save.nickname)
+         | Error (`Not_found _) ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognized."];
+            Lwt.return_none
+         | Error e ->
+            lwt_alert ~title:[%i"REQUEST ERROR"] [
+                H.p [H.txt [%i"Could not retrieve data from server"]];
+                H.code [H.txt (Server_caller.string_of_error e)];
+              ] ~buttons:[
+                [%i"Retry"], (fun () -> login_passwd ());
+                [%i"Cancel"], (fun () -> Lwt.return_none);
+              ]
+    else
+      Lwt.return_none
   in
   let rec login_token () =
-    let input = input_tok in
+    let input = login_input_token in
     match Token.parse (Manip.value input) with
     | exception (Failure _) ->
-        Manip.SetCss.borderColor input "#f44";
-        Lwt.return_none
+       Manip.SetCss.borderColor input "#f44";
+       Lwt.return_none
     | token ->
-        Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
-        | Ok save ->
-            set_state_from_save_file ~token save;
-            Lwt.return_some (token, save.Save.nickname)
-        | Error (`Not_found _) ->
-            alert ~title:[%i"TOKEN NOT FOUND"]
-              [%i"The entered token couldn't be recognised."];
-            Lwt.return_none
-        | Error e ->
-            lwt_alert ~title:[%i"REQUEST ERROR"] [
-              H.p [H.txt [%i"Could not retrieve data from server"]];
-              H.code [H.txt (Server_caller.string_of_error e)];
-            ] ~buttons:[
-              [%i"Retry"], (fun () -> login_token ());
-              [%i"Cancel"], (fun () -> Lwt.return_none);
-            ]
+       Server_caller.request (Learnocaml_api.Can_login token) >>= function
+       | Error _ | Ok false ->
+          alert ~title:[%i"INVALID TOKEN"] @@
+            Printf.sprintf [%if"This token is invalid, \
+                                or associated to an upgraded account \
+                                that only allows \
+                                password-based%s authentication."]
+            (if get_opt config##.enableMoodle then [%i" or Moodle/LTI"] else "");
+          Lwt.return_none
+       | _ ->
+          Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+          | Ok save ->
+             set_state_from_save_file ~token save;
+             Learnocaml_local_storage.(store can_show_token) true;
+             Lwt.return_some (token, save.Save.nickname)
+          | Error (`Not_found _) ->
+             alert ~title:[%i"TOKEN NOT FOUND"]
+               [%i"The entered token couldn't be recognized."];
+             Lwt.return_none
+          | Error e ->
+             lwt_alert ~title:[%i"REQUEST ERROR"] [
+                 H.p [H.pcdata [%i"Could not retrieve data from server"]];
+                 H.code [H.pcdata (Server_caller.string_of_error e)];
+               ] ~buttons:[
+                 [%i"Retry"], (fun () -> login_token ());
+                 [%i"Cancel"], (fun () -> Lwt.return_none);
+               ]
+  in
+  let rec reset_password () =
+    if get_opt config##.enablePasswd then
+      let email = Manip.value login_input_email in
+      let email_criteria = not (check_email_js email) in
+      Manip.SetCss.borderColor login_input_email "";
+      if email_criteria then begin
+          Manip.SetCss.borderColor login_input_email "#f44";
+          cb_alert ~title:[%i"ERROR"] [%i"The entered e-mail was invalid."]
+            (fun () -> Manip.focus login_input_email);
+          Lwt.return_none end
+      else
+      Server_caller.request (Learnocaml_api.Send_reset_password email)
+      >>= complete_reset_password reset_password
+    else
+      Lwt.return_none
   in
   let handler f t = fun _ ->
     Lwt.async (fun () ->
@@ -588,24 +848,64 @@ let init_token_dialog () =
         | None -> ());
     t
   in
+  Manip.Ev.onclick token_new_button (handler create_raw_token false);
+  Manip.Ev.onreturn token_nickname (handler create_raw_token ());
   Manip.Ev.onclick button_new (handler create_token false);
-  Manip.Ev.onreturn input_nick (handler create_token ());
-  Manip.Ev.onclick button_connect (handler login_token false);
-  Manip.Ev.onreturn input_tok (handler login_token ());
+  Manip.Ev.onreturn reg_input_nick (handler create_token ());
+  Manip.Ev.onclick button_connect (handler login_passwd false);
+  Manip.Ev.onreturn login_input_password (handler login_passwd ());
+  Manip.Ev.onclick login_forgotten (handler reset_password false);
+  Manip.Ev.onclick button_token_connect (handler login_token false);
+  Manip.Ev.onreturn login_input_token (handler login_token ());
   get_token >|= fun (token, nickname) ->
   (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
   Manip.SetCss.display login_overlay "none";
   token
 
+let get_cookie name =
+  Js.(to_array (str_array (Dom_html.document##.cookie##split (string ";"))))
+  |> Array.fold_left
+       (fun res v ->
+         match res with
+         | Some _ -> res
+         | None -> let cookie = Js.to_string v
+                                |> String.trim
+                                |> String.split_on_char '=' in
+                   match cookie with
+                   | n :: v when n = name -> Some (String.concat "=" v)
+                   | _ -> None)
+       None
+
+let delete_cookie name =
+  Dom_html.document##.cookie := Js.string (Printf.sprintf "%s=; Max-age=-1;" name)
+
 let init_sync_token button_group =
   catch
     (fun () ->
-       begin try
-           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
-         with Not_found -> init_token_dialog ()
-       end >>= fun token ->
-       enable_button_group button_group ;
-       Lwt.return (Some token))
+      begin
+        match get_cookie "token" with
+        | None ->
+           begin
+             try Lwt.return Learnocaml_local_storage.(retrieve sync_token)
+             with Not_found -> init_token_dialog ()
+           end
+        | Some token ->
+           let token = Learnocaml_data.Token.parse token in
+           Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+           | Ok save ->
+              set_state_from_save_file ~token save;
+              Learnocaml_local_storage.(store can_show_token) false;
+              Lwt.return token
+           | Error _ -> init_token_dialog ()
+      end >>= fun token ->
+      enable_button_group button_group;
+      begin
+        try
+          let nickname = Learnocaml_local_storage.(retrieve nickname) in
+          (Tyxml_js.To_dom.of_input El.nickname_field)##.value := Js.string nickname
+        with _ -> ()
+      end;
+      Lwt.return (Some token))
     (fun _ -> Lwt.return None)
 
 let set_string_translations () =
@@ -617,13 +917,39 @@ let set_string_translations () =
     [%i"Activities"];
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
+    "txt_token_first_connection", [%i"First connection"];
+    "txt_token_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_first_connection_secret", [%i"Enter the secret"];
+    "txt_token_new", [%i"Create new token"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_dialog", [%i"Choose a nickname"];
+    "txt_first_connection_email", [%i"E-mail address"];
+    "txt_first_connection_nickname", [%i"Nickname"];
+    "txt_first_connection_password", [%i"Password"];
+    "txt_first_connection_confirmation", [%i"Password confirmation"];
     "txt_first_connection_secret", [%i"Secret"];
-    "txt_login_new", [%i"Create new token"];
+    "txt_secret_label", [%i"The secret is an optional passphrase \
+                            provided by your teacher. It may be \
+                            required to create an account."];
+    "txt_login_new", [%i"Create new account"];
     "txt_returning", [%i"Returning user"];
-    "txt_returning_dialog", [%i"Enter your token"];
+    "txt_returning_email", [%i"E-mail address"];
+    "txt_returning_password", [%i"Password"];
     "txt_login_returning",  [%i"Connect"];
+    "txt_login_forgotten", [%i"Forgot your password?"];
+    "txt_first_connection_consent", [%i"By submitting this form, I accept that the \
+                                       information entered will be used in the \
+                                        context of the Learn-OCaml plateform."];
+    "txt_returning_with_token", (if get_opt config##.enablePasswd
+                                 then [%i"Login with a legacy token"]
+                                 else [%i"Login with a token"]);
+    "txt_returning_token", [%i"Token"];
+    "txt_token_returning", [%i"Connect"];
+    "txt_upgrade", [%i"Setup a password"];
+    "txt_moodle_label", (if get_opt config##.enableMoodle
+                         then [%i"Or you may want to login \
+                                  directly from Moodle \
+                                  (ask your teacher for details)"]
+                         else "");
   ] in
   List.iter
     (fun (id, text) ->
@@ -632,14 +958,11 @@ let set_string_translations () =
   let placeholder_translations = [
     El.nickname_field, configured config##.txtNickname
       [%i"Nickname"];
-    El.Login_overlay.input_nick, configured config##.txtNickname
-      [%i"Nickname"];
   ] in
   List.iter
     (fun (el, text) ->
        (Tyxml_js.To_dom.of_input el)##.placeholder := Js.string text)
     placeholder_translations
-
 
 let () =
   Lwt.async_exception_hook := begin fun e ->
@@ -673,8 +996,65 @@ let () =
     Manip.appendChild El.content div ;
     delete_arg "activity"
   in
+  let show_upgrade_button ?(critical=true) () =
+    let token = Learnocaml_local_storage.(retrieve sync_token) and
+        input = Js.Unsafe.coerce @@ H.toelt (find_component "upgrade-token") in
+    input##.value := Js.string @@ Token.to_string token;
+    if critical
+    then Manip.addClass (find_component "upgrade-button") "active"
+    else Manip.removeClass (find_component "upgrade-button") "active";
+    Manip.SetCss.display (find_component "learnocaml-upgrade-container") "block"
+  in
+  let init_op () =
+    let rec change_password () =
+      Server_caller.request (Learnocaml_api.Change_password
+                               Learnocaml_local_storage.(retrieve sync_token))
+      >>= complete_reset_password ~sayif:false change_password in
+    let abort_email_change () =
+      Server_caller.request
+        (Learnocaml_api.Abort_email_change (Learnocaml_local_storage.(retrieve sync_token)))
+      >>= fun _ -> Lwt_js.sleep 1.0 >>= fun () -> Js_utils.reload (); Lwt.return_none in
+    let rec change_email () =
+      Lwt.catch
+        (fun () ->
+          ask_string ~title:[%i"New e-mail address"]
+            [H.txt [%i"Enter your new e-mail address:"]]
+          >>= validate_email
+          >>= function
+          | Some address ->
+             Server_caller.request
+               (Learnocaml_api.Change_email (Learnocaml_local_storage.(retrieve sync_token),
+                                             address))
+             >>= complete_change_email change_email address
+          | None -> Lwt.return_none)
+        (fun _exn -> Lwt.return_none) in
+    if get_opt config##.enablePasswd then
+      can_show_token () >>= fun show_token ->
+      if show_token
+      then Lwt.return @@ show_upgrade_button ()
+      else get_emails () >>= fun emails ->
+           let buttons =
+             match emails with
+             | Some (cur_email, Some new_email) when cur_email <> new_email ->
+                [[%i"Change password"], change_password;
+                 [%i"Abort e-mail change"], abort_email_change]
+             | Some (_email, Some _) ->
+                [[%i"Change password"], change_password]
+             | Some (_email, None) ->
+                [[%i"Change password"], change_password;
+                 [%i"Change e-mail"], change_email]
+             | None -> (* Upgrade is not critical as the user logged-in by LTI *)
+                show_upgrade_button ~critical:false (); [] in
+           let container = El.op_buttons_container in
+           Manip.removeChildren container;
+           List.iter (fun (name, callback) ->
+               let btn = Tyxml_js.Html5.(button [txt name]) in
+               Manip.Ev.onclick btn (fun _ -> Lwt.async callback; true);
+               Manip.appendChild container btn) buttons;
+           Lwt.return_unit
+    else Lwt.return_unit
+  in
   let init_tabs token =
-    let get_opt o = Js.Optdef.get o (fun () -> false) in
     let tabs =
       (if get_opt config##.enableTryocaml
        then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
@@ -782,33 +1162,44 @@ let () =
     Lwt.return_unit
   in
   let logout_dialog () =
+    can_show_token () >>= fun show_token ->
     Server_caller.request
       (Learnocaml_api.Update_save
          (get_stored_token (), get_state_as_save_file ()))
     >|= (function
-        | Ok _ ->
-            [%i"Be sure to write down your token before logging out:"]
+         | Ok _ ->
+            if show_token then
+              [%i"Be sure to write down your token before logging out:"]
+            else
+              [%i"Are you sure you want to logout?"]
         | Error _ ->
             [%i"WARNING: the data could not be synchronised with the server. \
                 Logging out will lose your local changes, be sure you exported \
                 a backup."])
     >|= fun s ->
+    let dialog_content =
+      (H.p [H.txt s]) ::
+        if show_token then
+          [H.div ~a:[H.a_style "text-align: center;"]
+             [token_disp_div (get_stored_token ())]]
+        else
+          [] in
     confirm ~title:[%i"Logout"] ~ok_label:[%i"Logout"]
-      [H.p [H.txt s];
-       H.div ~a:[H.a_style "text-align: center;"]
-         [token_disp_div (get_stored_token ())]]
+      dialog_content
       (fun () ->
          Lwt.async @@ fun () ->
          Learnocaml_local_storage.clear ();
+         delete_cookie "token";
          reload ();
          Lwt.return_unit)
   in
   List.iter (fun (text, icon, f) ->
       button ~container:El.sync_buttons ~theme:"white" ~group:sync_button_group ~icon text f)
     [
-      [%i"Show token"], "token", (fun () ->
-          show_token_dialog (get_stored_token ());
-          Lwt.return_unit);
+      (if get_opt config##.enablePasswd
+       then [%i"Show login"]
+       else [%i"Show token"]), "token", (fun () ->
+          show_token_dialog (get_stored_token ()));
       [%i"Sync workspace"], "sync", (fun () ->
           catch_with_alert @@ fun () ->
           sync () >>= fun _ -> Lwt.return_unit);
@@ -857,7 +1248,10 @@ let () =
       true);
   Server_caller.request (Learnocaml_api.Version ()) >>=
     (function
-     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
+     | Ok _ ->
+        init_sync_token sync_button_group >|= init_tabs >>= fun tabs ->
+        init_op () >>= fun () ->
+        Lwt.return tabs
      | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
   try
     let activity = arg "activity" in

@@ -8,10 +8,19 @@
 
 open Lwt.Infix
 
+let is_directory path =
+  Lwt.catch
+    (fun () ->
+      Lwt_unix.lstat path >|= function
+      | Lwt_unix.{st_kind=S_DIR; _} -> true
+      | _ -> false)
+    (fun _exn -> Lwt.return_false)
+
 let rec mkdir_p ?(perm=0o755) dir =
   Lwt_unix.file_exists dir >>= function
   | true ->
-      if Sys.is_directory dir then
+      is_directory dir >>= fun is_directory ->
+      if is_directory then
         Lwt.return ()
       else
         Lwt.fail_with

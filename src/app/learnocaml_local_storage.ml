@@ -151,6 +151,15 @@ let sync_token =
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
 
+let can_show_token =
+  let key = mangle [ "can-show-token" ] in
+  let enc = Json_encoding.(obj1 (req "can-show" bool)) in
+  let store value = store_single key enc value
+  and retrieve () = retrieve_single key enc ()
+  and delete () = delete_single key enc () in
+  { key = Some key ; dependent_keys = (=) key ;
+    store ; retrieve ; delete ; listeners = [] }
+
 let nickname =
   let key = mangle [ "nickname" ] in
   let enc = Json_encoding.(obj1 (req "nickname" string)) in

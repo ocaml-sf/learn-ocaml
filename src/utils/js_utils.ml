@@ -351,6 +351,18 @@ module Manip = struct
     let elt = get_blur_elt "blur" elt in
     elt##blur
 
+  type checked = < checked: bool Js.t Js.prop >
+  let get_checked_elt name elt : checked Js.t =
+    if Js.undefined == (Js.Unsafe.coerce @@ Html5.toelt elt)##.checked then
+      manip_error
+        "Cannot call %s on a node without a 'checked' property"
+        name;
+    Js.Unsafe.coerce @@ Html5.toelt elt
+
+  let checked elt =
+    let elt = get_checked_elt "checked" elt in
+    Js.to_bool elt##.checked
+
   type value = < value: Js.js_string Js.t Js.prop >
   let get_value_elt name elt : value Js.t =
     if Js.undefined == (Js.Unsafe.coerce @@ Html5.toelt elt)##.value then

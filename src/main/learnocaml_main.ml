@@ -373,14 +373,18 @@ let main o =
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
               \  enableToplevel: %b,\n\
-              \  baseUrl: \"%s\"\n\
+              \  baseUrl: \"%s\",\n\
+              \  enablePasswd: %b,\n\
+              \  enableMoodle: %b\n\
                }\n"
               (tutorials_ret <> None)
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
               (o.builder.Builder.toplevel <> Some false)
-              o.builder.Builder.base_url >>= fun () ->
+              o.builder.Builder.base_url
+              preconfig.ServerData.use_passwd
+              preconfig.ServerData.use_moodle >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
     else
       Lwt.return true

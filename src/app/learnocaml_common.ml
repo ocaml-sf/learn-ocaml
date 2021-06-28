@@ -92,10 +92,14 @@ let dialog_layer_id = "ocp-dialog-layer"
 let box_button txt f =
   H.button ~a: [
     H.a_onclick (fun _ ->
+        begin
+          match Manip.by_id dialog_layer_id with
+          | Some div -> Manip.removeChild Manip.Elt.body div
+          | None -> ()
+        end;
         f ();
-        match Manip.by_id dialog_layer_id with
-        | Some div -> Manip.removeChild Manip.Elt.body div; false
-        | None -> (); false)
+        false
+      )
   ] [ H.txt txt ]
 
 let close_button txt =
@@ -135,22 +139,29 @@ let lwt_alert ~title ~buttons message =
 let alert ?(title=[%i"ERROR"]) ?buttons message =
   ext_alert ~title ?buttons [ H.p [H.txt (String.trim message)] ]
 
+let cb_alert ?(title=[%i"ERROR"]) message f =
+  ext_alert ~title ~buttons:[box_button [%i"OK"] @@ f]
+    [ H.p [H.txt (String.trim message)] ]
+
 let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f =
   ext_alert ~title contents ~buttons:[
     box_button ok_label f;
     close_button cancel_label;
   ]
 
-let ask_string ~title ?(ok_label=[%i"OK"]) contents =
+let ask_string ~title ?(ok_label=[%i"OK"]) ?(cancel_label=Some [%i"Cancel"]) contents =
   let input_field =
     H.input ~a:[
         H.a_input_type `Text;
       ] ()
   in
   let result_t, up = Lwt.wait () in
-  ext_alert ~title (contents @ [input_field]) ~buttons:[
-      box_button ok_label (fun () -> Lwt.wakeup up @@ Manip.value input_field)
-    ];
+  let buttons =
+    box_button ok_label (fun () -> Lwt.wakeup up @@ Manip.value input_field) ::
+    match cancel_label with
+    | Some label -> [box_button label (fun () -> Lwt.fail_with "Cancelled by user")]
+    | _ -> [] in
+  ext_alert ~title (contents @ [input_field]) ~buttons;
   result_t
 
 let default_exn_printer = function
@@ -979,7 +990,7 @@ let setup_prelude_pane ace prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
-    
+
 let get_token ?(has_server = true) () =
   if not has_server then
     Lwt.return None
@@ -990,7 +1001,7 @@ let get_token ?(has_server = true) () =
     with Not_found ->
       retrieve (Learnocaml_api.Nonce ())
       >>= fun nonce ->
-      ask_string ~title:"Secret"
+      ask_string ~title:"Secret" ~cancel_label:None
         [H.txt [%i"Enter the secret"]]
       >>= fun secret ->
       retrieve
@@ -998,7 +1009,7 @@ let get_token ?(has_server = true) () =
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       Some token
-      
+
 module Display_exercise =
   functor (
     Q: sig

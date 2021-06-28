@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>Learn OCaml</title>
+    <link rel="stylesheet" href="/css/learnocaml_common.css">
+    <link rel="stylesheet" href="/css/learnocaml_main.css">
+    <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+    <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+    <script language="JavaScript" src="/js/learnocaml-reset.js" defer></script>
+    <style>
+      #login-overlay div > div:last-child {
+          padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-overlay">
+      <form method="post" action="/reset_password">
+        <div id="login-new">
+          <h4 id="txt_passwd_reset"><!-- Reset password --></h4>
+	  <ul>
+	    <li><div id="txt_password_length"><!-- remark 1 --></div></li>
+	    <li><div id="txt_password_strength"><!-- remark 2 --></div></li>
+	  </ul>
+          <div>
+            <div id="txt_new_passwd"><!-- New password --></div>
+            <div class="filler_h"></div>
+            <input id="reset-passwd-input" type="password" name="passwd" minlength="8">
+          </div>
+          <input type="hidden" id="reset-csrf-input" name="csrf">
+          <input type="hidden" id="reset-handle-input" name="handle">
+          <div>
+            <button id="reset-passwd-button" type="submit"><span id="txt_submit"><!-- Submit --></span></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

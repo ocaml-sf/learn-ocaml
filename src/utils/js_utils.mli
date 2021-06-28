@@ -71,6 +71,7 @@ module Manip : sig
   val disable: 'a elt -> unit
   val enable: 'a elt -> unit
 
+  val checked: 'a elt -> bool
   val value: 'a elt -> string
 
   val hasClass: 'a elt -> string -> bool

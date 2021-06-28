@@ -21,6 +21,7 @@ depends: [
   "cohttp-lwt" {>= "1.0.0" & < "2.0.0"}
   "cohttp-lwt-unix" {>= "1.0.0" & < "2.0.0"}
   "conf-git"
+  "cryptokit"
   "decompress" {= "0.8.1"}
   "digestif" {>= "0.7.1"}
   "dune" {= "2.0.1"}
@@ -41,6 +42,7 @@ depends: [
   "markup"
   "markup-lwt"
   "ocaml" {= "4.05.0"}
+  "ocamlnet" {> "4.1"}
   "ocamlfind" {build}
   "ocp-indent-nlfork"
   "ocp-ocamlres" {>= "0.4"}
@@ -50,8 +52,8 @@ depends: [
   "pprint"
   "ppx_cstruct"
   "ppx_tools"
+  "safepass"
   "uutf" {>= "1.0" }
-  "yojson" {>= "1.4.0" }
   "asak" {>= "0.1"}
 ]
 build: [

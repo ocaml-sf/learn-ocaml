@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+val is_directory: string -> bool Lwt.t
 val mkdir_p: ?perm:int -> string -> unit Lwt.t
 
 (** [copy_tree src dst] copies the file [src] into file [dst] *)

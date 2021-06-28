@@ -14,6 +14,8 @@ class type learnocaml_config = object
   method enableLessons: bool Js.optdef_prop
   method enableExercises: bool Js.optdef_prop
   method enableToplevel: bool Js.optdef_prop
+  method enablePasswd: bool Js.optdef_prop
+  method enableMoodle: bool Js.optdef_prop
   method enablePlayground: bool Js.optdef_prop
   method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
   method txtNickname: Js.js_string Js.t Js.optdef_prop
@@ -22,3 +24,4 @@ end
 
 val config : learnocaml_config Js.t
 val api_server : string
+val get_opt : bool Js.optdef -> bool
