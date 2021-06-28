@@ -46,45 +46,61 @@
                 (run odoc html %{dep:test_lib.odoc} -o %{workspace_root}/_doc/_html)))
 )
 
+
+
 (rule
  (targets embedded_cmis.ml)
- (deps %{ocaml-config:standard_library}/array.cmi
-       %{ocaml-config:standard_library}/arrayLabels.cmi
-       %{ocaml-config:standard_library}/buffer.cmi
-       %{ocaml-config:standard_library}/bytes.cmi
-       %{ocaml-config:standard_library}/bigarray.cmi
-       %{ocaml-config:standard_library}/camlinternalFormatBasics.cmi
-       %{ocaml-config:standard_library}/camlinternalFormat.cmi
-       %{ocaml-config:standard_library}/camlinternalLazy.cmi
-       %{ocaml-config:standard_library}/camlinternalMod.cmi
-       %{ocaml-config:standard_library}/camlinternalOO.cmi
-       %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi
-       %{ocaml-config:standard_library}/char.cmi
-       %{ocaml-config:standard_library}/complex.cmi
-       %{ocaml-config:standard_library}/digest.cmi
-       %{ocaml-config:standard_library}/filename.cmi
-       %{ocaml-config:standard_library}/format.cmi
-       %{ocaml-config:standard_library}/hashtbl.cmi
-       %{ocaml-config:standard_library}/int32.cmi
-       %{ocaml-config:standard_library}/int64.cmi
-       %{ocaml-config:standard_library}/lazy.cmi
-       %{ocaml-config:standard_library}/lexing.cmi
-       %{ocaml-config:standard_library}/list.cmi
-       %{ocaml-config:standard_library}/map.cmi
-       %{ocaml-config:standard_library}/marshal.cmi
-       %{ocaml-config:standard_library}/pervasives.cmi
-       %{ocaml-config:standard_library}/printexc.cmi
-       %{ocaml-config:standard_library}/printf.cmi
-       %{ocaml-config:standard_library}/queue.cmi
-       %{ocaml-config:standard_library}/random.cmi
-       %{ocaml-config:standard_library}/scanf.cmi
-       %{ocaml-config:standard_library}/set.cmi
-       %{ocaml-config:standard_library}/stack.cmi
-       %{ocaml-config:standard_library}/string.cmi
-       %{ocaml-config:standard_library}/sys.cmi
-       %{ocaml-config:standard_library}/uchar.cmi
-       %{ocaml-config:standard_library}/weak.cmi)
- (action (with-stdout-to %{targets} (run ocp-ocamlres -format ocamlres %{deps})))
+ (deps
+      (:stdlib_cmis
+        %{ocaml-config:standard_library}/array.cmi
+        %{ocaml-config:standard_library}/arrayLabels.cmi
+        %{ocaml-config:standard_library}/buffer.cmi
+        %{ocaml-config:standard_library}/bytes.cmi
+        %{ocaml-config:standard_library}/bigarray.cmi
+        %{ocaml-config:standard_library}/camlinternalFormatBasics.cmi
+        %{ocaml-config:standard_library}/camlinternalFormat.cmi
+        %{ocaml-config:standard_library}/camlinternalLazy.cmi
+        %{ocaml-config:standard_library}/camlinternalMod.cmi
+        %{ocaml-config:standard_library}/camlinternalOO.cmi
+        %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi
+        %{ocaml-config:standard_library}/char.cmi
+        %{ocaml-config:standard_library}/complex.cmi
+        %{ocaml-config:standard_library}/digest.cmi
+        %{ocaml-config:standard_library}/filename.cmi
+        %{ocaml-config:standard_library}/format.cmi
+        %{ocaml-config:standard_library}/hashtbl.cmi
+        %{ocaml-config:standard_library}/int32.cmi
+        %{ocaml-config:standard_library}/int64.cmi
+        %{ocaml-config:standard_library}/lazy.cmi
+        %{ocaml-config:standard_library}/lexing.cmi
+        %{ocaml-config:standard_library}/list.cmi
+        %{ocaml-config:standard_library}/map.cmi
+        %{ocaml-config:standard_library}/marshal.cmi
+        %{ocaml-config:standard_library}/pervasives.cmi
+        %{ocaml-config:standard_library}/printexc.cmi
+        %{ocaml-config:standard_library}/printf.cmi
+        %{ocaml-config:standard_library}/queue.cmi
+        %{ocaml-config:standard_library}/random.cmi
+        %{ocaml-config:standard_library}/scanf.cmi
+        %{ocaml-config:standard_library}/set.cmi
+        %{ocaml-config:standard_library}/stack.cmi
+        %{ocaml-config:standard_library}/string.cmi
+        %{ocaml-config:standard_library}/sys.cmi
+        %{ocaml-config:standard_library}/uchar.cmi
+        %{ocaml-config:standard_library}/weak.cmi)
+
+       (:local_cmis
+         ../toplevel/.learnocaml_toplevel_pp.objs/byte/learnocaml_toplevel_pp.cmi)
+
+       (:lib_cmis
+         %{lib:re:re.cmi}
+         %{lib:gg:gg.cmi}
+         %{lib:vg:vg.cmi}
+         %{lib:vg:vgr_svg.cmi}))
+ (action
+   (with-stdout-to %{targets}
+    (run ocp-ocamlres -format ocamlres %{stdlib_cmis} %{local_cmis} %{lib_cmis}))
+ )
 )
 
 (library
@@ -92,7 +108,10 @@
  (wrapped false)
  (modes byte)
  (modules Embedded_cmis)
- (libraries ocplib-ocamlres.runtime bigarray)
+ (libraries ocplib-ocamlres.runtime bigarray
+            learnocaml_toplevel_pp
+            vg gg vg.svg
+            re)
 )
 
 (rule
@@ -177,6 +196,7 @@
  (name grader_jsoo_worker)
  (modes byte)
  (flags :standard -warn-error -9-27)
+ (link_flags :standard -linkall)
  (libraries toploop_jsoo
             grading
             ezjsonm
