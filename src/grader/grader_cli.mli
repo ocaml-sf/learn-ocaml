@@ -39,7 +39,8 @@ val dump_dot: string option ref
 
 (** Runs the grading process *)
 val grade:
-  ?print_result:bool -> ?dirname:string -> Learnocaml_data.Exercise.Meta.t ->
+  ?check: string option -> ?print_result:bool -> ?dirname:string ->
+  Learnocaml_data.Exercise.Meta.t ->
   Learnocaml_exercise.t -> string option ->
   (unit, int) result Lwt.t
 

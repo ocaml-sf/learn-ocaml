@@ -203,7 +203,7 @@ let rec teacher_tab token _select _params () =
             mk_table (group_level + 1) acc status g.Exercise.Index.contents)
           acc groups_list
     | Exercise.Index.Exercises exlist ->
-        List.fold_left (fun acc (id, meta, subindex) ->
+        List.fold_left (fun acc (id, meta, _subindex) ->
             let open_exercise_ () =
               let _win = window_open ("/exercises/"^id^"/") "_blank" in
               false
@@ -484,7 +484,7 @@ let rec teacher_tab token _select _params () =
         (Manip.addClass anystudents_line "student_hidden"; [`Any])
     in
     let hidden =
-      Token.Map.fold (fun tok std hidden->
+      Token.Map.fold (fun tok std hidden ->
           let elt = find_component (student_line_id (`Token tok)) in
           if matches std then
             (Manip.removeClass elt "student_hidden";

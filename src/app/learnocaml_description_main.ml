@@ -35,14 +35,14 @@ let () =
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
          let exo = match ex with
-           | Learnocaml_exercise.Subexercise (_,ex) ->
+           | Learnocaml_exercise.Subexercise (ex,_) ->
               (match ex with
               | [] -> raise Not_found
-              | ex1 :: _ -> Learnocaml_exercise.Exercise ex1)
+              | (ex1,_) :: _ -> Learnocaml_exercise.Exercise ex1)
            | ex -> ex
          in
          (* display exercise questions and prelude *)
-         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude exo);
+         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher false File.prelude exo);
          let prelude_container = find_component "learnocaml-exo-tab-text-prelude" in
          let iframe_container = find_component "learnocaml-exo-tab-text-iframe" in
          let text_iframe = Dom_html.createIframe Dom_html.document in

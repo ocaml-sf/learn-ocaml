@@ -47,13 +47,17 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade ?(print_result=false) ?dirname meta exercise output_json =
+let grade ?(check=None) ?(print_result=false) ?dirname meta exercise output_json =
   Lwt.catch
     (fun () ->
-       let code_to_grade = match !grade_student with
+      let code_to_grade =
+        match check with
+        | Some path -> read_student_file (Sys.getcwd ()) ( path ^ "/solution.ml")
+        | None ->
+        match !grade_student with
          | Some path -> read_student_file (Sys.getcwd ()) path
          | None ->
-             Lwt.return (Learnocaml_exercise.(decipher File.solution exercise)) in
+             Lwt.return (Learnocaml_exercise.(decipher true File.solution exercise)) in
        let callback =
          if !display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
        let timeout = !individual_timeout in
@@ -138,13 +142,13 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
            if failure then begin
              if print_result then
                Printf.eprintf "%-30s - Failure - %d points\n%!"
-                 Learnocaml_exercise.(access File.id exercise) max;
+                 Learnocaml_exercise.(access true File.id exercise) max;
              Lwt.return (Error max)
            end
            else begin
              if print_result then
                Printf.eprintf "%-30s - Success - %d points\n%!"
-                 Learnocaml_exercise.(access File.id exercise) max;
+                 Learnocaml_exercise.(access true File.id exercise) max;
              match output_json with
              | None ->
                  Lwt.return (Ok ())

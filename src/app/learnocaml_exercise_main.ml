@@ -47,7 +47,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
+    let max = Learnocaml_exercise.(access false File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -123,10 +123,12 @@ let () =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
     let ex = match exo with
       | Learnocaml_exercise.Exercise ex -> ex
-      | Learnocaml_exercise.Subexercise (_, [] )  -> raise Not_found
-      | Learnocaml_exercise.Subexercise (_id, ex :: _ ) -> ex
+      | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
+      | Learnocaml_exercise.Subexercise ((ex, _) :: _ ,_) -> ex
     in
-    begin match Learnocaml_exercise.(decipher File.prelude (Learnocaml_exercise.Exercise ex)) with
+    let sub_id = ex.Learnocaml_exercise.id
+    in
+    begin match Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude (Learnocaml_exercise.Exercise ex)) with
       | "" -> Lwt.return true
       | prelude ->
           Learnocaml_toplevel.load ~print_outcome:true top
@@ -134,7 +136,7 @@ let () =
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
+      (Learnocaml_exercise.(decipher ~subid:sub_id false File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -147,6 +149,14 @@ let () =
   set_nickname_div ();
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
+  let sub_id =
+    match exo with
+    | Learnocaml_exercise.Subexercise (exs,_) ->
+       (match exs with
+       | [] -> ""
+       | (ex,_subex) :: _ -> ex.Learnocaml_exercise.id)
+    | _ -> ""
+  in
   (match deadline with
    | None -> ()
    | Some 0. -> make_readonly ()
@@ -161,7 +171,7 @@ let () =
         solution
     | { Answer.report = None ; solution ; _ } ->
         solution
-    | exception Not_found -> Learnocaml_exercise.(access File.template exo) in
+    | exception Not_found -> Learnocaml_exercise.(access ~subid:sub_id false File.template exo) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -184,13 +194,13 @@ let () =
   (* ---- editor pane --------------------------------------------------- *)
   let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access File.template exo));
+  EB.cleanup (Learnocaml_exercise.(access ~subid:sub_id false File.template exo));
   EB.sync token id;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude exo);
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")

@@ -173,14 +173,17 @@ let log conn api_req =
 
 let check_report exo report grade =
   let max_grade = match exo with
-    
-    | Learnocaml_exercise.Subexercise (_id,subexs) ->
+    | Learnocaml_exercise.Subexercise (subexs,_) ->
        let rec aux acc = function
          | [] -> 0
-         | ex :: l ->  aux (acc+(Learnocaml_exercise.(access File.max_score) (Learnocaml_exercise.Exercise ex))) l
+         | (ex,subex) :: l ->
+            let open Learnocaml_exercise in
+            aux (acc + subex.student_weight *
+                         (access true File.max_score (Exercise ex)))
+              l
        in
        aux 0 subexs
-    | ex -> Learnocaml_exercise.(access File.max_score) ex
+    | ex -> Learnocaml_exercise.(access true File.max_score) ex
   in
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade

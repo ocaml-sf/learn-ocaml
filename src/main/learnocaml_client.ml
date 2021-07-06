@@ -348,7 +348,7 @@ let get_score =
   in
   get_score 0
 
-let max_score exo = Learnocaml_exercise.(access File.max_score exo)
+let max_score exo = Learnocaml_exercise.(access false File.max_score exo)
 
 let print_score ?(max=1) ?color i =
   let color = match color with
@@ -475,7 +475,7 @@ let upload_save server_url token save =
 let upload_report server token ex solution report =
   let score = get_score report in
   let max_score = max_score ex in
-  let id = Learnocaml_exercise.(access File.id ex) in
+  let id = Learnocaml_exercise.(access (Learnocaml_data.Token.is_student token) File.id ex) in
   let mtime = Unix.gettimeofday () in
   let exercise_state =
     { Answer.
@@ -911,7 +911,7 @@ module Template = struct
        >>= fun (_meta, exercise, _deadline) ->
        write_exercise_file
          exercise_id
-         Learnocaml_exercise.(access File.template exercise)
+         Learnocaml_exercise.(access false File.template exercise)
        >|= function
        | true -> 0
        | false -> 3

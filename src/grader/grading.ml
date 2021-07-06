@@ -102,12 +102,12 @@ let get_grade
       set_progress [%i"Loading the prelude."] ;
       handle_error (internal_error [%i"while loading the prelude"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prelude.ml")
-        (Learnocaml_exercise.(decipher File.prelude exo)) ;
+        (Learnocaml_exercise.(decipher false File.prelude exo)) ;
 
       set_progress [%i"Preparing the test environment."] ;
       handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prepare.ml")
-        (Learnocaml_exercise.(decipher File.prepare exo)) ;
+        (Learnocaml_exercise.(decipher false File.prepare exo)) ;
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
@@ -117,7 +117,7 @@ let get_grade
       set_progress [%i"Loading the solution."] ;
       handle_error (internal_error [%i"while loading the solution"]) @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-        (Learnocaml_exercise.(decipher File.solution exo)) ;
+        (Learnocaml_exercise.(decipher false File.solution exo)) ;
 
       set_progress [%i"Preparing to launch the tests."] ;
       Introspection.allow_introspection ~divert ;
@@ -145,12 +145,12 @@ let get_grade
 
       let () =
         let open Learnocaml_exercise in
-        let files = File.dependencies (access File.depend exo) in
+        let files = File.dependencies (access false File.depend exo) in
         let rec load_dependencies signatures = function
         | [] -> () (* signatures without implementation are ignored *)
         | file::fs ->
           let path = File.key file
-          and content = decipher file exo in
+          and content = decipher false file exo in
           let modname = String.capitalize_ascii @@
                         Filename.remove_extension @@ Filename.basename path in
           match Filename.extension path with
@@ -188,7 +188,7 @@ let get_grade
 
       handle_error (internal_error [%i"while testing your solution"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
-        (Learnocaml_exercise.(decipher File.test exo)) ;
+        (Learnocaml_exercise.(decipher false File.test exo)) ;
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;

@@ -77,8 +77,7 @@ let exercises_tab token _ _ () =
       let open Tyxml_js.Html5 in
       match contents with
       | Exercise.Index.Exercises exercises ->
-         print_string "Indexing exercise";
-         List.fold_left
+        List.fold_left
            (fun acc (exercise_id, meta_opt, subindex_opt) ->
              match meta_opt,subindex_opt with
              | None, None -> acc

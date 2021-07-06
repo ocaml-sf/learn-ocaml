@@ -569,10 +569,10 @@ let exercise_text ex_meta exo =
   let descr =
     let lang = "" in
     try
-      List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+      List.assoc lang (Learnocaml_exercise.(access false File.descr exo))
     with
       Not_found ->
-        try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+        try List.assoc "" (Learnocaml_exercise.(access false File.descr exo))
         with Not_found -> [%i "No description available for this exercise." ]
   in
   Format.asprintf

@@ -13,6 +13,17 @@
 
 type id = string
 
+type check_all_against = string option
+
+type subexercise =
+  { sub_id : id;
+    student_hidden : bool;
+    student_weight : int;
+    teacher_weight : int;
+  }
+
+val construct_subexercise : id -> bool -> int -> int -> subexercise
+
 type exercise = {
   id : id;
   prelude : string;
@@ -27,7 +38,7 @@ type exercise = {
   }
 
 type t =
-  | Subexercise of (id * exercise list)
+  |Subexercise of ((exercise * subexercise) list * check_all_against )
   | Exercise of exercise
 
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
@@ -99,13 +110,17 @@ end
 
 (** Access a field from the exercise, using the [t] representation, without **
     deciphering it. May raise [Missing_file] if the field is optional and set to
-    [None]. *)
-val access: ?subid:id -> 'a File.file -> t -> 'a
+    [None].
+    For subexercises, cannot access if the users is a student and the subexercise 
+    is student_hidden. It will raise a Not_found exeption *)
+val access: ?subid:id -> bool -> 'a File.file -> t -> 'a
 
 (** Access a string field from the exercise, using the [t] representation, and
     deciphers if necessary. May raise [Missing_file] if the field is optional and
-    set to [None]. *)
-val decipher: ?subid:id -> string File.file -> t -> string
+    set to [None].
+    For subexercises, cannot access and decipher if the users is a student and the subexercise 
+    is student_hidden. It will raise a Not_found exeption *)
+val decipher: ?subid:id -> bool -> string File.file -> t -> string
 
 (** Updates the value of a field of the exercise in its [t] representation. *)
 val update: ?subid:id -> 'a File.file -> 'a -> t -> exercise
@@ -123,7 +138,7 @@ val read:
 (** Writer and cipherer, ['a] can be [unit] *)
 val write:
   write_field:(string -> string -> 'a -> 'a) ->
-  exercise -> ?cipher:bool -> 'a ->
+  exercise -> ?cipher:bool -> bool -> 'a ->
   'a
 
 (** Reader and decipherer with {!Lwt} *)
@@ -135,7 +150,7 @@ val read_lwt:
 (** Writer and cipherer with {!Lwt}, ['a] can be [unit] *)
 val write_lwt:
   write_field:(string -> string -> 'a -> 'a Lwt.t) ->
-  exercise -> ?cipher:bool -> 'a ->
+  exercise -> ?cipher:bool -> bool -> 'a ->
   'a Lwt.t
 
 (** JSON serializer, with {!id} file included *)

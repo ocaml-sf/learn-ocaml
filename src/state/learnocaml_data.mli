@@ -171,8 +171,6 @@ module Exercise: sig
 
     val enc: t Json_encoding.encoding
 
-    val sub_enc: t Json_encoding.encoding
-
   end
 
   module Status: sig

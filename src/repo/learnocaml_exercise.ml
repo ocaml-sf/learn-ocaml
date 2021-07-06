@@ -8,6 +8,18 @@
 
 type id = string
 
+type check_all_against = string option
+
+type subexercise =
+  { sub_id : id;
+    student_hidden : bool;
+    student_weight : int;
+    teacher_weight : int;
+  }
+
+let construct_subexercise sub_id student_hidden student_weight teacher_weight =
+  {sub_id; student_hidden; student_weight; teacher_weight}
+
 type exercise =
   { id : id ;
     prelude : string ;
@@ -23,7 +35,7 @@ type exercise =
 
 
 type t =
-  | Subexercise of (id * exercise list)
+  | Subexercise of ((exercise * subexercise) list * check_all_against )
   | Exercise of exercise
 
 let encoding =
@@ -46,9 +58,21 @@ let encoding =
          (req  "depend" (option string))
          (req  "dependencies" (list string)))
   in
+  let sub_enc =
+    conv
+      (fun { sub_id ; student_hidden ; student_weight ; teacher_weight } ->
+        sub_id, student_hidden, student_weight, teacher_weight)
+      (fun (sub_id, student_hidden, student_weight, teacher_weight) ->
+        { sub_id ; student_hidden ; student_weight ; teacher_weight })
+      (obj4
+         (req "id" string)
+         (req "student_hidden" bool)
+         (req "student_weight" int)
+         (req "teacher_weight" int))
+  in
   let subexercise_enc =
       obj1
-      (req "subexercise" (tup2 string (list exercise_enc)))
+      (req "subexercise" (tup2 (list (tup2 exercise_enc sub_enc)) (obj1 (opt "check_all_against" string))))
   in
   union
     [case
@@ -131,9 +155,9 @@ module File = struct
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
   let get_opt file ex =
-    try (* a missing file here is necessarily [file] *) 
-      get file ex 
-    with Missing_file _ -> None 
+    try (* a missing file here is necessarily [file] *)
+      get file ex
+    with Missing_file _ -> None
 
   let has { key ; _ } ex =
     StringMap.mem key ex
@@ -375,16 +399,24 @@ module File = struct
   include MakeReader (Seq)
 end
 
-let access ?(subid="") f ex  =
+let access ?(subid="") _is_Student f ex  =
   match ex with
   | Exercise exo -> f.File.field exo
-  | Subexercise (_, subexos) -> f.File.field @@ List.find (fun ex -> ex.id = subid) subexos
+  | Subexercise (subexos,_) ->
+     f.File.field @@
+       (fun (ex,_) -> ex) @@
+         List.find
+           (fun (ex,_subex) ->  ex.id = subid)
+           subexos
 
-
-let decipher ?(subid="") f ex =
+let decipher ?(subid="") _is_Student f ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+    | Subexercise (subexos,_) ->
+       (fun (ex,_) -> ex) @@
+         List.find
+           (fun (ex,_subex) ->  ex.id = subid)
+           subexos
   in
   let open File in
   let raw = f.field exo in
@@ -398,14 +430,16 @@ let decipher ?(subid="") f ex =
 let update ?(subid="") f v ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+    | Subexercise (subexos, _) -> (fun (ex,_) -> ex) @@
+                                    List.find (fun (ex,_) -> ex.id = subid) subexos
   in
   f.File.update v exo
 
 let cipher ?(subid="") f v ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (_,subexos) -> List.find (fun ex -> ex.id = subid) subexos
+    | Subexercise (subexos, _) -> (fun (ex,_) -> ex) @@
+                                   List.find (fun (ex, _) -> ex.id = subid) subexos
   in
   let open File in
   if f.ciphered then
@@ -420,7 +454,7 @@ let field_from_file file files =
   with Not_found -> raise File.(Missing_file file.key)
 
 module MakeReaderAnddWriter (Concur : Concur) = struct
-  
+
   module FileReader = File.MakeReader(Concur)
 
   let read ~read_field ?id ?decipher () =
@@ -439,19 +473,19 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           solution = field_from_file File.solution ex ;
           max_score = 0 ;
           depend ;
-          dependencies = 
+          dependencies =
             let field_from_dependency file =
               try field_from_file file ex
-              with File.Missing_file msg 
-              -> let msg' = msg ^ ": dependency declared in " 
+              with File.Missing_file msg
+              -> let msg' = msg ^ ": dependency declared in "
                                 ^ File.(key depend) ^ ", but not found" in
-                 raise (File.Missing_file msg') 
-            in 
-            List.map field_from_dependency (File.dependencies depend)             
+                 raise (File.Missing_file msg')
+            in
+            List.map field_from_dependency (File.dependencies depend)
         }
     with File.Missing_file _ as e -> fail e
 
-  let write ~write_field ex ?(cipher = true) acc =
+  let write ~write_field ex ?(cipher = true) is_Student acc =
     let open Concur in
     let open File in
     let acc = ref acc in
@@ -481,7 +515,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field test ;
         write_field depend ;
         (* write_field max_score *) ] 
-       @ (List.map write_field (dependencies (access depend (Exercise ex) ))) )
+       @ (List.map write_field (dependencies (access is_Student depend (Exercise ex) ))) )
         >>= fun () ->
     return !acc
 end
