@@ -349,10 +349,11 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
-  begin toolbar_button
-      ~icon: "reload" [%i"AllGrade!"] @@ fun () ->
-    typecheck true
-  end;
+  if nav_available then 
+    begin toolbar_button
+            ~icon: "reload" [%i"AllGrade!"] @@ fun () ->
+                                               typecheck true
+    end;
   Window.onunload (fun _ev -> local_save ace id; true);
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
