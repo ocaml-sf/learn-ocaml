@@ -1,0 +1,113 @@
+<p>
+  This exercise is just a demo for the exercise environment.
+</p>
+
+<h2>The task</h2>
+
+<p>
+  In this test-bed exercise you are asked to implement the basic
+  integer-arithmetic functions.
+</p>
+
+
+<ol>
+  <li>
+    Write a function <code>plus</code> of type <code>int -> int -> int</code>.
+    <br/>
+    Ex : val plus 3 4 : int = 7.
+  </li>
+  <li>
+    Write a function <code>minus</code> of type <code>int -> int -> int</code>.
+    <br/>
+     Ex : val minus 3 2 : int = 1.
+  </li>
+  <li>
+    Write a function <code>times</code> of type <code>int -> int -> int</code>.
+    <br/>
+    Ex : val times 2 6 : int = 12.
+  </li>
+  <li>
+    Write a function <code>divide</code> of type <code>int -> int -> int</code>.
+    Ex : val divide 8 4 : int = 2.
+  </li>
+  <li>
+    Write a function <code>sum3</code> of type <code>int -> int -> int -> int
+    </code>.
+    <br/>
+    Ex : val sum3 2 4 3 : int = 9.
+  </li>
+  <li>
+    Write a function <code>plus2</code> of type int -> int using <code> plus
+    </code> which add 2 to another integer.
+  </li>
+</ol>
+<p>
+  Now you have done these quite easy exercises, sure you can train on recursive
+  fonctions ! 
+</p>
+
+<h2> Recursive exercises </h2>
+
+<p>
+  In this test-bed exercise you are asked to implement some recursive
+  integer-arithmetic functions.
+</p>
+<ol>
+  <li>
+    Write a function <code> sum_0_to_n </code> of type int -> int which
+    add integers from 0 to n, considering n can't be under 0.
+    <br/>
+    Ex : val sum_0_to_n 3 : int = 6.
+  </li>
+  <li>
+    Write a function <code> fact </code> of type int -> int which represent
+    the factorial (n!)  function : 4! = 1x2x3x4 = 24.
+    <br/>
+    Ex : val fact 5 : int = 120.
+   </li>
+</ol>
+
+<h2> List exercise </h2>
+
+<ol>
+  <il>
+    Write a function <code> list_0_to_n </code> of type <code> int -> int list
+    </code>.
+      This function must create a list containing integers between 0 and n. If
+      n<0, the function must return a Failure exception.
+      <br/>
+      Ex :list_0_to_n 4 -> [0;1;2;3;4]
+  </il>
+  <il>
+    Write a function <code> forall </code> of type <code> 'a list ->
+      ('a -> bool) -> bool </code>, that return true if (all) the elements of
+    the list verify a predicat.
+      <br/>
+      Ex : forall [0;2;4] (fun x -> (x%2)=0) -> true
+  </il>
+  <il>
+    Write a function <code> cat_list </code> of type <code>'a list -> 'a list ->
+      'a list </code>. This function concatenate two list to make only one.
+    <br/>
+    Ex : cat_list ["a";"b"] ["c";"d";"e"] -> ["a";"b";"c";"d";"e"]
+  </il>
+</ol>
+
+
+
+
+
+<p>
+  <br/>
+  Feel free to introduce more errors and to stress the system,
+  the resulting grade for this exercise will not be taken into account
+  in the global grade and you might submit as many solutions as you
+  wish.
+  <br/>
+  If you end up writing an infinite computation, the system will
+  detect it after a while and ask you to stop the script. It will
+  slow your browser down until that point, since everything is done
+  on your side, via your JavaScript engine.
+  So don't worry, you can try and break the system as much as you
+  want, it should not break anything on our servers.
+</p>

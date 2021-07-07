@@ -1,0 +1,32 @@
+{ "learnocaml_version": "1",
+  "meta":{
+      "learnocaml_version": "2",
+      "kind": "problem",
+      "stars": 4,
+      "title": "Demo of a multi-part exercise",
+      "identifier": "demo3",
+      "authors": [["Someone", "someone@example.com"]],
+      "focus": ["recursion"],
+      "requirements": ["basic arithmetic"],
+      "forward_exercises": [],
+      "backward_exercises": []} ,
+  "check_all_against": "demo3-prof",
+  "parts": [
+      { "subtitle": "First test",
+        "subexercise": "demo3-etu1",
+        "student_weight": 1,
+        "teacher_weight": 0
+      },
+      { "subtitle": "Second test",
+        "subexercise": "demo3-etu2",
+        "student_hidden": false,
+        "student_weight": 1,
+        "teacher_weight": 0
+      },
+      { "subtitle": "Grading",
+        "subexercise": "demo3-prof",
+        "student_hidden": true,
+        "student_weight": 0,
+        "teacher_weight": 1
+      }]
+}
