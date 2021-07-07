@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - '**'
+  schedule:
+    # test master every Saturday at 08:00 UTC
+    - cron: '0 8 * * 6'
 
 jobs:
   build_test_server:

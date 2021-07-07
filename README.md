@@ -5,7 +5,7 @@ This is Learn-OCaml, a platform for learning the OCaml language,
 featuring a Web toplevel, an exercise environment, and a directory of
 lessons and tutorials.
 
-A demo is available at: (http://learn-ocaml.hackojo.org/).
+A demo is available [online](https://ocaml-sf.org/learn-ocaml-public/).
 
 [![CI](https://github.com/ocaml-sf/learn-ocaml/workflows/CI/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3ACI)
 [![macOS](https://github.com/ocaml-sf/learn-ocaml/workflows/macOS/badge.svg?branch=master)](https://github.com/ocaml-sf/learn-ocaml/actions?query=workflow%3AmacOS)
@@ -19,6 +19,7 @@ Howtos
 * [How to write exercises?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-write-exercises.md)
 * [How to submit an exercise to the global corpus?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-a-learn-ocaml-instance.md)
+* [How to deploy Learn-OCaml statically?](https://github.com/ocaml-sf/learn-ocaml/blob/master/docs/howto-deploy-learn-ocaml-statically.md)
 
 Contacts
 --------
@@ -60,16 +61,16 @@ to redistribute it. See (http://www.exljbris.com/eula.html). You will
 optionally have to procure the files by yourself while building the
 app. If not, the CSS provides a reasonable fallback font.
 
-Contributions to this repository are placed under the BSD
+Contributions to this repository are placed under the MIT
 license. This means that we can merge them with the same license as
 the rest of the codebase, while you keep all the rights on your code.
 And we will not have to bother you with any future license update.
-See (https://opensource.org/licenses/BSD-3-Clause).
+See (https://opensource.org/licenses/MIT).
 
 Authors and Acknowledgements
 ----------------------------
 
-Learn-OCaml is a free software by the [OCaml Software Foundation](http://ocaml-sf.org).
+Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
  * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 

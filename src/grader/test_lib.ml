@@ -341,7 +341,7 @@ module type S = sig
 
   module Test_functions_generic : sig
 
-    val run_timeout : (unit -> 'a) -> 'a
+    val run_timeout : ?time:int -> (unit -> 'a) -> 'a
 
     val exec : (unit -> 'a) -> ('a * string * string) result
 
@@ -1132,11 +1132,11 @@ module Make
          with exc ->
            reset_sigalrm (); raise exc
 
-    let run_timeout v =
-      match Params.timeout with
-      | Some time ->
+    let run_timeout ?time v =
+      match time, Params.timeout with
+      | Some time, _ | None, Some time ->
           run_timeout ~time v
-      | None ->
+      | None, None ->
           v()
 
     let exec v =
