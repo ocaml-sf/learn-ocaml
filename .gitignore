@@ -33,3 +33,5 @@ translations/*.pot
 tests/corpuses/*
 
 detect-libs.*
+
+docs/odoc.html
