@@ -52,8 +52,7 @@ jobs:
           opam switch create . ocaml-base-compiler 'dune<2' --deps-only
       - name: Build the binaries
         run: |
-          ./scripts/setup-static-build.sh
-          opam exec -- make
+          opam exec -- make LINKING_MODE=static
           otool -L _build/install/default/bin/*
       - name: Archive static binaries
         uses: actions/upload-artifact@v2
