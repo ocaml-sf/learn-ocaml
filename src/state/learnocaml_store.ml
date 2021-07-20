@@ -339,7 +339,9 @@ module Token = struct
 
   let register ?(allow_teacher=false) token =
     if not allow_teacher && is_teacher token then
-      Lwt.fail (Invalid_argument "Registration of teacher token not allowed")
+      Lwt.fail
+        (Invalid_argument "Registration of teacher token forbidden. \
+          Logout and use a new teacher token?")
     else
       Lwt.catch (fun () ->
           Lwt_io.with_file ~mode:Lwt_io.Output ~perm:0o700 (save_path token)
