@@ -7,7 +7,8 @@ cd $(dirname "$0")/..
 
 ## Run build in container
 
-tar c $(git ls-files) | \
+set -o pipefail
+git ls-files -z | xargs -0 tar c | \
   docker run --rm -i \
     ocamlpro/ocaml:4.05 \
     sh -uexc \
