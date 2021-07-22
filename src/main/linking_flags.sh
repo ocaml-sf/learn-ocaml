@@ -25,6 +25,7 @@ EXTRA_LIBS="$*"
 # To get the correct list for manual linking, the simplest way is to set the
 # flags to `-verbose`, while on the normal `autolink` mode, then extract them
 # from the gcc command-line.
+# The Makefile contains a target to automate this: `make detect-libs`.
 
 case $(uname -s) in
     Linux)

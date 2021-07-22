@@ -94,3 +94,21 @@ travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci
 .PHONY: static-binaries
 static-binaries:
 	./scripts/static-build.sh
+
+BINARIES = src/main/learnocaml_client.bc src/main/learnocaml_main.bc src/main/learnocaml_server_main.exe
+
+.PHONY: detect-libs
+detect-libs:
+	$(RM) $(addprefix _build/default/,$(BINARIES))
+	+sort=true; \
+	baseid="detect-libs.$$$$"; echo ...; \
+	$(MAKE) LINKING_MODE=dynamic OCAMLPARAM="_,verbose=1" > $$baseid.log 2>&1; \
+	for bin in $(BINARIES); do \
+	  base=$${bin#src/main/}; base=$${base%.*}; \
+	  grep -e "'$$bin'" $$baseid.log > $$baseid.$$base.log; \
+	  printf "%s: " "$$base"; \
+	  sed -e "s/ /\n/g; s/'//g" $$baseid.$$base.log | grep -e "^-l" | \
+	  if [ "$$sort" = true ]; then printf "(sorted) "; sort -u; else cat; fi | xargs; \
+	done; echo; \
+	set +x; cat $$baseid.*.log; \
+	$(RM) $$baseid.*log
