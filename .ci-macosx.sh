@@ -11,3 +11,6 @@ eval $(opam env)
 
 opam install -y -j 2 . --deps-only --locked
 make && make opaminstall
+
+# See src/main/linking_flags.sh
+make detect-libs
