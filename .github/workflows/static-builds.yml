@@ -18,7 +18,10 @@ jobs:
       - name: Generate the binaries
         run: |
           ./scripts/static-build.sh
-          ldd learn-ocaml learn-ocaml-server learn-ocaml-client
+          bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
+          file "${bin[@]}"
+          ldd "${bin[@]}"
+          for b in "${bin[@]}"; do ( set -x; "$b" --version ); done
       - name: Archive static binaries
         uses: actions/upload-artifact@v2
         with:
@@ -53,7 +56,11 @@ jobs:
       - name: Build the binaries
         run: |
           opam exec -- make LINKING_MODE=static
-          otool -L _build/install/default/bin/*
+          bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
+          dir="_build/install/default/bin/"
+          file "$dir"/*
+          otool -L "$dir"/*
+          for b in "${bin[@]}"; do ( set -x; "$dir/$b" --version ); done
       - name: Archive static binaries
         uses: actions/upload-artifact@v2
         with:
