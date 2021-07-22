@@ -57,7 +57,7 @@ jobs:
         run: |
           opam exec -- make LINKING_MODE=static
           bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
-          dir="_build/install/default/bin/"
+          dir="_build/install/default/bin"
           file "$dir"/*
           otool -L "$dir"/*
           for b in "${bin[@]}"; do ( set -x; "$dir/$b" --version ); done

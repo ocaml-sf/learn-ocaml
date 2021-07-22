@@ -32,7 +32,7 @@ case $(uname -s) in
         case $(. /etc/os-release && echo $ID) in
             alpine)
                 COMMON_LIBS="camlstr base_stubs ssl_threads_stubs ssl crypto cstruct_stubs lwt_unix_stubs bigarray unix c"
-                # `m` and `pthreads` are built-in musl
+                # `m` and `pthread` are built-in musl
                 echo '(-noautolink'
                 echo ' -cclib -Wl,-Bstatic'
                 echo ' -cclib -static-libgcc'
