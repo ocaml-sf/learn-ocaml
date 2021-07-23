@@ -47,7 +47,8 @@ case $(uname -s) in
         esac
         ;;
     Darwin)
-        COMMON_LIBS="camlstr base_stubs ssl_threads_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs lwt_unix_stubs bigarray unix pthread"
+        COMMON_LIBS="camlstr base_stubs ssl_threads_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs lwt_unix_stubs bigarray unix"
+        # `m` and `pthread` are built-in in libSystem
         echo '(-noautolink'
         for l in $EXTRA_LIBS $COMMON_LIBS; do
             if [ "${l%.a}" != "${l}" ]; then echo " -cclib $l"
