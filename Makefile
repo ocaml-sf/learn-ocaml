@@ -107,8 +107,8 @@ detect-libs:
 	  base=$${bin#src/main/}; base=$${base%.*}; \
 	  grep -e "'$$bin'" $$baseid.log > $$baseid.$$base.log; \
 	  printf "%s: " "$$base"; \
-	  sed -e "s/'//g; s/ /\\n/g" $$baseid.$$base.log | grep -e "^-l" | \
-	  if [ "$$sort" = true ]; then printf "(sorted) "; sort -u; else cat; fi | xargs echo; \
+	  ( sed -e "s/'//g; s/ /\\$$(printf '\n/g')" $$baseid.$$base.log | grep -e "^-l" | \
+	    if [ "$$sort" = true ]; then printf "(sorted) "; sort -u; else cat; fi | xargs echo ); \
 	done; echo; \
 	cat $$baseid.*.log; \
 	$(RM) $$baseid.*log
