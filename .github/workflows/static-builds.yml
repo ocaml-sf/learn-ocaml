@@ -15,9 +15,11 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Generate the binaries
+      - name: Build the binaries
         run: |
           ./scripts/static-build.sh
+      - name: Test the binaries
+        run: |
           bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
           file "${bin[@]}"
           ldd "${bin[@]}"
@@ -56,6 +58,8 @@ jobs:
       - name: Build the binaries
         run: |
           opam exec -- make LINKING_MODE=static
+      - name: Test the binaries
+        run: |
           bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
           dir="_build/install/default/bin"
           file "$dir"/*
