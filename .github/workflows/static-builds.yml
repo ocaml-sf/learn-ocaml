@@ -41,6 +41,11 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Show OS version
+        run: |
+          sw_vers
+          system_profiler SPSoftwareDataType
+          uname -a
       # Need unreleased 2.1.0~rc
       # - name: Retrieve opam
       #   run: |
