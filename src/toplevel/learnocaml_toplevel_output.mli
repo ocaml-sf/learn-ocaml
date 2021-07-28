@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml_tyxml
+
 (** Toplevel output console. *)
 
 (** A toplevel output console handle. *)
@@ -93,11 +95,11 @@ val output_answer : ?phrase: phrase -> output -> string -> unit
 
 (** Output an error in a [pre] element with class [toplevel-error].
     A [span] with class [ref] is used for location labels. *)
-val output_error : ?phrase: phrase -> output -> Toploop_results.error -> unit
+val output_error : ?phrase: phrase -> output -> Location.report -> unit
 
 (** Output a warning in a [pre] element with class [toplevel-warning].
     A [span] with class [ref] is used for location labels. *)
-val output_warning : ?phrase: phrase -> output -> Toploop_results.warning -> unit
+val output_warning : ?phrase: phrase -> output -> Location.report -> unit
 
 (** Format OCaml code in the style of {!output_code}. *)
 val format_ocaml_code : string -> [> `Span | `PCDATA ] Tyxml_js.Html5.elt list

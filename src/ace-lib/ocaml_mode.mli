@@ -15,15 +15,15 @@ type loc = Ace.loc = {
   loc_end: int * int;
 }
 
-type error = {
-  locs: loc list;
-  msg: string;
-}
-
-type warning = {
+type msg = {
   loc: loc;
   msg: string;
 }
+
+
+type error = msg list
+
+type warning = error
 
 val create_ocaml_editor: Dom_html.divElement Js.t -> editor
 val get_editor: editor -> editor Ace.editor

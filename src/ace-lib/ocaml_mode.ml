@@ -6,6 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml_lwt
 open Js_utils
 open Js_of_ocaml
 open Lwt.Infix
@@ -324,15 +325,17 @@ type loc = Ace.loc = {
   loc_end: int * int;
 }
 
-type error = {
-  locs: loc list;
-  msg: string;
-}
-
-type warning = {
+type msg = {
   loc: loc;
   msg: string;
 }
+
+type error = msg list
+
+type warning = error (* {
+ *   loc: loc;
+ *   msg: string;
+ * } *)
 
 type editor = {
   ace: editor Ace.editor;
@@ -356,8 +359,10 @@ let reset_error editor =
 let report_error editor ?(set_class = true) err warnings =
   reset_error editor >>= fun () ->
   Lwt_js.yield () >|= fun () ->
-  let add_warning editor { loc; msg } =
-    Ace.set_mark editor ~loc ~type_:Ace.Warning msg in
+  let add_warning editor =
+    List.iter (fun {msg; loc} ->
+        Ace.set_mark editor ~loc ~type_:Ace.Warning msg)
+  in
   editor.current_error <- err;
   editor.current_warnings <- warnings;
   match err, warnings with
@@ -368,17 +373,13 @@ let report_error editor ?(set_class = true) err warnings =
       if set_class then
         Ace.add_class editor.ace "ocaml-check-warn";
       List.iter (add_warning editor.ace) warnings
-  | Some { locs; msg }, warnings ->
+  | Some msgs, warnings ->
       if set_class then
         Ace.add_class editor.ace "ocaml-check-error";
       List.iter (add_warning editor.ace) warnings;
-      match locs with
-      | [] ->
-          Ace.set_mark editor.ace ~type_:Ace.Error msg
-      | locs ->
-          List.iter
-            (fun loc -> Ace.set_mark editor.ace ~loc ~type_:Ace.Error msg)
-            locs
+      List.iter (fun {msg; loc} ->
+          Ace.set_mark editor.ace ~loc ~type_:Ace.Error msg)
+        msgs
 
 let report_current_error editor ?set_class () =
   report_error editor ?set_class editor.current_error editor.current_warnings

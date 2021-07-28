@@ -34,7 +34,7 @@ exception OutOfRange of int
 For the first graded function, we want to be sure the student function
 returned both the right `Ok` output and the right exception with its
 is correct argument. The predefined tester that compares both possible
-results with `Pervasives.compare` function is called `test`. This is
+results with `Stdlib.compare` function is called `test`. This is
 obviously the default value of optional argument [~test].
 
 ```ocaml
@@ -192,7 +192,7 @@ let p_list l =
   let t = List.fold_left (fun a x -> a && p x) true l in
   if t then
 	(* Check that there is at least two different elements *)
-	let l = List.sort_uniq (Pervasives.compare) l in
+	let l = List.sort_uniq (Stdlib.compare) l in
 	if List.length l > 1 then true else false
   else false
 

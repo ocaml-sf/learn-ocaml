@@ -7,6 +7,8 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
+open Js_of_ocaml_lwt
 open Js_utils
 open Lwt.Infix
 open Learnocaml_data
@@ -918,20 +920,24 @@ let typecheck top ace editor set_class =
   let error, warnings =
     match res with
     | Toploop_results.Ok ((), warnings) -> None, warnings
-    | Toploop_results.Error (err, warnings) -> Some err, warnings in
-  let transl_loc { Toploop_results.loc_start ; loc_end } =
-    { Ocaml_mode.loc_start ; loc_end } in
+    | Toploop_results.Error (err, warnings) -> Some err, warnings
+  in
+  let lexing_to_licol loc =
+    Lexing.(loc.pos_lnum, loc.pos_cnum - loc.pos_bol);
+  in
+  let transl_loc { Warnings.loc_start ; loc_end ; loc_ghost = _} =
+    { Ace.loc_start = lexing_to_licol loc_start;
+      Ace.loc_end = lexing_to_licol loc_end }
+  in
+  let transl (err0,errs) =
+    List.map (fun (loc, msg) -> {Ocaml_mode.msg; loc = transl_loc loc})
+      (err0::errs)
+  in
   let error = match error with
     | None -> None
-    | Some { Toploop_results.locs ; msg ; if_highlight } ->
-       Some { Ocaml_mode.locs = List.map transl_loc locs ;
-              msg = (if if_highlight <> "" then if_highlight else msg) } in
-  let warnings =
-    List.map
-      (fun { Toploop_results.locs ; msg ; if_highlight } ->
-        { Ocaml_mode.loc = transl_loc (List.hd locs) ;
-          msg = (if if_highlight <> "" then if_highlight else msg) })
-      warnings in
+    | Some err -> Some (transl err)
+  in
+  let warnings = List.map (fun warn -> transl warn) warnings in
   Ocaml_mode.report_error ~set_class editor error warnings >|= fun () ->
   Ace.focus ace
 

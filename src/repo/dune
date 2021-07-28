@@ -18,7 +18,8 @@
             learnocaml_data
             lwt.unix
             markup
-            omd)
+            omd
+            re)
 )
 
 (executable

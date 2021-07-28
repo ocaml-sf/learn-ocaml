@@ -109,4 +109,4 @@ module type S = sig
   val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
-module Make (Test_lib: Test_lib.S) : S
+module Make (_: Test_lib.S) : S

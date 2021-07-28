@@ -7,14 +7,16 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
+open Js_of_ocaml_lwt
 
 type block =
   | Html of string * [ `Div ] Tyxml_js.Html5.elt
   | Std of (string * [ `Out | `Err ]) list ref * [ `Pre ] Tyxml_js.Html5.elt
   | Code of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt * Nstream.snapshot option
   | Answer of string * pretty list ref * [ `Pre ] Tyxml_js.Html5.elt * Nstream.snapshot option
-  | Error of Toploop_results.error * [ `Pre ] Tyxml_js.Html5.elt
-  | Warning of int * Toploop_results.warning * [ `Pre ] Tyxml_js.Html5.elt
+  | Error of Location.report * [ `Pre ] Tyxml_js.Html5.elt
+  | Warning of int * Location.report * [ `Pre ] Tyxml_js.Html5.elt
   | Phrase of phrase * block list ref
 
 and pretty =
@@ -247,13 +249,21 @@ let output_answer ?phrase output answer =
       (pretty_html pretty) in
   insert output ?phrase (Answer (answer, ref pretty, pre, snapshot)) pre
 
-open Toploop_results
-
-let inside (l, c) { loc_start = (sl, sc) ; loc_end = (el, ec) } =
+let inside (l, c) loc =
+  let open Location in
+  let open Lexing in
+  let sl = loc.loc_start.pos_lnum in
+  let sc = loc.loc_start.pos_cnum - loc.loc_start.pos_bol in
+  let el = loc.loc_end.pos_lnum in
+  let ec = loc.loc_end.pos_cnum - loc.loc_end.pos_bol in
   ((l > sl) || (l = sl && c >= sc))
   && ((l < el) || (l = el && c < ec))
 
-let last (l, c) { loc_end = (el, ec) } =
+let last (l, c) loc =
+  let open Location in
+  let open Lexing in
+  let el = loc.loc_end.pos_lnum in
+  let ec = loc.loc_end.pos_cnum - loc.loc_end.pos_bol in
   l = el && c = ec - 1
 
 let hilight_pretty cls pretty locs lbl =
@@ -288,26 +298,33 @@ let hilight_pretty cls pretty locs lbl =
     fst (hilight_one pretty (1, 0) []) in
   List.fold_left hilight_one pretty locs
 
+(* Moves [loc] backwards to take into account that [code] has been removed from
+   the source before it *)
 let advance_loc code loc =
-  let rec loop i sl sc el ec =
-    if i >= String.length code then
-      { loc_start = (sl, sc) ; loc_end = (el, ec) }
-    else
-      let next l c =
-        (* should work even with ignored '\n's *)
-        if l > 1 then
-          (if String.get code i = '\n' then l - 1 else l), c
-        else
-          1, max 0 (c - 1) in
-      let sl, sc = next sl sc in
-      let el, ec = next el ec in
-      loop (i + 1) sl sc el ec in
-  let { loc_start = (sl, sc) ; loc_end = (el, ec) } = loc in
-  loop 0 sl sc el ec
+  let len = String.length code in
+  let nlcount =
+    let r = ref 0 in
+    String.iter (function '\n' -> incr r | _ -> ()) code;
+    !r
+  in
+  let shift pos =
+    let open Lexing in
+    { pos with
+      pos_lnum = max 1 (pos.pos_lnum - nlcount);
+      pos_cnum = pos.pos_cnum - len;
+      pos_bol = max 0 (pos.pos_bol - len);
+    }
+  in
+  let open Location in
+  { loc with
+    loc_start = shift loc.loc_start;
+    loc_end = shift loc.loc_end;
+  }
+
 
 let hilight cls output u locs lbl =
   match find_phrase output u with
-  | None -> assert false
+  | None -> invalid_arg "Learnocaml_toplevel_output.hilight"
   | Some l ->
       let rec loop locs = function
         | Code (code, pretty, pre, _) :: rest ->
@@ -320,36 +337,53 @@ let hilight cls output u locs lbl =
       loop locs (List.rev !l)
 
 let output_error ?phrase output error =
-  let { Toploop_results.locs ; msg ; if_highlight } = error in
+  (* TODO: replace by setting Location.report_printer *)
   let content =
     [ Tyxml_js.Html5.txt
-        (match phrase with None -> msg | Some _ -> if_highlight) ] in
+        (Format.asprintf "%a" Location.print_report error) ]
+  in
   let pre =
     Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-error" ] ]) content in
+  let locs =
+    List.map (fun m -> m.Location.loc)
+      (error.Location.main :: error.Location.sub)
+  in
   begin match phrase, locs with
     | None, _ | _, [] -> ()
     | Some u, _ -> hilight "toplevel-hilighted-error" output u locs []
   end ;
   insert output ?phrase (Error (error, pre)) pre
 
+let noloc_report_printer =
+  let pp_loc = fun _self _report _ppf _loc -> () in
+  { Location.batch_mode_printer with
+    Location.pp_main_loc = pp_loc;
+    Location.pp_submsg_loc = pp_loc }
+
 let output_warning ?phrase output warning =
-  let { Toploop_results.locs ; msg ; if_highlight } = warning in
+  Location.report_printer := (fun () -> noloc_report_printer);
+  let locs =
+    List.map (fun m -> m.Location.loc)
+      (warning.Location.main :: warning.Location.sub)
+  in
   match phrase, locs with
   | None, _ | _, [] ->
+      let msg = Format.asprintf "%a" Location.print_report warning in
       let pre =
         Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-warning" ] ]
                           [ txt msg ]) in
       insert output ?phrase (Warning (0, warning, pre)) pre
   | Some phrase, _ ->
       phrase.warnings <- phrase.warnings + 1 ;
+      let msg = Format.asprintf "%a" Location.print_report warning in
       hilight "toplevel-hilighted-warning" output phrase locs
         [ Ref phrase.warnings ] ;
       let pre =
         Tyxml_js.Html5.(pre ~a: [ a_class [ "toplevel-warning" ] ]
                           [ span ~a: [ a_class [ "ref" ] ]
                               [ txt (string_of_int phrase.warnings) ] ;
-                            txt ":" ;
-                            txt if_highlight ]) in
+                            txt " " ;
+                            txt msg ]) in
       insert output ~phrase (Warning (phrase.warnings, warning, pre)) pre
 
 let clear output =

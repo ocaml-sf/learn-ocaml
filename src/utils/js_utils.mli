@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 
 val alert: string -> unit
 val confirm: string -> bool
@@ -104,10 +105,10 @@ module Manip : sig
     val onload: ('a,Dom_html.event) ev
     val onerror: ('a,Dom_html.event) ev
     val onabort: ('a,Dom_html.event) ev
-    val onfocus: ('a,Dom_html.event) ev
-    val onblur: ('a,Dom_html.event) ev
-    val onfocus_textarea: ('a,Dom_html.event) ev
-    val onblur_textarea: ('a,Dom_html.event) ev
+    val onfocus: ('a,Dom_html.focusEvent) ev
+    val onblur: ('a,Dom_html.focusEvent) ev
+    val onfocus_textarea: ('a,Dom_html.focusEvent) ev
+    val onblur_textarea: ('a,Dom_html.focusEvent) ev
     val onscroll: ('a,Dom_html.event) ev
     val onreturn: ('a,Dom_html.keyboardEvent) ev_unit
     val onchange: ('a,Dom_html.event) ev

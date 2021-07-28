@@ -9,20 +9,28 @@
 open Js_of_ocaml
 
 let get_grade ?callback exo solution =
-  let path = "/grading_cmis" in
-  let root =
-    OCamlRes.Res.merge
-      Embedded_cmis.root
-      Embedded_grading_cmis.root in
-  Sys_js.mount ~path
-    (fun ~prefix:_ ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) root with
-       | cmi ->
-           Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
-           Some cmi
-       | exception Not_found -> None) ;
-  Config.load_path := [ path ] ;
-  Toploop_jsoo.initialize () ;
+  (* the new toplevel uses directory listings to discover .cmis, so the old
+     approach of using [Sys_js.mount] for subpaths of individual files no longer
+     works: we need to mount everything explicitely. *)
+  (* FIXME: copied from learnocaml_toplevel_worker_main.ml *)
+  let rec rec_mount path = function
+    | OCamlRes.Res.Dir (name, children) ->
+        List.iter (rec_mount (name::path)) children
+    | OCamlRes.Res.File (name, content) ->
+        let name = "/" ^ String.concat "/" (List.rev (name::path)) in
+        Js.Unsafe.set content (Js.string "t") 9 ; (* XXX hack *)
+        Sys_js.create_file ~name ~content
+    | OCamlRes.Res.Error _ -> ()
+  in
+  rec_mount [] (OCamlRes.Res.Dir ("worker_cmis", Embedded_cmis.root));
+  rec_mount [] (OCamlRes.Res.Dir ("grading_cmis", Embedded_grading_cmis.root));
+  (try Toploop_jsoo.initialize ["/worker_cmis"; "/grading_cmis"] with
+   | Typetexp.Error (loc, env, error) ->
+       Js_utils.log "FAILED INIT %a at %a"
+         (Typetexp.report_error env) error
+         Location.print_loc loc
+   | e ->
+       Js_utils.log "FAILED INIT %s" (Printexc.to_string e));
   let divert name chan cb =
     let redirection = Toploop_jsoo.redirect_channel name chan cb in
     fun () -> Toploop_jsoo.stop_channel_redirection redirection in
@@ -40,22 +48,34 @@ let () =
     let json = Json_repr_browser.Json_encoding.construct from_worker_enc msg in
     Worker.post_message json in
   let ans =
-    let result, stdout, stderr, outcomes =
-      get_grade ~callback exercise solution in
-    match result with
-    | Ok report ->
+    match get_grade ~callback exercise solution with
+    | Ok report, stdout, stderr, outcomes ->
         Answer (report, stdout, stderr, outcomes)
-    | Error exn ->
+    | Error exn, stdout, stderr, outcomes ->
         let msg = match exn with
-          | Grading.User_code_error { Toploop_results.msg ; _ } ->
-              [%i"Error in your solution:\n"] ^ msg
-          | Grading.Internal_error (step, { Toploop_results.msg ; _ }) ->
-              [%i"Error in the exercise "] ^ step ^ "\n" ^ msg
+          | Grading.User_code_error err ->
+              Format.asprintf [%if"Error in your solution:\n%a\n%!"]
+                Location.print_report (Toploop_results.to_error err)
+          | Grading.Internal_error (step, err) ->
+              Format.asprintf [%if"Error in the exercise %s\n%a\n%!"]
+                step
+                Location.print_report (Toploop_results.to_error err)
           | Grading.Invalid_grader ->
               [%i"Internal error:\nThe grader did not return a report."]
           | exn ->
               [%i"Unexpected error:\n"] ^ Printexc.to_string exn in
         let report = Learnocaml_report.[ Message ([ Code msg ], Failure) ] in
-        Answer (report, stdout, stderr, outcomes) in
+        Answer (report, stdout, stderr, outcomes)
+    | exception exn ->
+        let bt = Printexc.get_backtrace () in
+        let open Learnocaml_report in
+        let report =
+          section ~title:"Internal error" [
+            failure ~message:"The grader crashed";
+            message ~message:(Printexc.to_string exn);
+            info ~message:bt;
+          ] in
+        Answer ([report], "", "", "")
+  in
   let json = Json_repr_browser.Json_encoding.construct from_worker_enc ans in
   Worker.post_message json

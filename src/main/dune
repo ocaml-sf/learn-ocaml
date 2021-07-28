@@ -10,7 +10,6 @@
  (public_name learn-ocaml)
  (name learnocaml_main)
  (modes byte)
- (ocamlc_flags :standard -custom)
  (flags (:standard -linkall
          (:include linking_main.sexp)))
  (modules Learnocaml_main)
@@ -29,7 +28,6 @@
  (public_name learn-ocaml-client)
  (name learnocaml_client)
  (modes byte)
- (ocamlc_flags :standard -custom)
  (flags (:standard -linkall
          (:include linking_client.sexp)))
  (modules Learnocaml_client)
@@ -37,7 +35,8 @@
  	    sha
             lwt.unix
             lwt_utils
-            cohttp.lwt
+            cohttp-lwt
+            cohttp-lwt-unix
             grading_cli
             learnocaml_data
 	    learnocaml_store
