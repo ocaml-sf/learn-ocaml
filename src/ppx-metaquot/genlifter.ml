@@ -2,23 +2,21 @@
 (*  under the terms of the MIT license (see LICENSE file).       *)
 (*  Copyright 2013  Alain Frisch and LexiFi                      *)
 
-
 (* Generate code to lift values of a certain type.
    This illustrates how to build fragments of Parsetree through
    Ast_helper and more local helper functions. *)
 
 module Main : sig end = struct
-
   open Location
   open Types
   open Asttypes
   open Ast_helper
   open Ast_convenience
 
-  let selfcall ?(this = "this") m args = app (Exp.send (evar this) (mknoloc m)) args
+  let selfcall ?(this = "this") m args =
+    app (Exp.send (evar this) (mknoloc m)) args
 
   (*************************************************************************)
-
 
   let env = Env.initial_safe_string
 
@@ -32,26 +30,31 @@ module Main : sig end = struct
   let print_fun s = "lift_" ^ clean s
 
   let printed = Hashtbl.create 16
+
   let meths = ref []
+
   let use_existentials = ref false
+
   let use_arrows = ref false
 
   let existential_method =
-    Cf.(method_ (mknoloc "existential") Public
-          (virtual_ Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res"))))
-       )
+    Cf.(
+      method_ (mknoloc "existential") Public
+        (virtual_
+           Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res")))))
 
   let arrow_method =
-    Cf.(method_ (mknoloc "arrow") Public
-          (virtual_ Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res"))))
-       )
+    Cf.(
+      method_ (mknoloc "arrow") Public
+        (virtual_
+           Typ.(poly [mknoloc "a"] (arrow Nolabel (var "a") (var "res")))))
 
   let rec gen ty =
     if Hashtbl.mem printed ty then ()
-    else let tylid = Longident.parse ty in
+    else
+      let tylid = Longident.parse ty in
       let td =
-        try Env.find_type (Env.lookup_type tylid env) env
-        with Not_found ->
+        try Env.find_type (Env.lookup_type tylid env) env with Not_found ->
           Format.eprintf "** Cannot resolve type %s@." ty;
           exit 2
       in
@@ -63,32 +66,47 @@ module Main : sig end = struct
         | Lapply _ -> assert false
       in
       Hashtbl.add printed ty ();
-      let sparams = List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params in
+      let sparams =
+        List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params
+      in
       let params = List.map mknoloc sparams in
-      let env = List.map2 (fun s t -> t.id, evar s.txt) params td.type_params in
-      let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res")) in
+      let env =
+        List.map2 (fun s t -> (t.id, evar s.txt)) params td.type_params
+      in
+      let make_result_t tyargs =
+        Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res"))
+      in
       let make_t tyargs =
         List.fold_right
           (fun arg t ->
-             Typ.(arrow Asttypes.Nolabel (arrow Asttypes.Nolabel arg (var "res")) t))
+            Typ.(
+              arrow Asttypes.Nolabel (arrow Asttypes.Nolabel arg (var "res")) t)
+            )
           tyargs (make_result_t tyargs)
       in
       let tyargs = List.map (fun t -> Typ.var t.txt) params in
       let t = Typ.poly params (make_t tyargs) in
       let concrete e =
-        let e = List.fold_right (fun x e -> lam x e) (List.map (fun x -> pvar x.txt) params) e in
+        let e =
+          List.fold_right
+            (fun x e -> lam x e)
+            (List.map (fun x -> pvar x.txt) params)
+            e
+        in
         let tyargs = List.map (fun t -> Typ.constr (lid t.txt) []) params in
         let e = Exp.constraint_ e (make_t tyargs) in
         let e = List.fold_right (fun x e -> Exp.newtype x e) params e in
         let body = Exp.poly e (Some t) in
-        meths := Cf.(method_ (mknoloc (print_fun ty)) Public (concrete Fresh body)) :: !meths
+        meths :=
+          Cf.(method_ (mknoloc (print_fun ty)) Public (concrete Fresh body))
+          :: !meths
       in
       let field ld =
         let s = Ident.name ld.ld_id in
-        (lid (prefix ^ s), pvar s),
-        tuple[str s; tyexpr env ld.ld_type (evar s)]
+        ( (lid (prefix ^ s), pvar s)
+        , tuple [str s; tyexpr env ld.ld_type (evar s)] )
       in
-      match td.type_kind, td.type_manifest with
+      match (td.type_kind, td.type_manifest) with
       | Type_record (l, _), _ ->
           let l = List.map field l in
           concrete
@@ -100,39 +118,43 @@ module Main : sig end = struct
             let c = Ident.name cd.cd_id in
             let qc = prefix ^ c in
             match cd.cd_args with
-            | Cstr_tuple (tys) ->
+            | Cstr_tuple tys ->
                 let p, args = gentuple env tys in
-                pconstr qc p, selfcall "constr" [str ty; tuple[str c; list args]]
-            | Cstr_record (l) ->
+                ( pconstr qc p
+                , selfcall "constr" [str ty; tuple [str c; list args]] )
+            | Cstr_record l ->
                 let l = List.map field l in
-                pconstr qc [Pat.record (List.map fst l) Closed],
-                selfcall "constr" [str ty; tuple [str c;
-                                                  selfcall "record" [str (ty ^ "." ^ c); list (List.map snd l)]]]
+                ( pconstr qc [Pat.record (List.map fst l) Closed]
+                , selfcall "constr"
+                    [ str ty
+                    ; tuple
+                        [ str c
+                        ; selfcall "record"
+                            [str (ty ^ "." ^ c); list (List.map snd l)] ] ] )
           in
           concrete (func (List.map case l))
-      | Type_abstract, Some t ->
-          concrete (tyexpr_fun env t)
+      | Type_abstract, Some t -> concrete (tyexpr_fun env t)
       | Type_abstract, None ->
           (* Generate an abstract method to lift abstract types *)
-          meths := Cf.(method_ (mknoloc (print_fun ty)) Public (virtual_ t)) :: !meths
-      | Type_open, _ ->
-          failwith "Open types are not yet supported."
+          meths :=
+            Cf.(method_ (mknoloc (print_fun ty)) Public (virtual_ t)) :: !meths
+      | Type_open, _ -> failwith "Open types are not yet supported."
 
   and gentuple env tl =
     let arg i t =
       let x = Printf.sprintf "x%i" i in
-      pvar x, tyexpr env t (evar x)
+      (pvar x, tyexpr env t (evar x))
     in
     List.split (List.mapi arg tl)
 
   and tyexpr env ty x =
     match ty.desc with
-    | Tvar _ ->
-        (match List.assoc ty.id env with
-         | f -> app f [x]
-         | exception Not_found ->
-             use_existentials := true;
-             selfcall "existential" [x])
+    | Tvar _ -> (
+      match List.assoc ty.id env with
+      | f -> app f [x]
+      | exception Not_found ->
+          use_existentials := true;
+          selfcall "existential" [x] )
     | Ttuple tl ->
         let p, e = gentuple env tl in
         let_in [Vb.mk (Pat.tuple p) x] (selfcall "tuple" [list e])
@@ -163,8 +185,7 @@ module Main : sig end = struct
         Format.eprintf "** Cannot deal with type %a@." Printtyp.type_expr ty;
         exit 2
 
-  and tyexpr_fun env ty =
-    lam (pvar "x") (tyexpr env ty (evar "x"))
+  and tyexpr_fun env ty = lam (pvar "x") (tyexpr env ty (evar "x"))
 
   let simplify =
     (* (fun x -> <expr> x) ====> <expr> *)
@@ -176,53 +197,51 @@ module Main : sig end = struct
       let open Parsetree in
       match e.pexp_desc with
       | Pexp_fun
-          (Asttypes.Nolabel, None,
-           {ppat_desc = Ppat_var{txt=id;_};_},
-           {pexp_desc =
-              Pexp_apply
-                (f,
-                 [Asttypes.Nolabel
-                 ,{pexp_desc= Pexp_ident{txt=Lident id2;_};_}]);_})
-        when id = id2 -> f
+          ( Asttypes.Nolabel
+          , None
+          , {ppat_desc = Ppat_var {txt = id; _}; _}
+          , { pexp_desc =
+                Pexp_apply
+                  ( f
+                  , [ ( Asttypes.Nolabel
+                      , {pexp_desc = Pexp_ident {txt = Lident id2; _}; _} ) ] ); _
+            } )
+        when id = id2 ->
+          f
       | _ -> e
     in
     {super with expr}
 
   let args =
     let open Arg in
-    [
-      "-I", String (fun s -> Config.load_path := Misc.expand_directory Config.standard_library s :: !Config.load_path),
-      "<dir> Add <dir> to the list of include directories";
-    ]
+    [ ( "-I"
+      , String
+          (fun s ->
+            Config.load_path :=
+              Misc.expand_directory Config.standard_library s
+              :: !Config.load_path )
+      , "<dir> Add <dir> to the list of include directories" ) ]
 
-  let usage =
-    Printf.sprintf "%s [options] <type names>\n" Sys.argv.(0)
+  let usage = Printf.sprintf "%s [options] <type names>\n" Sys.argv.(0)
 
   let main () =
     Config.load_path := [Config.standard_library];
     Arg.parse (Arg.align args) gen usage;
     let meths = !meths in
     let meths =
-      if !use_existentials then
-        existential_method :: meths
-      else
-        meths
+      if !use_existentials then existential_method :: meths else meths
     in
-    let meths =
-      if !use_arrows then
-        arrow_method :: meths
-      else
-        meths
-    in
+    let meths = if !use_arrows then arrow_method :: meths else meths in
     let cl = Cstr.mk (pvar "this") meths in
-    let params = [Typ.var "res", Invariant] in
-    let cl = Ci.mk ~virt:Virtual ~params (mknoloc "lifter") (Cl.structure cl) in
+    let params = [(Typ.var "res", Invariant)] in
+    let cl =
+      Ci.mk ~virt:Virtual ~params (mknoloc "lifter") (Cl.structure cl)
+    in
     let s = [Str.class_ [cl]] in
-    Format.printf "%a@." Pprintast.structure (simplify.Ast_mapper.structure simplify s)
+    Format.printf "%a@." Pprintast.structure
+      (simplify.Ast_mapper.structure simplify s)
 
   let () =
-    try main ()
-    with exn ->
+    try main () with exn ->
       Printf.eprintf "** fatal error: %s\n%!" (Printexc.to_string exn)
-
 end

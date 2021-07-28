@@ -19,8 +19,6 @@ let s_ arr = arr.(!lang_id)
 let set_lang lang =
   let lang = List.hd (String.split_on_char '-' lang) in
   let rec aux i =
-    if i <= 0 then 0
-    else if known_lang_ids.(i) = lang then i
-    else aux (i-1)
+    if i <= 0 then 0 else if known_lang_ids.(i) = lang then i else aux (i - 1)
   in
   lang_id := aux (Array.length known_lang_ids - 1)

@@ -13,6 +13,23 @@ open Tyxml_js
 (** An abstract type representing a toplevel instance. *)
 type t
 
+val create :
+     ?worker_js_file:string
+  -> ?timeout_delay:float
+  -> timeout_prompt:(t -> unit Lwt.t)
+  -> ?flood_limit:int
+  -> flood_prompt:(t -> string -> (unit -> int) -> bool Lwt.t)
+  -> ?after_init:(t -> unit Lwt.t)
+  -> ?input_sizing:Learnocaml_toplevel_input.sizing
+  -> ?on_resize:(unit -> unit)
+  -> ?on_disable_input:(t -> unit)
+  -> ?on_enable_input:(t -> unit)
+  -> ?history:Learnocaml_toplevel_history.history
+  -> ?oldify:bool
+  -> ?display_welcome:bool
+  -> container:[`Div] Html5.elt
+  -> unit
+  -> t Lwt.t
 (** Create a toplevel instance in a given container [div].
 
    @param container
@@ -59,41 +76,25 @@ type t
    @param display_welcome
      Tells if the welcome message with some help and the version of OCaml
      is to be displayed or not. *)
-val create:
-  ?worker_js_file:string ->
-  ?timeout_delay: float ->
-  timeout_prompt:(t -> unit Lwt.t) ->
-  ?flood_limit: int ->
-  flood_prompt: (t -> string -> (unit -> int) -> bool Lwt.t) ->
-  ?after_init:(t -> unit Lwt.t) ->
-  ?input_sizing: Learnocaml_toplevel_input.sizing ->
-  ?on_resize:(unit -> unit) ->
-  ?on_disable_input:(t -> unit) ->
-  ?on_enable_input:(t -> unit) ->
-  ?history:Learnocaml_toplevel_history.history ->
-  ?oldify:bool ->
-  ?display_welcome: bool ->
-  container:[`Div] Html5.elt ->
-  unit -> t Lwt.t
 
+val make_timeout_popup :
+     ?countdown:int
+  -> ?refill_step:int
+  -> ?on_show:(unit -> unit)
+  -> unit
+  -> t
+  -> unit Lwt.t
 (** Creates a thread that displays a popup over the toplevel container
     with a countdown and a button to augment it manually, and
     terminates after the countdown. *)
-val make_timeout_popup:
-  ?countdown: int ->
-  ?refill_step: int ->
-  ?on_show: (unit -> unit) ->
-  unit ->
-  t -> unit Lwt.t
 
+val make_flood_popup :
+  ?on_show:(unit -> unit) -> unit -> t -> string -> (unit -> int) -> bool Lwt.t
 (** Create a thread that displays a popup over the toplevel
     container displaying the flood amount in real time, and
     asking if the display should be hidden or not. *)
-val make_flood_popup:
-  ?on_show: (unit -> unit) ->
-  unit ->
-  (t -> string -> (unit -> int) -> bool Lwt.t)
 
+val execute_phrase : t -> ?timeout:(t -> unit Lwt.t) -> string -> bool Lwt.t
 (** Execute a given piece of code.
 
     @param timeout
@@ -102,10 +103,14 @@ val make_flood_popup:
       Returns [Success true] whenever the code was correctly
       typechecked and its evaluation did not raise an exception nor
       timeouted and [false] otherwise. *)
-val execute_phrase: t ->
-  ?timeout:(t -> unit Lwt.t) ->
-  string -> bool Lwt.t
 
+val load :
+     t
+  -> ?print_outcome:bool
+  -> ?timeout:(t -> unit Lwt.t)
+  -> ?message:string
+  -> string
+  -> bool Lwt.t
 (** Execute a given piece of code without displaying it.
 
     @param timeout
@@ -118,51 +123,45 @@ val execute_phrase: t ->
        Returns [Success true] whenever the code was correctly
        typechecked and its evaluation did not raise an exception nor
        timeouted and [false] otherwise. *)
-val load:
-  t ->
-  ?print_outcome:bool ->
-  ?timeout:(t -> unit Lwt.t) ->
-  ?message: string ->
-  string -> bool Lwt.t
 
+val check : t -> string -> unit Toploop_results.toplevel_result Lwt.t
 (** Parse and typecheck a given source code. *)
-val check: t -> string -> unit Toploop_results.toplevel_result Lwt.t
 
+val set_checking_environment : t -> unit Lwt.t
 (** Freezes the environment for future calls to {!check}. *)
-val set_checking_environment: t -> unit Lwt.t
 
+val clear : t -> unit
 (** Empty the toplevel container content. *)
-val clear: t -> unit
 
+val reset : t -> unit Lwt.t
 (** Reset the toplevel environment. *)
-val reset: t -> unit Lwt.t
 
+val print_string : t -> string -> unit
 (** Print a message in the toplevel standard output. This is equivalent
     to calling [Pervasives.print_string] in the toplevel session.
     Calls {!Learnocaml_toplevel_output.output_stdout}. *)
-val print_string: t -> string -> unit
 
+val prerr_string : t -> string -> unit
 (** Print a message in the toplevel standard error output. This is
     equivalent to calling [Pervasives.prerr_string] in the toplevel
     session. Calls {!Learnocaml_toplevel_output.output_stderr}. *)
-val prerr_string: t -> string -> unit
 
+val print_html : t -> string -> unit
 (** Print a block of HTML in the toplevel output.
     Calls {!Learnocaml_toplevel_output.output_html}. *)
-val print_html: t -> string -> unit
 
+val scroll : t -> unit
 (** scroll the view to show the last phrase.
     Calls {!Learnocaml_toplevel_output.scroll. *)
-val scroll: t -> unit
 
+val execute : t -> unit
 (** Execute the content of the input [textarea].
     This is equivalent to pressing [Enter] when the toplevel is focused. *)
-val execute: t -> unit
 
+val go_backward : t -> unit
 (** Go backward in the input's history.
     This is equivalent to pressing [Up] when the toplevel is focused. *)
-val go_backward: t -> unit
 
+val go_forward : t -> unit
 (** Go forward in the input's history.
     This is equivalent to pressing [Down] when the toplevel is focused. *)
-val go_forward: t -> unit

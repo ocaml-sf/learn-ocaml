@@ -10,13 +10,13 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software. *)
 
-(** Lists all the supported languages *)
 val known_lang_ids : string array
+(** Lists all the supported languages *)
 
+val s_ : 'a array -> 'a
 (** Gets the right index from the given array for the currently selected
     language (should be used by the preprocessor only) *)
-val s_ : 'a array -> 'a
 
+val set_lang : string -> unit
 (** Select the currently active language (two-letter code, possibly with country
     suffix e.g. [fr-FR]. *)
-val set_lang : string -> unit

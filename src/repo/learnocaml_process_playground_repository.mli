@@ -8,10 +8,11 @@
 
 (** Configuration options *)
 
-val playground_dir: string ref
-val playground_index: string option ref
+val playground_dir : string ref
+
+val playground_index : string option ref
 
 (** Main *)
 
+val main : string -> bool Lwt.t
 (** [dest_dir] -> success *)
-val main: string -> bool Lwt.t

@@ -18,7 +18,13 @@ open Toploop_results
 (** An abstract type representing a toplevel instance. *)
 type t
 
-
+val create :
+     ?js_file:string
+  -> ?after_init:(t -> unit Lwt.t)
+  -> ?pp_stdout:(string -> unit)
+  -> ?pp_stderr:(string -> unit)
+  -> unit
+  -> t Lwt.t
 (** Create a toplevel instance.
 
     @param after_init a function that will be called whenever the
@@ -33,23 +39,22 @@ type t
 
     @param js_file the web worker [.js] file.
            (default: ["/js/learnocaml-toplevel-worker.js"]). *)
-val create:
-  ?js_file: string ->
-  ?after_init:(t -> unit Lwt.t) ->
-  ?pp_stdout:(string -> unit) ->
-  ?pp_stderr:(string -> unit) ->
-  unit -> t Lwt.t
 
-
+val check : t -> string -> unit toplevel_result Lwt.t
 (** Parse and typecheck a given source code
 
     @return [Success ()] in case of success and [Error err]
             where [err] contains the error message otherwise.
 
 *)
-val check: t -> string -> unit toplevel_result Lwt.t
 
-
+val execute :
+     t
+  -> ?pp_code:(string -> unit)
+  -> pp_answer:(string -> unit)
+  -> print_outcome:bool
+  -> string
+  -> bool toplevel_result Lwt.t
 (** Execute a given source code. The evaluation stops after the first
     toplevel phrase (as terminated by ";;") that fails to compile or
     for which the evaluation raises an uncaught exception.
@@ -71,17 +76,17 @@ val check: t -> string -> unit toplevel_result Lwt.t
             exception, and [Success false] otherwise.
 
 *)
-val execute:
-  t ->
-  ?pp_code:(string -> unit) ->
-  pp_answer:(string -> unit) ->
-  print_outcome:bool ->
-  string -> bool toplevel_result Lwt.t
 
+val set_checking_environment : t -> unit toplevel_result Lwt.t
 (** Freezes the environment for future calls to {!check}. *)
-val set_checking_environment:
-  t -> unit toplevel_result Lwt.t
 
+val use_string :
+     t
+  -> ?filename:string
+  -> pp_answer:(string -> unit)
+  -> print_outcome:bool
+  -> string
+  -> bool toplevel_result Lwt.t
 (** Execute a given source code. The code is parsed and
     typechecked all at once before to start the evaluation.
 
@@ -92,14 +97,15 @@ val set_checking_environment:
     @return as {!val:execute}.
 
 *)
-val use_string:
-  t ->
-  ?filename: string ->
-  pp_answer:(string -> unit) ->
-  print_outcome:bool ->
-  string -> bool toplevel_result Lwt.t
 
-
+val use_mod_string :
+     t
+  -> pp_answer:(string -> unit)
+  -> print_outcome:bool
+  -> modname:string
+  -> ?sig_code:string
+  -> string
+  -> bool toplevel_result Lwt.t
 (** Wrap a given source code into a module and bind it with a given name.
 
     @param pp_answer see {!val:execute}.
@@ -114,29 +120,23 @@ val use_string:
     @return as {!val:execute}.
 
 *)
-val use_mod_string:
-  t ->
-  pp_answer:(string -> unit) ->
-  print_outcome:bool ->
-  modname:string ->
-  ?sig_code:string ->
-  string -> bool toplevel_result Lwt.t
 
+val register_callback :
+  t -> string -> (string -> unit) -> unit toplevel_result Lwt.t
 (** Insert a callback in the toplevel environment. *)
-val register_callback : t -> string -> (string -> unit) -> unit toplevel_result Lwt.t
 
+val reset : t -> ?timeout:(unit -> unit Lwt.t) -> unit -> unit Lwt.t
 (** Reset the current toplevel environment to the initial
     environment. *)
-val reset: t -> ?timeout:(unit -> unit Lwt.t) -> unit -> unit Lwt.t
 
-
+val terminate : t -> unit
 (** Terminate the toplevel, i.e. destroy the Web Worker. It does
     nothing if the toplevel as been created with [async=false]. *)
-val terminate: t -> unit
 
-val set_after_init: t -> (t -> unit Lwt.t) -> unit
+val set_after_init : t -> (t -> unit Lwt.t) -> unit
 
 (**/**)
 
-val debug: bool ref
-val wrap: (string -> unit) -> Format.formatter
+val debug : bool ref
+
+val wrap : (string -> unit) -> Format.formatter

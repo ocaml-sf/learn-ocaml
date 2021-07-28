@@ -30,17 +30,21 @@ val exercise_state : string -> Answer.t storage_key
 
 val all_exercise_states : Answer.t SMap.t storage_key
 
-val exercise_toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
+val exercise_toplevel_history :
+  string -> Learnocaml_toplevel_history.snapshot storage_key
 
 val exercise_toplevel_history_list : string list storage_key
 
-val all_exercise_toplevel_histories : Learnocaml_toplevel_history.snapshot SMap.t storage_key
+val all_exercise_toplevel_histories :
+  Learnocaml_toplevel_history.snapshot SMap.t storage_key
 
 val toplevel_history_list : string list storage_key
 
-val toplevel_history : string -> Learnocaml_toplevel_history.snapshot storage_key
+val toplevel_history :
+  string -> Learnocaml_toplevel_history.snapshot storage_key
 
-val all_toplevel_histories : Learnocaml_toplevel_history.snapshot SMap.t storage_key
+val all_toplevel_histories :
+  Learnocaml_toplevel_history.snapshot SMap.t storage_key
 
 val server_id : int storage_key
 

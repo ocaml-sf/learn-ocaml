@@ -59,7 +59,8 @@ type 'a mutant_info = string * int * 'a
     equality ([(=)]).
 *)
 module type S = sig
-
+  val run_test_against_mutant :
+    ?compare:('b -> 'b -> bool) -> ('a -> 'b) -> 'a * 'b -> bool
   (** Run a test (a pair of input and expected output) on a mutant
       function.
       Returns true if the mutant *fails* the test, either by deviating
@@ -69,33 +70,40 @@ module type S = sig
       comparing the expected and actual outputs, and defaults to
       structural equality ([(=)]).
   *)
-  val run_test_against_mutant:
-    ?compare: ('b -> 'b -> bool) ->
-    ('a -> 'b) -> ('a * 'b) -> bool
 
-  val test_unit_tests_1:
-    ?test_student_soln: bool ->
-    ?test: ('b -> 'b -> bool) ->
-    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant_info list -> Learnocaml_report.t
-  val test_unit_tests_2:
-    ?test_student_soln: bool ->
-    ?test: ('c -> 'c -> bool) ->
-    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant_info list -> Learnocaml_report.t
-  val test_unit_tests_3:
-    ?test_student_soln: bool ->
-    ?test: ('d -> 'd -> bool) ->
-    ('a -> 'b -> 'c -> 'd) Ty.ty
+  val test_unit_tests_1 :
+       ?test_student_soln:bool
+    -> ?test:('b -> 'b -> bool)
+    -> ('a -> 'b) Ty.ty
+    -> string
+    -> ('a -> 'b) mutant_info list
+    -> Learnocaml_report.t
+
+  val test_unit_tests_2 :
+       ?test_student_soln:bool
+    -> ?test:('c -> 'c -> bool)
+    -> ('a -> 'b -> 'c) Ty.ty
+    -> string
+    -> ('a -> 'b -> 'c) mutant_info list
+    -> Learnocaml_report.t
+
+  val test_unit_tests_3 :
+       ?test_student_soln:bool
+    -> ?test:('d -> 'd -> bool)
+    -> ('a -> 'b -> 'c -> 'd) Ty.ty
     -> string
     -> ('a -> 'b -> 'c -> 'd) mutant_info list
     -> Learnocaml_report.t
-  val test_unit_tests_4:
-    ?test_student_soln: bool ->
-    ?test: ('e -> 'e -> bool) ->
-    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+
+  val test_unit_tests_4 :
+       ?test_student_soln:bool
+    -> ?test:('e -> 'e -> bool)
+    -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
     -> string
     -> ('a -> 'b -> 'c -> 'd -> 'e) mutant_info list
     -> Learnocaml_report.t
 
+  val passed_mutation_testing : Learnocaml_report.t -> bool
   (** To be called on a report returned by one of the
       [test_unit_tests_<args_nb>] functions,
       for checking whether the student passed or failed mutation testing.
@@ -106,7 +114,6 @@ module type S = sig
       If this function is called on a report that did not result from
       one of the above 4 functions, the result is undefined.
   *)
-  val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
-module Make (Test_lib: Test_lib.S) : S
+module Make (Test_lib : Test_lib.S) : S

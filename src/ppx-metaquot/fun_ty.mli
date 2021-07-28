@@ -27,38 +27,30 @@
     Alternatively: [3 @: "word" @:!! false] *)
 type ('arrow, 'uarrow, 'ret) args
 
+val last : 'a -> ('a -> 'ret, 'a -> unit, 'ret) args
 (** [last e], or equivalently [!! e], builds a one-element argument list. *)
-val last :
-  'a ->
-  ('a -> 'ret, 'a -> unit, 'ret) args
 
+val arg :
+     'a
+  -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
+  -> ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 (** [arg a l], or equivalently [a @: l], adds [a] in front of the
    argument list [l]. *)
-val arg :
-  'a ->
-  ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-  ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
+val ( !! ) : 'a -> ('a -> 'ret, 'a -> unit, 'ret) args
 (** Helper notation for [last]. *)
-val (!!) :
-  'a ->
-  ('a -> 'ret, 'a -> unit, 'ret) args
 
+val ( @: ) :
+     'a
+  -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
+  -> ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 (** Helper notation for [arg]. *)
-val (@:) :
-  'a ->
-  ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-  ('a -> 'ar -> 'row, 'a -> 'ar -> 'urow, 'ret) args
 
+val ( @:!! ) : 'a -> 'b -> ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 (** [a @:!! l] is another notation for [a @: !! l] (with a space). *)
-val (@:!!) :
-  'a -> 'b ->
-  ('a -> 'b -> 'ret, 'a -> 'b -> unit, 'ret) args
 
+val apply : ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret
 (** [apply f l] applies a n-ary function [f] to the arguments from [l]. *)
-val apply :
-  ('ar -> 'row) -> ('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-  'ret
 
 (** GADT for function types.
 
@@ -100,60 +92,63 @@ val apply :
     where the co-domain type [bool] is now explicit. *)
 type ('arrow, 'uarrow, 'ret) fun_ty
 
-(** [last_ty [%ty: a] [%ty: r]] builds a function type for [a -> r]. *)
 val last_ty :
-  'a Ty.ty ->
-  'ret Ty.ty ->
-  (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) fun_ty
+  'a Ty.ty -> 'ret Ty.ty -> (('a -> 'ret) Ty.ty, 'a -> unit, 'ret) fun_ty
+(** [last_ty [%ty: a] [%ty: r]] builds a function type for [a -> r]. *)
 
+val arg_ty :
+     'a Ty.ty
+  -> (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+  -> (('a -> 'ar -> 'row) Ty.ty, 'a -> 'ar -> 'urow, 'ret) fun_ty
 (** [arg_ty [%ty: a] [%funty: b ->...-> r]] builds a function type for
     [a -> b ->...-> r]. *)
-val arg_ty :
-  'a Ty.ty ->
-  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-  (('a -> 'ar -> 'row) Ty.ty, ('a -> 'ar -> 'urow), 'ret) fun_ty
 
+val ty_of_fun_ty :
+  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
 (** [ty_of_fun_ty funty] returns a term of type [('ar -> 'row) Ty.ty],
     assuming [funty : (('ar -> 'row) Ty.ty, _, _) fun_ty]. *)
-val ty_of_fun_ty :
-  (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-  ('ar -> 'row) Ty.ty
 
+val get_ret_ty :
+  ('ar -> 'row) Ty.ty -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret Ty.ty
 (** [get_ret_ty ty l] returns a term of type ['ret Ty.ty] such that if
     [ty : ('ar -> 'row) Ty.ty] and [l] contains n arguments, ['ar -> 'row]
     is the arrow type of an n-argument function with co-domain ['ret]. *)
-val get_ret_ty :
-  ('ar -> 'row) Ty.ty -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> 'ret Ty.ty
 
 module type S = sig
   val typed_printer : 'a Ty.ty -> Format.formatter -> 'a -> unit
+
   val typed_sampler : 'a Ty.ty -> unit -> 'a
 end
 
 (** [Make], used in [Test_lib], provides a generic printer and sampler
     for argument lists of n-ary functions, depending on their type. *)
-module Make : functor (M : S) -> sig
+module Make (M : S) : sig
   val print :
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-    Format.formatter -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit
+       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+    -> Format.formatter
+    -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
+    -> unit
+
   val get_sampler :
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-    unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
+       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+    -> unit
+    -> ('ar -> 'row, 'ar -> 'urow, 'ret) args
 end
 
+val apply_args_1 : ('a -> 'b) -> ('a -> 'c, 'a -> unit, 'c) args -> 'b
 (** [apply_args_1], [apply_args_2], [apply_args3], [apply_args_4] are
     variants of the [apply] function, assuming a fixed number of args;
     they have thus a more precise type and are used in [Test_lib]. *)
-val apply_args_1 :
-  ('a -> 'b) -> ('a -> 'c, 'a -> unit, 'c) args -> 'b
 
 val apply_args_2 :
   ('a -> 'b -> 'c) -> ('a -> 'b -> 'd, 'a -> 'b -> unit, 'd) args -> 'c
 
 val apply_args_3 :
-  ('a -> 'b -> 'c -> 'd) ->
-  ('a -> 'b -> 'c -> 'e, 'a -> 'b -> 'c -> unit, 'e) args -> 'd
+     ('a -> 'b -> 'c -> 'd)
+  -> ('a -> 'b -> 'c -> 'e, 'a -> 'b -> 'c -> unit, 'e) args
+  -> 'd
 
 val apply_args_4 :
-  ('a -> 'b -> 'c -> 'd -> 'e) ->
-  ('a -> 'b -> 'c -> 'd -> 'f, 'a -> 'b -> 'c -> 'd -> unit, 'f) args -> 'e
+     ('a -> 'b -> 'c -> 'd -> 'e)
+  -> ('a -> 'b -> 'c -> 'd -> 'f, 'a -> 'b -> 'c -> 'd -> unit, 'f) args
+  -> 'e

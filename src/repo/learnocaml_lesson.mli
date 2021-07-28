@@ -7,13 +7,16 @@
  * included LICENSE file for details. *)
 
 type lesson =
-  { lesson_title : string (* may contains HTML formatting *) ;
-    lesson_steps : step list }
+  { lesson_title : string (* may contains HTML formatting *)
+  ; lesson_steps : step list }
+
 and step =
-  { step_title : string (* may contains HTML formatting *) ;
-    step_phrases : phrase list }
+  { step_title : string (* may contains HTML formatting *)
+  ; step_phrases : phrase list }
+
 and phrase =
-  | Text of string (* may contains HTML formatting *)
+  | Text of string
+  (* may contains HTML formatting *)
   | Code of string
 
 val lesson_enc : lesson Json_encoding.encoding

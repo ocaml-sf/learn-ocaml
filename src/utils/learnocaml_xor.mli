@@ -8,5 +8,6 @@
 
 (* This is trivial and dummy "encryption" for the tests and the solutions. *)
 
-val encode: ?prefix:string -> string -> string
-val decode: ?prefix:string -> string -> string
+val encode : ?prefix:string -> string -> string
+
+val decode : ?prefix:string -> string -> string

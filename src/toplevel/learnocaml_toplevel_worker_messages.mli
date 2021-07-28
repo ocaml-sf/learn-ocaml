@@ -15,7 +15,9 @@ type _ host_msg =
   | Reset : unit host_msg
   | Execute : int option * bool * int * string -> bool host_msg
   | Use_string : string option * bool * int * string -> bool host_msg
-  | Use_mod_string : int * bool * string * string option * string -> bool host_msg
+  | Use_mod_string :
+      int * bool * string * string option * string
+      -> bool host_msg
   | Set_debug : bool -> unit host_msg
   | Register_callback : string * int -> unit host_msg
   | Set_checking_environment : unit host_msg
@@ -30,8 +32,11 @@ type _ msg_ty =
 type (_, _) eq = Eq : ('a, 'a) eq
 
 type toploop_msg =
-  | Write : int * string -> toploop_msg (* pseudo file descriptor * content *)
+  | Write : int * string -> toploop_msg
+  (* pseudo file descriptor * content *)
   | ReturnSuccess :
-      int * 'a msg_ty * 'a * Toploop_results.warning list -> toploop_msg
+      int * 'a msg_ty * 'a * Toploop_results.warning list
+      -> toploop_msg
   | ReturnError :
-      int * Toploop_results.error * Toploop_results.warning list -> toploop_msg
+      int * Toploop_results.error * Toploop_results.warning list
+      -> toploop_msg

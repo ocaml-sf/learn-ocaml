@@ -7,5 +7,4 @@
  * included LICENSE file for details. *)
 
 (** Events loop for the toplevel's Web Worker. *)
-
 (* Empty *)

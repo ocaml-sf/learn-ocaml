@@ -21,110 +21,90 @@
 
 open Learnocaml_data
 
-val version: string
+val version : string
 
 type _ request =
-  | Static:
-      string list -> string request
-  | Version:
-      unit -> (string * int) request
-  | Nonce:
-      unit -> string request
-  | Create_token:
-      string * student token option * string option -> student token request
-  | Create_teacher_token:
-      teacher token -> teacher token request
-  | Fetch_save:
-      'a token -> Save.t request
-  | Archive_zip:
-      'a token -> string request
-  | Update_save:
-      'a token * Save.t -> Save.t request
-  | Git:
-      'a token * string list -> string request
-
-  | Students_list:
-      teacher token -> Student.t list request
-  | Set_students_list:
-      teacher token * (Student.t * Student.t) list -> unit request
-    (** Does not affect the students absent from the list. the pairs are the
+  | Static : string list -> string request
+  | Version : unit -> (string * int) request
+  | Nonce : unit -> string request
+  | Create_token :
+      string * student token option * string option
+      -> student token request
+  | Create_teacher_token : teacher token -> teacher token request
+  | Fetch_save : 'a token -> Save.t request
+  | Archive_zip : 'a token -> string request
+  | Update_save : 'a token * Save.t -> Save.t request
+  | Git : 'a token * string list -> string request
+  | Students_list : teacher token -> Student.t list request
+  | Set_students_list :
+      teacher token * (Student.t * Student.t) list
+      -> unit request
+      (** Does not affect the students absent from the list. the pairs are the
         before/after states, used for merging *)
-  | Students_csv:
-      teacher token * Exercise.id list * Token.t list -> string request
-
-  | Exercise_index:
-      'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
-  | Exercise:
-      'a token option * string -> (Exercise.Meta.t * Exercise.t * float option) request
-
-  | Lesson_index:
-      unit -> (string * string) list request
-  | Lesson:
-      string -> Lesson.t request
-
-  | Tutorial_index:
-      unit -> Tutorial.Index.t request
-  | Tutorial:
-      string -> Tutorial.t request
-
-  | Playground_index:
-      unit -> Playground.Index.t request
-  | Playground:
-      string -> Playground.t request
-
-  | Exercise_status_index:
-      teacher token -> Exercise.Status.t list request
-  | Exercise_status:
-      teacher token * Exercise.id -> Exercise.Status.t request
-  | Set_exercise_status:
-      teacher token * (Exercise.Status.t * Exercise.Status.t) list ->
-      unit request
-    (** The two Status.t correspond to the states before and after changes, used
+  | Students_csv :
+      teacher token * Exercise.id list * Token.t list
+      -> string request
+  | Exercise_index :
+      'a token option
+      -> (Exercise.Index.t * (Exercise.id * float) list) request
+  | Exercise :
+      'a token option * string
+      -> (Exercise.Meta.t * Exercise.t * float option) request
+  | Lesson_index : unit -> (string * string) list request
+  | Lesson : string -> Lesson.t request
+  | Tutorial_index : unit -> Tutorial.Index.t request
+  | Tutorial : string -> Tutorial.t request
+  | Playground_index : unit -> Playground.Index.t request
+  | Playground : string -> Playground.t request
+  | Exercise_status_index : teacher token -> Exercise.Status.t list request
+  | Exercise_status : teacher token * Exercise.id -> Exercise.Status.t request
+  | Set_exercise_status :
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list
+      -> unit request
+      (** The two Status.t correspond to the states before and after changes, used
         for three-way merge *)
-
-  | Partition:
-      teacher token * Exercise.id * string * int -> Partition.t request
-
-  | Invalid_request:
-      string -> string request
-    (** Only for server-side handling: bound to requests not matching any case
+  | Partition :
+      teacher token * Exercise.id * string * int
+      -> Partition.t request
+  | Invalid_request : string -> string request
+      (** Only for server-side handling: bound to requests not matching any case
         above *)
 
-type http_request = {
-  meth: [ `GET | `POST of string];
-  path: string list;
-  args: (string * string) list;
-}
+type http_request =
+  { meth : [`GET | `POST of string]
+  ; path : string list
+  ; args : (string * string) list }
 
 module type JSON_CODEC = sig
-  val decode: 'a Json_encoding.encoding -> string -> 'a
-  val encode: ?minify:bool -> 'a Json_encoding.encoding -> 'a -> string
+  val decode : 'a Json_encoding.encoding -> string -> 'a
+
+  val encode : ?minify:bool -> 'a Json_encoding.encoding -> 'a -> string
 end
 
 module type REQUEST_HANDLER = sig
   type 'resp ret
 
-  val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
+  val map_ret : ('a -> 'b) -> 'a ret -> 'b ret
 
-  val callback: Conduit.endp ->
-                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+  val callback :
+    Conduit.endp -> Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
-module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
-
+module Server (Json : JSON_CODEC) (Rh : REQUEST_HANDLER) : sig
+  val handler :
+       Conduit.endp
+    -> Learnocaml_data.Server.config
+    -> http_request
+    -> string Rh.ret
   (** Helper to define a server: handles recognition of the incoming request, and
       encoding of the response. *)
-  val handler: Conduit.endp ->
-               Learnocaml_data.Server.config -> http_request -> string Rh.ret
-
 end
 
-module Client: functor (Json: JSON_CODEC) -> sig
-
+module Client (Json : JSON_CODEC) : sig
+  val make_request :
+       (http_request -> (string, 'a) result Lwt.t)
+    -> 'resp request
+    -> ('resp, 'a) result Lwt.t
   (** Helper to make a client request: handles encoding of the request and
       decoding of the response. *)
-  val make_request:
-    (http_request -> (string, 'a) result Lwt.t) ->
-    'resp request -> ('resp, 'a) result Lwt.t
-
 end

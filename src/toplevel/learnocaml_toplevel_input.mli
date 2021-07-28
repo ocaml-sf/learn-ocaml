@@ -13,10 +13,19 @@ type input
 
 (** Size parameters for the input box. *)
 type sizing =
-  { line_height : int (** The height of ta line in pixels. *) ;
-    min_lines : int (** The minimum assigned height in terms of of lines. *) ;
-    max_lines : int (** The maximum assigned height in terms of of lines. *) }
+  { line_height : int  (** The height of ta line in pixels. *)
+  ; min_lines : int  (** The minimum assigned height in terms of of lines. *)
+  ; max_lines : int  (** The maximum assigned height in terms of of lines. *)
+  }
 
+val setup :
+     ?sizing:sizing
+  -> ?history:Learnocaml_toplevel_history.history
+  -> ?on_resize:(unit -> unit)
+  -> execute:(string -> unit)
+  -> container:[`Div] Tyxml_js.Html5.elt
+  -> unit
+  -> input
 (** Use a given div as an input box.
     Inserts a textarea in it and gives it the class [toplevel-input].
 
@@ -29,35 +38,28 @@ type sizing =
     @param execute
       The callback called whenever the [Enter] key is pressed, or the
       {!execute} function is called. *)
-val setup :
-  ?sizing: sizing ->
-  ?history:Learnocaml_toplevel_history.history ->
-  ?on_resize:(unit -> unit) ->
-  execute: (string -> unit) ->
-  container: [ `Div ] Tyxml_js.Html5.elt ->
-  unit -> input
 
-(** Disable the input box. *)
 val disable : input -> unit
+(** Disable the input box. *)
 
-(** Enable the input box. *)
 val enable : input -> unit
+(** Enable the input box. *)
 
+val set : input -> string -> unit
 (** Updates the contents of the field.
     Discards its current contents. *)
-val set : input -> string -> unit
 
-(** Gives the content of the input box. *)
 val get : input -> string
+(** Gives the content of the input box. *)
 
-(** Simulates a hit on the [Enter] key *)
 val execute : input -> unit
+(** Simulates a hit on the [Enter] key *)
 
-(** Simulates a hit on the [Up] key *)
 val go_backward : input -> unit
+(** Simulates a hit on the [Up] key *)
 
-(** Simulates a hit on the [Down] key *)
 val go_forward : input -> unit
+(** Simulates a hit on the [Down] key *)
 
-(** Sets focus to the text input field *)
 val focus : input -> unit
+(** Sets focus to the text input field *)

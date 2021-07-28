@@ -11,7 +11,7 @@ open Learnocaml_toplevel_worker_messages
 
 let debug = ref false
 
-let (>>=) = Lwt.bind
+let ( >>= ) = Lwt.bind
 
 let is_success = function
   | Toploop_ext.Ok _ -> true
@@ -22,21 +22,23 @@ type 'a return =
   | ReturnError of Toploop_ext.error * Toploop_ext.warning list
 
 let return_success v w = Lwt.return (ReturnSuccess (v, w))
+
 let return_unit_success = return_success () []
+
 let return_error e w = Lwt.return (ReturnError (e, w))
 
 let unwrap_result =
   let open Toploop_ext in
   function
-  | Ok (b, w) -> return_success b w
-  | Error (err, w) -> return_error err w
+  | Ok (b, w) -> return_success b w | Error (err, w) -> return_error err w
 
 (** File descriptors *)
 
-module IntMap = Map.Make(struct
-    type t = int
-    let compare (x:int) (y:int) = Pervasives.compare x y
-  end)
+module IntMap = Map.Make (struct
+  type t = int
+
+  let compare (x : int) (y : int) = Pervasives.compare x y
+end)
 
 (* Limit the frequency of sent messages to one per ms, using an active
    loop (yuck) because, well, there is no other concurrency primitive
@@ -55,77 +57,74 @@ module IntMap = Map.Make(struct
    still need some kind of active waiting to limit throughput. All in
    all this spinwait is not that ugly. *)
 let last = ref 0.
+
 let rec wait () =
   let now = Sys.time () (* let's hope this yields a bit *) in
-  if now -. !last > 0.001 then
-    last := now
-  else wait ()
+  if now -. !last > 0.001 then last := now else wait ()
 
-let post_message (m: toploop_msg) =
-  wait () ;
+let post_message (m : toploop_msg) =
+  wait ();
   Worker.post_message (Json.output m)
 
-let (wrap_fd, close_fd, clear_fds) =
+let wrap_fd, close_fd, clear_fds =
   let fds = ref IntMap.empty in
   let wrap_fd fd =
-    try IntMap.find fd !fds
-    with Not_found ->
+    try IntMap.find fd !fds with Not_found ->
       let buf = Buffer.create 503 in
       let flush () =
         let s = Buffer.contents buf in
-        if s <> "" then begin
+        if s <> "" then (
           Buffer.reset buf;
           if !debug then Js_utils.debug "Worker: <- Write %d %S" fd s;
-          post_message (Write (fd, s))
-        end in
+          post_message (Write (fd, s)) )
+      in
       let ppf = Format.make_formatter (Buffer.add_substring buf) flush in
       fds := IntMap.add fd ppf !fds;
-      ppf in
+      ppf
+  in
   let close_fd fd =
-    if IntMap.mem fd !fds then (Format.pp_print_flush (IntMap.find fd !fds) ());
-    fds := IntMap.remove fd !fds in
+    if IntMap.mem fd !fds then Format.pp_print_flush (IntMap.find fd !fds) ();
+    fds := IntMap.remove fd !fds
+  in
   let clear_fds () =
     fds :=
       IntMap.fold
         (fun id ppf fds ->
-           Format.pp_print_flush ppf ();
-           if id = 0 || id = 1 then
-             IntMap.add id ppf fds
-           else
-             fds)
-        !fds
-        IntMap.empty in
+          Format.pp_print_flush ppf ();
+          if id = 0 || id = 1 then IntMap.add id ppf fds else fds )
+        !fds IntMap.empty
+  in
   (wrap_fd, close_fd, clear_fds)
 
 let stdout_ppf = wrap_fd 0
+
 let stderr_ppf = wrap_fd 1
 
 let () =
-  Sys_js.set_channel_flusher stdout
-    (fun s ->
-       Format.pp_print_string stdout_ppf s;
-       Format.pp_print_flush stdout_ppf ());
-  Sys_js.set_channel_flusher stderr
-    (fun s ->
-       Format.pp_print_string stderr_ppf s;
-       Format.pp_print_flush stderr_ppf ())
+  Sys_js.set_channel_flusher stdout (fun s ->
+      Format.pp_print_string stdout_ppf s;
+      Format.pp_print_flush stdout_ppf () );
+  Sys_js.set_channel_flusher stderr (fun s ->
+      Format.pp_print_string stderr_ppf s;
+      Format.pp_print_flush stderr_ppf () )
 
 let make_answer_ppf fd_answer =
   let orig_print_string, orig_flush =
-    Format.pp_get_formatter_output_functions (wrap_fd fd_answer) () in
+    Format.pp_get_formatter_output_functions (wrap_fd fd_answer) ()
+  in
   let check_first_call =
     let first_call = ref true in
     fun () ->
-      if !first_call then begin
-        flush stdout ;
-        flush stderr ;
-        Format.(pp_print_flush std_formatter ()) ;
-        Format.(pp_print_flush err_formatter ()) ;
-        first_call := false ;
-      end in
+      if !first_call then (
+        flush stdout;
+        flush stderr;
+        Format.(pp_print_flush std_formatter ());
+        Format.(pp_print_flush err_formatter ());
+        first_call := false )
+  in
   Format.make_formatter
-    (fun str -> check_first_call () ; orig_print_string str)
-    (fun () -> check_first_call () ; orig_flush ())
+    (fun str -> check_first_call (); orig_print_string str)
+    (fun () -> check_first_call (); orig_flush ())
 
 (** Code compilation and execution *)
 
@@ -133,17 +132,17 @@ let make_answer_ppf fd_answer =
 
 (** Message dispatcher *)
 
-let map_option f o = match o with | None -> None | Some o -> Some (f o)
-let iter_option f o = match o with | None -> () | Some o -> f o
+let map_option f o = match o with None -> None | Some o -> Some (f o)
+
+let iter_option f o = match o with None -> () | Some o -> f o
 
 let checking_environment = ref !Toploop.toplevel_env
 
 let handler : type a. a host_msg -> a return Lwt.t = function
   | Set_checking_environment ->
-      checking_environment := !Toploop.toplevel_env ;
+      checking_environment := !Toploop.toplevel_env;
       return_unit_success
-  | Init ->
-      return_unit_success
+  | Init -> return_unit_success
   | Reset ->
       if !debug then Js_utils.debug "Worker: -> Reset";
       clear_fds ();
@@ -154,16 +153,20 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_code = map_option wrap_fd fd_code in
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then Js_utils.debug "Worker: -> Execute (%S)" code;
-      let result = Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
-      if !debug then Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
+      let result =
+        Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code
+      in
+      if !debug then
+        Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
       iter_option close_fd fd_code;
       close_fd fd_answer;
       unwrap_result result
   | Use_string (filename, print_outcome, fd_answer, code) ->
       let ppf_answer = make_answer_ppf fd_answer in
-      if !debug then
-        Js_utils.debug "Worker: -> Use_string (%S)" code;
-      let result = Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
+      if !debug then Js_utils.debug "Worker: -> Use_string (%S)" code;
+      let result =
+        Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code
+      in
       if !debug then
         Js_utils.debug "Worker: <- Use_string (%B)" (is_success result);
       close_fd fd_answer;
@@ -171,13 +174,14 @@ let handler : type a. a host_msg -> a return Lwt.t = function
   | Use_mod_string (fd_answer, print_outcome, modname, sig_code, impl_code) ->
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then
-        Js_utils.debug
-          "Worker: -> Use_mod_string %s (%S)" modname impl_code;
-      let result = Toploop_ext.use_mod_string
-          ~ppf_answer ~print_outcome ~modname ?sig_code impl_code in
+        Js_utils.debug "Worker: -> Use_mod_string %s (%S)" modname impl_code;
+      let result =
+        Toploop_ext.use_mod_string ~ppf_answer ~print_outcome ~modname
+          ?sig_code impl_code
+      in
       if !debug then
-        Js_utils.debug
-          "Worker: <- Use_mod_string %s (%B)" modname (is_success result);
+        Js_utils.debug "Worker: <- Use_mod_string %s (%B)" modname
+          (is_success result);
       close_fd fd_answer;
       unwrap_result result
   | Set_debug b ->
@@ -185,33 +189,40 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       return_unit_success
   | Register_callback (name, fd) ->
       let callback text =
-        post_message (Write (fd, text)) ; () in
+        post_message (Write (fd, text));
+        ()
+      in
       let ty =
         let ast =
           let arg =
-            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "string")) []) in
+            Ast_helper.(
+              Typ.constr (Location.mknoloc (Longident.Lident "string")) [])
+          in
           let ret =
-            Ast_helper.(Typ.constr (Location.mknoloc (Longident.Lident "unit")) []) in
-          { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret) ;
-            ptyp_loc = Location.none ;
-            ptyp_attributes = [] } in
-        Typetexp.transl_type_scheme !Toploop.toplevel_env ast in
+            Ast_helper.(
+              Typ.constr (Location.mknoloc (Longident.Lident "unit")) [])
+          in
+          { Parsetree.ptyp_desc =
+              Parsetree.Ptyp_arrow (Asttypes.Nolabel, arg, ret)
+          ; ptyp_loc = Location.none
+          ; ptyp_attributes = [] }
+        in
+        Typetexp.transl_type_scheme !Toploop.toplevel_env ast
+      in
       Toploop.toplevel_env :=
-        Env.add_value
-          (Ident.create name)
-          { Types.
-            val_type = ty.Typedtree.ctyp_type;
-            val_kind = Types.Val_reg;
-            val_attributes = [];
-            val_loc = Location.none }
-          !Toploop.toplevel_env ;
-      Toploop.setvalue name (Obj.repr callback) ;
+        Env.add_value (Ident.create name)
+          { Types.val_type = ty.Typedtree.ctyp_type
+          ; val_kind = Types.Val_reg
+          ; val_attributes = []
+          ; val_loc = Location.none }
+          !Toploop.toplevel_env;
+      Toploop.setvalue name (Obj.repr callback);
       return_unit_success
   | Check code ->
       let saved = !Toploop.toplevel_env in
-      Toploop.toplevel_env := !checking_environment ;
+      Toploop.toplevel_env := !checking_environment;
       let result = Toploop_ext.check code in
-      Toploop.toplevel_env := saved ;
+      Toploop.toplevel_env := saved;
       unwrap_result result
 
 let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
@@ -227,29 +238,30 @@ let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
 
 let () =
   let handler (type t) data =
-    let (id, data) : (int * t host_msg) = Json.unsafe_input data  in
+    let (id, data) : int * t host_msg = Json.unsafe_input data in
     let ty = ty_of_host_msg data in
-    handler data >>= function
+    handler data
+    >>= function
     | ReturnSuccess (v, w) ->
         post_message (ReturnSuccess (id, ty, v, w));
         Lwt.return_unit
     | ReturnError (res, w) ->
-        if !debug then
-          Js_utils.debug "Worker: <- ReturnError %d" id;
+        if !debug then Js_utils.debug "Worker: <- ReturnError %d" id;
         post_message (ReturnError (id, res, w));
         Lwt.return_unit
   in
   let path = "/worker_cmis" in
-  Sys_js.mount ~path
-    (fun ~prefix:_ ~path ->
-       match OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root with
-       | cmi ->
-           Js.Unsafe.set cmi (Js.string "t") 9 ; (* XXX hack *)
-           Some cmi
-       | exception Not_found -> None) ;
-  Config.load_path := [ path ] ;
+  Sys_js.mount ~path (fun ~prefix:_ ~path ->
+      match
+        OCamlRes.Res.find (OCamlRes.Path.of_string path) Embedded_cmis.root
+      with
+      | cmi ->
+          Js.Unsafe.set cmi (Js.string "t") 9;
+          (* XXX hack *)
+          Some cmi
+      | exception Not_found -> None );
+  Config.load_path := [path];
   Toploop_jsoo.initialize ();
-  Hashtbl.add Toploop.directive_table
-    "debug_worker"
+  Hashtbl.add Toploop.directive_table "debug_worker"
     (Toploop.Directive_bool (fun b -> debug := b));
   Worker.set_onmessage (fun s -> Lwt.async (fun () -> handler s))

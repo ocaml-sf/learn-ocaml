@@ -1,1 +1,1 @@
-val sha512: string -> string
+val sha512 : string -> string

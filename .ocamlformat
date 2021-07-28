@@ -1,0 +1,3 @@
+profile = default
+sequence-style = terminator
+field-space = loose

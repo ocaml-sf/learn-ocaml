@@ -15,11 +15,10 @@ type id = string
 
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)
-val encoding: t Json_encoding.encoding
+val encoding : t Json_encoding.encoding
 
 (** Intermediate representation of files, resulting of reading the exercise directory *)
 module File : sig
-
   (** The exercise parts required by the exercise page and the grader.
       Not the metadata from the repository. *)
   type files
@@ -30,96 +29,100 @@ module File : sig
   (** Get was called on a missing undefaulted field *)
   exception Missing_file of string
 
+  val get : 'a file -> files -> 'a
   (** Access a field in an exercise, may raise [Missing_file] *)
-  val get: 'a file -> files -> 'a
 
-  (** Access an optional field in an exercise *)
   val get_opt : 'a option file -> files -> 'a option
+  (** Access an optional field in an exercise *)
 
+  val has : 'a file -> files -> bool
   (** Check the existence of a field in an exercise *)
-  val has: 'a file -> files -> bool
 
+  val set : 'a file -> 'a -> files -> files
   (** Access a field in an exercise *)
-  val set: 'a file -> 'a -> files -> files
 
+  val key : 'a file -> string
   (** Returns the key (i.e. then name) of a file *)
-  val key: 'a file -> string
 
+  val id : id file
   (** Learnocaml_exercise id accessor *)
-  val id: id file
 
   (* (\** Learnocaml_exercise title / name accessor *\)
    * val title: string file *)
 
+  val max_score : int file
   (** Maximum score for the exercise *)
-  val max_score: int file
 
+  val prepare : string file
   (** Returns the (private, already deciphered) [prepare.ml] *)
-  val prepare: string file
 
+  val solution : string file
   (** Returns the (private, already deciphered) [solution.ml] *)
-  val solution: string file
 
+  val test : string file
   (** Returns the (private, already deciphered) [test.ml] *)
-  val test: string file
 
+  val prelude : string file
   (** Returns the (public) [prelude.ml] *)
-  val prelude: string file
 
+  val template : string file
   (** Returns the (public) [template.ml] *)
-  val template: string file
 
+  val descr : (string * string) list file
   (** Returns the (public) [descr.html] *)
-  val descr: (string * string) list file
 
+  val depend : string option file
   (** Returns the (public) depend file *)
-  val depend: string option file
 
+  val dependencies : string option -> string file list
   (** [dependencies txt] create the (private, already deciphered) dependencies 
       declared in [txt] *)
-  val dependencies: string option -> string file list
 end
 
+val access : 'a File.file -> t -> 'a
 (** Access a field from the exercise, using the [t] representation, without **
     deciphering it. May raise [Missing_file] if the field is optional and set to
     [None]. *)
-val access: 'a File.file -> t -> 'a
 
+val decipher : string File.file -> t -> string
 (** Access a string field from the exercise, using the [t] representation, and
     deciphers if necessary. May raise [Missing_file] if the field is optional and
     set to [None]. *)
-val decipher: string File.file -> t -> string
 
+val update : 'a File.file -> 'a -> t -> t
 (** Updates the value of a field of the exercise in its [t] representation. *)
-val update: 'a File.file -> 'a -> t -> t
 
+val cipher : string File.file -> string -> t -> t
 (** Updates the value of a field of the exercise in its [t] representation, and
     ciphers it. *)
-val cipher: string File.file -> string -> t -> t
 
+val read :
+     read_field:(string -> string option)
+  -> ?id:string
+  -> ?decipher:bool
+  -> unit
+  -> t
 (** Reader and decipherer *)
-val read:
-  read_field:(string -> string option) ->
-  ?id:string -> ?decipher:bool -> unit ->
-  t
 
+val write :
+  write_field:(string -> string -> 'a -> 'a) -> t -> ?cipher:bool -> 'a -> 'a
 (** Writer and cipherer, ['a] can be [unit] *)
-val write:
-  write_field:(string -> string -> 'a -> 'a) ->
-  t -> ?cipher:bool -> 'a ->
-  'a
 
+val read_lwt :
+     read_field:(string -> string option Lwt.t)
+  -> ?id:string
+  -> ?decipher:bool
+  -> unit
+  -> t Lwt.t
 (** Reader and decipherer with {!Lwt} *)
-val read_lwt:
-  read_field:(string -> string option Lwt.t) ->
-  ?id:string -> ?decipher:bool -> unit ->
-  t Lwt.t
 
+val write_lwt :
+     write_field:(string -> string -> 'a -> 'a Lwt.t)
+  -> t
+  -> ?cipher:bool
+  -> 'a
+  -> 'a Lwt.t
 (** Writer and cipherer with {!Lwt}, ['a] can be [unit] *)
-val write_lwt:
-  write_field:(string -> string -> 'a -> 'a Lwt.t) ->
-  t -> ?cipher:bool -> 'a ->
-  'a Lwt.t
 
-(** JSON serializer, with {!id} file included *)
 val enc : t Json_encoding.encoding
+(** JSON serializer, with {!id} file included *)

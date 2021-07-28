@@ -12,17 +12,13 @@ type 'a toplevel_result = 'a Toploop_results.toplevel_result =
   | Error of error * warning list
 
 and error = Toploop_results.error =
-  { msg: string;
-    locs: loc list;
-    if_highlight: string; }
+  {msg : string; locs : loc list; if_highlight : string}
 
 and warning = error
 
-and loc = Toploop_results.loc = {
-  loc_start: int * int;
-  loc_end: int * int;
-}
+and loc = Toploop_results.loc = {loc_start : int * int; loc_end : int * int}
 
+val check : ?setenv:bool -> string -> unit toplevel_result
 (** Parse and typecheck a given source code.
 
     @param setenv should the resulting environment replace the current
@@ -32,9 +28,13 @@ and loc = Toploop_results.loc = {
             where [err] contains the error message otherwise.
 
 *)
-val check: ?setenv:bool -> string -> unit toplevel_result
 
-
+val execute :
+     ?ppf_code:Format.formatter
+  -> ?print_outcome:bool
+  -> ppf_answer:Format.formatter
+  -> string
+  -> bool toplevel_result
 (** Execute a given source code. The evaluation stops after the
     first toplevel phrase (as terminated by ";;") that fails to
     parse/typecheck/compile or for which the evaluation raises an
@@ -56,13 +56,13 @@ val check: ?setenv:bool -> string -> unit toplevel_result
             exception, and [Ok false] otherwise. In the last case,
             the exception has been pretty-printed in [ppf_answer].
 *)
-val execute:
-  ?ppf_code:Format.formatter ->
-  ?print_outcome:bool ->
-  ppf_answer:Format.formatter ->
-  string -> bool toplevel_result
 
-
+val use_string :
+     ?filename:string
+  -> ?print_outcome:bool
+  -> ppf_answer:Format.formatter
+  -> string
+  -> bool toplevel_result
 (** Execute a given source code. The code is parsed all at once
     before to typecheck/compile/evaluate phrase by phrase.
 
@@ -75,12 +75,15 @@ val execute:
     @return as {!val:execute}.
 
 *)
-val use_string:
-  ?filename:string ->
-  ?print_outcome:bool ->
-  ppf_answer:Format.formatter ->
-  string -> bool toplevel_result
 
+val use_mod_string :
+     ?filename:string
+  -> ?print_outcome:bool
+  -> ppf_answer:Format.formatter
+  -> modname:string
+  -> ?sig_code:string
+  -> string
+  -> bool toplevel_result
 (** Wrap a given source code into a module and bind it with a given
     name.
 
@@ -98,17 +101,13 @@ val use_string:
     @return as {!val:execute}.
 
 *)
-val use_mod_string:
-  ?filename:string ->
-  ?print_outcome:bool ->
-  ppf_answer:Format.formatter ->
-  modname:string ->
-  ?sig_code:string ->
-  string -> bool toplevel_result
 
 (** Helpers to embed PPX into the toplevel. *)
 module Ppx : sig
-  val preprocess_structure: Parsetree.structure -> Parsetree.structure
-  val preprocess_signature: Parsetree.signature -> Parsetree.signature
-  val preprocess_phrase: Parsetree.toplevel_phrase -> Parsetree.toplevel_phrase
+  val preprocess_structure : Parsetree.structure -> Parsetree.structure
+
+  val preprocess_signature : Parsetree.signature -> Parsetree.signature
+
+  val preprocess_phrase :
+    Parsetree.toplevel_phrase -> Parsetree.toplevel_phrase
 end

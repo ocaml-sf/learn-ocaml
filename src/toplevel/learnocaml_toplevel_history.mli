@@ -8,20 +8,19 @@
 
 type history
 
-type snapshot =
-  { phrases : string list ;
-    mtime : float }
+type snapshot = {phrases : string list; mtime : float}
 
 val snapshot_enc : snapshot Json_encoding.encoding
 
 val empty_snapshot : snapshot
 
-val create:
-  gettimeofday: (unit -> float) ->
-  ?on_update: (history -> unit) ->
-  ?max_size: int ->
-  ?snapshot: snapshot ->
-  unit -> history
+val create :
+     gettimeofday:(unit -> float)
+  -> ?on_update:(history -> unit)
+  -> ?max_size:int
+  -> ?snapshot:snapshot
+  -> unit
+  -> history
 
 val current : history -> string
 

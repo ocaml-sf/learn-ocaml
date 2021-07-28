@@ -10,28 +10,23 @@ open Js_of_ocaml
 
 type editor
 
-type loc = Ace.loc = {
-  loc_start: int * int;
-  loc_end: int * int;
-}
+type loc = Ace.loc = {loc_start : int * int; loc_end : int * int}
 
-type error = {
-  locs: loc list;
-  msg: string;
-}
+type error = {locs : loc list; msg : string}
 
-type warning = {
-  loc: loc;
-  msg: string;
-}
+type warning = {loc : loc; msg : string}
 
-val create_ocaml_editor: Dom_html.divElement Js.t -> editor
-val get_editor: editor -> editor Ace.editor
+val create_ocaml_editor : Dom_html.divElement Js.t -> editor
 
-val report_error: editor -> ?set_class: bool -> error option -> warning list -> unit Lwt.t
-val report_current_error: editor -> ?set_class: bool -> unit -> unit Lwt.t
+val get_editor : editor -> editor Ace.editor
 
-val get_current_error: editor -> error option
-val get_current_warnings: editor -> warning list
+val report_error :
+  editor -> ?set_class:bool -> error option -> warning list -> unit Lwt.t
+
+val report_current_error : editor -> ?set_class:bool -> unit -> unit Lwt.t
+
+val get_current_error : editor -> error option
+
+val get_current_warnings : editor -> warning list
 
 val token_type : Approx_tokens.token -> string

@@ -8,12 +8,13 @@
 
 (** Configuration options *)
 
-val tutorials_dir: string ref
-val tutorials_index: string option ref
+val tutorials_dir : string ref
 
-val args: (Arg.key * Arg.spec * Arg.doc) list
+val tutorials_index : string option ref
+
+val args : (Arg.key * Arg.spec * Arg.doc) list
 
 (** Main *)
 
+val main : string -> bool Lwt.t
 (** [dest_dir] -> success *)
-val main: string -> bool Lwt.t

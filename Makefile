@@ -3,12 +3,18 @@ all: static build
 DUNE = dune
 DUNE_ARGS = --profile=release
 
+FORMATER = ocamlformat
+SRC = src/**/*.ml
+
 build-deps:
 	opam install . --deps-only --locked
 
-.PHONY: build
-build:
+.PHONY: build format
+build: format
 	@${DUNE} build ${DUNE_ARGS}
+
+format:
+	@${FORMATER} -i $(SRC) $(SRC:.ml=.mli)
 
 .PHONY: static
 static:

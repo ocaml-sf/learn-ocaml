@@ -15,28 +15,28 @@
 *)
 
 module type INTROSPECTION = sig
+  type 'a value = Absent | Present of 'a | Incompatible of string
 
-  type 'a value =
-    | Absent
-    | Present of 'a
-    | Incompatible of string
+  val get_value : string -> 'a Ty.ty -> 'a value
 
-  val get_value: string -> 'a Ty.ty -> 'a value
-  val print_value: Format.formatter -> 'a -> 'a Ty.ty -> unit
+  val print_value : Format.formatter -> 'a -> 'a Ty.ty -> unit
+
   (* expected first *)
-  val compatible_type: string -> string -> unit value
+  val compatible_type : string -> string -> unit value
 
   exception Excess
 
-  val grab_stdout: unit -> unit
-  val release_stdout: unit -> string
+  val grab_stdout : unit -> unit
 
-  val grab_stderr: unit -> unit
-  val release_stderr: unit -> string
+  val release_stdout : unit -> string
 
-  val get_sampler: 'a Ty.ty -> (unit -> 'a)
-  val get_printer: 'a Ty.ty -> (Format.formatter -> 'a -> unit)
+  val grab_stderr : unit -> unit
 
-  val parse_lid: string -> Longident.t
+  val release_stderr : unit -> string
 
+  val get_sampler : 'a Ty.ty -> unit -> 'a
+
+  val get_printer : 'a Ty.ty -> Format.formatter -> 'a -> unit
+
+  val parse_lid : string -> Longident.t
 end
