@@ -57,7 +57,7 @@ testrun: build install
 	learn-ocaml build --repo $(REPO) -j1
 	rm -rf www/css
 	ln -s ../static/css www
-	learn-ocaml serve
+	LEARNOCAML_SERVER_NOCACHE=1 learn-ocaml serve
 
 docker-images: Dockerfile learn-ocaml.opam
 	@rm -rf docker

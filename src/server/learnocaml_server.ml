@@ -86,7 +86,14 @@ type 'a response =
 
 type error = (Cohttp.Code.status_code * string)
 
-let caching: type resp. resp Api.request -> caching = function
+let disable_cache =
+  match Sys.getenv_opt "LEARNOCAML_SERVER_NOCACHE" with
+  | None | Some ("" | "0" | "false") -> false
+  | Some _ -> true
+
+let caching: type resp. resp Api.request -> caching = fun resp ->
+  if disable_cache then Nocache else
+  match resp with
   | Api.Version () -> Shortcache (Some ["version"; "server_id"])
   | Api.Static ("fonts"::_ | "icons"::_ | "js"::_::_::_ as p) -> Longcache p
   | Api.Static ("css"::_ | "js"::_ | _ as p) -> Shortcache (Some p)
