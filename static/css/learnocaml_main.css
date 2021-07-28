@@ -335,11 +335,11 @@ body {
 }
 #learnocaml-main-toplevel > .toplevel-pane {
   position: absolute;
-  left: 0px; top: 0; right: 0; bottom: 0px;
+  left: 0px; top: 0; right: 0; bottom: 40px;
 }
 #learnocaml-main-toplevel > .buttons {
   position: absolute;
-  top: 13px; right: 1%; bottom: 5px; width: 49%; height: 40px;
+  left: 0; bottom: 0px; width: 100%; height: 40px;
   background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
   color: #fff;
   line-height: 40px;
