@@ -318,25 +318,23 @@ body {
 }
 #learnocaml-exo-tab-toplevel > .buttons {
   position: absolute;
-  left: 0; bottom: 0px; width: 100%; height: 40px;
+  left: 0; bottom: 0px; width: 100%; height: 39px;
   background: linear-gradient(to bottom, #fff 0px, #ddd 10px, #aaa 60px);
   color: #fff;
   line-height: 40px;
   display: flex;
-  flex-direction: row;
+  flex-direction: row-reverse;
   z-index: 1003;
+  border-top: 1px #000 solid;
 }
 #learnocaml-exo-tab-toplevel > .buttons > button {
-  flex: 1;
+  flex: 0 0.33 200px;
   background: none;
   border: none;
   color: #222;
   text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-  border-top: 1px #666 solid;
   position: relative;
   padding: 0;
-}
-#learnocaml-exo-tab-toplevel > .buttons > button:not(:first-child) {
   border-left: 1px #666 solid;
 }
 @media (max-width: 550px) {
