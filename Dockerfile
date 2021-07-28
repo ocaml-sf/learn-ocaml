@@ -1,9 +1,9 @@
-FROM ocaml/opam2:alpine as compilation
+FROM ocaml/opam:alpine-3.13-ocaml-4.12 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
 
-COPY learn-ocaml.opam learn-ocaml.opam.locked learn-ocaml-client.opam ./
+COPY learn-ocaml.opam learn-ocaml.opam.locked learn-ocaml-client.opam learn-ocaml-client.opam.locked ./
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMYES true
@@ -42,7 +42,7 @@ WORKDIR /learnocaml
 
 COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bin
 
-ENTRYPOINT ["dumb-init","learn-ocaml-client"]
+ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml-client"]
 
 LABEL org.opencontainers.image.title="learn-ocaml-client"
 LABEL org.opencontainers.image.description="learn-ocaml command-line client"
@@ -68,7 +68,7 @@ WORKDIR /home/learn-ocaml
 
 COPY --from=compilation /home/opam/install-prefix /usr
 
-ENTRYPOINT ["dumb-init","learn-ocaml","--sync-dir=/sync","--repo=/repository"]
+ENTRYPOINT ["dumb-init","/usr/bin∕learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
 
 LABEL org.opencontainers.image.title="learn-ocaml"

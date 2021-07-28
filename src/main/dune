@@ -56,7 +56,7 @@
 (rule
   (targets linking_main.sexp)
   (action  (with-stdout-to %{targets}
-    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} %{ocaml-config:system} laolao_stubs threads camlrun))))
+    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} %{ocaml-config:system} checkseum_c_stubs threads camlrun))))
 (rule
   (targets linking_client.sexp)
   (action  (with-stdout-to %{targets}
@@ -64,4 +64,4 @@
 (rule
   (targets linking_server.sexp)
   (action  (with-stdout-to %{targets}
-    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} -- laolao_stubs threadsnat))))
+    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} -- checkseum_c_stubs threadsnat))))
