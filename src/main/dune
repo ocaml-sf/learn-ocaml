@@ -6,12 +6,12 @@
 )
 
 (executable
- (package learn-ocaml)
- (public_name learn-ocaml)
+;; (package learn-ocaml) ;; missing support in dune, manually installed below
+;; (public_name learn-ocaml)
  (name learnocaml_main)
- (modes byte)
- (flags (:standard -linkall
-         (:include linking_main.sexp)))
+ (modes byte_complete)
+ (ocamlc_flags -custom)
+ (flags :standard -linkall -verbose (:include linking_main.sexp))
  (modules Learnocaml_main)
  (libraries cmdliner
             sha
@@ -22,14 +22,18 @@
             learnocaml_server_args
             learnocaml_report)
 )
+(install
+ (files (learnocaml_main.bc.exe as learn-ocaml))
+ (section bin)
+ (package learn-ocaml))
 
 (executable
- (package learn-ocaml-client)
- (public_name learn-ocaml-client)
+;; (package learn-ocaml-client) ;; missing support in dune, manually installed below
+;; (public_name learn-ocaml-client)
  (name learnocaml_client)
- (modes byte)
- (flags (:standard -linkall
-         (:include linking_client.sexp)))
+ (modes byte_complete)
+ (ocamlc_flags -custom)
+ (flags :standard -linkall (:include linking_client.sexp))
  (modules Learnocaml_client)
  (libraries cmdliner
  	    sha
@@ -42,6 +46,10 @@
 	    learnocaml_store
             learnocaml_api)
 )
+(install
+ (files (learnocaml_client.bc.exe as learn-ocaml-client))
+ (section bin)
+ (package learn-ocaml-client))
 
 (executable
  (package learn-ocaml)
