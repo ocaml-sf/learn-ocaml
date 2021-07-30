@@ -68,7 +68,7 @@ WORKDIR /home/learn-ocaml
 
 COPY --from=compilation /home/opam/install-prefix /usr
 
-ENTRYPOINT ["dumb-init","/usr/bin∕learn-ocaml","--sync-dir=/sync","--repo=/repository"]
+ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
 
 LABEL org.opencontainers.image.title="learn-ocaml"
