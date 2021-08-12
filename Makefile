@@ -90,3 +90,25 @@ travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci
 	INSTANCE="travisci/ci-garnet:packer-1512502276-986baf0";	\
 	docker run --name $$BUILDID -dit $$INSTANCE /sbin/init &&	\
 	docker exec -it $$BUILDID bash -l
+
+.PHONY: static-binaries
+static-binaries:
+	./scripts/static-build.sh
+
+BINARIES = src/main/learnocaml_client.bc src/main/learnocaml_main.bc src/main/learnocaml_server_main.exe
+
+.PHONY: detect-libs
+detect-libs:
+	$(RM) $(addprefix _build/default/,$(BINARIES))
+	+sort=false; \
+	baseid="detect-libs.$$$$"; echo ...; \
+	$(MAKE) LINKING_MODE=dynamic OCAMLPARAM="_,verbose=1" > $$baseid.log 2>&1; \
+	for bin in $(BINARIES); do \
+	  base=$${bin#src/main/}; base=$${base%.*}; \
+	  grep -e "'$$bin'" $$baseid.log > $$baseid.$$base.log; \
+	  printf "%s: " "$$base"; \
+	  ( sed -e "s/'//g; s/ /\\$$(printf '\n/g')" $$baseid.$$base.log | grep -e "^-l" | \
+	    if [ "$$sort" = true ]; then printf "(sorted) "; sort -u; else cat; fi | xargs echo ); \
+	done; echo; \
+	cat $$baseid.*.log; \
+	$(RM) $$baseid.*log

@@ -77,6 +77,8 @@ val output_stderr : ?phrase: phrase -> output -> string -> unit
 (** Output HTML in a [div] element with class [toplevel-html-block]. *)
 val output_html : ?phrase: phrase -> output -> string -> unit
 
+val output_svg : ?phrase: phrase -> output -> string -> unit
+
 (** Output ocaml code in a [pre] element with class [toplevel-code].
     Code tokens are wrapped in [span] elements with classes as
     documented in {!Ocaml_mode.token_type}. An intermediate level of

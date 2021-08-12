@@ -383,6 +383,22 @@ let wrap_flusher_to_prevent_flood top name hook real =
       flooded := total
     end
 
+let load_pp err top pps =
+  let prelude_pp =
+    Format.sprintf "open Learnocaml_toplevel_pp;; %s"
+      Learnocaml_toplevel_pp.prelude_pp
+  in
+  let rec loading = function
+    | [] -> Lwt.return_unit
+    | code :: cs ->
+      load ~print_outcome:false top code
+      >>= (fun _ -> loading cs)
+  in
+  let pps =
+    List.map (fun pp -> Format.sprintf "#install_printer %s;;" pp) pps
+  in
+  err >>= (fun _ -> loading (prelude_pp::pps))
+
 let welcome_phrase () =
   [%i"Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n\
       print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n\
@@ -498,10 +514,16 @@ let create
     else
       first_time := false ;
     Learnocaml_toplevel_worker_caller.register_callback worker "print_html"
-      (Learnocaml_toplevel_output.output_html output) >>= fun _ ->
+      (Learnocaml_toplevel_output.output_html output)
+    >>= fun _ ->
+      Learnocaml_toplevel_worker_caller.register_callback worker "print_svg"
+        (Learnocaml_toplevel_output.output_svg output)
+    >>= fun err -> load_pp (Lwt.return err) top Learnocaml_toplevel_pp.pp_list
+    >>= fun _ ->
     match after_init with
     | None -> Lwt.return_unit
-    | Some f -> f top in
+    | Some f -> f top
+  in
   after_init top >>= fun () ->
   Learnocaml_toplevel_worker_caller.set_after_init top.worker (fun _ -> after_init top);
   Lwt.return top
