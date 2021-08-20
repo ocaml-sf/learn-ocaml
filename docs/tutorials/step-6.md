@@ -3,22 +3,26 @@
 **Warning** This step is ahead of the current version of [learn-ocaml].
 
 ## Test functions for variables
+
 There are 3 test functions for variables.
 
 ### Signatures
+
 ```ocaml
-  val test_variable :
-    'a Ty.ty -> string -> 'a -> Learnocaml_report.report
+val test_variable :
+  'a Ty.ty -> string -> 'a -> Learnocaml_report.report
 
-  val test_variable_against_solution :
-    'a Ty.ty -> string -> Learnocaml_report.report
+val test_variable_against_solution :
+  'a Ty.ty -> string -> Learnocaml_report.report
 
-  val test_variable_property :
-    'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
+val test_variable_property :
+  'a Ty.ty -> string -> ('a -> Learnocaml_report.report) -> Learnocaml_report.report
 ```
 
 ### Examples
+
 #### Trivial example with `grade_variable`
+
 `grade_variable` is usually used only for trivial examples since
 it is directly compared to an expected result and not to a solution.
 
@@ -28,14 +32,17 @@ let exercise_0 =
 ```
 
 #### More classical example with `grade_variable_against_solution`
+
 `grade_variable_against_solution` is more versatile and works
 basically like `test_function_against_solution`.
+
 ```ocaml
 let exercise_1 =
   grade_variable_against_solution [%ty: float] "norm"
 ```
 
 #### `grade_variable_property`
+
 `grade_variable_property` is used in specific cases when you
 want to write your own report depending on the value of the graded
 variable.

@@ -5,6 +5,7 @@ real effort from the student: any valid OCaml code will be a valid
 answer for this exercise.
 
 Let us focus on `test.ml`:
+
 ```ocaml
 open Test_lib
 open Report
@@ -49,9 +50,9 @@ give 1 point to the student.
    directory.
 2. Update index.json
 3. Build and run the new instance of your local learn-ocaml platform:
-```ocaml
-learn-ocaml build; learn-ocaml serve
-```
+    ```ocaml
+    learn-ocaml build; learn-ocaml serve
+    ```
 
 At this point, you should see the exercise in the instance opened
 on `http://localhost:8080`. Click on grade to get your point!
