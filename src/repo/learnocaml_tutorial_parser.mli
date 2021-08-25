@@ -9,20 +9,15 @@
 open Learnocaml_data
 
 val parse_md_tutorial :
-  tutorial_name: string ->
-  file_name: string ->
-  (Tutorial.Index.entry * Tutorial.t) Lwt.t
+     tutorial_name:string
+  -> file_name:string
+  -> (Tutorial.Index.entry * Tutorial.t) Lwt.t
 
 val parse_html_tutorial :
-  tutorial_name: string ->
-  file_name: string ->
-  (Tutorial.Index.entry * Tutorial.t) Lwt.t
+     tutorial_name:string
+  -> file_name:string
+  -> (Tutorial.Index.entry * Tutorial.t) Lwt.t
 
-val print_html_tutorial :
-  tutorial_name: string ->
-  Tutorial.t ->
-  string
+val print_html_tutorial : tutorial_name:string -> Tutorial.t -> string
 
-val print_md_tutorial :
-  Tutorial.t ->
-  string
+val print_md_tutorial : Tutorial.t -> string

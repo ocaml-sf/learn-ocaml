@@ -9,7 +9,6 @@
 (** Documentation for [test_lib] library. [Test_lib] module can be
    used to write graders for learn-ocaml.  *)
 module type S = sig
-
   val set_result : Learnocaml_report.t -> unit
 
   type nonrec 'a result = ('a, exn) result
@@ -20,7 +19,6 @@ module type S = sig
    enforce restrictions on the student's code.  *)
 
   module Ast_checker : sig
-
     (** Since the user's code is reified, the parsed abstract syntax
        tree is available in the testing environment, as a variable
        named [code_ast], with type [Parsetree.structure]. As such, it
@@ -74,32 +72,38 @@ module type S = sig
 
     *)
     type 'a ast_checker =
-      ?on_expression: (Parsetree.expression -> Learnocaml_report.t) ->
-      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.t) ->
-      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
-      ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
-      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
-      ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
-      ?on_module_occurence: (string -> Learnocaml_report.t) ->
-      ?on_variable_occurence: (string -> Learnocaml_report.t) ->
-      ?on_function_call: (
-          (Parsetree.expression
-           * (string * Parsetree.expression) list) -> Learnocaml_report.t)
-      -> 'a -> Learnocaml_report.t
+         ?on_expression:(Parsetree.expression -> Learnocaml_report.t)
+      -> ?on_pattern:(Parsetree.pattern -> Learnocaml_report.t)
+      -> ?on_structure_item:(Parsetree.structure_item -> Learnocaml_report.t)
+      -> ?on_external:(Parsetree.value_description -> Learnocaml_report.t)
+      -> ?on_include:(Parsetree.include_declaration -> Learnocaml_report.t)
+      -> ?on_open:(Parsetree.open_description -> Learnocaml_report.t)
+      -> ?on_module_occurence:(string -> Learnocaml_report.t)
+      -> ?on_variable_occurence:(string -> Learnocaml_report.t)
+      -> ?on_function_call:(   Parsetree.expression
+                               * (string * Parsetree.expression) list
+                            -> Learnocaml_report.t)
+      -> 'a
+      -> Learnocaml_report.t
 
+    val ast_check_expr : Parsetree.expression ast_checker
     (** [ast_check_expr] builds an {{!ast_checker}AST checker} for
        [Parsetree] expressions. This function can be used as
        functional argument for {!find_binding}. *)
-    val ast_check_expr : Parsetree.expression ast_checker
 
+    val ast_check_structure : Parsetree.structure ast_checker
     (** [ast_check_structure] builds an {{!ast_checker}AST checker}
        for [Parsetree] structure. The returned AST checker can
        directly be used with [code_ast] which is available in the
        grading environment. *)
-    val ast_check_structure : Parsetree.structure ast_checker
 
     (** {2 Finding top level variable in AST}*)
 
+    val find_binding :
+         Parsetree.structure
+      -> string
+      -> (Parsetree.expression -> Learnocaml_report.t)
+      -> Learnocaml_report.t
     (** [find_binding code_ast name cb] looks for the top level
        variable [name] in [code_ast] and its associated Parsetree
        expression [expr] ([let name = expr]). If the variable is
@@ -107,12 +111,9 @@ module type S = sig
        concatenated with the report resulting of [cb] applied to
        [expr]. Otherwise, it returns a {!Learnocaml_report.Failure}
        report. *)
-    val find_binding :
-      Parsetree.structure -> string
-      -> (Parsetree.expression -> Learnocaml_report.t)
-      -> Learnocaml_report.t
 
     (** {2 Functions for optional arguments of checkers} *)
+
     (** The following functions are classic functions to use as
        optional arguments for {!ast_checker} like forbidding,
        rectricting or requiring some [Parsetree] structures or
@@ -120,34 +121,38 @@ module type S = sig
 
     (** {3 Generic functions} *)
 
+    val forbid :
+      string -> ('a -> string) -> 'a list -> 'a -> Learnocaml_report.t
     (** [forbid k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
        tested if [t] is in the list [ls]. The message of the
        report is {e The text1 text2 is forbidden} where [text1] is the
        result of [pr] applies to [t] and [text2] is value
        [k]. Otherwise, an empty report is returned. *)
-    val forbid :
-      string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
 
+    val restrict :
+      string -> ('a -> string) -> 'a list -> 'a -> Learnocaml_report.t
     (** [restrict k pr ls t] returns a
        {{!Learnocaml_report.Failure}Failure} the first time [t] is
        tested if [t] is {e not} in [ls]. The message of the
        report is {e The text1 text2 is not allowed} where [text1] is
        the result of [pr] applies to [t] and [text2] is value of
        [k]. Otherwise, an empty report is returned. *)
-    val restrict :
-      string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
 
+    val require : string -> ('a -> string) -> 'a -> 'a -> Learnocaml_report.t
     (** [require k pr _ t] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time this function is called. The
        message of the report is {e Found text1 text2} where
        [text1] is value of [k] and [text2] is the result of [pr]
        applies to [t]. Otherwise, an empty report is returned. *)
-    val require :
-      string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
 
     (** {3 For expressions } *)
 
+    val forbid_expr :
+         string
+      -> Parsetree.expression list
+      -> Parsetree.expression
+      -> Learnocaml_report.t
     (** [forbid_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is in the list of forbidden
@@ -155,10 +160,12 @@ module type S = sig
        The text1 text2 is forbidden} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned. *)
-    val forbid_expr :
-      string -> Parsetree.expression list
-      -> (Parsetree.expression -> Learnocaml_report.t)
 
+    val restrict_expr :
+         string
+      -> Parsetree.expression list
+      -> Parsetree.expression
+      -> Learnocaml_report.t
     (** [restrict_expr name exprs expr] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time
        [expr] is tested if [expr] is {e not} in the list of allowed
@@ -166,18 +173,17 @@ module type S = sig
        The text1 text2 is not allowed} where [text1] is [expr] and
        [text2] is value of [name]. Otherwise, an empty report is
        returned.  *)
-    val restrict_expr :
-      string -> Parsetree.expression list
-      -> (Parsetree.expression -> Learnocaml_report.t)
 
+    val require_expr :
+         string
+      -> Parsetree.expression
+      -> Parsetree.expression
+      -> Learnocaml_report.t
     (** [require_expr name _ t] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time this function is called. The
        message of the success report is {e Found text1 text2} where
        [text1] is value of [name] and [text2] is the result of [pr]
        applies to [t]. Otherwise, an empty report is returned. *)
-    val require_expr :
-      string -> Parsetree.expression
-      -> (Parsetree.expression -> Learnocaml_report.t)
 
     (** {3 For syntax } *)
 
@@ -190,28 +196,28 @@ module type S = sig
        (forbid "open")] prevents the student from using [open] and
        [include] syntaxes. *)
 
+    val forbid_syntax : string -> _ -> Learnocaml_report.t
     (** [forbid_syntax n _] returns a
        {{!Learnocaml_report.Failure}Failure} report the first time it
        is called. The message of the report is {e The {b text}
        syntax is forbidden} where [text] is the value of
        [n]. Otherwise, an empty report is returned. *)
-    val forbid_syntax : string -> (_ -> Learnocaml_report.t)
 
+    val require_syntax : string -> _ -> Learnocaml_report.t
     (** [require_syntax n _] returns a {{!Learnocaml_report.Success
        5}Success 5} report the first time it is called. The message of
        the report is {e The {b text} syntax has been found, as
        expected} where [text] is the value of [n]. Otherwise, an empty
        report is returned.  *)
-    val require_syntax : string -> (_ -> Learnocaml_report.t)
 
     (** {2 AST sanity checks } *)
 
-    (** [ast_sanity_check ~modules ast cb] *)
     val ast_sanity_check :
-      ?modules: string list -> Parsetree.structure
+         ?modules:string list
+      -> Parsetree.structure
       -> (unit -> Learnocaml_report.t)
       -> Learnocaml_report.t
-
+    (** [ast_sanity_check ~modules ast cb] *)
   end
 
   (** {1 Testers and IO testers} *)
@@ -224,18 +230,15 @@ module type S = sig
   (** Functions of type [tester] are used to compare student result
      with solution result. The first {!S.result} is the student
      output and the second one is the solution output. *)
-  type 'a tester =
-    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
+  type 'a tester = 'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
 
   (** Functions of type [io_tester] are used to compare student
      standard out or standard error channels with solution ones. *)
-  type io_tester =
-    string -> string -> Learnocaml_report.t
+  type io_tester = string -> string -> Learnocaml_report.t
 
   (** Functions of type [io_postcond] are used to verify that student
      standard out or standard error channels satisfy a postcondition. *)
-  type io_postcond =
-    string -> Learnocaml_report.t
+  type io_postcond = string -> Learnocaml_report.t
 
   (** The exception [Timeout limit] is raised by [run_timeout]. Thus, the
       functions [exec] and [result] can return [Error (Timeout limit)].
@@ -261,50 +264,50 @@ module type S = sig
 
     (** {2:tester_sec Pre-defined testers and tester builders} *)
 
+    val test : 'a tester
     (** [test] is a {!S.tester} that compares its two {!S.result} inputs
        with OCaml structural equality. This is the default value of [~test]
        optional argument of grading functions for functions.*)
-    val test : 'a tester
 
+    val test_ignore : 'a tester
     (** [test_ignore] is a {!S.tester} that compares only the constructor of its
        {S.result} inputs. The content is ignored. If the constructors
        match, an empty report is returned. *)
-    val test_ignore : 'a tester
 
+    val test_eq : ('a result -> 'a result -> bool) -> 'a tester
     (** [test_eq eq] builds a {!S.tester} with function [eq] as comparison
        function. *)
-    val test_eq : ('a result -> 'a result -> bool) -> 'a tester
 
+    val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
     (** [test_eq_ok eq] builds a {!S.tester} that compares [Ok] results with
        [eq] and [Error] results with Ocaml structural equality. *)
-    val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
 
+    val test_eq_exn : (exn -> exn -> bool) -> 'a tester
     (** [test_eq_exn eq] builds a {!S.tester} that compares [Error] results
        with [eq] and [Ok] results with Ocaml structural equality. *)
-    val test_eq_exn : (exn -> exn -> bool) -> 'a tester
 
+    val test_canon : ('a result -> 'a result) -> 'a tester
     (** [test_canon canon] builds a {!S.tester} that compares its two
        {S.result} inputs after application to [canon] function with
        Ocaml structural equality. *)
-    val test_canon : ('a result -> 'a result) -> 'a tester
 
+    val test_canon_ok : ('a -> 'a) -> 'a tester
     (** [test_canon_ok canon] builds a {!S.tester} that compares two
        [Ok] result inputs after application to [canon] function with
        Ocaml structural equality. [Error] results are compared
        normally with Ocaml structural equality. *)
-    val test_canon_ok : ('a -> 'a) -> 'a tester
 
+    val test_canon_error : (exn -> exn) -> 'a tester
     (** [test_canon_error canon] builds a {!S.tester} that compares two
        [Error] result inputs after application to [canon] function with
        Ocaml structural equality. [Ok] results are compared
        normally with Ocaml structural equality. *)
-    val test_canon_error : (exn -> exn) -> 'a tester
 
+    val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
     (** [test_translate conv test ty] builds a {!S.tester} that
        translates its inputs [va] and [vb] to ['b results] [va_trans]
        and [vb_trans] using the conversion function [conv] and returns
        the report of [test ty va_trans vb_trans].*)
-    val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
 
     (** {2:io_tester_sec Pre-defined IO testers and IO tester builders} *)
 
@@ -322,36 +325,40 @@ module type S = sig
         - [~drop] : list of chars removed from IO testers input
        strings *)
 
-
+    val io_test_ignore : io_tester
     (** [io_test_ignore] is the default value of [~test_stdout] and
        [~test_stderr]. Returns an empty report whatever its inputs. *)
-    val io_test_ignore : io_tester
 
+    val io_test_equals : ?trim:char list -> ?drop:char list -> io_tester
     (** [io_test_equals] builds a {!S.io_tester} which compares its
        input strings using Ocaml structural equality. *)
-    val io_test_equals :
-      ?trim: char list -> ?drop: char list -> io_tester
 
+    val io_test_lines :
+         ?trim:char list
+      -> ?drop:char list
+      -> ?skip_empty:bool
+      -> ?test_line:io_tester
+      -> io_tester
     (** [io_test_lines ~skip_empty ~test_line] builds a {!S.io_tester}
        which compares each line (separated with ['\n']) of its two
        string inputs with [test_line]. The default value of
        [test_line] is [io_tester_equals]. If [skip_empty] is set to
        [true], the empty lines are skipped (default value is
        [false]). *)
-    val io_test_lines :
-      ?trim: char list -> ?drop: char list ->
-      ?skip_empty: bool -> ?test_line: io_tester -> io_tester
 
+    val io_test_items :
+         ?split:char list
+      -> ?trim:char list
+      -> ?drop:char list
+      -> ?skip_empty:bool
+      -> ?test_item:io_tester
+      -> io_tester
     (** [io_test_items ~split ~skip_empty ~test_item] buids a
        {!S.io_tester} which splits its two string inputs into several
        items using [split] as separators and compares each item with
        [test_item] ([io_tester_equals] by default). If [skip_empty] is
        set to [true], the empty items are skipped (default value is
        [false]). *)
-    val io_test_items :
-      ?split: char list -> ?trim: char list -> ?drop: char list ->
-      ?skip_empty: bool -> ?test_item: io_tester -> io_tester
-
   end
 
   (** {1 Mutation observer builders} *)
@@ -360,16 +367,21 @@ module type S = sig
      [~before_reference], [~before_user], [~test] used by grading
      functions for {b unary} function with a mutable input. *)
   module Mutation : sig
-
     (** Important warning: this part is useful only to grade unary
        function using grading functions such than
        {!S.Test_functions_function.test_function_1_against_solution}. *)
 
     type 'arg arg_mutation_test_callbacks =
-      { before_reference : 'arg -> unit ;
-        before_user : 'arg -> unit ;
-        test : 'ret. ?test_result: 'ret tester -> 'ret tester }
+      { before_reference : 'arg -> unit
+      ; before_user : 'arg -> unit
+      ; test : 'ret. ?test_result:'ret tester -> 'ret tester }
 
+    val arg_mutation_test_callbacks :
+         ?test:'a tester
+      -> dup:('a -> 'a)
+      -> blit:('a -> 'a -> unit)
+      -> 'a Ty.ty
+      -> 'a arg_mutation_test_callbacks
     (** [arg_mutation_test_callbacks ~test_ref ~dup ~blit ty] returns
        a {!Mutation.arg_mutation_test_callbacks} [out] such than the
        functions [out.before_reference] and [out.before_user] can
@@ -388,31 +400,26 @@ module type S = sig
        [dup in] returns a copy of [in].
 
        [blit src dst] copies [src] into [dst].*)
-    val arg_mutation_test_callbacks:
-      ?test: 'a tester -> dup: ('a -> 'a)
-      -> blit:('a -> 'a -> unit) -> 'a Ty.ty
-      -> 'a arg_mutation_test_callbacks
 
+    val array_arg_mutation_test_callbacks :
+         ?test:'a array tester
+      -> 'a array Ty.ty
+      -> 'a array arg_mutation_test_callbacks
     (** [array_arg_mutation_test_callbacks ~test_arr ty] builds
        [before_user], [before_reference] and [test] such than [test] can
        compare mutation of an input array through student code and
        solution.
 
         By default, [test_arr] is set to {!Tester.test}.*)
-    val array_arg_mutation_test_callbacks:
-      ?test: 'a array tester -> 'a array Ty.ty ->
-      'a array arg_mutation_test_callbacks
 
+    val ref_arg_mutation_test_callbacks :
+      ?test:'a ref tester -> 'a ref Ty.ty -> 'a ref arg_mutation_test_callbacks
     (** [ref_arg_mutation_test_callbacks ~test_ref ty] builds
        [before_user], [before_reference] and [test] such than [test] can
        compare mutation of an input reference through student code and
        solution.
 
         By default, [test_ref] is set to {!Tester.test}. *)
-    val ref_arg_mutation_test_callbacks:
-      ?test: 'a ref tester -> 'a ref Ty.ty ->
-      'a ref arg_mutation_test_callbacks
-
   end
 
   (** {1 Samplers } *)
@@ -420,28 +427,34 @@ module type S = sig
   (** [Sampler] provides a library of predefined samplers for
      {{!Test_functions_function}grading functions}.*)
   module Sampler : sig
-
     type 'a sampler = unit -> 'a
 
     (** {2:sampler_sec Samplers} *)
 
-    (** [sample_int ()] returns a random integer between -5 and 5. *)
     val sample_int : int sampler
+    (** [sample_int ()] returns a random integer between -5 and 5. *)
 
-    (** [sample_float ()] returns a random float between -5. and 5. *)
     val sample_float : float sampler
+    (** [sample_float ()] returns a random float between -5. and 5. *)
 
-    (** [sample_string ()] returns a randomly long random string. *)
     val sample_string : string sampler
+    (** [sample_string ()] returns a randomly long random string. *)
 
-    (** [sample_char ()] returns an alphabet letter randomly. *)
     val sample_char : char sampler
+    (** [sample_char ()] returns an alphabet letter randomly. *)
 
-    (** [sample_bool ()] returns randomly [false] or [true]. *)
     val sample_bool : bool sampler
+    (** [sample_bool ()] returns randomly [false] or [true]. *)
 
     (** {2 Sampler builders} *)
 
+    val sample_list :
+         ?min_size:int
+      -> ?max_size:int
+      -> ?dups:bool
+      -> ?sorted:bool
+      -> 'a sampler
+      -> 'a list sampler
     (** [sample_list ~min_size ~max_size sample] returns a list
        sampler that generates a list of random length between
        [min_size] ([0] by default) and [max_size] ([10] by default)
@@ -452,11 +465,14 @@ module type S = sig
 
      If [~dups:false] ([true] by default), all elements of generated
        list are unique.*)
-    val sample_list :
-      ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool
-      -> 'a sampler
-      -> 'a list sampler
 
+    val sample_array :
+         ?min_size:int
+      -> ?max_size:int
+      -> ?dups:bool
+      -> ?sorted:bool
+      -> 'a sampler
+      -> 'a array sampler
     (** [sample_array ~min_size ~max_size sample] returns an array
        sampler that generates an array of random length between
        [min_size] ([0] by default) and [max_size] ([10] by default)
@@ -467,29 +483,25 @@ module type S = sig
 
      If [~dups:false] ([true] by default), all elements of generated
        array are unique.*)
-    val sample_array :
-      ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool
-      -> 'a sampler
-      -> 'a array sampler
 
+    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
     (** [sample_pair s1 s2] returns a sampler that generates a value
         of type ['a * 'b] using [s1] and [s2] to generate values of
         type ['a] and ['b], respectively, on each call. *)
-    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
 
+    val sample_alternatively : 'a sampler list -> 'a sampler
     (** [sample_alternatively s] returns a sampler that mimics
        randomly the behavior of one of [s] sampler and change at each
        call. *)
-    val sample_alternatively : 'a sampler list -> 'a sampler
 
+    val sample_cases : 'a list -> 'a sampler
     (** [sample_case cases] returns a sampler that generates randomly
        one of the value of cases. *)
-    val sample_cases : 'a list -> 'a sampler
 
+    val sample_option : 'a sampler -> 'a option sampler
     (** [sample_option sample] returns a sampler that generates an ['a
        option] value using [sample] to generate an ['a] value if
        necessary. *)
-    val sample_option : 'a sampler -> 'a option sampler
 
     (**  {2 Utilities} *)
 
@@ -500,7 +512,7 @@ module type S = sig
 
   (** Grading function for variables and references. *)
   module Test_functions_ref_var : sig
-
+    val test_ref : 'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.t
     (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
        report if reference [got] value is equal to [exp] and
        {!LearnOcaml_report.Failure} report otherwise.
@@ -510,35 +522,30 @@ module type S = sig
        in student's code. In this case, you should use
        {{!Mutation}mutation functions}. This function should be used
        for a reference defined locally (in [test.ml]). *)
-    val test_ref :
-      'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.t
 
+    val test_variable : 'a Ty.ty -> string -> 'a -> Learnocaml_report.t
     (** [test_variable ty name r] returns {!LearnOcaml_report.Success
         1} report if variable named [name] exists and is equal to
         [r]. Otherwise returns {!LearnOcaml_report.Failure} report.*)
-    val test_variable :
-      'a Ty.ty -> string -> 'a -> Learnocaml_report.t
 
+    val test_variable_property :
+      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
     (** [test_variable_property ty name cb] returns the report
         resulting of application of cb to variable named [name] if it
         exists.  Otherwise returns {!LearnOcaml_report.Failure} report.  *)
-    val test_variable_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
+    val test_variable_against_solution :
+      'a Ty.ty -> string -> Learnocaml_report.t
     (** [test_variable ty name r] returns {!LearnOcaml_report.Success
         1} report if variable named [name] exists and is equal to
         variable with the same name defined in solution. Otherwise returns
         {!LearnOcaml_report.Failure} report.*)
-    val test_variable_against_solution :
-      'a Ty.ty -> string -> Learnocaml_report.t
-
   end
 
   (** {1 Grading functions for types} *)
 
   (** Grading function for types. *)
   module Test_functions_types : sig
-
     val compatible_type : expected:string -> string -> Learnocaml_report.t
 
     val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
@@ -557,7 +564,6 @@ module type S = sig
 
   (** Grading function for functions. *)
   module Test_functions_function : sig
-
     (** {2:test_functions_fun_sec Grading functions for functions}*)
 
     (** Three grading functions for functions are defined for arity one
@@ -578,7 +584,6 @@ module type S = sig
        report concatening reports of each test. Otherwise a
        {!Learnocaml_report.Failure} report is returned.*)
 
-
     (** {3 Returned report}*)
 
     (** The grading functions for functions return a {report} which
@@ -596,9 +601,21 @@ module type S = sig
        always returns a non-empty report while the other three returns
        empty reports. *)
 
-
     (** {3 Unary functions}*)
 
+    val test_function_1 :
+         ?test:'b tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before:('a -> unit)
+      -> ?after:(   'a
+                 -> 'b * string * string
+                 -> 'b * string * string
+                 -> Learnocaml_report.t)
+      -> ('a -> 'b) Ty.ty
+      -> string
+      -> ('a * 'b * string * string) list
+      -> Learnocaml_report.t
     (** [test_function_1 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
        outputs.
@@ -611,17 +628,24 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
-    val test_function_1 :
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string)
-                -> ('b * string * string)
-                -> Learnocaml_report.t) ->
-      ('a -> 'b) Ty.ty -> string
-      -> ('a * 'b * string * string) list -> Learnocaml_report.t
 
+    val test_function_1_against :
+         ?gen:int
+      -> ?test:'b tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> unit)
+      -> ?before_user:('a -> unit)
+      -> ?after:(   'a
+                 -> 'b * string * string
+                 -> 'b * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a)
+      -> ('a -> 'b) Ty.ty
+      -> string
+      -> ('a -> 'b)
+      -> 'a list
+      -> Learnocaml_report.t
     (** [test_function_1_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
@@ -633,20 +657,23 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
-    val test_function_1_against :
-      ?gen: int ->
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a
-                -> ('b * string * string)
-                -> ('b * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.t
 
+    val test_function_1_against_solution :
+         ?gen:int
+      -> ?test:'b tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> unit)
+      -> ?before_user:('a -> unit)
+      -> ?after:(   'a
+                 -> 'b * string * string
+                 -> 'b * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a)
+      -> ('a -> 'b) Ty.ty
+      -> string
+      -> 'a list
+      -> Learnocaml_report.t
     (** [test_function_1_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -660,38 +687,42 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_1_against_solution :
-      ?gen: int ->
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a
-                -> ('b * string * string)
-                -> ('b * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
+    val test_function_1_against_postcond :
+         ?gen:int
+      -> ?test_stdout:io_postcond
+      -> ?test_stderr:io_postcond
+      -> ?before_reference:('a -> unit)
+      -> ?before_user:('a -> unit)
+      -> ?after:('a -> 'b * string * string -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a)
+      -> ('a -> 'b Ty.ty -> 'b result -> Learnocaml_report.t)
+      -> ('a -> 'b) Ty.ty
+      -> string
+      -> 'a list
+      -> Learnocaml_report.t
     (** [test_function_1_against_postcond postcond ty name tests] tests that
        the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_1_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b Ty.ty -> 'b result -> Learnocaml_report.t) ->
-      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
 
     (** {3 Binary functions }*)
 
+    val test_function_2 :
+         ?test:'c tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before:('a -> 'b -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c * string * string
+                 -> 'c * string * string
+                 -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * string * string) list
+      -> Learnocaml_report.t
     (** [test_function_2 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
        outputs.
@@ -705,19 +736,25 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
-    val test_function_2 :
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string)
-                -> ('c * string * string)
-                -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty
-      -> string
-      -> ('a * 'b * 'c * string * string) list
-      -> Learnocaml_report.t
 
+    val test_function_2_against :
+         ?gen:int
+      -> ?test:'c tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> unit)
+      -> ?before_user:('a -> 'b -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c * string * string
+                 -> 'c * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b)
+      -> ('a -> 'b -> 'c) Ty.ty
+      -> string
+      -> ('a -> 'b -> 'c)
+      -> ('a * 'b) list
+      -> Learnocaml_report.t
     (** [test_function_2_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
@@ -730,23 +767,24 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information about optional
        arguments. *)
-    val test_function_2_against :
-      ?gen: int ->
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b
-                -> ('c * string * string)
-                -> ('c * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string
-      -> ('a -> 'b -> 'c)
+
+    val test_function_2_against_solution :
+         ?gen:int
+      -> ?test:'c tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> unit)
+      -> ?before_user:('a -> 'b -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c * string * string
+                 -> 'c * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b)
+      -> ('a -> 'b -> 'c) Ty.ty
+      -> string
       -> ('a * 'b) list
       -> Learnocaml_report.t
-
     (** [test_function_2_against_soltion ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -760,38 +798,43 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_2_against_solution :
-      ?gen: int ->
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b
-                -> ('c * string * string)
-                -> ('c * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-                 ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
+    val test_function_2_against_postcond :
+         ?gen:int
+      -> ?test_stdout:io_postcond
+      -> ?test_stderr:io_postcond
+      -> ?before_reference:('a -> 'b -> unit)
+      -> ?before_user:('a -> 'b -> unit)
+      -> ?after:('a -> 'b -> 'c * string * string -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b)
+      -> ('a -> 'b -> 'c Ty.ty -> 'c result -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c) Ty.ty
+      -> string
+      -> ('a * 'b) list
+      -> Learnocaml_report.t
     (** [test_function_2_against_postcond postcond ty name tests] tests that
        the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_2_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c Ty.ty -> 'c result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
 
     (** {3 Three-arguments functions }*)
 
+    val test_function_3 :
+         ?test:'d tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before:('a -> 'b -> 'c -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd * string * string
+                 -> 'd * string * string
+                 -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * 'd * string * string) list
+      -> Learnocaml_report.t
     (** [test_function_3 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
        outputs.
@@ -805,18 +848,26 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_3 :
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c
-                -> ('d * string * string)
-                -> ('d * string * string) -> Learnocaml_report.t)
-      -> ('a -> 'b -> 'c -> 'd) Ty.ty -> string
-      -> ('a * 'b * 'c * 'd * string * string) list
-      -> Learnocaml_report.t
 
+    val test_function_3_against :
+         ?gen:int
+      -> ?test:'d tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> 'c -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd * string * string
+                 -> 'd * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c)
+      -> ('a -> 'b -> 'c -> 'd) Ty.ty
+      -> string
+      -> ('a -> 'b -> 'c -> 'd)
+      -> ('a * 'b * 'c) list
+      -> Learnocaml_report.t
     (** [test_function_3_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
@@ -830,24 +881,25 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_3_against :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c
-                -> ('d * string * string)
-                -> ('d * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty
+
+    val test_function_3_against_solution :
+         ?gen:int
+      -> ?test:'d tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> 'c -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd * string * string
+                 -> 'd * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c)
+      -> ('a -> 'b -> 'c -> 'd) Ty.ty
       -> string
-      -> ('a -> 'b -> 'c -> 'd)
       -> ('a * 'b * 'c) list
       -> Learnocaml_report.t
-
     (** [test_function_3_against_solution ty name tests] tests the function
        named [name] by comparison to solution function [rf] which must
        be defined under name [name] in the corresponding [solution.ml]
@@ -862,39 +914,44 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_3_against_solution :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c
-                -> ('d * string * string)
-                -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty
-      -> string -> ('a * 'b * 'c) list
-      -> Learnocaml_report.t
 
+    val test_function_3_against_postcond :
+         ?gen:int
+      -> ?test_stdout:io_postcond
+      -> ?test_stderr:io_postcond
+      -> ?before_reference:('a -> 'b -> 'c -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> unit)
+      -> ?after:('a -> 'b -> 'c -> 'd * string * string -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c)
+      -> ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd) Ty.ty
+      -> string
+      -> ('a * 'b * 'c) list
+      -> Learnocaml_report.t
     (** [test_function_3_against_postcond postcond ty name tests] tests that
        the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_3_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
 
     (** {3 Four-arguments functions }*)
 
+    val test_function_4 :
+         ?test:'e tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd
+                 -> 'e * string * string
+                 -> 'e * string * string
+                 -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * 'd * 'e * string * string) list
+      -> Learnocaml_report.t
     (** [test_function_4 ty name tests] tests the function named
        [name] by directly comparing obtained outputs against expected
        outputs.
@@ -908,19 +965,27 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_4 :
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd
-                -> ('e * string * string)
-                -> ('e * string * string)
-                -> Learnocaml_report.t)
-      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
-      -> ('a * 'b * 'c * 'd * 'e * string * string) list
-      -> Learnocaml_report.t
 
+    val test_function_4_against :
+         ?gen:int
+      -> ?test:'e tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd
+                 -> 'e * string * string
+                 -> 'e * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c * 'd)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+      -> string
+      -> ('a -> 'b -> 'c -> 'd -> 'e)
+      -> ('a * 'b * 'c * 'd) list
+      -> Learnocaml_report.t
     (** [test_function_4_against ty name rf tests] tests the function
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
@@ -934,22 +999,26 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_4_against :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd
-                -> ('e * string * string)
-                -> ('e * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd)
-      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
-      -> ('a -> 'b -> 'c -> 'd -> 'e)
-      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
+    val test_function_4_against_solution :
+         ?gen:int
+      -> ?test:'e tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd
+                 -> 'e * string * string
+                 -> 'e * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c * 'd)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * 'd) list
+      -> Learnocaml_report.t
     (** [test_function_4_against_solution ty name tests] tests the
        function named [name] by comparison to solution function [rf]
        which must be defined under name [name] in the corresponding
@@ -964,36 +1033,30 @@ module type S = sig
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_4_against_solution :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd
-                -> ('e * string * string)
-                -> ('e * string * string)
-                -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd)
-      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string
-      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
+    val test_function_4_against_postcond :
+         ?gen:int
+      -> ?test_stdout:io_postcond
+      -> ?test_stderr:io_postcond
+      -> ?before_reference:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?before_user:('a -> 'b -> 'c -> 'd -> unit)
+      -> ?after:(   'a
+                 -> 'b
+                 -> 'c
+                 -> 'd
+                 -> 'e * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> 'a * 'b * 'c * 'd)
+      -> ('a -> 'b -> 'c -> 'd -> 'e Ty.ty -> 'e result -> Learnocaml_report.t)
+      -> ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
+      -> string
+      -> ('a * 'b * 'c * 'd) list
+      -> Learnocaml_report.t
     (** [test_function_4_against_postcond postcond ty name tests] tests that
        the function named [name] satisfies the postcondition [postcond].
 
      See {{!optional_arguments_sec} this section} for information
        about optional arguments. *)
-    val test_function_4_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e Ty.ty -> 'e result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
 
     (** {2:optional_arguments_sec Optional arguments for grading functions} *)
 
@@ -1082,120 +1145,115 @@ module type S = sig
      should instead raise an issue to ask for the corresponding
      grading functions.  *)
   module Test_functions_generic : sig
-
+    val run_timeout : ?time:int -> (unit -> 'a) -> 'a
     (** [run_timeout ?time v] executes [v()] under an optional time limit.
         The exceptions raised by [v] are intentionally *not* caught,
         so the caller is able to catch and get a backtrace, if desired. 
         If given, [time] overrides the global timeout parameter.
     *)
-    val run_timeout : ?time:int -> (unit -> 'a) -> 'a
 
+    val exec : (unit -> 'a) -> ('a * string * string) result
     (** [exec v] executes [v ()] and returns [Ok (r, stdout, stderr)]
         if no exception is raised and where [r] is the result of [v
         ()], [stdout] the standard output string (possibly empty) and
         [stderr] the standard error string (possibly empty) or returns
         [Error exn] is exception [exn] is raised. In particular, a
         timeout error [Error (Timeout limit)] can be returned. *)
-    val exec : (unit -> 'a) -> ('a * string * string) result
 
+    val result : (unit -> 'a) -> 'a result
     (** [result v] executes [v ()] and returns [Ok r] where [r] is
         the result of [v ()] or [Error exn] if exception [exn] is
         raised. In particular, a timeout error [Error (Timeout limit)]
         can be returned. *)
-    val result : (unit -> 'a) -> 'a result
 
-    include (module type of Fun_ty
-                            with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
-                            and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty)
+    include
+      module type of Fun_ty
+      with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
+       and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty
 
     val ty_of_prot :
       (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
-    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
+      [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
 
     (** {2 Lookup functions} *)
 
     type 'a lookup =
-      unit
+         unit
       -> [ `Found of string * Learnocaml_report.t * 'a
          | `Unbound of string * Learnocaml_report.t ]
 
-    val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
+    val lookup : 'a Ty.ty -> ?display_name:string -> string -> 'a lookup
+
     val lookup_student : 'a Ty.ty -> string -> 'a lookup
+
     val lookup_solution : 'a Ty.ty -> string -> 'a lookup
+
     val found : string -> 'a -> 'a lookup
+
     val name : 'a lookup -> string
 
     (** {2 Generic grading functions}*)
 
-    (** [test_value lookup cb] *)
     val test_value :
       'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
+    (** [test_value lookup cb] *)
 
+    val test_function :
+         ?test:'ret tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before:(('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit)
+      -> ?after:(   ('ar -> 'row, 'ar -> 'urow, 'ret) args
+                 -> 'ret * string * string
+                 -> 'ret * string * string
+                 -> Learnocaml_report.t)
+      -> (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+      -> ('ar -> 'row) lookup
+      -> (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list
+      -> Learnocaml_report.t
     (** [test_function ~test ~test_stdout ~test_stderr ~before ~after
         prot uf tests]  *)
-    val test_function :
-      ?test: 'ret tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-         unit) ->
-      ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-         ('ret * string * string) ->
-         ('ret * string * string) ->
-         Learnocaml_report.t) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-      ('ar -> 'row) lookup ->
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
-      Learnocaml_report.t
 
+    val test_function_against :
+         ?gen:int
+      -> ?test:'ret tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:(('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit)
+      -> ?before_user:(('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit)
+      -> ?after:(   ('ar -> 'row, 'ar -> 'urow, 'ret) args
+                 -> 'ret * string * string
+                 -> 'ret * string * string
+                 -> Learnocaml_report.t)
+      -> ?sampler:(unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args)
+      -> (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+      -> ('ar -> 'row) lookup
+      -> ('ar -> 'row) lookup
+      -> ('ar -> 'row, 'ar -> 'urow, 'ret) args list
+      -> Learnocaml_report.t
     (** [test_function_against ~gen ~test ~test_stdout ~test_stderr
         ~before_reference ~before_user ~after ~sampler prot uf rf tests] *)
-    val test_function_against :
-      ?gen: int ->
-      ?test: 'ret tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-      ?before_user :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-      ?after :
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-         ('ret * string * string) ->
-         ('ret * string * string) ->
-         Learnocaml_report.t) ->
-      ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-      ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
-      Learnocaml_report.t
 
+    val test_function_against_solution :
+         ?gen:int
+      -> ?test:'ret tester
+      -> ?test_stdout:io_tester
+      -> ?test_stderr:io_tester
+      -> ?before_reference:(('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit)
+      -> ?before_user:(('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit)
+      -> ?after:(   ('ar -> 'row, 'ar -> 'urow, 'ret) args
+                 -> 'ret * string * string
+                 -> 'ret * string * string
+                 -> Learnocaml_report.item list)
+      -> ?sampler:(unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args)
+      -> (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty
+      -> string
+      -> ('ar -> 'row, 'ar -> 'urow, 'ret) args list
+      -> Learnocaml_report.item list
     (** [test_function_against_solution ~gen ~test ~test_stdout ~test_stderr
         ~before_reference ~before_user ~after ~sampler prot name tests] *)
-    val test_function_against_solution :
-      ?gen:int ->
-      ?test: 'ret tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-      ?before_user:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-      ?after:
-        (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-         'ret * string * string ->
-         'ret * string * string ->
-         Learnocaml_report.item list) ->
-      ?sampler:
-        (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-      string ->
-      ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
-      Learnocaml_report.item list
 
+    val ( ==> ) : 'params -> 'ret -> 'params * (unit -> 'ret)
     (** Helper notation to test pure functions.
 
         [p ==> r] is the pair [(p, fun () -> r)].
@@ -1203,46 +1261,52 @@ module type S = sig
         Example: [test_function prot
                   (lookup_student (ty_of_fun_ty prot) name)
                   [1 @: 2 @: 3 @: 4 @:!! 5 ==> 15; ... ==> ...]] *)
-    val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
   end
 
-    (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
-   val (@@@) :
-     ('a -> Learnocaml_report.t)
-     -> ('a -> Learnocaml_report.t)
-     -> ('a -> Learnocaml_report.t)
+  val ( @@@ ) :
+       ('a -> Learnocaml_report.t)
+    -> ('a -> Learnocaml_report.t)
+    -> 'a
+    -> Learnocaml_report.t
+  (** [r1 @@@ r2] is the function [x -> r1 x @ r2 x]. *)
 
-   (** [r1 @@> f] returns [r1] if [r1] is a failure report,
+  val ( @@> ) :
+    Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
+  (** [r1 @@> f] returns [r1] if [r1] is a failure report,
        otherwise returns the result of report generator
        [f ()]. *)
-   val (@@>) :
-     Learnocaml_report.t
-     -> (unit -> Learnocaml_report.t)
-     -> Learnocaml_report.t
 
-   (** [r1 @@= f] returns [r1] if [r1] is a failure report,
+  val ( @@= ) :
+    Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
+  (** [r1 @@= f] returns [r1] if [r1] is a failure report,
        otherwise concatenates [r1] to the result of report
        generator [f ()]. *)
-   val (@@=) :
-     Learnocaml_report.t
-     -> (unit -> Learnocaml_report.t)
-     -> Learnocaml_report.t
 
-   (**/**)
-   include (module type of Ast_checker)
-   include (module type of Tester)
-   include (module type of Mutation)
-   include (module type of Sampler)
-   include (module type of Test_functions_types)
-   include (module type of Test_functions_ref_var)
-   include (module type of Test_functions_function)
-   include (module type of Test_functions_generic)
+  (**/**)
+
+  include module type of Ast_checker
+
+  include module type of Tester
+
+  include module type of Mutation
+
+  include module type of Sampler
+
+  include module type of Test_functions_types
+
+  include module type of Test_functions_ref_var
+
+  include module type of Test_functions_function
+
+  include module type of Test_functions_generic
 end
 
-module Make : functor
-  (Params : sig
-     val results : Learnocaml_report.t option ref
-     val set_progress : string -> unit
-     val timeout : int option
-     module Introspection : Introspection_intf.INTROSPECTION
-   end) -> S
+module Make (Params : sig
+  val results : Learnocaml_report.t option ref
+
+  val set_progress : string -> unit
+
+  val timeout : int option
+
+  module Introspection : Introspection_intf.INTROSPECTION
+end) : S

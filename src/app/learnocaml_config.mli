@@ -9,16 +9,25 @@
    to the values stored in this file.  It is "statically linked" with
    learnocaml-common.ml. *)
 
-class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
-  method enableLessons: bool Js.optdef_prop
-  method enableExercises: bool Js.optdef_prop
-  method enableToplevel: bool Js.optdef_prop
-  method enablePlayground: bool Js.optdef_prop
-  method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
-  method txtNickname: Js.js_string Js.t Js.optdef_prop
-  method baseUrl: Js.js_string Js.t Js.optdef_prop
-end
+class type learnocaml_config =
+  object
+    method enableTryocaml : bool Js.optdef_prop
+
+    method enableLessons : bool Js.optdef_prop
+
+    method enableExercises : bool Js.optdef_prop
+
+    method enableToplevel : bool Js.optdef_prop
+
+    method enablePlayground : bool Js.optdef_prop
+
+    method txtLoginWelcome : Js.js_string Js.t Js.optdef_prop
+
+    method txtNickname : Js.js_string Js.t Js.optdef_prop
+
+    method baseUrl : Js.js_string Js.t Js.optdef_prop
+  end
 
 val config : learnocaml_config Js.t
+
 val api_server : string

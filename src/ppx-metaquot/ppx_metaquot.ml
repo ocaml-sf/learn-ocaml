@@ -56,7 +56,9 @@
 
 *)
 
-module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
+module Main : sig
+  val expander : string list -> Ast_mapper.mapper
+end = struct
   open Asttypes
   open Parsetree
   open Ast_helper
@@ -65,123 +67,152 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
   let prefix ty s =
     let open Longident in
     match parse ty with
-    | Ldot(m, _) -> String.concat "." (Longident.flatten m) ^ "." ^ s
+    | Ldot (m, _) -> String.concat "." (Longident.flatten m) ^ "." ^ s
     | _ -> s
 
   let append ?loc ?attrs e e' =
-    let fn = Location.mknoloc (Longident.(Ldot (Lident "List", "append"))) in
-    Exp.apply ?loc ?attrs (Exp.ident fn) [Nolabel, e; Nolabel, e']
+    let fn = Location.mknoloc Longident.(Ldot (Lident "List", "append")) in
+    Exp.apply ?loc ?attrs (Exp.ident fn) [(Nolabel, e); (Nolabel, e')]
 
   class exp_builder =
     object
-      method record ty x = record (List.map (fun (l, e) -> prefix ty l, e) x)
+      method record ty x = record (List.map (fun (l, e) -> (prefix ty l, e)) x)
+
       method constr ty (c, args) = constr (prefix ty c) args
+
       method list l = list l
+
       method tuple l = tuple l
+
       method int i = int i
+
       method string s = str s
+
       method char c = char c
+
       method int32 x = Exp.constant (Const.int32 x)
+
       method int64 x = Exp.constant (Const.int64 x)
+
       method nativeint x = Exp.constant (Const.nativeint x)
     end
 
   class pat_builder =
     object
-      method record ty x = precord ~closed:Closed (List.map (fun (l, e) -> prefix ty l, e) x)
+      method record ty x =
+        precord ~closed:Closed (List.map (fun (l, e) -> (prefix ty l, e)) x)
+
       method constr ty (c, args) = pconstr (prefix ty c) args
+
       method list l = plist l
+
       method tuple l = ptuple l
+
       method int i = pint i
+
       method string s = pstr s
+
       method char c = pchar c
+
       method int32 x = Pat.constant (Const.int32 x)
+
       method int64 x = Pat.constant (Const.int64 x)
+
       method nativeint x = Pat.constant (Const.nativeint x)
     end
 
-
   let get_exp loc = function
-    | PStr [ {pstr_desc=Pstr_eval (e, _); _} ] -> e
+    | PStr [{pstr_desc = Pstr_eval (e, _); _}] -> e
     | _ ->
-        Format.eprintf "%aExpression expected@."
-          Location.print_error loc;
+        Format.eprintf "%aExpression expected@." Location.print_error loc;
         exit 2
 
   let get_typ loc = function
     | PTyp t -> t
     | _ ->
-        Format.eprintf "%aType expected@."
-          Location.print_error loc;
+        Format.eprintf "%aType expected@." Location.print_error loc;
         exit 2
 
   let get_pat loc = function
     | PPat (t, None) -> t
     | _ ->
-        Format.eprintf "%aPattern expected@."
-          Location.print_error loc;
+        Format.eprintf "%aPattern expected@." Location.print_error loc;
         exit 2
 
   let exp_lifter loc map =
     let map = map.Ast_mapper.expr map in
     object
       inherit [_] Ast_lifter.lifter as super
+
       inherit exp_builder
 
       (* Special support for location in the generated AST *)
       method! lift_Location_t _ = loc
 
       (* Support for antiquotations *)
-      method! lift_Parsetree_expression = function
-        | {pexp_desc=Pexp_extension({txt="e";loc}, e); _} -> map (get_exp loc e)
-        | x -> super # lift_Parsetree_expression x
+      method! lift_Parsetree_expression =
+        function
+        | {pexp_desc = Pexp_extension ({txt = "e"; loc}, e); _} ->
+            map (get_exp loc e)
+        | x -> super#lift_Parsetree_expression x
 
-      method! lift_Parsetree_pattern = function
-        | {ppat_desc=Ppat_extension({txt="p";loc}, e); _} -> map (get_exp loc e)
-        | x -> super # lift_Parsetree_pattern x
+      method! lift_Parsetree_pattern =
+        function
+        | {ppat_desc = Ppat_extension ({txt = "p"; loc}, e); _} ->
+            map (get_exp loc e)
+        | x -> super#lift_Parsetree_pattern x
 
       method! lift_Parsetree_structure str =
         List.fold_right
           (function
-           | {pstr_desc=Pstr_extension(({txt="s";loc}, e), _); _} ->
-               append (get_exp loc e)
-           | x ->
-               cons (super # lift_Parsetree_structure_item x))
+            | {pstr_desc = Pstr_extension (({txt = "s"; loc}, e), _); _} ->
+                append (get_exp loc e)
+            | x -> cons (super#lift_Parsetree_structure_item x))
           str (nil ())
 
-      method! lift_Parsetree_core_type = function
-        | {ptyp_desc=Ptyp_extension({txt="t";loc}, e); _} -> map (get_exp loc e)
-        | x -> super # lift_Parsetree_core_type x
+      method! lift_Parsetree_core_type =
+        function
+        | {ptyp_desc = Ptyp_extension ({txt = "t"; loc}, e); _} ->
+            map (get_exp loc e)
+        | x -> super#lift_Parsetree_core_type x
     end
 
   let pat_lifter map =
     let map = map.Ast_mapper.pat map in
     object
       inherit [_] Ast_lifter.lifter as super
+
       inherit pat_builder
 
       (* Special support for location and attributes in the generated AST *)
       method! lift_Location_t _ = Pat.any ()
+
       method! lift_Parsetree_attributes _ = Pat.any ()
 
       (* Support for antiquotations *)
-      method! lift_Parsetree_expression = function
-        | {pexp_desc=Pexp_extension({txt="e";loc}, e); _} -> map (get_pat loc e)
-        | x -> super # lift_Parsetree_expression x
+      method! lift_Parsetree_expression =
+        function
+        | {pexp_desc = Pexp_extension ({txt = "e"; loc}, e); _} ->
+            map (get_pat loc e)
+        | x -> super#lift_Parsetree_expression x
 
-      method! lift_Parsetree_pattern = function
-        | {ppat_desc=Ppat_extension({txt="p";loc}, e); _} -> map (get_pat loc e)
-        | x -> super # lift_Parsetree_pattern x
+      method! lift_Parsetree_pattern =
+        function
+        | {ppat_desc = Ppat_extension ({txt = "p"; loc}, e); _} ->
+            map (get_pat loc e)
+        | x -> super#lift_Parsetree_pattern x
 
-      method! lift_Parsetree_core_type = function
-        | {ptyp_desc=Ptyp_extension({txt="t";loc}, e); _} -> map (get_pat loc e)
-        | x -> super # lift_Parsetree_core_type x
+      method! lift_Parsetree_core_type =
+        function
+        | {ptyp_desc = Ptyp_extension ({txt = "t"; loc}, e); _} ->
+            map (get_pat loc e)
+        | x -> super#lift_Parsetree_core_type x
     end
 
   let loc = ref (app (evar "Pervasives.!") [evar "Ast_helper.default_loc"])
 
   let handle_attr = function
-    | {txt="metaloc";loc=l}, e -> loc := get_exp l e
+    | {txt = "metaloc"; loc = l}, e -> loc := get_exp l e
     | _ -> ()
 
   let with_loc ?(attrs = []) f =
@@ -193,126 +224,108 @@ module Main : sig val expander: string list -> Ast_mapper.mapper end = struct
 
   (* ------ <edited for learn-ocaml> ------ *)
   let ty_of this cty =
-    let obj_id =
-      Location.mknoloc
-        Longident.(Ldot (Lident "Ty", "repr")) in
-    let ty_id =
-      Location.mknoloc
-        Longident.(Ldot (Lident "Ty", "ty")) in
-    let tyexpr =
-      ((exp_lifter !loc this) # lift_Parsetree_core_type cty) in
+    let obj_id = Location.mknoloc Longident.(Ldot (Lident "Ty", "repr")) in
+    let ty_id = Location.mknoloc Longident.(Ldot (Lident "Ty", "ty")) in
+    let tyexpr = (exp_lifter !loc this)#lift_Parsetree_core_type cty in
     Exp.constraint_
-      (Exp.apply
-         (Exp.ident obj_id)
-         [Nolabel, tyexpr])
+      (Exp.apply (Exp.ident obj_id) [(Nolabel, tyexpr)])
       (Typ.constr ty_id [cty])
 
   let fun_ty_of this l e =
     (* Naming convention: ty:=Ty.ty, cty:=core_type, ety:=expression *)
     let glob_cty = get_typ l e in
     match glob_cty with
-    | { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg0, next) ; _ } ->
-       (* OK: The type expression is an arrow type *)
-       (* Recursion over [core_type]s: *)
-       let rec get_fun_ty_of arg0 next =
-         match next with
-         | { Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg', next') ; _ } ->
-            let fun_ty_next, ucty, ret = get_fun_ty_of arg' next' in
-            (* Arg_ty (arg0, fun_ty_next) : (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) *)
-            let cons_arg_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "arg_ty")) in
-            let arg0_ety = ty_of this arg0 in
-            let ucty = Typ.arrow Nolabel arg0 ucty in
-            (Exp.apply
-               (Exp.apply
-                  (Exp.ident cons_arg_id)
-                  [Nolabel, arg0_ety])
-               [Nolabel, fun_ty_next],
-             ucty, ret)
-         | _ ->
-            (* Last_ty (arg0, next) : (('a -> 'r) Ty.ty, 'a -> unit, 'r) fun_ty *)
-            let cons_last_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "last_ty")) in
-            let arg0_ety = ty_of this arg0 in
-            let next_ety = ty_of this next in
-            let unit_id = Location.mknoloc (Longident.Lident "unit") in
-            let unit_cty = Typ.constr unit_id [] in
-            let ucty = Typ.arrow Nolabel arg0 unit_cty in
-            (Exp.apply
-               (Exp.apply
-                  (Exp.ident cons_last_id)
-                  [Nolabel, arg0_ety])
-               [Nolabel, next_ety],
-             ucty, next)
-       in
-       (* Main branch *)
-       let fun_ty_next, ucty, ret = get_fun_ty_of arg0 next in
-       (* fun_ty_next : (('a -> 'b -> 'r) Ty.ty, 'a -> 'b -> unit, 'r) [typecast] *)
-       let fun_ty_id = Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "fun_ty")) in
-       let ty_id = Location.mknoloc Longident.(Ldot (Lident "Ty", "ty")) in
-       let glob_cty_ty = Typ.constr ty_id [glob_cty] in
-       Exp.constraint_
-         fun_ty_next
-         (Typ.constr fun_ty_id [glob_cty_ty; ucty; ret])
+    | {Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg0, next); _} ->
+        (* OK: The type expression is an arrow type *)
+        (* Recursion over [core_type]s: *)
+        let rec get_fun_ty_of arg0 next =
+          match next with
+          | {Parsetree.ptyp_desc = Parsetree.Ptyp_arrow (_, arg', next'); _} ->
+              let fun_ty_next, ucty, ret = get_fun_ty_of arg' next' in
+              (* Arg_ty (arg0, fun_ty_next) : (('a -> 'b -> 'c) Ty.ty, 'a -> 'b -> 'd, 'r) *)
+              let cons_arg_id =
+                Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "arg_ty"))
+              in
+              let arg0_ety = ty_of this arg0 in
+              let ucty = Typ.arrow Nolabel arg0 ucty in
+              ( Exp.apply
+                  (Exp.apply (Exp.ident cons_arg_id) [(Nolabel, arg0_ety)])
+                  [(Nolabel, fun_ty_next)]
+              , ucty
+              , ret )
+          | _ ->
+              (* Last_ty (arg0, next) : (('a -> 'r) Ty.ty, 'a -> unit, 'r) fun_ty *)
+              let cons_last_id =
+                Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "last_ty"))
+              in
+              let arg0_ety = ty_of this arg0 in
+              let next_ety = ty_of this next in
+              let unit_id = Location.mknoloc (Longident.Lident "unit") in
+              let unit_cty = Typ.constr unit_id [] in
+              let ucty = Typ.arrow Nolabel arg0 unit_cty in
+              ( Exp.apply
+                  (Exp.apply (Exp.ident cons_last_id) [(Nolabel, arg0_ety)])
+                  [(Nolabel, next_ety)]
+              , ucty
+              , next )
+        in
+        (* Main branch *)
+        let fun_ty_next, ucty, ret = get_fun_ty_of arg0 next in
+        (* fun_ty_next : (('a -> 'b -> 'r) Ty.ty, 'a -> 'b -> unit, 'r) [typecast] *)
+        let fun_ty_id =
+          Location.mknoloc Longident.(Ldot (Lident "Fun_ty", "fun_ty"))
+        in
+        let ty_id = Location.mknoloc Longident.(Ldot (Lident "Ty", "ty")) in
+        let glob_cty_ty = Typ.constr ty_id [glob_cty] in
+        Exp.constraint_ fun_ty_next
+          (Typ.constr fun_ty_id [glob_cty_ty; ucty; ret])
     | _ -> invalid_arg "fun_ty_of: not an arrow type"
+
   (* ------ </edited for learn-ocaml> ------ *)
 
   let expander _args =
     let open Ast_mapper in
     let super = default_mapper in
     let expr this e =
-      with_loc ~attrs:e.pexp_attributes
-        (fun () ->
-           match e.pexp_desc with
-           | Pexp_extension({txt="expr";loc=l}, e) ->
-               (exp_lifter !loc this) # lift_Parsetree_expression (get_exp l e)
-           | Pexp_extension({txt="pat";loc=l}, e) ->
-               (exp_lifter !loc this) # lift_Parsetree_pattern (get_pat l e)
-           | Pexp_extension({txt="str";_}, PStr e) ->
-               (exp_lifter !loc this) # lift_Parsetree_structure e
-           | Pexp_extension({txt="stri";_}, PStr [e]) ->
-               (exp_lifter !loc this) # lift_Parsetree_structure_item e
-           | Pexp_extension({txt="type";loc=l}, e) ->
-               (exp_lifter !loc this) # lift_Parsetree_core_type (get_typ l e)
-(* ------ <edited for learn-ocaml> ------ *)
-           | Pexp_extension({txt="ty";loc=l}, e) ->
+      with_loc ~attrs:e.pexp_attributes (fun () ->
+          match e.pexp_desc with
+          | Pexp_extension ({txt = "expr"; loc = l}, e) ->
+              (exp_lifter !loc this)#lift_Parsetree_expression (get_exp l e)
+          | Pexp_extension ({txt = "pat"; loc = l}, e) ->
+              (exp_lifter !loc this)#lift_Parsetree_pattern (get_pat l e)
+          | Pexp_extension ({txt = "str"; _}, PStr e) ->
+              (exp_lifter !loc this)#lift_Parsetree_structure e
+          | Pexp_extension ({txt = "stri"; _}, PStr [e]) ->
+              (exp_lifter !loc this)#lift_Parsetree_structure_item e
+          | Pexp_extension ({txt = "type"; loc = l}, e) ->
+              (exp_lifter !loc this)#lift_Parsetree_core_type (get_typ l e)
+          (* ------ <edited for learn-ocaml> ------ *)
+          | Pexp_extension ({txt = "ty"; loc = l}, e) ->
               let ty = get_typ l e in
               ty_of this ty
-           | Pexp_extension({txt="funty";loc=l}, e) ->
-              fun_ty_of this l e
-(* ------ </edited for learn-ocaml> ------ *)
-           | _ ->
-               super.expr this e
-        )
+          | Pexp_extension ({txt = "funty"; loc = l}, e) -> fun_ty_of this l e
+          (* ------ </edited for learn-ocaml> ------ *)
+          | _ -> super.expr this e )
     and pat this p =
-      with_loc ~attrs:p.ppat_attributes
-        (fun () ->
-           match p.ppat_desc with
-           | Ppat_extension({txt="expr";loc=l}, e) ->
-               (pat_lifter this) # lift_Parsetree_expression (get_exp l e)
-           | Ppat_extension({txt="pat";loc=l}, e) ->
-               (pat_lifter this) # lift_Parsetree_pattern (get_pat l e)
-           | Ppat_extension({txt="str";_}, PStr e) ->
-               (pat_lifter this) # lift_Parsetree_structure e
-           | Ppat_extension({txt="stri";_}, PStr [e]) ->
-               (pat_lifter this) # lift_Parsetree_structure_item e
-           | Ppat_extension({txt="type";loc=l}, e) ->
-               (pat_lifter this) # lift_Parsetree_core_type (get_typ l e)
-           | _ ->
-               super.pat this p
-        )
-    and structure this l =
-      with_loc
-        (fun () -> super.structure this l)
-
+      with_loc ~attrs:p.ppat_attributes (fun () ->
+          match p.ppat_desc with
+          | Ppat_extension ({txt = "expr"; loc = l}, e) ->
+              (pat_lifter this)#lift_Parsetree_expression (get_exp l e)
+          | Ppat_extension ({txt = "pat"; loc = l}, e) ->
+              (pat_lifter this)#lift_Parsetree_pattern (get_pat l e)
+          | Ppat_extension ({txt = "str"; _}, PStr e) ->
+              (pat_lifter this)#lift_Parsetree_structure e
+          | Ppat_extension ({txt = "stri"; _}, PStr [e]) ->
+              (pat_lifter this)#lift_Parsetree_structure_item e
+          | Ppat_extension ({txt = "type"; loc = l}, e) ->
+              (pat_lifter this)#lift_Parsetree_core_type (get_typ l e)
+          | _ -> super.pat this p )
+    and structure this l = with_loc (fun () -> super.structure this l)
     and structure_item this x =
-      begin match x.pstr_desc with
-      | Pstr_attribute x -> handle_attr x
-      | _ -> ()
-      end;
+      (match x.pstr_desc with Pstr_attribute x -> handle_attr x | _ -> ());
       super.structure_item this x
-
     in
     {super with expr; pat; structure; structure_item}
-
 end
 
 let expander = Main.expander

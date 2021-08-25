@@ -11,6 +11,12 @@
 (** A toplevel output console handle. *)
 type output
 
+val setup :
+     ?limit:int
+  -> ?on_resize:(unit -> unit)
+  -> container:[`Div] Tyxml_js.Html5.elt
+  -> unit
+  -> output
 (** Use a given div as an output console.
     Gives it the class [toplevel-output].
 
@@ -18,28 +24,24 @@ type output
       A callback, called every time the contents of the console is updated.
     @param limit
       The maximum number of blocks displayed. *)
-val setup :
-  ?limit: int ->
-  ?on_resize:(unit -> unit) ->
-  container: [ `Div ] Tyxml_js.Html5.elt ->
-  unit -> output
 
-(** Empty the console. *)
 val clear : output -> unit
+(** Empty the console. *)
 
+val scroll : output -> unit
 (** Make the last element of the console visible on the screen.
     This works if the div itself is scrollable (CSS attribute [overflow-y]).
     If not, the [on_resize] parameter of {!setup} can be used to scroll
     a parent scrollable area.
     The console is automatically scrolled after each output.*)
-val scroll : output -> unit
 
-(** Make the current elements of the console greyed and unselectable. *)
 val oldify : output -> unit
+(** Make the current elements of the console greyed and unselectable. *)
 
 (** Represents a sequence of unseparated output blocks. *)
 type phrase
 
+val phrase : unit -> phrase
 (** Forges a new phrase identifier.
 
     Phrases are subsequences of outputs in the console, separated by
@@ -61,43 +63,43 @@ type phrase
     is specified, it is considered only if it is the last one in the
     console. Otherwise, it is appended to the console, as if no phrase
     was specified. *)
-val phrase : unit -> phrase
 
+val output_stdout : ?phrase:phrase -> output -> string -> unit
 (** Output verbatim text to the console. Successive outputs are
     grouped, mixing {!output_stdout} and {!output_stderr}.  The output
     block is a direct child of the console, a [pre] element with class
     [toplevel-output]. The text is wrapped in a [span] element with
     class [stdout]. *)
-val output_stdout : ?phrase: phrase -> output -> string -> unit
 
+val output_stderr : ?phrase:phrase -> output -> string -> unit
 (** Output verbatim error text. See {!output_stdout}. The text is
     wrapped in a [span] element with class [stdout]. *)
-val output_stderr : ?phrase: phrase -> output -> string -> unit
 
+val output_html : ?phrase:phrase -> output -> string -> unit
 (** Output HTML in a [div] element with class [toplevel-html-block]. *)
-val output_html : ?phrase: phrase -> output -> string -> unit
 
-val output_svg : ?phrase: phrase -> output -> string -> unit
+val output_svg : ?phrase:phrase -> output -> string -> unit
 
+val output_code : ?phrase:phrase -> output -> string -> unit
 (** Output ocaml code in a [pre] element with class [toplevel-code].
     Code tokens are wrapped in [span] elements with classes as
     documented in {!Ocaml_mode.token_type}. An intermediate level of
     [span] elements with classes [toplevel-hilighted-error] and
     [toplevel-hilighted-warning] are used for errors and warnings. A
     [span] with class [ref] is used for location labels. *)
-val output_code : ?phrase: phrase -> output -> string -> unit
 
+val output_answer : ?phrase:phrase -> output -> string -> unit
 (** Output an ocaml toplevel answer in a [pre] element with class
     [toplevel-answer]. *)
-val output_answer : ?phrase: phrase -> output -> string -> unit
 
+val output_error : ?phrase:phrase -> output -> Toploop_results.error -> unit
 (** Output an error in a [pre] element with class [toplevel-error].
     A [span] with class [ref] is used for location labels. *)
-val output_error : ?phrase: phrase -> output -> Toploop_results.error -> unit
 
+val output_warning :
+  ?phrase:phrase -> output -> Toploop_results.warning -> unit
 (** Output a warning in a [pre] element with class [toplevel-warning].
     A [span] with class [ref] is used for location labels. *)
-val output_warning : ?phrase: phrase -> output -> Toploop_results.warning -> unit
 
+val format_ocaml_code : string -> [> `Span | `PCDATA] Tyxml_js.Html5.elt list
 (** Format OCaml code in the style of {!output_code}. *)
-val format_ocaml_code : string -> [> `Span | `PCDATA ] Tyxml_js.Html5.elt list

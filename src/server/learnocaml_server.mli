@@ -8,13 +8,15 @@
 
 (** Configuration options *)
 
-val port: int ref
-val cert_key_files: (string * string) option ref
-val base_url: string ref
+val port : int ref
 
-val args: (Arg.key * Arg.spec * Arg.doc) list
+val cert_key_files : (string * string) option ref
+
+val base_url : string ref
+
+val args : (Arg.key * Arg.spec * Arg.doc) list
 
 (** Main *)
 
 (* Returns [false] if interrupted prematurely due to an error *)
-val launch: unit -> bool Lwt.t
+val launch : unit -> bool Lwt.t

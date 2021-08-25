@@ -8,26 +8,31 @@
 
 open Learnocaml_data
 
-type request_error = [
-  | `Unreachable of string
+type request_error =
+  [ `Unreachable of string
   | `Not_found of string
   | `Http_error of int * string
   | `Exception of exn
-  | `Invalid_response of exn
-]
+  | `Invalid_response of exn ]
 
-val string_of_error: request_error -> string
+val string_of_error : request_error -> string
 
-val request: 'a Learnocaml_api.request -> ('a, request_error) result Lwt.t
+val request : 'a Learnocaml_api.request -> ('a, request_error) result Lwt.t
 
 exception Cannot_fetch of string
-val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t
 
-val[@deprecated] fetch_exercise:
-  Token.t option -> Exercise.id -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
+val request_exn : 'a Learnocaml_api.request -> 'a Lwt.t
 
-val[@deprecated] fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
-val[@deprecated] fetch_lesson : string -> Lesson.t Lwt.t
+val fetch_exercise :
+     Token.t option
+  -> Exercise.id
+  -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
+  [@@deprecated]
 
-val[@deprecated] fetch_tutorial_index : unit -> Tutorial.Index.t Lwt.t
-val[@deprecated] fetch_tutorial : string -> Tutorial.t Lwt.t
+val fetch_lesson_index : unit -> Lesson.Index.t Lwt.t [@@deprecated]
+
+val fetch_lesson : string -> Lesson.t Lwt.t [@@deprecated]
+
+val fetch_tutorial_index : unit -> Tutorial.Index.t Lwt.t [@@deprecated]
+
+val fetch_tutorial : string -> Tutorial.t Lwt.t [@@deprecated]

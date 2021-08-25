@@ -7,11 +7,10 @@
  * included LICENSE file for details. *)
 
 type tutorial =
-  { tutorial_title : Learnocaml_index.text ;
-    tutorial_steps : step list }
-and step =
-  { step_title : Learnocaml_index.text ;
-    step_contents : phrase list }
+  {tutorial_title : Learnocaml_index.text; tutorial_steps : step list}
+
+and step = {step_title : Learnocaml_index.text; step_contents : phrase list}
+
 and phrase =
   | Paragraph of Learnocaml_index.text
   | Enum of phrase list list

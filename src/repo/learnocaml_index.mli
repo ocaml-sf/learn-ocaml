@@ -6,9 +6,9 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+val exercise_index_path : string
 (** the following are relative paths to the www root, using [/] as path
     separator *)
-val exercise_index_path : string
 
 val exercises_dir : string
 
