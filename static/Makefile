@@ -14,9 +14,13 @@ FILES = $(wildcard \
   css/*.css\
 ) $(shell find js/mathjax ! -type d)
 
+EDITOR_FILES = $(wildcard \
+  editor/*.html\
+)
+
 ALWAYS:
 file-list: icons ALWAYS
-	@echo ${FILES} >$@
+	@echo ${FILES} ${EDITOR_FILES} >$@
 
 icons:
 	@${MAKE} -C icons
@@ -27,6 +31,7 @@ dune: file-list
 	@echo ' (package learn-ocaml)' >>$@
 	@echo ' (files' >>$@
 	@$(foreach f,$(FILES),echo '  ($f as ${addprefix www/,$f})' >>$@;)
+	@$(foreach f,$(EDITOR_FILES),echo '  ($f as $f)' >>$@;)
 	@echo ' )' >>$@
 	@echo ')' >>$@
 

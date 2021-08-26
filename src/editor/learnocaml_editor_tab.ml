@@ -64,7 +64,7 @@ let export_all_bar =
           p [pcdata [%i"Export all exercises to a zip file"]]]]
   
 let new_exercise_bar =
-  a ~a:[ a_href  "new_exercise.html";
+  a ~a:[ a_href  "new-exercise.html";
          a_class [ "exercise" ] ] [
       div ~a:[ a_class [ "descr" ] ] [
           h1 [ pcdata [%i"New exercise"] ];

@@ -400,7 +400,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         | ["playground.html"]
         | ["student-view.html"]
         | ["description.html"]
-        | ["new_exercise.html"]
+        | ["new-exercise.html"]
         | ["editor.html"]
         | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),

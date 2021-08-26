@@ -20,7 +20,7 @@ begin program "new_exercise"
     "new_exercise.ml" ( comp = [ ppx_js ppx_ocplib_i18n]  )
   ]
     build_rules = [
-    "%{new_exercise_FULL_DST_DIR}%/new_exercise.js" (
+    "%{new_exercise_FULL_DST_DIR}%/new-exercise.js" (
       build_target = true
       sources = %byte_exe( p = "new_exercise" )
       commands = [ {

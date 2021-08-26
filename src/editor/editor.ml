@@ -523,7 +523,7 @@ let () =
   begin toolbar_button
       ~icon: "left" [%i"Metadata"] @@ fun () ->
       Dom_html.window##.location##assign
-        (Js.string (api_server ^ "/new_exercise.html#id=" ^ id ^ "&action=open"));
+        (Js.string (api_server ^ "/new-exercise.html#id=" ^ id ^ "&action=open"));
     Lwt.return ()
   end;
   begin toolbar_button
