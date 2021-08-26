@@ -694,10 +694,11 @@ let () =
        then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
       (match token with
        | Some t when Token.is_teacher t ->
-          [ "teacher", ([%i"Teach"], teacher_tab t);
-            "editor", ([%i"Editor"], editor_tab) ]
-       | None ->
-          (* FIXME: could be enabled only if desired at build time *)
+          [ "teacher", ([%i"Teach"], teacher_tab t) ] @
+        if get_opt config##.enableEditor then
+          [ "editor", ([%i"Editor"], editor_tab) ]
+        else []
+       | None when get_opt config##.enableEditor ->
           [ "editor", ([%i"Editor"], editor_tab) ]
        | _ -> [])
     in

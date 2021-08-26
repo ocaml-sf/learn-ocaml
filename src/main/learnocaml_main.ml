@@ -173,6 +173,10 @@ module Args = struct
         "the 'Lessons' tab (enabled by default if the repository contains a \
          $(i,lessons) directory)"
 
+    let editor = enable "editor"
+        "the 'Editor' tab (enabled by default), for users connected with a \
+         teacher token, or all users if static deployment is used."
+
     let exercises = enable "exercises"
         "the 'Exercises' tab (enabled by default if the repository contains an \
          $(i,exercises) directory)"
@@ -193,6 +197,7 @@ module Args = struct
       contents_dir: string;
       try_ocaml: bool option;
       lessons: bool option;
+      editor: bool option;
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
@@ -201,10 +206,10 @@ module Args = struct
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel base_url
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; base_url }
+        contents_dir try_ocaml lessons editor exercises playground toplevel base_url
+        = { contents_dir; try_ocaml; lessons; editor; exercises; playground; toplevel; base_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
+      Term.(const apply $contents_dir $try_ocaml $lessons $editor $exercises $playground $toplevel $base_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -372,6 +377,7 @@ let main o =
               \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
+              \  enableEditor: %b,\n\
               \  enableToplevel: %b,\n\
               \  baseUrl: \"%s\"\n\
                }\n"
@@ -379,9 +385,11 @@ let main o =
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
+              (o.builder.Builder.editor <> Some false)
               (o.builder.Builder.toplevel <> Some false)
               o.builder.Builder.base_url >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
+        (* TODO: double-check if a condition is not missing in previous line *)
     else
       Lwt.return true
   in
