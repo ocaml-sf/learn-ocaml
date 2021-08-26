@@ -244,11 +244,11 @@ let cat_question name list_qst =
        (2, "q_" ^ name ^ "_1") l
      |> snd
 
-(* TODO/FIXME: Add some "let () = set_progress ..." lines *)
 let compile indexed_list =
   let tests = test_prel ^ (ast_fonction true true) in
-  let tests = List.fold_left (fun acc (_name, list_qst) ->
+  let tests = List.fold_left (fun acc (name, list_qst) ->
                   acc ^
+                  Format.sprintf {|let () = set_progress "Q. %s"@.@.|} name ^
                   if List.length list_qst > 1 then
                     List.fold_left (fun (i, acc) qst ->
                         (i + 1, acc ^ question_typed ~num:i qst ^" \n"))
