@@ -29,7 +29,7 @@ let question_typed ?num question =
     | "" -> ""
     | f -> Format.sprintf "fun () -> last ((%s) ())" f
   in
-  let suffix = match num with None -> "" | Some n -> "_" ^ string_of_int n in
+  let prefix = match num with None -> "" | Some n -> string_of_int n in
   match question with
   | TestAgainstSpec a ->
      (* FIXME *)
@@ -38,13 +38,13 @@ let question_typed ?num question =
   | TestSuite a ->
      let name, prot, tester, suite =
        a.name, to_funty a.ty, opt_string "test" a.tester, a.suite in
-     (* Naming convention: [q_name], [q_name_1; q_name_2] (occurrence 1/3) *)
-     Format.sprintf "let q_%s%s =@.  \
+     (* Naming convention: [q_name], [q1_name; q2_name] (occurrence 1/3) *)
+     Format.sprintf "let q%s_%s =@.  \
                      let prot = %s in@.  \
                      test_function%s prot@.  \
                      (lookup_student (ty_of_prot prot) %s)@.  \
                      %s;;@."
-       name suffix prot tester name suite
+       prefix name prot tester name suite
   | TestAgainstSol a ->
      let name = a.name
      and prot = to_funty a.ty
@@ -53,13 +53,13 @@ let question_typed ?num question =
      and tester = opt_string "test" a.tester
      and suite = a.suite
      in
-     (* Naming convention: [q_name], [q_name_1; q_name_2] (occurrence 2/3) *)
-     Format.sprintf "let q_%s%s =@.  \
+     (* Naming convention: [q_name], [q1_name; q2_name] (occurrence 2/3) *)
+     Format.sprintf "let q%s_%s =@.  \
                      let prot = %s in@.  \
                      test_function_against_solution ~gen:(%d)%s%s prot@.  \
                      \"%s\"@.  \
                      %s;;@."
-     name suffix prot gen sampler tester name suite
+     prefix name prot gen sampler tester name suite
 
 (*****************)
 (* compile stuff *)
@@ -231,17 +231,17 @@ let fonction =
       "" in
   fonction
 
-(* Naming convention: [q_name], [q_name_1; q_name_2] (occurrence 3/3) *)
+(* Naming convention: [q_name], [q1_name; q2_name] (occurrence 3/3) *)
 (* [cat_question "foo" [42] = "q_foo"]
-   [cat_question "foo" [42; 42; 42] = "q_foo_1 @ q_foo_2 @ q_foo_3"] *)
+   [cat_question "foo" [42; 42; 42] = "q1_foo @ q2_foo @ q3_foo"] *)
 let cat_question name list_qst =
   match list_qst with
   | [] -> invalid_arg "cat_question"
   | [_] -> "q_" ^ name
   | _q :: ((_ :: _) as l) ->
      List.fold_left (fun (i, acc) _e ->
-         (i + 1, acc ^" @ q_"^ name ^ "_" ^ string_of_int i))
-       (2, "q_" ^ name ^ "_1") l
+         (i + 1, acc ^ " @ q" ^ string_of_int i ^ "_" ^ name))
+       (2, "q1_" ^ name) l
      |> snd
 
 let compile indexed_list =
