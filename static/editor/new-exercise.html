@@ -21,11 +21,9 @@
       a:link {
       text-decoration: none;
       }
-      
       input:invalid {
       box-shadow: 0 0 1px 1px red;
       }
-      
       .error {
       color: darkred;
       }
@@ -67,18 +65,25 @@
         <span id="title_error" class="error" aria-live="polite"></span>
       </p>
       <p>
-        <label id="txt_authors" for="authors">Authors : <br> </label>
-        <input type="text" id="authors" name="title" placeholder="Firstname Name, mail ; ... " size="40" />
+        <label id="txt_authors" for="authors">Authors (comma-separated list):<br></label>
+        <input type="text" id="authors" name="title" placeholder="Firstname Lastname <address@email.com>, ... " size="86"
+               pattern="(?:[\p{Letter} .-]+ <(?:[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+)?>(?:, ?|$))+"/><br>
+        <!-- this pattern relies on the following RegExp for e-mails:
+             "[a-zA-Z0-9.+_~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+"
+          -->
+        <i>Each author follows the syntax:</i>&nbsp;&nbsp;
+        <code>Firstname Lastname &lt;address@email.com&gt;</code><br>
+        <i>But their email can be omitted:</i>&nbsp;&nbsp;
+        <code>Firstname Lastname &lt;&gt;</code>
       </p>
       <div class="splitted">
         <div>
-          <label id="txt_requiered" for="authors">Required skills : <br></label>
+          <label id="txt_requiered" for="authors">Required skills:<br></label>
           <input type="text" id="required" name="title" placeholder="Skill1 Skill2 ... " size="40" style="display: inline" />
         </div>
         <div style="width: 20px"></div>
         <div>
-          <label id="txt_focus" for="focus">Trained skills :  </label>
-          <br>
+          <label id="txt_focus" for="focus">Trained skills:<br></label>
           <input type="text" id="focus" name="title" placeholder="Skill1 Skill2 ... " size="40" style="display: inline" />
         </div>
 
@@ -103,12 +108,12 @@
       </p>
       <div class="splitted">
         <div>
-          <label id="txt_backward" for="backward">Exercises to do before (Ids) : <br> </label>
+          <label id="txt_backward" for="backward">Exercises to do before (IDs):<br></label>
           <input type="text" id="backward" name="title" placeholder="id1 id2 ... " size="40" />
         </div>
         <div style="width: 20px"></div>
         <div>
-          <label id="txt_forward" for="forkward">Exercises to do after (Ids) : <br> </label>
+          <label id="txt_forward" for="forkward">Exercises to do after (IDs):<br></label>
           <input type="text" id="forward" name="title" placeholder="id1 id2 ... " size="40" />
         </div>
       </div>

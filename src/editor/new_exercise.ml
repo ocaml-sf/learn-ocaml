@@ -100,21 +100,18 @@ let backward_input =get (getElementById_coerce "backward" CoerceTo.input)
 let forward_input = get (getElementById_coerce "forward" CoerceTo.input)
 let previous_state =
   match get_editor_state previous_id with
-  | exception Not_found -> None    
+  | exception Not_found -> None
   | state->Some state
 
 (*filling the form eventualy *)
 let _ = match previous_state with
   | None -> ()
   | Some state -> identifier_input##.value := Js.string previous_id;
-                  
                   title_input##.value := Js.string state.metadata.title;
-                  
-                  let s = (List.fold_left
-                             (fun acc (a,b) ->acc^a^", "^b^"; ")
-                             ""
-                             state.metadata.author)
-                  in
+                  let s = List.fold_left
+                            (fun acc (a, b) -> acc ^ a ^ " <" ^ b ^ ">, ")
+                            ""
+                            state.metadata.author in
                   authors_input##.value :=
                     if s="" then Js.string ""
                     else
@@ -166,29 +163,24 @@ let _ =
                    (Regexp.regexp " ")
                     string
   in
- 
-    let requirements= string_parser (Js.to_string required_input##.value)
-    and  focus= string_parser (Js.to_string trained_input##.value)
-    and  backward = string_parser (Js.to_string backward_input##.value)
-    and forward = string_parser (Js.to_string forward_input##.value)
-    and authors=
-      if String.trim (Js.to_string authors_input##.value) = "" then
-        []
-      else
-      Regexp.split
-        (Regexp.regexp ";")
-        (Js.to_string authors_input##.value)
-      |> List.map @@
-           fun s ->
-           match List.map String.trim @@ Regexp.split
-                   (Regexp.regexp ",")
-                   s
-                    with
-                      a::b::[]->(a,b)
-                    | _ ->
-                       Dom_html.window##alert (Js.string "Incorrect value for the authors field");
-                       failwith "bad syntax"
-      
+  let requirements = string_parser (Js.to_string required_input##.value)
+  and focus = string_parser (Js.to_string trained_input##.value)
+  and backward = string_parser (Js.to_string backward_input##.value)
+  and forward = string_parser (Js.to_string forward_input##.value)
+  and authors =
+    if String.trim (Js.to_string authors_input##.value) = "" then []
+    else
+      Regexp.split (Regexp.regexp ", ?") (Js.to_string authors_input##.value)
+      |> List.map @@ fun s ->
+                     match Regexp.string_match
+                             (Regexp.regexp "^([^<>]+) <([^<>]*)>$") s 0 with
+                     (* TODO Keep up-to-date with static/editor/new-exercise.html *)
+                     | Some res -> let odflt = (function Some s -> s | None -> "") in
+                                   String.trim @@ odflt @@ Regexp.matched_group res 1,
+                                   String.trim @@ odflt @@ Regexp.matched_group res 2
+                     | None ->
+                        Dom_html.window##alert (Js.string "Incorrect value for the authors field");
+                        failwith "bad syntax"
   in
   let metadata={requirements;focus;backward;forward;
                 kind= Exercise;title; id=Some id;
@@ -225,6 +217,5 @@ let _ =
       store metadata;
       Dom_html.window##.location##assign
         (Js.string (api_server ^ "/editor.html#id=" ^ id));
- 
     end;
   Js._true);
