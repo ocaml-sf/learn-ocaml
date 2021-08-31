@@ -21,6 +21,8 @@ type t =
     dependencies : string list;
   }
 
+(* XXX: a change to this type may require another change in editor_lib.ml *)
+
 let encoding =
   let open Json_encoding in
   conv
@@ -192,7 +194,7 @@ module File = struct
 
   let depend =
     { key = "depend.txt" ; ciphered = false ;
-      decode = (fun v -> Some v) ; 
+      decode = (fun v -> Some v) ; (* XXX should this produce None sometimes? *)
       encode = (function 
                 | None -> "" (* no `depend` ~ empty `depend` *)
                 | Some txt -> txt) ;
@@ -289,7 +291,7 @@ module File = struct
        *         return ()
        *       with _ -> return ()
        * in *)
-      let descrs = ref [] in
+      let descrs : (string option * string) list ref = ref [] in
       let rec read_descr lang = function
         | [] ->
            (* If there are no extensions to try, we just give up. *)
@@ -314,7 +316,7 @@ module File = struct
            | Some raw ->
               (* If it does, we apply the function, add the
                  description to [!descrs] and return. *)
-              descrs := (lang, f raw) :: !descrs;
+              descrs := (lang, f raw) :: !descrs ;
               return ()
       in
   let override_url = function
@@ -339,15 +341,24 @@ module File = struct
       in
       let read_descrs () =
         let langs = [] in
+        (* XXX: Really [] ? *)
         let exts = [
             (Filename.extension descr.key, fun h -> h) ;
             (".md", markdown_to_html)
           ] in
         join (read_descr None exts :: List.map (fun l -> read_descr (Some l) exts) langs)
         >>= fun () ->
-        ex := set descr
-                (List.map (function (None, v) -> "", v | (Some l, v) -> l, v) !descrs)
-                !ex;
+        let res = (List.map (function (None, v) -> "", v | (Some l, v) -> l, v) !descrs) in
+        (* let res' = descr.encode res in
+        let stack_overflow = descr.decode res' in () *)
+
+        (* Also reproducible with:
+        let html = (* markdown_to_html md (* length = 13711 *) *)
+          String.init 14000 (fun n -> if n mod 2 = 0 then 'A' else ' ') in
+        let res' = descrs_to_string [("", html)] (* length = 13857 *) in
+        let stack_overflow = descrs_from_string res' in () *)
+
+        ex := set descr res !ex;
         return ()
       in
       join

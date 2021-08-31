@@ -12,6 +12,7 @@ open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
 open Learnocaml_config
+open Grade_exercise
 
 module H = Tyxml_js.Html
 
@@ -34,42 +35,6 @@ let check_if_need_refresh has_server =
   else
     Lwt.return_unit
 
-let get_grade =
-  let get_worker = get_worker_code "learnocaml-grader-worker.js" in
-  fun ?callback ?timeout exercise ->
-    get_worker () >>= fun worker_js_file ->
-    Grading_jsoo.get_grade ~worker_js_file ?callback ?timeout exercise
-
-let display_report exo report =
-  let score, _failed = Report.result report in
-  let report_button = find_component "learnocaml-exo-button-report" in
-  Manip.removeClass report_button "success" ;
-  Manip.removeClass report_button "failure" ;
-  Manip.removeClass report_button "partial" ;
-  let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
-    if max = 0 then 999 else score * 100 / max
-  in
-  if grade >= 100 then begin
-    Manip.addClass report_button "success" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ txt [%i"Report"] ]
-  end else if grade = 0 then begin
-    Manip.addClass report_button "failure" ;
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ txt [%i"Report"] ]
-  end else begin
-    Manip.addClass report_button "partial" ;
-    let pct = Format.asprintf "%2d%%" grade in
-    Manip.replaceChildren report_button
-      Tyxml_js.Html5.[ txt [%i"Report"] ;
-                       span ~a: [ a_class [ "score" ] ] [ txt pct ]]
-  end ;
-  let report_container = find_component "learnocaml-exo-tab-report" in
-  Manip.setInnerHtml report_container
-    (Format.asprintf "%a" Report.(output_html ~bare: true) report) ;
-  grade
-
 module Exercise_link =
   struct
     let exercise_link ?(cl = []) id content =
@@ -79,9 +44,9 @@ module Exercise_link =
         ]
         content
   end
-  
-module Display = Display_exercise(Exercise_link)    
-open Display  
+
+module Display = Display_exercise(Exercise_link)
+open Display
 
 let is_readonly = ref false
 
@@ -90,6 +55,13 @@ let make_readonly () =
   alert ~title:[%i"TIME'S UP"]
     [%i"The deadline for this exercise has expired. Any changes you make \
         from now on will remain local only."]
+
+(* experiment button of editor.html redirects to the html associated to this ml
+   to know if we are in this page because of that we decide
+   to put a '.' before the id
+   therefore idEditor looks for a '.' before the id *)
+
+let idEditor s =  not ((Regexp.string_match (Regexp.regexp "^[.]+") s 0) = None)
 
 let () =
   run_async_with_log @@ fun () ->
@@ -115,12 +87,27 @@ let () =
   in
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
-  let exercise_fetch =
-    token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id))
+
+  (* if we came from a true exercise we search in the server.
+   In the other case we get the exercise information from the Local storage *)
+  (* FIXME: for debug purposes; to be removed:
+  let ok str = lwt_alert ~title:"TEST1" ~buttons:["OK", (fun () -> Lwt.return_unit)]
+                [ H.p [H.txt (String.trim str)] ] in *)
+  let exercise_fetch = match idEditor id with
+    | false -> token >>= fun token ->
+               retrieve (Learnocaml_api.Exercise (token, id))
+
+    | true -> let proper_id = String.sub id 1 ((String.length id)-1) in
+              let state = Editor_lib.get_editor_state proper_id in
+              (* FIXME: for debug purposes; to be removed:
+              ok state.Editor.metadata.title >>= fun () -> *)
+              let exo = Editor_lib.exo_creator proper_id in
+              Lwt.return (state.Editor.metadata, exo, None)
   in
+
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
+
     begin match Learnocaml_exercise.(decipher File.prelude exo) with
       | "" -> Lwt.return true
       | prelude ->
@@ -196,6 +183,18 @@ let () =
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
+  let () =
+    if idEditor id then
+      begin
+        let id = String.sub id 1 ((String.length id)-1) in
+        begin toolbar_button
+       ~icon: "upload" [%i"Edit"] @@ fun ()->
+       Dom_html.window##.location##assign
+       (Js.string (api_server ^ "/editor.html#id=" ^ id ^ "&action=open"));
+       Lwt.return_unit
+        end;
+      end
+  in
   begin toolbar_button
       ~icon: "list" [%i"Exercises"] @@ fun () ->
     Dom_html.window##.location##assign
@@ -208,6 +207,7 @@ let () =
   let worker =
     ref (get_grade ~callback exo)
   in
+  
   begin toolbar_button
       ~icon: "typecheck" [%i"Compile"] @@ fun () ->
     typecheck true

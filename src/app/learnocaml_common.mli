@@ -23,6 +23,14 @@ val fatal : ?title: string -> string -> unit
 
 val alert : ?title: string -> ?buttons: Html_types.div_content Tyxml_js.Html.elt list -> string -> unit
 
+val box_button :
+  string Tyxml_js.Html5.wrap -> (unit -> 'a) ->
+  [> Html_types.button ] Tyxml_js.Html5.elt
+
+val close_button :
+  string Tyxml_js.Html5.wrap ->
+  [> Html_types.button ] Tyxml_js.Html5.elt
+
 val ext_alert :
   title: string ->
   ?buttons: Html_types.div_content_fun Tyxml_js.Html.elt list ->
@@ -277,3 +285,13 @@ module Display_exercise :functor
       'a Learnocaml_data.token option ->
       Learnocaml_data.Exercise.Meta.t -> string -> unit Lwt.t
   end
+
+module Grade_exercise : sig
+  val get_grade :
+    ?callback:(string -> unit) ->
+    ?timeout:float ->
+    Learnocaml_exercise.t ->
+    (string -> (Learnocaml_report.t * string * string * string) Lwt.t) Lwt.t
+  val display_report :
+    Learnocaml_exercise.t -> Learnocaml_data.Report.t -> int
+end

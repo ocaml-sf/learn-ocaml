@@ -396,10 +396,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
       | `GET,
         ( ["index.html"]
-          | ["exercise.html"]
+        | ["exercise.html"]
         | ["playground.html"]
         | ["student-view.html"]
         | ["description.html"]
+        | ["new-exercise.html"]
+        | ["editor.html"]
         | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
         _ ->

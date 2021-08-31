@@ -155,6 +155,14 @@ module Args = struct
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
         "directory containing the base learn-ocaml app contents"
 
+    let editor_dir =
+      let default =
+        readlink (Filename.dirname (Filename.dirname (Sys.executable_name))
+                  /"share"/"learn-ocaml"/"editor")
+      in
+      value & opt dir default & info ["editor-dir"] ~docv:"DIR" ~doc:
+        "directory containing the learn-ocaml-editor app contents"
+
     let enable opt doc =
       value & vflag None [
         Some true, info ["enable-"^opt] ~doc:("Enable "^doc);
@@ -172,6 +180,10 @@ module Args = struct
     let lessons = enable "lessons"
         "the 'Lessons' tab (enabled by default if the repository contains a \
          $(i,lessons) directory)"
+
+    let editor = enable "editor"
+        "the 'Editor' tab (enabled by default), for users connected with a \
+         teacher token, or all users if static deployment is used."
 
     let exercises = enable "exercises"
         "the 'Exercises' tab (enabled by default if the repository contains an \
@@ -191,8 +203,10 @@ module Args = struct
 
     type t = {
       contents_dir: string;
+      editor_dir: string;
       try_ocaml: bool option;
       lessons: bool option;
+      editor: bool option;
       exercises: bool option;
       playground: bool option;
       toplevel: bool option;
@@ -201,10 +215,10 @@ module Args = struct
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel base_url
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; base_url }
+        contents_dir editor_dir try_ocaml lessons editor exercises playground toplevel base_url
+        = { contents_dir; editor_dir; try_ocaml; lessons; editor; exercises; playground; toplevel; base_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
+      Term.(const apply $contents_dir $editor_dir $try_ocaml $lessons $editor $exercises $playground $toplevel $base_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -304,17 +318,22 @@ let main o =
     else Lwt.return_none
   in
   let generate () =
+    let copy title src_dir =
+      Printf.printf "Updating %s at %s\n%!" title o.app_dir;
+      Lwt.catch
+        (fun () -> Lwt_utils.copy_tree src_dir o.app_dir)
+        (function
+         | Failure _ ->
+            Lwt.fail_with @@
+              Printf.sprintf "Failed to copy %s app contents from %s"
+                title (readlink src_dir)
+         | e -> Lwt.fail e)
+    in
     if List.mem Build o.commands then
-      (Printf.printf "Updating app at %s\n%!" o.app_dir;
-       Lwt.catch
-         (fun () -> Lwt_utils.copy_tree o.builder.Builder.contents_dir o.app_dir)
-         (function
-           | Failure _ ->
-               Lwt.fail_with @@ Printf.sprintf
-                 "Failed to copy base app contents from %s"
-                 (readlink o.builder.Builder.contents_dir)
-           | e -> Lwt.fail e)
-       >>= fun () ->
+      (copy "learn-ocaml" o.builder.Builder.contents_dir >>= fun () ->
+       (if o.builder.Builder.editor <> Some false then
+          copy "learn-ocaml-editor" o.builder.Builder.editor_dir
+        else Lwt.return_unit) >>= fun () ->
        let server_config = o.repo_dir/"server_config.json"
        and www_server_config = o.app_dir/"server_config.json" in
        let module ServerData = Learnocaml_data.Server in
@@ -372,6 +391,7 @@ let main o =
               \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
+              \  enableEditor: %b,\n\
               \  enableToplevel: %b,\n\
               \  baseUrl: \"%s\"\n\
                }\n"
@@ -379,9 +399,11 @@ let main o =
               (playground_ret <> None)
               (lessons_ret <> None)
               (exercises_ret <> None)
+              (o.builder.Builder.editor <> Some false)
               (o.builder.Builder.toplevel <> Some false)
               o.builder.Builder.base_url >>= fun () ->
        Lwt.return (tutorials_ret <> Some false && exercises_ret <> Some false)))
+        (* TODO: double-check if a condition is not missing in previous line *)
     else
       Lwt.return true
   in

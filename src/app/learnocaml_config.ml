@@ -9,6 +9,7 @@ class type learnocaml_config = object
   method enableTryocaml: bool Js.optdef_prop
   method enableLessons: bool Js.optdef_prop
   method enableExercises: bool Js.optdef_prop
+  method enableEditor: bool Js.optdef_prop
   method enableToplevel: bool Js.optdef_prop
   method enablePlayground: bool Js.optdef_prop
   method txtLoginWelcome: Js.js_string Js.t Js.optdef_prop
