@@ -240,9 +240,12 @@ let () =
   let ace_quest = Ace.create_editor (Tyxml_js.To_dom.of_div editor_question ) in
    let question =
     let a = get_question id in
-    if a = "" then [%i"# Questions\n\n\
-    You can write here your questions using\n\
-    the **Markdown** markup language\n"]
+    if a = "" then {|# Exercise Title
+
+1. You can write here your questions using the
+   [**Markdown**](https://commonmark.org/) lightweight markup language.
+
+1. For details, see the [CommonMark spec](https://spec.commonmark.org/).|}
     else a in
 
   Ace.set_contents ace_quest question ;
