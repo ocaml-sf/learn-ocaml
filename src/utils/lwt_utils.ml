@@ -18,14 +18,7 @@ let rec mkdir_p ?(perm=0o755) dir =
           (Printf.sprintf "Can't create dir: file %s is in the way" dir)
   | false ->
       mkdir_p (Filename.dirname dir) >>= fun () ->
-      (* This exn handler mitigates a TOC/TOU race condition which
-         occurs when [mkdir_p] is called from parallel build jobs
-         (namely, for some "learn-ocaml build -j 2" command) *)
-      Lwt.catch (fun () -> Lwt_unix.mkdir dir perm)
-        (function
-         | Unix.Unix_error(Unix.EEXIST, "mkdir", _path)
-              when Sys.is_directory dir -> Lwt.return ()
-         | e -> Lwt.fail e)
+      Lwt_unix.mkdir dir perm
 
 let copy_file src dst =
   Lwt.catch (fun () ->
