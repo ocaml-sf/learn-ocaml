@@ -46,20 +46,16 @@ jobs:
           sw_vers
           system_profiler SPSoftwareDataType
           uname -a
-      # Need unreleased 2.1.0~rc
-      # - name: Retrieve opam
-      #   run: |
-      #     mkdir "$HOME/bin"
-      #     wget https://github.com/ocaml/opam/releases/download/2.1.0-beta2/opam-2.1.0-beta2-x86_64-macos -O $HOME/bin/opam
-      #     chmod a+x $HOME/bin/opam
-      #     echo "$HOME/bin" >> $GITHUB_PATH
-      - name: Install latest opam
+      - name: Retrieve opam
         run: |
-          brew install opam --HEAD
+          mkdir "$HOME/bin"
+          wget https://github.com/ocaml/opam/releases/download/2.1.0/opam-2.1.0-x86_64-macos -O $HOME/bin/opam
+          chmod a+x $HOME/bin/opam
+          echo "$HOME/bin" >> $GITHUB_PATH
       - name: Prepare build environment
         run: |
           opam init -a --bare
-          opam switch create . ocaml-base-compiler 'dune<2' --deps-only
+          opam switch create . ocaml-base-compiler --deps-only
       - name: Build the binaries
         run: |
           opam exec -- make LINKING_MODE=static

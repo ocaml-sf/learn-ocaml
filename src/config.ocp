@@ -1,3 +1,0 @@
-comp += [ "-safe-string" "-w" "A-4-42-44-45-48" ]
-link += [ "-w" "A" ]
-has_asm = false

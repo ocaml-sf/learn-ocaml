@@ -13,14 +13,14 @@ exception Invalid_grader
 let string_of_exn = function
   | Internal_error (msg, error) ->
       let msg =
-        Printf.sprintf [%if"Exercise definition error %s:\n%s\n%!"]
-          msg error.Toploop_ext.msg
+        Format.asprintf [%if"Exercise definition error %s:\n%a\n%!"]
+          msg Location.print_report (Toploop_results.to_error error)
       in
       Some  msg
   | User_code_error error ->
       let msg =
-        Printf.sprintf [%if"Error in user code:\n\n%s\n%!"]
-          error.Toploop_ext.msg
+        Format.asprintf [%if"Error in user code:\n\n%a\n%!"]
+          Location.print_report (Toploop_results.to_error error)
       in
       Some msg
   | _ -> None
@@ -28,9 +28,7 @@ let string_of_exn = function
 let () =
   Location.register_error_of_exn (fun exn ->
       match string_of_exn exn with
-      | Some msg ->
-          Some {Location.loc = Location.none ; sub = [] ;
-                msg ; if_highlight = msg }
+      | Some msg -> Some (Location.error msg)
       | None -> None)
 
 
@@ -86,7 +84,7 @@ let get_grade
           let msg =
             String.concat "\n"
               (List.map Buffer.contents [stderr_buffer; stdout_buffer; outcomes_buffer])
-          in fail { Toploop_ext.msg ; locs = [] ; if_highlight = msg }
+          in fail ((Location.none, msg), [])
         end
     | Toploop_ext.Error (err, w) ->
         warn w ;

@@ -43,9 +43,10 @@ case $(uname -s) in
     Linux)
         case $(. /etc/os-release && echo $ID) in
             alpine)
-                COMMON_LIBS="camlstr base_stubs ssl_threads_stubs ssl crypto cstruct_stubs lwt_unix_stubs bigarray unix c"
+                COMMON_LIBS="camlstr ssl_threads_stubs ssl crypto cstruct_stubs bigstringaf_stubs lwt_unix_stubs unix c"
                 # `m` and `pthread` are built-in musl
                 echo '(-noautolink'
+                echo ' -verbose'
                 echo ' -cclib -Wl,-Bstatic'
                 echo ' -cclib -static-libgcc'
                 for l in $EXTRA_LIBS $COMMON_LIBS; do
@@ -54,14 +55,15 @@ case $(uname -s) in
                 echo ' -cclib -static)'
                 ;;
             *)
-                echo "Error: static linking is only supported in Alpine, to avoids glibc constraints" >&2
+                echo "Error: static linking is only supported in Alpine, to avoids glibc constraints (use scripts/static-build.sh to build through an Alpine Docker container)" >&2
                 exit 3
         esac
         ;;
     Darwin)
-        COMMON_LIBS="camlstr base_stubs ssl_threads_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs lwt_unix_stubs bigarray unix"
+        COMMON_LIBS="camlstr ssl_threads_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs bigstringaf_stubs lwt_unix_stubs unix"
         # `m` and `pthread` are built-in in libSystem
         echo '(-noautolink'
+        echo ' -verbose'
         for l in $EXTRA_LIBS $COMMON_LIBS; do
             if [ "${l%.a}" != "${l}" ]; then echo " -cclib $l"
             else echo " -cclib -l$l"

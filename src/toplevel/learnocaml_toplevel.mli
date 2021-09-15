@@ -8,7 +8,7 @@
 
 (** An OCaml toplevel whose input and output will be in a given HTML [div]. *)
 
-open Tyxml_js
+open Js_of_ocaml_tyxml.Tyxml_js
 
 (** An abstract type representing a toplevel instance. *)
 type t
@@ -99,12 +99,12 @@ val make_flood_popup:
     @param timeout
       See {!create}.
     @returns
-      Returns [Success true] whenever the code was correctly
-      typechecked and its evaluation did not raise an exception nor
-      timeouted and [false] otherwise. *)
+      Returns [errors, warnings, success]. [success] is true whenever the code
+      was correctly typechecked and its evaluation did not raise an exception
+      nor timeouted and [false] otherwise. *)
 val execute_phrase: t ->
   ?timeout:(t -> unit Lwt.t) ->
-  string -> bool Lwt.t
+  string -> (Location.report option * Location.report list * bool) Lwt.t
 
 (** Execute a given piece of code without displaying it.
 
@@ -138,12 +138,12 @@ val clear: t -> unit
 val reset: t -> unit Lwt.t
 
 (** Print a message in the toplevel standard output. This is equivalent
-    to calling [Pervasives.print_string] in the toplevel session.
+    to calling [Stdlib.print_string] in the toplevel session.
     Calls {!Learnocaml_toplevel_output.output_stdout}. *)
 val print_string: t -> string -> unit
 
 (** Print a message in the toplevel standard error output. This is
-    equivalent to calling [Pervasives.prerr_string] in the toplevel
+    equivalent to calling [Stdlib.prerr_string] in the toplevel
     session. Calls {!Learnocaml_toplevel_output.output_stderr}. *)
 val prerr_string: t -> string -> unit
 

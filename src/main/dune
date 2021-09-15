@@ -6,13 +6,12 @@
 )
 
 (executable
- (package learn-ocaml)
- (public_name learn-ocaml)
+;; (package learn-ocaml) ;; missing support in dune, manually installed below
+;; (public_name learn-ocaml)
  (name learnocaml_main)
- (modes byte)
- (ocamlc_flags :standard -custom)
- (flags (:standard -linkall
-         (:include linking_main.sexp)))
+ (modes byte_complete)
+ (ocamlc_flags -custom)
+ (flags :standard -linkall -verbose (:include linking_main.sexp))
  (modules Learnocaml_main)
  (libraries cmdliner
             sha
@@ -23,26 +22,34 @@
             learnocaml_server_args
             learnocaml_report)
 )
+(install
+ (files (learnocaml_main.bc.exe as learn-ocaml))
+ (section bin)
+ (package learn-ocaml))
 
 (executable
- (package learn-ocaml-client)
- (public_name learn-ocaml-client)
+;; (package learn-ocaml-client) ;; missing support in dune, manually installed below
+;; (public_name learn-ocaml-client)
  (name learnocaml_client)
- (modes byte)
- (ocamlc_flags :standard -custom)
- (flags (:standard -linkall
-         (:include linking_client.sexp)))
+ (modes byte_complete)
+ (ocamlc_flags -custom)
+ (flags :standard -linkall (:include linking_client.sexp))
  (modules Learnocaml_client)
  (libraries cmdliner
  	    sha
             lwt.unix
             lwt_utils
-            cohttp.lwt
+            cohttp-lwt
+            cohttp-lwt-unix
             grading_cli
             learnocaml_data
 	    learnocaml_store
             learnocaml_api)
 )
+(install
+ (files (learnocaml_client.bc.exe as learn-ocaml-client))
+ (section bin)
+ (package learn-ocaml-client))
 
 (executable
  (package learn-ocaml)
@@ -57,7 +64,7 @@
 (rule
   (targets linking_main.sexp)
   (action  (with-stdout-to %{targets}
-    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} %{ocaml-config:system} laolao_stubs threads camlrun))))
+    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} %{ocaml-config:system} checkseum_c_stubs threads camlrun))))
 (rule
   (targets linking_client.sexp)
   (action  (with-stdout-to %{targets}
@@ -65,4 +72,4 @@
 (rule
   (targets linking_server.sexp)
   (action  (with-stdout-to %{targets}
-    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} -- laolao_stubs threadsnat))))
+    (run ./linking_flags.sh %{env:LINKING_MODE=dynamic} -- checkseum_c_stubs threadsnat))))

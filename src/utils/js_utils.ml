@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 
 let doc = Dom_html.document
 let window = Dom_html.window
@@ -1230,4 +1231,4 @@ let worker_with_code code =
 
 let _worker url =
   let open Lwt.Infix in
-  Lwt_request.get ?headers:None ~url ~args:[] >|= worker_with_code
+  Lwt_request.get ?headers:None ~url ~args:[] () >|= worker_with_code

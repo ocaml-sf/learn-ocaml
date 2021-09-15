@@ -21,7 +21,7 @@ module type S = sig
       ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
       ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
       ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
-      ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
+      ?on_open: (Parsetree.open_declaration -> Learnocaml_report.t) ->
       ?on_module_occurence: (string -> Learnocaml_report.t) ->
       ?on_variable_occurence: (string -> Learnocaml_report.t) ->
       ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
@@ -468,7 +468,7 @@ module Make
       ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
       ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
       ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
-      ?on_open: (Parsetree.open_description -> Learnocaml_report.t) ->
+      ?on_open: (Parsetree.open_declaration -> Learnocaml_report.t) ->
       ?on_module_occurence: (string -> Learnocaml_report.t) ->
       ?on_variable_occurence: (string -> Learnocaml_report.t) ->
       ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
@@ -518,13 +518,10 @@ module Make
       let expr mapper expr =
         add @@ on_expression expr ;
         match expr with
-        | { pexp_desc = Pexp_open (popen_override, popen_lid, iexpr); _ } ->
-           let o = { popen_lid ; popen_override ;
-                     popen_loc = Location.none ;
-                     popen_attributes = [] } in
+        | { pexp_desc = Pexp_open (o, iexpr); _ } ->
            let before = !modules in
            add @@ on_open o ;
-           treat_module popen_lid ;
+           ignore (mapper.module_expr mapper o.popen_expr) ;
            variables := [] ;
            modules := [] (* over approximation *) ;
            ignore (mapper.expr mapper iexpr) ;
@@ -534,7 +531,7 @@ module Make
            let before = !modules in
            let variables_before = !variables in
            ignore (mapper.module_expr mapper mexpr) ;
-           modules := name :: before ;
+           Option.iter (fun n -> modules := n :: before) name ;
            variables := variables_before ;
            ignore (mapper.expr mapper iexpr) ;
            modules := before ;
@@ -625,12 +622,15 @@ module Make
            let before = !modules in
            let variables_before = !variables in
            ignore (mapper.module_expr mapper pmb_expr) ;
-           modules := pmb_name.Location.txt :: before ;
+           Option.iter (fun n -> modules := n :: before) pmb_name.Location.txt ;
            variables := variables_before ;
            structure_item
         | { pstr_desc = Pstr_recmodule mbs; _ } ->
            let variables_before = !variables in
-           List.iter (fun { pmb_name; _ } -> modules := pmb_name.Location.txt :: !modules) mbs  ;
+           List.iter (fun { pmb_name; _ } ->
+               Option.iter (fun n -> modules := n :: !modules)
+                 pmb_name.Location.txt)
+             mbs ;
            let before = !modules in
            List.iter (fun { pmb_expr; _ } ->
                ignore (mapper.module_expr mapper pmb_expr) ;
@@ -639,7 +639,7 @@ module Make
            structure_item
         | { pstr_desc = Pstr_open o; _ } as si ->
            add @@ on_open o ;
-           treat_module o.popen_lid ;
+           ignore (mapper.module_expr mapper o.popen_expr) ;
            ignore (default_mapper.structure_item mapper si) ;
            variables := [] ;
            modules := [] (* over approximation *) ;
@@ -680,7 +680,7 @@ module Make
            variables := n.Location.txt :: !variables ;
            default_mapper.pat mapper p
         | { ppat_desc = Ppat_unpack n; _ } as p ->
-           modules := n.Location.txt :: !modules ;
+           Option.iter (fun txt -> modules := txt :: !modules) n.Location.txt ;
            default_mapper.pat mapper p
         | { ppat_desc = Ppat_construct (ident, _); _ } as p ->
            treat_module_prefixes ident ;
@@ -779,7 +779,7 @@ module Make
       let ast_sanity_check ?(modules = []) ast cb =
         let modules =
           (* Some may not even be present, we just want to display a message. *)
-          [ "Obj" ; "Marshal" ; "Pervasives" ; "Sys" ;
+          [ "Obj" ; "Marshal" ; "Stdlib" ; "Sys" ;
             "Test_lib" ; "Introspection" ; "Report" ;
             "Js" ; "Toploop" ; "Compiler" ; "Unix" ] @ modules in
         let sanity_report =
@@ -832,14 +832,18 @@ module Make
 
     let existing_type ?(score = 1) name =
       let open Learnocaml_report in
-      try let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
+      try
+          let lid = Longident.parse ("Code." ^ name) in
+          let path, _ = Env.find_type_by_name lid !Toploop.toplevel_env in
           let _ = Env.find_type path !Toploop.toplevel_env in
           true, [ Message ( [ Text "Type" ; Code name ; Text "found" ], Success score ) ]
       with Not_found -> false, [ Message ( [ Text "type" ; Code name ; Text "not found" ], Failure ) ]
 
     let abstract_type ?(allow_private = true) ?(score = 5) name =
       let open Learnocaml_report in
-      try let path = Env.lookup_type Longident.(parse ("Code." ^ name)) !Toploop.toplevel_env in
+      try
+          let lid = Longident.parse ("Code." ^ name) in
+          let path, _ = Env.find_type_by_name lid !Toploop.toplevel_env in
           match Env.find_type path !Toploop.toplevel_env with
           | { Types. type_kind = Types.Type_abstract ; Types. type_manifest = None; _ } ->
              true, [ Message ([Text "Type" ; Code name ; Text "is abstract as expected." ], Success score) ]
@@ -1789,7 +1793,7 @@ module Make
       printable_funs := (Obj.repr f, n) :: !printable_funs ; f
 
     let () =
-      let path = Path.Pident (Ident.create "fun_printer") in
+      let path = Path.Pident (Ident.create_local "fun_printer") in
       let ty = Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj [%ty: _ -> _ ]) in
       Toploop.install_printer path ty.Typedtree.ctyp_type fun_printer
   end

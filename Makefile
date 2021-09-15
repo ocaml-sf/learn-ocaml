@@ -57,7 +57,7 @@ testrun: build install
 	learn-ocaml build --repo $(REPO) -j1
 	rm -rf www/css
 	ln -s ../static/css www
-	learn-ocaml serve
+	LEARNOCAML_SERVER_NOCACHE=1 learn-ocaml serve
 
 docker-images: Dockerfile learn-ocaml.opam
 	@rm -rf docker
@@ -95,7 +95,7 @@ travis: # From https://stackoverflow.com/questions/21053657/how-to-run-travis-ci
 static-binaries:
 	./scripts/static-build.sh
 
-BINARIES = src/main/learnocaml_client.bc src/main/learnocaml_main.bc src/main/learnocaml_server_main.exe
+BINARIES = src/main/learnocaml_client.bc.exe src/main/learnocaml_main.bc.exe src/main/learnocaml_server_main.exe
 
 .PHONY: detect-libs
 detect-libs:
@@ -104,6 +104,7 @@ detect-libs:
 	baseid="detect-libs.$$$$"; echo ...; \
 	$(MAKE) LINKING_MODE=dynamic OCAMLPARAM="_,verbose=1" > $$baseid.log 2>&1; \
 	for bin in $(BINARIES); do \
+	  rm -f "_build/default/$$bin"; \
 	  base=$${bin#src/main/}; base=$${base%.*}; \
 	  grep -e "'$$bin'" $$baseid.log > $$baseid.$$base.log; \
 	  printf "%s: " "$$base"; \

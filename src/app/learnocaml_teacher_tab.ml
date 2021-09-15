@@ -7,6 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 open Js_utils
 open Lwt
 open Learnocaml_data
@@ -891,11 +892,11 @@ let rec teacher_tab token _select _params () =
     (if changes = [] then Lwt.return () else
        retrieve
          (Learnocaml_api.Set_exercise_status (token, changes)))
-    >|= fun () ->
+    >>= fun () ->
     (if students_changes = [] then Lwt.return () else
        retrieve
          (Learnocaml_api.Set_students_list (token, students_changes)))
-    >|= fun () ->
+    >>= fun () ->
     (* Reload the full tab: a bit more costly, but safer & simpler *)
     teacher_tab token _select _params () >|=
     Manip.replaceSelf (find_component "learnocaml-main-teacher")

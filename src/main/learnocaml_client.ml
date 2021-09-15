@@ -633,7 +633,7 @@ module Init = struct
 
   let cmd =
     Term.(
-      const (fun go co -> Pervasives.exit (Lwt_main.run (init go co)))
+      const (fun go co -> Stdlib.exit (Lwt_main.run (init go co)))
       $ Args_global.term $ Args_create_token.term),
     Term.info ~man
       ~doc:"Initialize the configuration file."
@@ -719,7 +719,7 @@ module Grade = struct
 
   let cmd =
     Term.(
-      const (fun go eo -> Pervasives.exit (Lwt_main.run (grade go eo)))
+      const (fun go eo -> Stdlib.exit (Lwt_main.run (grade go eo)))
       $ Args_global.term $ Args_exercises.term),
     Term.info ~man
       ~doc:"Learn-ocaml grading client."
@@ -728,7 +728,7 @@ end
 
 let use_global f =
   Term.(
-    const (fun o -> Pervasives.exit (Lwt_main.run (f o)))
+    const (fun o -> Stdlib.exit (Lwt_main.run (f o)))
     $ Args_global.term)
 
 module Print_token = struct
@@ -858,7 +858,7 @@ module Fetch = struct
 
   let cmd =
     Term.(
-      const (fun o l -> Pervasives.exit (Lwt_main.run (fetch o l)))
+      const (fun o l -> Stdlib.exit (Lwt_main.run (fetch o l)))
       $ Args_global.term $ Args_fetch.term),
     Term.info ~man ~exits
       ~doc:"Fetch the user's solutions."
@@ -890,7 +890,7 @@ module Create_token = struct
 
   let cmd =
     Term.(
-      const (fun go co -> Pervasives.exit (Lwt_main.run (create_tok go co)))
+      const (fun go co -> Stdlib.exit (Lwt_main.run (create_tok go co)))
       $ Args_global.term_server $ Args_create_token.term),
     Term.info ~man
       ~doc:"Create a token."
@@ -920,13 +920,13 @@ module Template = struct
 
   let cmd =
     Term.(
-      const (fun o id -> Pervasives.exit (Lwt_main.run (template o id)))
+      const (fun o id -> Stdlib.exit (Lwt_main.run (template o id)))
       $ Args_global.term $ Args_exercise_id.term),
     Term.info ~man
       ~doc:"Get the template of a given exercise."
       "template"
 end
-                
+
 module Exercise_list = struct
   let doc= "Get a structured json containing a list of the exercises of the server"
 
