@@ -80,6 +80,7 @@ val set_custom_data: 'a editor -> 'a -> unit
 
 type token
 val token: type_:string -> string -> token
+val get_token_val: token -> string
 
 type 'state helpers = {
   initial_state: unit -> 'state;

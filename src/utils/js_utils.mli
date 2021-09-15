@@ -32,6 +32,8 @@ val js_debug: 'a -> unit
 val js_warn: 'a -> unit
 val js_error: 'a -> unit
 
+val pos8_to_pos16: ?stop_before:bool -> string -> int -> int
+
 val reload: unit -> unit
 
 (** Gets the language configured in the browser *)
