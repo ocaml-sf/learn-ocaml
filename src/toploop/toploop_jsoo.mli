@@ -6,8 +6,9 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(** To be called before using any [Toploop] function. *)
-val initialize: unit -> unit
+(** To be called before using any [Toploop] function. Takes cmi dirs ([-I]) as
+    argument*)
+val initialize: string list -> unit
 
 (** Materializes an output channel redirection. *)
 type redirection

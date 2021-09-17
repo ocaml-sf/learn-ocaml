@@ -16,6 +16,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+//Provides: define_ocaml_mode
+//Version: 1.3.3
+
 var define_ocaml_mode = function (name, helpers) {
 
 ace.define(name,["require","exports","module",

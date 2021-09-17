@@ -6,22 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-type 'a toplevel_result = 'a Toploop_results.toplevel_result =
-  (* ('a * warning list, error * warning list) result = *)
-  | Ok of 'a * warning list
-  | Error of error * warning list
-
-and error = Toploop_results.error =
-  { msg: string;
-    locs: loc list;
-    if_highlight: string; }
-
-and warning = error
-
-and loc = Toploop_results.loc = {
-  loc_start: int * int;
-  loc_end: int * int;
-}
+include module type of Toploop_results
 
 (** Parse and typecheck a given source code.
 

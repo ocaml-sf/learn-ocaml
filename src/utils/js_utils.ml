@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 
 let doc = Dom_html.document
 let window = Dom_html.window
@@ -29,6 +30,20 @@ let js_log obj = Firebug.console##(log obj)
 let js_debug obj = Firebug.console##(debug obj)
 let js_warn obj = Firebug.console##(warn obj)
 let js_error obj = Firebug.console##(error obj)
+
+let rec pos8_to_pos16 line c8 i8 i16 stop_before = 
+    if i8 >= c8 || i8 >= String.length line then i16 else
+    let di8, di16 = match line.[i8] with
+      | '\x00' .. '\x7F' -> 1, 1
+      | '\xC2' .. '\xDF' -> 2, 1
+      | '\xE0' .. '\xEF' -> 3, 1
+      | '\xF0' .. '\xF4' -> 4, 2 
+      | _                -> 1, 1 in
+    if stop_before && i8 <= c8 && c8 < i8 + di8 then i16
+    else pos8_to_pos16 line c8 (i8+di8) (i16+di16) stop_before
+
+let pos8_to_pos16 ?(stop_before = true) line c8 =
+	pos8_to_pos16 line c8 0 0 stop_before
 
 let log fmt =
   Format.kfprintf
@@ -1230,4 +1245,4 @@ let worker_with_code code =
 
 let _worker url =
   let open Lwt.Infix in
-  Lwt_request.get ?headers:None ~url ~args:[] >|= worker_with_code
+  Lwt_request.get ?headers:None ~url ~args:[] () >|= worker_with_code

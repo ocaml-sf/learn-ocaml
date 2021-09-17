@@ -7,6 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 open Learnocaml_data
 
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
@@ -197,7 +198,7 @@ val init_toplevel_pane :
    unit) ->
   unit
 
-val run_async_with_log : (unit -> 'a Lwt.t) -> unit
+val run_async_with_log : (unit -> unit Lwt.t) -> unit
 
 val mk_tab_handlers : string -> string list -> (unit -> unit) * (string -> unit)
 
@@ -206,10 +207,10 @@ module type Editor_info = sig
   val buttons_container : 'a Tyxml_js.Html5.elt
 end
 
-module Editor_button (E : Editor_info) : sig
+module Editor_button (_ : Editor_info) : sig
   val cleanup : string -> unit
   val download : string -> unit
-  val eval : Learnocaml_toplevel.t -> (string -> 'a) -> unit
+  val eval : Learnocaml_toplevel.t -> (string -> unit) -> unit
   val sync : Token.t option Lwt.t -> Learnocaml_data.SMap.key -> unit
 end
 
@@ -226,7 +227,7 @@ val setup_prelude_pane : 'a Ace.editor -> string -> unit
 val get_token : ?has_server:bool -> unit -> Learnocaml_data.student Learnocaml_data.token option Lwt.t
 
 module Display_exercise :functor
-  (Q : sig
+  (_ : sig
          val exercise_link :
            ?cl:string list ->
            string ->

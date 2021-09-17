@@ -1,11 +1,13 @@
 ## Step 7: Modifying the comparison functions (testers) with the optional arguments [~test], [~test_stdout], [~test_stderr]
 
 ### Tester `~test`
+
 Tester are functions used to compare the student output result with
 the solution output result. The output result can be either `Ok _` or
 `Error _` (i.e. a raised exception).
 
 #### Signatures of predefined testers and tester builders
+
 See [Test_lib
 documentation](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/test_lib.mli)
 for more information. Some typical examples are shown below.
@@ -34,7 +36,7 @@ exception OutOfRange of int
 For the first graded function, we want to be sure the student function
 returned both the right `Ok` output and the right exception with its
 is correct argument. The predefined tester that compares both possible
-results with `Pervasives.compare` function is called `test`. This is
+results with `Stdlib.compare` function is called `test`. This is
 obviously the default value of optional argument [~test].
 
 ```ocaml
@@ -84,6 +86,7 @@ let exercise_3 =
 ```
 
 ### IO testers `~test_stdout` and `~test_stderr`
+
 IO testers are used to compare string such are standard output.
 
 By default, the values of `test_stdout` and `test_sdterr` are
@@ -91,20 +94,21 @@ By default, the values of `test_stdout` and `test_sdterr` are
 and error outputs.
 
 #### Signatures of predefined IO testers and IO tester builders
+
 See [Test_lib
 documentation](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader/test_lib.mli)
 for more information. Some typical examples are shown below.
 
 ```ocaml
-  val io_test_ignore : io_tester
-  val io_test_equals :
-	?trim: char list -> ?drop: char list -> io_tester
-  val io_test_lines :
-	?trim: char list -> ?drop: char list ->
-	?skip_empty: bool -> ?test_line: io_tester -> io_tester
-  val io_test_items :
-	?split: char list -> ?trim: char list -> ?drop: char list ->
-	?skip_empty: bool -> ?test_item: io_tester -> io_tester
+val io_test_ignore : io_tester
+val io_test_equals :
+  ?trim: char list -> ?drop: char list -> io_tester
+val io_test_lines :
+  ?trim: char list -> ?drop: char list ->
+  ?skip_empty: bool -> ?test_line: io_tester -> io_tester
+val io_test_items :
+  ?split: char list -> ?trim: char list -> ?drop: char list ->
+  ?skip_empty: bool -> ?test_item: io_tester -> io_tester
 ```
 
 #### Examples
@@ -171,6 +175,7 @@ result need to be redefined.
 
 The first function graded is a function that generates randomly
 integer. We want the integer to be between 0 and 10.
+
 ```ocaml
 let p x = if x >= 0 && x < 10 then true else false
 
@@ -186,13 +191,14 @@ Obviously we only check here that the output integer is in the right
 range (but this is just a trivial example).
 
 The second example is a function using the previous one to generate a list of integers.
+
 ```ocaml
 let p_list l =
   (* Check all elements of the input list are in the right range*)
   let t = List.fold_left (fun a x -> a && p x) true l in
   if t then
 	(* Check that there is at least two different elements *)
-	let l = List.sort_uniq (Pervasives.compare) l in
+	let l = List.sort_uniq (Stdlib.compare) l in
 	if List.length l > 1 then true else false
   else false
 

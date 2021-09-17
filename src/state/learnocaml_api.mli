@@ -110,7 +110,7 @@ module type REQUEST_HANDLER = sig
                 Learnocaml_data.Server.config -> 'resp request -> 'resp ret
 end
 
-module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
+module Server: functor (_: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
 
   (** Helper to define a server: handles recognition of the incoming request, and
       encoding of the response. *)
@@ -119,7 +119,7 @@ module Server: functor (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) -> sig
 
 end
 
-module Client: functor (Json: JSON_CODEC) -> sig
+module Client: functor (_: JSON_CODEC) -> sig
 
   (** Helper to make a client request: handles encoding of the request and
       decoding of the response. *)

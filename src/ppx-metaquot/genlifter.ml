@@ -48,9 +48,9 @@ module Main : sig end = struct
 
   let rec gen ty =
     if Hashtbl.mem printed ty then ()
-    else let tylid = Longident.parse ty in
+    else let tylid = Longident.parse ty [@ocaml.warning "-3"] in
       let td =
-        try Env.find_type (Env.lookup_type tylid env) env
+        try snd (Env.find_type_by_name tylid env)
         with Not_found ->
           Format.eprintf "** Cannot resolve type %s@." ty;
           exit 2
@@ -63,8 +63,7 @@ module Main : sig end = struct
         | Lapply _ -> assert false
       in
       Hashtbl.add printed ty ();
-      let sparams = List.mapi (fun i _ -> Printf.sprintf "f%i" i) td.type_params in
-      let params = List.map mknoloc sparams in
+      let params = List.mapi (fun i _ -> mknoloc (Printf.sprintf "f%i" i)) td.type_params in
       let env = List.map2 (fun s t -> t.id, evar s.txt) params td.type_params in
       let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res")) in
       let make_t tyargs =
@@ -105,10 +104,17 @@ module Main : sig end = struct
                 pconstr qc p, selfcall "constr" [str ty; tuple[str c; list args]]
             | Cstr_record (l) ->
                 let l = List.map field l in
-                pconstr qc [Pat.record (List.map fst l) Closed],
-                selfcall "constr" [str ty; tuple [str c;
-                                                  selfcall "record" [str (ty ^ "." ^ c); list (List.map snd l)]]]
-          in
+                let keep_head ((lid, pattern), _) =
+                      let txt = Longident.Lident (Longident.last lid.txt) in
+                      ({lid with txt}, pattern)
+                    in
+                    pconstr qc [Pat.record (List.map keep_head l) Closed],
+                    selfcall "constr"
+                      [str ty;
+                       tuple [str c;
+                              list [selfcall "record"
+                                      [str ""; list (List.map snd l)]]]]
+              in
           concrete (func (List.map case l))
       | Type_abstract, Some t ->
           concrete (tyexpr_fun env t)
@@ -191,7 +197,7 @@ module Main : sig end = struct
   let args =
     let open Arg in
     [
-      "-I", String (fun s -> Config.load_path := Misc.expand_directory Config.standard_library s :: !Config.load_path),
+      "-I", String (fun s -> Load_path.add_dir (Misc.expand_directory Config.standard_library s)),
       "<dir> Add <dir> to the list of include directories";
     ]
 
@@ -199,7 +205,7 @@ module Main : sig end = struct
     Printf.sprintf "%s [options] <type names>\n" Sys.argv.(0)
 
   let main () =
-    Config.load_path := [Config.standard_library];
+    Load_path.init [Config.standard_library];
     Arg.parse (Arg.align args) gen usage;
     let meths = !meths in
     let meths =
@@ -215,7 +221,7 @@ module Main : sig end = struct
         meths
     in
     let cl = Cstr.mk (pvar "this") meths in
-    let params = [Typ.var "res", Invariant] in
+    let params = [Typ.var "res", (NoVariance, NoInjectivity)] in
     let cl = Ci.mk ~virt:Virtual ~params (mknoloc "lifter") (Cl.structure cl) in
     let s = [Str.class_ [cl]] in
     Format.printf "%a@." Pprintast.structure (simplify.Ast_mapper.structure simplify s)

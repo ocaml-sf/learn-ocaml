@@ -6,13 +6,15 @@ argument or defining a sampler function `sample_my_type`) can be used
 but required a little more work, especially for parametric types.
 
 ## Non parametric type
+
 For non-parametric type, it is exactly the same than in the previous
 step.
 
-You can find the examples below in the
-`exercises/sampler-user-defined-types` directory (branch: step-4).
+You can find the examples below in the `exercises/sampler-user-defined-types`
+directory (branch: step-4).
 
 In the examples, we use the type `color` defined as :
+
 ```ocaml
 type color = Green | Yellow | Red | Blue
 ```
@@ -33,6 +35,7 @@ let exercise_1 =
 ```
 
 ### Method 2: Defining a sampler
+
 You can also define your own sampler and not use the `~sampler`
 argument with the following rule: a sampler of type `unit -> my_type`
 has to be named `sample_my_type`.
@@ -62,6 +65,7 @@ You can find the examples below in the
 `exercises/sampler-user-defined-parametric-types` directory (branch: step-4).
 
 In the examples below, we use the types:
+
 ```ocaml
 type col = R | B
 
@@ -69,6 +73,7 @@ type 'a tree =
   | Leaf
   | Node of 'a tree * 'a * 'a tree
 ```
+
 ### Method 1:  using the `~sampler` argument
 
 No change here, just don't forget that the optional argument`~sampler`
@@ -103,15 +108,16 @@ A sampler of a parametric type `('a * 'b * ... ) my_type` has a
 type : `(unit -> 'a) -> (unit -> 'b) -> ... -> -> (unit -> ('a * 'b *
 ...) my_type` and must be named `sample_my_type`.
 
+So for example, if we want to test a function of type `col tree -> int`, so we
+need two samplers :
 
-So for example, if we want to test a function of type `col tree -> int`, so we need two samplers :
 ``` ocaml
-(*Not a parametric type*)
+(* Not a parametric type *)
 let sample_col () = match Random.int 2 with
   | 0 -> B
   | _ -> R
 
-(*A parametric type*)
+(* A parametric type *)
 let sample_tree (sample: unit -> 'a) : unit -> 'a tree =
   let rec builder h = match h with
     | 0 -> Leaf
@@ -124,6 +130,7 @@ let sample_tree (sample: unit -> 'a) : unit -> 'a tree =
 ```
 
 The grading function is then simply :
+
 ```ocaml
 let exercise_2 =
 	test_function_1_against_solution
@@ -134,6 +141,7 @@ let exercise_2 =
 
 Note that if instead of [col tree], the input type is [int tree] (or
 another type with a predefined sampler), you need nothing more.
+
 ```ocaml
 let exercise_2bis =
   test_function_1_against_solution
@@ -154,8 +162,8 @@ let exercise_3 =
 		[]
 ```
 
-
 ### Advanced examples
+
 More advanced examples (but nothing new) can be found in
 `exercises/advanced-examples-step-4` directory (branch: step-4).
 
@@ -164,18 +172,21 @@ particular examples for functional types graded with both methods and
 using the predefined sampler of list.
 
 The user-defined type is:
+
 ```ocaml
 type position = {x: int ; y: int}
 ```
 
 and its corresponding sampler:
+
 ```ocaml
 let sample_position () = { x=sample_int () ; y=sample_int () }
 ```
 
 #### First example: `get_x`
 
-Exactly as shown previously, using metdho 2:
+Exactly as shown previously, using method 2:
+
 ```ocaml
 let exercise_1 =
   test_function_1_against_solution
@@ -199,8 +210,12 @@ let sampler_fun () = match Random.int 3 with
   | 1 -> pred
   | _ -> fun x -> if x < 0 then -1 else 1
 ```
+
 ##### Method 1
-For this method, we can just build the proper sampler for all the function arguments.
+
+For this method, we can just build the proper sampler for all the function
+arguments.
+
 ```ocaml
 let sampler_2 () =
   (sampler_fun (), sample_list ~min_size:1 ~max_size:10 sample_int ())
@@ -214,6 +229,7 @@ let exercise_2 =
 ```
 
 ##### Method 2
+
 For this method, we need to use an alias for type `int -> int`.
 
 ```ocaml
@@ -229,10 +245,12 @@ let exercise_2bis =
 ```
 
 #### Third example: 'first_elt' (tuple)
+
 In case you want to grade a function with a tuple as an input type,
 you can either use method 1 or define an alias and use method 2.
 
 ##### Method 1
+
 ```ocaml
 let exercise_3 =
   test_function_1_against_solution
@@ -243,6 +261,7 @@ let exercise_3 =
 ```
 
 ##### Method 2
+
 ```ocaml
 type pair_int = int * int
 let sample_pair_int () = sample_int (), sample_int ()
@@ -253,7 +272,6 @@ let exercise_3bis =
     ~gen:5
     []
 ```
-
 
 ### Which method should I use ?
 

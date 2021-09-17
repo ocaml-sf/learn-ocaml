@@ -2,12 +2,14 @@
 
 Let us now move to the development a basic grader. We ask the student
 to implement the identity function and provide the following `template.ml`:
+
 ```ocaml
 let identity x = "Put your code here"
 ```
 
 Our goal is to check that this function is modified by the student
 in such a way that it behaves as our `solution.ml`:
+
 ```ocaml
 let identity x = x
 ```
@@ -20,6 +22,7 @@ the student gets one point.
 
 Assuming that we choose `int` for this ground type, the behavior described
 in the previous paragraph is implemented as follows:
+
 ```ocaml
 open Test_lib
 open Report
@@ -80,18 +83,20 @@ corresponding report. For a function called `my_function`, it will be
 
 
 ## Want to learn more about grading function ?
+
 The next steps will bring you progressively to understand most of the
 possibilities of grading functions. However, if you want to have a better
 overview right now, you can go directly to [step
 5](step-5.md)
 where you will:
-* find the signature of `test_function_1_against_solution`
-* learn a new grading function for functions
-* learn how to change the header report
-* have a quick resumé of the utility of each optional arguments with a
+- find the signature of `test_function_1_against_solution`
+- learn a new grading function for functions
+- learn how to change the header report
+- have a quick resumé of the utility of each optional arguments with a
 link to the right tutorial.
 
 ## Multiple arguments
+
 To grade a function with multiple arguments you simply need to use the
 corresponding grading function which follows this pattern :
 `Test_lib.test_function_<function arity>_against_solution` and give
@@ -114,12 +119,11 @@ let () =
 
 ```
 
-
 You can find this example in the
 `exercises/grade-function-multiple_args` directory (branch: step-2).
 
-
 ## Polymorphic functions : testing several types
+
 For a polymorphic functions, you may want to test the function with
 different types. To do so, you can concat the result of numerous grading
 functions and encapsulate it in a `Section` which has two arguments :
@@ -128,7 +132,6 @@ some text and a list of items produced by grading functions.
 ```ocaml
 open Test_lib
 open Report
-
 
 let exercise_1 =
     Section ([ Text "Function: "; Code "identity" ; Text " with multiple tested input types." ],

@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+open Js_of_ocaml_tyxml
+open Js_of_ocaml_lwt
 open Js_utils
 open Tyxml_js
 
@@ -187,15 +189,20 @@ let execute_phrase top ?timeout content =
      reset_with_timeout top ~timeout ());
   ] >>= fun () ->
   t >>= fun result ->
-  let warnings, result = match result with
-    | Toploop_results.Ok (result, warnings) -> warnings, result
+  let error, warnings, result = match result with
+    | Toploop_results.Ok (result, warnings) ->
+        None, List.map Toploop_results.to_warning warnings, result
     | Toploop_results.Error (error, warnings) ->
-        Learnocaml_toplevel_output.output_error ~phrase top.output error ;
-        warnings, false in
+        Learnocaml_toplevel_output.output_error ~phrase top.output
+          (Toploop_results.to_error error) ;
+        Some (Toploop_results.to_error error),
+        List.map Toploop_results.to_warning warnings,
+        false
+  in
   List.iter
     (Learnocaml_toplevel_output.output_warning ~phrase top.output)
     warnings ;
-  Lwt.return result
+  Lwt.return (error, warnings, result)
 
 let execute top =
   Learnocaml_toplevel_input.execute top.input
@@ -242,9 +249,9 @@ let load top ?(print_outcome = true) ?timeout ?message content =
      reset top);
   ] >>= fun () ->
   t >>= fun result ->
-  let warnings, result = match result with
-    | Toploop_results.Ok (result, warnings) -> warnings, result
-    | Toploop_results.Error (error, warnings) ->
+  let warnings, result = match Toploop_results.to_report result with
+    | Ok (result, warnings) -> warnings, result
+    | Error (error, warnings) ->
         Learnocaml_toplevel_output.output_error top.output error ;
         warnings, false in
   List.iter
@@ -481,8 +488,9 @@ let create
       Lwt.catch
         (fun () -> execute_phrase top code)
         (function
-          | Lwt.Canceled -> Lwt.return true
-          | exn -> Lwt.fail exn )) ;
+          | Lwt.Canceled -> Lwt.return (None, [], true)
+          | exn -> Lwt.fail exn )
+      >>= fun _ -> Lwt.return_unit) ;
   let first_time = ref true in
   let after_init top =
     if !first_time || not oldify then

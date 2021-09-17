@@ -7,6 +7,7 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
+open Js_of_ocaml_tyxml
 
 let indent_caml s in_lines =
   let output = {

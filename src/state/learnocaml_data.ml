@@ -260,7 +260,7 @@ module Token = struct
 
   module T = struct
     type nonrec t = t
-    let compare = Pervasives.compare
+    let compare = compare
   end
 
   module Set = Set.Make(T)
