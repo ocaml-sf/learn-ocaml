@@ -930,6 +930,12 @@ div#login-overlay > h1 {
     display: flex;
     flex-direction: column;
 }
+#login-new:not(:target) {
+    display: none;
+}
+#login-new:target ~ div {
+    display: none;
+}
 @media (min-width: 1000px) {
     #login-new, #login-returning {
         width: 30vw;
@@ -945,6 +951,14 @@ div#login-overlay > h1 {
     background-color: #bbb;
     color: black;
     border-radius: 3px 3px 0 0;
+}
+#login-overlay a {
+    display: block;
+    margin-left: auto;
+    margin-right: 20px;
+    text-decoration: none;
+    color: #aaf;
+    font-size: small;
 }
 #login-new > div, #login-returning > div {
     padding: 20px;

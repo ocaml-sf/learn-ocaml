@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2021-07-26 10:51+0200\n"
+"PO-Revision-Date: 2021-07-29 17:55+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -128,7 +128,7 @@ msgstr "%02d:%02d"
 msgid "0:%02d:%02d"
 msgstr "0:%02d:%02d"
 
-#: File "src/app/learnocaml_common.ml", line 543, characters 34-55 1034, 38-59
+#: File "src/app/learnocaml_common.ml", line 543, characters 34-55 1035, 38-59
 msgid "difficulty: %d / 40"
 msgstr "difficulté: %d / 40"
 
@@ -172,7 +172,7 @@ msgid "Editor"
 msgstr "Éditeur"
 
 #: File "src/app/learnocaml_common.ml", line 782, characters 41-51
-#: "src/app/learnocaml_index_main.ml", 689, 30-40
+#: "src/app/learnocaml_index_main.ml", 691, 30-40
 msgid "Toplevel"
 msgstr "Toplevel"
 
@@ -203,7 +203,7 @@ msgid "Stats"
 msgstr "Statistiques"
 
 #: File "src/app/learnocaml_common.ml", line 794, characters 37-48
-#: "src/app/learnocaml_index_main.ml", 686, 29-40
+#: "src/app/learnocaml_index_main.ml", 688, 29-40
 #: "src/app/learnocaml_teacher_tab.ml", 329, 18-29
 #: "src/app/learnocaml_exercise_main.ml", 202, 23-34
 msgid "Exercises"
@@ -233,63 +233,63 @@ msgstr "Télécharger"
 msgid "Eval code"
 msgstr "Évaluer le code"
 
-#: File "src/app/learnocaml_common.ml", line 905, characters 23-29
+#: File "src/app/learnocaml_common.ml", line 906, characters 23-29
 msgid "Sync"
 msgstr "Sync"
 
-#: File "src/app/learnocaml_common.ml", line 962, characters 34-49
+#: File "src/app/learnocaml_common.ml", line 963, characters 34-49
 msgid "OCaml prelude"
 msgstr "Prélude OCaml"
 
-#: File "src/app/learnocaml_common.ml", line 969, characters 59-65
+#: File "src/app/learnocaml_common.ml", line 970, characters 59-65
 msgid "Hide"
 msgstr "Cacher"
 
-#: File "src/app/learnocaml_common.ml", line 976, characters 59-65
+#: File "src/app/learnocaml_common.ml", line 977, characters 59-65
 msgid "Show"
 msgstr "Montrer"
 
-#: File "src/app/learnocaml_common.ml", line 1000, characters 18-36
+#: File "src/app/learnocaml_common.ml", line 1001, characters 18-36
 msgid "Enter the secret"
 msgstr "Entrez le secret"
 
-#: File "src/app/learnocaml_common.ml", line 1040, characters 22-35
+#: File "src/app/learnocaml_common.ml", line 1041, characters 22-35
 msgid "Difficulty:"
 msgstr "Difficulté :"
 
-#: File "src/app/learnocaml_common.ml", line 1054, characters 39-49
+#: File "src/app/learnocaml_common.ml", line 1055, characters 39-49
 msgid "Kind: %s"
 msgstr "Type : %s"
 
-#: File "src/app/learnocaml_common.ml", line 1195, characters 46-59
+#: File "src/app/learnocaml_common.ml", line 1196, characters 46-59
 msgid "Identifier:"
 msgstr "Identifiant de l'exercice :"
 
-#: File "src/app/learnocaml_common.ml", line 1199, characters 48-57
+#: File "src/app/learnocaml_common.ml", line 1200, characters 48-57
 msgid "Author:"
 msgstr "Auteur :"
 
-#: File "src/app/learnocaml_common.ml", line 1200, characters 47-57
+#: File "src/app/learnocaml_common.ml", line 1201, characters 47-57
 msgid "Authors:"
 msgstr "Auteurs :"
 
-#: File "src/app/learnocaml_common.ml", line 1205, characters 31-48
+#: File "src/app/learnocaml_common.ml", line 1206, characters 31-48
 msgid "Skills trained:"
 msgstr "Compétences pratiquées :"
 
-#: File "src/app/learnocaml_common.ml", line 1209, characters 31-49
+#: File "src/app/learnocaml_common.ml", line 1210, characters 31-49
 msgid "Skills required:"
 msgstr "Compétences requises :"
 
-#: File "src/app/learnocaml_common.ml", line 1214, characters 36-57
+#: File "src/app/learnocaml_common.ml", line 1215, characters 36-57
 msgid "Previous exercises:"
 msgstr "Exercices précédents :"
 
-#: File "src/app/learnocaml_common.ml", line 1217, characters 35-52
+#: File "src/app/learnocaml_common.ml", line 1218, characters 35-52
 msgid "Next exercises:"
 msgstr "Exercices suivants :"
 
-#: File "src/app/learnocaml_common.ml", line 1222, characters 26-36
+#: File "src/app/learnocaml_common.ml", line 1223, characters 26-36
 msgid "Metadata"
 msgstr "Métadonnées"
 
@@ -467,61 +467,69 @@ msgstr "Bienvenue sur Learn OCaml"
 msgid "First connection"
 msgstr "Première connexion"
 
-#: File "src/app/learnocaml_index_main.ml", line 623, characters 38-57
+#: File "src/app/learnocaml_index_main.ml", line 623, characters 36-67
+msgid "New user ? Create a new token"
+msgstr "Vous êtes nouveau ? Obtenez un nouveau token"
+
+#: File "src/app/learnocaml_index_main.ml", line 624, characters 38-57
 msgid "Choose a nickname"
 msgstr "Choisissez un identifiant"
 
-#: File "src/app/learnocaml_index_main.ml", line 624, characters 38-46
+#: File "src/app/learnocaml_index_main.ml", line 625, characters 38-46
 msgid "Secret"
 msgstr "Secret"
 
-#: File "src/app/learnocaml_index_main.ml", line 625, characters 24-42
+#: File "src/app/learnocaml_index_main.ml", line 626, characters 24-42
 msgid "Create new token"
 msgstr "Nouveau token"
 
-#: File "src/app/learnocaml_index_main.ml", line 626, characters 24-40
+#: File "src/app/learnocaml_index_main.ml", line 627, characters 24-40
 msgid "Returning user"
 msgstr "Utilisateur existant"
 
-#: File "src/app/learnocaml_index_main.ml", line 627, characters 31-49
+#: File "src/app/learnocaml_index_main.ml", line 628, characters 29-64
+msgid "Already have a token ? Click here"
+msgstr "Vous avez déjà un token ? Par ici !"
+
+#: File "src/app/learnocaml_index_main.ml", line 629, characters 31-49
 msgid "Enter your token"
 msgstr "Entrez votre token"
 
-#: File "src/app/learnocaml_index_main.ml", line 628, characters 31-40
+#: File "src/app/learnocaml_index_main.ml", line 630, characters 31-40
 msgid "Connect"
 msgstr "Se connecter"
 
-#: File "src/app/learnocaml_index_main.ml", line 636, characters 9-19 638,
+#: File "src/app/learnocaml_index_main.ml", line 638, characters 9-19 640,
 #: "src/app/learnocaml_teacher_tab.ml", 558, 22-32
 msgid "Nickname"
 msgstr "Pseudonyme"
 
-#: File "src/app/learnocaml_index_main.ml", line 673, characters 38-59
+#: File "src/app/learnocaml_index_main.ml", line 675, characters 38-59
 msgid "Choose an activity."
 msgstr "Sélectionnez une activité."
 
-#: File "src/app/learnocaml_index_main.ml", line 682, characters 30-41
+#: File "src/app/learnocaml_index_main.ml", line 684, characters 30-41
 msgid "Try OCaml"
 msgstr "Try OCaml"
 
-#: File "src/app/learnocaml_index_main.ml", line 684, characters 29-38
+#: File "src/app/learnocaml_index_main.ml", line 686, characters 29-38
 msgid "Lessons"
 msgstr "Cours"
 
-#: File "src/app/learnocaml_index_main.ml", line 691, characters 32-44
+#: File "src/app/learnocaml_index_main.ml", line 693, characters 32-44
 #: "src/app/learnocaml_playground_main.ml", 73, 23-35
 msgid "Playground"
 msgstr "Bac-à-sable"
 
-#: File "src/app/learnocaml_index_main.ml", line 694, characters 28-35
+#: File "src/app/learnocaml_index_main.ml", line 696, characters 28-35
 msgid "Teach"
 msgstr "Enseignement"
 
-#: File "src/app/learnocaml_index_main.ml", line 792, characters 15-69
+#: File "src/app/learnocaml_index_main.ml", line 794, characters 15-69
 msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token :"
 
-#: File "src/app/learnocaml_index_main.ml", lines 794-796, characters 15-26
+#: File "src/app/learnocaml_index_main.ml", lines 796-798, characters 15-26
 msgid ""
 "WARNING: the data could not be synchronised with the server. Logging out "
 "will lose your local changes, be sure you exported a backup."
@@ -530,32 +538,32 @@ msgstr ""
 "En vous déconnectant, vous perdrez tous les changements locaux, à moins "
 "d'avoir exporté votre espace de travail au préalable."
 
-#: File "src/app/learnocaml_index_main.ml", line 798, characters 22-30 45-53
-#: 820, 9-17
+#: File "src/app/learnocaml_index_main.ml", line 800, characters 22-30 45-53
+#: 822, 9-17
 msgid "Logout"
 msgstr "Déconnexion"
 
-#: File "src/app/learnocaml_index_main.ml", line 811, characters 9-21
+#: File "src/app/learnocaml_index_main.ml", line 813, characters 9-21
 msgid "Show token"
 msgstr "Afficher le token"
 
-#: File "src/app/learnocaml_index_main.ml", line 814, characters 9-25
+#: File "src/app/learnocaml_index_main.ml", line 816, characters 9-25
 msgid "Sync workspace"
 msgstr "Synchroniser"
 
-#: File "src/app/learnocaml_index_main.ml", line 817, characters 9-25
+#: File "src/app/learnocaml_index_main.ml", line 819, characters 9-25
 msgid "Export to file"
 msgstr "Exporter vers un fichier"
 
-#: File "src/app/learnocaml_index_main.ml", line 818, characters 9-17
+#: File "src/app/learnocaml_index_main.ml", line 820, characters 9-17
 msgid "Import"
 msgstr "Importer"
 
-#: File "src/app/learnocaml_index_main.ml", line 819, characters 9-36
+#: File "src/app/learnocaml_index_main.ml", line 821, characters 9-36
 msgid "Download all source files"
 msgstr "Télécharger tous les fichiers sources"
 
-#: File "src/app/learnocaml_index_main.ml", line 825, characters 38-44
+#: File "src/app/learnocaml_index_main.ml", line 827, characters 38-44
 msgid "Menu"
 msgstr "Menu"
 
