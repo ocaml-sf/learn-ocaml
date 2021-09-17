@@ -10,19 +10,19 @@
 
 (executable
  (name learnocaml_toplevel_worker_main)
- (modes byte)
+ (modes (byte js))
  (flags :standard -w -41 -warn-error -4-42-44-45-48-32-27)
  (link_flags :standard -linkall)
  (libraries jsutils
             js_of_ocaml
-            js_of_ocaml.ppx
+            js_of_ocaml-ppx
             toploop_jsoo
             toploop_results
             ocplib-ocamlres.runtime
             embedded_cmis
             learnocaml_toplevel_worker_messages)
  (modules Learnocaml_toplevel_worker_main)
- (preprocess (pps js_of_ocaml.ppx))
+ (preprocess (pps js_of_ocaml-ppx))
  (js_of_ocaml (flags :standard +dynlink.js +toplevel.js
                      --toplevel --nocmis))
 )
@@ -50,7 +50,7 @@
  (libraries toploop_results
             jsutils
             js_of_ocaml
-            js_of_ocaml.ppx
+            js_of_ocaml-ppx
             ocp-indent-nlfork.lib
             ace
             ocplib-json-typed
@@ -62,7 +62,7 @@
           Learnocaml_toplevel_output
           Learnocaml_toplevel_input
           Learnocaml_toplevel)
- (preprocess (pps ppx_ocplib_i18n js_of_ocaml.ppx))
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
 )
 
 

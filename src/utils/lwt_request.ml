@@ -14,7 +14,10 @@ let url_encode_list l =
   String.concat "&" (List.map (fun (name, arg) ->
       Printf.sprintf "%s=%s" name (Url.urlencode arg)) l)
 
-let get ?(headers=[]) ~url ~args =
+let resp_text req =
+  Js.to_string @@ Js.Opt.get req##.responseText (fun () -> Js.string "")
+
+let get ?(headers=[]) ~url ~args () =
   let (res, w) = Lwt.task () in
   let req = XmlHttpRequest.create () in
   let url = match args with
@@ -27,11 +30,12 @@ let get ?(headers=[]) ~url ~args =
     headers;
   let callback () =
     match req##.status with
-    | 200 -> Lwt.wakeup w (Js.to_string req##.responseText)
+    | 200 -> Lwt.wakeup w (resp_text req)
     | 204 -> Lwt.wakeup w ""
     | code (* including 0 *) ->
-        Lwt.wakeup_exn w
-          (Request_failed (code, Js.to_string req##.responseText)) in
+        Lwt.wakeup_exn w @@
+        Request_failed (code, Js.Opt.case req##.responseText (fun () -> "") Js.to_string)
+  in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with
        XmlHttpRequest.DONE -> callback ()
@@ -40,7 +44,7 @@ let get ?(headers=[]) ~url ~args =
   Lwt.on_cancel res (fun () -> req##abort);
   res
 
-let post ?(headers=[]) ?(get_args=[]) ~url ~body =
+let post ?(headers=[]) ?(get_args=[]) ~url ~body () =
   let (res, w) = Lwt.task () in
   let req = XmlHttpRequest.create () in
   let url = match get_args with
@@ -53,10 +57,12 @@ let post ?(headers=[]) ?(get_args=[]) ~url ~body =
     headers;
   let callback () =
     match req##.status with
-    | 200 -> Lwt.wakeup w (Js.to_string req##.responseText)
+    | 200 -> Lwt.wakeup w (resp_text req)
     | 204 -> Lwt.wakeup w ""
-    | code (* including 0 *) -> Lwt.wakeup_exn w
-    (Request_failed (code, Js.to_string req##.responseText))
+    | code (* including 0 *) ->
+        Lwt.wakeup_exn w
+	  (Request_failed (code, Js.Opt.case req##.responseText
+                      (fun () -> "") Js.to_string))
   in
   req##.onreadystatechange := Js.wrap_callback
       (fun _ -> (match req##.readyState with

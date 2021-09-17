@@ -1,3 +1,0 @@
-ppx_js = [ "-ppx" "%{js_of_ocaml-ppx_FULL_DST_DIR}%/ppx.exe --as-ppx" ]
-
-ppx_ocplib_i18n = [ "-ppx" %asm_exe( p = "ppx_ocplib_i18n" ) ]

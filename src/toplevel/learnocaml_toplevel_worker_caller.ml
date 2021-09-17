@@ -35,7 +35,7 @@ let wrap pp =
 
 module IntMap = Map.Make(struct
     type t = int
-    let compare (x:int) (y:int) = Pervasives.compare x y
+    let compare (x:int) (y:int) = compare x y
   end)
 let map_option f o = match o with | None -> None | Some o -> Some (f o)
 let iter_option f o = match o with | None -> () | Some o -> f o
@@ -232,7 +232,7 @@ let reset worker ?(timeout = fun () -> never_ending) () =
       worker.after_init worker
   | `Reset Toploop_results.Error (err, _) ->
       Lwt.cancel timeout;
-      worker.pp_stderr err.Toploop_results.msg;
+      worker.pp_stderr (Format.asprintf "%a" Location.print_report (Toploop_results.to_error err));
       worker.reset_worker worker
   | `Timeout ->
       (* Not canceling the Reset thread, but manually resetting. *)

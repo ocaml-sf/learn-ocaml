@@ -38,8 +38,9 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
   Toploop.toplevel_env := begin
     if String.uncapitalize_ascii name = name then
       Env.add_value
-        (Ident.create name)
+        (Ident.create_local name)
         { Types.
+          val_uid = Types.Uid.mk ~current_unit:"Learnocaml_introspection";
           val_type = ty.Typedtree.ctyp_type;
           val_kind = Types.Val_reg;
           val_attributes = [];
@@ -50,7 +51,8 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
       match ty.ctyp_desc with
       | Ttyp_package { pack_type; _ } ->
         Env.add_module
-          (Ident.create name)
+          (Ident.create_local name)
+          Types.Mp_present
           pack_type
           !Toploop.toplevel_env
       | _ -> invalid_arg "Learnocaml_toplevel_toploop.insert_in_env (2)"
@@ -77,7 +79,7 @@ let insert_mod_ast_in_env ~var_name impl_code =
         init_loc sig_lb (String.uncapitalize_ascii modname ^ ".mli");
         let s = Parse.interface sig_lb in
         Mod.constraint_ (Mod.structure str) (Mty.signature s) in
-    Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc modname) m) ] in
+    Ptop_def [ Str.module_ (Mb.mk (Location.mknoloc (Some modname)) m) ] in
   let phr =
     Toploop_ext.Ppx.preprocess_phrase @@
     parse_mod_string (String.capitalize_ascii var_name) None impl_code in
@@ -107,14 +109,19 @@ let treat_lookup_errors fn = match fn () with
            (Typetexp.Type_mismatch args))
   | exception exn ->
       match Location.error_of_exn exn with
-      | None -> Incompatible (Format.asprintf "%a@." Toploop.print_untyped_exception (Obj.repr exn))
-      | Some { Location.msg; _ } -> Incompatible msg
+      | None | Some `Already_displayed ->
+          Incompatible
+            (Format.asprintf "%a@."
+               Toploop.print_untyped_exception (Obj.repr exn))
+      | Some (`Ok err) ->
+          Incompatible
+            (Format.asprintf "%a@." Location.print_report err)
 
 let compatible_type nexp ngot =
   treat_lookup_errors @@ fun () ->
-  let path_exp = Env.lookup_type nexp !Toploop.toplevel_env in
+  let path_exp, _ = Env.find_type_by_name nexp !Toploop.toplevel_env in
   let decl_exp = Env.find_type path_exp !Toploop.toplevel_env in
-  let path_got = Env.lookup_type ngot !Toploop.toplevel_env in
+  let path_got, _ = Env.find_type_by_name ngot !Toploop.toplevel_env in
   let decl_got = Env.find_type path_got !Toploop.toplevel_env in
   let texp = Ctype.newconstr path_exp (List.map (fun _ -> Ctype.newvar ()) decl_exp.Types.type_params) in
   let tgot = Ctype.newconstr path_got (List.map (fun _ -> Ctype.newvar ()) decl_got.Types.type_params) in
@@ -125,9 +132,9 @@ let get_value lid ty =
   treat_lookup_errors @@ fun () ->
   match Ty.obj ty, String.get (Longident.last lid) 0 with
   | { Parsetree.ptyp_desc = Parsetree.Ptyp_package (n, rews); _ }, 'A'.. 'Z' ->
-      begin match Env.lookup_module ~load:false lid !Toploop.toplevel_env with
+      begin match Env.find_module_by_name lid !Toploop.toplevel_env with
         | exception Not_found -> Absent
-        | path ->
+        | path, _ ->
             let { Types.md_loc; _ } = Env.find_module path !Toploop.toplevel_env in
             let phrase =
               let open Ast_helper in
@@ -142,8 +149,8 @@ let get_value lid ty =
             let buf = Buffer.create 300 in
             let ppf = Format.formatter_of_buffer buf in
             if Toploop.execute_phrase false ppf phrase then
-              let fake_path, _ = Env.lookup_value (Longident.Lident "%fake%") !Toploop.toplevel_env in
-              Present (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env fake_path)
+              let fake_path, _ = Env.find_value_by_name (Longident.Lident "%fake%") !Toploop.toplevel_env in
+              Present (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env fake_path)
             else
               let msg = Format.fprintf ppf "@." ; Buffer.contents buf in
               failwith msg
@@ -152,9 +159,9 @@ let get_value lid ty =
       let { Typedtree.ctyp_type = exp_type; _ } =
         Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
       let path, { Types.val_type; _ } =
-        Env.lookup_value lid !Toploop.toplevel_env in
+        Env.find_value_by_name lid !Toploop.toplevel_env in
       if Ctype.moregeneral !Toploop.toplevel_env true val_type exp_type then
-        Present (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
+        Present (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)
       else
         failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
 
@@ -232,10 +239,10 @@ let sample_value ty =
   match Toploop.execute_phrase false ppf phrase with
   | true ->
     let path, { Types.val_type; _ } =
-      Env.lookup_value (Longident.Lident lid) !Toploop.toplevel_env in
+      Env.find_value_by_name (Longident.Lident lid) !Toploop.toplevel_env in
     let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
     if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then
-      (Obj.obj @@ Toploop.eval_path !Toploop.toplevel_env path)
+      (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)
     else (failwith "sampler has the wrong type !")
   | false ->
       failwith ("sampler could not be defined, " ^ Buffer.contents buf)
@@ -253,7 +260,7 @@ let register_callback name ty f =
 
 
 let ref_lid =
-  Location.mknoloc Longident.(Ldot(Lident "Pervasives", "ref"))
+  Location.mknoloc Longident.(Ldot(Lident "Stdlib", "ref"))
 
 let create_ref name (ty: 'a Ty.ty) (v: 'a) =
   let ty = Ty.repr @@ Ast_helper.Typ.constr ref_lid [Ty.obj ty] in

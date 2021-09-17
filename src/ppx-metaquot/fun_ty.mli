@@ -132,7 +132,7 @@ end
 
 (** [Make], used in [Test_lib], provides a generic printer and sampler
     for argument lists of n-ary functions, depending on their type. *)
-module Make : functor (M : S) -> sig
+module Make : functor (_: S) -> sig
   val print :
     (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
     Format.formatter -> ('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit
