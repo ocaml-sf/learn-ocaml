@@ -956,7 +956,7 @@ let setup_tab_text_prelude_pane prelude =
   let open Tyxml_js.Html5 in
   let state =
     ref (match arg "tab_text_prelude" with
-         | exception Not_found -> false
+         | exception Not_found -> true
          | "shown" -> true
          | "hidden" -> false
          | _ -> failwith "Bad format for argument prelude.") in
