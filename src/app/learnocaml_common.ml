@@ -951,7 +951,7 @@ let set_nickname_div () =
 (* setup for the prelude in the description page (in description_main.ml) *)
 let setup_tab_text_prelude_pane prelude =
   if prelude = "" then () else
-  let iframe_pane = find_component "learnocaml-exo-tab-text-iframe" in
+  let iframe_pane = find_component "learnocaml-exo-tab-text-descr" in
   let prelude_pane = find_component "learnocaml-exo-tab-text-prelude" in
   let open Tyxml_js.Html5 in
   let state =

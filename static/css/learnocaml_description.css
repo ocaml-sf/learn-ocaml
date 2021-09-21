@@ -31,8 +31,9 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: none;
 }
-#learnocaml-exo-tabs > * > h1 {
+#learnocaml-exo-tabs h1 {
   flex: 0 0 auto;
   background: #222;
   color: #eee;
@@ -45,15 +46,15 @@ body {
   position: relative;
   border-bottom: thin solid #eee;
 }
-#learnocaml-exo-tabs > * > h1:first-child {
+#learnocaml-exo-tabs h1:first-child {
   margin-top: 5px;
 }
-#learnocaml-exo-tabs > *  > iframe {
+#learnocaml-exo-tabs iframe {
   border: none;
   overflow: auto;
   flex: 1 3 auto ;
 }
-#learnocaml-exo-tab-meta > * > h1::after {
+#learnocaml-exo-tab-meta h1::after {
   position: absolute;
   left: 0px; bottom: -5px; width: 100%;
   content:"";
@@ -63,8 +64,9 @@ body {
 
 /* ----------------------- iframe --------------------------------*/
 
-#learnocaml-exo-tab-text-iframe {
+#learnocaml-exo-tab-text-descr {
     position : absolute;
+    top: 48px;
     right : 0px;
     left : 0px;
     bottom : 0px;
@@ -72,9 +74,6 @@ body {
     flex-direction : column;
 }
 
-#learnocaml-exo-tab-text-iframe > iframe {
-    height : 100%;
-}
 /* -------------------- Prelude -------------------------------- */
 
 #learnocaml-exo-tab-text-prelude {
@@ -119,11 +118,7 @@ body {
   width: 20%;
   background: #222; 
 }
-#learnocaml-exo-tab-text-prelude > iframe {
-  border: none;
-  overflow: auto;
-  flex: 1 3 auto ;
-}
+
 #learnocaml-exo-tab-text-prelude > pre.toplevel-code {
   flex: 0 1 auto;
   height: 150px;
@@ -275,9 +270,9 @@ body {
     #learnocaml-exo-tab-text {
 	position: relative;
 	flex-grow: 4;
-	border-right: #222 2px solid;
+	border-right: none;
 	overflow-y: auto;
-    }   
+    }
     #learnocaml-exo-tab-meta {
 	position: relative;
 	flex-grow: 1;
