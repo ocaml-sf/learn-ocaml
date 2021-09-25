@@ -29,7 +29,7 @@ depends: [
   "ezjsonm"
   "lwt" {>= "4.0.0"}
   "lwt_ssl"
-  "ocaml" {= "4.12.0"}
+  "ocaml" {(>= "4.12") & (< "4.13~")}
   "ocamlfind" {build}
   "ocp-indent-nlfork"
   "ocp-ocamlres" {>= "0.4"}

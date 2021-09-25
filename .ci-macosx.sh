@@ -6,7 +6,7 @@ brew update
 brew install pkg-config
 brew install opam
 brew install libev
-opam init -y --compiler=4.12.0
+opam init -y --compiler=4.12.1
 eval $(opam env)
 
 opam install -y -j 2 . --deps-only --locked

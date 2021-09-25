@@ -73,7 +73,7 @@ depends: [
   "menhirSdk" {= "20210419"}
   "mmap" {= "1.1.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.12.0"}
+  "ocaml" {= "4.12.1"}
   "ocaml-compiler-libs" {= "v0.12.3"}
   "ocaml-config" {= "2"}
   "ocaml-migrate-parsetree" {= "1.8.0"}
