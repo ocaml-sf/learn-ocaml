@@ -2,15 +2,20 @@
 
 set -e
 
+sw_vers
+system_profiler SPSoftwareDataType
+uname -a
+
 brew update
 brew install pkg-config
 brew install opam
 brew install libev
-opam init -y --compiler=4.12.1
-eval $(opam env)
+opam init -y -a --bare
 
-opam install -y -j 2 . --deps-only --locked
-make && make opaminstall
+opam switch create . ocaml-base-compiler --deps-only --locked -y -j 2 -v
+eval $(opam env)
+make
+make opaminstall
 
 # See src/main/linking_flags.sh
 make detect-libs
