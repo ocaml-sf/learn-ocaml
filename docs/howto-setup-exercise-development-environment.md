@@ -47,42 +47,54 @@ your exercises.
 We assume that the current directory is `$DIR`.
 
 First, clone the current learn-ocaml source tree:
+
 ```
 git clone git@github.com:ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
 
 If you do not have a GitHub account, do instead:
+
 ```
 git clone https://github.com/ocaml-sf/learn-ocaml.git && cd learn-ocaml
 ```
 
 Get an opam environment (a.k.a "switch") with the learn-ocaml dependencies
 ready:
+
 ```
 opam switch create . --deps-only --locked
 opam install opam-installer
 eval $(opam env)
 ```
+
 (Alternatively, use `opam install . --deps-only` to install the dependencies in
 your current opam switch, without creating a dedicated one.)
 
 
 Second, compile and install the platform:
+
 ```
 make && make opaminstall
 ```
 
 At this point, you should get a working `learn-ocaml` program in
 your path. Try:
+
 ```
 learn-ocaml --help
 ```
+
 This should open the manpage of the command-line tool to interact
 with the platform.
+
+> **Note for developers:**
+> An API documentation could be partially generated with the `make doc` command.
+> _Currently, the only two supported modules are `Test_lib` and `Learnocaml_report`_.
 
 ## Step 2: Set up a work directory
 
 Now, let us go back to `$DIR` and create a root for the source tree of exercises:
+
 ```
 cd $DIR && cp -fr learn-ocaml/demo-repository my-learn-ocaml-repository
 ```
@@ -90,12 +102,14 @@ cd $DIR && cp -fr learn-ocaml/demo-repository my-learn-ocaml-repository
 ## Step 3: Sanity check
 
 Check that your installation works:
+
 ```
 learn-ocaml build --repo my-learn-ocaml-repository
 learn-ocaml serve
 ```
 
 This should output several lines in your terminal ending with:
+
 ```
 Starting server on port 8080
 ```

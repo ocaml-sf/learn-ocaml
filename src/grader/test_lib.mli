@@ -1001,7 +1001,7 @@ module type S = sig
        argument. Here is a list in alphabetic order of each of them.
 
     {3 ?⁠after}
-       defines a function which is called with the current
+    defines a function which is called with the current
        tested inputs, the student {!type:result} and the solution
        {!type:result} and returns a new report which is concatenated to
        reports built with [~test], [~test_sdtout] and [~test_sdterr].
@@ -1010,14 +1010,14 @@ module type S = sig
        appropriate report. Default value is [fun _ _ _ -> []].
 
     {3 ?before}
-       defines a function called right before the application
+    defines a function called right before the application
        of student function to the current tested inputs. Default value
        is [fun _ -> ()]
 
      For [test_function_<args_nb>] only.
 
     {3 ?before_reference}
-       defines a function called right before the
+    defines a function called right before the
        application of solution function to the current tested
        inputs. This function is called {b before} student function
        evaluation. Default value is [fun _ -> ()].
@@ -1026,7 +1026,7 @@ module type S = sig
        [test_function_<args_nb>_against_solution].
 
     {3 ?before_user}
-       defines a function called right before the
+    defines a function called right before the
        application of student function to the current tested
        inputs. This function is called {b after} solution function
        evaluation. Default value is [fun _ -> ()].
@@ -1035,7 +1035,7 @@ module type S = sig
        [test_function_<args_nb>_against_solution].
 
     {3 ?gen}
-       Number of automatically generated tested inputs. Inputs
+    Number of automatically generated tested inputs. Inputs
        are generated using either sampler defined in the current
        environment or function defined with [~sampler] optional
        argument. By default, [gen] is [max 5 (10 - List.length
@@ -1047,7 +1047,7 @@ module type S = sig
      See {{!Sampler.sampler_sec}Sampler module}.
 
     {3 ?sampler}
-       defines the function used to automatically generated
+    defines the function used to automatically generated
        inputs. If unset, the grading function checks if a sampler is
        defined for each input type in the current environment. Such
        sampler for a type [some-type] must be named [sample_some-type]
@@ -1060,14 +1060,14 @@ module type S = sig
      See {{!Sampler.sampler_sec}Sampler module}.
 
     {3 ?test}
-       defines the function used to compare the output of
+    defines the function used to compare the output of
        student function and the output of solution function. Default
        value is {!Tester.test}.
 
      See {{!Tester.tester_sec}predefined testers and tester builders}.
 
     {3 ?test_sdterr}
-       defines the function used to compare the standard
+    defines the function used to compare the standard
        output produced by student function and the one produced by
        solution function. Default value is {!Tester.io_test_ignore}.
 
@@ -1075,7 +1075,7 @@ module type S = sig
        builders}.
 
     {3 ?test_sdtout}
-       defines the function used to compare the standard
+    defines the function used to compare the standard
        error produced by student function and the one produced by
        solution function. Default value is {!Tester.io_test_ignore}.
 
@@ -1094,7 +1094,7 @@ module type S = sig
 
     (** [run_timeout ?time v] executes [v()] under an optional time limit.
         The exceptions raised by [v] are intentionally *not* caught,
-        so the caller is able to catch and get a backtrace, if desired. 
+        so the caller is able to catch and get a backtrace, if desired.
         If given, [time] overrides the global timeout parameter.
     *)
     val run_timeout : ?time:int -> (unit -> 'a) -> 'a

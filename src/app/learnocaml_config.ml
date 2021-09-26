@@ -5,7 +5,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details.  *)
 
-open Js_of_ocaml
+module Js = Js_of_ocaml.Js
 
 class type learnocaml_config = object
   method enableTryocaml: bool Js.optdef_prop
