@@ -8,13 +8,47 @@ open Learnocaml_data.Exercise.Meta
 let init_tabs, select_tab =
   mk_tab_handlers "text" ["text"; "meta"]
 
+type encoded_token =
+  {
+    arg_name: string;
+    raw_arg: string;
+    token: Learnocaml_data.Token.t
+  }
+
+(** [get_arg_token ()] read (and decode if need be) the user token.
+
+    @return [Some encoded_token] if a token was successfully read.
+            It returns [None] if no token was specified in the URL.
+            An exception is raised if an incorrect token was specified. *)
+let get_encoded_token () =
+  match arg "token" with (* arg in plain text, deprecated in learn-ocaml 0.13 *)
+  | raw_arg ->
+     let token = Learnocaml_data.Token.parse raw_arg in
+     Some { arg_name = "token"; raw_arg; token }
+  | exception Not_found ->
+     match arg "token1" with (* encoding algo 1: space-padded token |> base64 *)
+     | raw_arg ->
+        begin match Base64.decode ~pad:true raw_arg with
+        (* ~pad:false would work also, but ~pad:true is stricter *)
+        | Ok pad_token ->
+           Some { arg_name = "token1"; raw_arg;
+                  token = Learnocaml_data.Token.parse (String.trim pad_token) }
+        | Error (`Msg msg) -> failwith msg
+        end
+     | exception Not_found -> None
+
 module Exercise_link =
   struct
     let exercise_link ?(cl = []) id content =
-      let token = Learnocaml_data.Token.(to_string (parse (arg "token"))) in
-      Tyxml_js.Html5.(a ~a:[ a_href ("/description/"^id^"#token="^token);
-                             a_class cl ]
-                        content)
+      match get_encoded_token () with
+      | Some { arg_name; raw_arg; _ } ->
+         Tyxml_js.Html5.(a ~a:[ a_href
+                                  (Printf.sprintf "/description/%s#%s=%s"
+                                   id arg_name raw_arg);
+                                a_class cl ]
+                           content)
+      | None ->
+         Tyxml_js.Html5.(a ~a:[ a_href "#" ; a_class cl ] content)
   end
 
 module Display = Display_exercise(Exercise_link)
@@ -29,8 +63,8 @@ let () =
      Learnocaml_local_storage.init () ;
      let title_container = find_component "learnocaml-exo-tab-text-title" in
      let text_container = find_component "learnocaml-exo-tab-text-descr" in
-     try begin
-         let token = Learnocaml_data.Token.parse (arg "token") in
+     match get_encoded_token () with
+     | Some { arg_name = _; raw_arg = _; token } -> begin
          let exercise_fetch =
            retrieve (Learnocaml_api.Exercise (Some token, id))
          in
@@ -55,7 +89,7 @@ let () =
          (* hide the initial/loading phase curtain *)
          Lwt.return @@ hide_loading ~id:"learnocaml-exo-loading" ()
        end
-     with Not_found ->
+     | None ->
        let elt = find_div_or_append_to_body "learnocaml-exo-loading" in
        Manip.(addClass elt "loading-layer") ;
        Manip.(removeClass elt "loaded") ;
