@@ -51,9 +51,21 @@ let () =
              d##write (Js.string (exercise_text ex_meta exo));
              d##close) ;
          (* display meta *)
-         display_meta (Some token) ex_meta id
+         display_meta (Some token) ex_meta id >>= fun () ->
+         (* hide the initial/loading phase curtain *)
+         Lwt.return @@ hide_loading ~id:"learnocaml-exo-loading" ()
        end
      with Not_found ->
-       Lwt.return @@
-         Manip.replaceChildren text_container
-           Tyxml_js.Html5.[ h1 [ txt "Error: Missing token" ] ]
+       let elt = find_div_or_append_to_body "learnocaml-exo-loading" in
+       Manip.(addClass elt "loading-layer") ;
+       Manip.(removeClass elt "loaded") ;
+       Manip.(addClass elt "loading") ;
+       Manip.replaceChildren elt
+         Tyxml_js.Html5.[
+           h1 [ txt "Error: missing token. \
+                     Use a link from ";
+                (* Note: could be put in a global constant *)
+                a ~a:[ a_href "https://github.com/pfitaxel/learn-ocaml.el" ]
+                  [ txt "learn-ocaml-mode" ];
+                txt "?" ] ];
+       Lwt.return_unit
