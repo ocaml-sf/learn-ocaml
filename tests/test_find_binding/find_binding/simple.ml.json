@@ -1,0 +1,38 @@
+[
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "foo",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found a toplevel definition for "
+          },
+          {
+            "text": "foo",
+            "display": "code"
+          },
+          {
+            "text": "."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Found"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  }
+]

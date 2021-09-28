@@ -803,6 +803,8 @@ module Make
           | { pstr_desc = Pstr_value (_, bds); _ } :: rest ->
              let rec findvar = function
                | [] -> findlet rest
+               | { pvb_pat = { ppat_desc = Ppat_constraint ({
+                  ppat_desc = Ppat_var { Location.txt; _ }; _} , _) ; _ } ; pvb_expr; _ } :: _
                | { pvb_pat = { ppat_desc = Ppat_var { Location.txt; _ }; _ } ; pvb_expr; _ } :: _ when txt = name ->
                   Message ([ Text "Found a toplevel definition for " ; Code name ; Text "."], Informative)
                   :: cb pvb_expr
