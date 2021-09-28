@@ -151,7 +151,7 @@ let token_type =
   | TILDE
   | UNDERSCORE -> "operator"
 
-  | LINE_DIRECTIVE _ -> "meta"
+  | LINE_DIRECTIVE -> "meta"
 
   | FALSE
   | TRUE
