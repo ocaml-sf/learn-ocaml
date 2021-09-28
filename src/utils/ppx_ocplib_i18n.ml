@@ -10,15 +10,6 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software. *)
 
-open Migrate_parsetree
-open OCaml_405.Ast
-
-open Ast_mapper
-open Ast_helper
-open Asttypes
-open Parsetree
-open Longident
-
 let read_translations f =
   let ic = open_in f in
   let t = Hashtbl.create 427 in
@@ -129,57 +120,55 @@ let translations =
   Hashtbl.fold (fun lang h acc ->
       (lang, find_translation lang h) :: acc) langs []
 
+open Ppxlib
+module AB = Ast_builder.Default
+
 let get_lang_expr ~loc transl_expr =
-  Exp.apply ~loc
-    (Exp.ident { txt = Ldot (Lident "Ocplib_i18n", "s_"); loc })
+  AB.pexp_apply ~loc
+    (AB.pexp_ident ~loc { txt = Ldot (Lident "Ocplib_i18n", "s_"); loc })
     [Nolabel, transl_expr]
 
-let transl_mapper _config _cookies =
-  { default_mapper with
-    expr = fun mapper expr ->
-      match expr with
-      | { pexp_desc =
-            Pexp_extension ({ txt = "lang_ids_array"; loc }, _);
-          _ } ->
-          Exp.array ~loc
-            (List.map (fun (lang, _) ->
-                 Exp.constant ~loc (Pconst_string (lang,None)))
-                translations)
-      | { pexp_desc =
-            Pexp_extension ({ txt = ("i"|"if" as tag); loc }, pstr);
-          _ } ->
-          (match pstr with
-           | PStr [{
-               pstr_desc =
-                 Pstr_eval ({
-                     pexp_loc  = loc;
-                     pexp_desc = Pexp_constant (Pconst_string (s, _));
-                     _
-                   }, _);
-               _
-             }] ->
-               let is_format = tag = "if" in
-               let translations =
-                 List.map (fun (_lang, f) -> f ~loc s) translations
-               in
-               let translations_expr =
-                 Exp.array ~loc
-                   (List.map (fun s ->
-                        let e = Exp.constant ~loc (Pconst_string (s,None)) in
-                        if is_format then
-                          Exp.apply ~loc
-                            (Exp.ident { txt = Lident "format_of_string"; loc })
-                            [Nolabel, e]
-                        else e)
-                       translations)
-               in
-               get_lang_expr ~loc translations_expr
-           | _ ->
-               raise (Location.Error (
-                   Location.error ~loc "[%i] requires a constant string, e.g. [%i \"text\"]")))
-      | x -> default_mapper.expr mapper x;
-  }
+let rules =
+  let ext_lang_ids_array =
+    Extension.declare "lang_ids_array"
+      Extension.Context.Expression Ast_pattern.__
+    @@ fun ~loc ~path:_ _ ->
+    AB.pexp_array ~loc
+      (List.map (fun (lang, _) ->
+           AB.pexp_constant ~loc (Pconst_string (lang,loc,None)))
+          translations)
+  in
+  let expand_transl is_format ~loc ~path:_ s =
+    let translations =
+      List.map (fun (_lang, f) -> f ~loc s) translations
+    in
+    let translations_expr =
+      AB.pexp_array ~loc
+        (List.map (fun s ->
+             let e = AB.pexp_constant ~loc (Pconst_string (s,loc,None)) in
+             if is_format then
+               AB.pexp_apply ~loc
+                 (AB.pexp_ident ~loc { txt = Lident "format_of_string"; loc })
+                 [Nolabel, e]
+             else e)
+            translations)
+    in
+    get_lang_expr ~loc translations_expr
+  in
+  let ext_i =
+    Extension.declare "i"
+      Extension.Context.Expression Ast_pattern.(single_expr_payload (estring __))
+    @@ expand_transl false
+  in
+  let ext_if =
+    Extension.declare "if"
+      Extension.Context.Expression Ast_pattern.(single_expr_payload (estring __))
+    @@ expand_transl true
+  in
+  List.map Context_free.Rule.extension [ ext_lang_ids_array; ext_i; ext_if ]
 
-let () = Driver.register ~name:"i18n" (module OCaml_405) transl_mapper
+
+let () = Driver.register_transformation ~rules "i18n"
+
 let () =
   if Sys.getenv_opt "DUMP_POT" <> None then at_exit dump_pot
