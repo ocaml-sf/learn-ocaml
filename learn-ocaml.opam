@@ -50,7 +50,7 @@ depends: [
   "ocaml" {(>= "4.12") & (< "4.13~")}
   "ocamlfind" {build}
   "ocaml-migrate-parsetree" {= "1.8.0"}
-  "ocp-indent-nlfork"
+  "ocp-indent-nlfork" {>= "1.5.5"}
   "ocplib-json-typed" {>= "0.7"}
   "ocplib-json-typed-browser" {>= "0.7"}
   "ocp-ocamlres" {>= "0.4"}
@@ -85,3 +85,9 @@ description: """
 This contains the binaries forming the engine for the learn-ocaml platform, and
 the common files. A demo exercise repository is also provided as example.
 """
+pin-depends: [
+   [
+     "ocp-indent-nlfork.1.5.5"
+     "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
+   ]
+]
