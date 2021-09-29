@@ -22,7 +22,7 @@ module type COMPAT = sig
   val v : string -> t
 
   (** Note that trailing zeros are ignored, i.e. (v "1") and (v "1.0")
-      are equal compats. But (v "1") is higher than (v "1.-1"), itself
+      are equal versions. But (v "1") is higher than (v "1.-1"), itself
       higher than (v "1.-2"), and so on. *)
   val le : t -> t -> bool
 

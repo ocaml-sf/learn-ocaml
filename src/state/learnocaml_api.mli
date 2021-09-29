@@ -58,24 +58,24 @@ in the same codebase, so it's easier to update both of them in one go.
 
 But this tight coupling meant that a learn-ocaml-client version would
 only be compatible with a single server version, hence a frequent but
-annoying error "API version mismatch: client v._ and server v._".
+annoying error "API version mismatch: client v.x and server v.y".
 
-So since learn-ocaml 0.13, a given client_version will try to be
-compatible with as much server_version's as possible (>= 0.12 &
-<= client_version).
+So since learn-ocaml 0.13.0, a given client_version will try to be
+compatible with as much server_version's as possible such that
+[client_version >= server_version && server_version >= "0.12"].
 
-To this aim, each [request] constructor is annotated with a version
-constraint of type [Compat.t], see [supported_versions].
+To this aim, each [request] constructor comes with a version
+constraint of type [Compat.pred], see [supported_versions].
 
 Regarding the inevitable extensions of the API:
 
-- make sure one only adds constructors to this [request] type,
+- make sure we only add constructors to this [request] type,
 - and that their semantics does not change
   (or at least in a backward-compatible way;
    see PR https://github.com/ocaml-sf/learn-ocaml/pull/397
-   for a counter-example)
+   for a counter-example);
 - but if a given entrypoint would need to be removed,
-  rather add a Compat.Upto (*<*) constraint.
+  add a [Compat.Upto] constraint (*<*) instead.
  *)
 type _ request =
   | Static:
