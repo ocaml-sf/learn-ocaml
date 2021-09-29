@@ -23,6 +23,60 @@ open Learnocaml_data
 
 val version: string
 
+module type COMPAT = sig
+  (** List-based versions endowed with a lexicographic order. *)
+  type t
+
+  val to_string : t -> string
+
+  (** Supported formats: [Compat.v "str"] where "str" is
+      either "n", "-n" (a signed integer), or "n.str".
+      However, [Compat.v "0.14.rc1"] or so is not supported for now. *)
+  val v : string -> t
+
+  (** Note that trailing zeros are ignored, i.e. (v "1") and (v "1.0")
+      are equal versions. But (v "1") is higher than (v "1.-1"), itself
+      higher than (v "1.-2"), and so on. *)
+  val le : t -> t -> bool
+
+  val eq : t -> t -> bool
+
+  val lt : t -> t -> bool
+
+  type pred =
+    | Since of t | Upto of t | And of pred * pred
+
+  val compat : pred -> t -> bool
+end
+
+module Compat: COMPAT
+
+(** Note about backward-compatibility:
+
+The architecture of learn-ocaml merges the (client, server) components
+in the same codebase, so it's easier to update both of them in one go.
+
+But this tight coupling meant that a learn-ocaml-client version would
+only be compatible with a single server version, hence a frequent but
+annoying error "API version mismatch: client v._ and server v._".
+
+So since learn-ocaml 0.13, a given client_version will try to be
+compatible with as much server_version's as possible (>= 0.12 &
+<= client_version).
+
+To this aim, each [request] constructor is annotated with a version
+constraint of type [Compat.t], see [supported_versions].
+
+Regarding the inevitable extensions of the API:
+
+- make sure one only adds constructors to this [request] type,
+- and that their semantics does not change
+  (or at least in a backward-compatible way;
+   see PR https://github.com/ocaml-sf/learn-ocaml/pull/397
+   for a counter-example)
+- but if a given entrypoint would need to be removed,
+  rather add a Compat.Upto (*<*) constraint.
+ *)
 type _ request =
   | Static:
       string list -> string request
@@ -89,6 +143,14 @@ type _ request =
       string -> string request
     (** Only for server-side handling: bound to requests not matching any case
         above *)
+
+val supported_versions: 'a request -> Compat.pred
+
+(** [is supported client server req] = Ok () if
+    [server <= client && current "supports" req && server "supports" client] *)
+val is_supported:
+  ?current:Compat.t -> server:Compat.t ->
+  'resp request -> (unit, string) result
 
 type http_request = {
   meth: [ `GET | `POST of string];
