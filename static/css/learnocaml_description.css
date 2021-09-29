@@ -141,6 +141,16 @@ body {
 
 /* BEGIN excerpt from learnocaml_exercise.css */
 
+/* -------------------- loading splash screen --------------------- */
+#learnocaml-exo-loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#learnocaml-exo-loading.loading,
+#learnocaml-exo-loading.loaded {
+  background: rgba(200,200,200,0.9);
+}
+
 .learnocaml-exo-meta-category ~ .exercise + .exercise {
   border-top: 1px #333 solid;
 }
