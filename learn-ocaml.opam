@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml"
-version: "0.12"
+version: "0.13.0"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"

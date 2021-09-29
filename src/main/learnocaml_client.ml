@@ -502,15 +502,37 @@ let upload_report server token ex solution report =
         (Token.to_string token)
   | e -> Lwt.fail e
 
+  (** [is_supported cached_version req] checks if the request is server-compat.
+      (and if the client Learnocaml_version.v >= the server_version)
+
+      [is_supported (Some version) req] = Ok version, if it's compatible,
+      [is_supported (Some version) req] = Error message, if it's not,
+      [is_supported None req] = let v = GET Version in Ok v, if it's compatible,
+      [is_supported None req] = let v = GET Version in Error m, if it's not;
+
+      and [is_supported None Version] will also do a GET Version request *)
+  let is_supported_server
+    : type resp.
+      Api.Compat.t option -> Uri.t -> resp Api.request -> (Api.Compat.t, string) result Lwt.t
+    = fun server_version server req ->
+        (match server_version with
+        | Some server_version -> Lwt.return server_version
+        | None ->
+           fetch server (Api.Version ()) >|= fun (server_version, _todo) ->
+           Api.Compat.v server_version) >|= fun server_version ->
+        match Api.is_supported ~server:server_version req with
+      | Ok () -> Ok server_version
+      | Error msg -> Error msg
+
 let check_server_version ?(allow_static=false) server =
   Lwt.catch (fun () ->
-      fetch server (Api.Version ()) >|= fun (server_version,_) ->
-      if server_version <> Api.version then
-        (Printf.eprintf "API version mismatch: client v.%s and server v.%s\n"
-           Api.version server_version;
-         exit 1)
-      else
-        true)
+      is_supported_server
+        None (* if need be: Implement some server_version cache *)
+        server
+        (Api.Version ()) (* TODO: pass more precise requests *)
+      >|= function
+      | Ok _server_version -> true
+      | Error msg -> Printf.eprintf "%s\n" msg; exit 1)
   @@ fun e ->
      if not allow_static then
        begin
