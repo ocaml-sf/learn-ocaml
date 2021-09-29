@@ -532,7 +532,10 @@ let check_server_version ?(allow_static=false) server =
         (Api.Version ()) (* TODO: pass more precise requests *)
       >|= function
       | Ok _server_version -> true
-      | Error msg -> Printf.eprintf "%s\n" msg; exit 1)
+      | Error msg -> (* See [Learnocaml_api.is_supported]'s message *)
+         Printf.eprintf
+           "[ERROR] %s\nDo you use the latest learn-ocaml-client binary?\n" msg;
+         exit 1)
   @@ fun e ->
      if not allow_static then
        begin
