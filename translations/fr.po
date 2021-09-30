@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2021-10-01 00:54+0200\n"
+"PO-Revision-Date: 2021-10-01 01:00+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -231,7 +231,7 @@ msgstr "Télécharger"
 
 #: File "src/app/learnocaml_common.ml", line 898, characters 22-33
 msgid "Eval code"
-msgstr "Évaluer le code"
+msgstr "Exécuter le code"
 
 #: File "src/app/learnocaml_common.ml", line 906, characters 23-29
 msgid "Sync"
@@ -468,7 +468,7 @@ msgid "First connection"
 msgstr "Première connexion"
 
 #: File "src/app/learnocaml_index_main.ml", line 623, characters 36-67
-msgid "New user ? Create a new token"
+msgid "New user? Create a new token"
 msgstr "Vous êtes nouveau ? Obtenez un nouveau token"
 
 #: File "src/app/learnocaml_index_main.ml", line 624, characters 38-57
@@ -488,7 +488,7 @@ msgid "Returning user"
 msgstr "Utilisateur existant"
 
 #: File "src/app/learnocaml_index_main.ml", line 628, characters 29-64
-msgid "Already have a token ? Click here"
+msgid "Already have a token? Click here!"
 msgstr "Vous avez déjà un token ? Par ici !"
 
 #: File "src/app/learnocaml_index_main.ml", line 629, characters 31-49

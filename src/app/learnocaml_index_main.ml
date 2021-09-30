@@ -620,12 +620,12 @@ let set_string_translations () =
     "txt_login_welcome", configured config##.txtLoginWelcome
       [%i"Welcome to Learn OCaml"];
     "txt_first_connection", [%i"First connection"];
-    "txt_first_connection_link", [%i"New user ? Create a new token"];
+    "txt_first_connection_link", [%i"New user? Create a new token"];
     "txt_first_connection_dialog", [%i"Choose a nickname"];
     "txt_first_connection_secret", [%i"Secret"];
     "txt_login_new", [%i"Create new token"];
     "txt_returning", [%i"Returning user"];
-    "txt_returning_link", [%i"Already have a token ? Click here"];
+    "txt_returning_link", [%i"Already have a token? Click here!"];
     "txt_returning_dialog", [%i"Enter your token"];
     "txt_login_returning",  [%i"Connect"];
   ] in
