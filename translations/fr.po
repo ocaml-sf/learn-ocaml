@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2021-07-29 17:55+0200\n"
+"PO-Revision-Date: 2021-10-01 00:54+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -765,7 +765,7 @@ msgstr "Erreur dans le code."
 
 #: File "src/app/learnocaml_exercise_main.ml", line 277, characters 27-85
 msgid "Cannot start the grader if your code does not typecheck."
-msgstr "La notation ne peut être lancée si le code ne type pas."
+msgstr "La notation ne peut être lancée si le code ne compile pas."
 
 #: File "src/app/learnocaml_student_view.ml", line 213, characters 24-54
 msgid "Future assignment (starting "
