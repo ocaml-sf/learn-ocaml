@@ -128,7 +128,7 @@ msgstr "%02d:%02d"
 msgid "0:%02d:%02d"
 msgstr "0:%02d:%02d"
 
-#: File "src/app/learnocaml_common.ml", line 543, characters 34-55 1035, 38-59
+#: File "src/app/learnocaml_common.ml", line 543, characters 34-55 1071, 38-59
 msgid "difficulty: %d / 40"
 msgstr "difficulté: %d / 40"
 
@@ -237,59 +237,59 @@ msgstr "Exécuter le code"
 msgid "Sync"
 msgstr "Sync"
 
-#: File "src/app/learnocaml_common.ml", line 963, characters 34-49
+#: File "src/app/learnocaml_common.ml", line 964, characters 34-49 999,
 msgid "OCaml prelude"
 msgstr "Prélude OCaml"
 
-#: File "src/app/learnocaml_common.ml", line 970, characters 59-65
+#: File "src/app/learnocaml_common.ml", line 971, characters 59-65 1006,
 msgid "Hide"
 msgstr "Cacher"
 
-#: File "src/app/learnocaml_common.ml", line 977, characters 59-65
+#: File "src/app/learnocaml_common.ml", line 976, characters 59-65 1013,
 msgid "Show"
 msgstr "Montrer"
 
-#: File "src/app/learnocaml_common.ml", line 1001, characters 18-36
+#: File "src/app/learnocaml_common.ml", line 1037, characters 18-36
 msgid "Enter the secret"
 msgstr "Entrez le secret"
 
-#: File "src/app/learnocaml_common.ml", line 1041, characters 22-35
+#: File "src/app/learnocaml_common.ml", line 1077, characters 22-35
 msgid "Difficulty:"
 msgstr "Difficulté :"
 
-#: File "src/app/learnocaml_common.ml", line 1055, characters 39-49
+#: File "src/app/learnocaml_common.ml", line 1091, characters 39-49
 msgid "Kind: %s"
 msgstr "Type : %s"
 
-#: File "src/app/learnocaml_common.ml", line 1196, characters 46-59
+#: File "src/app/learnocaml_common.ml", line 1232, characters 46-59
 msgid "Identifier:"
 msgstr "Identifiant de l'exercice :"
 
-#: File "src/app/learnocaml_common.ml", line 1200, characters 48-57
+#: File "src/app/learnocaml_common.ml", line 1236, characters 48-57
 msgid "Author:"
 msgstr "Auteur :"
 
-#: File "src/app/learnocaml_common.ml", line 1201, characters 47-57
+#: File "src/app/learnocaml_common.ml", line 1237, characters 47-57
 msgid "Authors:"
 msgstr "Auteurs :"
 
-#: File "src/app/learnocaml_common.ml", line 1206, characters 31-48
+#: File "src/app/learnocaml_common.ml", line 1242, characters 31-48
 msgid "Skills trained:"
 msgstr "Compétences pratiquées :"
 
-#: File "src/app/learnocaml_common.ml", line 1210, characters 31-49
+#: File "src/app/learnocaml_common.ml", line 1246, characters 31-49
 msgid "Skills required:"
 msgstr "Compétences requises :"
 
-#: File "src/app/learnocaml_common.ml", line 1215, characters 36-57
+#: File "src/app/learnocaml_common.ml", line 1251, characters 36-57
 msgid "Previous exercises:"
 msgstr "Exercices précédents :"
 
-#: File "src/app/learnocaml_common.ml", line 1218, characters 35-52
+#: File "src/app/learnocaml_common.ml", line 1254, characters 35-52
 msgid "Next exercises:"
 msgstr "Exercices suivants :"
 
-#: File "src/app/learnocaml_common.ml", line 1223, characters 26-36
+#: File "src/app/learnocaml_common.ml", line 1259, characters 26-36
 msgid "Metadata"
 msgstr "Métadonnées"
 
@@ -467,7 +467,7 @@ msgstr "Bienvenue sur Learn OCaml"
 msgid "First connection"
 msgstr "Première connexion"
 
-#: File "src/app/learnocaml_index_main.ml", line 623, characters 36-67
+#: File "src/app/learnocaml_index_main.ml", line 623, characters 36-66
 msgid "New user? Create a new token"
 msgstr "Vous êtes nouveau ? Obtenez un nouveau token"
 
