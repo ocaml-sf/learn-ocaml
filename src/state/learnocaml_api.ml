@@ -16,7 +16,7 @@ module type COMPAT = sig
 
   val to_string : t -> string
 
-  (** Supported formats: [Compat.v "str"] where "str" is
+  (** Supported formats: [Compat.v "str"] where "str" is nonempty and
       either "n", "-n" (a signed integer), or "n.str".
       However, [Compat.v "0.14.rc1"] or so is not supported for now. *)
   val v : string -> t
