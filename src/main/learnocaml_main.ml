@@ -270,7 +270,6 @@ let process_html_file orig_file dest_file base_url no_secret =
               when no_secret && List.mem (("", "id"), "secret-section") attrs ->
             `Start_element ((e, "div"), (("", "style"), "display:none")::attrs)
          | t -> t)
-  |> Markup.pretty_print
   |> Markup.write_html
   |> Markup_lwt.to_lwt_stream
   |> Lwt_io.write_chars wfile >>= fun () ->
