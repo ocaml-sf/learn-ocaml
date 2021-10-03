@@ -672,14 +672,22 @@ let get_config_option_server ?local ?(save_back=false) ?(allow_static=false) ser
           Lwt.return_unit
       )
       >|= fun () -> (Some c, server_version)
-  | None -> Lwt.return (None, None)
+  | None ->
+     match server_opt with
+     | Some server ->
+        let c = ConfigFile.{server; token = None} in
+        check_server_version ~allow_static server
+        >>= fun server_version ->
+        (* Note: could raise an error if save_back=true *)
+        Lwt.return (Some c, server_version)
+     | None -> Lwt.return (None, None)
 
 let get_config_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
   get_config_option_server ?local ~save_back ~allow_static server_opt
   >>= function
   | Some c, o -> Lwt.return (c, o)
   (* TODO: Make it possible to change this error message (from get_config_o_server) *)
-  | None, _ -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
+  | None, _ -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`, or pass a --server=\"URL\" option"
 
 let get_config_o_server ?save_back ?(allow_static=false) o =
   let open Args_server in
