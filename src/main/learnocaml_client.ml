@@ -559,7 +559,7 @@ let check_server_version ?(allow_static=false) server =
         server
         (Api.Version ()) (* TODO: pass more precise requests *)
       >|= function
-      | Ok _server_version -> true
+      | Ok server_version -> Some server_version
       | Error msg -> (* See [Learnocaml_api.is_supported]'s message *)
          Printf.eprintf
            "[ERROR] %s\nDo you use the latest learn-ocaml-client binary?\n" msg;
@@ -575,7 +575,7 @@ let check_server_version ?(allow_static=false) server =
          exit 1
        end
      else
-       Lwt.return_false
+       Lwt.return_none
 
 let get_server =
   let default_server = Uri.of_string "http://learn-ocaml.org" in
@@ -615,7 +615,7 @@ let get_config_option ?local ?(save_back=false) ?(allow_static=false) server_opt
         | None, None -> c
       in
       check_server_version ~allow_static c.ConfigFile.server
-      >>= fun _ ->
+      >>= fun _version -> (* could use this arg like get_config_option_server *)
       (
         if save_back
         then
@@ -662,7 +662,7 @@ let get_config_option_server ?local ?(save_back=false) ?(allow_static=false) ser
         | None -> c
       in
       check_server_version ~allow_static c.ConfigFile.server
-      >>= fun _ ->
+      >>= fun server_version ->
       (
         if save_back
         then
@@ -671,15 +671,15 @@ let get_config_option_server ?local ?(save_back=false) ?(allow_static=false) ser
         else
           Lwt.return_unit
       )
-      >|= fun () -> Some c
-  | None -> Lwt.return_none
+      >|= fun () -> (Some c, server_version)
+  | None -> Lwt.return (None, None)
 
 let get_config_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
   get_config_option_server ?local ~save_back ~allow_static server_opt
   >>= function
-  | Some c -> Lwt.return c
+  | Some c, o -> Lwt.return (c, o)
   (* TODO: Make it possible to change this error message (from get_config_o_server) *)
-  | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
+  | None, _ -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
 
 let get_config_o_server ?save_back ?(allow_static=false) o =
   let open Args_server in
@@ -706,7 +706,7 @@ module Init = struct
     in
     get_server () >>= fun server ->
     check_server_version ~allow_static:true server >>= fun has_server ->
-    let token = if has_server then
+    let token = if has_server <> None then
                   get_token server >>= Lwt.return_some
                 else
                   Lwt.return_none in
@@ -887,10 +887,11 @@ module Server_version = struct
          | e -> Printexc.to_string e)
       >>= fun () -> exit 2
       end >>= fun cf ->
-    let ConfigFile.{server; token = _} = cf in
+    match cf with
+    | ConfigFile.{server; token = _}, server_version ->
     (Lwt.catch (fun () ->
          is_supported_server
-           None (* if need be: Implement some server_version cache *)
+           server_version (* some server_version cache *)
            server
            (Api.Version ())
          >>= function
