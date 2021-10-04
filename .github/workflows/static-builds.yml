@@ -58,6 +58,7 @@ jobs:
       - name: Prepare build environment
         run: |
           opam init -a --bare
+          brew install openssl@3  # Workaround https://github.com/ocaml/opam-repository/issues/19676
           opam switch create . ocaml-base-compiler --deps-only
       - name: Build the binaries
         run: |
