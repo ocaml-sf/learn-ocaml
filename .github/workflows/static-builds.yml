@@ -15,6 +15,10 @@ jobs:
   static-bin-linux:
     name: Builds static Linux binaries
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        artifact: ["learn-ocaml-linux-x86_64.tar.gz"]
+        # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
@@ -28,19 +32,25 @@ jobs:
           ldd "${bin[@]}"
           for b in "${bin[@]}"; do ( set -x; "$b" --version ); done
       - name: Archive static binaries
+        run: |
+          uname -a
+          tar cvzf ${{ matrix.artifact }} \
+            learn-ocaml learn-ocaml-server learn-ocaml-client
+      - name: Upload static binaries
         uses: actions/upload-artifact@v2
         with:
-          name: static-binaries-linux
-          path: |
-            learn-ocaml
-            learn-ocaml-server
-            learn-ocaml-client
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
   static-bin-macos:
     name: Builds static Macos binaries
     runs-on: macos-latest
     env:
       OPAMYES: 1
       OPAMDEPEXTYES: 1
+    strategy:
+      matrix:
+        artifact: ["learn-ocaml-darwin-x86_64.tar.gz"]
+        # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
@@ -71,7 +81,13 @@ jobs:
           otool -L "$dir"/*
           for b in "${bin[@]}"; do ( set -x; "$dir/$b" --version ); done
       - name: Archive static binaries
+        run: |
+          uname -a
+          cd _build/install/default/bin
+          tar cvzhf "$OLDPWD"/${{ matrix.artifact }} \
+            learn-ocaml learn-ocaml-server learn-ocaml-client
+      - name: Upload static binaries
         uses: actions/upload-artifact@v2
         with:
-          name: static-binaries-macos
-          path: _build/install/default/bin/*
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
