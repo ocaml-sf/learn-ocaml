@@ -32,6 +32,34 @@ let token_conv =
       (fun fmt t -> Format.pp_print_string fmt (Token.to_string t))
     )
 
+module Args_server = struct
+  (* Subset of Args_global, to be used if "--token" is irrelevant *)
+  type t = {
+      server_url: Uri.t option;
+      local: bool;
+    }
+
+  let server_url =
+    value & opt (some url_conv) None &
+    info ["s";"server"] ~docv:"URL" ~doc:
+      "The URL of the learn-ocaml server."
+      ~env:(Term.env_info "LEARNOCAML_SERVER" ~doc:
+              "Sets the learn-ocaml server URL. Overridden by $(b,--server).")
+  let local =
+    value & flag & info ["local"] ~doc:
+      "Use a configuration file local to the current directory, rather \
+       than user-wide."
+
+  let apply server_url local =
+    {server_url; local}
+
+  let term =
+    Term.(const apply $server_url $local)
+
+  let term_server =
+    Term.(const (fun x -> x) $ server_url)
+end
+
 module Args_global = struct
   type t = {
       server_url: Uri.t option;
@@ -531,11 +559,11 @@ let check_server_version ?(allow_static=false) server =
         server
         (Api.Version ()) (* TODO: pass more precise requests *)
       >|= function
-      | Ok _server_version -> true
+      | Ok server_version -> Some server_version
       | Error msg -> (* See [Learnocaml_api.is_supported]'s message *)
          Printf.eprintf
            "[ERROR] %s\nDo you use the latest learn-ocaml-client binary?\n" msg;
-         exit 1)
+         exit 70)
   @@ fun e ->
      if not allow_static then
        begin
@@ -547,7 +575,7 @@ let check_server_version ?(allow_static=false) server =
          exit 1
        end
      else
-       Lwt.return_false
+       Lwt.return_none
 
 let get_server =
   let default_server = Uri.of_string "http://learn-ocaml.org" in
@@ -587,7 +615,7 @@ let get_config_option ?local ?(save_back=false) ?(allow_static=false) server_opt
         | None, None -> c
       in
       check_server_version ~allow_static c.ConfigFile.server
-      >>= fun _ ->
+      >>= fun _version -> (* could use this arg like get_config_option_server *)
       (
         if save_back
         then
@@ -603,6 +631,7 @@ let get_config ?local ?(save_back=false) ?(allow_static=false) server_opt token_
   get_config_option ?local ~save_back ~allow_static server_opt token_opt
   >>= function
   | Some c -> Lwt.return c
+  (* TODO: Make it possible to change this error message (from get_config_o) *)
   | None -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`"
 
 let man p = [
@@ -621,6 +650,48 @@ let man p = [
 let get_config_o ?save_back ?(allow_static=false) o =
   let open Args_global in
   get_config ~local:o.local ?save_back ~allow_static o.server_url o.token
+
+(* Likewise, but without dealing with tokens *)
+
+let get_config_option_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
+  match ConfigFile.path ?local () with
+  | Some f ->
+      ConfigFile.read f >>= fun c ->
+      let c = match server_opt with
+        | Some server -> { c with ConfigFile.server }
+        | None -> c
+      in
+      check_server_version ~allow_static c.ConfigFile.server
+      >>= fun server_version ->
+      (
+        if save_back
+        then
+          ConfigFile.write f c >|= fun () ->
+          Printf.eprintf "Configuration written to %s\n%!" f
+        else
+          Lwt.return_unit
+      )
+      >|= fun () -> (Some c, server_version)
+  | None ->
+     match server_opt with
+     | Some server ->
+        let c = ConfigFile.{server; token = None} in
+        check_server_version ~allow_static server
+        >>= fun server_version ->
+        (* Note: could raise an error if save_back=true *)
+        Lwt.return (Some c, server_version)
+     | None -> Lwt.return (None, None)
+
+let get_config_server ?local ?(save_back=false) ?(allow_static=false) server_opt =
+  get_config_option_server ?local ~save_back ~allow_static server_opt
+  >>= function
+  | Some c, o -> Lwt.return (c, o)
+  (* TODO: Make it possible to change this error message (from get_config_o_server) *)
+  | None, _ -> Lwt.fail_with "No config file found. Please do `learn-ocaml-client init`, or pass a --server=\"URL\" option"
+
+let get_config_o_server ?save_back ?(allow_static=false) o =
+  let open Args_server in
+  get_config_server ~local:o.local ?save_back ~allow_static o.server_url
 
 module Init = struct
   open Args_global
@@ -643,7 +714,7 @@ module Init = struct
     in
     get_server () >>= fun server ->
     check_server_version ~allow_static:true server >>= fun has_server ->
-    let token = if has_server then
+    let token = if has_server <> None then
                   get_token server >>= Lwt.return_some
                 else
                   Lwt.return_none in
@@ -664,7 +735,7 @@ module Init = struct
       ~doc:"Initialize the configuration file."
       "init"
 end
-  
+
 module Grade = struct
   open Args_exercises
   let grade go eo =
@@ -790,7 +861,95 @@ module Print_server = struct
     Term.info ~man ~doc:explanation "print-server"
     
 end
-                    
+
+module Args_server_version = struct
+  type t = {
+      minimum: bool;
+    }
+
+  let minimum =
+    value & flag & info ["min"] ~doc:
+      "Return the min of server and learn-ocaml-client versions. \
+       This flag is useless for now as we only support backward-compatibility \
+       (so an old learn-ocaml-client won't try to reach a more recent server) \
+       but it is already provided if we later decide to relax this constraint."
+
+  let apply minimum = {minimum}
+
+  let term = Term.(const apply $ minimum)
+end
+
+module Server_version = struct
+  open Args_server_version
+  open Learnocaml_api
+
+  let server_version server_args server_version_args =
+    Lwt.catch
+      (fun () ->
+        get_config_o_server ~save_back:false ~allow_static:false server_args)
+      begin fun e ->
+      Lwt_io.eprintf "[ERROR] Input error: %s\n"
+        (match e with
+         | Unix.Unix_error (err, _, _) -> Unix.error_message err
+         | Failure m -> m
+         | e -> Printexc.to_string e)
+      >>= fun () -> exit 2
+      end >>= fun cf ->
+    match cf with
+    | ConfigFile.{server; token = _}, server_version ->
+    (Lwt.catch (fun () ->
+         is_supported_server
+           server_version (* some server_version cache *)
+           server
+           (Api.Version ())
+         >>= function
+         | Ok server_version ->
+            let version =
+              let {minimum} = server_version_args in
+              if minimum then
+                let client_version = Compat.v Learnocaml_version.v in
+                if Compat.le server_version client_version
+                then server_version
+                else client_version
+              else server_version in
+            Lwt_io.printl (Learnocaml_api.Compat.to_string version)
+            >|= fun () -> 0
+         (* TODO: Factor-out error messages *)
+         | Error msg -> (* See [Learnocaml_api.is_supported]'s message *)
+            Lwt_io.eprintf
+              "[ERROR] %s\nDo you use the latest learn-ocaml-client binary?\n" msg
+            >|= fun () -> 70)
+     @@ fun e ->
+        begin
+          Lwt_io.eprintf "[ERROR] Could not reach server: %s\n"
+            (match e with
+             | Unix.Unix_error (err, _, _) -> Unix.error_message err
+             | Failure m -> m
+             | e -> Printexc.to_string e)
+          >|= fun () -> 1
+        end)
+
+  let explanation =
+    "Print the version of the server (from CLI or from the cookie file, which is kept untouched anyway)."
+
+  let man = man explanation
+
+  let exits =
+    let open Term in
+    [ exit_info ~doc:"Default exit." exit_status_success
+    ; exit_info ~doc:"Unable to reach the server." 1
+    ; exit_info ~doc:"Input error: unable to find a server URL." 2
+    ; exit_info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
+  (* TODO: Generalize & Use [use_global] *)
+  let cmd =
+    Term.(
+      const (fun o l -> Stdlib.exit (Lwt_main.run (server_version o l)))
+      $ Args_server.term $ Args_server_version.term),
+    Term.info ~man ~exits ~doc:explanation "server-version"
+end
+
 module Set_options = struct
   let set_opts o =
     get_config_o ~save_back:true ~allow_static:true o
@@ -979,7 +1138,7 @@ module Exercise_list = struct
     use_global exercise_list,
     Term.info ~man ~doc:doc "exercise-list"
 end
-                
+
 module Main = struct
   let man =
     man
@@ -999,6 +1158,7 @@ let () =
           ; Set_options.cmd
           ; Fetch.cmd
           ; Print_server.cmd
+          ; Server_version.cmd
           ; Template.cmd
           ; Create_token.cmd
           ; Exercise_list.cmd]
