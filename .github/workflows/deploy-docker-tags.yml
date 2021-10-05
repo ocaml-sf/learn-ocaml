@@ -1,0 +1,45 @@
+name: Deploy docker tags
+on:
+  push:
+    branches:
+      - 'deploy-docker-tags'
+jobs:
+  deploy-docker-tags:
+    name: "Retag master image if need be"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - "ocamlsf/learn-ocaml"
+          - "ocamlsf/learn-ocaml-client"
+          - "ocamlsf/emacs-learn-ocaml-client"
+        tag:
+          - "0.13.0"
+          # Double-check if you want to tag latest as well (see below)
+      fail-fast: false
+    steps:
+      - name: Try to pull non-existing image
+        run: |
+          [ -n "${{ secrets.DOCKER_USERNAME }}" ]  # test this early
+          if sudo docker pull "${{ matrix.image }}:${{ matrix.tag }}"; then
+            echo 'FAILURE: the docker tag already exists'
+            exit 1
+          else
+            : OK
+          fi
+      - name: Pull master image
+        run: |
+          sudo docker pull "${{ matrix.image }}:master"
+      - name: Login into Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: "Retag image to latest AND ${{ matrix.tag }}"
+        run: |
+          sudo docker tag "${{ matrix.image }}:master" "${{ matrix.image }}:${{ matrix.tag }}"
+          sudo docker push "${{ matrix.image }}:${{ matrix.tag }}"
+          sudo docker tag "${{ matrix.image }}:master" "${{ matrix.image }}:latest"
+          sudo docker push "${{ matrix.image }}:latest"
+      - name: Logout from Docker Hub
+        if: ${{ always() }}
+        run: |
+          sudo docker logout || true
