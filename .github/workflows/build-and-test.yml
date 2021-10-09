@@ -59,6 +59,7 @@ jobs:
       matrix:
         dockerfile:
           - 'Dockerfile.test-client'
+          - 'Dockerfile.test-server'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
