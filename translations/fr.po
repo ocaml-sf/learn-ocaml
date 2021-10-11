@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2021-10-01 01:00+0200\n"
+"PO-Revision-Date: 2021-10-11 15:30+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -747,23 +747,23 @@ msgstr "Noter!"
 msgid "abort"
 msgstr "abandonner"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 226, characters 35-70
-msgid "Grading is taking a lot of time, "
-msgstr "La notation prend longtemps, "
+#: File "src/app/learnocaml_exercise_main.ml", lines 226-227, characters 35-65
+msgid "Grading is taking a lot of time, maybe your code is looping? "
+msgstr "La notation prend du temps, peut-être une boucle infinie dans votre code ? "
 
-#: File "src/app/learnocaml_exercise_main.ml", line 232, characters 35-57
+#: File "src/app/learnocaml_exercise_main.ml", line 233, characters 35-57
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 255, characters 60-86
+#: File "src/app/learnocaml_exercise_main.ml", line 256, characters 60-86
 msgid "Grading aborted by user."
 msgstr "Notation annulée par l'utilisateur."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 276, characters 38-59
+#: File "src/app/learnocaml_exercise_main.ml", line 277, characters 38-59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 277, characters 27-85
+#: File "src/app/learnocaml_exercise_main.ml", line 278, characters 27-85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne compile pas."
 
