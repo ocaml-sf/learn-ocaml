@@ -1,0 +1,78 @@
+[
+  {
+    "section": [
+      {
+        "text": "Function:"
+      },
+      {
+        "text": "aff",
+        "display": "code"
+      }
+    ],
+    "contents": [
+      {
+        "message": [
+          {
+            "text": "Found"
+          },
+          {
+            "text": "aff",
+            "display": "code"
+          },
+          {
+            "text": "with compatible type."
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "aff 2 (-1) 5",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "9",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      },
+      {
+        "message": [
+          {
+            "text": "Computing"
+          },
+          {
+            "text": "aff (-2) 1 5",
+            "display": "code"
+          }
+        ],
+        "result": "informative"
+      },
+      {
+        "message": [
+          {
+            "text": "Correct value"
+          },
+          {
+            "text": "(-9)",
+            "display": "code"
+          }
+        ],
+        "result": 1
+      }
+    ]
+  }
+]
