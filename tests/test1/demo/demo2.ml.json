@@ -79,7 +79,7 @@
             "text": "Computing"
           },
           {
-            "text": "plus 10 -10",
+            "text": "plus 10 (-10)",
             "display": "code"
           }
         ],
@@ -155,7 +155,7 @@
             "text": "Computing"
           },
           {
-            "text": "minus 4 -2",
+            "text": "minus 4 (-2)",
             "display": "code"
           }
         ],
@@ -191,7 +191,7 @@
             "text": "Correct value"
           },
           {
-            "text": "-10",
+            "text": "(-10)",
             "display": "code"
           }
         ],
