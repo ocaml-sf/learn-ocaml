@@ -10,6 +10,7 @@ on:
 jobs:
   push_server:
     name: Push learn-ocaml image to Docker Hub
+    if: ${{ github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -26,6 +27,7 @@ jobs:
           tags: master
   push_client:
     name: Push learn-ocaml-client image to Docker Hub
+    if: ${{ github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -43,6 +45,7 @@ jobs:
           tags: master
   push_emacs_client:
     name: Push emacs-learn-ocaml-client image to Docker Hub
+    if: ${{ github.repository == 'ocaml-sf/learn-ocaml' }}
     needs: push_client
     runs-on: ubuntu-latest
     steps:

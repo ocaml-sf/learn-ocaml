@@ -14,6 +14,7 @@ on:
 jobs:
   static-bin-linux:
     name: Builds static Linux binaries
+    if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -43,6 +44,7 @@ jobs:
           path: ${{ matrix.artifact }}
   static-bin-macos:
     name: Builds static Macos binaries
+    if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: macos-latest
     env:
       OPAMYES: 1
