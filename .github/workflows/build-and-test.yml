@@ -37,6 +37,7 @@ jobs:
       matrix:
         server_image:
           - 'ocamlsf/learn-ocaml:0.12'
+          - 'ocamlsf/learn-ocaml:0.13.0'
           - 'learn-ocaml'  # use learn-ocaml image built from master
     env:
       USE_CLIENT_IMAGE: 'true'
