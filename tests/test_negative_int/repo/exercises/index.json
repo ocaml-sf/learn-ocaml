@@ -1,0 +1,5 @@
+{ "learnocaml_version": "1",
+  "groups":
+  { "demo":
+    { "title": "Test negative_int",
+      "exercises": [ "int_exo" ] } } }

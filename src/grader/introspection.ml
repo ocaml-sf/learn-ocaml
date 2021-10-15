@@ -183,7 +183,7 @@ let print_value ppf v ty =
                  state := `Undecided ;
                  for i = ofs to ofs + len - 1 do
                    match String.get s i with
-                   | ' ' | '\n' | '\r' | '\t' ->
+                   | '-' | ' ' | '\n' | '\r' | '\t' ->
                        state := `Decided true ;
                        raise Exit
                    | _ ->  ()
