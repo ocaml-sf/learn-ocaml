@@ -14,6 +14,10 @@
         grid-template-columns: auto;
         grid-template-rows: auto;
     }
+
+    #learnocaml-main-teacher > #teacher_menubar {
+        overflow: visible;
+    }
 }
 @media (min-width: 1400px) {
     #learnocaml-main-teacher {
