@@ -131,6 +131,8 @@ jobs:
       - name: Get tag name
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
+      - name: Check out the repo
+        uses: actions/checkout@v2
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -150,6 +152,8 @@ jobs:
       - name: Get tag name
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
+      - name: Check out the repo
+        uses: actions/checkout@v2
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -172,6 +176,8 @@ jobs:
       - name: Get tag name
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
+      - name: Check out the repo
+        uses: actions/checkout@v2
       - name: Push to Docker Hub
         # https://github.com/docker/build-push-action/tree/releases/v1#readme
         uses: docker/build-push-action@v1
