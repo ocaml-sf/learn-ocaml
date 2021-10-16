@@ -38,6 +38,7 @@ translations/$(LANGS:=.pot):
 	@for f in $(LANGS); do echo >> translations/$$f.po; done
 	@rm -f translations/*.pot
 	@${DUNE} clean ${DUNE_ARGS}
+	-rm -f ${INDEX_ODOC_PATH}
 	@DUMP_POT=1 ${DUNE} build ${DUNE_ARGS} -j 1
 	@for f in $(LANGS); do \
 	  mv translations/$$f.pot translations/$$f.pot.bak; \
