@@ -223,7 +223,8 @@ let () =
       Manip.Ev.onclick btn (fun _ -> Lwt.wakeup u () ; true) ;
       let div =
         Tyxml_js.Html5.(div ~a: [ a_class [ "dialog" ] ]
-                          [ txt [%i"Grading is taking a lot of time, "] ;
+                          [ txt [%i"Grading is taking a lot of time, \
+                                    maybe your code is looping? "] ;
                             btn ;
                             txt " ?" ]) in
       Manip.SetCss.opacity div (Some "0") ;
@@ -249,7 +250,7 @@ let () =
                Lwt.return_unit)
         in
         let abortion =
-          Lwt_js.sleep 5. >>= fun () ->
+          Lwt_js.sleep 15. >>= fun () ->
           Manip.SetCss.opacity abort_message (Some "1") ;
           aborted >>= fun () ->
           Lwt.return Learnocaml_report.[ Message ([ Text [%i"Grading aborted by user."] ], Failure) ] in

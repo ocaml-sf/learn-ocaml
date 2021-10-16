@@ -203,7 +203,12 @@ module Exercise = struct
           List.iter (fun st -> Hashtbl.add tbl st.id st) l;
           tbl)
       @@ function
-      | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return tbl
+      | Unix.Unix_error (Unix.ENOENT, _, _) ->
+          Lazy.force !index >>= fun index ->
+          Exercise.Index.fold_exercises (fun () id _ ->
+              Hashtbl.add tbl id (Exercise.Status.default id))
+            () index;
+          Lwt.return tbl
       | e -> Lwt.fail e
     )
 
