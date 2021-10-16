@@ -14,7 +14,7 @@ jobs:
           - "ocamlsf/learn-ocaml-client"
           - "ocamlsf/emacs-learn-ocaml-client"
         tag:
-          - "0.13.0"
+          - "0.13.1"
           # Double-check if you want to tag latest as well (see below)
       fail-fast: false
     steps:
