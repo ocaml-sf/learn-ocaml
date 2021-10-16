@@ -1,5 +1,42 @@
 # Changelog
 
+### [0.13.1](https://www.github.com/ocaml-sf/learn-ocaml/compare/v0.13.0...v0.13.1) (2021-10-16)
+
+
+### Bug Fixes
+
+* ***.opam:** Make common deps constraints uniform & Add missing deps ([26a50ef](https://www.github.com/ocaml-sf/learn-ocaml/commit/26a50ef1ef4c37ddb990f9d7ebb71da6896cfc1a))
+* **API:** Fix listing exercise status when the status list hasn't been initialized; Fix [#314](https://www.github.com/ocaml-sf/learn-ocaml/issues/314) ([3c781cb](https://www.github.com/ocaml-sf/learn-ocaml/commit/3c781cb3f9605176c915da825be877c70cfceb41))
+* **grader:** Display negative numbers with mandatory parens; Fix [#440](https://www.github.com/ocaml-sf/learn-ocaml/issues/440) ([35941b5](https://www.github.com/ocaml-sf/learn-ocaml/commit/35941b5ebe8cb2b947cd6010118050a79c6e36f8))
+* **UI:** Cleanup duplicate, inconsistent camel logos ([03d871a](https://www.github.com/ocaml-sf/learn-ocaml/commit/03d871ad0a70c4c50849166dd2b2f3d95ae3913a))
+* **UI:** Display Actions=teacher_menubar properly in responsive mode; Fix [#444](https://www.github.com/ocaml-sf/learn-ocaml/issues/444) ([#450](https://www.github.com/ocaml-sf/learn-ocaml/issues/450)) ([b6d44db](https://www.github.com/ocaml-sf/learn-ocaml/commit/b6d44db7504e9b74169cbb69e9ae08b60a1aed01))
+* **UI:** Fix CSS bug regarding the loading animation ([#445](https://www.github.com/ocaml-sf/learn-ocaml/issues/445)) ([881982a](https://www.github.com/ocaml-sf/learn-ocaml/commit/881982a8f0ec5b03b4f8c85d8ea38790ac804012))
+* **UI:** Increase timeout during grading ([3cb9dd1](https://www.github.com/ocaml-sf/learn-ocaml/commit/3cb9dd1f0460b9c5d91e8c42c3bba9b23091c0e7))
+* **UI:** Update one fr translation ([06a71ae](https://www.github.com/ocaml-sf/learn-ocaml/commit/06a71aec5af76e421c5e654d213fb77450eae82a))
+
+
+### Dependencies
+
+* Fix version of dune package (w.r.t. that of dune-project file) ([7c11083](https://www.github.com/ocaml-sf/learn-ocaml/commit/7c110834d9647beb80ce59d976a18efe712d5393))
+
+
+### Documentation
+
+* **tests/README.md:** Add hint for test case generation ([19477a5](https://www.github.com/ocaml-sf/learn-ocaml/commit/19477a51327ed749bc0f7cf0ad9195e1b401c5f8))
+
+
+### Tests
+
+* Add Dockefile.test-server to repro issue with learn-ocaml.opam ([6d86ce6](https://www.github.com/ocaml-sf/learn-ocaml/commit/6d86ce6a7c40b3098336315d3f4cbd4b89ace9c8))
+* Add test to repro issue [#440](https://www.github.com/ocaml-sf/learn-ocaml/issues/440) ([07033c9](https://www.github.com/ocaml-sf/learn-ocaml/commit/07033c98b3e73630a4472125673dc386687bc2b1))
+
+
+### CI/CD
+
+* **build-and-test.yml:** Add ocamlsf/learn-ocaml:0.13.0 in client test matrix ([6c21d9c](https://www.github.com/ocaml-sf/learn-ocaml/commit/6c21d9c58a36364f52ac731b28b9e1622a1348dc))
+* Ensure release-please triggers docker/build-push-action jobs ([#443](https://www.github.com/ocaml-sf/learn-ocaml/issues/443)) ([71c3590](https://www.github.com/ocaml-sf/learn-ocaml/commit/71c3590e46ad48269834dbaf1a3b634ec35b91b4))
+* Ensure the CD-related workflows won't run on forks ([#446](https://www.github.com/ocaml-sf/learn-ocaml/issues/446)) ([6b8c49b](https://www.github.com/ocaml-sf/learn-ocaml/commit/6b8c49b36a8e2c2bd729cd0acc8f9cefde38ec2a))
+
 ## 0.13.0 (2021-10-05)
 
 ### Features
