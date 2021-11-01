@@ -56,7 +56,7 @@ module El = struct
   module Dyn = struct
     (** Elements that are dynamically created (ids only) *)
     let exercise_list_id = "learnocaml-main-exercise-list"
-    let tryocaml_id = "learnocaml-main-tryocaml"
+    let tutorial_id = "learnocaml-main-tutorial"
     let lesson_id = "learnocaml-main-lesson"
     let toplevel_id = "learnocaml-main-toplevel"
   end
@@ -301,7 +301,7 @@ let lessons_tab select (arg, set_arg, _delete_arg) () =
   end >>= fun () ->
   Lwt.return lesson_div
 
-let tryocaml_tab select (arg, set_arg, _delete_arg) () =
+let tutorial_tab select (arg, set_arg, _delete_arg) () =
   let open Tutorial in
   let navigation_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "navigation" ] ] []) in
@@ -320,7 +320,7 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
   let buttons_div =
     Tyxml_js.Html5.(div ~a: [ a_class [ "buttons" ] ] []) in
   let tutorial_div =
-    Tyxml_js.Html5.(div ~a: [ a_id El.Dyn.tryocaml_id ])
+    Tyxml_js.Html5.(div ~a: [ a_id El.Dyn.tutorial_id ])
       [ navigation_div ; step_div ; toplevel_div ; buttons_div ] in
   let toplevel_buttons_group = button_group () in
   disable_button_group toplevel_buttons_group (* enabled after init *) ;
@@ -329,7 +329,7 @@ let tryocaml_tab select (arg, set_arg, _delete_arg) () =
     let on_enable () = Manip.removeClass step_div "disabled" in
     toplevel_launch ~on_disable ~on_enable toplevel_div
       Learnocaml_local_storage.toplevel_history
-      (fun () -> Lwt.async select) toplevel_buttons_group "tryocaml"
+      (fun () -> Lwt.async select) toplevel_buttons_group "tutorials"
   in
   show_loading [%i"Loading tutorials"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -680,8 +680,8 @@ let () =
   let init_tabs token =
     let get_opt o = Js.Optdef.get o (fun () -> false) in
     let tabs =
-      (if get_opt config##.enableTryocaml
-       then [ "tryocaml", ([%i"Try OCaml"], tryocaml_tab) ] else []) @
+      (if get_opt config##.enableTutorials
+       then [ "tutorials", ([%i"Tutorials"], tutorial_tab) ] else []) @
       (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
         (if get_opt config##.enableExercises then

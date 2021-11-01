@@ -8,7 +8,7 @@
 module Js = Js_of_ocaml.Js
 
 class type learnocaml_config = object
-  method enableTryocaml: bool Js.optdef_prop
+  method enableTutorials: bool Js.optdef_prop
   method enableLessons: bool Js.optdef_prop
   method enableExercises: bool Js.optdef_prop
   method enableToplevel: bool Js.optdef_prop

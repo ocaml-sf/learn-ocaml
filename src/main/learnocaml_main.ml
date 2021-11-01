@@ -155,14 +155,18 @@ module Args = struct
       value & opt dir default & info ["contents-dir"] ~docv:"DIR" ~doc:
         "directory containing the base learn-ocaml app contents"
 
-    let enable opt doc =
+    (** [enable "opt" ~old["old";"very old"](*backward-compat opts*) "the.."] *)
+    let enable opt ?(old: string list = []) doc =
+      let f_on_off opt = ("enable-"^opt, "disable-"^opt) in
+      let on_opt, off_opt =
+        List.split (List.map f_on_off (opt :: old)) in
       value & vflag None [
-        Some true, info ["enable-"^opt] ~doc:("Enable "^doc);
-        Some false, info ["disable-"^opt] ~doc:("Disable "^doc);
+        Some true, info on_opt ~doc:("Enable "^doc);
+        Some false, info off_opt ~doc:("Disable "^doc);
       ]
 
-    let try_ocaml = enable "tryocaml"
-        "the 'TryOCaml' tab (enabled by default if the repository contains a \
+    let try_ocaml = enable "tutorials" ~old:["tryocaml"]
+        "the 'Tutorials' tab (enabled by default if the repository contains a \
          $(i,tutorials) directory)"
 
     let playground = enable "playground"
@@ -367,7 +371,7 @@ let main o =
          (fun oc ->
             Lwt_io.fprintf oc
               "var learnocaml_config = {\n\
-              \  enableTryocaml: %b,\n\
+              \  enableTutorials: %b,\n\
               \  enablePlayground: %b,\n\
               \  enableLessons: %b,\n\
               \  enableExercises: %b,\n\
