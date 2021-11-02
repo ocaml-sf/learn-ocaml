@@ -1,42 +1,49 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report a bug with this project
 title: 'Bug:'
 labels: bug
 assignees: ''
 
 ---
 
-> Related issue(s) or PR(s): 
-> Related project scope(s) (ex: client, CSS, grading, etc...) : 
-> Related user(s): 
+<!-- Some optional but useful fields -->
+
+**Related issue(s) or PR(s):**
+- #…
+
+**Related project scope(s):** …
+(e.g. UI, grading, learn-ocaml-client, Teacher-dashboard, partition-view, …)
+
+**Related user(s):**
+- @…
 
 ## Bug description
 
-A clear and concise description of what the bug is.
+<!-- A clear and concise description of what the bug is -->
 
-### To Reproduce
+### To reproduce
 
 Steps to reproduce the behavior:
 
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1. Open …
+1. Click on …
+1. Then …
 
 ### Expected behavior
 
-A clear and concise description of what you expected to happen.
+<!-- A clear and concise description of what you expected to happen -->
 
-### Screenshots
+### Optional screenshots
 
-If applicable, add screenshots to document your problem.
+<!-- If applicable, add screenshots to document your problem -->
+
 ## Current configuration
 
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+* OS name (and version): 
+* Browser name (and version): 
+* `learn-ocaml --version`: 
 
 ## Additional context
 
-Add any other context about the problem here.
+<!-- Add any other useful details about the problem here -->
