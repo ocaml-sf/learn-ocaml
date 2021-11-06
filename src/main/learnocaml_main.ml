@@ -187,7 +187,8 @@ module Args = struct
 
     let jobs =
       value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
-        "Number of building jobs to run in parallel"
+        "Number of building jobs to run in parallel \
+         (only accept '$(b,--jobs=1)' for now, cf. issue #414)."
 
     type t = {
       contents_dir: string;
@@ -216,8 +217,10 @@ module Args = struct
           repo_dir/"tutorials";
         Learnocaml_process_playground_repository.playground_dir :=
           repo_dir/"playground";
-        Learnocaml_process_exercise_repository.n_processes := jobs;
-        ()
+        Learnocaml_process_exercise_repository.n_processes := 1;
+        if jobs >= 2
+        then failwith "only accept --jobs=1 for now (cf. issue #414)"
+        else ()
       in
       Term.(const apply $repo_dir $exercises_filtered $jobs)
 

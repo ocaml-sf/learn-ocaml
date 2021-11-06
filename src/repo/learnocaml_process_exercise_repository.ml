@@ -227,6 +227,7 @@ let main dest_dir =
                Grader_cli.grade ?print_result ?dirname meta exercise json_path
                >|= fun r -> print_grader_error exercise r; r
            else
+             let () = failwith "only accept --jobs=1 for now (cf. issue #414)" in
              Lwt_list.map_p,
              spawn_grader
          in
