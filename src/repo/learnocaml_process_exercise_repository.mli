@@ -17,5 +17,5 @@ val n_processes: int ref
 
 (** Main *)
 
-(** [dest_dir] -> success *)
-val main: string -> bool Lwt.t
+(** [build_cmo] -> [dest_dir] -> success *)
+val main: bool option -> string -> bool Lwt.t

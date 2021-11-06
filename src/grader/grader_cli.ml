@@ -6,6 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
+let build_cmo = ref false
+let build_grade = ref true
 let display_std_outputs = ref false
 let dump_outputs = ref None
 let dump_reports = ref None
@@ -48,6 +50,15 @@ let read_student_file exercise_dir path =
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
 let grade ?(print_result=false) ?dirname meta exercise output_json =
+  (if !build_cmo then
+          match output_json with
+          | Some json_path ->
+             (* Note: fails if the prelude/prepare don't compile *)
+             Cmo_builder.compile_given exercise json_path
+          | None ->
+             Lwt_io.eprintf "[Warning] json_path = None; please report.@."
+    else Lwt.return_unit) >>= fun () ->
+  if not !build_grade then Lwt.return (Ok ()) else
   Lwt.catch
     (fun () ->
        let code_to_grade = match !grade_student with

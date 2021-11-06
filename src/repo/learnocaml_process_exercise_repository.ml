@@ -92,7 +92,7 @@ let spawn_grader
       | Unix.WEXITED 0 -> Lwt.return (Ok ())
       | _ -> Lwt.return (Error (-1))
 
-let main dest_dir =
+let main build_cmo dest_dir =
   let exercises_index =
     match !exercises_index with
     | Some exercises_index -> exercises_index
@@ -217,19 +217,21 @@ let main dest_dir =
                changed, dump_outputs, dump_reports) :: acc)
            all_exercises [] in
        begin
-         let listmap, grade =
+         let listmap, compile_grade =
            if !n_processes = 1 then
              Lwt_list.map_s,
-             fun dump_outputs dump_reports ?print_result ?dirname
-               meta exercise json_path ->
-               Grader_cli.dump_outputs := dump_outputs;
-               Grader_cli.dump_reports := dump_reports;
-               Grader_cli.grade ?print_result ?dirname meta exercise json_path
-               >|= fun r -> print_grader_error exercise r; r
+             fun (build_cmo, build_grade) dump_outputs dump_reports ?print_result ?dirname
+                 meta exercise json_path ->
+             Grader_cli.build_cmo := build_cmo;
+             Grader_cli.build_grade := build_grade;
+             Grader_cli.dump_outputs := dump_outputs;
+             Grader_cli.dump_reports := dump_reports;
+             Grader_cli.grade ?print_result ?dirname meta exercise json_path
+             >|= fun r -> print_grader_error exercise r; r
            else
              let () = failwith "only accept --jobs=1 for now (cf. issue #414)" in
              Lwt_list.map_p,
-             spawn_grader
+             fun (_todo: bool * bool) -> spawn_grader
          in
          listmap (fun (id, ex_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
              let dst_ex_dir = String.concat Filename.dir_sep [dest_dir; "static"; id] in
@@ -241,15 +243,22 @@ let main dest_dir =
                     Lwt_utils.copy_tree d dst
                  else Lwt.return_unit)
                  (Lwt_unix.files_of_directory ex_dir) >>= fun () ->
-               if not changed then begin
+               let build_cmo =
+                 match build_cmo with
+                 | None -> changed (* by default *)
+                 | Some explicit -> explicit in
+               if not changed && not build_cmo then begin
                  Format.printf "%-24s (no changes)@." id ;
                  Lwt.return true
                end else begin
-                 grade dump_outputs dump_reports
+                 compile_grade (build_cmo, changed) dump_outputs dump_reports
                    ~dirname:(!exercises_dir / id) (Index.find index id) exercise (Some json_path)
                  >>= function
                  | Ok () ->
-                     Format.printf "%-24s     [OK]@." id ;
+                     if not changed then
+                       Format.printf "%-24s (no changes)@." id
+                     else
+                       Format.printf "%-24s     [OK]@." id ;
                      Lwt.return true
                  | Error _ ->
                      Format.printf "%-24s   [FAILED]@." id ;

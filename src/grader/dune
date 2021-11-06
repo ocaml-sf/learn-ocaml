@@ -175,6 +175,15 @@
  (preprocess (per_module ((pps ppx_ocplib_i18n learnocaml_ppx_metaquot) Grading)))
 )
 
+(library
+ (name cmo_builder)
+ (wrapped false)
+ (modes byte)
+ (libraries compiler-libs.bytecomp
+  	    lwt_utils
+	    learnocaml_data)
+ (modules Cmo_builder)
+)
 
 (library
  (name grading_cli)
@@ -185,6 +194,7 @@
             ocplib-ocamlres
             ezjsonm
             lwt_utils
+	    cmo_builder
             learnocaml_report
             learnocaml_data)
  (modules Grading_cli Grader_cli)

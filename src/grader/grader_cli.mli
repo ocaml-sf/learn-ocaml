@@ -8,6 +8,27 @@
 
 (** {2 Configuration options} *)
 
+(** Should should generate exo.{cmi,cmo,cmt} for [prelude ^ " ;;\n" ^ prepare].
+
+    This experimental option can be set from command-line
+    (explicit mode: learn-ocaml build [--enable-cmo-build|--disable-cmo-build])
+    and thereby regenerate [*.cm*] files unconditionally.
+    Otherwise (implicit mode), it is on by default for changed exercises only.
+
+    This feature is useful for learn-ocaml.el but optional (it can be disabled)
+    yet it may become mandatory (not an option anymore) if/when the js_of_ocaml
+    frontend also fetches [*.cmo] binaries for [{solution,test}.ml].
+
+    Note: the initial value of this [bool ref] (in [*.ml]) is a dummy value. *)
+val build_cmo: bool ref
+
+(** Grade the exercise (to be set to [false] if the exercise did not change).
+
+    Use case: if we run [learn-ocaml build --enable-cmo-build] (explicit mode)
+    on an unchanged exercise, we will have [!build_cmo && not !build_grade], so
+    the [*.cmo] will be built, but the grading will be skipped. *)
+val build_grade: bool ref
+
 (** Should stdout / stderr of the grader be echoed *)
 val display_std_outputs: bool ref
 

@@ -161,6 +161,12 @@ module Args = struct
         Some false, info ["disable-"^opt] ~doc:("Disable "^doc);
       ]
 
+    (* See also the comments at the beginning of file [grader/grader_cli.mli] *)
+    let build_cmo = enable "cmo-build"
+        "the build of *.{cmi,cmo,cmt} for each repository exercise \
+         (experimental option; build changed exercises by default; \
+         '$(b,--enable-cmo-build)' will also build un-changed exercises)"
+
     let try_ocaml = enable "tryocaml"
         "the 'TryOCaml' tab (enabled by default if the repository contains a \
          $(i,tutorials) directory)"
@@ -192,6 +198,7 @@ module Args = struct
 
     type t = {
       contents_dir: string;
+      build_cmo: bool option;
       try_ocaml: bool option;
       lessons: bool option;
       exercises: bool option;
@@ -202,10 +209,10 @@ module Args = struct
 
     let builder_conf =
       let apply
-        contents_dir try_ocaml lessons exercises playground toplevel base_url
-        = { contents_dir; try_ocaml; lessons; exercises; playground; toplevel; base_url }
+        contents_dir build_cmo try_ocaml lessons exercises playground toplevel base_url
+        = { contents_dir; build_cmo; try_ocaml; lessons; exercises; playground; toplevel; base_url }
       in
-      Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
+      Term.(const apply $contents_dir $build_cmo $try_ocaml $lessons $exercises $playground $toplevel $base_url)
 
     let repo_conf =
       let apply repo_dir exercises_filtered jobs =
@@ -364,7 +371,8 @@ let main o =
          (fun _ -> Learnocaml_process_playground_repository.main (o.app_dir))
        >>= fun playground_ret ->
        if_enabled o.builder.Builder.exercises (o.repo_dir/"exercises")
-         (fun _ -> Learnocaml_process_exercise_repository.main (o.app_dir))
+         (fun _ ->
+           Learnocaml_process_exercise_repository.main o.builder.Builder.build_cmo o.app_dir)
        >>= fun exercises_ret ->
        Lwt_io.with_file ~mode:Lwt_io.Output (o.app_dir/"js"/"learnocaml-config.js")
          (fun oc ->
