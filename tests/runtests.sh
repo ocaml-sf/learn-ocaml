@@ -84,7 +84,7 @@ run_server () {
         red "PROBLEM, server is not running.\\n"
 
         red "LS:"
-        ls -Rl "$dir"
+        ls -Rl "$srcdir/$dir"
         echo ""
 
         red "LOGS:"
