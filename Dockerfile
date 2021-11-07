@@ -66,7 +66,11 @@ EXPOSE 8443
 USER learn-ocaml
 WORKDIR /home/learn-ocaml
 
+ARG opam_switch="/home/opam/.opam/4.12"
+
 COPY --from=compilation /home/opam/install-prefix /usr
+COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
+COPY --from=compilation "$opam_switch/lib/ocaml" "$opam_switch/lib/ocaml/"
 
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
