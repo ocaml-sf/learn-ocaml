@@ -139,6 +139,10 @@ let get_grade
       handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome ~ppf_answer
         "module Report = Learnocaml_report" ;
+      (* The following 3 lines are just a workaround for issue #457 *)
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        "module Introspection = Introspection" ;
       set_progress [%i"Launching the test bench."] ;
 
       let () =
