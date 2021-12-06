@@ -12,9 +12,9 @@
 
 <!-- You can remove all the check-boxes that are not applicable. -->
 
-* [ ] Read the [CONTRIBUTING.md](https://github.com/ocaml-sf/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md) guide and:
-  * [ ] Use [Atomic Commits](https://github.com/ocaml-sf/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md#atomic-commits) so each commit gathers a single logical change
-  * [ ] Use [Conventional Commits](https://github.com/ocaml-sf/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md#conventional-commits) regarding commit messages (needed by our release toolchain)
+* [ ] Read the [CONTRIBUTING.md](https://github.com/pfitaxel/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md) guide and:
+  * [ ] Use [Atomic Commits](https://github.com/pfitaxel/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md#atomic-commits) so each commit gathers a single logical change
+  * [ ] Use [Conventional Commits](https://github.com/pfitaxel/learn-ocaml/blob/add-contributing.md/CONTRIBUTING.md#conventional-commits) regarding commit messages (needed by our release toolchain)
 * [ ] Add/update [tests](https://github.com/ocaml-sf/learn-ocaml/tree/master/tests#readme)
   <!-- if the change impacts the grading feature. -->
 * [ ] Add/update [documentation](https://github.com/ocaml-sf/learn-ocaml/tree/master/docs)
