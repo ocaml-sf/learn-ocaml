@@ -1,28 +1,37 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-title: 'Feat:'
+title: 'Feature:'
 labels: feature
 assignees: ''
 
 ---
 
-> Related issue(s) or PR(s): 
-> Related project scope(s) (ex: client, CSS, grading, etc...) : 
-> Related user(s): 
+<!-- Some optional but useful fields -->
+
+**Related issue(s) or PR(s):**
+- #…
+
+**Related project scope(s):** …
+(e.g. UI, grading, learn-ocaml-client, Teacher-dashboard, partition-view, …)
+
+**Related user(s):**
+- @…
 
 ## The problem
 
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+<!-- A clear and concise description of what the problem is -->
+
+<!-- e.g. I'm always frustrated when … -->
 
 ### Wanted solution
 
-A clear and concise description of what you want to happen.
+<!-- A clear and concise description of what you want to happen -->
 
 ### Considered alternatives
 
-A clear and concise description of any alternative solutions or features you've considered.
+<!-- A clear and concise description of any alternative solutions or features you considered -->
 
 ## Additional context
 
-Add any other context or screenshots about the feature request here.
+<!-- Add any other useful details or screenshots about the feature request here -->
