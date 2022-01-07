@@ -40,9 +40,11 @@ Steps to reproduce the behavior:
 
 ## Current configuration
 
+<!-- You can write "N/A" for the items that sound irrelevant to you -->
 * OS name (and version): 
 * Browser name (and version): 
 * `learn-ocaml --version`: 
+* `git describe --long --always --abbrev=40`: 
 
 ## Additional context
 
