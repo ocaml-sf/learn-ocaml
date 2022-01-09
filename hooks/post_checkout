@@ -1,8 +1,0 @@
-#!/bin/bash
-# href: https://docs.docker.com/docker-cloud/builds/advanced/
-# href: https://stackoverflow.com/a/17937889/9164010
-
-echo "### Unshallowing the git repo to get all remote branches"
-git fetch --unshallow --quiet || true
-git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-git fetch --quiet origin
