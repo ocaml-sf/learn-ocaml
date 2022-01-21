@@ -303,7 +303,7 @@ body {
 
 /* -- Activity place-holder ------------------------------------------------ */
 
-#Learnocaml-main-content > .placeholder {
+#learnocaml-main-content > .placeholder {
   position: absolute;
   left: 0; top: 0; right: 0; bottom: 0;
   background: #eee;
@@ -323,7 +323,7 @@ body {
 }
 
 @media (min-width: 1000px) {
-  #Learnocaml-main-content > .placeholder {
+  #learnocaml-main-content > .placeholder {
     background: linear-gradient(to right, #aaa 0px, #eee 8px);
   }
 }
