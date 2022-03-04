@@ -712,7 +712,7 @@ let mouseover_toggle_signal elt sigvalue setter =
   in
   Manip.Ev.onmouseover elt hdl
 
-(* 
+(*
 
    If a user has made no change to a solution for the exercise [id]
    for 180 seconds, [check_valid_editor_state id] ensures that there is
@@ -724,24 +724,42 @@ let mouseover_toggle_signal elt sigvalue setter =
    student solution when the solution is open in several clients.
 
 *)
+let is_synchronized_with_server_callback = ref (fun () -> false)
+
+let is_synchronized_with_server () = !is_synchronized_with_server_callback ()
+
 let check_valid_editor_state id =
   let last_changed = ref (Unix.gettimeofday ()) in
   fun update_content ->
   let update_local_copy checking_time () =
     match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.mtime; solution; _ } ->
-       if mtime > checking_time then (
-         if Js_utils.confirm
-              [%i "A more recent answer exists on the server. \
-                   Do you want to update the current one?"]
-         then
-           update_content solution;
-       );
-       Lwt.return ()
+        if mtime > checking_time then (
+          let buttons =
+            if is_synchronized_with_server () then
+              [
+                [%i "Fetch from server"],
+                (fun () -> Lwt.return (update_content solution));
+                [%i "Ignore & keep editing"],
+                (fun () -> Lwt.return_unit)
+              ]
+            else
+              [
+                [%i "Ignore & keep editing"],
+                (fun () -> Lwt.return_unit);
+                [%i "Fetch from server & overwrite"],
+                (fun () -> Lwt.return (update_content solution));
+              ]
+         in
+         lwt_alert ~title:"Question"
+           ~buttons
+           [ H.p [H.txt [%i "A more recent answer exists on the server. \
+                             Do you want to fetch the new version?"] ] ]
+       ) else Lwt.return_unit
     | exception Not_found -> Lwt.return ()
   in
   let now = Unix.gettimeofday () in
-  if now -. !last_changed > 180. then (
+  if now -. !last_changed > 30. then (
     let checking_time = !last_changed in
     last_changed := now;
     Lwt.async (update_local_copy checking_time)
@@ -1074,7 +1092,7 @@ let setup_prelude_pane ace prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
-    
+
 let get_token ?(has_server = true) () =
   if not has_server then
     Lwt.return None
@@ -1093,7 +1111,7 @@ let get_token ?(has_server = true) () =
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       Some token
-      
+
 module Display_exercise =
   functor (
     Q: sig

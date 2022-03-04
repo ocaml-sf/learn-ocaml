@@ -220,6 +220,8 @@ end
 
 val setup_editor : string -> string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
 
+val is_synchronized_with_server_callback : (unit -> bool) ref
+
 val typecheck :
   Learnocaml_toplevel.t ->
   'a Ace.editor -> Ocaml_mode.editor -> bool -> unit Lwt.t

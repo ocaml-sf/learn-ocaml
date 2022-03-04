@@ -81,9 +81,9 @@ module Exercise_link =
         ]
         content
   end
-  
-module Display = Display_exercise(Exercise_link)    
-open Display  
+
+module Display = Display_exercise(Exercise_link)
+open Display
 
 let is_readonly = ref false
 
@@ -180,6 +180,7 @@ let () =
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   (* ---- editor pane --------------------------------------------------- *)
   let editor, ace = setup_editor id solution in
+  is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   EB.cleanup (Learnocaml_exercise.(access File.template exo));
   EB.sync token id (fun () -> Ace.set_synchronized ace) ;
