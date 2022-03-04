@@ -5,7 +5,10 @@ synopsis: "The learn-ocaml client"
 description: """\
 This contains the binaries to interact with the learn-ocaml
 platform from the command line."""
-maintainer: "Yann Régis-Gianas"
+maintainer: [
+  "Érik Martin-Dorel <erik.martin-dorel@irit.fr>"
+  "Yann Régis-Gianas <yann.regis-gianas@nomadic-labs.com>"
+]
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
