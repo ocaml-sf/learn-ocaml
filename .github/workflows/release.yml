@@ -66,6 +66,7 @@ jobs:
               mv -v -- "$d/$b" "target/$b-$d-x86_64"
             done
           done
+          mv -v -- learn-ocaml-www.zip target/learn-ocaml-www.zip
       - name: Add binaries to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
