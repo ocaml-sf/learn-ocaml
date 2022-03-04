@@ -768,7 +768,8 @@ let check_valid_editor_state id =
     let checking_time = !last_changed in
     last_changed := now;
     Lwt.async (update_local_copy checking_time)
-  )
+  ) else
+    last_changed := now
 
 
 let ace_display tab =
