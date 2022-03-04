@@ -86,6 +86,8 @@ let set_synchronized_status editor status =
   List.iter (fun obs -> obs status) editor.sync_observers;
   editor.synchronized <- status
 
+let focus { editor } = editor##focus
+
 let create_editor editor_div check_valid_state =
   let editor = edit editor_div in
   Js.Unsafe.set editor "$blockScrolling" (Js.Unsafe.variable "Infinity");
@@ -100,7 +102,7 @@ let create_editor editor_div check_valid_state =
   editor##.customData := (data, None);
   editor##setOption (Js.string "displayIndentGuides") (Js.bool false);
   editor##on (Js.string "change") (fun () ->
-      check_valid_state (set_contents data) ;
+      check_valid_state (set_contents data) (fun () -> focus data);
       set_synchronized_status data false);
   data
 
@@ -192,7 +194,6 @@ let clear_marks editor =
 let record_event_handler editor event handler =
   editor.editor##(on (Js.string event) handler)
 
-let focus { editor } = editor##focus
 let resize { editor } force = editor##(resize (Js.bool force))
 
 let get_keybinding_menu e =

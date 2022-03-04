@@ -730,7 +730,7 @@ let is_synchronized_with_server () = !is_synchronized_with_server_callback ()
 
 let check_valid_editor_state id =
   let last_changed = ref (Unix.gettimeofday ()) in
-  fun update_content ->
+  fun update_content focus_back ->
   let update_local_copy checking_time () =
     match Learnocaml_local_storage.(retrieve (exercise_state id)) with
     | { Answer.mtime; solution; _ } ->
@@ -739,16 +739,17 @@ let check_valid_editor_state id =
             if is_synchronized_with_server () then
               [
                 [%i "Fetch from server"],
-                (fun () -> Lwt.return (update_content solution));
+                (fun () -> Lwt.return (focus_back (); update_content solution));
                 [%i "Ignore & keep editing"],
-                (fun () -> Lwt.return_unit)
+                (fun () -> Lwt.return (focus_back ()));
               ]
             else
               [
                 [%i "Ignore & keep editing"],
-                (fun () -> Lwt.return_unit);
+                (fun () -> Lwt.return (focus_back ()));
                 [%i "Fetch from server & overwrite"],
-                (fun () -> Lwt.return (update_content solution));
+                (fun () ->
+                   Lwt.return (focus_back (); update_content solution));
               ]
          in
          lwt_alert ~title:"Question"
@@ -759,7 +760,7 @@ let check_valid_editor_state id =
     | exception Not_found -> Lwt.return ()
   in
   let now = Unix.gettimeofday () in
-  if now -. !last_changed > 30. then (
+  if now -. !last_changed > 180. then (
     let checking_time = !last_changed in
     last_changed := now;
     Lwt.async (update_local_copy checking_time)
@@ -771,7 +772,7 @@ let ace_display tab =
     let answer =
       Ocaml_mode.create_ocaml_editor
         (Tyxml_js.To_dom.of_div tab)
-        ignore
+        (fun _ _ -> ())
     in
     let ace = Ocaml_mode.get_editor answer in
     Ace.set_font_size ace 16;

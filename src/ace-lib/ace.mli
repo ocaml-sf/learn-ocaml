@@ -17,7 +17,8 @@ type loc = {
   loc_end: int * int;
 }
 
-val create_editor: Dom_html.divElement Js.t -> ((string -> unit) -> unit) -> 'a editor
+val create_editor: Dom_html.divElement Js.t
+  -> ((string -> unit) -> (unit -> unit) -> unit) -> 'a editor
 
 val is_synchronized : 'a editor -> bool
 
