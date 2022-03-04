@@ -102,7 +102,8 @@ let create_editor editor_div check_valid_state =
   editor##.customData := (data, None);
   editor##setOption (Js.string "displayIndentGuides") (Js.bool false);
   editor##on (Js.string "change") (fun () ->
-      check_valid_state (set_contents data) (fun () -> focus data);
+      check_valid_state (set_contents data) (fun () -> focus data)
+        (fun () -> set_synchronized_status data true);
       set_synchronized_status data false);
   data
 

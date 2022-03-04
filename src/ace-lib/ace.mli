@@ -18,7 +18,7 @@ type loc = {
 }
 
 val create_editor: Dom_html.divElement Js.t
-  -> ((string -> unit) -> (unit -> unit) -> unit) -> 'a editor
+  -> ((string -> unit) -> (unit -> unit) -> (unit -> unit) -> unit) -> 'a editor
 
 val is_synchronized : 'a editor -> bool
 
