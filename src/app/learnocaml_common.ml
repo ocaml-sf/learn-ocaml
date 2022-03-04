@@ -732,14 +732,17 @@ let check_valid_editor_state id =
   let last_changed = ref (Unix.gettimeofday ()) in
   fun update_content focus_back ->
   let update_local_copy checking_time () =
-    match Learnocaml_local_storage.(retrieve (exercise_state id)) with
-    | { Answer.mtime; solution; _ } ->
-        if mtime > checking_time then (
+    let get_solution () =
+      Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution in
+    try let mtime =
+          Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.mtime in
+        if mtime > checking_time then begin
           let buttons =
             if is_synchronized_with_server () then
               [
                 [%i "Fetch from server"],
-                (fun () -> Lwt.return (focus_back (); update_content solution));
+                (fun () -> let solution = get_solution () in
+                           Lwt.return (focus_back (); update_content solution));
                 [%i "Ignore & keep editing"],
                 (fun () -> Lwt.return (focus_back ()));
               ]
@@ -748,16 +751,17 @@ let check_valid_editor_state id =
                 [%i "Ignore & keep editing"],
                 (fun () -> Lwt.return (focus_back ()));
                 [%i "Fetch from server & overwrite"],
-                (fun () ->
-                   Lwt.return (focus_back (); update_content solution));
+                (fun () -> let solution = get_solution () in
+                           Lwt.return (focus_back (); update_content solution));
               ]
          in
          lwt_alert ~title:"Question"
            ~buttons
            [ H.p [H.txt [%i "A more recent answer exists on the server. \
                              Do you want to fetch the new version?"] ] ]
-       ) else Lwt.return_unit
-    | exception Not_found -> Lwt.return ()
+          end else Lwt.return_unit
+    with
+    | Not_found -> Lwt.return ()
   in
   let now = Unix.gettimeofday () in
   if now -. !last_changed > 180. then (
