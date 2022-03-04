@@ -100,197 +100,217 @@ msgstr "ERREUR DE REQUÊTE"
 msgid "Could not retrieve data from server"
 msgstr "Échec lors du téléchargement des données du serveur"
 
-#: File "src/app/learnocaml_common.ml", line 414, characters 12-19 454, 11-18
+#: File "src/app/learnocaml_common.ml", line 414, characters 12-19 458, 13-20
 #: "src/app/learnocaml_index_main.ml", 582, 17-24
 msgid "Retry"
 msgstr "Réessayer"
 
-#: File "src/app/learnocaml_common.ml", line 417, characters 25-33 455, 11-19
+#: File "src/app/learnocaml_common.ml", line 417, characters 25-33 459, 13-21
 msgid "Ignore"
 msgstr "Ignorer"
 
-#: File "src/app/learnocaml_common.ml", line 450, characters 26-39
+#: File "src/app/learnocaml_common.ml", line 454, characters 26-39
 msgid "SYNC FAILED"
 msgstr "ECHEC DE LA SYNCHRONISATION"
 
-#: File "src/app/learnocaml_common.ml", line 451, characters 22-66
+#: File "src/app/learnocaml_common.ml", line 455, characters 22-66
 msgid "Could not synchronise save with the server"
 msgstr "Les données n'ont pas pu être synchronisées avec le serveur"
 
-#: File "src/app/learnocaml_common.ml", line 510, characters 39-50
+#: File "src/app/learnocaml_common.ml", line 514, characters 39-50
 msgid "%dd %02dh"
 msgstr "%dj %02dh"
 
-#: File "src/app/learnocaml_common.ml", line 511, characters 40-51
+#: File "src/app/learnocaml_common.ml", line 515, characters 40-51
 msgid "%02d:%02d"
 msgstr "%02d:%02d"
 
-#: File "src/app/learnocaml_common.ml", line 512, characters 23-36
+#: File "src/app/learnocaml_common.ml", line 516, characters 23-36
 msgid "0:%02d:%02d"
 msgstr "0:%02d:%02d"
 
-#: File "src/app/learnocaml_common.ml", line 543, characters 34-55 1071, 38-59
+#: File "src/app/learnocaml_common.ml", line 547, characters 34-55 1147, 38-59
 msgid "difficulty: %d / 40"
 msgstr "difficulté: %d / 40"
 
-#: File "src/app/learnocaml_common.ml", line 578, characters 30-75
+#: File "src/app/learnocaml_common.ml", line 582, characters 30-75
 msgid "No description available for this exercise."
 msgstr "Aucune description pour cet exercice."
 
-#: File "src/app/learnocaml_common.ml", line 601, characters 32-41
+#: File "src/app/learnocaml_common.ml", line 605, characters 32-41
 #: "src/app/learnocaml_index_main.ml", 132, 54-63
 msgid "project"
 msgstr "projet"
 
-#: File "src/app/learnocaml_common.ml", line 602, characters 32-41
+#: File "src/app/learnocaml_common.ml", line 606, characters 32-41
 #: "src/app/learnocaml_index_main.ml", 133, 54-63
 msgid "problem"
 msgstr "problème"
 
-#: File "src/app/learnocaml_common.ml", line 603, characters 33-43
+#: File "src/app/learnocaml_common.ml", line 607, characters 33-43
 #: "src/app/learnocaml_index_main.ml", 134, 55-65
 msgid "exercise"
 msgstr "exercice"
 
-#: File "src/app/learnocaml_common.ml", line 755, characters 26-33
+#: File "src/app/learnocaml_common.ml", line 743, characters 20-39
+msgid "Fetch from server"
+msgstr "Télécharger du serveur"
+
+#: File "src/app/learnocaml_common.ml", line 746, characters 20-43 751,
+msgid "Ignore & keep editing"
+msgstr "Ignorer & continuer d'éditer"
+
+#: File "src/app/learnocaml_common.ml", line 753, characters 20-51
+msgid "Fetch from server & overwrite"
+msgstr "Télécharger du serveur & écraser"
+
+#: File "src/app/learnocaml_common.ml", lines 760-761, characters 28-67
+msgid ""
+"A more recent answer exists on the server. Do you want to fetch the new "
+"version?"
+msgstr ""
+"Une version plus récente de cette réponse existe sur le serveur. Voulez-vous "
+"télécharger la nouvelle version ?"
+
+#: File "src/app/learnocaml_common.ml", line 820, characters 26-33
 msgid "Clear"
 msgstr "Effacer"
 
-#: File "src/app/learnocaml_common.ml", line 760, characters 25-32 881, 24-31
+#: File "src/app/learnocaml_common.ml", line 825, characters 25-32 947, 24-31
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: File "src/app/learnocaml_common.ml", line 765, characters 22-35
+#: File "src/app/learnocaml_common.ml", line 830, characters 22-35
 msgid "Eval phrase"
 msgstr "Évaluer la phrase"
 
-#: File "src/app/learnocaml_common.ml", line 780, characters 24-51
+#: File "src/app/learnocaml_common.ml", line 845, characters 24-51
 msgid "Preparing the environment"
 msgstr "Préparation de l'environnement"
 
-#: File "src/app/learnocaml_common.ml", line 781, characters 39-47 786, 37-45
+#: File "src/app/learnocaml_common.ml", line 846, characters 39-47 851, 37-45
 msgid "Editor"
 msgstr "Éditeur"
 
-#: File "src/app/learnocaml_common.ml", line 782, characters 41-51
+#: File "src/app/learnocaml_common.ml", line 847, characters 41-51
 #: "src/app/learnocaml_index_main.ml", 691, 30-40
 msgid "Toplevel"
 msgstr "Toplevel"
 
-#: File "src/app/learnocaml_common.ml", line 783, characters 39-47 795,
+#: File "src/app/learnocaml_common.ml", line 848, characters 39-47 860,
 #: "src/app/learnocaml_exercise_main.ml", 58, 30-38 62, 67,
 #: "src/app/learnocaml_student_view.ml", 383, 28-36 396, 400, 405,
 msgid "Report"
 msgstr "Rapport"
 
-#: File "src/app/learnocaml_common.ml", line 784, characters 37-47
+#: File "src/app/learnocaml_common.ml", line 849, characters 37-47
 msgid "Exercise"
 msgstr "Exercice"
 
-#: File "src/app/learnocaml_common.ml", line 785, characters 37-46
+#: File "src/app/learnocaml_common.ml", line 850, characters 37-46
 msgid "Details"
 msgstr "Détails"
 
-#: File "src/app/learnocaml_common.ml", line 787, characters 27-70
+#: File "src/app/learnocaml_common.ml", line 852, characters 27-70
 msgid "Click the Grade button to get your report"
 msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
 
-#: File "src/app/learnocaml_common.ml", line 792, characters 22-44
+#: File "src/app/learnocaml_common.ml", line 857, characters 22-44
 msgid "Loading student data"
 msgstr "Chargement des informations sur les étudiants"
 
-#: File "src/app/learnocaml_common.ml", line 793, characters 38-45
+#: File "src/app/learnocaml_common.ml", line 858, characters 38-45
 msgid "Stats"
 msgstr "Statistiques"
 
-#: File "src/app/learnocaml_common.ml", line 794, characters 37-48
+#: File "src/app/learnocaml_common.ml", line 859, characters 37-48
 #: "src/app/learnocaml_index_main.ml", 688, 29-40
 #: "src/app/learnocaml_teacher_tab.ml", 329, 18-29
-#: "src/app/learnocaml_exercise_main.ml", 202, 23-34
+#: "src/app/learnocaml_exercise_main.ml", 203, 23-34
 msgid "Exercises"
 msgstr "Exercices"
 
-#: File "src/app/learnocaml_common.ml", line 796, characters 37-46
+#: File "src/app/learnocaml_common.ml", line 861, characters 37-46
 msgid "Subject"
 msgstr "Énoncé"
 
-#: File "src/app/learnocaml_common.ml", line 797, characters 39-47
+#: File "src/app/learnocaml_common.ml", line 862, characters 39-47
 msgid "Answer"
 msgstr "Réponse"
 
-#: File "src/app/learnocaml_common.ml", line 882, characters 22-42
+#: File "src/app/learnocaml_common.ml", line 948, characters 22-42
 msgid "START FROM SCRATCH"
 msgstr "TOUT RECOMMENCER"
 
-#: File "src/app/learnocaml_common.ml", line 883, characters 16-65
+#: File "src/app/learnocaml_common.ml", line 949, characters 16-65
 msgid "This will discard all your edits. Are you sure?"
 msgstr "Toutes vos modifications seront perdues. Vous êtes sûr·e ?"
 
-#: File "src/app/learnocaml_common.ml", line 890, characters 27-37
+#: File "src/app/learnocaml_common.ml", line 956, characters 27-37
 msgid "Download"
 msgstr "Télécharger"
 
-#: File "src/app/learnocaml_common.ml", line 898, characters 22-33
+#: File "src/app/learnocaml_common.ml", line 964, characters 22-33
 msgid "Eval code"
 msgstr "Exécuter le code"
 
-#: File "src/app/learnocaml_common.ml", line 906, characters 23-29
+#: File "src/app/learnocaml_common.ml", line 974, characters 23-29
 msgid "Sync"
 msgstr "Sync"
 
-#: File "src/app/learnocaml_common.ml", line 964, characters 34-49 999,
+#: File "src/app/learnocaml_common.ml", line 1040, characters 34-49 1075,
 msgid "OCaml prelude"
 msgstr "Prélude OCaml"
 
-#: File "src/app/learnocaml_common.ml", line 971, characters 59-65 1006,
+#: File "src/app/learnocaml_common.ml", line 1047, characters 59-65 1082,
 msgid "Hide"
 msgstr "Cacher"
 
-#: File "src/app/learnocaml_common.ml", line 976, characters 59-65 1013,
+#: File "src/app/learnocaml_common.ml", line 1052, characters 59-65 1089,
 msgid "Show"
 msgstr "Montrer"
 
-#: File "src/app/learnocaml_common.ml", line 1037, characters 18-36
+#: File "src/app/learnocaml_common.ml", line 1113, characters 18-36
 msgid "Enter the secret"
 msgstr "Entrez le secret"
 
-#: File "src/app/learnocaml_common.ml", line 1077, characters 22-35
+#: File "src/app/learnocaml_common.ml", line 1153, characters 22-35
 msgid "Difficulty:"
 msgstr "Difficulté :"
 
-#: File "src/app/learnocaml_common.ml", line 1091, characters 39-49
+#: File "src/app/learnocaml_common.ml", line 1167, characters 39-49
 msgid "Kind: %s"
 msgstr "Type : %s"
 
-#: File "src/app/learnocaml_common.ml", line 1232, characters 46-59
+#: File "src/app/learnocaml_common.ml", line 1308, characters 46-59
 msgid "Identifier:"
 msgstr "Identifiant de l'exercice :"
 
-#: File "src/app/learnocaml_common.ml", line 1236, characters 48-57
+#: File "src/app/learnocaml_common.ml", line 1312, characters 48-57
 msgid "Author:"
 msgstr "Auteur :"
 
-#: File "src/app/learnocaml_common.ml", line 1237, characters 47-57
+#: File "src/app/learnocaml_common.ml", line 1313, characters 47-57
 msgid "Authors:"
 msgstr "Auteurs :"
 
-#: File "src/app/learnocaml_common.ml", line 1242, characters 31-48
+#: File "src/app/learnocaml_common.ml", line 1318, characters 31-48
 msgid "Skills trained:"
 msgstr "Compétences pratiquées :"
 
-#: File "src/app/learnocaml_common.ml", line 1246, characters 31-49
+#: File "src/app/learnocaml_common.ml", line 1322, characters 31-49
 msgid "Skills required:"
 msgstr "Compétences requises :"
 
-#: File "src/app/learnocaml_common.ml", line 1251, characters 36-57
+#: File "src/app/learnocaml_common.ml", line 1327, characters 36-57
 msgid "Previous exercises:"
 msgstr "Exercices précédents :"
 
-#: File "src/app/learnocaml_common.ml", line 1254, characters 35-52
+#: File "src/app/learnocaml_common.ml", line 1330, characters 35-52
 msgid "Next exercises:"
 msgstr "Exercices suivants :"
 
-#: File "src/app/learnocaml_common.ml", line 1259, characters 26-36
+#: File "src/app/learnocaml_common.ml", line 1335, characters 26-36
 msgid "Metadata"
 msgstr "Métadonnées"
 
@@ -518,7 +538,7 @@ msgid "Lessons"
 msgstr "Cours"
 
 #: File "src/app/learnocaml_index_main.ml", line 693, characters 32-44
-#: "src/app/learnocaml_playground_main.ml", 73, 23-35
+#: "src/app/learnocaml_playground_main.ml", 77, 23-35
 msgid "Playground"
 msgstr "Bac-à-sable"
 
@@ -726,45 +746,46 @@ msgstr ""
 "seront plus sauvegardés sur le serveur."
 
 #: File "src/app/learnocaml_exercise_main.ml", line 130, characters 25-49
-#: "src/app/learnocaml_playground_main.ml", 43, 19-43
+#: "src/app/learnocaml_playground_main.ml", 47, 19-43
 msgid "loading the prelude..."
 msgstr "Chargement du prélude..."
 
 #: File "src/app/learnocaml_exercise_main.ml", line 135, characters 41-59
-#: "src/app/learnocaml_playground_main.ml", 46, 31-49
+#: "src/app/learnocaml_playground_main.ml", 50, 31-49
 msgid "error in prelude"
 msgstr "erreur dans le prélude"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 214, characters 28-37
-#: "src/app/learnocaml_playground_main.ml", 80,
+#: File "src/app/learnocaml_exercise_main.ml", line 215, characters 28-37
+#: "src/app/learnocaml_playground_main.ml", 84,
 msgid "Compile"
 msgstr "Compiler"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 218, characters 29-37
+#: File "src/app/learnocaml_exercise_main.ml", line 219, characters 29-37
 msgid "Grade!"
 msgstr "Noter!"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 222, characters 48-55
+#: File "src/app/learnocaml_exercise_main.ml", line 223, characters 48-55
 msgid "abort"
 msgstr "abandonner"
 
-#: File "src/app/learnocaml_exercise_main.ml", lines 226-227, characters 35-65
+#: File "src/app/learnocaml_exercise_main.ml", lines 227-228, characters 35-65
 msgid "Grading is taking a lot of time, maybe your code is looping? "
-msgstr "La notation prend du temps, peut-être une boucle infinie dans votre code ? "
+msgstr ""
+"La notation prend du temps, peut-être une boucle infinie dans votre code ? "
 
-#: File "src/app/learnocaml_exercise_main.ml", line 233, characters 35-57
+#: File "src/app/learnocaml_exercise_main.ml", line 234, characters 35-57
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 256, characters 60-86
+#: File "src/app/learnocaml_exercise_main.ml", line 257, characters 60-86
 msgid "Grading aborted by user."
 msgstr "Notation annulée par l'utilisateur."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 277, characters 38-59
+#: File "src/app/learnocaml_exercise_main.ml", line 279, characters 38-59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 278, characters 27-85
+#: File "src/app/learnocaml_exercise_main.ml", line 280, characters 27-85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne compile pas."
 
@@ -894,7 +915,7 @@ msgstr ""
 "%a\n"
 "%!"
 
-#: File "src/grader/grading.ml", line 96, characters 38-65 106, 131, 139,
+#: File "src/grader/grading.ml", line 96, characters 38-65 106, 131, 139, 143,
 msgid "while preparing the tests"
 msgstr "lors de la préparation des tests"
 
@@ -926,15 +947,15 @@ msgstr "lors du chargement de la solution"
 msgid "Preparing to launch the tests."
 msgstr "Préparation du lancement des tests."
 
-#: File "src/grader/grading.ml", line 142, characters 22-49
+#: File "src/grader/grading.ml", line 146, characters 22-49
 msgid "Launching the test bench."
 msgstr "Lancement du banc de test."
 
-#: File "src/grader/grading.ml", line 171, characters 45-78
+#: File "src/grader/grading.ml", line 175, characters 45-78
 msgid "while loading user dependencies"
 msgstr "lors du chargement des dépendances"
 
-#: File "src/grader/grading.ml", line 187, characters 38-67
+#: File "src/grader/grading.ml", line 191, characters 38-67
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
 
@@ -943,22 +964,8 @@ msgstr "lors du test de la solution utilisateur"
 #~ "Le téléchargement de l'archive a échoué. Veuillez réessayer "
 #~ "ulterieurement!"
 
-msgid "Do you want to save your work before closing?"
-msgstr "Souhaitez-vous enregistrer votre travail avant de quitter?"
-
-msgid "A more recent answer exists on the server. Do you want to fetch the new version?"
-msgstr ""
-"Une version plus récente de cette réponse existe sur le serveur."
-"Voulez-vous télécharger la nouvelle version?"
-
-msgid "Fetch from server"
-msgstr "Télécharger depuis le serveur"
-
-msgid "Fetch from server & overwrite"
-msgstr "Télécharger depuis le serveur et écraser"
-
-msgid "Ignore & keep editing"
-msgstr "Ignorer et continuer d'éditer"
+#~ msgid "Do you want to save your work before closing?"
+#~ msgstr "Souhaitez-vous enregistrer votre travail avant de quitter?"
 
 #~ msgid "No description available."
 #~ msgstr "Aucune description."
