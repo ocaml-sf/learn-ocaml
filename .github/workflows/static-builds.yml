@@ -12,6 +12,29 @@ on:
     # test master every Saturday at 08:00 UTC
     - cron: '0 8 * * 6'
 jobs:
+  learn-ocaml-www-zip:
+    name: Build learn-ocaml-www.zip archive
+    if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        archive: ["learn-ocaml-www.zip"]
+        # we could use an env var, albeit it would be less convenient
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Build learn-ocaml-compilation
+        run: 'docker build -t learn-ocaml-compilation --target=compilation .'
+      - name: Build ${{ matrix.archive }}
+        run: |
+          docker run -i --rm -w /home/opam/install-prefix/share/learn-ocaml -u 0 --entrypoint='' learn-ocaml-compilation sh -c \
+          'apk add --no-cache zip >&2 && zip -r ${{ matrix.archive }} www >&2 && tar c ${{ matrix.archive }}' | \
+          tar vx
+      - name: Upload ${{ matrix.archive }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.archive }}
+          path: ${{ matrix.archive }}
   static-bin-linux:
     name: Builds static Linux binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
