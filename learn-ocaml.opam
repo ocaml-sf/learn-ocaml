@@ -58,7 +58,7 @@ depends: [
   "ppx_tools"
   "ppx_tools_versioned"
   "re"
-  "ssl" {= "0.5.5"}
+  "ssl" {= "0.5.10"}
   "uutf" {>= "1.0" }
   "vg"
   "yojson" {>= "1.4.0" }
