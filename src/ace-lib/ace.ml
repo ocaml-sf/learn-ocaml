@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -20,6 +20,8 @@ type 'a editor = {
   editor: ('a editor * 'a option) Ace_types.editor Js.t;
   mutable marks: int list;
   mutable keybinding_menu: bool;
+  mutable synchronized : bool;
+  mutable sync_observers : (bool -> unit) list;
 }
 
 let ace : Ace_types.ace Js.t = Js.Unsafe.variable "ace"
@@ -30,10 +32,13 @@ let create_position r c =
   pos##.row := r;
   pos##.column := c;
   pos
+
 let greater_position p1 p2 =
   p1##.row > p2##.row ||
   (p1##.row = p2##.row && p1##.column > p2##.column)
 
+let register_sync_observer editor obs =
+  editor.sync_observers <- obs :: editor.sync_observers
 
 let create_range s e =
   let range : range Js.t = Js.Unsafe.obj [||] in
@@ -77,14 +82,36 @@ let get_contents ?range e =
       let r = create_range (create_position r1 c1) (create_position r2 c2) in
       Js.to_string @@ document##(getTextRange r)
 
-let create_editor editor_div =
+let set_synchronized_status editor status =
+  List.iter (fun obs -> obs status) editor.sync_observers;
+  editor.synchronized <- status
+
+let focus { editor } = editor##focus
+
+let create_editor editor_div check_valid_state =
   let editor = edit editor_div in
   Js.Unsafe.set editor "$blockScrolling" (Js.Unsafe.variable "Infinity");
   let data =
-    { editor; editor_div; marks = []; keybinding_menu = false; } in
+    { editor; editor_div;
+      marks = [];
+      keybinding_menu = false;
+      synchronized = true;
+      sync_observers = []
+    }
+  in
   editor##.customData := (data, None);
   editor##setOption (Js.string "displayIndentGuides") (Js.bool false);
+  editor##on (Js.string "change") (fun () ->
+      check_valid_state (set_contents data) (fun () -> focus data)
+        (fun () -> set_synchronized_status data true);
+      set_synchronized_status data false);
   data
+
+let set_synchronized editor =
+  set_synchronized_status editor true
+
+let is_synchronized editor =
+  editor.synchronized
 
 let get_custom_data { editor } =
   match snd editor##.customData with
@@ -168,7 +195,6 @@ let clear_marks editor =
 let record_event_handler editor event handler =
   editor.editor##(on (Js.string event) handler)
 
-let focus { editor } = editor##focus
 let resize { editor } force = editor##(resize (Js.bool force))
 
 let get_keybinding_menu e =

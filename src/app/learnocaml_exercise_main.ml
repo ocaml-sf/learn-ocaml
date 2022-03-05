@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2020 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -81,9 +81,9 @@ module Exercise_link =
         ]
         content
   end
-  
-module Display = Display_exercise(Exercise_link)    
-open Display  
+
+module Display = Display_exercise(Exercise_link)
+open Display
 
 let is_readonly = ref false
 
@@ -179,10 +179,11 @@ let () =
     Tyxml_js.Html5.[ h1 [ txt ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   (* ---- editor pane --------------------------------------------------- *)
-  let editor, ace = setup_editor solution in
+  let editor, ace = setup_editor id solution in
+  is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   EB.cleanup (Learnocaml_exercise.(access File.template exo));
-  EB.sync token id;
+  EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
@@ -267,7 +268,8 @@ let () =
             Some solution, None
         in
         token >>= fun token ->
-        sync_exercise token id ?answer ?editor >>= fun _save ->
+        sync_exercise token id ?answer ?editor (fun () -> Ace.set_synchronized ace)
+        >>= fun _save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->
         Ace.focus ace ;
@@ -286,7 +288,25 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
-  Window.onunload (fun _ev -> local_save ace id; true);
+  (* Small but cross-compatible hack (tested with Firefox-ESR, Chromium, Safari)
+   * that reuses part of this commit:
+   * https://github.com/pfitaxel/learn-ocaml/commit/15780b5b7c91689a26cfeaf33f3ed2cdb3a5e801
+   * For details on this event, see:
+   * https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#example
+   *
+   * Ideally, we might have wanted to use a variant of [Dom.handler]
+   * that is compatible with "unbeforeunload".
+   * For further discussion on this issue, see:
+   * https://github.com/ocaml-sf/learn-ocaml/issues/467
+   *)
+  let prompt_before_unload () : unit =
+    Js.Unsafe.js_expr "window.onbeforeunload = function(e) {e.preventDefault(); return false;}" in
+  let resume_before_unload () : unit =
+    Js.Unsafe.js_expr "window.onbeforeunload = null" in
+  let () =
+    Ace.register_sync_observer ace (fun sync ->
+        if not sync then prompt_before_unload ()
+        else resume_before_unload ()) in
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->

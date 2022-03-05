@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2020 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -434,10 +434,13 @@ let get_state_as_save_file ?(include_reports = false) () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let rec sync_save token save_file =
+let rec sync_save token save_file on_sync =
   Server_caller.request (Learnocaml_api.Update_save (token, save_file))
   >>= function
-  | Ok save -> set_state_from_save_file ~token save; Lwt.return save
+  | Ok save ->
+     set_state_from_save_file ~token save;
+     on_sync ();
+     Lwt.return save
   | Error (`Not_found _) ->
       Server_caller.request_exn
         (Learnocaml_api.Create_token ("", Some token, None)) >>= fun _token ->
@@ -445,19 +448,20 @@ let rec sync_save token save_file =
       Server_caller.request_exn
         (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
       set_state_from_save_file ~token save;
+      on_sync ();
       Lwt.return save
   | Error e ->
       lwt_alert ~title:[%i"SYNC FAILED"] [
         H.p [H.txt [%i"Could not synchronise save with the server"]];
         H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:[
-        [%i"Retry"], (fun () -> sync_save token save_file);
-        [%i"Ignore"], (fun () -> Lwt.return save_file);
+          [%i"Retry"], (fun () -> sync_save token save_file on_sync);
+          [%i"Ignore"], (fun () -> Lwt.return save_file);
       ]
 
-let sync token = sync_save token (get_state_as_save_file ())
+let sync token on_sync = sync_save token (get_state_as_save_file ()) on_sync
 
-let sync_exercise token ?answer ?editor id =
+let sync_exercise token ?answer ?editor id on_sync =
   let handle_serverless () =
     (* save the text at least locally (but not the report & grade, that could
        be misleading) *)
@@ -494,7 +498,7 @@ let sync_exercise token ?answer ?editor id =
   } in
   match token with
   | Some token ->
-     Lwt.catch (fun () -> sync_save token save_file)
+     Lwt.catch (fun () -> sync_save token save_file on_sync)
        (fun e ->
          handle_serverless ();
          raise e)
@@ -708,11 +712,72 @@ let mouseover_toggle_signal elt sigvalue setter =
   in
   Manip.Ev.onmouseover elt hdl
 
+(*
+
+   If a user has made no change to a solution for the exercise [id]
+   for 180 seconds, [check_valid_editor_state id] ensures that there is
+   no more recent version of this solution in the server. If this is
+   the case, the user is asked if we should download this solution
+   from the server.
+
+   This function reduces the risk of an involuntary overwriting of a
+   student solution when the solution is open in several clients.
+
+*)
+let is_synchronized_with_server_callback = ref (fun () -> false)
+
+let is_synchronized_with_server () = !is_synchronized_with_server_callback ()
+
+let check_valid_editor_state id =
+  let last_changed = ref (Unix.gettimeofday ()) in
+  fun update_content focus_back on_sync ->
+  let update_local_copy checking_time () =
+    let get_solution () =
+      Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution in
+    try let mtime =
+          Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.mtime in
+        if mtime > checking_time then begin
+          let buttons =
+            if is_synchronized_with_server () then
+              [
+                [%i "Fetch from server"],
+                (fun () -> let solution = get_solution () in
+                           Lwt.return (focus_back (); update_content solution; on_sync ()));
+                [%i "Ignore & keep editing"],
+                (fun () -> Lwt.return (focus_back ()));
+              ]
+            else
+              [
+                [%i "Ignore & keep editing"],
+                (fun () -> Lwt.return (focus_back ()));
+                [%i "Fetch from server & overwrite"],
+                (fun () -> let solution = get_solution () in
+                           Lwt.return (focus_back (); update_content solution; on_sync ()));
+              ]
+         in
+         lwt_alert ~title:"Question"
+           ~buttons
+           [ H.p [H.txt [%i "A more recent answer exists on the server. \
+                             Do you want to fetch the new version?"] ] ]
+          end else Lwt.return_unit
+    with
+    | Not_found -> Lwt.return ()
+  in
+  let now = Unix.gettimeofday () in
+  if now -. !last_changed > 180. then (
+    let checking_time = !last_changed in
+    last_changed := now;
+    Lwt.async (update_local_copy checking_time)
+  ) else
+    last_changed := now
+
+
 let ace_display tab =
   let ace = lazy (
     let answer =
       Ocaml_mode.create_ocaml_editor
         (Tyxml_js.To_dom.of_div tab)
+        (fun _ _ _ -> ())
     in
     let ace = Ocaml_mode.get_editor answer in
     Ace.set_font_size ace 16;
@@ -874,7 +939,8 @@ end
 
 module Editor_button (E : Editor_info) = struct
 
-  let editor_button = button ~container:E.buttons_container ~theme:"light"
+  let editor_button =
+    button ~container:E.buttons_container ~theme:"light"
 
   let cleanup template =
   editor_button
@@ -901,16 +967,26 @@ module Editor_button (E : Editor_info) = struct
       select_tab "toplevel";
       Lwt.return_unit
 
-  let sync token id =
-    editor_button
+  let sync token id on_sync =
+    let state = button_state () in
+    (editor_button
+      ~state
       ~icon: "sync" [%i"Sync"] @@ fun () ->
       token >>= fun token ->
-      sync_exercise token id ~editor:(Ace.get_contents E.ace) >|= fun _save -> ()
+      sync_exercise token id ~editor:(Ace.get_contents E.ace) on_sync
+      >|= fun _save -> ());
+    Ace.register_sync_observer E.ace (fun sync ->
+        if sync then disable_button state else enable_button state)
+
 end
 
-let setup_editor solution =
+let setup_editor id solution =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
-  let editor = Ocaml_mode.create_ocaml_editor (Tyxml_js.To_dom.of_div editor_pane) in
+  let editor =
+    Ocaml_mode.create_ocaml_editor
+      (Tyxml_js.To_dom.of_div editor_pane)
+      (check_valid_editor_state id)
+  in
   let ace = Ocaml_mode.get_editor editor in
   Ace.set_contents ace ~reset_undo:true solution;
   Ace.set_font_size ace 18;
@@ -1022,7 +1098,7 @@ let setup_prelude_pane ace prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
-    
+
 let get_token ?(has_server = true) () =
   if not has_server then
     Lwt.return None
@@ -1041,7 +1117,7 @@ let get_token ?(has_server = true) () =
       >|= fun token ->
       Learnocaml_local_storage.(store sync_token) token;
       Some token
-      
+
 module Display_exercise =
   functor (
     Q: sig

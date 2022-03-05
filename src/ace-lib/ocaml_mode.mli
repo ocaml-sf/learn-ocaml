@@ -20,12 +20,12 @@ type msg = {
   msg: string;
 }
 
-
 type error = msg list
 
 type warning = error
 
-val create_ocaml_editor: Dom_html.divElement Js.t -> editor
+val create_ocaml_editor:
+  Dom_html.divElement Js.t -> ((string -> unit) -> (unit -> unit) -> (unit -> unit) -> unit) -> editor
 val get_editor: editor -> editor Ace.editor
 
 val report_error: editor -> ?set_class: bool -> error option -> warning list -> unit Lwt.t
