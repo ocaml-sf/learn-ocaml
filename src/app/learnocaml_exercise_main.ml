@@ -288,46 +288,16 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
-  (* BEGIN HACK, to simplify one day with a later version of js_of_ocaml?
-
-   This is needed to address <https://github.com/ocaml-sf/learn-ocaml/issues/467>
-   because [Dom.handler] <https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom/index.html#val-handler>
-   appears to be incompatible with "onbeforeunload" and Firefox.
-
-   * Namely, the semantics of [Dom.handler] requires to "return true" to tell [Dom.handler] that we want to unload normally,
-   * but with some browsers such as Firefox we should actually "return undefined" (better than "return null" BTW),
-   * but then, "undefined" is seen as "false", implying [Dom.handler] will call "preventDefault",
-   * end_of_the_story.
-   *)
-  (* Copy of private [Dom.window_event] *)
-  (*
-  let window_event' () : 'a #Dom.event Js.t = Js.Unsafe.pure_js_expr "event" in
-  (* Fixed copy of [Dom.handler], working for onbeforeunload
-     even for Firefox *)
-  let handler_onbeforeunload :
-        ((#Js_of_ocaml.Dom_html.event as 'b) Js_of_ocaml__.Js.t ->
-         bool Js_of_ocaml__.Js.t) ->
-        (* ('a, 'b Js_of_ocaml__.Js.t) Js_of_ocaml.Dom_html.event_listener = *)
-        ('a, 'b Js_of_ocaml__.Js.t -> bool Js.t) Js.meth_callback Js.opt =
-    fun f ->
-  Js.some
-    (Js.Unsafe.callback (fun e ->
-         (* depending on the internet explorer version, e can be null or undefined. *)
-         if not (Js.Opt.test (Js.some e))
-         then (
-           let e = window_event' () in
-           let res = f e in
-           if not (Js.to_bool res) then
-             (e##.returnValue := res; res)
-           else
-             Js.Unsafe.pure_js_expr "undefined"
-         ) else (
-           let res = f e in
-           if not (Js.to_bool res) then
-             ((Js.Unsafe.coerce e)##preventDefault (* ; res *))
-           else
-             (Js.Unsafe.delete (Js.Unsafe.coerce e) "returnValue";
-              Js.Unsafe.pure_js_expr "undefined")))) in
+  (* Small but cross-compatible hack (tested with Firefox-ESR, Chromium, Safari)
+   * that reuses part of this commit:
+   * https://github.com/pfitaxel/learn-ocaml/commit/15780b5b7c91689a26cfeaf33f3ed2cdb3a5e801
+   * For details on this event, see:
+   * https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#example
+   *
+   * Ideally, we might have wanted to use a variant of [Dom.handler]
+   * that is compatible with "unbeforeunload".
+   * For further discussion on this issue, see:
+   * https://github.com/ocaml-sf/learn-ocaml/issues/467
    *)
   let prompt_before_unload () : unit =
     Js.Unsafe.js_expr "window.onbeforeunload = function(e) {e.preventDefault(); return false;}" in
@@ -337,7 +307,6 @@ let () =
     Ace.register_sync_observer ace (fun sync ->
         if not sync then prompt_before_unload ()
         else resume_before_unload ()) in
-  (* END HACK *)
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->
