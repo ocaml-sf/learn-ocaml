@@ -55,7 +55,7 @@ depends: [
   "fpath" {= "0.7.3"}
   "gg" {= "0.9.3"}
   "hex" {= "1.4.0"}
-  "ipaddr" {= "2.8.0"}
+  "ipaddr" {= "2.9.0"}
   "jbuilder" {= "1.0+beta20.2"}
   "js_of_ocaml" {= "3.9.0"}
   "js_of_ocaml-compiler" {= "3.9.1"}
@@ -107,7 +107,7 @@ depends: [
   "seq" {= "0.2.2"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
-  "ssl" {= "0.5.5"}
+  "ssl" {= "0.5.10"}
   "stdlib-shims" {= "0.3.0"}
   "stringext" {= "1.6.0"}
   "topkg" {= "1.0.3"}

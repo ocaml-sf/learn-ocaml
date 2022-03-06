@@ -28,11 +28,12 @@ depends: [
   "dune" {>= "2.3.0"}
   "ezjsonm"
   "gg"
-  "ipaddr" {= "2.8.0" }
+  "ipaddr" {= "2.9.0" }
   "lwt" {>= "4.0.0"}
   "lwt_ssl"
   "ocaml" {(>= "4.12") & (< "4.13~")}
   "ocamlfind" {build}
+  "ocaml-migrate-parsetree" {= "1.8.0"}
   "ocp-indent-nlfork"
   "ocplib-json-typed" {>= "0.7"}
   "ocp-ocamlres" {>= "0.4"}
@@ -41,7 +42,7 @@ depends: [
   "ppxlib"
   "ppx_sexp_conv"
   "ppx_tools"
-  "ssl" {= "0.5.5"}
+  "ssl" {= "0.5.10"}
   "vg"
 ]
 build: [
