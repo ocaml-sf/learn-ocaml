@@ -16,7 +16,7 @@ RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config
   && opam switch 4.12 \
   && echo 'pre-session-commands: [ "sudo" "apk" "add" depexts ]' >> ~/.opam/config \
   && opam pin add -n -y -k path learn-ocaml . \
-  && opam install learn-ocaml --deps-only --locked
+  && opam install learn-ocaml --deps-only
 
 COPY static static
 COPY translations translations
@@ -29,6 +29,9 @@ COPY dune dune
 RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
+
+# Run "make detect-libs"
+ENV OPAMWITHTEST 1
 
 RUN opam install learn-ocaml --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml
