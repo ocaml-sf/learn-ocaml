@@ -45,6 +45,7 @@ depends: [
   "markup-lwt"
   "ocaml" {(>= "4.12") & (< "4.13~")}
   "ocamlfind" {build}
+  "ocaml-migrate-parsetree" {= "1.8.0"}
   "ocp-indent-nlfork"
   "ocplib-json-typed" {>= "0.7"}
   "ocplib-json-typed-browser" {>= "0.7"}
