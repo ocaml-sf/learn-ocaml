@@ -21,6 +21,7 @@
 ### Documentation
 
 * Add `CONTRIBUTING.md` file ([#452](https://www.github.com/ocaml-sf/learn-ocaml/issues/452)) ([6e3fa0f](https://www.github.com/ocaml-sf/learn-ocaml/commit/6e3fa0f8731a383f70006abf127bbf3c8a6218ee))
+* Improve `ISSUE_TEMPLATE`s & Add `PULL_REQUEST_TEMPLATE` ([#453](https://github.com/ocaml-sf/learn-ocaml/pull/453)) ([d511d58](https://github.com/ocaml-sf/learn-ocaml/commit/d511d58a53778cede681b71f9a9f45922202b371))
 * Improve `{ISSUE,PULL_REQUEST}_TEMPLATE`s, slightly ([#464](https://www.github.com/ocaml-sf/learn-ocaml/issues/464)) ([e3ff435](https://www.github.com/ocaml-sf/learn-ocaml/commit/e3ff435dd32cd452ecd8a3a85f7c45102da77f71))
 
 
