@@ -16,7 +16,7 @@ RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config
   && opam switch 4.12 \
   && echo 'pre-session-commands: [ "sudo" "apk" "add" depexts ]' >> ~/.opam/config \
   && opam pin add -n -y -k path learn-ocaml . \
-  && opam install learn-ocaml --deps-only --locked
+  && opam install learn-ocaml --deps-only
 
 COPY static static
 COPY translations translations
