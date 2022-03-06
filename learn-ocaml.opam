@@ -66,6 +66,7 @@ depends: [
 build: [
   [make "static"]
   ["dune" "build" "-p" name "-j" jobs]
+  [make "detect-libs"] {with-test}
 ]
 install: [
   ["mkdir" "-p" "%{_:share}%"]

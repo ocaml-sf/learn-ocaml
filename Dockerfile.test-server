@@ -30,6 +30,9 @@ RUN sudo chown -R opam:nogroup .
 
 ENV OPAMVERBOSE 1
 
+# Run "make detect-libs"
+ENV OPAMWITHTEST 1
+
 RUN opam install learn-ocaml --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml
 
