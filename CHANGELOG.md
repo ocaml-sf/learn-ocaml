@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.14.0](https://www.github.com/ocaml-sf/learn-ocaml/compare/v0.13.1...v0.14.0) (2022-03-06)
+
+
+### Features
+
+* Build `learn-ocaml-www.zip` (`learn-ocaml --contents-dir=www`) ([#469](https://www.github.com/ocaml-sf/learn-ocaml/issues/469)) ([e36d874](https://www.github.com/ocaml-sf/learn-ocaml/commit/e36d874551f453231142fdabf8971ea708437687))
+* Offer better protections against solution overwriting ([#372](https://www.github.com/ocaml-sf/learn-ocaml/issues/372)) ([5c12539](https://www.github.com/ocaml-sf/learn-ocaml/commit/5c125390d0197bd6ad39b30bedf9018570e12bb5)), closes [#316](https://www.github.com/ocaml-sf/learn-ocaml/issues/316) [#467](https://www.github.com/ocaml-sf/learn-ocaml/issues/467)
+* Rename Try_OCaml→Tutorials, --enable-tryocaml→--enable-tutorials ([#451](https://www.github.com/ocaml-sf/learn-ocaml/issues/451)) ([9651160](https://www.github.com/ocaml-sf/learn-ocaml/commit/9651160201df17e09907e113027abaf13788f738))
+
+
+### Bug Fixes
+
+* Change `learn-ocaml-www.zip` inner dir (`www` → `learn-ocaml-www`) ([#474](https://www.github.com/ocaml-sf/learn-ocaml/issues/474)) ([a602ba2](https://www.github.com/ocaml-sf/learn-ocaml/commit/a602ba2609a06bebc49d8c6c8b4f80e4e851099d))
+* **docker:** Add missing libs for partition-view/… using compiler-libs ([#459](https://www.github.com/ocaml-sf/learn-ocaml/issues/459)) ([c2399b0](https://www.github.com/ocaml-sf/learn-ocaml/commit/c2399b0e40e08e9605ccce3d7fa151fbd930ea8a)), closes [#438](https://www.github.com/ocaml-sf/learn-ocaml/issues/438)
+* **grader:** Workaround issue [#457](https://www.github.com/ocaml-sf/learn-ocaml/issues/457) about the `Introspection` module ([#461](https://www.github.com/ocaml-sf/learn-ocaml/issues/461)) ([f5d66c6](https://www.github.com/ocaml-sf/learn-ocaml/commit/f5d66c678bf970f37bf71b54ac9104e4c877b08d))
+* **UI:** Restore UX of the welcome message "Choose an activity." ([#455](https://www.github.com/ocaml-sf/learn-ocaml/issues/455)) ([9d5c7de](https://www.github.com/ocaml-sf/learn-ocaml/commit/9d5c7de495201ea18af6482875caa3d8dff1f3f1))
+
+
+### Documentation
+
+* Add `CONTRIBUTING.md` file ([#452](https://www.github.com/ocaml-sf/learn-ocaml/issues/452)) ([6e3fa0f](https://www.github.com/ocaml-sf/learn-ocaml/commit/6e3fa0f8731a383f70006abf127bbf3c8a6218ee))
+* Improve `{ISSUE,PULL_REQUEST}_TEMPLATE`s, slightly ([#464](https://www.github.com/ocaml-sf/learn-ocaml/issues/464)) ([e3ff435](https://www.github.com/ocaml-sf/learn-ocaml/commit/e3ff435dd32cd452ecd8a3a85f7c45102da77f71))
+
+
+### Code Refactoring
+
+* Remove unneeded `hooks/` directory ([#465](https://www.github.com/ocaml-sf/learn-ocaml/issues/465)) ([79ce07e](https://www.github.com/ocaml-sf/learn-ocaml/commit/79ce07ed290165e839f528fb7571c59900738b44))
+
+
+### Build System
+
+* **docker:** Refine the `.dockerignore` as a whitelist ([#471](https://www.github.com/ocaml-sf/learn-ocaml/issues/471)) ([41706ea](https://www.github.com/ocaml-sf/learn-ocaml/commit/41706ea09fc497ab81d7e2a28b18dbcda750e1e6))
+
+
+### Tests
+
+* Improve `make detect-libs` & Use it (`Dockerfile.test-server`) ([7c81d7f](https://www.github.com/ocaml-sf/learn-ocaml/commit/7c81d7fc69f04693ced35c76c44fe36dd02a7004))
+
+
+### Dependencies
+
+* **opam:** Add missing package (ocaml-migrate-parsetree v1.8.0) ([38809a5](https://www.github.com/ocaml-sf/learn-ocaml/commit/38809a56d45c388a74ad07d0255c1adf3ac45e5a))
+* **opam:** Bump `ssl` version ([9d6da39](https://www.github.com/ocaml-sf/learn-ocaml/commit/9d6da397d02d5340ec2a4cf60e04297f831a6313))
+
 ### [0.13.1](https://www.github.com/ocaml-sf/learn-ocaml/compare/v0.13.0...v0.13.1) (2021-10-16)
 
 
