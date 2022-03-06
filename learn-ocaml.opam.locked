@@ -55,7 +55,7 @@ depends: [
   "fpath" {= "0.7.3"}
   "gg" {= "0.9.3"}
   "hex" {= "1.4.0"}
-  "ipaddr" {= "2.8.0"}
+  "ipaddr" {= "2.9.0"}
   "jbuilder" {= "1.0+beta20.2"}
   "js_of_ocaml" {= "3.9.0"}
   "js_of_ocaml-compiler" {= "3.9.1"}

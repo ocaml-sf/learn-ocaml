@@ -28,7 +28,7 @@ depends: [
   "dune" {>= "2.3.0"}
   "ezjsonm"
   "gg"
-  "ipaddr" {= "2.8.0" }
+  "ipaddr" {= "2.9.0" }
   "lwt" {>= "4.0.0"}
   "lwt_ssl"
   "ocaml" {(>= "4.12") & (< "4.13~")}
