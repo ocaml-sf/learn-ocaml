@@ -1,4 +1,19 @@
-.git
-_obuild
-_opam
-www
+*
+# whitelist: ignore everything except:
+!src
+!static
+!translations
+!scripts
+!demo-repository
+
+!learn-ocaml.opam
+!learn-ocaml.opam.locked
+!learn-ocaml-client.opam
+!learn-ocaml-client.opam.locked
+
+!Makefile
+!dune-project
+!dune
+
+# ignore backup files
+**/*~
