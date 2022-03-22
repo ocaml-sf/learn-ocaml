@@ -232,7 +232,6 @@ module Args = struct
 
   module Server = struct
     include Learnocaml_server_args
-    let info = info ~docs:"SERVER OPTIONS"
   end
 
   type t = {

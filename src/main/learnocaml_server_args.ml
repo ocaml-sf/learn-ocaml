@@ -9,6 +9,8 @@
 open Cmdliner
 open Arg
 
+let info = info ~docs:"SERVER OPTIONS"
+
 let sync_dir =
   value & opt string "./sync" & info ["sync-dir"] ~docv:"DIR" ~doc:
     "Directory where to store user sync tokens"
