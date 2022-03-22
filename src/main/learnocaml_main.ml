@@ -37,19 +37,21 @@ module Args = struct
       ]) [Build; Serve] &
     info [] ~docs:"COMMANDS" ~docv:"COMMAND"
 
+  let docs = Manpage.s_common_options
+
   let repo_dir =
-    value & opt dir "." & info ["repo"] ~docv:"DIR" ~doc:
+    value & opt dir "." & info ["repo"] ~docs ~docv:"DIR" ~doc:
       "The path to the repository containing the exercises, lessons and \
        tutorials."
 
   let app_dir =
-    value & opt string "./www" & info ["app-dir"; "o"] ~docv:"DIR" ~doc:
+    value & opt string "./www" & info ["app-dir"; "o"] ~docs ~docv:"DIR" ~doc:
       "Directory where the app should be generated for the $(i,build) command, \
        and from where it is served by the $(i,serve) command."
 
   let base_url =
     value & opt string "" &
-      info ["base-url"] ~docv:"BASE_URL" ~env:(Arg.env_var "LEARNOCAML_BASE_URL") ~doc:
+      info ["base-url"] ~docs ~docv:"BASE_URL" ~env:(Cmd.Env.info "LEARNOCAML_BASE_URL") ~doc:
         "Set the base URL of the website. \
          Should not end with a trailing slash. \
          Currently, this has no effect on the backend - '$(b,learn-ocaml serve)'. \
@@ -231,7 +233,8 @@ module Args = struct
   end
 
   module Server = struct
-    include Learnocaml_server_args
+    module Args = Learnocaml_server_args.Args(struct let section = "SERVER OPTIONS" end)
+    include Args
   end
 
   type t = {
@@ -424,11 +427,13 @@ let main o =
   in
   exit ret
 
-let man = [
-  `S "DESCRIPTION";
+let man = 
+  let open Cmdliner.Manpage in
+  [
+  `S s_description;
   `P "This program performs various tasks related to generating, serving and \
       administrating a learn-ocaml web-app.";
-  `S "COMMANDS";
+  `S s_commands;
   `P "The $(i,COMMAND) argument may be one or more of the following. If no \
       command is specified, '$(b,build) $(b,serve)' is assumed.";
   `I ("$(b,grade)", "Runs the automatic grader on exercise solutions.");
@@ -437,36 +442,40 @@ let man = [
                      $(b,REPOSITORY FORMAT)).");
   `I ("$(b,serve)", "Run a web-server providing access to the learn-ocaml app, \
                      as well as user file synchronisation.");
-  `S "OPTIONS";
+  `S s_common_options;
   `S "GRADER OPTIONS";
   `S "BUILDER OPTIONS";
   `S "SERVER OPTIONS";
   `S "REPOSITORY FORMAT";
   `P "The repository specified by $(b,--repo) is expected to contain \
       sub-directories $(b,lessons), $(b,tutorials), $(b,playground) and $(b,exercises).";
-  `S "AUTHORS";
+  `S s_exit_status;
+  `S s_environment;
+  `S s_authors;
   `P "The original authors are Benjamin Canou, \
-      Çağdaş Bozman, Grégoire Henry and Louis Gesbert. It is licensed under \
-      the MIT License.";
-  `S "BUGS";
+      Çağdaş Bozman, Grégoire Henry and Louis Gesbert (OCamlPro). \
+      Learn-OCaml is licensed under the MIT License.";
+  `S s_bugs;
   `P "Bugs should be reported to \
       $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
 ]
 
-let main_cmd =
-  Cmdliner.Term.(const main $ Args.term),
-  Cmdliner.Term.info
-    ~man
+let main_info =
+  Cmdliner.Cmd.info 
+    ~man 
     ~doc:"Learn-ocaml web-app manager"
-    ~version:Learnocaml_api.version
+    ~version:Learnocaml_api.version 
     "learn-ocaml"
 
+let main_term = Cmdliner.Term.(const main $ Args.term)
+
 let () =
+  let open Cmdliner in
   match
-    Cmdliner.Term.eval ~catch:false main_cmd
+    Cmd.eval_value ~catch:false (Cmd.v main_info main_term)
   with
   | exception Failure msg ->
       Printf.eprintf "[ERROR] %s\n" msg;
       exit 1
-  | `Error _ -> exit 2
+  | Error _ -> exit 2
   | _ -> exit 0

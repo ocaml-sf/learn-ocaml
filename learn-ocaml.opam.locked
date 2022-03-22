@@ -30,7 +30,7 @@ depends: [
   "bigstringaf" {= "0.8.0"}
   "biniou" {= "1.2.1"}
   "checkseum" {= "0.3.1"}
-  "cmdliner" {= "1.0.4"}
+  "cmdliner" {= "1.1.1"}
   "cohttp" {= "4.0.0"}
   "cohttp-lwt" {= "4.0.0"}
   "cohttp-lwt-unix" {= "4.0.0"}
