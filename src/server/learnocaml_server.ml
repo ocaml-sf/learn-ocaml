@@ -449,17 +449,18 @@ module Request_handler = struct
       | Api.Exercise_index None ->
          lwt_fail (`Forbidden, "Forbidden")
 
-      | Api.Exercise (Some token, id) ->
+      | Api.Exercise (Some token, id, js) ->
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
+              let ex = Learnocaml_exercise.strip js ex in
               respond_json cache
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
              lwt_fail (`Forbidden, "Exercise closed"))
-      | Api.Exercise (None, _) ->
+      | Api.Exercise (None, _, _) ->
          lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Lesson_index () ->

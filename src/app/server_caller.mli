@@ -24,7 +24,7 @@ exception Cannot_fetch of string
 val request_exn: 'a Learnocaml_api.request -> 'a Lwt.t
 
 val[@deprecated] fetch_exercise:
-  Token.t option -> Exercise.id -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
+  Token.t option -> Exercise.id -> bool -> (Exercise.Meta.t * Exercise.t * float option) Lwt.t
 
 val[@deprecated] fetch_lesson_index: unit -> Lesson.Index.t Lwt.t
 val[@deprecated] fetch_lesson : string -> Lesson.t Lwt.t

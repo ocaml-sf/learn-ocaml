@@ -119,7 +119,7 @@ let () =
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
     token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id))
+    retrieve (Learnocaml_api.Exercise (token, id, true))
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->

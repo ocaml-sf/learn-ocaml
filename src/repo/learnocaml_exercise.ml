@@ -456,6 +456,17 @@ let field_from_file file files =
   try File.(StringMap.find file.key files |> file.decode)
   with Not_found -> raise File.(Missing_file file.key)
 
+let strip need_js ex =
+  let f {cma; js} =
+    if need_js then {cma= ""; js} else {cma; js = ""}
+  in
+  { ex with
+    compiled =
+      { ex.compiled with
+        exercise_lib = f ex.compiled.exercise_lib;
+        test_lib = f ex.compiled.test_lib } }
+
+
 module MakeReaderAnddWriter (Concur : Concur) = struct
   
   module FileReader = File.MakeReader(Concur)

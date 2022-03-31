@@ -110,6 +110,11 @@ val update: 'a File.file -> 'a -> t -> t
     ciphers it. *)
 val cipher: string File.file -> string -> t -> t
 
+(** Selectively removes compiled data from an exercise.
+    If the first arg [js] is [true], keep only the javascript.
+    Otherwise, keep only the bytecode. *)
+val strip: bool -> t -> t
+
 (** Reader and decipherer *)
 val read:
   read_field:(string -> string option) ->
