@@ -484,7 +484,7 @@ let fetch server_url req =
   | Error (`Failure s) -> Lwt.fail_with ("Server request failed: "^ s)
 
 let fetch_exercise server_url token id =
-  Lwt.catch (fun () -> fetch server_url (Api.Exercise (token, id)))
+  Lwt.catch (fun () -> fetch server_url (Api.Exercise (token, id, false)))
   @@ function
   | Not_found ->
       Printf.ksprintf Lwt.fail_with

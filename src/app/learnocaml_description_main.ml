@@ -66,7 +66,7 @@ let () =
      match get_encoded_token () with
      | Some { arg_name = _; raw_arg = _; token } -> begin
          let exercise_fetch =
-           retrieve (Learnocaml_api.Exercise (Some token, id))
+           retrieve (Learnocaml_api.Exercise (Some token, id, true))
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
