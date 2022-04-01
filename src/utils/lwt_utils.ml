@@ -9,16 +9,18 @@
 open Lwt.Infix
 
 let rec mkdir_p ?(perm=0o755) dir =
-  Lwt_unix.file_exists dir >>= function
-  | true ->
+  if Sys.file_exists dir then
       if Sys.is_directory dir then
         Lwt.return ()
       else
         Lwt.fail_with
           (Printf.sprintf "Can't create dir: file %s is in the way" dir)
-  | false ->
-      mkdir_p (Filename.dirname dir) >>= fun () ->
-      Lwt_unix.mkdir dir perm
+  else
+      if Sys.file_exists (Filename.dirname dir) then
+        Lwt.return (Unix.mkdir dir perm)
+      else
+        mkdir_p ~perm (Filename.dirname dir) >>= fun () ->
+        mkdir_p ~perm dir
 
 let copy_file src dst =
   Lwt.catch (fun () ->
