@@ -192,7 +192,7 @@ module Args = struct
          the entire repository. Can be repeated."
 
     let jobs =
-      value & opt int 1 & info ["jobs";"j"] ~docv:"INT" ~doc:
+      value & opt int 8 & info ["jobs";"j"] ~docv:"INT" ~doc:
         "Number of building jobs to run in parallel"
 
     type t = {
