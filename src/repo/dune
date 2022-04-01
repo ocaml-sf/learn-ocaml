@@ -4,7 +4,7 @@
  (modules Learnocaml_index
           Learnocaml_exercise)
  (libraries ocplib-json-typed
-            learnocaml_xor
+            base64
             omd
             lwt
             ezjsonm)

@@ -25,7 +25,7 @@ let read_exercise exercise_dir =
   in
   Learnocaml_exercise.read_lwt ~read_field
     ~id:(Filename.basename exercise_dir)
-    ~decipher:false ()
+    ()
 
 let exercises_dir = ref "./exercises"
 
