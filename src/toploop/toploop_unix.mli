@@ -9,6 +9,9 @@
 (** To be called before using any [Toploop] function. *)
 val initialize: unit -> unit
 
+(** Load the given compiled code *)
+val use_compiled_string: string -> unit
+
 (** Materializes an output channel redirection. *)
 type redirection
 

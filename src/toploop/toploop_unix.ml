@@ -70,3 +70,25 @@ let stop_channel_redirection ({ target_fd ; read_fd ; backup_fd ; _ } as redirec
 
 let initialize () =
   Toploop.initialize_toplevel_env ()
+
+let use_compiled_string code =
+  let cma = Filename.temp_file "learnocaml-file" ".cma" in
+  let r =
+    try
+      let oc = open_out_bin cma in
+      output_string oc code;
+      close_out oc;
+      Topdirs.load_file Format.std_formatter cma
+    with
+    | Symtable.Error e ->
+        Format.kasprintf (fun msg -> Sys.remove cma; failwith msg)
+          "%a"
+          Symtable.report_error e
+    | exn ->
+        Sys.remove cma;
+        raise exn
+  in
+  Sys.remove cma;
+  flush_all ();
+  if r then ()
+  else failwith "Failed to load compiled code"

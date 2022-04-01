@@ -21,12 +21,9 @@ let get_grade
   let t, u = Lwt.task () in
   let worker = Worker.create worker_js_file in
   Lwt.on_cancel t (fun () ->
-      Js_utils.js_warn "Grading worker END";
       worker##terminate) ;
   let onmessage (ev : Json_repr_browser.Repr.value Worker.messageEvent Js.t) =
     let json = ev##.data in
-    Js_utils.js_warn ("msg from grading worker:");
-    Js_utils.js_warn json;
     begin match Json_repr_browser.Json_encoding.destruct from_worker_enc json with
       | Callback text -> callback text
       | Answer (report, stdout, stderr, outcomes) ->
@@ -52,8 +49,6 @@ let get_grade
   fun solution ->
     let req = { exercise ; solution } in
     let json = Json_repr_browser.Json_encoding.construct to_worker_enc req in
-    Js_utils.js_warn ("Sending to grading worker: ");
-    Js_utils.js_warn json;
     worker##(postMessage json) ;
     let timer =
       Lwt_js.sleep timeout >>= fun () ->

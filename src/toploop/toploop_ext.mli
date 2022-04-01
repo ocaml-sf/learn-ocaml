@@ -91,6 +91,19 @@ val use_mod_string:
   ?sig_code:string ->
   string -> bool toplevel_result
 
+(** Registers the given cmi files contents into the running toplevel *)
+val load_cmi_from_string:
+  string -> unit
+
+(** Registers a global into the toplevel. Can be used to dynamically create
+    compilation units ([inject_global "Foo" (Obj.repr (module Foo))]). Does not
+    affect the environment (suppose a corresponding .cmi) *)
+val inject_global: string -> Obj.t -> unit
+
+(** Register a hook to be called after inject_global on the newly registered
+    ident. Useful for jsoo which has additional registrations required. *)
+val set_inject_global_hook: (Ident.t -> unit) -> unit
+
 (** Helpers to embed PPX into the toplevel. *)
 module Ppx : sig
   val preprocess_structure: Parsetree.structure -> Parsetree.structure

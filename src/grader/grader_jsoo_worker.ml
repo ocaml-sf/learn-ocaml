@@ -23,7 +23,6 @@ let get_grade ?callback exo solution =
     | OCamlRes.Res.Error _ -> ()
   in
   rec_mount [] (OCamlRes.Res.Dir ("worker_cmis", Embedded_cmis.root));
-  rec_mount [] (OCamlRes.Res.Dir ("grading_cmis", Embedded_grading_cmis.root));
   (try Toploop_jsoo.initialize ["/worker_cmis"; "/grading_cmis"] with
    | Typetexp.Error (loc, env, error) ->
        Js_utils.log "FAILED INIT %a at %a"
@@ -34,7 +33,16 @@ let get_grade ?callback exo solution =
   let divert name chan cb =
     let redirection = Toploop_jsoo.redirect_channel name chan cb in
     fun () -> Toploop_jsoo.stop_channel_redirection redirection in
-  Grading.get_grade ?callback ~divert exo solution
+  let load_code compiled_code =
+    try
+      Toploop_jsoo.use_compiled_string compiled_code.Learnocaml_exercise.js;
+      flush_all ();
+      Toploop_ext.Ok (true, [])
+    with exn ->
+      prerr_endline (Printexc.to_string exn);
+      Toploop_ext.Ok (false, [])
+  in
+  Grading.get_grade ?callback ~divert ~load_code exo solution
 
 open Grader_jsoo_messages
 
@@ -51,8 +59,8 @@ let () =
     match get_grade ~callback exercise solution with
     | Ok report, stdout, stderr, outcomes ->
         Answer (report, stdout, stderr, outcomes)
-    | Error exn, stdout, stderr, outcomes ->
-        let msg = match exn with
+    | Error err, stdout, stderr, outcomes ->
+        let msg = match err with
           | Grading.User_code_error err ->
               Format.asprintf [%if"Error in your solution:\n%a\n%!"]
                 Location.print_report (Toploop_results.to_error err)
@@ -61,9 +69,7 @@ let () =
                 step
                 Location.print_report (Toploop_results.to_error err)
           | Grading.Invalid_grader ->
-              [%i"Internal error:\nThe grader did not return a report."]
-          | exn ->
-              [%i"Unexpected error:\n"] ^ Printexc.to_string exn in
+              [%i"Internal error:\nThe grader did not return a report."] in
         let report = Learnocaml_report.[ Message ([ Code msg ], Failure) ] in
         Answer (report, stdout, stderr, outcomes)
     | exception exn ->

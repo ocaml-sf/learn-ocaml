@@ -14,4 +14,4 @@ val get_grade:
   ?timeout:int ->
   ?dirname:string ->
   Learnocaml_exercise.t -> string ->
-  ((Learnocaml_report.t, exn) result * string * string * string) Lwt.t
+  ((Learnocaml_report.t, Grading.error) result * string * string * string) Lwt.t

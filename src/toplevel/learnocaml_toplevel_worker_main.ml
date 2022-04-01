@@ -161,6 +161,20 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       iter_option close_fd fd_code;
       close_fd fd_answer;
       unwrap_result result
+  | Use_compiled_string (fd_answer, js_code) ->
+      let ppf_answer = make_answer_ppf fd_answer in
+      if !debug then
+        Js_utils.debug "Worker: -> Use_js_string (%S)" js_code;
+      let result =
+        try Toploop_jsoo.use_compiled_string js_code; Toploop_ext.Ok (true, [])
+        with exn ->
+          Firebug.console##log (Js.string (Printexc.to_string exn));
+          Format.fprintf ppf_answer "%s" (Printexc.to_string exn); Toploop_ext.Ok (false, [])
+      in
+      if !debug then
+        Js_utils.debug "Worker: <- Use_js_string (%B)" (is_success result);
+      close_fd fd_answer;
+      unwrap_result result
   | Use_string (filename, print_outcome, fd_answer, code) ->
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then
@@ -217,17 +231,22 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let result = Toploop_ext.check code in
       Toploop.toplevel_env := saved ;
       unwrap_result result
+  | Load_cmi_from_string cmi ->
+      Toploop_ext.load_cmi_from_string cmi;
+      return_unit_success
 
 let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
   | Init -> Unit
   | Reset -> Unit
   | Execute _ -> Bool
   | Use_string _ -> Bool
+  | Use_compiled_string _ -> Bool
   | Use_mod_string _ -> Bool
   | Set_debug _ -> Unit
   | Check _ -> Unit
   | Set_checking_environment -> Unit
   | Register_callback _ -> Unit
+  | Load_cmi_from_string _ -> Unit
 
 let () =
   let handler (type t) data =

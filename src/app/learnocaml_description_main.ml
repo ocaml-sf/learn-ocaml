@@ -71,7 +71,7 @@ let () =
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
          (* display exercise questions and prelude *)
-         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude exo);
+         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude_ml exo);
          let text_iframe = Dom_html.createIframe Dom_html.document in
          Manip.replaceChildren title_container
            Tyxml_js.Html5.[ h1 [ txt ex_meta.title] ];

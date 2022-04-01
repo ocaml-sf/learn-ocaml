@@ -1,3 +1,4 @@
+open Test_lib.Open_me
 open Learnocaml_report
 
 type 'a test_result =
@@ -41,7 +42,7 @@ module type S = sig
   val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
-module Make (Test_lib: Test_lib.S) : S = struct
+module Make (Test_lib: module type of Test_lib) : S = struct
   open Test_lib
 
   let run_test_against ?(compare = (=)) f (input, expected) =

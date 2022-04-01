@@ -138,11 +138,13 @@ let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
   | Reset -> Unit
   | Execute _ -> Bool
   | Use_string _ -> Bool
+  | Use_compiled_string _ -> Bool
   | Use_mod_string _ -> Bool
   | Set_debug _ -> Unit
   | Check _ -> Unit
   | Set_checking_environment -> Unit
   | Register_callback _ -> Unit
+  | Load_cmi_from_string _ -> Unit
 
 (** Threads created with [post] will always be wake-uped by
     [onmessage] by calling [Lwt.wakeup]. They should never end with
@@ -253,6 +255,13 @@ let execute worker ?pp_code ~pp_answer ~print_outcome code =
   close_fd worker pp_answer;
   Lwt.return result
 
+let use_compiled_string worker ~pp_answer code =
+  let pp_answer = create_fd worker pp_answer in
+  post worker @@
+  Use_compiled_string (pp_answer, code) >>= fun result ->
+  close_fd worker pp_answer;
+  Lwt.return result
+
 let use_string worker ?filename ~pp_answer ~print_outcome code =
   let pp_answer = create_fd worker pp_answer in
   post worker @@
@@ -275,3 +284,7 @@ let register_callback worker name callback =
   let fd = create_fd worker callback in
   post worker (Register_callback (name, fd)) >>? fun () ->
   return_unit_success
+
+let load_cmi_from_string worker cmi =
+  post worker @@
+  Load_cmi_from_string cmi

@@ -17,10 +17,10 @@ val sample_value: 'a Ty.ty -> 'a
 
 val insert_in_env: string -> 'a Ty.ty -> 'a -> unit
 
-val insert_mod_ast_in_env: var_name:string -> string -> unit
-val create_ref: string -> 'a Ty.ty -> 'a -> unit -> 'a
+val get_mod_ast: var_name:string -> string -> Parsetree.structure
+
 val register_callback:  string -> 'a Ty.ty -> ('a -> unit) -> unit
 
 val allow_introspection:
   divert:(string -> out_channel -> (string -> unit) -> (unit -> unit)) ->
-  unit
+  (module Introspection_intf.INTROSPECTION)
