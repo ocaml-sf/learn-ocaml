@@ -38,7 +38,7 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ~source ~target args =
 let jsoo ?(dir=Sys.getcwd ()) ~source ~target args =
   let d = Filename.concat dir in
   if is_fresh ~dir target [source] then Lwt.return_unit else
-  let args = "--wrap-with=dynload" :: "--pretty" :: args in
+  let args = "--wrap-with=dynload" :: args in
   let args = args @ [d source; "-o"; d target] in
   run "js_of_ocaml" args
 

@@ -15,8 +15,7 @@ type id = string
 
 type compiled_lib = { cma: string; js: string }
 
-(* JSON encoding of the exercise representation. Includes cipher and decipher at
-   at encoding and decoding. *)
+(* JSON encoding of the exercise representation. *)
 val encoding: t Json_encoding.encoding
 
 (** Intermediate representation of files, resulting of reading the exercise directory *)
@@ -118,25 +117,25 @@ val strip: bool -> t -> t
 (** Reader and decipherer *)
 val read:
   read_field:(string -> string option) ->
-  ?id:string -> ?decipher:bool -> unit ->
+  ?id:string -> unit ->
   t
 
 (** Writer and cipherer, ['a] can be [unit] *)
 val write:
   write_field:(string -> string -> 'a -> 'a) ->
-  t -> ?cipher:bool -> 'a ->
+  t -> 'a ->
   'a
 
 (** Reader and decipherer with {!Lwt} *)
 val read_lwt:
   read_field:(string -> string option Lwt.t) ->
-  ?id:string -> ?decipher:bool -> unit ->
+  ?id:string -> unit ->
   t Lwt.t
 
 (** Writer and cipherer with {!Lwt}, ['a] can be [unit] *)
 val write_lwt:
   write_field:(string -> string -> 'a -> 'a Lwt.t) ->
-  t -> ?cipher:bool -> 'a ->
+  t -> 'a ->
   'a Lwt.t
 
 (** JSON serializer, with {!id} file included *)

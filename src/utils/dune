@@ -34,14 +34,6 @@
 )
 
 (library
- (name learnocaml_xor)
- (wrapped false)
- (flags :standard -warn-error A-4-42-44-45-48)
- (libraries base64)
- (modules Learnocaml_xor)
- )
-
-(library
  (name sha)
  (wrapped false)
  (flags :standard -warn-error A-4-42-44-45-48)

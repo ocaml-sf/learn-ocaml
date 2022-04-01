@@ -27,7 +27,7 @@ let read_exercise exercise_dir =
   in
   Learnocaml_exercise.read_lwt ~read_field
     ~id:(Filename.basename exercise_dir)
-    ~decipher:false ()
+    ()
 
 let remove_trailing_slash s =
   let len = String.length s in
