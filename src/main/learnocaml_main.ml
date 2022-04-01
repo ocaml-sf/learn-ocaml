@@ -109,38 +109,40 @@ module Args = struct
     type t = {
       exercises: string list;
       output_json: string option;
+      display_callback: bool;
+      dump_outputs: string option;
+      dump_reports: string option;
     }
 
     let grader_conf =
-      let apply exercises output_json =
+      let apply exercises output_json quiet dump_outputs dump_reports =
         let exercises = List.flatten exercises in
-        { exercises; output_json }
+        { exercises; output_json; display_callback = not quiet;
+          dump_outputs; dump_reports }
       in
-      Term.(const apply $exercises $output_json)
+      Term.(const apply $exercises $output_json $quiet $dump_outputs $dump_reports)
 
     let grader_cli =
       let apply
-          grade_student display_outcomes quiet display_std_outputs
-          dump_outputs dump_reports timeout verbose dump_dot
+          grade_student display_outcomes display_std_outputs
+          timeout verbose dump_dot
         =
         Grader_cli.grade_student := grade_student;
         Grader_cli.display_outcomes := display_outcomes;
-        Grader_cli.display_callback := not quiet;
         Grader_cli.display_std_outputs := display_std_outputs;
-        Grader_cli.dump_outputs := dump_outputs;
-        Grader_cli.dump_reports := dump_reports;
         Grader_cli.individual_timeout := timeout;
         Grader_cli.display_reports := verbose;
         Grader_cli.dump_dot := dump_dot;
-        Learnocaml_process_exercise_repository.dump_outputs := dump_outputs;
-        Learnocaml_process_exercise_repository.dump_reports := dump_reports;
         ()
       in
-      Term.(const apply $grade_student $display_outcomes $quiet $display_std_outputs
-            $dump_outputs $dump_reports  $timeout $verbose $dump_dot)
+      Term.(const apply $grade_student $display_outcomes $display_std_outputs
+            $timeout $verbose $dump_dot)
 
     let term =
-      let apply conf () = conf in
+      let apply conf () =
+        Learnocaml_process_exercise_repository.dump_outputs := conf.dump_outputs;
+        Learnocaml_process_exercise_repository.dump_reports := conf.dump_reports;
+        conf in
       Term.(const apply $grader_conf $grader_cli)
   end
 
@@ -297,7 +299,11 @@ let main o =
            in
            Lwt.catch
              (fun () ->
-                Grader_cli.grade_from_dir ~print_result:true ex json_output
+                Grader_cli.grade_from_dir ~print_result:true
+                  ~dump_outputs:o.grader.Grader.dump_outputs
+                  ~dump_reports:o.grader.Grader.dump_reports
+                  ~display_callback:o.grader.Grader.display_callback
+                  ex json_output
                 >|= function Ok () -> i | Error _ -> 1)
              (fun e ->
                 Printf.ksprintf failwith

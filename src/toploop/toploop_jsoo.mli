@@ -10,6 +10,9 @@
     argument*)
 val initialize: string list -> unit
 
+(** Load compiled code as a string *)
+val use_compiled_string: string -> unit
+
 (** Materializes an output channel redirection. *)
 type redirection
 

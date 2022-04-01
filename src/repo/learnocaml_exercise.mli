@@ -13,6 +13,8 @@ type t
 
 type id = string
 
+type compiled_lib = { cma: string; js: string }
+
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)
 val encoding: t Json_encoding.encoding
@@ -54,20 +56,31 @@ module File : sig
   (** Maximum score for the exercise *)
   val max_score: int file
 
-  (** Returns the (private, already deciphered) [prepare.ml] *)
-  val prepare: string file
-
-  (** Returns the (private, already deciphered) [solution.ml] *)
-  val solution: string file
-
-  (** Returns the (private, already deciphered) [test.ml] *)
-  val test: string file
-
   (** Returns the (public) [prelude.ml] *)
-  val prelude: string file
+  val prelude_ml: string file
 
   (** Returns the (public) [template.ml] *)
   val template: string file
+
+  (** Returns the (private) [solution.ml], only when loaded from disk (for
+      building the exercises). Otherwise the empty string *)
+  val solution: string file
+
+  val prelude_cmi: string file
+
+  val prepare_cmi: string file
+
+  val solution_cmi: string file
+
+  val test_cmi: string file
+
+  val exercise_cma: string file
+
+  val exercise_js: string file
+
+  val test_cma: string file
+
+  val test_js: string file
 
   (** Returns the (public) [descr.html] *)
   val descr: (string * string) list file

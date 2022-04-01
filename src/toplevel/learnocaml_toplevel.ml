@@ -259,6 +259,38 @@ let load top ?(print_outcome = true) ?timeout ?message content =
     warnings ;
   Lwt.return result
 
+let load_js top ?(print_outcome = true) ?message content =
+  let phrase = Learnocaml_toplevel_output.phrase () in
+  protect_execution top @@ fun () ->
+  begin match message with
+    | None -> ()
+    | Some message ->
+        Learnocaml_toplevel_output.output_code ~phrase top.output
+          ("(* " ^ message ^ "*)")
+  end ;
+  let pp_answer =
+    if print_outcome then
+      Learnocaml_toplevel_output.output_answer ~phrase top.output
+    else
+      ignore in
+  Lwt.protected @@
+  Learnocaml_toplevel_worker_caller.use_compiled_string
+    top.worker ~pp_answer content
+  >>= fun result ->
+  let warnings, result = match Toploop_results.to_report result with
+    | Ok (result, warnings) -> warnings, result
+    | Error (error, warnings) ->
+        Learnocaml_toplevel_output.output_error top.output error ;
+        warnings, false in
+  List.iter
+    (Learnocaml_toplevel_output.output_warning top.output)
+    warnings ;
+  Lwt.return result
+
+let load_cmi_from_string top cmi =
+  protect_execution top @@ fun () ->
+  Learnocaml_toplevel_worker_caller.load_cmi_from_string top.worker cmi
+
 let make_timeout_popup
     ?(countdown = 10)
     ?(refill_step = 10)

@@ -8,6 +8,9 @@
 
 (** Introspection *)
 
+exception Introspection_failure of string
+let failwith msg = raise (Introspection_failure msg)
+
 let split s c =
   let rec loop i =
     match String.index_from s i c with
@@ -59,7 +62,7 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
   end;
   Toploop.setvalue name (Obj.repr value)
 
-let insert_mod_ast_in_env ~var_name impl_code =
+let get_mod_ast ~var_name impl_code =
   let init_loc lb filename =
     Location.input_name := filename;
     Location.input_lexbuf := Some lb;
@@ -92,8 +95,7 @@ let insert_mod_ast_in_env ~var_name impl_code =
                     Pstr_module { pmb_expr = { pmod_desc =
                                                  Pmod_constraint ({ pmod_desc =
                                                                       Pmod_structure s; _ }, _); _ }; _ }; _}] ->
-       let ty = Ty.repr (Ast_helper.(Typ.constr (Location.mknoloc (parse_lid "Parsetree.structure")) [])) in
-       insert_in_env var_name (ty : Parsetree.structure Ty.ty) s
+       s
    | _ (* should not happen *) -> assert false)
 
 let treat_lookup_errors fn = match fn () with
@@ -204,6 +206,48 @@ let print_value ppf v ty =
     Format.fprintf ppf "@]"
   end
 
+let register_sampler name f =
+  let sampler_name = "sample_" ^ name in
+  (* FIXME TODO: type-check the specified samplers ! *)
+  (* let sampled_ty_path, sampled_ty_decl =
+   *   Env.find_type_by_name (Longident.Lident name) !Toploop.toplevel_env
+   * in
+   * let sampled_ty =
+   *   match sampled_ty_decl.Types.type_manifest with
+   *   | Some ty -> ty
+   *   | None -> failwith "Type is not public for sampling"
+   * in
+   * let sampler_ty_computed =
+   *   (\* The given sampler must be a function with one argument for every type param *\)
+   *   let sampler ty = (\* ['a sampler] == [unit -> 'a] *\)
+   *     Types.Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Types.Cok)
+   *   in
+   *   List.fold_right (fun typaram ty ->
+   *       Types.Tarrow (Asttypes.Nolabel, Btype.newgenty (sampler typaram), Btype.newgenty ty, Types.Cok))
+   *     sampled_ty_decl.Types.type_params
+   *     (sampler sampled_ty)
+   * in *)
+  let sampler_ty(* _found *) =
+    Env.find_value
+      (Path.Pdot (Path.Pident (Ident.create_persistent "Test"), sampler_name))
+      !Toploop.toplevel_env
+      (* Requires [test.cmi] to be pre-loaded *)
+      (* FIXME: maybe don't require the cmi and skip this check when on the
+         browser.
+         ... unless the type of the sampler might somehow depend on the types
+         inferred from [Code], but that should definitely be forbidden! *)
+  in
+  if true (* Ctype.moregeneral !Toploop.toplevel_env true
+       * (Btype.newgenty sampler_ty_found) sampler_ty_computed *)
+  then
+    (Toploop.toplevel_env :=
+       Env.add_value (Ident.create_local sampler_name) sampler_ty
+         !Toploop.toplevel_env;
+     Toploop.setvalue sampler_name (Obj.repr f))
+  else
+    failwith "sampler has the wrong type !"
+
+
 let sample_value ty =
   let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
@@ -216,9 +260,9 @@ let sample_value ty =
       Exp.ident (Location.mknoloc (Longident.Lident ("sample_" ^ suffix))) in
     let rec phrase ty = match ty.desc with
       | Tconstr (path, [], _) ->
-          sampler_id (Path.name path)
+          sampler_id (Path.last path)
       | Tconstr (path, tl, _) ->
-          Exp.apply (sampler_id (Path.name path))
+          Exp.apply (sampler_id (Path.last path))
             (List.map (fun arg -> Asttypes.Nolabel, phrase arg) tl)
       | Ttuple tys ->
          begin match tys with
@@ -249,6 +293,14 @@ let sample_value ty =
   | exception Typetexp.Error (_loc, env, err) ->
       Typetexp.report_error env ppf err;
       failwith ("type error while defining sampler: " ^ Buffer.contents buf)
+  | exception Env.Error e ->
+      Format.kasprintf failwith "error while defining sampler: %s%a" (Buffer.contents buf) Env.report_error e
+  | exception Symtable.(Error (Uninitialized_global "Test")) ->
+      Format.kasprintf failwith "Missing sampler registration for %a"
+        Printtyp.type_expr ty
+  | exception Symtable.Error e ->
+      Format.kasprintf failwith "error while defining sampler: %s%a"
+        (Buffer.contents buf) Symtable.report_error e
   | exception e ->
       failwith ("error while defining sampler: " ^ Buffer.contents buf ^ Printexc.to_string e)
 
@@ -266,13 +318,9 @@ let create_ref name (ty: 'a Ty.ty) (v: 'a) =
   let ty = Ty.repr @@ Ast_helper.Typ.constr ref_lid [Ty.obj ty] in
   let r = ref v in
   insert_in_env name ty r;
-  (fun () -> !r)
-
-let setup = lazy (Ast_mapper.register "ppx_metaquot" Ppx_metaquot.expander)
+  (r, ty), (fun () -> !r)
 
 let allow_introspection ~divert =
-
-  Lazy.force setup ;
 
   let module Introspection = struct
 
@@ -339,13 +387,12 @@ let allow_introspection ~divert =
       res
 
     let get_printer ty = fun ppf v -> print_value ppf v ty
+
+    let register_sampler name f = register_sampler name f
     let get_sampler ty = sample_value ty
 
     let parse_lid name = parse_lid name
 
   end in
 
-  insert_in_env
-    "Introspection"
-    [%ty: (module Introspection_intf.INTROSPECTION)]
-    (module Introspection : Introspection_intf.INTROSPECTION)
+  (module Introspection : Introspection_intf.INTROSPECTION)

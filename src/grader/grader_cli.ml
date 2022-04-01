@@ -7,9 +7,6 @@
  * included LICENSE file for details. *)
 
 let display_std_outputs = ref false
-let dump_outputs = ref None
-let dump_reports = ref None
-let display_callback = ref false
 let display_outcomes = ref false
 let grade_student = ref None
 let individual_timeout = ref None
@@ -47,29 +44,25 @@ let read_student_file exercise_dir path =
   else
     Lwt_io.with_file ~mode:Lwt_io.Input fn Lwt_io.read
 
-let grade ?(print_result=false) ?dirname meta exercise output_json =
+let grade ?(print_result=false) ?dirname
+    ~dump_outputs ~dump_reports ~display_callback
+    meta exercise output_json =
   Lwt.catch
     (fun () ->
        let code_to_grade = match !grade_student with
          | Some path -> read_student_file (Sys.getcwd ()) path
-         | None ->
-             Lwt.return (Learnocaml_exercise.(decipher File.solution exercise)) in
+         | None -> Lwt.return (Learnocaml_exercise.(decipher File.solution exercise)) in
        let callback =
-         if !display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
+         if display_callback then Some (Printf.eprintf "[ %s ]%!\r\027[K") else None in
        let timeout = !individual_timeout in
        code_to_grade >>= fun code ->
        Grading_cli.get_grade ?callback ?timeout ?dirname exercise code
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        flush stderr;
        match result with
-       | Error exn ->
+       | Error err ->
            let dump_error ppf =
-             begin match Grading.string_of_exn exn with
-               | Some msg ->
-                   Format.fprintf ppf "%s@." msg
-               | None ->
-                   Format.fprintf ppf "%a@." Location.report_exception exn
-             end;
+             Format.fprintf ppf "%s@." (Grading.string_of_err err);
              if stdout_contents <> "" then begin
                Format.fprintf ppf "grader stdout:@.%s@." stdout_contents
              end ;
@@ -79,7 +72,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
              if outcomes <> "" then begin
                Format.fprintf ppf "grader outcomes:@.%s@." outcomes
              end in
-           begin match !dump_outputs with
+           begin match dump_outputs with
              | None -> ()
              | Some prefix ->
                  let oc = open_out (prefix ^ ".error") in
@@ -92,7 +85,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
            let (max, failure) = Learnocaml_report.result report in
            if !display_reports then
              Learnocaml_report.print (Format.formatter_of_out_channel stderr) report;
-           begin match !dump_reports with
+           begin match dump_reports with
              | None -> ()
              | Some prefix ->
                  let oc = open_out (prefix ^ ".report.txt") in
@@ -103,7 +96,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
                  close_out oc
            end ;
            if stderr_contents <> "" then begin
-             begin match !dump_outputs with
+             begin match dump_outputs with
                | None -> ()
                | Some prefix ->
                    let oc = open_out (prefix ^ ".stderr") in
@@ -114,7 +107,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
                Format.eprintf "%s" stderr_contents
            end ;
            if stdout_contents <> "" then begin
-             begin match !dump_outputs with
+             begin match dump_outputs with
                | None -> ()
                | Some prefix ->
                    let oc = open_out (prefix ^ ".stdout") in
@@ -125,7 +118,7 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
                Format.printf "%s" stdout_contents
            end ;
            if outcomes <> "" then begin
-             begin match !dump_outputs with
+             begin match dump_outputs with
                | None -> ()
                | Some prefix ->
                    let oc = open_out (prefix ^ ".outcomes") in
@@ -163,7 +156,8 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
                  Lwt.return (Ok ())
            end)
     (fun exn ->
-       begin match !dump_outputs with
+       Lwt.wrap @@ fun () ->
+       begin match dump_outputs with
          | None -> ()
          | Some prefix ->
              let oc = open_out (prefix ^ ".error") in
@@ -172,10 +166,13 @@ let grade ?(print_result=false) ?dirname meta exercise output_json =
                "%a@!" Location.report_exception exn ;
              close_out oc
        end ;
-       Format.eprintf "%a" Location.report_exception exn ;
-       Lwt.return (Error (-1)))
+       Format.eprintf "%a" Location.report_exception exn;
+       Error (-1))
 
-let grade_from_dir ?(print_result=false) exercise_dir output_json =
+let grade_from_dir
+    ?(print_result=false)
+    ~dump_outputs ~dump_reports ~display_callback
+    exercise_dir output_json =
   let exercise_dir = remove_trailing_slash exercise_dir in
   read_exercise exercise_dir >>= fun exo ->
   Lwt_io.(with_file ~mode:Input (String.concat Filename.dir_sep [exercise_dir; "meta.json"]) read) >>= fun content ->
@@ -183,4 +180,6 @@ let grade_from_dir ?(print_result=false) exercise_dir output_json =
               | "" -> `O []
               | s -> Ezjsonm.from_string s)
              |> Json_encoding.destruct Learnocaml_data.Exercise.Meta.enc in
-  grade ~print_result ~dirname:exercise_dir meta exo output_json
+  grade
+    ~dump_outputs ~dump_reports ~display_callback
+    ~print_result ~dirname:exercise_dir meta exo output_json

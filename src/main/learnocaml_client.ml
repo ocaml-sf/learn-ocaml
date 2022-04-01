@@ -778,13 +778,9 @@ module Grade = struct
     pr `Cyan "outcome" ex_outcome;
     if eo.verbosity >= 1 then prerr_newline ();
     match report with
-    | Error e ->
-       let str =
-         match Grading.string_of_exn e with
-         | Some s -> s
-         | None   -> Printexc.to_string e
-       in
-       Printf.eprintf "[ERROR] Could not do the grading:\n%s\n" str;
+    | Error err ->
+       Printf.eprintf "[ERROR] Could not do the grading:\n%s\n"
+         (Grading.string_of_err err);
        Lwt.return 10
     | Ok report ->
        (match eo.output_format with

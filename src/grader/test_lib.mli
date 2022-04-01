@@ -8,7 +8,6 @@
 
 (** Documentation for [test_lib] library. [Test_lib] module can be
    used to write graders for learn-ocaml.  *)
-module type S = sig
 
   val set_result : Learnocaml_report.t -> unit
 
@@ -1246,12 +1245,18 @@ module type S = sig
    include (module type of Test_functions_ref_var)
    include (module type of Test_functions_function)
    include (module type of Test_functions_generic)
-end
+(* end *)
 
-module Make : functor
-  (_ : sig
-     val results : Learnocaml_report.t option ref
-     val set_progress : string -> unit
-     val timeout : int option
-     module Introspection : Introspection_intf.INTROSPECTION
-   end) -> S
+(* module Make : functor
+ *   (_ : sig
+ *      val results : Learnocaml_report.t option ref
+ *      val set_progress : string -> unit
+ *      val timeout : int option
+ *      module Introspection : Introspection_intf.INTROSPECTION
+ *    end) -> S *)
+(* module Report = Learnocaml_report
+ * include (module type of Pre_test) *)
+module Open_me: sig
+  module Report = Learnocaml_report
+  include module type of Pre_test
+end

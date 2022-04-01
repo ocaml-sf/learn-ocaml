@@ -128,3 +128,26 @@ let stop_channel_redirection redir =
         Sys_js.set_channel_flusher redir.channel append ;
   with Not_found ->
     fail ()
+
+let use_compiled_string code =
+  (* jsoo supports dynload, but relies on expectations on the parent object that
+     are no longer valid when running from a web-worker. Thus we compile with
+     `jsoo --wrap-with` and apply explicitely to the global object *)
+  let clean_code =
+    let b = Buffer.create (String.length code + 2) in
+    let i = String.rindex code '}' in
+    (* jsoo >=4 adds garbage after the fun def with --wrap-with *)
+    Buffer.add_char b '(';
+    Buffer.add_substring b code 0 (i+1);
+    Buffer.add_char b ')';
+    Buffer.contents b
+  in
+  ignore @@
+  Js.Unsafe.fun_call (Js.Unsafe.eval_string clean_code)
+    [|Js.Unsafe.inject Js.Unsafe.global|]
+
+let () = Toploop_ext.set_inject_global_hook @@ fun id ->
+  Js_of_ocaml.Js.Unsafe.set
+    (Js_of_ocaml.Js.Unsafe.js_expr "jsoo_runtime.caml_global_data")
+    (Js_of_ocaml.Js.string (Ident.name id))
+    (Symtable.get_global_value id)

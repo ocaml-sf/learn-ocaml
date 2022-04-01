@@ -239,3 +239,34 @@ let check ?(setenv = false) code =
   | End_of_file -> return_success ()
   | exn -> return_exn exn
 
+let inject_sig name sign =
+  Toploop.toplevel_env :=
+    Env.add_module
+      (Ident.create_persistent name)
+      Types.Mp_present
+      (Types.Mty_signature sign)
+      !Toploop.toplevel_env
+
+let load_cmi_from_string cmi_str =
+  (* Cmi_format.input_cmi only supports reading from a channel *)
+  let magic_len = String.length Config.cmi_magic_number in
+  if String.sub cmi_str 0 magic_len <> Config.cmi_magic_number then
+    Printf.ksprintf failwith "Bad cmi file";
+  let (name, sign) = Marshal.from_string cmi_str magic_len in
+  (* we ignore crc and flags *)
+  inject_sig name sign
+
+let inject_global_hook: (Ident.t -> unit) ref = ref (fun _ -> ())
+
+let set_inject_global_hook f = inject_global_hook := f
+
+let inject_global name obj =
+  let id = Ident.create_persistent name in
+  let fake_buf = Misc.LongString.create 4 in
+  let reloc = [Cmo_format.Reloc_setglobal id, 0] in
+  Symtable.patch_object fake_buf reloc;
+  (* we don't care about patching but this is the only entry point that allows us to register the global *)
+  Symtable.check_global_initialized reloc;
+  Symtable.update_global_table ();
+  Symtable.assign_global_value id obj;
+  !inject_global_hook id

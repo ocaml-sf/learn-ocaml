@@ -123,16 +123,21 @@ let () =
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    begin match Learnocaml_exercise.(decipher File.prelude exo) with
-      | "" -> Lwt.return true
-      | prelude ->
-          Learnocaml_toplevel.load ~print_outcome:true top
-            ~message: [%i"loading the prelude..."]
-            prelude
-    end >>= fun r1 ->
-    Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
-    if not r1 || not r2 then failwith [%i"error in prelude"] ;
+    let exercise_js = Learnocaml_exercise.(decipher File.exercise_js exo) in
+    Learnocaml_toplevel.load_cmi_from_string top
+      Learnocaml_exercise.(decipher File.prelude_cmi exo) >>= fun _ ->
+    Learnocaml_toplevel.load_cmi_from_string top
+      Learnocaml_exercise.(decipher File.prepare_cmi exo) >>= fun _ ->
+    Learnocaml_toplevel.load_js ~print_outcome:false top
+      ~message: [%i"loading the prelude..."]
+      exercise_js
+    >>= fun r ->
+    if not r then Lwt.fail_with  [%i"error in prelude"] else
+    Learnocaml_toplevel.load top "open! Prelude ;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load top "open! Prepare ;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    (* TODO: maybe remove Prelude, Prepare modules from the env ? *)
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
   let toplevel_launch =
@@ -188,7 +193,7 @@ let () =
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude_ml exo);
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")

@@ -11,15 +11,6 @@
 (** Should stdout / stderr of the grader be echoed *)
 val display_std_outputs: bool ref
 
-(** Should outputs of the grader be saved and where *)
-val dump_outputs: string option ref
-
-(** Should the reports be saved and where *)
-val dump_reports: string option ref
-
-(** Should the message from 'test.ml' be displayed on stdout ? *)
-val display_callback: bool ref
-
 (** Should compiler outcome be printed ? *)
 val display_outcomes: bool ref
 
@@ -39,9 +30,14 @@ val dump_dot: string option ref
 
 (** Runs the grading process *)
 val grade:
-  ?print_result:bool -> ?dirname:string -> Learnocaml_data.Exercise.Meta.t -> Learnocaml_exercise.t -> string option ->
+  ?print_result:bool -> ?dirname:string ->
+  dump_outputs:string option -> dump_reports:string option ->
+  display_callback:bool ->
+  Learnocaml_data.Exercise.Meta.t -> Learnocaml_exercise.t -> string option ->
   (unit, int) result Lwt.t
 
 val grade_from_dir:
-  ?print_result:bool -> string -> string option ->
+  ?print_result:bool ->
+  dump_outputs:string option -> dump_reports:string option -> display_callback:bool ->
+  string -> string option ->
   (unit, int) result Lwt.t

@@ -34,9 +34,28 @@ module type INTROSPECTION = sig
   val grab_stderr: unit -> unit
   val release_stderr: unit -> string
 
+  val register_sampler: string -> ('a -> 'b) -> unit
   val get_sampler: 'a Ty.ty -> (unit -> 'a)
   val get_printer: 'a Ty.ty -> (Format.formatter -> 'a -> unit)
 
   val parse_lid: string -> Longident.t
 
+end
+
+(** Interface of the module that gets automatically injected in the environment
+    before the Prelude is loaded. *)
+module type LEARNOCAML_CALLBACK = sig
+  val print_html: string -> unit
+  val print_svg: string -> unit
+end
+
+(** Interface of the module that gets automatically injected in the environment
+    of the grader before the tests are run. *)
+module type PRE_TEST = sig
+  module Introspection: INTROSPECTION
+
+  val code_ast: Parsetree.structure
+  val results: Learnocaml_report.t option ref
+  val set_progress: string -> unit
+  val timeout: int option
 end

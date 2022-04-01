@@ -125,6 +125,25 @@ val load:
   ?message: string ->
   string -> bool Lwt.t
 
+(** Loads a given piece of code, without displaying its output. The code is
+    expected to be already compiled to js.
+
+    @param print_outcome
+      Tells if answers of the toplevel are to be displayed.
+    @param message
+      Displays [(* message *)] where the code should have been echoed.
+    @return
+       Returns [Success true] whenever the code was correctly
+       typechecked and its evaluation did not raise an exception nor
+       timeouted and [false] otherwise. *)
+val load_js:
+  t ->
+  ?print_outcome:bool ->
+  ?message: string ->
+  string -> bool Lwt.t
+
+val load_cmi_from_string: t -> string -> unit Toploop_results.toplevel_result Lwt.t
+
 (** Parse and typecheck a given source code. *)
 val check: t -> string -> unit Toploop_results.toplevel_result Lwt.t
 
