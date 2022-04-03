@@ -21,9 +21,15 @@
 )
 
 (library
+ (name learnocaml_recorder)
+ (wrapped false)
+ (modules Recorder)
+ (libraries ppxlib))
+
+(library
  (name learnocaml_ppx_metaquot)
  (wrapped false)
- (libraries learnocaml_ppx_metaquot_lib ty fun_ty ocaml-migrate-parsetree)
+ (libraries learnocaml_ppx_metaquot_lib ty fun_ty ocaml-migrate-parsetree learnocaml_recorder)
  (modules Ppx_metaquot_register)
  (kind ppx_rewriter)
 )

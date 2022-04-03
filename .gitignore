@@ -35,3 +35,8 @@ tests/corpuses/*
 detect-libs.*
 
 docs/odoc.html
+
+demo-repository/exercises/**/*.cmo
+demo-repository/exercises/**/*.cmi
+demo-repository/exercises/**/*.cma
+demo-repository/exercises/**/*.js
