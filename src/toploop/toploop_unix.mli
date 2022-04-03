@@ -33,7 +33,7 @@ val flush_redirected_channel : redirection -> unit
 (** Flushes the channel and then cancel the redirection.
     The redirection must be the last one performed, otherwise an
     [Invalid_argument] will be raised.
-    A stack of redirections is maintained for all fire descriptors. So
+    A stack of redirections is maintained for all file descriptors. So
     the channel is then restored to either the previous redirection or
     to the original file descriptor. *)
 val stop_channel_redirection : redirection -> unit

@@ -61,7 +61,7 @@ let precompile ~exercise_dir =
      jsoo ~dir [] ~source:"exercise.cma" ~target:"exercise.js");
     (ocamlc ~dir ["-c";
                   "-I"; "+compiler-libs";
-                  "-ppx"; Filename.concat !grading_ppx_dir "learnocaml-ppx-metaquot" ]
+                  "-ppx"; Filename.concat !grading_ppx_dir "learnocaml-ppx-metaquot"]
        ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"; "Test_lib.Open_me"]
        ~source:["test.ml"]
        ~target:"test.cmo"
