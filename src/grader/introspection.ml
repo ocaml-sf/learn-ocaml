@@ -206,52 +206,80 @@ let print_value ppf v ty =
     Format.fprintf ppf "@]"
   end
 
-let register_sampler name f =
-  let sampler_name = "sample_" ^ name in
-  (* FIXME TODO: type-check the specified samplers ! *)
-  (* let sampled_ty_path, sampled_ty_decl =
-   *   Env.find_type_by_name (Longident.Lident name) !Toploop.toplevel_env
-   * in
-   * let sampled_ty =
-   *   match sampled_ty_decl.Types.type_manifest with
-   *   | Some ty -> ty
-   *   | None -> failwith "Type is not public for sampling"
-   * in
-   * let sampler_ty_computed =
-   *   (\* The given sampler must be a function with one argument for every type param *\)
-   *   let sampler ty = (\* ['a sampler] == [unit -> 'a] *\)
-   *     Types.Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Types.Cok)
-   *   in
-   *   List.fold_right (fun typaram ty ->
-   *       Types.Tarrow (Asttypes.Nolabel, Btype.newgenty (sampler typaram), Btype.newgenty ty, Types.Cok))
-   *     sampled_ty_decl.Types.type_params
-   *     (sampler sampled_ty)
-   * in *)
-  let sampler_ty(* _found *) =
-    Env.find_value
-      (Path.Pdot (Path.Pident (Ident.create_persistent "Test"), sampler_name))
-      !Toploop.toplevel_env
-      (* Requires [test.cmi] to be pre-loaded *)
-      (* FIXME: maybe don't require the cmi and skip this check when on the
-         browser.
-         ... unless the type of the sampler might somehow depend on the types
-         inferred from [Code], but that should definitely be forbidden! *)
-  in
-  if true (* Ctype.moregeneral !Toploop.toplevel_env true
-       * (Btype.newgenty sampler_ty_found) sampler_ty_computed *)
-  then
-    (Toploop.toplevel_env :=
-       Env.add_value (Ident.create_local sampler_name) sampler_ty
-         !Toploop.toplevel_env;
-     Toploop.setvalue sampler_name (Obj.repr f))
-  else
-    failwith "sampler has the wrong type !"
 
+(* for a type [('a, 'b) foo] => [register_sampler "foo" f] where [f] must have
+   type ['a sampler -> 'b sampler -> ('a, 'b) foo sampler].
+   - find the sampler's type from its name and the cmi
+   - lookup type [foo]
+   - build the expected sampler type from the type params of [foo]
+   - match with the sampler type
+*)
+let register_sampler name f =
+  let open Types in
+  let gen_sampler_type =
+    Path.Pdot
+      (Path.Pident (Ident.create_persistent "Test_lib"),
+       "sampler")
+  in
+  let lookup_env = !Toploop.toplevel_env in
+  let sampler_name = "sample_" ^ name in
+  match
+    let sampler_path =
+      Path.Pdot (Path.Pident (Ident.create_persistent "Test"),
+                 sampler_name)
+    in
+    try sampler_path, Env.find_value sampler_path lookup_env
+    with Not_found ->
+      Env.find_value_by_name (Longident.Lident sampler_name)
+        lookup_env
+  with
+  | exception Not_found ->
+      Format.ksprintf failwith "Bad sampler registration (function %s not found).@."
+        sampler_name
+  | _sampler_path, sampler_desc ->
+  match
+    Env.find_type_by_name (Longident.Lident name) lookup_env
+  with
+  | exception Not_found ->
+      Format.eprintf "Warning: unrecognised sampler definition (type %s not found).@."
+        name
+  | sampled_ty_path, sampled_ty_decl ->
+      let sampler_ty_expected =
+        Ctype.begin_def();
+        let ty_args =
+          List.map (fun _ -> Ctype.newvar ()) sampled_ty_decl.type_params
+        in
+        let ty_target =
+          Ctype.newty (Tconstr (sampled_ty_path, ty_args, ref Mnil))
+        in
+        let fn_args =
+          List.map (fun ty -> Ctype.newconstr gen_sampler_type [ty]) ty_args
+        in
+        let sampler_ty =
+          List.fold_right (fun fn_arg ty ->
+              Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, Cunknown)))
+            fn_args (Ctype.newconstr gen_sampler_type [ty_target])
+        in
+        Ctype.end_def ();
+        Ctype.generalize sampler_ty;
+        sampler_ty
+      in
+      (try
+         Ctype.unify lookup_env
+           sampler_ty_expected
+           (Ctype.instance sampler_desc.val_type)
+       with Ctype.Unify _ ->
+         Format.ksprintf failwith "%s has a wrong type for a sampling function.@."
+           sampler_name);
+      Toploop.toplevel_env :=
+        Env.add_value (Ident.create_local sampler_name) sampler_desc
+           !Toploop.toplevel_env;
+      Toploop.setvalue sampler_name (Obj.repr f)
 
 let sample_value ty =
   let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
-  let lid = Format.asprintf "sample_%04X" (Random.int 0xFFFF) in
+  let lid = Format.asprintf "sample_%06X" (Random.int 0xFFFFFF) in
   let phrase =
     let open Asttypes in
     let open Types in
