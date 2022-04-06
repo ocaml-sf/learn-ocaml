@@ -115,10 +115,16 @@ let get_grade
         };
 
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Prelude|};
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        {|include Prelude|};
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Prepare|};
-
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|module Prelude = struct end|};
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|include Prepare|};
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|module Prepare = struct end|};
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
