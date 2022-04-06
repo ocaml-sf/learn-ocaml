@@ -129,13 +129,17 @@ let () =
     Learnocaml_toplevel.load_cmi_from_string top
       Learnocaml_exercise.(decipher File.prepare_cmi exo) >>= fun _ ->
     Learnocaml_toplevel.load_js ~print_outcome:false top
-      ~message: [%i"loading the prelude..."]
       exercise_js
     >>= fun r ->
     if not r then Lwt.fail_with  [%i"error in prelude"] else
-    Learnocaml_toplevel.load top "open! Prelude ;;" >>= fun r ->
+    Learnocaml_toplevel.load top "include Prelude ;;"
+      ~message: [%i"loading the prelude..."] >>= fun r ->
     if not r then Lwt.fail_with [%i"error in prelude"] else
-    Learnocaml_toplevel.load top "open! Prepare ;;" >>= fun r ->
+    Learnocaml_toplevel.load ~print_outcome:false top "module Prelude = struct end;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load ~print_outcome:false top "include Prepare ;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load ~print_outcome:false top "module Prepare = struct end;;" >>= fun r ->
     if not r then Lwt.fail_with [%i"error in prelude"] else
     (* TODO: maybe remove Prelude, Prepare modules from the env ? *)
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
