@@ -729,9 +729,17 @@ module Init = struct
   let man = man "Initialize the configuration file with the server, and \
                  a token or a nickname+secret pair"
 
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Input error: unable to find a server URL or connection token." 1
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
   let info =
     Cmd.info 
       ~man
+      ~exits
       ~sdocs:Manpage.s_options
       ~doc:"Initialize the configuration file."
       "init"
@@ -819,9 +827,19 @@ module Grade = struct
       "Grades an OCaml exercise using a learn-ocaml server, and submits \
         solutions."
 
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Server-side error: either unable to reach the server or request has been failed." 1
+    ; info ~doc:"Input error: unable to find a file to grade or token isn't valid." 2
+    ; info ~doc:"Grading failed." 10
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
   let info =
     Cmd.info 
       ~man
+      ~exits
       ~sdocs:Manpage.s_options
       ~doc:"Learn-ocaml grading client."
       "grade"        
@@ -850,7 +868,14 @@ module Print_token = struct
 
   let man = man explanation
 
-  let info = Cmd.info ~man ~doc:explanation ~sdocs:Manpage.s_options "print-token"
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Server error: could not reach the server or config file wasn't found." 1
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
+  let info = Cmd.info ~man ~exits ~doc:explanation ~sdocs:Manpage.s_options "print-token"
 
   let term = use_global print_tok
 end
@@ -865,8 +890,15 @@ module Print_server = struct
   let explanation = "Just print the configured server."
                   
   let man = man explanation
-          
-  let info = Cmd.info ~man ~doc:explanation ~sdocs:Manpage.s_options "print-server"
+  
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Server error: could not reach the server or config file wasn't found." 1
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
+  let info = Cmd.info ~man ~exits ~doc:explanation ~sdocs:Manpage.s_options "print-server"
 
   let term = use_global print_server        
     
@@ -948,7 +980,7 @@ module Server_version = struct
     let open Cmd.Exit in
     [ info ~doc:"Default exit." ok
     ; info ~doc:"Unable to reach the server." 1
-    ; info ~doc:"Input error: unable to find a server URL." 2
+    ; info ~doc:"Input error: unable to find a server URL or config file." 2
     ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
     ]
 
@@ -971,9 +1003,17 @@ module Set_options = struct
       "Overwrite the configuration file with the command-line options \
        ($(b,--server), $(b,--token))."
 
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Server error: config file wasn't found." 1
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
   let info =
     Cmd.info 
       ~man
+      ~exits
       ~sdocs:Manpage.s_options
       ~doc:"Set configuration."
       "set-options"
@@ -1050,9 +1090,11 @@ module Fetch = struct
   let exits =
     let open Cmd.Exit in
     [ info ~doc:"Default exit." ok
-    ; info ~doc:"There was a file already present on the local side." 1
+    ; info ~doc:"Either sever-side error or there was a file already present on the local side." 1
     ; info ~doc:"A specified exercise was not found on the server." 2
-    ; info ~doc:"Both of 1 and 2." 3 ]
+    ; info ~doc:"Both of 1 (for local side) and 2." 3
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
 
   let info =
     Cmd.info 
@@ -1091,9 +1133,18 @@ module Create_token = struct
   let man = man "Create a token on the server with the desired nickname.\
                  Prodiving a token will test if it exists on the server."
 
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Server error: either unable to reach the server or request has been failed." 1
+    ; info ~doc:"Input error: nickname wasn't provided." 2
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
   let info =
     Cmd.info 
       ~man
+      ~exits
       ~sdocs:Manpage.s_options
       ~doc:"Create a token."
       "create-token"
@@ -1125,9 +1176,19 @@ module Template = struct
 
   let man = man "Get the template of a given exercise"
 
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Sever error: unable to find config file or request has been failed." 1
+    ; info ~doc:"Input error: exercise id wasn't provided." 2
+    ; info ~doc:"Exercise with given id already exists." 3
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
   let info =
     Cmd.info 
       ~man
+      ~exits
       ~sdocs:Manpage.s_options
       ~doc:"Get the template of a given exercise."
       "template"
@@ -1161,7 +1222,14 @@ module Exercise_list = struct
 
   let man = man doc
 
-  let info = Cmd.info ~man ~doc:doc ~sdocs:Manpage.s_options "exercise-list"
+  let exits =
+    let open Cmd.Exit in
+    [ info ~doc:"Default exit." ok
+    ; info ~doc:"Sever error: unable to find config file or request has been failed." 1
+    ; info ~doc:"The client's version is incompatible (too old?) w.r.t. the server." 70
+    ]
+
+  let info = Cmd.info ~man ~exits ~doc:doc ~sdocs:Manpage.s_options "exercise-list"
 
   let term = use_global exercise_list
 end
@@ -1194,6 +1262,7 @@ module Main = struct
     Cmd.info
       ~version 
       ~man
+      ~exits:Grade.exits
       ~sdocs:s_options
       ~doc:"Learn-ocaml client CLI."
       "learn-ocaml-client"

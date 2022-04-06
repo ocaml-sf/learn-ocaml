@@ -87,10 +87,19 @@ let base_url =
        Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
        which typically occurs for static deployment."
 
+let  exits =
+  let open Cmd.Exit in
+  [ info ~doc:"Default exit." ok
+  ; info ~doc:"Uncaught exception." 2
+  ; info ~doc:"Server error whose cause is printed on stderr." 10
+  ; info ~doc:"Aborting. Server internal error occured in less then 15 seconds after the launch." 20
+  ]
+
 let main_info =
   Cmd.info
     ~man
     ~doc:"Learn-ocaml native server"
+    ~exits
     ~sdocs:Manpage.s_options
     ~version:Learnocaml_api.version
     "learn-ocaml-server"

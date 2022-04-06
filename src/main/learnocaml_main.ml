@@ -7,6 +7,7 @@
  * included LICENSE file for details. *)
 
 open Lwt.Infix
+open Cmdliner
 
 module StringSet = Set.Make(String)
 
@@ -24,7 +25,6 @@ let readlink f =
   with Sys_error _ -> Sys.chdir (Filename.get_temp_dir_name ()); f
 
 module Args = struct
-  open Cmdliner
   open Arg
 
   type command = Grade | Build | Serve
@@ -428,7 +428,7 @@ let main o =
   exit ret
 
 let man = 
-  let open Cmdliner.Manpage in
+  let open Manpage in
   [
   `S s_description;
   `P "This program performs various tasks related to generating, serving and \
@@ -460,17 +460,25 @@ let man =
       $(i,https://github.com/ocaml-sf/learn-ocaml/issues)";
 ]
 
+let exits =
+  let open Cmd.Exit in
+  [ info ~doc:"Default exit." ok
+  ; info ~doc:"Client-side failure whose cause is printed on stderr. Caused by $(b,grade) or $(b,build) commands." 1
+  ; info ~doc:"Uncaught exception." 2
+  ; info ~doc:"Server error whose cause is printed on stderr. Caused by $(b,serve) command." 10
+  ]
+
 let main_info =
-  Cmdliner.Cmd.info 
-    ~man 
+  Cmd.info 
+    ~man
+    ~exits
     ~doc:"Learn-ocaml web-app manager"
     ~version:Learnocaml_api.version 
     "learn-ocaml"
 
-let main_term = Cmdliner.Term.(const main $ Args.term)
+let main_term = Term.(const main $ Args.term)
 
 let () =
-  let open Cmdliner in
   match
     Cmd.eval_value ~catch:false (Cmd.v main_info main_term)
   with
