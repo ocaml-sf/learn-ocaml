@@ -60,6 +60,19 @@ let grade ?(print_result=false) ?dirname
        >>= fun (result, stdout_contents, stderr_contents, outcomes) ->
        flush stderr;
        match result with
+       | Error (Grading.Internal_error _ as err) ->
+           let dump_error ppf =
+             Format.fprintf ppf "%s@." (Grading.string_of_err err)
+           in
+           begin match dump_outputs with
+             | None -> ()
+             | Some prefix ->
+                 let oc = open_out (prefix ^ ".error") in
+                 dump_error (Format.formatter_of_out_channel oc) ;
+                 close_out oc
+           end ;
+           dump_error Format.err_formatter ;
+           Lwt.return (Error (-1))
        | Error err ->
            let dump_error ppf =
              Format.fprintf ppf "%s@." (Grading.string_of_err err);
