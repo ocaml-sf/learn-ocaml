@@ -18,30 +18,33 @@ and remove dir name =
     let file = Filename.concat dir name in
     if Sys.is_directory file then remove_dir file else Lwt_unix.unlink file
 
-let with_temp_dir f =
-  let rec get_dir () =
-    let d =
-      Filename.concat
-        (Filename.get_temp_dir_name ())
-        (Printf.sprintf "grader_%06X" (Random.int 0xFFFFFF))
-    in
-    Lwt.catch (fun () -> Lwt_unix.mkdir d 0o700 >>= fun () -> Lwt.return d)
-    @@ function
-    | Unix.Unix_error(Unix.EEXIST, _, _) -> get_dir ()
-    | e -> raise e
+let rec mk_temp_dir () =
+  let d =
+    Filename.concat
+      (Filename.get_temp_dir_name ())
+      (Printf.sprintf "grader_%06X" (Random.int 0xFFFFFF))
   in
-  get_dir () >>= fun dir ->
-  Lwt.catch
-    (fun () -> f dir >>= fun res -> remove_dir dir >>= fun () -> Lwt.return res)
-    (fun e -> remove_dir dir >>= fun () -> Lwt.fail e)
+  Lwt.catch (fun () -> Lwt_unix.mkdir d 0o700 >>= fun () -> Lwt.return d)
+  @@ function
+  | Unix.Unix_error(Unix.EEXIST, _, _) -> mk_temp_dir ()
+  | e -> Lwt.fail e
 
 (* The answer of the grader will be returned marshalled through a pipe:
    type it explicitely and avoid any exceptions inside. *)
 type grader_answer =
   (Learnocaml_report.t, Grading.error) Stdlib.result * string * string * string
 
+let cmis_dir = lazy begin
+  mk_temp_dir () >>= fun cmis_dir ->
+  let module ResDump = OCamlResFormats.Files (OCamlResSubFormats.Raw) in
+  ResDump.output { OCamlResFormats.base_output_dir = cmis_dir }
+    Embedded_cmis.root;
+  Lwt_main.at_exit (fun () -> remove_dir cmis_dir);
+  Lwt.return cmis_dir
+end
+
 let get_grade ?callback ?timeout ?dirname exo solution =
-  with_temp_dir @@ fun cmis_dir ->
+  Lazy.force cmis_dir >>= fun cmis_dir ->
   Lwt_io.flush_all () >>= fun () ->
   flush_all ();
   let in_fd, out_fd = Unix.pipe ~cloexec:true () in
@@ -51,12 +54,6 @@ let get_grade ?callback ?timeout ?dirname exo solution =
       Unix.close in_fd;
       let oc = Unix.out_channel_of_descr out_fd in
       let (ret: grader_answer) =
-        let module ResDump =
-          OCamlResFormats.Files (OCamlResSubFormats.Raw) in
-        let dump_cmis =
-          ResDump.output { OCamlResFormats.base_output_dir = cmis_dir } in
-        dump_cmis Embedded_cmis.root ;
-        (* dump_cmis Embedded_grading_cmis.root ; *)
         Load_path.init [ cmis_dir ] ;
         Toploop_unix.initialize () ;
         let divert name chan cb =
