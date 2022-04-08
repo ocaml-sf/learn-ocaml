@@ -263,18 +263,31 @@ let register_sampler name f =
     in
     try sampler_path, Env.find_value sampler_path lookup_env
     with Not_found ->
-      Env.find_value_by_name (Longident.Lident sampler_name)
-        lookup_env
+      let sampler_path =
+        Path.Pdot (Path.Pdot (Path.Pident (Ident.create_persistent "Test_lib"),
+                              "Sampler_reg"),
+                   sampler_name)
+      in
+      sampler_path, Env.find_value sampler_path lookup_env
+      (* Env.find_value_by_name (Longident.Lident sampler_name)
+       *   lookup_env *)
   with
   | exception Not_found ->
       Format.ksprintf failwith "Bad sampler registration (function %s not found).@."
         sampler_name
-  | _sampler_path, sampler_desc ->
+  | sampler_path, sampler_desc ->
   match
-    Env.find_type_by_name (Longident.Lident name) lookup_env
+    let ty_path = match sampler_path with
+      | Path.Pdot (pp, _) -> Path.Pdot (pp, name)
+      | _ -> raise Not_found
+    in
+    try ty_path, Env.find_type ty_path lookup_env
+    with Not_found ->
+      Env.find_type_by_name (Longident.Lident name) lookup_env
   with
   | exception Not_found ->
-      Format.eprintf "Warning: unrecognised sampler definition (type %s not found).@."
+      Format.eprintf
+        "Warning: unrecognised sampler definition (type %s not found).@."
         name
   | sampled_ty_path, sampled_ty_decl ->
       let sampler_ty_expected =

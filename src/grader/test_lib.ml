@@ -1353,6 +1353,21 @@ module Intro = Pre_test.Introspection
       let ty = Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj [%ty: _ -> _ ]) in
       Intro.install_printer path ty.Typedtree.ctyp_type fun_printer
   end
+  module Sampler_reg = struct
+    include Sampler
+    let () = Intro.register_sampler "bool" sample_bool
+    let () = Intro.register_sampler "int" sample_int
+    let () = Intro.register_sampler "float" sample_float
+    let () = Intro.register_sampler "char" sample_char
+    let () = Intro.register_sampler "string" sample_string
+    let () = Intro.register_sampler "option" sample_option
+    let sample_array sample () = sample_array sample ()
+    let () = Intro.register_sampler "array" sample_array
+    let sample_list sample () = sample_list sample ()
+    let () = Intro.register_sampler "list" sample_list
+    type ('a, 'b) pair = 'a * 'b
+    let () = Intro.register_sampler "pair" sample_pair
+  end
 
   let (@@@) f g = fun x -> f x @ g x
   let (@@>) r1 f = if snd (Learnocaml_report.result r1) then r1 else f ()
