@@ -36,6 +36,10 @@ module type INTROSPECTION = sig
 
   val register_sampler: string -> ('a -> 'b) -> unit
   val get_sampler: 'a Ty.ty -> (unit -> 'a)
+
+  val install_printer:
+    Path.t -> Types.type_expr -> (Format.formatter -> Obj.t -> unit) -> unit
+
   val get_printer: 'a Ty.ty -> (Format.formatter -> 'a -> unit)
 
   val parse_lid: string -> Longident.t

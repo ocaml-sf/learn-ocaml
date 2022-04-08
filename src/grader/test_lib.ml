@@ -1351,7 +1351,7 @@ module Intro = Pre_test.Introspection
     let () =
       let path = Path.Pident (Ident.create_local "fun_printer") in
       let ty = Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj [%ty: _ -> _ ]) in
-      Toploop.install_printer path ty.Typedtree.ctyp_type fun_printer
+      Intro.install_printer path ty.Typedtree.ctyp_type fun_printer
   end
 
   let (@@@) f g = fun x -> f x @ g x
