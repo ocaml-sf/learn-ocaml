@@ -164,8 +164,6 @@ let get_grade
           js = OCamlRes.(Res.find (Path.of_string "testing_dyn.js")
                            Embedded_grading_lib.root) };
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Test_lib|};
-      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Test_lib.Open_me|};
       (* Registering the samplers that may be defined in [test.ml] requires
          having their types and the definitions of the types they sample, hence

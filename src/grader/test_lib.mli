@@ -495,6 +495,21 @@
     val printable_fun : string -> (_ -> _ as 'f) -> 'f
   end
 
+  (** For internal use, needed for the default samplers registration *)
+  module Sampler_reg : sig
+    type 'a sampler = 'a Sampler.sampler
+    val sample_int : int sampler
+    val sample_float : float sampler
+    val sample_string : string sampler
+    val sample_char : char sampler
+    val sample_bool : bool sampler
+    val sample_list : 'a sampler -> 'a list sampler
+    val sample_array : 'a sampler -> 'a array sampler
+    val sample_option : 'a sampler -> 'a option sampler
+    type ('a, 'b) pair = 'a * 'b
+    val sample_pair : 'a sampler -> 'b sampler -> ('a, 'b) pair sampler
+  end
+
   (** {1 Grading functions for references and variables } *)
 
   (** Grading function for variables and references. *)

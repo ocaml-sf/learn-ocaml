@@ -34,6 +34,9 @@ module type INTROSPECTION = sig
   val grab_stderr: unit -> unit
   val release_stderr: unit -> string
 
+  (* The sampler type is actually [['x sampler ->]* t sampler] with ['x] all the
+     type variables of [t]. It is dynamically checked at runtime, based on the
+     cmi of the module that must be already loaded and opened. *)
   val register_sampler: string -> ('a -> 'b) -> unit
   val get_sampler: 'a Ty.ty -> (unit -> 'a)
 
