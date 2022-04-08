@@ -167,6 +167,39 @@ let get_value lid ty =
       else
         failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
 
+(* Replacement for [Toploop.print_value] that doesn't segfault on yet
+   unregistered extension constructors.
+
+   Note: re-instanciating [Genprintval.Make] means we lose any previously
+   defined printers through [Topdirs.dir_install_printer]. *)
+let base_print_value, install_printer =
+  let module Printer = Genprintval.Make(Obj)(struct
+      type valu = Obj.t
+      exception Error
+      let eval_address = function
+        | Env.Aident id ->
+            if Ident.persistent id || Ident.global id then
+              Symtable.get_global_value id
+            else begin
+              let name = Translmod.toplevel_name id in
+              try Toploop.getvalue name
+              with _ -> raise Error
+            end
+        | Env.Adot(_, _) ->
+            (* in this case we bail out because this may refer to a
+               yet-unregistered extension constructor within the current module.
+               The printer has a reasonable fallback. *)
+            raise Error
+      let same_value v1 v2 = (v1 == v2)
+    end)
+  in
+  let print_value env obj ppf ty =
+    !Oprint.out_value ppf @@
+    Printer.outval_of_value 300 100 (fun _ _ _ -> None) env obj ty
+  in
+  let install_printer pr = Printer.install_printer pr in
+  print_value, install_printer
+
 let print_value ppf v ty =
   let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
@@ -192,17 +225,17 @@ let print_value ppf v ty =
                  done)
         (fun () -> ()) in
     begin try
-        Toploop.print_value !Toploop.toplevel_env (Obj.repr v) tmp_ppf ty ;
+        base_print_value !Toploop.toplevel_env (Obj.repr v) tmp_ppf ty ;
         Format.pp_print_flush tmp_ppf ()
       with Exit -> () end ;
     match !state with `Start | `Decided false | `Undecided -> false | `Decided true -> true in
   if needs_parentheses then begin
     Format.fprintf ppf "@[<hv 1>(" ;
-    Toploop.print_value !Toploop.toplevel_env (Obj.repr v) ppf ty ;
+    base_print_value !Toploop.toplevel_env (Obj.repr v) ppf ty ;
     Format.fprintf ppf ")@]"
   end else begin
     Format.fprintf ppf "@[<hv 0>" ;
-    Toploop.print_value !Toploop.toplevel_env (Obj.repr v) ppf ty ;
+    base_print_value !Toploop.toplevel_env (Obj.repr v) ppf ty ;
     Format.fprintf ppf "@]"
   end
 
@@ -414,6 +447,7 @@ let allow_introspection ~divert =
       stderr_cb := bad_stderr_cb ;
       res
 
+    let install_printer pr = install_printer pr
     let get_printer ty = fun ppf v -> print_value ppf v ty
 
     let register_sampler name f = register_sampler name f
