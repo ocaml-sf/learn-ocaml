@@ -70,7 +70,7 @@ REPO ?= demo-repository
 
 testrun: build install
 	rm -rf www/css
-	learn-ocaml build --repo $(REPO) -j1
+	learn-ocaml build --repo $(REPO)
 	rm -rf www/css
 	ln -s ../static/css www
 	LEARNOCAML_SERVER_NOCACHE=1 learn-ocaml serve
