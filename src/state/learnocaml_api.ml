@@ -279,10 +279,10 @@ module Conversions (Json: JSON_CODEC) = struct
   let to_http_request
     : type resp. resp request -> http_request
     =
-    let get ?token path = {
+    let get ?token ?(args=[]) path = {
       meth = `GET;
       path;
-      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
+      args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @ args;
     } in
     let post ~token path body = {
       meth = `POST body;
@@ -337,11 +337,12 @@ module Conversions (Json: JSON_CODEC) = struct
        get ["exercise-index.json"]
 
     | Exercise (Some token, id, js) ->
-       let ext = if js then ".js.json" else ".bc.json" in
-       get ~token ("exercises" :: String.split_on_char '/' (id^ext))
+       get ~token
+         ("exercises" :: String.split_on_char '/' (id^".json"))
+         ~args:["mode", if js then "js" else "byte"]
     | Exercise (None, id, js) ->
-       let ext = if js then ".js.json" else ".bc.json" in
-       get ("exercises" :: String.split_on_char '/' (id^ext))
+       get ("exercises" :: String.split_on_char '/' (id^".json"))
+         ~args:["mode", if js then "js" else "byte"]
 
     | Lesson_index () ->
         get ["lessons.json"]
@@ -466,15 +467,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                (match token with
                 | Some token ->
                     let id = Filename.chop_suffix (String.concat "/" path) ".json" in
-                    let id_js = match Filename.chop_suffix_opt ~suffix:".bc" id with
-                      | Some id -> Some (id, false)
-                      | None -> match Filename.chop_suffix_opt ~suffix:".js" id with
-                        | Some id -> Some (id, true)
-                        | None -> None
-                    in
-                    (match id_js with
-                     | Some (id, js) -> Exercise (Some token, id, js) |> k
-                     | None -> Invalid_request "Missing bc/js extension" |> k)
+                    let js = List.assoc_opt "mode" request.args = Some "js" in
+                    Exercise (Some token, id, js) |> k
                 | None -> Invalid_request "Missing token" |> k)
            | Some "" ->
                Static ["exercise.html"] |> k
