@@ -102,7 +102,7 @@ let treat_lookup_errors fn = match fn () with
   | result -> result
   | exception Not_found ->
       Absent
-  | exception Failure msg ->
+  | exception Introspection_failure msg ->
       Incompatible msg
   | exception Ctype.Unify args ->
       Incompatible

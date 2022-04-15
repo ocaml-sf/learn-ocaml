@@ -250,7 +250,8 @@ let inject_sig name sign =
 let load_cmi_from_string cmi_str =
   (* Cmi_format.input_cmi only supports reading from a channel *)
   let magic_len = String.length Config.cmi_magic_number in
-  if String.sub cmi_str 0 magic_len <> Config.cmi_magic_number then
+  if String.length cmi_str < magic_len ||
+     String.sub cmi_str 0 magic_len <> Config.cmi_magic_number then
     Printf.ksprintf failwith "Bad cmi file";
   let (name, sign) = Marshal.from_string cmi_str magic_len in
   (* we ignore crc and flags *)

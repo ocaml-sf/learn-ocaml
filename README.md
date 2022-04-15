@@ -52,7 +52,7 @@ The Inconsolata font is released under the Open Font License.
 See (http://www.levien.com/type/myfonts/inconsolata.html).
 
 The Biolinum font is licensed under the GNU General Public License with
-a the 'Font-Exception'.
+a 'Font-Exception'.
 See (http://www.linuxlibertine.org).
 
 The public instance of Learn OCaml uses the Fontin font instead of
@@ -73,7 +73,8 @@ Authors and Acknowledgements
 
 Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
- * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
+ * The original authors are Benjamin Canou, Çağdaş Bozman, Grégoire Henry and
+   Louis Gesbert, from OCamlPro.
 
  * It builds on the previous experience of Try OCaml by Çağdaş Bozman.
 
