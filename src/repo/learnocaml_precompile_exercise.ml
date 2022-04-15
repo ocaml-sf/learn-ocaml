@@ -42,8 +42,32 @@ let jsoo ?(dir=Sys.getcwd ()) ~source ~target args =
   let args = args @ [d source; "-o"; d target] in
   run "js_of_ocaml" args
 
+let read_lines fopen =
+  try
+    let ic = fopen () in
+    let lines = ref [] in
+    try while true do lines := input_line ic :: !lines done; []
+    with End_of_file ->
+      close_in ic;
+      List.rev !lines
+  with Sys_error _ -> []
+
 let precompile ~exercise_dir =
   let dir = exercise_dir in
+  let grader_libs =
+    read_lines (fun () -> open_in (Filename.concat dir "test_libs.txt")) in
+  let grader_flags =
+    List.fold_right (fun lib flags ->
+        let libflags =
+          read_lines (fun () ->
+              Printf.ksprintf Unix.open_process_in
+                "ocamlfind query %s -predicates byte -format \"-I&%%d&%%a\"" lib)
+          |> List.map (String.split_on_char '&')
+          |> List.flatten
+        in
+        List.append libflags flags)
+      grader_libs []
+  in
   ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"]
     ~source:["prelude.ml"] ~target:"prelude.cmo"
   >>= fun () ->
@@ -59,15 +83,15 @@ let precompile ~exercise_dir =
        ~target:"exercise.cma"
      >>= fun () ->
      jsoo ~dir [] ~source:"exercise.cma" ~target:"exercise.js");
-    (ocamlc ~dir ["-c";
-                  "-I"; "+compiler-libs";
-                  "-ppx"; Filename.concat !grading_ppx_dir "learnocaml-ppx-metaquot"]
+    (ocamlc ~dir (["-c";
+                   "-I"; "+compiler-libs";
+                   "-ppx"; Filename.concat !grading_ppx_dir "learnocaml-ppx-grader"]
+                  @ grader_flags)
        ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"; "Test_lib.Open_me"]
        ~source:["test.ml"]
        ~target:"test.cmo"
      >>= fun () ->
-     (* Todo: support for depends.txt *)
-     ocamlc ~dir ["-a"; (* "-linkall" *)]
+     ocamlc ~dir ["-a"]
        ~source:["test.cmo"]
        ~target:"test.cma"
      >>= fun () ->
