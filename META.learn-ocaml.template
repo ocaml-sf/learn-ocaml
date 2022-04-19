@@ -1,0 +1,6 @@
+package "test_lib" (
+  directory = "test_lib"
+  version = "0.13.2"
+  description = "Learn-ocaml dependencies for automatic graders"
+  requires = "compiler-libs"
+)

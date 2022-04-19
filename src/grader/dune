@@ -168,20 +168,19 @@
 )
 
 ;; cmis that are needed to precompile the graders for exercises
-;; FIXME: now we install the libs through dune, so use that ??
 (install
- (section share)
+ (section lib)
  (package learn-ocaml)
  (files
-  (../ppx-metaquot/.ty.objs/byte/ty.cmi as grading_cmis/ty.cmi)
-  (../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi as grading_cmis/fun_ty.cmi)
-;;  (.exercise_init.objs/byte/exercise_init.cmi as grading_cmis/exercise_init.cmi)
-  (.introspection_intf.objs/byte/introspection_intf.cmi as grading_cmis/introspection_intf.cmi)
-  (.pre_test.objs/byte/learnocaml_internal.cmi as grading_cmis/learnocaml_internal.cmi)
-  (.pre_test.objs/byte/pre_test.cmi as grading_cmis/pre_test.cmi)
-  (.learnocaml_report.objs/byte/learnocaml_report.cmi as grading_cmis/learnocaml_report.cmi)
-  (.pre_test.objs/byte/learnocaml_callback.cmi as grading_cmis/learnocaml_callback.cmi) ;;FIXME separate lib??
-  (.testing_dyn.objs/byte/test_lib.cmi as grading_cmis/test_lib.cmi))
+  (../ppx-metaquot/.ty.objs/byte/ty.cmi as test_lib/ty.cmi)
+  (../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi as test_lib/fun_ty.cmi)
+;;  (.exercise_init.objs/byte/exercise_init.cmi as test_lib/exercise_init.cmi)
+  (.introspection_intf.objs/byte/introspection_intf.cmi as test_lib/introspection_intf.cmi)
+  (.pre_test.objs/byte/learnocaml_internal.cmi as test_lib/learnocaml_internal.cmi)
+  (.pre_test.objs/byte/pre_test.cmi as test_lib/pre_test.cmi)
+  (.learnocaml_report.objs/byte/learnocaml_report.cmi as test_lib/learnocaml_report.cmi)
+  (.pre_test.objs/byte/learnocaml_callback.cmi as test_lib/learnocaml_callback.cmi) ;;FIXME separate lib??
+  (.testing_dyn.objs/byte/test_lib.cmi as test_lib/test_lib.cmi))
 )
 
 

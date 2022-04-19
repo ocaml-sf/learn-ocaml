@@ -6,7 +6,7 @@ open Lwt.Infix
 let grading_cmis_dir, grading_ppx_dir =
   let prefix = Filename.dirname (Filename.dirname (Sys.executable_name)) in
   let ( / ) = Filename.concat in
-  ref (prefix/"share"/"learn-ocaml"/"grading_cmis"),
+  ref (prefix/"lib"/"learn-ocaml"/"test_lib"),
   ref (prefix/"lib"/"learn-ocaml"/"grading_ppx")
 
 let run ?dir cmd args =
@@ -91,7 +91,7 @@ let precompile ~exercise_dir =
        ~source:["test.ml"]
        ~target:"test.cmo"
      >>= fun () ->
-     ocamlc ~dir ["-a"]
+     ocamlc ~dir (["-a"] @ grader_flags)
        ~source:["test.cmo"]
        ~target:"test.cma"
      >>= fun () ->
