@@ -20,30 +20,23 @@
  (libraries ppx_tools compiler-libs)
 )
 
-;; (library
-;;  (name learnocaml_recorder)
-;;  (wrapped false)
-;;  (modules Recorder)
-;;  (libraries ppxlib))
-
 (library
- (name learnocaml_ppx_metaquot)
+ (name grader_ppx)
  (wrapped false)
  (libraries learnocaml_ppx_metaquot_lib ty fun_ty ocaml-migrate-parsetree ppxlib)
- (modules Ppx_autoregister Ppx_metaquot_grader)
+ (modules Ppx_autoregister Grader_ppx)
  (kind ppx_rewriter)
 )
 
 (executable
- (name ppx_metaquot_main)
- (modules ppx_metaquot_main)
- (libraries learnocaml_ppx_metaquot))
+ (name grader_ppx_main)
+ (modules grader_ppx_main)
+ (libraries grader_ppx))
 
 (install
  (section libexec)
  (package learn-ocaml)
- (files
-  (ppx_metaquot_main.exe as grading_ppx/learnocaml-ppx-grader))
+ (files (grader_ppx_main.exe as test_lib/grader-ppx))
 )
 
 (library

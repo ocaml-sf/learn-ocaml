@@ -3,11 +3,10 @@
 open Lwt.Infix
 
 (* FIXME: make these configurable *)
-let grading_cmis_dir, grading_ppx_dir =
+let grading_cmis_dir =
   let prefix = Filename.dirname (Filename.dirname (Sys.executable_name)) in
   let ( / ) = Filename.concat in
-  ref (prefix/"lib"/"learn-ocaml"/"test_lib"),
-  ref (prefix/"lib"/"learn-ocaml"/"grading_ppx")
+  ref (prefix/"lib"/"learn-ocaml"/"test_lib")
 
 let run ?dir cmd args =
   Lwt_process.exec ?cwd:dir ("", Array.of_list (cmd::args)) >>= function
@@ -85,7 +84,7 @@ let precompile ~exercise_dir =
      jsoo ~dir [] ~source:"exercise.cma" ~target:"exercise.js");
     (ocamlc ~dir (["-c";
                    "-I"; "+compiler-libs";
-                   "-ppx"; Filename.concat !grading_ppx_dir "learnocaml-ppx-grader"]
+                   "-ppx"; Filename.concat !grading_cmis_dir "grader-ppx --as-ppx"]
                   @ grader_flags)
        ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"; "Test_lib.Open_me"]
        ~source:["test.ml"]

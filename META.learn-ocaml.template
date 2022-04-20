@@ -4,3 +4,4 @@ package "test_lib" (
   description = "Learn-ocaml dependencies for automatic graders"
   requires = "compiler-libs"
 )
+# DUNE_GEN
