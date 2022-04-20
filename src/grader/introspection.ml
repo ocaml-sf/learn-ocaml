@@ -54,7 +54,7 @@ let insert_in_env (type t) name (ty : t Ty.ty) (value : t) =
       match ty.ctyp_desc with
       | Ttyp_package { pack_type; _ } ->
         Env.add_module
-          (Ident.create_local name)
+          (Ident.create_persistent name)
           Types.Mp_present
           pack_type
           !Toploop.toplevel_env
@@ -235,7 +235,6 @@ let install_printer modname id tyname pr =
           ty_args
           (gen_printer_type ty_target)
       in
-      Ctype.end_def ();
       (try
          Ctype.unify env
            printer_ty_expected
@@ -260,26 +259,33 @@ let install_printer modname id tyname pr =
                     args)
            ty_args
            tyname);
+      Ctype.end_def ();
       Ctype.generalize printer_ty_expected;
-      let ty_path =
-        match ty_target.desc with
-        | Tconstr (path, args, _)
-          when Ctype.all_distinct_vars env args -> Format.kasprintf failwith "XXX %a // %a // %a" Printtyp.path ty_path Printtyp.path path Printtyp.type_expr ty_target
-        | Tconstr (path, args, _) -> Format.kasprintf failwith "XXX %a // %a // %a" Printtyp.path ty_path Printtyp.path path Printtyp.type_expr ty_target
-        | _ -> ty_path
-      in
-      let rec build v = function
+      let register_as_path = Path.(Pdot (Pident modident, "print_"^tyname)) in
+      let rec build_generic v = function
         | [] ->
             Genprintval.Zero
               (fun formatter repr -> Obj.obj v formatter (Obj.obj repr))
         | _ :: args ->
             Genprintval.Succ
-              (fun fn -> build ((Obj.obj v : _ -> Obj.t) fn) args)
+              (fun fn -> build_generic ((Obj.obj v : _ -> Obj.t) fn) args)
       in
-      Printer.install_generic_printer'
-        Path.(Pdot (Pident modident, "print_"^tyname))
-        ty_path
-        (build (Obj.repr pr) ty_args)
+      match ty_decl.type_params, ty_target.desc with
+      | [], _ ->
+          Printer.install_printer register_as_path ty_target
+            (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
+      | _, (Tconstr (ty_path, args, _) | Tlink {desc = Tconstr (ty_path, args, _); _})
+        when Ctype.all_distinct_vars env args ->
+          Printer.install_generic_printer' register_as_path ty_path
+            (build_generic (Obj.repr pr) ty_decl.type_params)
+      | _, ty ->
+          Format.kasprintf failwith
+            "Invalid printer for %a = %a: OCaml doesn't support printers for \
+             types with partially instanciated variables. Define a generic \
+             printer and a printer for the type of your variable instead."
+            Printtyp.path ty_path
+            Printtyp.type_expr (Ctype.newty ty)
+
 
 let print_value ppf v ty =
   let { Typedtree.ctyp_type = ty; _ } =
