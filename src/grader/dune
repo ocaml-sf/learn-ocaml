@@ -35,15 +35,15 @@
  (library_flags :standard -linkall)
  (libraries ty
             toploop
-            learnocaml_ppx_metaquot
             learnocaml_ppx_metaquot_lib
+            grader_ppx
             ocplib-json-typed
             learnocaml_report
             learnocaml_repository
             introspection_intf
             pre_test)
  (modules Test_lib)
- (preprocess (pps learnocaml_ppx_metaquot))
+ (preprocess (pps grader_ppx))
 )
 (rule
  (target testing_dyn.js)
@@ -167,29 +167,12 @@
            (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
-;; cmis that are needed to precompile the graders for exercises
-(install
- (section lib)
- (package learn-ocaml)
- (files
-  (../ppx-metaquot/.ty.objs/byte/ty.cmi as test_lib/ty.cmi)
-  (../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi as test_lib/fun_ty.cmi)
-;;  (.exercise_init.objs/byte/exercise_init.cmi as test_lib/exercise_init.cmi)
-  (.introspection_intf.objs/byte/introspection_intf.cmi as test_lib/introspection_intf.cmi)
-  (.pre_test.objs/byte/learnocaml_internal.cmi as test_lib/learnocaml_internal.cmi)
-  (.pre_test.objs/byte/pre_test.cmi as test_lib/pre_test.cmi)
-  (.learnocaml_report.objs/byte/learnocaml_report.cmi as test_lib/learnocaml_report.cmi)
-  (.pre_test.objs/byte/learnocaml_callback.cmi as test_lib/learnocaml_callback.cmi) ;;FIXME separate lib??
-  (.testing_dyn.objs/byte/test_lib.cmi as test_lib/test_lib.cmi))
-)
-
-
 (library
  (name grading)
  (wrapped false)
  (modes byte)
  (library_flags :standard -linkall)
- (libraries learnocaml_ppx_metaquot
+ (libraries grader_ppx
             ocplib-ocamlres.runtime
             toploop
             learnocaml_internal_intf
@@ -201,7 +184,7 @@
  (modules Introspection
           Embedded_grading_lib
           Grading)
- (preprocess (per_module ((pps ppx_ocplib_i18n learnocaml_ppx_metaquot) Grading)))
+ (preprocess (per_module ((pps ppx_ocplib_i18n grader_ppx) Grading)))
 )
 
 

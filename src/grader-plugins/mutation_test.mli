@@ -100,7 +100,7 @@ module M: sig
   val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
-include M
+include module type of M
 
 (** For backwards compatibility *)
-module Make (_: module type of Test_lib) = M
+module Make (_: module type of Test_lib): module type of M

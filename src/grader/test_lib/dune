@@ -1,0 +1,30 @@
+;; cmis that are needed to precompile the graders for exercises
+
+(rule
+ (alias test_lib_cmis)
+ (action (progn
+           (copy %{dep:../../ppx-metaquot/.ty.objs/byte/ty.cmi} ty.cmi)
+           (copy %{dep:../../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi} fun_ty.cmi)
+           ;;  (copy %{dep:../.exercise_init.objs/byte/exercise_init.cmi} exercise_init.cmi)
+           (copy %{dep:../.introspection_intf.objs/byte/introspection_intf.cmi} introspection_intf.cmi)
+           (copy %{dep:../.pre_test.objs/byte/learnocaml_internal.cmi} learnocaml_internal.cmi)
+           (copy %{dep:../.pre_test.objs/byte/pre_test.cmi} pre_test.cmi)
+           (copy %{dep:../.learnocaml_report.objs/byte/learnocaml_report.cmi} learnocaml_report.cmi)
+           (copy %{dep:../.pre_test.objs/byte/learnocaml_callback.cmi} learnocaml_callback.cmi)
+           (copy %{dep:../.testing_dyn.objs/byte/test_lib.cmi} test_lib.cmi)))
+)
+
+(install
+ (section lib)
+ (package learn-ocaml)
+ (files
+  (ty.cmi as test_lib/ty.cmi)
+  (fun_ty.cmi as test_lib/fun_ty.cmi)
+  ;;   (exercise_init.cmi as test_lib/exercise_init.cmi)
+  (introspection_intf.cmi as test_lib/introspection_intf.cmi)
+  (learnocaml_internal.cmi as test_lib/learnocaml_internal.cmi)
+  (pre_test.cmi as test_lib/pre_test.cmi)
+  (learnocaml_report.cmi as test_lib/learnocaml_report.cmi)
+  (learnocaml_callback.cmi as test_lib/learnocaml_callback.cmi)
+  (test_lib.cmi as test_lib/test_lib.cmi))
+)
