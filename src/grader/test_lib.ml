@@ -1361,18 +1361,18 @@ module Intro = Pre_test.Introspection
   end
   module Sampler_reg = struct
     include Sampler
-    let () = Intro.register_sampler "Test_lib" "sample_bool" "bool" sample_bool
-    let () = Intro.register_sampler "Test_lib" "sample_int" "int" sample_int
-    let () = Intro.register_sampler "Test_lib" "sample_float" "float" sample_float
-    let () = Intro.register_sampler "Test_lib" "sample_char" "char" sample_char
-    let () = Intro.register_sampler "Test_lib" "sample_string" "string" sample_string
-    let () = Intro.register_sampler "Test_lib" "sample_option" "option" sample_option
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_bool" "bool" sample_bool
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_int" "int" sample_int
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_float" "float" sample_float
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_char" "char" sample_char
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_string" "string" sample_string
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_option" "option" sample_option
     let sample_array sample () = sample_array sample ()
-    let () = Intro.register_sampler "Test_lib" "sample_array" "array" sample_array
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_array" "array" sample_array
     let sample_list sample () = sample_list sample ()
-    let () = Intro.register_sampler "Test_lib" "sample_list" "list" sample_list
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_list" "list" sample_list
     type ('a, 'b) pair = 'a * 'b
-    let () = Intro.register_sampler "Test_lib" "sample_pair" "pair" sample_pair
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_pair" "pair" sample_pair
   end
 
   let (@@@) f g = fun x -> f x @ g x
