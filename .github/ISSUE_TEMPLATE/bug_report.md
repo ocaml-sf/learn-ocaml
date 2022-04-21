@@ -44,7 +44,7 @@ Steps to reproduce the behavior:
 * OS name (and version): 
 * Browser name (and version): 
 * `learn-ocaml --version`: 
-* `git describe --long --always --abbrev=40`: 
+* `git describe --long --always --abbrev=40 --tags`: 
 
 ## Additional context
 
