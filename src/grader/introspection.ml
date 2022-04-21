@@ -334,80 +334,79 @@ let print_value ppf v ty =
    - build the expected sampler type from the type params of [foo]
    - match with the sampler type
 *)
-let register_sampler _modname _id name f =
+let register_sampler modname id tyname f =
   let open Types in
+  let inmodpath id =
+    match String.split_on_char '.' modname with
+    | md::r ->
+        List.fold_left (fun acc id -> Path.Pdot (acc, id))
+          (Path.Pident (Ident.create_persistent md)) (r @ [id])
+    | [] ->
+        Path.Pident (Ident.create_local id)
+  in
+  let sampler_path = inmodpath id in
+  let env = !Toploop.toplevel_env in
   let gen_sampler_type =
     Path.Pdot
       (Path.Pident (Ident.create_persistent "Test_lib"),
        "sampler")
   in
-  let lookup_env = !Toploop.toplevel_env in
-  let sampler_name = "sample_" ^ name in
+  let ty_path1 = inmodpath tyname in
   match
-    let sampler_path =
-      Path.Pdot (Path.Pident (Ident.create_persistent "Test"),
-                 sampler_name)
-    in
-    try sampler_path, Env.find_value sampler_path lookup_env
-    with Not_found ->
-      let sampler_path =
-        Path.Pdot (Path.Pdot (Path.Pident (Ident.create_persistent "Test_lib"),
-                              "Sampler_reg"),
-                   sampler_name)
-      in
-      sampler_path, Env.find_value sampler_path lookup_env
-      (* Env.find_value_by_name (Longident.Lident sampler_name)
-       *   lookup_env *)
-  with
-  | exception Not_found ->
-      Format.ksprintf failwith "Bad sampler registration (function %s not found).@."
-        sampler_name
-  | sampler_path, sampler_desc ->
-  match
-    let ty_path = match sampler_path with
-      | Path.Pdot (pp, _) -> Path.Pdot (pp, name)
-      | _ -> raise Not_found
-    in
-    try ty_path, Env.find_type ty_path lookup_env
-    with Not_found ->
-      Env.find_type_by_name (Longident.Lident name) lookup_env
+    Env.find_value sampler_path env,
+    try ty_path1, Env.find_type ty_path1 env
+    with Not_found -> Env.find_type_by_name (Longident.Lident tyname) env
   with
   | exception Not_found ->
       Format.eprintf
-        "Warning: unrecognised sampler definition (type %s not found).@."
-        name
-  | sampled_ty_path, sampled_ty_decl ->
+        "Warning: ignored bad sampler registration %s.sample_%s. The type and \
+         sampler must be found in the cmi file (no mli file allowed)@."
+        modname tyname
+  | sampler_desc, (sampled_ty_path, sampled_ty_decl) ->
+      Ctype.begin_def();
+      let ty_args =
+        List.map (fun _ -> Ctype.newvar ()) sampled_ty_decl.type_params
+      in
+      let ty_target =
+        Ctype.newty (Tconstr (sampled_ty_path, ty_args, ref Mnil))
+      in
+      let fn_args =
+        List.map (fun ty -> Ctype.newconstr gen_sampler_type [ty]) ty_args
+      in
       let sampler_ty_expected =
-        Ctype.begin_def();
-        let ty_args =
-          List.map (fun _ -> Ctype.newvar ()) sampled_ty_decl.type_params
-        in
-        let ty_target =
-          Ctype.newty (Tconstr (sampled_ty_path, ty_args, ref Mnil))
-        in
-        let fn_args =
-          List.map (fun ty -> Ctype.newconstr gen_sampler_type [ty]) ty_args
-        in
-        let sampler_ty =
-          List.fold_right (fun fn_arg ty ->
-              Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, Cunknown)))
-            fn_args (Ctype.newconstr gen_sampler_type [ty_target])
-        in
-        Ctype.end_def ();
-        Ctype.generalize sampler_ty;
-        sampler_ty
+        List.fold_right (fun fn_arg ty ->
+            Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, Cunknown)))
+          fn_args (Ctype.newconstr gen_sampler_type [ty_target])
       in
       (try
-         Ctype.unify lookup_env
+         Ctype.unify env
            sampler_ty_expected
            (Ctype.instance sampler_desc.val_type)
        with Ctype.Unify _ ->
-         Format.ksprintf failwith "%s has a wrong type for a sampling function.@."
-           sampler_name);
+         Format.kasprintf failwith
+           "Mismatching type for sampling function %s.sample_%s.@;\
+            The type must be@ @[<hov>%aunit -> %a%s@]@."
+           modname tyname
+           (Format.pp_print_list
+              (fun ppf -> Format.fprintf ppf "(unit -> %a) ->@ " (Printtyp.type_expr)))
+           ty_args
+           (fun ppf -> function
+              | [] -> ()
+              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
+              | args ->
+                  Format.fprintf ppf "(%a) "
+                    (Format.pp_print_list
+                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
+                       Printtyp.type_expr)
+                    args)
+           ty_args
+           tyname);
+      Ctype.end_def ();
+      let def_name = "sample_" ^ tyname in
       Toploop.toplevel_env :=
-        Env.add_value (Ident.create_local sampler_name) sampler_desc
+        Env.add_value (Ident.create_local def_name) sampler_desc
            !Toploop.toplevel_env;
-      Toploop.setvalue sampler_name (Obj.repr f)
+      Toploop.setvalue def_name (Obj.repr f)
 
 let sample_value ty =
   let { Typedtree.ctyp_type = ty; _ } =
