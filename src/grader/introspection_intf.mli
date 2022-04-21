@@ -50,15 +50,6 @@ module type INTROSPECTION = sig
      cmi of the module that must be already loaded and opened. *)
   val register_sampler:
     string -> string -> string -> ('a -> 'b) -> unit
-  val install_printer_internal:
-    string -> string -> string -> ('a -> 'b) -> unit
-end
-
-(** Interface of the module that gets automatically injected in the environment
-    before the Prelude is loaded. *)
-module type LEARNOCAML_CALLBACK = sig
-  val print_html: string -> unit
-  val print_svg: string -> unit
 end
 
 (** Interface of the module that gets automatically injected in the environment

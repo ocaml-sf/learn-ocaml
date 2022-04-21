@@ -167,126 +167,9 @@ let get_value lid ty =
       else
         failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
 
-(* Replacement for [Toploop.print_value] that doesn't segfault on yet
-   unregistered extension constructors.
-
-   Note: re-instanciating [Genprintval.Make] means we lose any previously
-   defined printers through [Topdirs.dir_install_printer]. *)
-module Printer = Genprintval.Make(Obj)(struct
-    type valu = Obj.t
-    exception Error
-    let eval_address = function
-      | Env.Aident id ->
-          if Ident.persistent id || Ident.global id then
-            Symtable.get_global_value id
-          else begin
-            let name = Translmod.toplevel_name id in
-            try Toploop.getvalue name
-            with _ -> raise Error
-          end
-      | Env.Adot(_, _) ->
-          (* in this case we bail out because this may refer to a
-             yet-unregistered extension constructor within the current module.
-             The printer has a reasonable fallback. *)
-          raise Error
-    let same_value v1 v2 = (v1 == v2)
-  end)
-
 let base_print_value env obj ppf ty =
   !Oprint.out_value ppf @@
-  Printer.outval_of_value 300 100 (fun _ _ _ -> None) env obj ty
-
-(** Relies on the env (already loaded cmi) to get the correct type parameters
-    for the [Printer] functions *)
-let install_printer modname id tyname pr =
-  let open Types in
-  let modident = Ident.create_persistent modname in
-  let printer_path = Path.Pdot (Path.Pident modident, id) in
-  let env = !Toploop.toplevel_env in
-  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, Cunknown)) in
-  let gen_printer_type ty =
-    let format_ty =
-      let ( +. ) a b = Path.Pdot (a, b) in
-      Path.Pident (Ident.create_persistent "Stdlib") +. "Format" +. "formatter"
-    in
-    (Ctype.newty (Tconstr (format_ty, [], ref Mnil))
-     @-> ty
-     @-> Predef.type_unit)
-  in
-  let ty_path1 = Path.Pdot (Path.Pident modident, tyname) in
-  match
-    Env.find_value printer_path env,
-    try ty_path1, Env.find_type ty_path1 env
-    with Not_found -> Env.find_type_by_name (Longident.Lident tyname) env
-  with
-  | exception Not_found ->
-      Format.kasprintf failwith "Warning: bad printer definition %s.print_%s. The type \
-                      and printer must be found in the cmi file.@."
-        modname tyname
-  | printer_desc, (ty_path, ty_decl) ->
-      Ctype.begin_def();
-      let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
-      let ty_target =
-        Ctype.expand_head env
-          (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
-      in
-      let printer_ty_expected =
-        List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
-          ty_args
-          (gen_printer_type ty_target)
-      in
-      (try
-         Ctype.unify env
-           printer_ty_expected
-           (Ctype.instance printer_desc.val_type)
-       with Ctype.Unify _ ->
-         Format.kasprintf failwith
-           "Mismatching type for print function %s.print_%s.@;\
-            The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
-           modname tyname
-           (Format.pp_print_list
-              (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
-                  (Printtyp.type_expr)))
-           ty_args
-           (fun ppf -> function
-              | [] -> ()
-              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
-              | args ->
-                  Format.fprintf ppf "(%a) "
-                    (Format.pp_print_list
-                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
-                       Printtyp.type_expr)
-                    args)
-           ty_args
-           tyname);
-      Ctype.end_def ();
-      Ctype.generalize printer_ty_expected;
-      let register_as_path = Path.(Pdot (Pident modident, "print_"^tyname)) in
-      let rec build_generic v = function
-        | [] ->
-            Genprintval.Zero
-              (fun formatter repr -> Obj.obj v formatter (Obj.obj repr))
-        | _ :: args ->
-            Genprintval.Succ
-              (fun fn -> build_generic ((Obj.obj v : _ -> Obj.t) fn) args)
-      in
-      match ty_decl.type_params, ty_target.desc with
-      | [], _ ->
-          Printer.install_printer register_as_path ty_target
-            (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
-      | _, (Tconstr (ty_path, args, _) | Tlink {desc = Tconstr (ty_path, args, _); _})
-        when Ctype.all_distinct_vars env args ->
-          Printer.install_generic_printer' register_as_path ty_path
-            (build_generic (Obj.repr pr) ty_decl.type_params)
-      | _, ty ->
-          Format.kasprintf failwith
-            "Invalid printer for %a = %a: OCaml doesn't support printers for \
-             types with partially instanciated variables. Define a generic \
-             printer and a printer for the type of your variable instead."
-            Printtyp.path ty_path
-            Printtyp.type_expr (Ctype.newty ty)
-
-
+  Toploop_ext.Printer.outval_of_value 300 100 (fun _ _ _ -> None) env obj ty
 let print_value ppf v ty =
   let { Typedtree.ctyp_type = ty; _ } =
     Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
@@ -546,8 +429,7 @@ let allow_introspection ~divert =
       stderr_cb := bad_stderr_cb ;
       res
 
-    let install_printer_internal pr = install_printer pr
-    let install_printer path ty pr = Printer.install_printer path ty pr
+    let install_printer path ty pr = Toploop_ext.Printer.install_printer path ty pr
     let get_printer ty = fun ppf v -> print_value ppf v ty
 
     let register_sampler name f = register_sampler name f

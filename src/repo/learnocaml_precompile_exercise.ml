@@ -26,9 +26,14 @@ let is_fresh =
       mt > exe_mtime && List.for_all (fun f -> mt > mtime f) srcs
     with Unix.Unix_error _ -> false
 
-let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ~source ~target args =
+let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ?(ppx=[]) ~source ~target args =
   let d = Filename.concat dir in
   if is_fresh ~dir target source then Lwt.return_unit else
+  let args =
+    List.fold_right (fun ppx args ->
+        "-ppx" :: Filename.concat !grading_cmis_dir (ppx^" --as-ppx") :: args)
+      ppx args
+  in
   let args = "-I" :: dir :: "-I" :: !grading_cmis_dir :: args in
   let args = args @ List.map d source @ ["-o"; d target] in
   let args = List.fold_right (fun m acc -> "-open" :: m :: acc) opn args in
@@ -37,7 +42,7 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ~source ~target args =
 let jsoo ?(dir=Sys.getcwd ()) ~source ~target args =
   let d = Filename.concat dir in
   if is_fresh ~dir target [source] then Lwt.return_unit else
-  let args = "--wrap-with=dynload" :: args in
+  let args = "--wrap-with=dynload" :: "--pretty" :: args in
   let args = args @ [d source; "-o"; d target] in
   run "js_of_ocaml" args
 
@@ -70,10 +75,10 @@ let precompile ~exercise_dir =
   ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"]
     ~source:["prelude.ml"] ~target:"prelude.cmo"
   >>= fun () ->
-  ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"; "Prelude"]
+  ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"; "Prelude"] ~ppx:["exercise-ppx"]
     ~source:["prepare.ml"] ~target:"prepare.cmo"
   >>= fun () ->
-  ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"]
+  ocamlc ~dir ["-c"] ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"] ~ppx:["exercise-ppx"]
     ~source:["solution.ml"] ~target:"solution.cmo"
   >>= fun () ->
   Lwt.join [
@@ -82,10 +87,8 @@ let precompile ~exercise_dir =
        ~target:"exercise.cma"
      >>= fun () ->
      jsoo ~dir [] ~source:"exercise.cma" ~target:"exercise.js");
-    (ocamlc ~dir (["-c";
-                   "-I"; "+compiler-libs";
-                   "-ppx"; Filename.concat !grading_cmis_dir "grader-ppx --as-ppx"]
-                  @ grader_flags)
+    (ocamlc ~dir (["-c"; "-I"; "+compiler-libs"] @ grader_flags)
+       ~ppx:["grader-ppx"]
        ~opn:["Learnocaml_callback"; "Prelude"; "Prepare"; "Test_lib.Open_me"]
        ~source:["test.ml"]
        ~target:"test.cmo"

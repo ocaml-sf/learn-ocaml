@@ -96,12 +96,20 @@ let get_grade
            in the solutions: provide dummy implementations here *)
         Toploop_ext.load_cmi_from_string
           OCamlRes.(Res.find (Path.of_string "learnocaml_callback.cmi") Embedded_grading_lib.root) ;
-        let module Learnocaml_callback: Introspection_intf.LEARNOCAML_CALLBACK = struct
-          let print_html _ = ()
-          let print_svg _ = ()
+        let module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS = struct
+          let print_html s = output_string stdout s
+          let print_svg s = output_string stdout s
         end in
         Toploop_ext.inject_global "Learnocaml_callback"
-          (Obj.repr (module Learnocaml_callback: Introspection_intf.LEARNOCAML_CALLBACK));
+          (Obj.repr (module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS));
+      in
+      let () =
+        let module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL = struct
+          let install_printer = Toploop_ext.install_printer
+          exception Undefined
+        end in
+        Toploop_ext.inject_global "Learnocaml_internal"
+          (Obj.repr (module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL))
       in
 
       set_progress [%i"Preparing the test environment."] ;
@@ -123,6 +131,7 @@ let get_grade
       handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome:false ~ppf_answer
         {|include Prepare|};
+      handle_error (internal_error [%i"while preparing the tests"]) @@
       Toploop_ext.use_string ~print_outcome:false ~ppf_answer
         {|module Prepare = struct end|};
 

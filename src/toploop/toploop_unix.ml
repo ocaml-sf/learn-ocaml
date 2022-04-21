@@ -89,6 +89,7 @@ let use_compiled_string code =
         raise exn
   in
   Sys.remove cma;
+  Toploop_ext.register_pending_printers ();
   flush_all ();
   if r then ()
   else failwith "Failed to load compiled code"
