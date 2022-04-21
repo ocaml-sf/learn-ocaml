@@ -34,10 +34,6 @@ module type INTROSPECTION = sig
   val grab_stderr: unit -> unit
   val release_stderr: unit -> string
 
-  (* The sampler type is actually [['x sampler ->]* t sampler] with ['x] all the
-     type variables of [t]. It is dynamically checked at runtime, based on the
-     cmi of the module that must be already loaded and opened. *)
-  val register_sampler: string -> ('a -> 'b) -> unit
   val get_sampler: 'a Ty.ty -> (unit -> 'a)
 
   val install_printer:
@@ -47,6 +43,15 @@ module type INTROSPECTION = sig
 
   val parse_lid: string -> Longident.t
 
+  (**/**)
+  (** Only for use by learnocaml's ppx *)
+  (* The sampler type is actually [['x sampler ->]* t sampler] with ['x] all the
+     type variables of [t]. It is dynamically checked at runtime, based on the
+     cmi of the module that must be already loaded and opened. *)
+  val register_sampler:
+    string -> string -> string -> ('a -> 'b) -> unit
+  val install_printer_internal:
+    string -> string -> string -> ('a -> 'b) -> unit
 end
 
 (** Interface of the module that gets automatically injected in the environment

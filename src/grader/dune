@@ -7,12 +7,6 @@
  (libraries ocplib-json-typed ocplib_i18n)
 )
 
-(rule
- (targets learnocaml_report.odoc)
- (deps .learnocaml_report.objs/byte/learnocaml_report.cmti)
- (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
-)
-
 ;; needs to be a separate lib because the module is shared between evaluator
 ;; parts (Grading) and dynamic parts (Test_lib)
 (library
@@ -22,28 +16,16 @@
  (modules_without_implementation introspection_intf)
  (libraries learnocaml_report ty))
 
-;; dynamic part, on which Prelude/Prepare/Test_lib etc. depend
-(library
- (name learnocaml_callback)
- (wrapped false)
- (modules learnocaml_callback)
- (modules_without_implementation learnocaml_callback)
- ;; hack: learnocaml_callback actually does have an implementation, but it is inserted
- ;; into the toplevel later on, through registered callbacks. Defining this lib
- ;; ensures the compilation of `learnocaml_callback.cmi`
- (libraries compiler-libs learnocaml_report introspection_intf))
-
 ;; dynamic part, on which Test_lib depends
 (library
  (name pre_test)
  (wrapped false)
- (modules pre_test)
- (modules_without_implementation pre_test)
- ;; hack: pre_test actually does have an implementation, but it is dynamically
- ;; generated and injected in the environment during grading. We are interested
- ;; in pre_test.cmi to compile test_lib.cmo, then test_lib.cmo should only be
- ;; loaded in the specific grading toplevel env.
- (libraries compiler-libs learnocaml_report introspection_intf))
+ (modules learnocaml_callback learnocaml_internal pre_test)
+ (modules_without_implementation learnocaml_callback learnocaml_internal pre_test)
+ (libraries compiler-libs
+            learnocaml_report
+            learnocaml_internal_intf
+            introspection_intf))
 
 ;; dynamic (but pre-compiled) part
 (library
@@ -59,10 +41,7 @@
             learnocaml_report
             learnocaml_repository
             introspection_intf
-            ;; dynamic dependencies
-            learnocaml_callback
-            pre_test
-            )
+            pre_test)
  (modules Test_lib)
  (preprocess (pps learnocaml_ppx_metaquot))
 )
@@ -71,18 +50,18 @@
  (deps testing_dyn.cma)
  (action (run js_of_ocaml %{deps} --wrap-with dynload --pretty)))
 
-(rule
- (targets test_lib.odoc)
- (deps .testing_dyn.objs/byte/test_lib.cmti)
- (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
-)
+;; (rule
+;;  (targets test_lib.odoc)
+;;  (deps .testing_dyn.objs/byte/test_lib.cmti)
+;;  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
+;; )
 
-(rule
- (alias doc)
- (action (progn (run mkdir -p doc)
-                (run odoc html %{dep:learnocaml_report.odoc} -o %{workspace_root}/_doc/_html)
-                (run odoc html %{dep:test_lib.odoc} -o %{workspace_root}/_doc/_html)))
-)
+;; (rule
+;;  (alias doc)
+;;  (action (progn (run mkdir -p doc)
+;;                 (run odoc html %{dep:learnocaml_report.odoc} -o %{workspace_root}/_doc/_html)
+;;                 (run odoc html %{dep:test_lib.odoc} -o %{workspace_root}/_doc/_html)))
+;; )
 
 
 
@@ -178,7 +157,8 @@
 (rule
  (targets embedded_grading_lib.ml)
  (deps
-  .learnocaml_callback.objs/byte/learnocaml_callback.cmi
+  .pre_test.objs/byte/learnocaml_callback.cmi
+  .pre_test.objs/byte/learnocaml_internal.cmi
   ;; .pre_test.objs/byte/pre_test.cmi -- only test_lib should be needed
   .testing_dyn.objs/byte/test_lib.cmi
   testing_dyn.cma
@@ -188,16 +168,19 @@
 )
 
 ;; cmis that are needed to precompile the graders for exercises
+;; FIXME: now we install the libs through dune, so use that ??
 (install
  (section share)
  (package learn-ocaml)
  (files
   (../ppx-metaquot/.ty.objs/byte/ty.cmi as grading_cmis/ty.cmi)
   (../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi as grading_cmis/fun_ty.cmi)
+;;  (.exercise_init.objs/byte/exercise_init.cmi as grading_cmis/exercise_init.cmi)
   (.introspection_intf.objs/byte/introspection_intf.cmi as grading_cmis/introspection_intf.cmi)
+  (.pre_test.objs/byte/learnocaml_internal.cmi as grading_cmis/learnocaml_internal.cmi)
   (.pre_test.objs/byte/pre_test.cmi as grading_cmis/pre_test.cmi)
   (.learnocaml_report.objs/byte/learnocaml_report.cmi as grading_cmis/learnocaml_report.cmi)
-  (.learnocaml_callback.objs/byte/learnocaml_callback.cmi as grading_cmis/learnocaml_callback.cmi)
+  (.pre_test.objs/byte/learnocaml_callback.cmi as grading_cmis/learnocaml_callback.cmi) ;;FIXME separate lib??
   (.testing_dyn.objs/byte/test_lib.cmi as grading_cmis/test_lib.cmi))
 )
 
@@ -210,6 +193,7 @@
  (libraries learnocaml_ppx_metaquot
             ocplib-ocamlres.runtime
             toploop
+            learnocaml_internal_intf
             introspection_intf
             embedded_cmis
             ocplib_i18n

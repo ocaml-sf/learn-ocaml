@@ -1326,10 +1326,16 @@ module Intro = Pre_test.Introspection
       if sorted then Array.sort compare arr ;
       arr
 
+    let sample_list sample () =
+      (* version without parameters for ppx_autoregister *)
+      Array.to_list (sample_array sample ())
+
     let sample_list ?min_size ?max_size ?dups ?sorted sample () =
       Array.to_list (sample_array ?min_size ?max_size ?dups ?sorted sample ())
 
-    let sample_pair sample1 sample2 () =
+    type ('a, 'b) pair = 'a * 'b
+    let sample_pair: 'a sampler -> 'b sampler -> ('a, 'b) pair sampler =
+      fun sample1 sample2 () ->
       (sample1 (), sample2 ())
 
     let printable_funs = ref []
@@ -1355,18 +1361,18 @@ module Intro = Pre_test.Introspection
   end
   module Sampler_reg = struct
     include Sampler
-    let () = Intro.register_sampler "bool" sample_bool
-    let () = Intro.register_sampler "int" sample_int
-    let () = Intro.register_sampler "float" sample_float
-    let () = Intro.register_sampler "char" sample_char
-    let () = Intro.register_sampler "string" sample_string
-    let () = Intro.register_sampler "option" sample_option
+    let () = Intro.register_sampler "Test_lib" "sample_bool" "bool" sample_bool
+    let () = Intro.register_sampler "Test_lib" "sample_int" "int" sample_int
+    let () = Intro.register_sampler "Test_lib" "sample_float" "float" sample_float
+    let () = Intro.register_sampler "Test_lib" "sample_char" "char" sample_char
+    let () = Intro.register_sampler "Test_lib" "sample_string" "string" sample_string
+    let () = Intro.register_sampler "Test_lib" "sample_option" "option" sample_option
     let sample_array sample () = sample_array sample ()
-    let () = Intro.register_sampler "array" sample_array
+    let () = Intro.register_sampler "Test_lib" "sample_array" "array" sample_array
     let sample_list sample () = sample_list sample ()
-    let () = Intro.register_sampler "list" sample_list
+    let () = Intro.register_sampler "Test_lib" "sample_list" "list" sample_list
     type ('a, 'b) pair = 'a * 'b
-    let () = Intro.register_sampler "pair" sample_pair
+    let () = Intro.register_sampler "Test_lib" "sample_pair" "pair" sample_pair
   end
 
   let (@@@) f g = fun x -> f x @ g x
