@@ -2,7 +2,7 @@ open Ppxlib
 
 module type ARG = sig
   val val_prefix: string
-  val inject_def: string -> string loc -> expression
+  val inject_def: string -> string -> string loc -> expression
 end
 
 module Make (Arg: ARG) = struct
@@ -35,24 +35,40 @@ module Ast_builder = Ast_builder.Make (struct
   let loc = Location.none
 end)
 
+let gen_expr (name, e) =
+  let id =
+    (* Create a fresh id that will be exported in the interface, so that looking
+       up the register function type in the cmi can't be tricked by later
+       redefinitions with a different type *)
+    Printf.sprintf "learnocaml_autoregister_%s_%06X"
+      name (Random.int 0xFFFFFF)
+  in
+  ({txt=id; loc=e.loc}, e), Arg.inject_def id name e
+
 let val_recorder s =
   let open Ast_builder in
   let create_val_registration defs =
-    let gen_expr (name, e) = Arg.inject_def name e in
-    let val_registration = List.map gen_expr defs |> esequence in
+    let ids, exprs = List.split (List.map gen_expr defs) in
+    let val_registration = esequence exprs in
     let register_toplevel =
-      [ value_binding ~pat:punit ~expr:val_registration ]
+      List.map (fun (id, e) ->
+          value_binding
+            ~pat:(Ast_builder.ppat_var id)
+            ~expr:(Ast_builder.pexp_ident
+                     {txt=Longident.Lident e.txt; loc=e.loc}))
+        ids
+      @ [ value_binding ~pat:punit ~expr:val_registration ]
     in
     pstr_value Nonrecursive register_toplevel
   in
   List.fold_right
     (fun si acc ->
-      match si.pstr_desc with
-      | Pstr_value (_, bindings) -> (
-          match get_defs bindings [] with
-          | [] -> si :: acc
-          | defs -> si :: create_val_registration defs :: acc)
-      | _ -> si :: acc)
+       match si.pstr_desc with
+       | Pstr_value (_, bindings) -> (
+           match get_defs bindings [] with
+           | [] -> si :: acc
+           | defs -> si :: create_val_registration defs :: acc)
+       | _ -> si :: acc)
     s []
 
 let expand = val_recorder

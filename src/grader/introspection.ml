@@ -172,33 +172,114 @@ let get_value lid ty =
 
    Note: re-instanciating [Genprintval.Make] means we lose any previously
    defined printers through [Topdirs.dir_install_printer]. *)
-let base_print_value, install_printer =
-  let module Printer = Genprintval.Make(Obj)(struct
-      type valu = Obj.t
-      exception Error
-      let eval_address = function
-        | Env.Aident id ->
-            if Ident.persistent id || Ident.global id then
-              Symtable.get_global_value id
-            else begin
-              let name = Translmod.toplevel_name id in
-              try Toploop.getvalue name
-              with _ -> raise Error
-            end
-        | Env.Adot(_, _) ->
-            (* in this case we bail out because this may refer to a
-               yet-unregistered extension constructor within the current module.
-               The printer has a reasonable fallback. *)
-            raise Error
-      let same_value v1 v2 = (v1 == v2)
-    end)
+module Printer = Genprintval.Make(Obj)(struct
+    type valu = Obj.t
+    exception Error
+    let eval_address = function
+      | Env.Aident id ->
+          if Ident.persistent id || Ident.global id then
+            Symtable.get_global_value id
+          else begin
+            let name = Translmod.toplevel_name id in
+            try Toploop.getvalue name
+            with _ -> raise Error
+          end
+      | Env.Adot(_, _) ->
+          (* in this case we bail out because this may refer to a
+             yet-unregistered extension constructor within the current module.
+             The printer has a reasonable fallback. *)
+          raise Error
+    let same_value v1 v2 = (v1 == v2)
+  end)
+
+let base_print_value env obj ppf ty =
+  !Oprint.out_value ppf @@
+  Printer.outval_of_value 300 100 (fun _ _ _ -> None) env obj ty
+
+(** Relies on the env (already loaded cmi) to get the correct type parameters
+    for the [Printer] functions *)
+let install_printer modname id tyname pr =
+  let open Types in
+  let modident = Ident.create_persistent modname in
+  let printer_path = Path.Pdot (Path.Pident modident, id) in
+  let env = !Toploop.toplevel_env in
+  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, Cunknown)) in
+  let gen_printer_type ty =
+    let format_ty =
+      let ( +. ) a b = Path.Pdot (a, b) in
+      Path.Pident (Ident.create_persistent "Stdlib") +. "Format" +. "formatter"
+    in
+    (Ctype.newty (Tconstr (format_ty, [], ref Mnil))
+     @-> ty
+     @-> Predef.type_unit)
   in
-  let print_value env obj ppf ty =
-    !Oprint.out_value ppf @@
-    Printer.outval_of_value 300 100 (fun _ _ _ -> None) env obj ty
-  in
-  let install_printer pr = Printer.install_printer pr in
-  print_value, install_printer
+  let ty_path1 = Path.Pdot (Path.Pident modident, tyname) in
+  match
+    Env.find_value printer_path env,
+    try ty_path1, Env.find_type ty_path1 env
+    with Not_found -> Env.find_type_by_name (Longident.Lident tyname) env
+  with
+  | exception Not_found ->
+      Format.kasprintf failwith "Warning: bad printer definition %s.print_%s. The type \
+                      and printer must be found in the cmi file.@."
+        modname tyname
+  | printer_desc, (ty_path, ty_decl) ->
+      Ctype.begin_def();
+      let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
+      let ty_target =
+        Ctype.expand_head env
+          (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
+      in
+      let printer_ty_expected =
+        List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
+          ty_args
+          (gen_printer_type ty_target)
+      in
+      Ctype.end_def ();
+      (try
+         Ctype.unify env
+           printer_ty_expected
+           (Ctype.instance printer_desc.val_type)
+       with Ctype.Unify _ ->
+         Format.kasprintf failwith
+           "Mismatching type for print function %s.print_%s.@;\
+            The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
+           modname tyname
+           (Format.pp_print_list
+              (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
+                  (Printtyp.type_expr)))
+           ty_args
+           (fun ppf -> function
+              | [] -> ()
+              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
+              | args ->
+                  Format.fprintf ppf "(%a) "
+                    (Format.pp_print_list
+                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
+                       Printtyp.type_expr)
+                    args)
+           ty_args
+           tyname);
+      Ctype.generalize printer_ty_expected;
+      let ty_path =
+        match ty_target.desc with
+        | Tconstr (path, args, _)
+          when Ctype.all_distinct_vars env args -> Format.kasprintf failwith "XXX %a // %a // %a" Printtyp.path ty_path Printtyp.path path Printtyp.type_expr ty_target
+        | Tconstr (path, args, _) -> Format.kasprintf failwith "XXX %a // %a // %a" Printtyp.path ty_path Printtyp.path path Printtyp.type_expr ty_target
+        | _ -> ty_path
+      in
+      let rec build v = function
+        | [] ->
+            Genprintval.Zero
+              (fun formatter repr -> Obj.obj v formatter (Obj.obj repr))
+        | _ :: args ->
+            Genprintval.Succ
+              (fun fn -> build ((Obj.obj v : _ -> Obj.t) fn) args)
+      in
+      Printer.install_generic_printer'
+        Path.(Pdot (Pident modident, "print_"^tyname))
+        ty_path
+        (build (Obj.repr pr) ty_args)
 
 let print_value ppf v ty =
   let { Typedtree.ctyp_type = ty; _ } =
@@ -247,7 +328,7 @@ let print_value ppf v ty =
    - build the expected sampler type from the type params of [foo]
    - match with the sampler type
 *)
-let register_sampler name f =
+let register_sampler _modname _id name f =
   let open Types in
   let gen_sampler_type =
     Path.Pdot
@@ -460,7 +541,8 @@ let allow_introspection ~divert =
       stderr_cb := bad_stderr_cb ;
       res
 
-    let install_printer pr = install_printer pr
+    let install_printer_internal pr = install_printer pr
+    let install_printer path ty pr = Printer.install_printer path ty pr
     let get_printer ty = fun ppf v -> print_value ppf v ty
 
     let register_sampler name f = register_sampler name f

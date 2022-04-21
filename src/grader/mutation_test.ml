@@ -13,36 +13,8 @@ let uncurry3 f = fun (x, y, z) -> f x y z
 let uncurry4 f = fun (x, y, z, w) -> f x y z w
 let map_third f = fun (x, y, z) -> (x, y, f z)
 
-module type S = sig
-  val run_test_against_mutant:
-    ?compare: ('b -> 'b -> bool) ->
-    ('a -> 'b) -> ('a * 'b) -> bool
-  val test_unit_tests_1:
-    ?test_student_soln: bool ->
-    ?test: ('b -> 'b -> bool) ->
-    ('a -> 'b) Ty.ty -> string -> ('a -> 'b) mutant_info list -> Learnocaml_report.t
-  val test_unit_tests_2:
-    ?test_student_soln: bool ->
-    ?test: ('c -> 'c -> bool) ->
-    ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) mutant_info list -> Learnocaml_report.t
-  val test_unit_tests_3:
-    ?test_student_soln: bool ->
-    ?test: ('d -> 'd -> bool) ->
-    ('a -> 'b -> 'c -> 'd) Ty.ty
-    -> string
-    -> ('a -> 'b -> 'c -> 'd) mutant_info list
-    -> Learnocaml_report.t
-  val test_unit_tests_4:
-    ?test_student_soln: bool ->
-    ?test: ('e -> 'e -> bool) ->
-    ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty
-    -> string
-    -> ('a -> 'b -> 'c -> 'd -> 'e) mutant_info list
-    -> Learnocaml_report.t
-  val passed_mutation_testing: Learnocaml_report.t -> bool
-end
-
-module Make (Test_lib: module type of Test_lib) : S = struct
+(* module Make (Test_lib: module type of Test_lib) : S = struct *)
+module M = struct
   open Test_lib
 
   let run_test_against ?(compare = (=)) f (input, expected) =
@@ -320,3 +292,8 @@ module Make (Test_lib: module type of Test_lib) : S = struct
       test_ty printer out_printer name soln stud muts
 
 end
+
+include M
+
+(* for backwards-compatibility *)
+module Make (_: module type of Test_lib) = M
