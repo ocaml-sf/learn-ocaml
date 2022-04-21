@@ -74,3 +74,11 @@ let val_recorder s =
 let expand = val_recorder
 
 end
+
+let modname var =
+  (* This is fragile. Do we have a better way to recover the current
+     compilation unit name in a ppx ? *)
+  String.capitalize_ascii @@
+  Filename.basename @@
+  Filename.remove_extension @@
+  var.Location.loc.Location.loc_start.Lexing.pos_fname

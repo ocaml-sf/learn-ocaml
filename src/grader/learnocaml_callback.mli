@@ -1,1 +1,1 @@
-include Introspection_intf.LEARNOCAML_CALLBACK
+include Learnocaml_internal_intf.CALLBACKS

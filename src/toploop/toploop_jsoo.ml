@@ -144,7 +144,8 @@ let use_compiled_string code =
   in
   ignore @@
   Js.Unsafe.fun_call (Js.Unsafe.eval_string clean_code)
-    [|Js.Unsafe.inject Js.Unsafe.global|]
+    [|Js.Unsafe.inject Js.Unsafe.global|];
+  Toploop_ext.register_pending_printers ()
 
 let () = Toploop_ext.set_inject_global_hook @@ fun id ->
   Js_of_ocaml.Js.Unsafe.set

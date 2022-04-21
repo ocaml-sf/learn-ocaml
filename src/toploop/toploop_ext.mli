@@ -110,3 +110,12 @@ module Ppx : sig
   val preprocess_signature: Parsetree.signature -> Parsetree.signature
   val preprocess_phrase: Parsetree.toplevel_phrase -> Parsetree.toplevel_phrase
 end
+
+module Printer : Genprintval.S with type t = Obj.t
+
+(** Used by our ppx *)
+val install_printer: string -> string -> string -> ('a -> 'b) -> unit
+
+(** Hook to be called after loading units so that the registered printers are
+    present also in the toplevel's built-in printer. *)
+val register_pending_printers: unit -> unit
