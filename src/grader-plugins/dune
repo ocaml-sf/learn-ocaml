@@ -11,6 +11,7 @@
  (flags (:standard -I src/grader/test_lib -open Test_lib.Open_me))
  (modules mutation_test)
  (preprocess (pps grader_ppx))
- (preprocessor_deps (alias ../grader/test_lib/test_lib_cmis))
- ;; this is not a preprocessor deps, but dune does not allow other kinds of deps...
+ (preprocessor_deps (file ../grader/grading.cma)
+                    (alias ../grader/test_lib/test_lib_cmis))
+ ;; these are not a preprocessor deps, but dune does not allow other kinds of deps...
 )
