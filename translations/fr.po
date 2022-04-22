@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2022-01-07 03:03+0100\n"
+"PO-Revision-Date: 2022-04-22 10:32+0200\n"
 "Last-Translator: Louis Gesbert <Louis.gesbert@ocamlpro.com>\n"
 "Language-Team: OCamlPro\n"
 "Language: french\n"
@@ -226,7 +226,7 @@ msgstr "Statistiques"
 #: File "src/app/learnocaml_common.ml", line 859, characters 37-48
 #: "src/app/learnocaml_index_main.ml", 688, 29-40
 #: "src/app/learnocaml_teacher_tab.ml", 329, 18-29
-#: "src/app/learnocaml_exercise_main.ml", 203, 23-34
+#: "src/app/learnocaml_exercise_main.ml", 212, 23-34
 msgid "Exercises"
 msgstr "Exercices"
 
@@ -318,55 +318,55 @@ msgstr "Métadonnées"
 msgid "The toplevel has been cleared.\n"
 msgstr "Le toplevel a été nettoyé.\n"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 271, characters 36-49
+#: File "src/toplevel/learnocaml_toplevel.ml", line 303, characters 36-49
 msgid "%d seconds!"
 msgstr "%d secondes !"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 274, characters 20-30
+#: File "src/toplevel/learnocaml_toplevel.ml", line 306, characters 20-30
 msgid "Kill it!"
 msgstr "Le terminer !"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 284, characters 24-40
+#: File "src/toplevel/learnocaml_toplevel.ml", line 316, characters 24-40
 msgid "Infinite loop?"
 msgstr "Boucle infinie ?"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 286, characters 23-66
+#: File "src/toplevel/learnocaml_toplevel.ml", line 318, characters 23-66
 msgid "The toplevel has not been responding for "
 msgstr "Le toplevel ne répond plus depuis "
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 288, characters 23-34 292,
+#: File "src/toplevel/learnocaml_toplevel.ml", line 320, characters 23-34 324,
 msgid " seconds."
 msgstr " secondes."
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 290, characters 23-46
+#: File "src/toplevel/learnocaml_toplevel.ml", line 322, characters 23-46
 msgid "It will be killed in "
 msgstr "Il sera terminé dans "
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 321, characters 20-34
+#: File "src/toplevel/learnocaml_toplevel.ml", line 353, characters 20-34
 msgid "Show anyway!"
 msgstr "Afficher quand même !"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 323, characters 20-34
+#: File "src/toplevel/learnocaml_toplevel.ml", line 355, characters 20-34
 msgid "Hide output!"
 msgstr "Masquer la sortie !"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 332, characters 24-41
+#: File "src/toplevel/learnocaml_toplevel.ml", line 364, characters 24-41
 msgid "Flooded output!"
 msgstr "La sortie déborde !"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 335, characters 30-69
+#: File "src/toplevel/learnocaml_toplevel.ml", line 367, characters 30-69
 msgid "Your code is flooding the %s channel."
 msgstr "Votre code submerge le canal %s."
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 337, characters 23-48
+#: File "src/toplevel/learnocaml_toplevel.ml", line 369, characters 23-48
 msgid "It has already printed "
 msgstr "Il a déjà affiché "
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 339, characters 23-32
+#: File "src/toplevel/learnocaml_toplevel.ml", line 371, characters 23-32
 msgid " bytes."
 msgstr " octets."
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 375, characters 44-80
+#: File "src/toplevel/learnocaml_toplevel.ml", line 407, characters 44-80
 msgid ""
 "\n"
 "Interrupted output channel %s.\n"
@@ -374,7 +374,7 @@ msgstr ""
 "\n"
 "Canal de sortie %s interrompu.\n"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", lines 407-412, characters 5-39
+#: File "src/toplevel/learnocaml_toplevel.ml", lines 439-444, characters 5-39
 msgid ""
 "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n"
 "print_endline \" - type your OCaml phrase in the box below and press "
@@ -396,7 +396,7 @@ msgstr ""
 "print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] "
 "pour naviguer dans l'historique\";;"
 
-#: File "src/toplevel/learnocaml_toplevel.ml", line 518, characters 11-43
+#: File "src/toplevel/learnocaml_toplevel.ml", line 550, characters 11-43
 msgid "The toplevel has been reset.\n"
 msgstr "Le toplevel a été redémarré.\n"
 
@@ -710,6 +710,53 @@ msgstr "Exporter les données étudiants en CSV"
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
+#: File "src/grader/grading.ml", line 19, characters 26-65
+msgid ""
+"Exercise definition error %s:\n"
+"%a\n"
+"%!"
+msgstr ""
+"Erreur dans la définition de l'exercice %s:\n"
+"%a\n"
+"%!"
+
+#: File "src/grader/grading.ml", line 22, characters 26-57
+msgid ""
+"Error in user code:\n"
+"\n"
+"%a\n"
+"%!"
+msgstr ""
+"Erreur dans le code:\n"
+"\n"
+"%a\n"
+"%!"
+
+#: File "src/grader/grading.ml", line 25, characters 9-32
+msgid "The grader is invalid"
+msgstr "Le moteur de notation est invalide"
+
+#: File "src/grader/grading.ml", line 115, characters 22-55
+msgid "Preparing the test environment."
+msgstr "Préparation de l'environnement de test."
+
+#: File "src/grader/grading.ml", line 119, characters 38-65 125, 128, 131, 134,
+#: 168, 175, 181,
+msgid "while preparing the tests"
+msgstr "lors de la préparation des tests"
+
+#: File "src/grader/grading.ml", line 138, characters 22-42
+msgid "Loading your code."
+msgstr "Chargement du code utilisateur."
+
+#: File "src/grader/grading.ml", line 145, characters 22-54
+msgid "Preparing to launch the tests."
+msgstr "Préparation du lancement des tests."
+
+#: File "src/grader/grading.ml", line 183, characters 38-67
+msgid "while testing your solution"
+msgstr "lors du test de la solution utilisateur"
+
 #: File "src/app/learnocaml_exercise_main.ml", line 29, characters 22-81
 msgid "WARNING: You have an older grader version than the server"
 msgstr ""
@@ -745,47 +792,47 @@ msgstr ""
 "La date limite de rendu de cet exercice est passée. Vos changements ne "
 "seront plus sauvegardés sur le serveur."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 130, characters 25-49
-#: "src/app/learnocaml_playground_main.ml", 47, 19-43
-msgid "loading the prelude..."
-msgstr "Chargement du prélude..."
-
-#: File "src/app/learnocaml_exercise_main.ml", line 135, characters 41-59
-#: "src/app/learnocaml_playground_main.ml", 50, 31-49
+#: File "src/app/learnocaml_exercise_main.ml", line 134, characters 36-54 137,
+#: 35-53 139, 141, 143, "src/app/learnocaml_playground_main.ml", 50, 31-49
 msgid "error in prelude"
 msgstr "erreur dans le prélude"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 215, characters 28-37
+#: File "src/app/learnocaml_exercise_main.ml", line 136, characters 19-43
+#: "src/app/learnocaml_playground_main.ml", 47,
+msgid "loading the prelude..."
+msgstr "Chargement du prélude..."
+
+#: File "src/app/learnocaml_exercise_main.ml", line 224, characters 28-37
 #: "src/app/learnocaml_playground_main.ml", 84,
 msgid "Compile"
 msgstr "Compiler"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 219, characters 29-37
+#: File "src/app/learnocaml_exercise_main.ml", line 228, characters 29-37
 msgid "Grade!"
 msgstr "Noter!"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 223, characters 48-55
+#: File "src/app/learnocaml_exercise_main.ml", line 232, characters 48-55
 msgid "abort"
 msgstr "abandonner"
 
-#: File "src/app/learnocaml_exercise_main.ml", lines 227-228, characters 35-65
+#: File "src/app/learnocaml_exercise_main.ml", lines 236-237, characters 35-65
 msgid "Grading is taking a lot of time, maybe your code is looping? "
 msgstr ""
 "La notation prend du temps, peut-être une boucle infinie dans votre code ? "
 
-#: File "src/app/learnocaml_exercise_main.ml", line 234, characters 35-57
+#: File "src/app/learnocaml_exercise_main.ml", line 243, characters 35-57
 msgid "Launching the grader"
 msgstr "Lancement de la notation"
 
-#: File "src/app/learnocaml_exercise_main.ml", line 257, characters 60-86
+#: File "src/app/learnocaml_exercise_main.ml", line 266, characters 60-86
 msgid "Grading aborted by user."
 msgstr "Notation annulée par l'utilisateur."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 279, characters 38-59
+#: File "src/app/learnocaml_exercise_main.ml", line 288, characters 38-59
 msgid "Error in your code."
 msgstr "Erreur dans le code."
 
-#: File "src/app/learnocaml_exercise_main.ml", line 280, characters 27-85
+#: File "src/app/learnocaml_exercise_main.ml", line 289, characters 27-85
 msgid "Cannot start the grader if your code does not typecheck."
 msgstr "La notation ne peut être lancée si le code ne compile pas."
 
@@ -861,7 +908,7 @@ msgstr "Aucun rapport"
 msgid "Status of student: "
 msgstr "Suivi étudiant: "
 
-#: File "src/grader/grader_jsoo_worker.ml", line 57, characters 34-67
+#: File "src/grader/grader_jsoo_worker.ml", line 65, characters 34-67
 msgid ""
 "Error in your solution:\n"
 "%a\n"
@@ -871,7 +918,7 @@ msgstr ""
 "%a\n"
 "%!"
 
-#: File "src/grader/grader_jsoo_worker.ml", line 60, characters 34-68
+#: File "src/grader/grader_jsoo_worker.ml", line 68, characters 34-68
 msgid ""
 "Error in the exercise %s\n"
 "%a\n"
@@ -881,7 +928,7 @@ msgstr ""
 "%a\n"
 "%!"
 
-#: File "src/grader/grader_jsoo_worker.ml", line 64, characters 17-71
+#: File "src/grader/grader_jsoo_worker.ml", line 72, characters 17-71
 msgid ""
 "Internal error:\n"
 "The grader did not return a report."
@@ -889,75 +936,26 @@ msgstr ""
 "Erreur interne:\n"
 "Le moteur de notation n'a pas retourné de rapport."
 
-#: File "src/grader/grader_jsoo_worker.ml", line 66, characters 17-38
-msgid "Unexpected error:\n"
-msgstr "Erreur inattendue:\n"
+#~ msgid "Unexpected error:\n"
+#~ msgstr "Erreur inattendue:\n"
 
-#: File "src/grader/grading.ml", line 16, characters 28-67
-msgid ""
-"Exercise definition error %s:\n"
-"%a\n"
-"%!"
-msgstr ""
-"Erreur dans la définition de l'exercice %s:\n"
-"%a\n"
-"%!"
+#~ msgid "Loading the prelude."
+#~ msgstr "Chargement du prélude."
 
-#: File "src/grader/grading.ml", line 22, characters 28-59
-msgid ""
-"Error in user code:\n"
-"\n"
-"%a\n"
-"%!"
-msgstr ""
-"Erreur dans le code:\n"
-"\n"
-"%a\n"
-"%!"
+#~ msgid "while loading the prelude"
+#~ msgstr "lors du chargement du prélude"
 
-#: File "src/grader/grading.ml", line 96, characters 38-65 106, 131, 139, 143,
-msgid "while preparing the tests"
-msgstr "lors de la préparation des tests"
+#~ msgid "Loading the solution."
+#~ msgstr "Chargement de la solution."
 
-#: File "src/grader/grading.ml", line 100, characters 22-44
-msgid "Loading the prelude."
-msgstr "Chargement du prélude."
+#~ msgid "while loading the solution"
+#~ msgstr "lors du chargement de la solution"
 
-#: File "src/grader/grading.ml", line 101, characters 38-65
-msgid "while loading the prelude"
-msgstr "lors du chargement du prélude"
+#~ msgid "Launching the test bench."
+#~ msgstr "Lancement du banc de test."
 
-#: File "src/grader/grading.ml", line 105, characters 22-55
-msgid "Preparing the test environment."
-msgstr "Préparation de l'environnement de test."
-
-#: File "src/grader/grading.ml", line 110, characters 22-42
-msgid "Loading your code."
-msgstr "Chargement du code utilisateur."
-
-#: File "src/grader/grading.ml", line 115, characters 22-45
-msgid "Loading the solution."
-msgstr "Chargement de la solution."
-
-#: File "src/grader/grading.ml", line 116, characters 38-66
-msgid "while loading the solution"
-msgstr "lors du chargement de la solution"
-
-#: File "src/grader/grading.ml", line 120, characters 22-54
-msgid "Preparing to launch the tests."
-msgstr "Préparation du lancement des tests."
-
-#: File "src/grader/grading.ml", line 146, characters 22-49
-msgid "Launching the test bench."
-msgstr "Lancement du banc de test."
-
-#: File "src/grader/grading.ml", line 175, characters 45-78
-msgid "while loading user dependencies"
-msgstr "lors du chargement des dépendances"
-
-#: File "src/grader/grading.ml", line 191, characters 38-67
-msgid "while testing your solution"
-msgstr "lors du test de la solution utilisateur"
+#~ msgid "while loading user dependencies"
+#~ msgstr "lors du chargement des dépendances"
 
 #~ msgid "Try OCaml"
 #~ msgstr "Try OCaml"
@@ -1024,11 +1022,11 @@ msgstr "lors du test de la solution utilisateur"
 #~ "icon_upload_white.svg\" class=\"icon\" alt=\"Restaurer\">."
 
 #~ msgid ""
-#~ "Save online using the <img src=\"icons/icon_sync_white.svg\" class=\"icon"
-#~ "\" alt=\"sync\"> button above."
+#~ "Save online using the <img src=\"icons/icon_sync_white.svg\" "
+#~ "class=\"icon\" alt=\"sync\"> button above."
 #~ msgstr ""
-#~ "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white.svg"
-#~ "\" class=\"icon\" alt=\"Sync\">."
+#~ "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white."
+#~ "svg\" class=\"icon\" alt=\"Sync\">."
 
 #~ msgid "Before log out, be sure to save your token"
 #~ msgstr "Avant de vous déconnecter, assurez-vous de sauvegarder votre token"
