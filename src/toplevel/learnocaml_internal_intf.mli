@@ -1,3 +1,10 @@
+(* This file is part of Learn-OCaml.
+ *
+ * Copyright (C) 2022 OCaml Software Foundation.
+ *
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
 (** Interface of the module that gets automatically injected in the environment
     before the Prelude is loaded. *)
 module type CALLBACKS = sig
