@@ -22,7 +22,6 @@
  (libraries js_of_ocaml-compiler toploop)
  (modules Toploop_jsoo)
  (preprocess (pps js_of_ocaml-ppx))
- (js_of_ocaml (flags :standard --pretty))
 )
 
 (library

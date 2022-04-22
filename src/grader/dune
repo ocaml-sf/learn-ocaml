@@ -54,7 +54,7 @@
 (rule
  (target testing_dyn.js)
  (deps testing_dyn.cma)
- (action (run js_of_ocaml %{deps} --wrap-with dynload --pretty)))
+ (action (run js_of_ocaml %{deps} --wrap-with dynload)))
 
 (rule
  (targets test_lib.odoc)
