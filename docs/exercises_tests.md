@@ -20,23 +20,23 @@ A classic `test.ml` file is as follows:
 open Test_lib
 open Report
 
-let exercise_1 = ..
+let exercise_1 () = ..
 
-let exercise_2 = ..
+let exercise_2 () = ..
 
-let exercise_3 = ..
+let exercise_3 () = ..
 
 
 let () =
   set_result @@
   ast_sanity_check code_ast @@ fun () ->
-  [ exercise_1 ; exercise_2 ; exercise_3 ]
+  [ exercise_1 (); exercise_2 (); exercise_3 () ]
 
 ```
 
-The values `exercise_x` are values of type `Learnocaml_report.report`, which is
+The return values of `exercise_x` are of type `Learnocaml_report.report`, which is
 a representation of the report given by the grader. In this example, each of
-these values are referring to a specific question from the exercise. Their
+these values is referring to a specific question from the exercise. Their
 content is detailed in the next section. These reports are then given to the
 function `ast_sanity_check`, which ensures that some modules are never used
 (`Obj`, `Marshall`, all the modules from `compiler-libs` or the library that
@@ -46,7 +46,7 @@ allows introspection), and also excludes some syntactic features of the language
 
 # Writing tests and reports
 
-The format of reports can be found in `src/state/learnocaml_report.ml`. A report
+The format of reports can be found in `src/grader/learnocaml_report.ml`. A report
 describes the result of what should be outputted and interpreted by the
 grader. It can be classified into sections for lisibility, and return many kind
 of messages:
@@ -252,3 +252,23 @@ forbidden or required. The two functions `ast_check_expr` and
 pattern-matching on some specific patterns into the code. The function
 `find_binding` look for a toplevel value and apply a given function on its
 syntax tree.
+
+### Using helper libraries for testing
+
+Using a `test_libs.txt` file, it is possible to include libraries that define
+helpers for grading.
+
+The file should contain the ocamlfind names of the libraries, one per line.
+
+Example of such libs include
+[mutation_testing](https://github.com/ocaml-sf/learn-ocaml/blob/master/src/grader-plugins/mutation_test.ml)
+(from McGill University, included in this repository), or
+[easy-check](https://github.com/lsylvestre/easy-check) from University Paris 6.
+
+See `src/grader-plugins/dune` to get how to build such libraries. Like
+`test.ml`, they can access the `Introspection` and `Test_lib` interfaces. They
+cannot, at the time of writing, define new samplers or printers, but if you need
+that feature and are ready to contribute, all that is missing is the inclusion
+of their `cmi` files in the grading-toplevel environment (these features rely
+on dynamic typing, and the `cma` library doesn't include the required typing
+information).

@@ -54,6 +54,30 @@ An exercise is described by a directory containing at most the following files:
 - solution.ml
 - test.ml
 - max_score.txt
+- test_libs.txt
+
+> Note: as of learn-ocaml 1.0, the `.ml` files get compiled into the exercise.
+> It is therefore not possible to use directives like `#install_printer`.
+> However, you can still define your own printers in a way similar to defining
+> custom `sample_<type>` functions:
+>
+> ```ocaml
+> (* Custom printer for a pre-defined type *)
+> let print_float ppf x = Format.fprintf ppf "%.2f" x
+> 
+> (* Name the alias to define a printer for a specific instanciation of a
+>    generic type *)
+> type int_list = int list
+> let print_int_list ppf l = ...
+>
+> (* Define a generic printer for a generic type *)
+> let print_result ppok pperr ppf = function
+>   | Ok ok -> Format.fprintf ppf "OK(%a)" ppok ok
+>   | Error err -> Format.fprintf ppf "ERR(%a)" pperr err
+> ```
+>
+> Printers defined in `prelude.ml` or `prepare.ml` affect the toplevel and the
+> grader. Printers defined in `test.ml`, obviously, affect only the grader.
 
 ### meta.json
 
@@ -129,6 +153,12 @@ code, which will be described and detailed in another section.
 
 Maximum score that is possible to get for this exercise, even if the grader
 grades more. Overridden by the field `max_score`, if present in `meta.json`.
+
+### test_libs.txt
+
+List of additional libraries (one per line) to be used by the grader. The
+libraries will be looked up using `ocamlfind`, available to `test.ml` during its
+compilation, and bundled in the exercise grader.
 
 # Metadata
 
