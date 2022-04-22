@@ -67,6 +67,7 @@ wait_for_it () {
 run_server () {
     SYNC="$srcdir"/"$dir"/sync
     REPO="$srcdir"/"$dir"/repo
+    chmod -R a+w "$REPO"
 
     mkdir "$SYNC" 2>/dev/null
     chmod o+w "$SYNC"
