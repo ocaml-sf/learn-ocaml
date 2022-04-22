@@ -71,6 +71,14 @@ ARG opam_switch="/home/opam/.opam/4.12"
 COPY --from=compilation /home/opam/install-prefix /usr
 COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
 COPY --from=compilation "$opam_switch/lib/ocaml" "$opam_switch/lib/ocaml/"
+COPY --from=compilation "$opam_switch/bin/js_of_ocaml" "$opam_switch/bin/"
+COPY --from=compilation "$opam_switch/lib/js_of_ocaml" "$opam_switch/lib/js_of_ocaml"
+
+# Fixes for ocamlfind
+COPY --from=compilation "$opam_switch/lib/findlib.conf" "$opam_switch/lib/"
+COPY --from=compilation "$opam_switch/lib/stdlib" "$opam_switch/lib/stdlib"
+ENV PATH="${opam_switch}/bin:${PATH}"
+ENV OCAMLPATH="/usr/lib"
 
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]

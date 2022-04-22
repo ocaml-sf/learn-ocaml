@@ -69,7 +69,7 @@ docker-images: Dockerfile learn-ocaml.opam
 	@docker build -t learn-ocaml-compilation --target compilation docker
 	@docker build -t learn-ocaml --target program docker
 	@docker build -t learn-ocaml-client --target client docker
-	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
+	@echo "Use with 'docker run --rm -v learn-ocaml-sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
 VERSION = $(shell opam show ./learn-ocaml.opam -f version)
 
