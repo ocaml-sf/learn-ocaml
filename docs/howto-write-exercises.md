@@ -65,9 +65,3 @@ get the files for the second step, and so on and so forth.
 [Step 6 : Grading functions for variables](tutorials/step-6.md)
     
 [Step 7 : Modifying the comparison functions (testers) with the optional arguments [~test], [~test_stdout], [~test_stderr]](tutorials/step-7.md)
-
-[Step 8 : Reusing the grader code](tutorials/step-8.md)
-
-- Separating the grader code
-
-[Step 9 : Introspection of students code](tutorials/step-9.md)    
