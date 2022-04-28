@@ -238,7 +238,7 @@ module File = struct
         | Some id, None | None, Some id -> return id
         | Some id, Some id' ->
             if id = id' then return id else
-              fail (Failure "Exercise.read: conficting ids")
+              fail (Failure "Exercise.read: conflicting ids")
       end >>= fun ex_id ->
       ex := set id ex_id !ex ;
       (* read_field meta.key >>=

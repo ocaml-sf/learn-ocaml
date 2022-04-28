@@ -20,7 +20,7 @@ depends: [
   "asak"
   "base64"
   "base" {>= "v0.9.4"}
-  "cmdliner"
+  "cmdliner" {>= "1.1.0"}
   "cohttp" {>= "2.0.0"}
   "cohttp-lwt-unix" {>= "2.0.0"}
   "cstruct" {>= "3.3.0"}
