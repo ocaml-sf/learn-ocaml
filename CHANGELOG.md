@@ -1,5 +1,18 @@
 # Changelog
 
+### [0.14.1](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.0...v0.14.1) (2022-05-14)
+
+
+### Dependencies
+
+* **opam:** Upgrade cmdliner version to 1.1.1 & Improve man pages ([590034f](https://github.com/ocaml-sf/learn-ocaml/commit/590034f9fa6b38a6f7e0032c58cfc257fc253ea8))
+
+
+### Documentation
+
+* **src/main/*:** Document exit codes in man pages forall cmd/subcmd ([c6ae2ca](https://github.com/ocaml-sf/learn-ocaml/commit/c6ae2cad5e68b7f4459c488a36e8900a402b3b9e))
+* **src/main/*:** Move server options to ad-hoc section in man pages ([7c14d4c](https://github.com/ocaml-sf/learn-ocaml/commit/7c14d4c0d67d79b16d4c8b9bc06d6bd35c63ad70))
+
 ## [0.14.0](https://www.github.com/ocaml-sf/learn-ocaml/compare/v0.13.1...v0.14.0) (2022-03-06)
 
 
