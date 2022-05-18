@@ -22,6 +22,7 @@ and status =
   | Warning (** A student error without influence on the grade *)
   | Informative (** A message for the student *)
   | Important (** An important message *)
+  | Absent (** With missed function *)
 
 and text = inline list
 
@@ -58,6 +59,7 @@ val enc : t Json_encoding.encoding
 (** {2 Learnocaml_report building combinators} *)
 
 val failure : message:string -> item
+val absent : message:string -> item
 val success : points:int -> message:string -> item
 val warning : message:string -> item
 val message : message:string -> item

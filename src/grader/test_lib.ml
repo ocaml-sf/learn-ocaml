@@ -799,7 +799,7 @@ module Make
           | [] -> [ Message ([ Text "I could not find " ; Code name ; Text "." ;
                                Break ;
                                Text "Check that it is defined as a simple " ; Code "let" ;
-                               Text " at top level." ], Failure) ]
+                               Text " at top level." ], Absent) ]
           | { pstr_desc = Pstr_value (_, bds); _ } :: rest ->
              let rec findvar = function
                | [] -> findlet rest
@@ -826,7 +826,7 @@ module Make
                    Text "is compatible with " ; Code exp ], Informative) ;
         match Introspection.compatible_type exp ("Code." ^ got) with
         | Introspection.Absent ->
-           Message ([ Text "Type not found" ], Failure)
+           Message ([ Text "Type not found" ], Absent)
         | Introspection.Incompatible msg ->
            Message ([ Text msg ], Failure)
         | Introspection.Present () ->
@@ -839,7 +839,7 @@ module Make
           let path, _ = Env.find_type_by_name lid !Toploop.toplevel_env in
           let _ = Env.find_type path !Toploop.toplevel_env in
           true, [ Message ( [ Text "Type" ; Code name ; Text "found" ], Success score ) ]
-      with Not_found -> false, [ Message ( [ Text "type" ; Code name ; Text "not found" ], Failure ) ]
+      with Not_found -> false, [ Message ( [ Text "type" ; Code name ; Text "not found" ], Absent ) ]
 
     let abstract_type ?(allow_private = true) ?(score = 5) name =
       let open Learnocaml_report in
@@ -853,7 +853,7 @@ module Make
              true, [ Message ([Text "Type" ; Code name ; Text "is private, I'll accept that :-)." ], Success score) ]
           | { Types. type_kind = _; _ } ->
              false, [ Message ([Text "Type" ; Code name ; Text "should be abstract!" ], Failure) ]
-      with Not_found -> false, [ Message ( [Text "Type" ; Code name ; Text "not found." ], Failure) ]
+      with Not_found -> false, [ Message ( [Text "Type" ; Code name ; Text "not found." ],Absent) ]
 
     let test_student_code ty cb =
       let open Learnocaml_report in
@@ -869,7 +869,7 @@ module Make
       match Introspection.get_value ("Code." ^ name) ty with
       | Introspection.Present v -> cb v
       | Introspection.Absent ->
-         [ Message ([ Text "Module" ; Code name ; Text "not found." ], Failure) ]
+         [ Message ([ Text "Module" ; Code name ; Text "not found." ], Absent) ]
       | Introspection.Incompatible msg ->
          [ Message ([ Text "Module" ; Code name ; Text "doesn't match the expected signature." ;
                       Break ; Code msg (* TODO: hide or fix locations *) ], Failure) ]
@@ -1231,7 +1231,7 @@ module Make
            `Found (display_name, msg, v)
         | Introspection.Absent ->
            `Unbound
-             (name, [ Message ([ Text "Cannot find " ; Code display_name ], Failure) ])
+             (name, [ Message ([ Text "Cannot find " ; Code display_name ], Absent) ])
         | Introspection.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Found" ; Code display_name ;
@@ -1249,7 +1249,7 @@ module Make
            `Found (name, msg, v)
         | Introspection.Absent ->
            `Unbound
-             (name, [ Message ([ Text "Cannot find " ; Code name ], Failure) ])
+             (name, [ Message ([ Text "Cannot find " ; Code name ], Absent) ])
         | Introspection.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Found" ; Code name ;
@@ -1265,7 +1265,7 @@ module Make
         | Introspection.Absent ->
            `Unbound
              (name, [ Message ([ Text "Looking for " ; Code name  ], Informative) ;
-                      Message ([ Text "Solution not found!" ], Failure) ])
+                      Message ([ Text "Solution not found!" ], Absent) ])
         | Introspection.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Looking for " ; Code name  ], Informative) ;
