@@ -417,7 +417,7 @@ let console_report ?(verbose=false) ex report =
     (List.for_all @@ function
       | Section (_, report) | SectionMin (_, report, _) -> all_good report
       | Message (_, (Success _ | Penalty _
-                   | Informative | Warning | Important)) -> true
+                   | Informative | Warning | Important | Absent)) -> true
       | Message (_, Failure) -> false)
       report
   in
@@ -447,7 +447,9 @@ let console_report ?(verbose=false) ex report =
     | Message (text, Informative) ->
         format_text text
     | Message (text, Important) ->
-        color [`Bg `Cyan]   "[important]" ^ "   " ^ format_text text
+       color [`Bg `Cyan]   "[important]" ^ "   " ^ format_text text
+    | Message (text, Absent) ->
+        color [`Bg `White] "[ absent ]" ^ "   " ^ format_text text
   in
   List.iter (fun i -> print_endline (format_item i)) report;
   print_newline ()
