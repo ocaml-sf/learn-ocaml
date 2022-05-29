@@ -232,7 +232,7 @@ val setup_tab_text_prelude_pane : string -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
 
-val get_token : ?has_server:bool -> unit -> Learnocaml_data.student Learnocaml_data.token option Lwt.t
+val get_token : ?has_server:bool -> unit -> Learnocaml_data.Token.t option Lwt.t
 
 module Display_exercise :functor
   (_ : sig

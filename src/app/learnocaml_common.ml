@@ -1106,17 +1106,23 @@ let get_token ?(has_server = true) () =
     try
       Some Learnocaml_local_storage.(retrieve sync_token) |>
         Lwt.return
-    with Not_found ->
+    with
+    Not_found ->
       retrieve (Learnocaml_api.Nonce ())
       >>= fun nonce ->
-      ask_string ~title:"Secret"
-        [H.txt [%i"Enter the secret"]]
-      >>= fun secret ->
-      retrieve
-        (Learnocaml_api.Create_token (Sha.sha512 (nonce ^ Sha.sha512 secret), None, None))
-      >|= fun token ->
-      Learnocaml_local_storage.(store sync_token) token;
-      Some token
+      ask_string ~title:"Token"
+        [H.txt [%i"Enter your token"]]
+      >>= fun input_tok ->
+      let token = Token.parse (input_tok) in
+        Server_caller.request (Learnocaml_api.Fetch_save token)
+        >>= function
+        | Ok save ->
+            set_state_from_save_file ~token save;
+            Lwt.return_some token
+        | _ ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognised."];
+            Lwt.return_none
 
 module Display_exercise =
   functor (
