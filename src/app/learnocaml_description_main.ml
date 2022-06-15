@@ -69,14 +69,27 @@ let () =
            retrieve (Learnocaml_api.Exercise (Some token, id))
          in
          init_tabs ();
-         exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
+         exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
+         let exo = match ex with
+           | Learnocaml_exercise.Subexercise (ex,_) ->
+              (match ex with
+              | [] -> raise Not_found
+              | (ex1,_) :: _ -> Learnocaml_exercise.Exercise ex1)
+           | ex -> ex
+         in
          (* display exercise questions and prelude *)
-         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude exo);
+         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher false File.prelude exo);
+         let prelude_container = find_component "learnocaml-exo-tab-text-prelude" in
+         let iframe_container = find_component "learnocaml-exo-tab-text-iframe" in
          let text_iframe = Dom_html.createIframe Dom_html.document in
          Manip.replaceChildren title_container
            Tyxml_js.Html5.[ h1 [ txt ex_meta.title] ];
+         Manip.replaceChildren iframe_container 
+           [Tyxml_js.Of_dom.of_iFrame text_iframe];
          Manip.replaceChildren text_container
-           [ Tyxml_js.Of_dom.of_iFrame text_iframe ];
+           [title_container;
+            prelude_container;
+            iframe_container ];
          Js.Opt.case
            (text_iframe##.contentDocument)
            (fun () -> failwith "cannot edit iframe document")

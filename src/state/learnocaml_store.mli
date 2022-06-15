@@ -80,6 +80,10 @@ module Exercise: sig
     include module type of struct include Exercise.Meta end
     val get: Exercise.id -> t Lwt.t
   end
+  
+  module Subindex: sig
+    include module type of struct include Exercise.Subindex end
+  end
 
   module Index: sig
     include module type of struct include Exercise.Index end
@@ -102,6 +106,7 @@ module Exercise: sig
   include module type of struct include Exercise end
   with module Meta := Exercise.Meta
    and module Status := Exercise.Status
+   and module Subindex := Exercise.Subindex
    and module Index := Exercise.Index
 
   val get: id -> t Lwt.t

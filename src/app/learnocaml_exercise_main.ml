@@ -49,7 +49,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
+    let max = Learnocaml_exercise.(access false File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -123,7 +123,14 @@ let () =
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    begin match Learnocaml_exercise.(decipher File.prelude exo) with
+    let ex = match exo with
+      | Learnocaml_exercise.Exercise ex -> ex
+      | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
+      | Learnocaml_exercise.Subexercise ((ex, _) :: _ ,_) -> ex
+    in
+    let sub_id = ex.Learnocaml_exercise.id
+    in
+    begin match Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude (Learnocaml_exercise.Exercise ex)) with
       | "" -> Lwt.return true
       | prelude ->
           Learnocaml_toplevel.load ~print_outcome:true top
@@ -131,7 +138,7 @@ let () =
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
+      (Learnocaml_exercise.(decipher ~subid:sub_id false File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -144,6 +151,14 @@ let () =
   set_nickname_div ();
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
+  let sub_id =
+    match exo with
+    | Learnocaml_exercise.Subexercise (exs,_) ->
+       (match exs with
+       | [] -> ""
+       | (ex,_subex) :: _ -> ex.Learnocaml_exercise.id)
+    | _ -> ""
+  in
   (match deadline with
    | None -> ()
    | Some 0. -> make_readonly ()
@@ -158,7 +173,7 @@ let () =
         solution
     | { Answer.report = None ; solution ; _ } ->
         solution
-    | exception Not_found -> Learnocaml_exercise.(access File.template exo) in
+    | exception Not_found -> Learnocaml_exercise.(access ~subid:sub_id false File.template exo) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -182,13 +197,13 @@ let () =
   let editor, ace = setup_editor id solution in
   is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access File.template exo));
+  EB.cleanup (Learnocaml_exercise.(access ~subid:sub_id false File.template exo));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude exo);
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
@@ -196,6 +211,57 @@ let () =
        d##open_;
        d##write (Js.string (exercise_text ex_meta exo));
        d##close) ;
+       
+  (* -------------------  Subexercise navigation -------- *)
+
+  let nav_available = match exo with
+    | Learnocaml_exercise.Exercise _ -> false
+    | Learnocaml_exercise.Subexercise _ -> true
+  in
+  (* Traitement du "sous-index" pour savoir si on peut naviguer *)
+  token >>= fun tok ->
+  retrieve (Learnocaml_api.Exercise_index tok) >>= fun (index,l) ->
+  let navigation_toolbar = find_component "learnocaml-exo-tab-navigation" in
+  let prev_and_next id =
+    let rec loop = function
+      | [] -> assert false
+      | [ _ ] (* assumes single id *) -> None, None
+      | (one, _) :: (two, _) :: _ when id = one -> None, Some two
+      | (one, _) :: (two, _) :: [] when id = two -> Some one, None
+      | (one, _) :: (two, _) :: (three, _) :: _ when id = two -> Some one, Some three
+      |  _ :: rest -> loop rest
+    in loop [id,1] in
+  let prev_button_state = button_state () in
+  let next_button_state = button_state () in
+  begin match prev_and_next id with
+      | None, None ->
+          disable_button prev_button_state ;
+          disable_button next_button_state
+      | Some _, None ->
+          enable_button prev_button_state ;
+          disable_button next_button_state
+      | None, Some _ ->
+          disable_button prev_button_state ;
+          enable_button next_button_state
+      | Some _, Some _ ->
+          enable_button prev_button_state ;
+          enable_button next_button_state
+  end ;
+  let subtitle_field = Tyxml_js.Html5.(h4 ~a: [a_class ["learnocaml-exo-subtitle"]]
+                                         [txt id]) in
+  let button_next = find_component "learnocaml-exo-button-next" in
+  let button_prev = find_component "learnocaml-exo-button-prev" in
+  Manip.appendChild ~before: button_next navigation_toolbar subtitle_field ;
+  if nav_available then
+    (Manip.SetCss.display button_next "";
+     Manip.SetCss.display button_prev "";
+    )
+  else
+    (Manip.SetCss.display button_next "none";
+     Manip.SetCss.display button_prev "none";
+     Manip.SetCss.width subtitle_field "100%";
+    );
+    
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
@@ -288,6 +354,11 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
+  if nav_available then 
+    begin toolbar_button
+            ~icon: "reload" [%i"AllGrade!"] @@ fun () ->
+                                               typecheck true
+    end;
   (* Small but cross-compatible hack (tested with Firefox-ESR, Chromium, Safari)
    * that reuses part of this commit:
    * https://github.com/pfitaxel/learn-ocaml/commit/15780b5b7c91689a26cfeaf33f3ed2cdb3a5e801

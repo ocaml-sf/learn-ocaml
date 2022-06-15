@@ -1,0 +1,36 @@
+{ "learnocaml_version": "1",
+  "meta": {
+    "learnocaml_version" : "2",
+    "kind"               : "problem",
+    "stars"              : 2,
+    "title"              : "Demo of a multi-part exercise",
+    "identifier"         : "demo-multi",
+    "authors"            : [["Someone", "someone@example.com"]],
+    "focus"              : ["skill1", "skillN", "concept1", "conceptM"],
+    "requirements"       : ["skill1", "skillN", "concept1", "conceptM"],
+    "forward_exercises"  : [ "exercise1", "exercise2"],
+    "backward_exercises" : [ "exercise1", "exercise2"],
+    "max_score" : 100
+  },
+  "check_all_against": "demoM-prof",
+  "parts": [
+      { "subtitle": "First test",
+        "subexercise": "demoM-exo1",
+        "student_hidden": false,
+        "student_weight": 1,
+        "teacher_weight": 0
+      },
+      { "subtitle": "Second test",
+        "subexercise": "demoM-exo2",
+        "student_hidden": false,
+        "student_weight": 1,
+        "teacher_weight": 0
+      },
+      { "subtitle": "Grading",
+        "subexercise": "demoM-prof",
+        "student_hidden": true,
+        "student_weight": 0,
+        "teacher_weight": 1
+      }
+  ]
+}

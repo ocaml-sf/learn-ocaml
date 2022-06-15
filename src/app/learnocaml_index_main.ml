@@ -80,64 +80,122 @@ let exercises_tab token _ _ () =
       match contents with
       | Exercise.Index.Exercises exercises ->
           List.fold_left
-            (fun acc (exercise_id, meta_opt) ->
-              match meta_opt with None -> acc | Some meta ->
-              let {Exercise.Meta.kind; title; short_description; stars; _ } =
-                meta
-              in
-              let pct_init =
-                match SMap.find exercise_id all_exercise_states with
-                | exception Not_found -> None
-                | { Answer.grade ; _ } -> grade in
-              let pct_signal, pct_signal_set = React.S.create pct_init in
-              Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
-                Some (function
-                    | Some { Answer.grade ; _ } -> pct_signal_set grade
-                    | None -> pct_signal_set None) ;
-              let pct_text_signal =
-                React.S.map
-                  (function
-                    | None -> "--"
-                    | Some 0 -> "0%"
-                    | Some pct -> string_of_int pct ^ "%")
-                  pct_signal in
-              let time_left = match List.assoc_opt exercise_id deadlines with
-                | None -> ""
-                | Some 0. -> [%i"Exercise closed"]
-                | Some f -> Printf.sprintf [%if"Time left: %s"]
-                              (string_of_seconds (int_of_float f))
-              in
-              let status_classes_signal =
-                React.S.map
-                  (function
-                    | None -> [ "stats" ]
-                    | Some 0 -> [ "stats" ; "failure" ]
-                    | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
-                    | Some _ -> [ "stats" ; "partial" ])
-                  pct_signal in
-              a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
-                     a_class [ "exercise" ] ] [
-                div ~a:[ a_class [ "descr" ] ] (
-                  h1 [ txt title ] ::
-                  begin match short_description with
-                    | None -> []
-                    | Some text -> [ txt text ]
-                  end
-                );
-                div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
-                div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
-                  stars_div stars;
-                  div ~a:[ a_class [ "length" ] ] [
-                    match kind with
-                    | Exercise.Meta.Project -> txt [%i"project"]
-                    | Exercise.Meta.Problem -> txt [%i"problem"]
-                    | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
-                  div ~a:[ a_class [ "score" ] ] [
-                    Tyxml_js.R.Html5.txt pct_text_signal
-                  ]
-                ] ] ::
-              acc)
-            acc exercises
+            (fun acc (exercise_id, meta_opt, subindex_opt) ->
+             match meta_opt,subindex_opt with
+             | None, None -> acc
+             | Some meta, _  ->
+                let {Exercise.Meta.kind; title; short_description; stars; _ } =
+                  meta
+                in
+                let pct_init =
+                  match SMap.find exercise_id all_exercise_states with
+                  | exception Not_found -> None
+                  | { Answer.grade ; _ } -> grade in
+                let pct_signal, pct_signal_set = React.S.create pct_init in
+                Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
+                  Some (function
+                      | Some { Answer.grade ; _ } -> pct_signal_set grade
+                      | None -> pct_signal_set None) ;
+                let pct_text_signal =
+                  React.S.map
+                    (function
+                     | None -> "--"
+                     | Some 0 -> "0%"
+                     | Some pct -> string_of_int pct ^ "%")
+                    pct_signal in
+                let time_left = match List.assoc_opt exercise_id deadlines with
+                  | None -> ""
+                  | Some 0. -> [%i"Exercise closed"]
+                  | Some f -> Printf.sprintf [%if"Time left: %s"]
+                                (string_of_seconds (int_of_float f))
+                in
+                let status_classes_signal =
+                  React.S.map
+                    (function
+                     | None -> [ "stats" ]
+                     | Some 0 -> [ "stats" ; "failure" ]
+                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
+                     | Some _ -> [ "stats" ; "partial" ])
+                    pct_signal in
+                a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
+                       a_class [ "exercise" ] ] [
+                    div ~a:[ a_class [ "descr" ] ] (
+                        h1 [ txt title ] ::
+                          begin match short_description with
+                          | None -> []
+                          | Some text -> [ txt text ]
+                          end
+                      );
+                    div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
+                    div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
+                        stars_div stars;
+                        div ~a:[ a_class [ "length" ] ] [
+                            match kind with
+                            | Exercise.Meta.Project -> txt [%i"project"]
+                            | Exercise.Meta.Problem -> txt [%i"problem"]
+                            | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
+                        div ~a:[ a_class [ "score" ] ] [
+                            Tyxml_js.R.Html5.txt pct_text_signal
+                          ]
+                  ] ] ::
+                  acc
+             | None, Some subindex ->
+                let {Exercise.Meta.kind; title; short_description; stars; _ } =
+                  Learnocaml_data.Exercise.Subindex.to_meta subindex
+                in
+                let pct_init =
+                  match SMap.find exercise_id all_exercise_states with
+                  | exception Not_found -> None
+                  | { Answer.grade ; _ } -> grade in
+                let pct_signal, pct_signal_set = React.S.create pct_init in
+                Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
+                  Some (function
+                      | Some { Answer.grade ; _ } -> pct_signal_set grade
+                      | None -> pct_signal_set None) ;
+                let pct_text_signal =
+                  React.S.map
+                    (function
+                     | None -> "--"
+                     | Some 0 -> "0%"
+                     | Some pct -> string_of_int pct ^ "%")
+                    pct_signal in
+                let time_left = match List.assoc_opt exercise_id deadlines with
+                  | None -> ""
+                  | Some 0. -> [%i"Exercise closed"]
+                  | Some f -> Printf.sprintf [%if"Time left: %s"]
+                                (string_of_seconds (int_of_float f))
+                in
+                let status_classes_signal =
+                  React.S.map
+                    (function
+                     | None -> [ "stats" ]
+                     | Some 0 -> [ "stats" ; "failure" ]
+                     | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
+                     | Some _ -> [ "stats" ; "partial" ])
+                    pct_signal in
+                a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
+                       a_class [ "exercise" ] ] [
+                    div ~a:[ a_class [ "descr" ] ] (
+                        h1 [ txt title ] ::
+                          begin match short_description with
+                          | None -> []
+                          | Some text -> [ txt text ]
+                          end
+                      );
+                    div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
+                    div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
+                        stars_div stars;
+                        div ~a:[ a_class [ "length" ] ] [
+                            match kind with
+                            | Exercise.Meta.Project -> txt [%i"project"]
+                            | Exercise.Meta.Problem -> txt [%i"problem"]
+                            | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
+                        div ~a:[ a_class [ "score" ] ] [
+                            Tyxml_js.R.Html5.txt pct_text_signal
+                          ]
+                  ] ] ::
+                  acc)
+           acc exercises
       | Exercise.Index.Groups groups ->
           let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
           List.fold_left

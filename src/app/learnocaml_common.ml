@@ -575,10 +575,10 @@ let exercise_text ex_meta exo =
   let descr =
     let lang = "" in
     try
-      List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+      List.assoc lang (Learnocaml_exercise.(access false File.descr exo))
     with
       Not_found ->
-        try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+        try List.assoc "" (Learnocaml_exercise.(access false File.descr exo))
         with Not_found -> [%i "No description available for this exercise." ]
   in
   Format.asprintf
@@ -1032,7 +1032,7 @@ let setup_tab_text_prelude_pane prelude =
   let open Tyxml_js.Html5 in
   let state =
     ref (match arg "tab_text_prelude" with
-         | exception Not_found -> true
+         | exception Not_found -> false
          | "shown" -> true
          | "hidden" -> false
          | _ -> failwith "Bad format for argument prelude.") in
@@ -1234,7 +1234,7 @@ module Display_exercise =
         else
           ignore (onclick cid);
         Manip.removeChildren exp;
-        Manip.appendChild exp (txt (if !displayed then "[-]" else "[+]"));
+        Manip.appendChild exp (txt (if !displayed then "[+]" else "[-]"));
         displayed := not !displayed;
         true
       in

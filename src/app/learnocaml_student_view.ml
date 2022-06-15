@@ -387,7 +387,7 @@ let display_report exo report =
   let report_button = El.Tabs.(report.btn) in
   restore_report_button ();
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
+    let max = Learnocaml_exercise.(access true File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
