@@ -303,7 +303,7 @@ module Exercise: sig
 
     val fold_exercises: ('a -> id -> Meta.t -> 'a) -> 'a -> t -> 'a
 
-    val filter: (id -> Meta.t -> bool) -> t -> t
+    val filter: (id -> Subindex.t option -> bool) -> t -> t
 
     (** CPS version of [map_exercises] *)
     val mapk_exercises:
@@ -312,7 +312,7 @@ module Exercise: sig
       (t -> 'a) -> 'a
 
     (** CPS version of [filter] *)
-    val filterk: (id -> Meta.t -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a
+    val filterk: (id -> Subindex.t option -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a
 
   end
 

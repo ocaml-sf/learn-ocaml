@@ -958,10 +958,11 @@ module Exercise = struct
       | Exercises l ->
           let rec aux acc = function
             | (id, Some ex, subindex) :: r ->
-                (f id ex @@ function
-                  | true -> aux ((id, Some ex, subindex) :: acc) r
+                aux ((id, Some ex, subindex ) :: acc) r
+            | (id, None, subindex) :: r ->
+                (f id subindex @@ function
+                  | true -> aux ((id, None, subindex ) :: acc) r
                   | false -> aux acc r)
-            | (_, None, _) :: r -> aux acc r
             | [] -> k (Exercises (List.rev acc))
           in
           aux [] l
