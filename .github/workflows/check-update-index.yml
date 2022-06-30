@@ -1,0 +1,32 @@
+name: check-update-index
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  check-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Execute the script
+        run: ./scripts/update-index.sh
+
+      - name: Check the diff
+        run: echo diff_output="$(git diff --name-only "$PWD/docs/index.md")" >> "$GITHUB_ENV"
+
+      - name: Warning
+        # if diff_output not null and master branch
+        if: env.diff_output != '' && github.ref_name == 'master'
+        run: "echo ::warning:: 'docs/index.md' outdated, please run 'scripts/update-index.sh'."
+
+      - name: Error
+        # if diff_output not null and not master branch
+        if: env.diff_output != '' && github.ref_name != 'master'
+        run: "echo ::error:: 'docs/index.md' outdated, please run 'scripts/update-index.sh' and commit.; exit 1"
