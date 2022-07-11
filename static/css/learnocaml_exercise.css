@@ -69,7 +69,34 @@ body {
     top: 61px;
   }
 }
+
+/* ------------------------- Navigation ----------------------------*/
+#learnocaml-exo-tab-navigation{
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    flex-direction: row ;
+    border-bottom: 1px black solid;
+    background: #ddd;
+    padding: 0px;
+    flex: 0 0 auto;
+    width: 100%;
+    height:60px;
+}
+#learnocaml-exo-tab-navigation > button {
+    width: 20%;
+}
+#learnocaml-exo-tab-navigation > h4 {
+    width: 60%;
+    text-align:center;
+}
+
 /* -------------------- tabs and tab buttons ---------------------- */
+#learnocaml-exo-tab {
+    top: 60px;
+    position: absolute;
+    height: 100px;
+}
 #learnocaml-exo-tab-buttons {
   position: absolute;
   z-index: 999;
@@ -126,8 +153,22 @@ body {
   #learnocaml-exo-button-editor {
     display: none;
   }
+  #learnocaml-exo-tab {
+      left: 800px; right: 0px; top: 0px;
+  }
+  #learnocaml-exo-tab-navigation{
+      height: 60px;
+      width: 100%;
+      border-bottom: 1px black solid;
+      position: absolute;
+      z-index: 3;
+      display: flex;
+      flex-direction: row;
+      background: #ddd;
+      padding: 0px;
+  }
   #learnocaml-exo-tab-buttons {
-    left: 800px; right: 0px; top: 0px;
+    left: 0px; right: 0px; top: 61px;
   }
   #learnocaml-exo-button-editor.front-tab ~ #learnocaml-exo-button-toplevel {
     border-bottom: none;
@@ -141,7 +182,7 @@ body {
     opacity: 1;
   }
   #learnocaml-exo-tabs > * {
-    left: 800px; top: 40px; right: 0px; bottom: 0px;
+    left: 800px; top: 101px; right: 0px; bottom: 0px;
   }
   #learnocaml-exo-tabs > #learnocaml-exo-tab-editor {
     width: 800px; left: 0; bottom: 0; top: 61px;
@@ -153,6 +194,9 @@ body {
 @media (max-width: 1199px) {
   #learnocaml-exo-toolbar {
     right: 0px;
+  }
+  #learnocaml-exo-tab{
+      width: 100%;
   }
   #learnocaml-exo-tab-buttons {
     left: 0; right: 0px;
@@ -175,19 +219,29 @@ body {
 }
 @media (min-width: 550px) and (max-width: 1199px) {
   #learnocaml-exo-tab-buttons {
-    top: 60px;
+    top: 61px;
   }
   #learnocaml-exo-tabs > * {
-    top: 100px;
+    top: 161px;
   }
 }
 @media (max-width: 549px) {
-  #learnocaml-exo-tab-buttons {
-    top: 40px;
-  }
-  #learnocaml-exo-tabs > * {
-    top: 80px;
-  }
+  #learnocaml-exo-tab {
+        top:40px;
+        height:80px;
+    }
+    #learnocaml-exo-tab-navigation {
+        height:40px;
+    }
+    #learnocaml-exo-tab-navigation > h4 {
+        align-self:center;
+    }
+    #learnocaml-exo-tab-buttons {
+        top: 41px;
+    }
+    #learnocaml-exo-tabs > * {
+        top: 120px;
+    }
 }
 
 /* -------------------- Prelude -------------------------------- */

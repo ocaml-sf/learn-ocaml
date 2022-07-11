@@ -74,6 +74,10 @@ body {
     flex-direction : column;
 }
 
+#learnocaml-exo-tab-text-iframe > iframe {
+    height : 100%;
+}
+
 /* -------------------- Prelude -------------------------------- */
 
 #learnocaml-exo-tab-text-prelude {

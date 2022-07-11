@@ -55,6 +55,7 @@ module Display = Display_exercise(Exercise_link)
 open Display
 
 let () =
+  print_string ("Test Show exo desc : 0 \n");
   run_async_with_log @@ fun () ->
     let id = match Url.Current.path with
       | "" :: "description" :: p | "description" :: p ->
@@ -71,14 +72,16 @@ let () =
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
          let exo = match ex with
-           | Learnocaml_exercise.Subexercise (ex,_) ->
-              (match ex with
-              | [] -> raise Not_found
-              | (ex1,_) :: _ -> Learnocaml_exercise.Exercise ex1)
-           | ex -> ex
+           | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
+           | Learnocaml_exercise.Subexercise ((exo, subex) :: _, _ ) -> 
+             if subex.Learnocaml_exercise.student_hidden = false then exo
+             else raise Not_found
+           | Learnocaml_exercise.Exercise exo -> exo
          in
+    	 let sub_id = exo.Learnocaml_exercise.id
+    	 in
          (* display exercise questions and prelude *)
-         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher false File.prelude exo);
+         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude (Learnocaml_exercise.Exercise exo));
          let prelude_container = find_component "learnocaml-exo-tab-text-prelude" in
          let iframe_container = find_component "learnocaml-exo-tab-text-iframe" in
          let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -95,7 +98,7 @@ let () =
            (fun () -> failwith "cannot edit iframe document")
            (fun d ->
              d##open_;
-             d##write (Js.string (exercise_text ex_meta exo));
+             d##write (Js.string (exercise_text ex_meta (Learnocaml_exercise.Exercise exo)));
              d##close) ;
          (* display meta *)
          display_meta (Some token) ex_meta id >>= fun () ->

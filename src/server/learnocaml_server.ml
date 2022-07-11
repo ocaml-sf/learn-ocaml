@@ -462,6 +462,7 @@ module Request_handler = struct
          lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Exercise (Some token, id) ->
+      	   print_string ("Server_multipart_0 : "^id^"\n");
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->

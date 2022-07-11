@@ -94,6 +94,7 @@ let make_readonly () =
         from now on will remain local only."]
 
 let () =
+  print_string ("Test Show exo find : 0 \n");
   run_async_with_log @@ fun () ->
   set_string_translations_exercises ();
   Learnocaml_local_storage.init ();
@@ -109,7 +110,7 @@ let () =
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
   let toplevel_button =
-    button ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
+    button ~container: toplevel_toolbar ~theme: "red" ~group:toplevel_buttons_group ?state:None in
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
@@ -124,9 +125,14 @@ let () =
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
     let ex = match exo with
-      | Learnocaml_exercise.Exercise ex -> ex
       | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
-      | Learnocaml_exercise.Subexercise ((ex, _) :: _ ,_) -> ex
+      | Learnocaml_exercise.Subexercise ((ex, subex) :: _, _ ) -> 
+        print_string ("Show exo_Multi find : \n");
+        if subex.Learnocaml_exercise.student_hidden = false then ex
+        else raise Not_found
+      | Learnocaml_exercise.Exercise ex ->
+        print_string ("Show exo_Simple find : \n");
+        ex
     in
     let sub_id = ex.Learnocaml_exercise.id
     in

@@ -65,7 +65,7 @@ let encoding =
         { sub_id ; student_hidden ; student_weight ; teacher_weight })
       (obj4
          (req "id" string)
-         (req "student_hidden" bool)
+         (dft "student_hidden" bool false)
          (req "student_weight" int)
          (req "teacher_weight" int))
   in

@@ -455,6 +455,7 @@ let update_tabs meta exo ans =
       update_answer_tab ans.Answer.solution
 
 let () =
+  print_string ("Test Show exo stV :  \n");
   run_async_with_log @@ fun () ->
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)

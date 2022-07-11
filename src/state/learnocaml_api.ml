@@ -334,7 +334,7 @@ module Conversions (Json: JSON_CODEC) = struct
     | Exercise_index None ->
        get ["exercise-index.json"]
 
-    | Exercise (Some token, id) ->
+    | Exercise (Some token, id) -> print_string ("Api_multipart_2_ : \n");
        get ~token ("exercises" :: String.split_on_char '/' (id^".json"))
     | Exercise (None, id) ->
        get ("exercises" :: String.split_on_char '/' (id^".json"))
@@ -456,16 +456,22 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["exercise-index.json"], token ->
          Exercise_index token |> k
       | `GET, ("exercises"::path), token ->
+      	   (* write code that processes the folder of multipart *)
+      	   print_string ("Api_multipart_0 : \n");
           (match last path with
            | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
                (match token with
                 | Some token ->
                     let id = Filename.chop_suffix (String.concat "/" path) ".json" in
+                    print_string ("Api_multipart_2 : "^id^"\n");
                     Exercise (Some token, id) |> k
                 | None -> Invalid_request "Missing token" |> k)
            | Some "" ->
+           	(* build link json & token *)
+           	print_string ("Api_multipart_1_0 : \n");
                Static ["exercise.html"] |> k
            | _ ->
+           	print_string ("Api_multipart_1_1 : \n");
               Static ("static"::path) |> k)
       | `GET, ("description"::_), _token ->
          (* match token with
