@@ -559,7 +559,6 @@ module Exercise = struct
           to_subindex meta check_all_against parts)
         (enc_check_version_1 (exercise_enc))
 
-
     let find t id =
       let rec aux = function
         | [] -> raise Not_found
