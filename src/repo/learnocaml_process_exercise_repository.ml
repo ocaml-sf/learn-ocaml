@@ -59,7 +59,7 @@ let print_grader_error exercise = function
 
 let spawn_grader
     dump_outputs dump_reports
-    ?print_result ?dirname meta exercise output_json =
+    ?print_result ?dirname meta exercise output_json (*TODO: double-check*)=
   let rec sleep () =
     if !n_processes <= 0 then
       Lwt_main.yield () >>= sleep
@@ -77,7 +77,7 @@ let spawn_grader
       Lwt_main.run
         (Lwt.catch (fun () ->
              (match exercise with
-              | Learnocaml_exercise.Subexercise (exs, _check_all_against) ->
+              | Learnocaml_exercise.Subexercise (exs) ->
                  (* match check_all_against with
                  | Some id ->
                     let exo = // Ici : trouver l'exercice du CAA
@@ -204,11 +204,6 @@ let main dest_dir =
 		       (from_file (Subindex.enc)
                          (!exercises_dir / id / "subindex.json")
                        >>= fun meta ->
-                       let check_all_against =
-                         match Exercise.Subindex.to_check meta with
-                         | Some check -> Some (!exercises_dir / id / check)
-                         | _ -> None
-                       in
                        let subexercise_list = Exercise.Subindex.to_part meta
                        in
                        let rec aux = function
@@ -236,7 +231,7 @@ let main dest_dir =
                            ([]) (List.rev listing)
                        in subexercises >|= fun exercise ->
                        SMap.add id
-                         (Learnocaml_exercise.Subexercise (exercise, check_all_against)) all_exercises,
+                         (Learnocaml_exercise.Subexercise (exercise)) all_exercises,
                        (id, None, Some meta) :: acc)
                     else
                       (from_file (Meta.enc)
@@ -285,7 +280,7 @@ let main dest_dir =
                   | Some dir -> Some (dir / id) in
                 (id, exercise_dir, exercise, json_path,
                  changed, dump_outputs, dump_reports) :: acc
-             | Learnocaml_exercise.Subexercise (ex,_) ->
+             | Learnocaml_exercise.Subexercise (ex) ->
                 print_string ("Add file in multipart folder : \n");
 
                 print_string ("multipartFile id : "^id^"\n");
@@ -377,12 +372,10 @@ let main dest_dir =
                Grader_cli.dump_outputs := dump_outputs;
                Grader_cli.dump_reports := dump_reports;
                (match exercise with
-              | Learnocaml_exercise.Subexercise (exs,check_all_against) ->
-                 (match check_all_against with
-                  | Some _ ->
+              | Learnocaml_exercise.Subexercise (exs) ->
                       Lwt_list.map_p
                         (fun (exo,_) ->
-                          Grader_cli.grade ~check:check_all_against ?print_result ?dirname meta
+                          Grader_cli.grade ?print_result ?dirname meta
                             (Learnocaml_exercise.Exercise exo) json_path)
                         exs
                       >>= fun check_all_against_result ->
@@ -392,11 +385,6 @@ let main dest_dir =
                          exs)
                       >>=  fun normal_result ->
                       Lwt.return @@ List.append check_all_against_result normal_result
-                 | None ->
-                      Lwt_list.map_p
-                   (fun (exo,_) -> Grader_cli.grade ?print_result ?dirname meta
-                                 (Learnocaml_exercise.Exercise exo) json_path)
-                   exs)
               | exo -> Lwt_list.map_p
                          (fun exo -> Grader_cli.grade ?print_result ?dirname meta
                                        exo json_path)
@@ -426,8 +414,9 @@ let main dest_dir =
                  Format.printf "%-24s (no changes)@." id ;
                  Lwt.return true
                end else begin
+                   let meta = Index.find index id in
                  grade dump_outputs dump_reports
-                   ~dirname:(!exercises_dir / id) (Index.find index id) exercise (Some json_path)
+                   ~dirname:(!exercises_dir / id) meta exercise (Some json_path)
                  >>= function
                  | Ok () :: _ (* à changer *) ->
                     Format.printf "%-24s     [OK]@." id ;

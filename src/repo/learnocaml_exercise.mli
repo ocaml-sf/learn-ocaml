@@ -36,7 +36,7 @@ type exercise = {
   }
 
 type t =
-  |Subexercise of ((exercise * subexercise) list * check_all_against )
+  |Subexercise of (exercise * subexercise) list 
   | Exercise of exercise
 
 (* JSON encoding of the exercise representation. Includes cipher and decipher at

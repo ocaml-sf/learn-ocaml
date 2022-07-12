@@ -72,8 +72,8 @@ let () =
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
          let exo = match ex with
-           | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
-           | Learnocaml_exercise.Subexercise ((exo, subex) :: _, _ ) -> 
+           | Learnocaml_exercise.Subexercise ([])  -> raise Not_found
+           | Learnocaml_exercise.Subexercise ((exo, subex) :: _ ) -> 
              if subex.Learnocaml_exercise.student_hidden = false then exo
              else raise Not_found
            | Learnocaml_exercise.Exercise exo -> exo

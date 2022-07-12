@@ -125,8 +125,8 @@ let () =
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
     let ex = match exo with
-      | Learnocaml_exercise.Subexercise ([], _ )  -> raise Not_found
-      | Learnocaml_exercise.Subexercise ((ex, subex) :: _, _ ) -> 
+      | Learnocaml_exercise.Subexercise ([])  -> raise Not_found
+      | Learnocaml_exercise.Subexercise ((ex, subex) :: _) -> 
         print_string ("Show exo_Multi find : \n");
         if subex.Learnocaml_exercise.student_hidden = false then ex
         else raise Not_found
@@ -159,7 +159,7 @@ let () =
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
   let sub_id =
     match exo with
-    | Learnocaml_exercise.Subexercise (exs,_) ->
+    | Learnocaml_exercise.Subexercise (exs) ->
        (match exs with
        | [] -> ""
        | (ex,_subex) :: _ -> ex.Learnocaml_exercise.id)

@@ -180,7 +180,7 @@ let log conn api_req =
 
 let check_report exo report grade =
   let max_grade = match exo with
-    | Learnocaml_exercise.Subexercise (subexs,_) ->
+    | Learnocaml_exercise.Subexercise (subexs) ->
        let rec aux acc = function
          | [] -> 0
          | (ex,subex) :: l ->

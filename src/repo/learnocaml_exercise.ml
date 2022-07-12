@@ -34,7 +34,7 @@ type exercise =
   }
 
 type t =
-  | Subexercise of ((exercise * subexercise) list * check_all_against )
+  | Subexercise of (exercise * subexercise) list
   | Exercise of exercise
 
 let encoding =
@@ -71,7 +71,7 @@ let encoding =
   in
   let subexercise_enc =
       obj1
-      (req "subexercise" (tup2 (list (tup2 exercise_enc sub_enc)) (obj1 (opt "check_all_against" string))))
+      (req "subexercise" (list (tup2 exercise_enc sub_enc)))
   in
   union
     [case
@@ -418,7 +418,7 @@ end
 let access ?(subid="") _is_Student f ex  =
   match ex with
   | Exercise exo -> f.File.field exo
-  | Subexercise (subexos,_) ->
+  | Subexercise (subexos) ->
      f.File.field @@
        (fun (ex,_) -> ex) @@
          List.find
@@ -428,7 +428,7 @@ let access ?(subid="") _is_Student f ex  =
 let decipher ?(subid="") _is_Student f ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (subexos,_) ->
+    | Subexercise (subexos) ->
        (fun (ex,_) -> ex) @@
          List.find
            (fun (ex,_subex) ->  ex.id = subid)
@@ -446,7 +446,7 @@ let decipher ?(subid="") _is_Student f ex =
 let update ?(subid="") f v ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (subexos, _) -> (fun (ex,_) -> ex) @@
+    | Subexercise (subexos) -> (fun (ex,_) -> ex) @@
                                     List.find (fun (ex,_) -> ex.id = subid) subexos
   in
   f.File.update v exo
@@ -454,7 +454,7 @@ let update ?(subid="") f v ex =
 let cipher ?(subid="") f v ex =
   let exo = match ex with
     | Exercise exo -> exo
-    | Subexercise (subexos, _) -> (fun (ex,_) -> ex) @@
+    | Subexercise (subexos) -> (fun (ex,_) -> ex) @@
                                    List.find (fun (ex, _) -> ex.id = subid) subexos
   in
   let open File in
