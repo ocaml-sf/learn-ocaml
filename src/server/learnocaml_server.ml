@@ -465,11 +465,14 @@ module Request_handler = struct
       	   print_string ("Server_multipart_0 : "^id^"\n");
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
+             lwt_catch_fail (fun () ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
               respond_json cache
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
+           )
+           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
           | `Closed ->
              lwt_fail (`Forbidden, "Exercise closed"))
       | Api.Exercise (None, _) ->
