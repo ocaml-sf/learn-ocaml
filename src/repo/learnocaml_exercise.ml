@@ -70,23 +70,39 @@ let encoding =
          (req "teacher_weight" int))
   in
   let subexercise_enc =
-      obj1
-      (req "subexercise" (list (tup2 exercise_enc sub_enc)))
+    (* 
+    (* pas mal *)
+       obj1
+     (req "parts" (list (tup2 exercise_enc sub_enc)))
+     *)
+
+    (*
+    (* mieux ? *)
+    (list (tup2 exercise_enc sub_enc))
+     *)
+
+    (* actuellement *)
+    obj1
+      (req "parts"
+         (list (obj2
+                  (req "exercise" exercise_enc)
+                  (req "subexercise" sub_enc))))
+
   in
   union
     [case
        exercise_enc
        (function
-        |Exercise map -> Some map
+        | Exercise ex -> Some ex
         |_ -> None)
-     (fun map -> Exercise map );
+       (fun ex -> Exercise ex);
      case
        subexercise_enc
        (function
-        | Subexercise map -> Some map
+        | Subexercise subex -> Some subex
         | _ -> None)
-     (fun map -> Subexercise map)
-       ]
+       (fun subex -> Subexercise subex)
+    ]
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
