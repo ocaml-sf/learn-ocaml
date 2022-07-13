@@ -302,7 +302,7 @@ let main dest_dir =
                 Printf.fprintf mutipart_file "    \"focus\": [\"skill1\", \"skillN\", \"concept1\", \"conceptM\"], \n";
                 Printf.fprintf mutipart_file "    \"requirements\": [\"skill1\", \"skillN\", \"concept1\", \"conceptM\"], \n";
                 Printf.fprintf mutipart_file "    \"forward_exercises\": [\"exercise1\", \"exercise2\"], \n";
-                Printf.fprintf mutipart_file "    \"backward_exercises\": [\"exercise1\", \"exercise2\"], \n";
+                Printf.fprintf mutipart_file "    \"backward_exercises\": [\"exercise1\", \"exercise2\"] \n";
                 Printf.fprintf mutipart_file "  },\n";
                 Printf.fprintf mutipart_file "  {\n";
                 Printf.fprintf mutipart_file "    \"parts\": [\n";
@@ -325,7 +325,9 @@ let main dest_dir =
 	      Printf.fprintf mutipart_file "      },\n";
 	      Printf.fprintf mutipart_file "      \"subexercise\": {\n"; 
 	      Printf.fprintf mutipart_file "        \"subtitle\": \"First test\",\n";
+	      Printf.fprintf mutipart_file "        \"student_hidden\": false,\n";
 		Printf.fprintf mutipart_file "        \"student_weight\": 1,\n";
+		Printf.fprintf mutipart_file "        \"teacher_weight\": 0\n";
       		 Printf.fprintf mutipart_file "      }\n";
       		 Printf.fprintf mutipart_file "    }\n";
                 Printf.fprintf mutipart_file "    ]\n";
