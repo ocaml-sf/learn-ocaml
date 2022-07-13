@@ -472,7 +472,7 @@ module Request_handler = struct
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
            )
-           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+           (fun exn -> (`Not_found, Printexc.to_string exn))
           | `Closed ->
              lwt_fail (`Forbidden, "Exercise closed"))
       | Api.Exercise (None, _) ->
