@@ -280,17 +280,16 @@ let main dest_dir =
                   | Some dir -> Some (dir / id) in
                 (id, exercise_dir, exercise, json_path,
                  changed, dump_outputs, dump_reports) :: acc
-             | Learnocaml_exercise.Subexercise (ex) ->
-                print_string ("Add file in multipart folder : \n");
+             | Learnocaml_exercise.Subexercise (multi_ex) ->
 
                 print_string ("multipartFile id : "^id^"\n");
                 let exercise_dir = !exercises_dir / id in
                 print_string ("multipartFile exercise_dir : "^exercise_dir^"\n");
                 let json_path = dest_dir / Learnocaml_index.exercise_path (id) in
                 print_string ("multipartFile json_path : "^json_path^"\n");
-
-
-                let mutipart_file = open_out json_path in
+		
+		
+		let mutipart_file = open_out json_path in
                 Printf.fprintf mutipart_file "[\n";
                 Printf.fprintf mutipart_file "  {\n";
                 Printf.fprintf mutipart_file "    \"learnocaml_version\": \"2\", \n";
@@ -304,18 +303,12 @@ let main dest_dir =
                 Printf.fprintf mutipart_file "    \"forward_exercises\": [\"exercise1\", \"exercise2\"], \n";
                 Printf.fprintf mutipart_file "    \"backward_exercises\": [\"exercise1\", \"exercise2\"] \n";
                 Printf.fprintf mutipart_file "  },\n";
-                Printf.fprintf mutipart_file "  {\n";
-                Printf.fprintf mutipart_file "    \"parts\": [\n";
-                Printf.fprintf mutipart_file "    { \"exercise\": {\n";
-	        Printf.fprintf mutipart_file "        \"id\": \"demoM-exo2\",\n";
+                Printf.fprintf mutipart_file "  [\n";
+                Printf.fprintf mutipart_file "    [ {\n";
+	        Printf.fprintf mutipart_file "        \"id\": \"demoM-exo1\",\n";
 	        Printf.fprintf mutipart_file "        \"prelude\": \"(* Some code is loaded in the toplevel before your code. *) let greetings = 'Hello world!'\",\n";
 	        Printf.fprintf mutipart_file "        \"template\": \"let plus x y = x + y ;;let minus x y = y - x ;;let times x y = x *\",\n";
-	        Printf.fprintf mutipart_file "        \"descr\": [
-	      [
-		\"\",
-		\"<p>The following example link will open another tab/window: <a href='https://ocaml.org' target='_blank' rel='noopener noreferrer' title='External link'>OCaml</a><br/>This exercise is just another demo for the exercise environment.<br/><a onclick='top.location='/exercises/demo/';' href=''>Test</a></p><details>    <summary>Hint</summary>Use an indirection.</details>\"
-	      ]
-	    ],\n";
+	        Printf.fprintf mutipart_file "        \"descr\": [\n[\n\"\",\n\"<p>The following example link will open another tab/window: <a href='https://ocaml.org' target='_blank' rel='noopener noreferrer' title='External link'>OCaml</a><br/>This exercise is just another demo for the exercise environment.<br/><a onclick='top.location='/exercises/demo/';' href=''>Test</a></p><details>    <summary>Hint</summary>Use an indirection.</details>\"\n]\n],\n";
 	      Printf.fprintf mutipart_file "        \"prepare\": \"\",\n";
 	      Printf.fprintf mutipart_file "        \"test\": \"jT9WIhcfkeK1Ged6sS7qoSYPTTgUSVZLPTxeWVXsfMAnr/pXVWCIG71HabyruvcloFTlVWNnvaHkIIwQeGLDgmkkS6Q6WhZIouAf9tVTMPIRLwUJ/PkRsDVVGdZx9SLaQO74qxQGW4LfNDqTTmFIdxrIdAPZXoWup65CnwaHriOM+kNj8ji2wYk9dT7eVeOXYmoBZ6EZGR/wEBFBV3vdsiiqDihBKZQRDGuSe4vfvzfXYOttLDfacr5Q/mr7Kg3bQ8YCUWJu5kaQcGXsmUhpdyoQ/Q+PgkGoI/V4/6+RXhRCng+x5lldqNAlOcNPMU8f7h7MVhlLBKC9V9nBjYLlLgcwSGjHHhLsnGy73PhCyZo8Wz2MER9Z+7oTRVo4cdLIOewBPVVxxFdHP4Xhq4zF2YwipDYtPPC5xUTZ1rkqlugA3lt4NlOECaThV3jEAGTn1UeBCwLyLqwwGkWMCcgtbkL9zevRB/8q6EsxyAN9HLOaovgG5QtVv+RNTIzp7fB9/yNTJMF+9rmWZLxzxpLs7jMIAo5RZB90JF/4QEOept5er9EcVWD0Xp6hw0jobaIwoCbU2i2bfvbmVs9Kx7OHt9IyE/670YdL9sgaeYQAFe1nGspA8g/RqDoVFs6Kf7LpB1OOa2IwQaKTYHK1ASsKbrrIgpyFT6WudAQBmJ7McEC+QkNs8pfSh15ps8r84+0ALQIZBVgXZ5tWUVZUW43eyETwDyEANJIQPVKsuLiehnDENJQEZ7+mxus49FajKgv5QycMBWI2zAqAr7qsbQBzw85DlBmDzVGdPFUWjEKRIqcA9dqolFp4qMtlMdFDMVmmdJOETwIHF0zsTTGAngX3PZZwUoeKT1+x6nuZ+P1ChJV8STZMZVoBTW9S2lB3bunB2PR0PkVejmpdPO7tqebv2xkplXk8Db+IxVaZE+Iu/bxHZVYrJEXISNjcMKPeE6rmN5a1AZLyLrcmGUOMCcgtu9C0jqiQTo+dlEdb6oYoUqvgosBG8BUVhOxZTITV8ukmpz9r0YkKje3BILZviQL5/WNBTUpRGWIZYQEDGRCsh155r99tRjm0SywhsvnkfOd5kDjUAzwn/h5=\",\n";
 	      Printf.fprintf mutipart_file "        \"solution\": \"Y7CQUrhd9YADDxe6HYraL7YVTR6YVFoK+QlRHRCmfMERc5RwVSjSESYuu0GcdbMsoDjbMnYzfr0xCZBVgnrKq9xjDVFuO5==\",\n";
@@ -323,30 +316,20 @@ let main dest_dir =
 	      Printf.fprintf mutipart_file "        \"depend\": null,\n";
 	      Printf.fprintf mutipart_file "        \"dependencies\": []\n";
 	      Printf.fprintf mutipart_file "      },\n";
-	      Printf.fprintf mutipart_file "      \"subexercise\": {\n"; 
-	      Printf.fprintf mutipart_file "        \"subtitle\": \"First test\",\n";
+	      Printf.fprintf mutipart_file "      {\n"; 
+	      Printf.fprintf mutipart_file "        \"sub_id\": \"demoM-exo1\",\n";
 	      Printf.fprintf mutipart_file "        \"student_hidden\": false,\n";
 		Printf.fprintf mutipart_file "        \"student_weight\": 1,\n";
 		Printf.fprintf mutipart_file "        \"teacher_weight\": 0\n";
       		 Printf.fprintf mutipart_file "      }\n";
-      		 Printf.fprintf mutipart_file "    }\n";
-                Printf.fprintf mutipart_file "    ]\n";
-                Printf.fprintf mutipart_file "  },\n";
+      		 Printf.fprintf mutipart_file "    ]\n";
+                Printf.fprintf mutipart_file "    ],\n";
                 Printf.fprintf mutipart_file "  null\n";
                 Printf.fprintf mutipart_file "]\n";
   		 close_out mutipart_file;
-  		 
-                
-                List.append (List.rev @@ List.fold_right
-                    (fun (exo,_) acc ->
-                      let sub_id = exo.Learnocaml_exercise.id in
-                      (*print_string ("TEST sub_id : "^sub_id^"\n");
-                      print_string ("TEST id : "^id^"\n");*)
-                      let exercise_dir = !exercises_dir / id / sub_id in
-                      (*print_string ("TEST exercise_dir : "^exercise_dir^"\n");*)
-                      let json_path = dest_dir / Learnocaml_index.exercise_path (id / sub_id) in
-                      (*print_string ("TEST json_path : "^json_path^"\n");*)
-                      let changed = try
+		
+        
+                 let changed = try
                           let { Unix.st_mtime = json_time ; _ } = Unix.stat json_path in
                           Sys.readdir exercise_dir |>
                             Array.to_list |>
@@ -356,14 +339,15 @@ let main dest_dir =
                       let dump_outputs =
                         match !dump_outputs with
                         | None -> None
-                        | Some dir -> print_string("test1 "^dir^"\n"); Some (dir / id ) in
+                        | Some dir -> Some (dir / id ) in
                       let dump_reports =
                         match !dump_reports with
                         | None -> None
-                        | Some dir -> print_string("test2 "^dir^"\n"); Some (dir / id ) in
-                      (id, exercise_dir, exercise, json_path,
-                       changed, dump_outputs, dump_reports) :: acc)
-                        ex [])  acc)
+                        | Some dir -> Some (dir / id ) in
+                      (id, exercise_dir, Learnocaml_exercise.Subexercise (multi_ex), json_path,
+                       changed, dump_outputs, dump_reports) :: acc
+                       
+                )
            all_exercises [] in
        begin
          let listmap, grade =
@@ -417,16 +401,17 @@ let main dest_dir =
                  Lwt.return true
                end else begin
                    let meta = Index.find index id in
-                 grade dump_outputs dump_reports
-                   ~dirname:(!exercises_dir / id) meta exercise (Some json_path)
-                 >>= function
-                 | Ok () :: _ (* à changer *) ->
-                    Format.printf "%-24s     [OK]@." id ;
-                    Lwt.return true
-                 | Error _ :: _->
-                    Format.printf "%-24s   [FAILED]@." id ;
-                    Lwt.return false
-                 | [] -> Lwt.return false
+                   (*maybe test if is multi_part exercise or not*)
+		         grade dump_outputs dump_reports
+		           ~dirname:(!exercises_dir / id) meta exercise (Some json_path)
+		         >>= function
+		         | Ok () :: _ (* à changer *) ->
+		            Format.printf "%-24s     [OK]@." id ;
+		            Lwt.return true
+		         | Error _ :: _->
+		            Format.printf "%-24s   [FAILED]@." id ;
+		            Lwt.return false
+		         | [] -> Lwt.return false
                end)
              processes_arguments
        end >>= fun results ->

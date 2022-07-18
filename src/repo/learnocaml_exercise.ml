@@ -64,7 +64,7 @@ let encoding =
       (fun (sub_id, student_hidden, student_weight, teacher_weight) ->
         { sub_id ; student_hidden ; student_weight ; teacher_weight })
       (obj4
-         (req "id" string)
+         (req "sub_id" string)
          (dft "student_hidden" bool false)
          (req "student_weight" int)
          (req "teacher_weight" int))
@@ -76,18 +76,17 @@ let encoding =
      (req "parts" (list (tup2 exercise_enc sub_enc)))
      *)
 
-    (*
     (* mieux ? *)
     (list (tup2 exercise_enc sub_enc))
-     *)
-
+    
+    (*
     (* actuellement *)
     obj1
       (req "parts"
          (list (obj2
                   (req "exercise" exercise_enc)
                   (req "subexercise" sub_enc))))
-
+      *)
   in
   union
     [case
