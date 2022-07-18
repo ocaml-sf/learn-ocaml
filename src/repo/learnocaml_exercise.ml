@@ -34,8 +34,8 @@ type exercise =
   }
 
 type t =
-  | Subexercise of (exercise * subexercise) list
   | Exercise of exercise
+  | Subexercise of (exercise * subexercise) list
 
 let encoding =
   let open Json_encoding in

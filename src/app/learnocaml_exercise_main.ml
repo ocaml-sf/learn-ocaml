@@ -87,6 +87,63 @@ open Display
 
 let is_readonly = ref false
 
+type state_multipart =
+  Monopart
+| Multipart of int * int (* numero du sous-exo, valeur max *)
+
+let state_multipart = ref Monopart
+
+(* XXX cette fonction est exécutée à chaque fois qu'un exercice
+   (monopart ou multi-part) est récupéré du serveur, pour initialiser
+   l'état stockant le numéro du sous-exercice.
+   Si l'état actuel spécifie un numéro déjà valide (1 <= _ <= new_max)
+   alors celui-ci est préservé,
+   Sinon on prend (min num_prec new_max),
+   ou alors 0 si le num_prec n'existe pas.
+   Mais dans tous les cas, on ne lève pas d'erreur si possible. *)
+let init_state_multipart exo =
+  let inival =
+    match exo, !state_multipart with
+    | Learnocaml_exercise.Exercise(_ex), _state -> Monopart
+    | Learnocaml_exercise.Subexercise(l), Monopart ->
+       let size = List.length l in
+       if size < 1 then raise Not_found (* TODO other exception *)
+       else Multipart(1, size)
+    | Learnocaml_exercise.Subexercise(l), Multipart(num_prec, _) ->
+       let size = List.length l in
+       if size < 1 then raise Not_found (* TODO other exception *)
+       else Multipart(min num_prec size, size)
+  in state_multipart := inival
+
+let get_current_part exo =
+  match exo, !state_multipart with
+  | Learnocaml_exercise.Exercise ex, Monopart -> ex
+  | Learnocaml_exercise.Subexercise l, Multipart (n, _nmax) ->
+     (match List.nth_opt l n with
+      | Some(ex, subex) ->
+         if subex.Learnocaml_exercise.student_hidden
+         then raise Not_found
+         else ex
+      | None -> raise Not_found (* TODO Array out of bounds *)
+     )
+  | _ -> raise Not_found (* TODO other exception? *)
+
+let next () =
+  let newval = match !state_multipart with
+    | Monopart -> raise Not_found (* TODO other exception *)
+    | Multipart (n, nmax) ->
+       if n < nmax then Multipart(n + 1, nmax)
+       else raise Not_found (* TODO Array out of bounds *)
+  in state_multipart := newval
+
+let prev () =
+  let newval = match !state_multipart with
+    | Monopart -> raise Not_found (* TODO other exception *)
+    | Multipart (n, nmax) ->
+       if n > 1 then Multipart(n - 1, nmax)
+       else raise Not_found (* TODO Array out of bounds *)
+  in state_multipart := newval
+
 let make_readonly () =
   is_readonly := true;
   alert ~title:[%i"TIME'S UP"]
@@ -124,19 +181,9 @@ let () =
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    let ex = match exo with
-      | Learnocaml_exercise.Subexercise ([])  -> raise Not_found
-      | Learnocaml_exercise.Subexercise ((ex, subex) :: _) -> 
-        print_string ("Show exo_Multi find : \n");
-        if subex.Learnocaml_exercise.student_hidden = false then ex
-        else raise Not_found
-      | Learnocaml_exercise.Exercise ex ->
-        print_string ("Show exo_Simple find : \n");
-        ex
-    in
-    let sub_id = ex.Learnocaml_exercise.id
-    in
-    begin match Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude (Learnocaml_exercise.Exercise ex)) with
+    init_state_multipart exo ;
+    let ex = get_current_part exo in
+    begin match Learnocaml_exercise.(decipher ~subid:"TODO" false File.prelude (Learnocaml_exercise.Exercise ex)) with
       | "" -> Lwt.return true
       | prelude ->
           Learnocaml_toplevel.load ~print_outcome:true top
@@ -144,7 +191,7 @@ let () =
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher ~subid:sub_id false File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
+      (Learnocaml_exercise.(decipher ~subid:"TODO" false File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -157,14 +204,8 @@ let () =
   set_nickname_div ();
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
-  let sub_id =
-    match exo with
-    | Learnocaml_exercise.Subexercise (exs) ->
-       (match exs with
-       | [] -> ""
-       | (ex,_subex) :: _ -> ex.Learnocaml_exercise.id)
-    | _ -> ""
-  in
+  init_state_multipart exo;
+  let exo = get_current_part exo in
   (match deadline with
    | None -> ()
    | Some 0. -> make_readonly ()
@@ -179,7 +220,7 @@ let () =
         solution
     | { Answer.report = None ; solution ; _ } ->
         solution
-    | exception Not_found -> Learnocaml_exercise.(access ~subid:sub_id false File.template exo) in
+    | exception Not_found -> Learnocaml_exercise.(access ~subid:"TODO" false File.template exo) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -203,13 +244,13 @@ let () =
   let editor, ace = setup_editor id solution in
   is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access ~subid:sub_id false File.template exo));
+  EB.cleanup (Learnocaml_exercise.(access ~subid:"TODO" false File.template exo));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:"TODO" false File.prelude exo);
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
@@ -228,6 +269,7 @@ let () =
   token >>= fun tok ->
   retrieve (Learnocaml_api.Exercise_index tok) >>= fun (index,l) ->
   let navigation_toolbar = find_component "learnocaml-exo-tab-navigation" in
+  (* TODO check/update, using prev() and next() *)
   let prev_and_next id =
     let rec loop = function
       | [] -> assert false
