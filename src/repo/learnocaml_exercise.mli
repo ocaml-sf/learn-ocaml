@@ -36,8 +36,8 @@ type exercise = {
   }
 
 type t =
-  |Subexercise of (exercise * subexercise) list 
   | Exercise of exercise
+  | Subexercise of (exercise * subexercise) list 
 
 (* JSON encoding of the exercise representation. Includes cipher and decipher at
    at encoding and decoding. *)

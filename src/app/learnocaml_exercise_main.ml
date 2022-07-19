@@ -205,7 +205,7 @@ let () =
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
   init_state_multipart exo;
-  let exo = get_current_part exo in
+  let ex = get_current_part exo in
   (match deadline with
    | None -> ()
    | Some 0. -> make_readonly ()
