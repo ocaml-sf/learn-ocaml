@@ -93,6 +93,12 @@ type state_multipart =
 
 let state_multipart = ref Monopart
 
+exception Multipart_missing_exercise
+exception Multipart_student_hidden
+exception Multipart_state_outofbounds
+exception Multipart_state_invalid
+exception Multipart_forbidden_navigation
+
 (* XXX cette fonction est exécutée à chaque fois qu'un exercice
    (monopart ou multi-part) est récupéré du serveur, pour initialiser
    l'état stockant le numéro du sous-exercice.
@@ -107,11 +113,11 @@ let init_state_multipart exo =
     | Learnocaml_exercise.Exercise(_ex), _state -> Monopart
     | Learnocaml_exercise.Subexercise(l), Monopart ->
        let size = List.length l in
-       if size < 1 then raise Not_found (* TODO other exception *)
+       if size < 1 then raise Multipart_missing_exercise
        else Multipart(1, size)
     | Learnocaml_exercise.Subexercise(l), Multipart(num_prec, _) ->
        let size = List.length l in
-       if size < 1 then raise Not_found (* TODO other exception *)
+       if size < 1 then raise Multipart_missing_exercise
        else Multipart(min num_prec size, size)
   in state_multipart := inival
 
@@ -119,29 +125,29 @@ let get_current_part exo =
   match exo, !state_multipart with
   | Learnocaml_exercise.Exercise ex, Monopart -> ex
   | Learnocaml_exercise.Subexercise l, Multipart (n, _nmax) ->
-     (match List.nth_opt l n with
+     (match List.nth_opt l (n - 1) with
       | Some(ex, subex) ->
          if subex.Learnocaml_exercise.student_hidden
-         then raise Not_found
+         then raise Multipart_student_hidden
          else ex
-      | None -> raise Not_found (* TODO Array out of bounds *)
+      | None -> raise Multipart_state_outofbounds
      )
-  | _ -> raise Not_found (* TODO other exception? *)
+  | _ -> raise Multipart_state_invalid
 
-let next () =
+let next () = print_endline("Btn_next");
   let newval = match !state_multipart with
-    | Monopart -> raise Not_found (* TODO other exception *)
+    | Monopart -> raise Multipart_forbidden_navigation
     | Multipart (n, nmax) ->
        if n < nmax then Multipart(n + 1, nmax)
-       else raise Not_found (* TODO Array out of bounds *)
+       else raise Multipart_forbidden_navigation
   in state_multipart := newval
 
-let prev () =
+let prev () = print_endline("Btn_prev");
   let newval = match !state_multipart with
-    | Monopart -> raise Not_found (* TODO other exception *)
+    | Monopart -> raise Multipart_forbidden_navigation
     | Multipart (n, nmax) ->
        if n > 1 then Multipart(n - 1, nmax)
-       else raise Not_found (* TODO Array out of bounds *)
+       else raise Multipart_forbidden_navigation
   in state_multipart := newval
 
 let make_readonly () =
@@ -185,7 +191,7 @@ let () =
     let ex = get_current_part exo in
     begin match Learnocaml_exercise.(decipher ~subid:"TODO" false File.prelude (Learnocaml_exercise.Exercise ex)) with
       | "" -> Lwt.return true
-      | prelude ->
+      | prelude -> print_endline("prelude:"^prelude);
           Learnocaml_toplevel.load ~print_outcome:true top
             ~message: [%i"loading the prelude..."]
             prelude
@@ -220,7 +226,8 @@ let () =
         solution
     | { Answer.report = None ; solution ; _ } ->
         solution
-    | exception Not_found -> Learnocaml_exercise.(access ~subid:"TODO" false File.template exo) in
+    | exception Not_found -> print_endline("template:");
+    	Learnocaml_exercise.(access ~subid:"TODO" false File.template (Learnocaml_exercise.Exercise ex)) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -244,13 +251,13 @@ let () =
   let editor, ace = setup_editor id solution in
   is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access ~subid:"TODO" false File.template exo));
+  EB.cleanup (Learnocaml_exercise.(access ~subid:"TODO" false File.template (Learnocaml_exercise.Exercise ex)));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:"TODO" false File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher ~subid:"TODO" false File.prelude (Learnocaml_exercise.Exercise ex));
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
@@ -404,7 +411,7 @@ let () =
   end ;
   if nav_available then 
     begin toolbar_button
-            ~icon: "reload" [%i"AllGrade!"] @@ fun () ->
+            ~icon: "reload" [%i"Grade everything!"] @@ fun () ->
                                                typecheck true
     end;
   (* Small but cross-compatible hack (tested with Firefox-ESR, Chromium, Safari)

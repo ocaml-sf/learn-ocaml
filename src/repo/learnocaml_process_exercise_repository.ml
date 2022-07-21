@@ -306,7 +306,7 @@ let main dest_dir =
                 Printf.fprintf mutipart_file "  [\n";
                 Printf.fprintf mutipart_file "    [ {\n";
 	        Printf.fprintf mutipart_file "        \"id\": \"demoM-exo1\",\n";
-	        Printf.fprintf mutipart_file "        \"prelude\": \"(* Some code is loaded in the toplevel before your code. *) let greetings = 'Hello world!'\",\n";
+	        Printf.fprintf mutipart_file "        \"prelude\": \"(* Some code is loaded in the toplevel before your code. *) let test = 11\",\n";
 	        Printf.fprintf mutipart_file "        \"template\": \"let plus x y = x + y ;;let minus x y = y - x ;;let times x y = x *\",\n";
 	        Printf.fprintf mutipart_file "        \"descr\": [\n[\n\"\",\n\"<p>The following example link will open another tab/window: <a href='https://ocaml.org' target='_blank' rel='noopener noreferrer' title='External link'>OCaml</a><br/>This exercise is just another demo for the exercise environment.<br/><a onclick='top.location='/exercises/demo/';' href=''>Test</a></p><details>    <summary>Hint</summary>Use an indirection.</details>\"\n]\n],\n";
 	      Printf.fprintf mutipart_file "        \"prepare\": \"\",\n";
@@ -325,7 +325,7 @@ let main dest_dir =
       		 Printf.fprintf mutipart_file "    ],\n";
       		 Printf.fprintf mutipart_file "    [ {\n";
 	        Printf.fprintf mutipart_file "        \"id\": \"demoM-exo2\",\n";
-	        Printf.fprintf mutipart_file "        \"prelude\": \"(* Some code is loaded in the toplevel before your code. *) let greetings = 'Hello world!'\",\n";
+	        Printf.fprintf mutipart_file "        \"prelude\": \"(* Some code is loaded in the toplevel before your code. *) let test = 12\",\n";
 	        Printf.fprintf mutipart_file "        \"template\": \"let plus x y = x + y ;;let minus x y = y - x ;;let times x y = x *\",\n";
 	        Printf.fprintf mutipart_file "        \"descr\": [\n[\n\"\",\n\"<p>The following example link will open another tab/window: <a href='https://ocaml.org' target='_blank' rel='noopener noreferrer' title='External link'>OCaml</a><br/>This exercise is just another demo for the exercise environment.<br/><a onclick='top.location='/exercises/demo/';' href=''>Test</a></p><details>    <summary>Hint</summary>Use an indirection.</details>\"\n]\n],\n";
 	      Printf.fprintf mutipart_file "        \"prepare\": \"\",\n";

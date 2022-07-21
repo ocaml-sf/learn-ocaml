@@ -54,6 +54,46 @@ module Exercise_link =
 module Display = Display_exercise(Exercise_link)
 open Display
 
+exception Multipart_missing_exercise
+exception Multipart_student_hidden
+exception Multipart_state_outofbounds
+exception Multipart_state_invalid
+exception Multipart_forbidden_navigation
+
+type state_multipart =
+  Monopart
+| Multipart of int * int (* numero du sous-exo, valeur max *)
+
+let state_multipart = ref Monopart
+
+let init_state_multipart exo =
+  let inival =
+    match exo, !state_multipart with
+    | Learnocaml_exercise.Exercise(_ex), _state -> Monopart
+    | Learnocaml_exercise.Subexercise(l), Monopart ->
+       let size = List.length l in
+       if size < 1 then raise Multipart_missing_exercise
+       else Multipart(1, size)
+    | Learnocaml_exercise.Subexercise(l), Multipart(num_prec, _) ->
+       let size = List.length l in
+       if size < 1 then raise Multipart_missing_exercise
+       else Multipart(min num_prec size, size)
+  in state_multipart := inival
+
+let get_current_part exo =
+  match exo, !state_multipart with
+  | Learnocaml_exercise.Exercise ex, Monopart -> ex
+  | Learnocaml_exercise.Subexercise l, Multipart (n, _nmax) ->
+     (match List.nth_opt l (n - 1) with
+      | Some(ex, subex) ->
+         if subex.Learnocaml_exercise.student_hidden
+         then raise Multipart_student_hidden
+         else ex
+      | None -> raise Multipart_state_outofbounds
+     )
+  | _ -> raise Multipart_state_invalid
+
+
 let () =
   print_string ("Test Show exo desc : 0 \n");
   run_async_with_log @@ fun () ->
@@ -71,14 +111,17 @@ let () =
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, ex, _deadline) ->
+         init_state_multipart ex ;
+	 let exo = get_current_part ex in
+         (*
          let exo = match ex with
            | Learnocaml_exercise.Subexercise ([])  -> raise Not_found
            | Learnocaml_exercise.Subexercise ((exo, subex) :: _ ) -> 
              if subex.Learnocaml_exercise.student_hidden = false then exo
              else raise Not_found
            | Learnocaml_exercise.Exercise exo -> exo
-         in
-    	 let sub_id = exo.Learnocaml_exercise.id
+         in*)
+    	 let sub_id = "TODO"
     	 in
          (* display exercise questions and prelude *)
          setup_tab_text_prelude_pane Learnocaml_exercise.(decipher ~subid:sub_id false File.prelude (Learnocaml_exercise.Exercise exo));
