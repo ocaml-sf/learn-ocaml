@@ -265,7 +265,6 @@ let () =
        d##open_;
        d##write (Js.string (exercise_text ex_meta exo));
        d##close) ;
-       
   (* -------------------  Subexercise navigation -------- *)
 
   let nav_available = match exo with
@@ -273,34 +272,28 @@ let () =
     | Learnocaml_exercise.Subexercise _ -> true
   in
   (* Traitement du "sous-index" pour savoir si on peut naviguer *)
-  token >>= fun tok ->
-  retrieve (Learnocaml_api.Exercise_index tok) >>= fun (index,l) ->
+  init_state_multipart exo ;
+  
   let navigation_toolbar = find_component "learnocaml-exo-tab-navigation" in
-  (* TODO check/update, using prev() and next() *)
-  let prev_and_next id =
-    let rec loop = function
-      | [] -> assert false
-      | [ _ ] (* assumes single id *) -> None, None
-      | (one, _) :: (two, _) :: _ when id = one -> None, Some two
-      | (one, _) :: (two, _) :: [] when id = two -> Some one, None
-      | (one, _) :: (two, _) :: (three, _) :: _ when id = two -> Some one, Some three
-      |  _ :: rest -> loop rest
-    in loop [id,1] in
+  
   let prev_button_state = button_state () in
   let next_button_state = button_state () in
-  begin match prev_and_next id with
-      | None, None ->
+
+  begin match !state_multipart with
+      | Monopart | Multipart(1, 1) ->
           disable_button prev_button_state ;
           disable_button next_button_state
-      | Some _, None ->
-          enable_button prev_button_state ;
-          disable_button next_button_state
-      | None, Some _ ->
+      | Multipart(1, nmax) when nmax > 1 ->
           disable_button prev_button_state ;
           enable_button next_button_state
-      | Some _, Some _ ->
+      | Multipart(n, nmax) when n = nmax && n > 1 ->
+          enable_button prev_button_state ;
+          disable_button next_button_state
+      | Multipart(n, nmax) when 1 < n && n < nmax ->
           enable_button prev_button_state ;
           enable_button next_button_state
+      | _ ->
+          raise Multipart_state_invalid
   end ;
   let subtitle_field = Tyxml_js.Html5.(h4 ~a: [a_class ["learnocaml-exo-subtitle"]]
                                          [txt id]) in
