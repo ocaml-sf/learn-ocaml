@@ -295,6 +295,7 @@ let () =
       | _ ->
           raise Multipart_state_invalid
   end ;
+  
   let subtitle_field = Tyxml_js.Html5.(h4 ~a: [a_class ["learnocaml-exo-subtitle"]]
                                          [txt id]) in
   let button_next = find_component "learnocaml-exo-button-next" in
@@ -302,7 +303,9 @@ let () =
   Manip.appendChild ~before: button_next navigation_toolbar subtitle_field ;
   if nav_available then
     (Manip.SetCss.display button_next "";
+     Manip.Ev.onclick button_next (fun _ -> next () ; true);
      Manip.SetCss.display button_prev "";
+     Manip.Ev.onclick button_prev (fun _ -> prev () ; true);
     )
   else
     (Manip.SetCss.display button_next "none";
