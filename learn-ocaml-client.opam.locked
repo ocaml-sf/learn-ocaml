@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml-client"
-version: "0.13.2"
+version: "0.14.0"
 synopsis: "The learn-ocaml client"
 description: """\
 This contains the binaries to interact with the learn-ocaml
@@ -32,7 +32,7 @@ depends: [
   "bigarray-compat" {= "1.0.0"}
   "bigstringaf" {= "0.8.0"}
   "biniou" {= "1.2.1"}
-  "cmdliner" {= "1.0.4"}
+  "cmdliner" {= "1.1.1"}
   "cohttp" {= "4.0.0"}
   "cohttp-lwt" {= "4.0.0"}
   "cohttp-lwt-unix" {= "4.0.0"}

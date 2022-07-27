@@ -20,6 +20,7 @@ Howtos
 * [How to submit an exercise to the global corpus?](./howto-submit-an-exercise.md)
 * [How to deploy an instance of Learn OCaml?](./howto-deploy-a-learn-ocaml-instance.md)
 * [How to deploy Learn-OCaml statically?](./howto-deploy-learn-ocaml-statically.md)
+* [How to practice OCaml with Learn-OCaml?](./howto-practice-ocaml.md)
 * [How to classify students answers?](./howto-classify-students-answers.md)
 
 Contacts
@@ -62,23 +63,23 @@ to redistribute it. See [http://www.exljbris.com/eula.html](http://www.exljbris.
 optionally have to procure the files by yourself while building the
 app. If not, the CSS provides a reasonable fallback font.
 
-Contributions to this repository are placed under the BSD
+Contributions to this repository are placed under the MIT
 license. This means that we can merge them with the same license as
 the rest of the codebase, while you keep all the rights on your code.
 And we will not have to bother you with any future license update.
-See [https://opensource.org/licenses/BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause).
+See [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
 
 Authors and Acknowledgements
 ----------------------------
 
 Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
- * The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
+* The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
 
- * It builds on the previous experience of Try OCaml by Çağdaş Bozman.
+* It builds on the previous experience of Try OCaml by Çağdaş Bozman.
 
- * We heavily use js_of_ocaml, so thanks to the Ocsigen team.
+* We heavily use js_of_ocaml, so thanks to the Ocsigen team.
 
- * The text editing component is a customized version of ACE.
+* The text editing component is a customized version of ACE.
 
- * We also include a derivative of ppx_metaquot by Alain Frisch.
+* We also include a derivative of ppx_metaquot by Alain Frisch.
