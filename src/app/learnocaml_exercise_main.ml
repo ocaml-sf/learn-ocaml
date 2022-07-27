@@ -273,12 +273,14 @@ let () =
   in
   (* Traitement du "sous-index" pour savoir si on peut naviguer *)
   init_state_multipart exo ;
-  
+
   let navigation_toolbar = find_component "learnocaml-exo-tab-navigation" in
-  
+  (*let navigation_toolbar =
+    Tyxml_js.Html5.(div ~a: [ a_class [ "learnocaml-exo-tab-navigation" ] ] []) in*)
   let prev_button_state = button_state () in
   let next_button_state = button_state () in
 
+  (*let actual_state_btn () =*)
   begin match !state_multipart with
       | Monopart | Multipart(1, 1) ->
           disable_button prev_button_state ;
@@ -293,26 +295,64 @@ let () =
           enable_button prev_button_state ;
           enable_button next_button_state
       | _ ->
-          raise Multipart_state_invalid
+          raise Multipart_state_invalid 
   end ;
-  
+
   let subtitle_field = Tyxml_js.Html5.(h4 ~a: [a_class ["learnocaml-exo-subtitle"]]
                                          [txt id]) in
-  let button_next = find_component "learnocaml-exo-button-next" in
-  let button_prev = find_component "learnocaml-exo-button-prev" in
-  Manip.appendChild ~before: button_next navigation_toolbar subtitle_field ;
   if nav_available then
-    (Manip.SetCss.display button_next "";
-     Manip.Ev.onclick button_next (fun _ -> next () ; true);
-     Manip.SetCss.display button_prev "";
-     Manip.Ev.onclick button_prev (fun _ -> prev () ; true);
+    (
+     begin button
+      ~state: prev_button_state ~container:  navigation_toolbar
+      ~theme: "black" ~icon: "left" [%i"Prev"] @@ fun () ->
+      prev () ;
+      begin match !state_multipart with
+	      | Monopart | Multipart(1, 1) ->
+		  disable_button prev_button_state ;
+		  disable_button next_button_state
+	      | Multipart(1, nmax) when nmax > 1 ->
+		  disable_button prev_button_state ;
+		  enable_button next_button_state
+	      | Multipart(n, nmax) when n = nmax && n > 1 ->
+		  enable_button prev_button_state ;
+		  disable_button next_button_state
+	      | Multipart(n, nmax) when 1 < n && n < nmax ->
+		  enable_button prev_button_state ;
+		  enable_button next_button_state
+	      | _ ->
+		  raise Multipart_state_invalid 
+      end ;
+      Lwt.return ()
+     end ; 
+     Manip.appendChild navigation_toolbar subtitle_field ;
+     begin button
+      ~state: next_button_state ~container:  navigation_toolbar
+      ~theme: "black" ~icon: "right" [%i"Next"] @@ fun () ->
+      next () ;
+      begin match !state_multipart with
+	      | Monopart | Multipart(1, 1) ->
+		  disable_button prev_button_state ;
+		  disable_button next_button_state
+	      | Multipart(1, nmax) when nmax > 1 ->
+		  disable_button prev_button_state ;
+		  enable_button next_button_state
+	      | Multipart(n, nmax) when n = nmax && n > 1 ->
+		  enable_button prev_button_state ;
+		  disable_button next_button_state
+	      | Multipart(n, nmax) when 1 < n && n < nmax ->
+		  enable_button prev_button_state ;
+		  enable_button next_button_state
+	      | _ ->
+		  raise Multipart_state_invalid 
+      end ;
+      Lwt.return ()
+     end ; 
     )
   else
-    (Manip.SetCss.display button_next "none";
-     Manip.SetCss.display button_prev "none";
+    (Manip.appendChild navigation_toolbar subtitle_field ;
      Manip.SetCss.width subtitle_field "100%";
     );
-    
+
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in

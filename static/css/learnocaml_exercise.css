@@ -69,9 +69,8 @@ body {
     top: 61px;
   }
 }
-
 /* ------------------------- Navigation ----------------------------*/
-#learnocaml-exo-tab-navigation{
+#learnocaml-exo-tab-navigation {
     position: absolute;
     z-index: 3;
     display: flex;
@@ -90,7 +89,6 @@ body {
     width: 60%;
     text-align:center;
 }
-
 /* -------------------- tabs and tab buttons ---------------------- */
 #learnocaml-exo-tab {
     top: 60px;
@@ -156,7 +154,7 @@ body {
   #learnocaml-exo-tab {
       left: 800px; right: 0px; top: 0px;
   }
-  #learnocaml-exo-tab-navigation{
+  #learnocaml-exo-tab-navigation {
       height: 60px;
       width: 100%;
       border-bottom: 1px black solid;
@@ -243,9 +241,7 @@ body {
         top: 120px;
     }
 }
-
 /* -------------------- Prelude -------------------------------- */
-
 #learnocaml-exo-prelude {
   overflow: hidden;
   left: 0;
