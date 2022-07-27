@@ -90,11 +90,11 @@ let asak_partition prof fun_name sol by_grade =
       (ans.Partition.bad_type @ bad_type, (i,ans.Partition.clusters) :: res)
     ) by_grade ([],[])
 
-let partition _exo_name _fun_name _prof = assert false (* TODO
+let partition exo_name fun_name prof =
   Learnocaml_store.Exercise.get exo_name
   >>= fun exo ->
-  let prelude = Learnocaml_exercise.(access File.prelude exo) in
-  let prepare = Learnocaml_exercise.(decipher File.prepare exo) in
+  let prelude = Learnocaml_exercise.(access File.prelude_ml exo) in
+  let prepare = Learnocaml_exercise.(decipher File.prepare_ml exo) in
   let prelude = prelude ^ "\n" ^ prepare in
   let solution = Learnocaml_exercise.(decipher File.solution exo) in
   let solution = prelude ^ "\n" ^ solution in
@@ -104,4 +104,3 @@ let partition _exo_name _fun_name _prof = assert false (* TODO
   let by_grade = partition_by_grade fun_name lst in
   let bad_type,partition_by_grade = asak_partition prof fun_name solution by_grade in
   {not_graded; bad_type; partition_by_grade}
-*)
