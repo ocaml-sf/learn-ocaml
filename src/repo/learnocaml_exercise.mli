@@ -58,6 +58,9 @@ module File : sig
   (** Returns the (public) [prelude.ml] *)
   val prelude_ml: string file
 
+  (** Returns the (private) [prepare.ml] *)
+  val prepare_ml: string file
+
   (** Returns the (public) [template.ml] *)
   val template: string file
 
@@ -87,7 +90,7 @@ module File : sig
   (** Returns the (public) depend file *)
   val depend: string option file
 
-  (** [dependencies txt] create the (private, already deciphered) dependencies 
+  (** [dependencies txt] create the (private, already deciphered) dependencies
       declared in [txt] *)
   val dependencies: string option -> string file list
 end

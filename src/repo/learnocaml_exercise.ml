@@ -22,6 +22,8 @@ type compiled = {
 type t =
   { id : id ;
     prelude_ml : string ;
+    prepare_ml : string ;
+    (* absent from the json, empty except when building the exercises *)
     template : string ;
     solution : string ;
     (* absent from the json, empty except when building the exercises *)
@@ -64,10 +66,10 @@ let encoding =
          (req "test_lib" compiled_lib_encoding))
   in
   conv
-    (fun { id ; prelude_ml ; template ; descr ; compiled ; max_score ; depend ; dependencies ; solution = _} ->
+    (fun { id ; prelude_ml ; prepare_ml = _; template ; descr ; compiled ; max_score ; depend ; dependencies ; solution = _} ->
        (id, prelude_ml, template, descr, compiled, max_score, depend, dependencies))
     (fun ((id, prelude_ml, template, descr, compiled, max_score, depend, dependencies)) ->
-       { id ; prelude_ml ; template ; descr ; compiled ; max_score ; depend ; dependencies; solution = ""})
+       { id ; prelude_ml ; prepare_ml = ""; template ; descr ; compiled ; max_score ; depend ; dependencies; solution = ""})
     (obj8
        (req "id" string)
        (req "prelude_ml" string)
@@ -81,7 +83,7 @@ let encoding =
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
  *   |> Json_encoding.destruct Learnocaml_meta.encoding
- * 
+ *
  * let meta_to_string m =
  *   Json_encoding.construct Learnocaml_meta.encoding m
  *   |> (function
@@ -138,9 +140,9 @@ module File = struct
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
   let get_opt file ex =
-    try (* a missing file here is necessarily [file] *) 
-      get file ex 
-    with Missing_file _ -> None 
+    try (* a missing file here is necessarily [file] *)
+      get file ex
+    with Missing_file _ -> None
 
   let has { key ; _ } ex =
     StringMap.mem key ex
@@ -185,6 +187,12 @@ module File = struct
       decode = (fun v -> v) ; encode = (fun v -> v) ;
       field = (fun ex -> ex.prelude_ml) ;
       update = (fun prelude_ml ex -> { ex with prelude_ml })
+     }
+  let prepare_ml =
+    { key = "prepare.ml" ;
+      decode = (fun v -> v) ; encode = (fun v -> v) ;
+      field = (fun ex -> ex.prepare_ml) ;
+      update = (fun prepare_ml ex -> { ex with prepare_ml })
      }
   let template =
     { key = "template.ml" ;
@@ -242,8 +250,8 @@ module File = struct
       (fun test_lib c -> { c with test_lib })
   let depend =
     { key = "depend.txt" ;
-      decode = (fun v -> Some v) ; 
-      encode = (function 
+      decode = (fun v -> Some v) ;
+      encode = (function
                 | None -> "" (* no `depend` ~ empty `depend` *)
                 | Some txt -> txt) ;
       field = (fun ex -> ex.depend) ;
@@ -252,7 +260,7 @@ module File = struct
 
   (* [parse_dependencies txt] extracts dependencies from the string [txt].
     Dependencies are file names separated by at least one line break.
-    [txt] may contain comments starting with characters ';' or '#' 
+    [txt] may contain comments starting with characters ';' or '#'
     and ending by a line break. *)
   let parse_dependencies txt =
     let remove_comment ~start:c line =
@@ -267,17 +275,17 @@ module File = struct
     | None -> []
     | Some txt ->
       let filenames = parse_dependencies txt in
-      List.mapi 
+      List.mapi
         (fun pos filename ->
           { key = filename ;
             decode = (fun v -> v) ; encode = (fun v -> v) ;
             field = (fun ex -> List.nth ex.dependencies pos) ;
-            update = (fun v ex -> 
-                        let dependencies = 
+            update = (fun v ex ->
+                        let dependencies =
                           List.mapi (fun i v' -> if i = pos then v else v')
                             ex.dependencies in { ex with dependencies }) })
         filenames
-  
+
   module MakeReader (Concur : Concur) = struct
     let read ~read_field ?id: ex_id () =
       let open Concur in
@@ -396,6 +404,7 @@ module File = struct
       join
         [ (* read_title () ; *)
           read_file prelude_ml ;
+          read_file prepare_ml ;
           read_file template ;
           read_file solution ;
           read_descrs () ;
@@ -447,7 +456,7 @@ let strip need_js ex =
 
 
 module MakeReaderAnddWriter (Concur : Concur) = struct
-  
+
   module FileReader = File.MakeReader(Concur)
 
   let read ~read_field ?id () =
@@ -459,6 +468,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
           prelude_ml = field_from_file File.prelude_ml ex ;
+          prepare_ml = field_from_file File.prepare_ml ex ;
           template = field_from_file File.template ex ;
           solution = field_from_file File.solution ex ;
           descr = field_from_file File.descr ex ;
@@ -478,14 +488,14 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
           };
           max_score = 0 ;
           depend ;
-          dependencies = 
+          dependencies =
             let field_from_dependency file =
               try field_from_file file ex
-              with File.Missing_file msg 
-              -> let msg' = msg ^ ": dependency declared in " 
+              with File.Missing_file msg
+              -> let msg' = msg ^ ": dependency declared in "
                                 ^ File.(key depend) ^ ", but not found" in
-                 raise (File.Missing_file msg') 
-            in 
+                 raise (File.Missing_file msg')
+            in
             List.map field_from_dependency (File.dependencies depend)
         }
     with File.Missing_file _ as e -> fail e
@@ -505,7 +515,8 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
       ([ write_field id ;
         (* write_field meta ;
          * write_field title ; *)
-        write_field prelude_ml ;
+         write_field prelude_ml ;
+         (* prepare not written on purpose *)
         write_field template ;
          (* solution not written on purpose *)
         write_field descr ;
@@ -517,7 +528,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field test_cma ;
         write_field test_js ;
         write_field depend ;
-        (* write_field max_score *) ] 
+        (* write_field max_score *) ]
         @ (List.map write_field (dependencies (access depend ex))) )
         >>= fun () ->
     return !acc
