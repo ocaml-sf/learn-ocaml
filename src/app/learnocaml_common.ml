@@ -549,48 +549,7 @@ let stars_div stars =
     H.img ~alt ~src ()
   ]
 
-type state_multipart =
-  Monopart
-| Multipart of int * int (* numero du sous-exo, valeur max *)
-
-let state_multipart = ref Monopart
-
-exception Multipart_missing_exercise
-exception Multipart_student_hidden
-exception Multipart_state_outofbounds
-exception Multipart_state_invalid
-
-let init_state_multipart exo =
-  let inival =
-    match exo, !state_multipart with
-    | Learnocaml_exercise.Exercise(_ex), _state -> Monopart
-    | Learnocaml_exercise.Subexercise(l), Monopart ->
-       let size = List.length l in
-       if size < 1 then raise Multipart_missing_exercise
-       else Multipart(1, size)
-    | Learnocaml_exercise.Subexercise(l), Multipart(num_prec, _) ->
-       let size = List.length l in
-       if size < 1 then raise Multipart_missing_exercise
-       else Multipart(min num_prec size, size)
-  in state_multipart := inival
-
-let get_current_part exo =
-  match exo, !state_multipart with
-  | Learnocaml_exercise.Exercise ex, Monopart -> ex
-  | Learnocaml_exercise.Subexercise l, Multipart (n, _nmax) ->
-     (match List.nth_opt l (n - 1) with
-      | Some(ex, subex) ->
-         if subex.Learnocaml_exercise.student_hidden
-         then raise Multipart_student_hidden
-         else ex
-      | None -> raise Multipart_state_outofbounds
-     )
-  | _ -> raise Multipart_state_invalid
-
-let exercise_text ex_meta exo =
-
-  init_state_multipart exo ;
-  let ex = get_current_part exo in
+let exercise_text ex_meta ex =
 
   let mathjax_url =
     api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
@@ -617,10 +576,10 @@ let exercise_text ex_meta exo =
   let descr =
     let lang = "" in
     try
-      List.assoc lang (Learnocaml_exercise.(access false File.descr (Learnocaml_exercise.Exercise ex)))
+      List.assoc lang (Learnocaml_exercise.(access false File.descr (ex)))
     with
       Not_found ->
-        try List.assoc "" (Learnocaml_exercise.(access false File.descr (Learnocaml_exercise.Exercise ex)))
+        try List.assoc "" (Learnocaml_exercise.(access false File.descr (ex)))
         with Not_found -> [%i "No description available for this exercise." ]
   in
   Format.asprintf
@@ -1022,6 +981,9 @@ module Editor_button (E : Editor_info) = struct
 
 end
 
+(*let update_template template (E : Editor_info) = Ace.set_contents E.ace template;
+  Lwt.return ()*)
+
 let setup_editor id solution =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor =
@@ -1101,6 +1063,33 @@ let setup_tab_text_prelude_pane prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
+
+
+let update_prelude prelude =
+  if prelude = "" then () else
+  let prelude_pane = find_component "learnocaml-exo-prelude" in
+  let open Tyxml_js.Html5 in
+  let state =
+    ref (match arg "prelude" with
+         | exception Not_found -> true
+         | "shown" -> true
+         | "hidden" -> false
+         | _ -> failwith "Bad format for argument prelude.") in
+  let prelude_container =
+    pre ~a: [ a_class [ "toplevel-code" ] ]
+      (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+  let update () =
+    if !state then begin
+        Manip.SetCss.display prelude_container "" ;
+      end else begin
+        Manip.SetCss.display prelude_container "none" ;
+      end in
+  update () ;
+  Manip.appendChildren prelude_pane
+    [ prelude_container ]
+
+
+
 
 let setup_prelude_pane ace prelude =
   if prelude = "" then () else
