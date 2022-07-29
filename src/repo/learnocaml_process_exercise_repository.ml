@@ -280,7 +280,7 @@ let main dest_dir =
                   | Some dir -> Some (dir / id) in
                 (id, exercise_dir, exercise, json_path,
                  changed, dump_outputs, dump_reports) :: acc
-             | Learnocaml_exercise.Subexercise (multi_ex) ->
+             | Learnocaml_exercise.Subexercise (_) ->
 
                 print_string ("multipartFile id : "^id^"\n");
                 let exercise_dir = !exercises_dir / id in
@@ -288,7 +288,8 @@ let main dest_dir =
                 let json_path = dest_dir / Learnocaml_index.exercise_path (id) in
                 print_string ("multipartFile json_path : "^json_path^"\n");
 		
-		
+		(*if you want to test a dynamic generation of the file_multipart .json, comment this code.*)
+		(*.. Statique generation of the file_multipart.json*)
 		let mutipart_file = open_out json_path in
                 Printf.fprintf mutipart_file "[\n";
                 Printf.fprintf mutipart_file "  {\n";
@@ -346,8 +347,8 @@ let main dest_dir =
                 Printf.fprintf mutipart_file "  null\n";
                 Printf.fprintf mutipart_file "]\n";
   		 close_out mutipart_file;
+		(*..................*)
 		
-        
                  let changed = try
                           let { Unix.st_mtime = json_time ; _ } = Unix.stat json_path in
                           Sys.readdir exercise_dir |>
@@ -363,9 +364,8 @@ let main dest_dir =
                         match !dump_reports with
                         | None -> None
                         | Some dir -> Some (dir / id ) in
-                      (id, exercise_dir, Learnocaml_exercise.Subexercise (multi_ex), json_path,
+                      (id, exercise_dir, exercise, json_path,
                        changed, dump_outputs, dump_reports) :: acc
-                       
                 )
            all_exercises [] in
        begin
@@ -390,10 +390,10 @@ let main dest_dir =
                          exs)
                       >>=  fun normal_result ->
                       Lwt.return @@ List.append check_all_against_result normal_result
-              | exo -> Lwt_list.map_p
+              | Learnocaml_exercise.Exercise (_) -> Lwt_list.map_p
                          (fun exo -> Grader_cli.grade ?print_result ?dirname meta
                                        exo json_path)
-                         [exo]
+                         [exercise]
              )
              >|= fun l ->
              let rec aux = function
