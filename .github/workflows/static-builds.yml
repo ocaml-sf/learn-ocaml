@@ -53,7 +53,6 @@ jobs:
         run: |
           bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
           file "${bin[@]}"
-          ldd "${bin[@]}"
           for b in "${bin[@]}"; do ( set -x; "$b" --version ); done
       - name: Archive static binaries
         run: |
