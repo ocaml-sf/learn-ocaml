@@ -107,7 +107,7 @@ depends: [
   "seq" {= "0.2.2"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
-  "ssl" {= "0.5.10"}
+  "ssl" {= "0.5.12"}
   "stdlib-shims" {= "0.3.0"}
   "stringext" {= "1.6.0"}
   "topkg" {= "1.0.3"}
