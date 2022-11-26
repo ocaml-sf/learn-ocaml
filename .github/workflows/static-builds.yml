@@ -16,6 +16,8 @@ jobs:
     name: Build learn-ocaml-www.zip archive
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.export.outputs.artifact }}
     strategy:
       matrix:
         arch_dir: ["learn-ocaml-www"]
@@ -35,10 +37,15 @@ jobs:
         with:
           name: '${{ matrix.arch_dir }}.zip'
           path: '${{ matrix.arch_dir }}.zip'
+      - id: export
+        name: Export artifact filename
+        run: echo "artifact=${{ matrix.arch_dir }}.zip" >> $GITHUB_OUTPUT
   static-bin-linux:
     name: Builds static Linux binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.export.outputs.artifact }}
     strategy:
       matrix:
         artifact: ["learn-ocaml-linux-x86_64.tar.gz"]
@@ -64,10 +71,15 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
+      - id: export
+        name: Export artifact filename
+        run: echo "artifact=${{ matrix.artifact }}" >> $GITHUB_OUTPUT
   static-bin-macos:
     name: Builds static Macos binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
     runs-on: macos-latest
+    outputs:
+      artifact: ${{ steps.export.outputs.artifact }}
     env:
       OPAMYES: 1
       OPAMDEPEXTYES: 1
@@ -115,3 +127,6 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
+      - id: export
+        name: Export artifact filename
+        run: echo "artifact=${{ matrix.artifact }}" >> $GITHUB_OUTPUT
