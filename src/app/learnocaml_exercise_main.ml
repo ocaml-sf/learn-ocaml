@@ -49,7 +49,7 @@ let display_report exo report =
   Manip.removeClass report_button "failure" ;
   Manip.removeClass report_button "partial" ;
   let grade =
-    let max = Learnocaml_exercise.(access File.max_score exo) in
+    let max = Learnocaml_exercise.(access false File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
@@ -87,6 +87,69 @@ open Display
 
 let is_readonly = ref false
 
+type state_multipart =
+  Monopart
+| Multipart of int * int (* numero du sous-exo, valeur max *)
+
+let state_multipart = ref Monopart
+
+exception Multipart_missing_exercise
+exception Multipart_student_hidden
+exception Multipart_state_outofbounds
+exception Multipart_state_invalid
+exception Multipart_forbidden_navigation
+
+(* XXX cette fonction est exécutée à chaque fois qu'un exercice
+   (monopart ou multi-part) est récupéré du serveur, pour initialiser
+   l'état stockant le numéro du sous-exercice.
+   Si l'état actuel spécifie un numéro déjà valide (1 <= _ <= new_max)
+   alors celui-ci est préservé,
+   Sinon on prend (min num_prec new_max),
+   ou alors 0 si le num_prec n'existe pas.
+   Mais dans tous les cas, on ne lève pas d'erreur si possible. *)
+let init_state_multipart exo =
+  let inival =
+    match exo, !state_multipart with
+    | Learnocaml_exercise.Exercise(_ex), _state -> Monopart
+    | Learnocaml_exercise.Subexercise(l), Monopart ->
+       let size = List.length l in
+       if size < 1 then raise Multipart_missing_exercise
+       else Multipart(1, size)
+    | Learnocaml_exercise.Subexercise(l), Multipart(num_prec, _) ->
+       let size = List.length l in
+       if size < 1 then raise Multipart_missing_exercise
+       else Multipart(min num_prec size, size)
+  in state_multipart := inival
+
+let get_current_part exo =
+  match exo, !state_multipart with
+  | Learnocaml_exercise.Exercise ex, Monopart -> ex
+  | Learnocaml_exercise.Subexercise l, Multipart (n, _nmax) ->
+     (match List.nth_opt l (n - 1) with
+      | Some(ex, subex) ->
+         if subex.Learnocaml_exercise.student_hidden
+         then raise Multipart_student_hidden
+         else ex
+      | None -> raise Multipart_state_outofbounds
+     )
+  | _ -> raise Multipart_state_invalid
+
+let next () = print_endline("Btn_next");
+  let newval = match !state_multipart with
+    | Monopart -> raise Multipart_forbidden_navigation
+    | Multipart (n, nmax) ->
+       if n < nmax then Multipart(n + 1, nmax)
+       else raise Multipart_forbidden_navigation
+  in state_multipart := newval
+
+let prev () = print_endline("Btn_prev");
+  let newval = match !state_multipart with
+    | Monopart -> raise Multipart_forbidden_navigation
+    | Multipart (n, nmax) ->
+       if n > 1 then Multipart(n - 1, nmax)
+       else raise Multipart_forbidden_navigation
+  in state_multipart := newval
+    
 let make_readonly () =
   is_readonly := true;
   alert ~title:[%i"TIME'S UP"]
@@ -94,6 +157,7 @@ let make_readonly () =
         from now on will remain local only."]
 
 let () =
+  print_string ("Test Show exo find : 0 \n");
   run_async_with_log @@ fun () ->
   set_string_translations_exercises ();
   Learnocaml_local_storage.init ();
@@ -123,15 +187,17 @@ let () =
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    begin match Learnocaml_exercise.(decipher File.prelude exo) with
+    init_state_multipart exo ;
+    let ex = get_current_part exo in
+    begin match Learnocaml_exercise.(decipher false File.prelude (Learnocaml_exercise.Exercise ex)) with
       | "" -> Lwt.return true
-      | prelude ->
+      | prelude -> print_endline("prelude:"^prelude);
           Learnocaml_toplevel.load ~print_outcome:true top
             ~message: [%i"loading the prelude..."]
             prelude
     end >>= fun r1 ->
     Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
+      (Learnocaml_exercise.(decipher false File.prepare (Learnocaml_exercise.Exercise ex))) >>= fun r2 ->
     if not r1 || not r2 then failwith [%i"error in prelude"] ;
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
@@ -144,6 +210,8 @@ let () =
   set_nickname_div ();
   toplevel_launch >>= fun top ->
   exercise_fetch >>= fun (ex_meta, exo, deadline) ->
+  init_state_multipart exo;
+  let ex = get_current_part exo in
   (match deadline with
    | None -> ()
    | Some 0. -> make_readonly ()
@@ -158,7 +226,8 @@ let () =
         solution
     | { Answer.report = None ; solution ; _ } ->
         solution
-    | exception Not_found -> Learnocaml_exercise.(access File.template exo) in
+    | exception Not_found -> print_endline("template:");
+    	Learnocaml_exercise.(access false File.template (Learnocaml_exercise.Exercise ex)) in
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
@@ -182,20 +251,94 @@ let () =
   let editor, ace = setup_editor id solution in
   is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access File.template exo));
+  EB.cleanup (Learnocaml_exercise.(access false File.template (Learnocaml_exercise.Exercise ex)));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher false File.prelude (Learnocaml_exercise.Exercise ex));
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")
     (fun d ->
        d##open_;
-       d##write (Js.string (exercise_text ex_meta exo));
+       d##write (Js.string (exercise_text ex_meta (Learnocaml_exercise.Exercise ex)));
        d##close) ;
+  (* -------------------  Subexercise navigation -------- *)
+
+  let nav_available = match exo with
+    | Learnocaml_exercise.Exercise _ -> false
+    | Learnocaml_exercise.Subexercise _ -> true
+  in
+  (* Traitement du "sous-index" pour savoir si on peut naviguer *)
+  init_state_multipart exo ;
+
+  let navigation_toolbar = find_component "learnocaml-exo-tab-navigation" in
+  (*let navigation_toolbar =
+    Tyxml_js.Html5.(div ~a: [ a_class [ "learnocaml-exo-tab-navigation" ] ] []) in*)
+  let subtitle_field = Tyxml_js.Html5.(h4 ~a: [a_class ["learnocaml-exo-subtitle"]]
+                                         [txt id]) in
+  let prev_button_state = button_state () in
+  let next_button_state = button_state () in
+
+  let actualise_state_btn () = print_endline("_state");
+    begin match !state_multipart with
+      | Monopart | Multipart(1, 1) ->
+          disable_button prev_button_state ;
+          disable_button next_button_state
+      | Multipart(1, nmax) when nmax > 1 ->
+          disable_button prev_button_state ;
+          enable_button next_button_state
+      | Multipart(n, nmax) when n = nmax && n > 1 ->
+          enable_button prev_button_state ;
+          disable_button next_button_state
+      | Multipart(n, nmax) when 1 < n && n < nmax ->
+          enable_button prev_button_state ;
+          enable_button next_button_state
+      | _ ->
+          raise Multipart_state_invalid 
+    end in
+  let get_content_subex () = let ex = get_current_part exo in
+      
+      (*let template = Learnocaml_exercise.(access false File.template (Learnocaml_exercise.Exercise ex)) in update_template template (struct let ace = ace let buttons_container = editor_toolbar end); common l984*)
+      
+      let prelude = Learnocaml_exercise.(decipher false File.prelude (Learnocaml_exercise.Exercise ex)) in update_prelude prelude ;
+
+      Js.Opt.case
+    	(text_iframe##.contentDocument)
+    	(fun () -> failwith "cannot edit iframe document")
+    	(fun d ->
+          d##open_;
+          d##write (Js.string (exercise_text ex_meta (Learnocaml_exercise.Exercise ex)));
+          d##close) ;
+            
+      Lwt.return ()
+    in
+  if nav_available then
+    (
+     actualise_state_btn () ;
+     begin button
+      ~state: prev_button_state ~container:  navigation_toolbar
+      ~theme: "black" ~icon: "left" [%i"Prev"] @@ fun () ->
+      prev () ;
+      actualise_state_btn () ;
+      get_content_subex () 
+     end ;
+     Manip.appendChild navigation_toolbar subtitle_field ;
+     begin button
+      ~state: next_button_state ~container:  navigation_toolbar
+      ~theme: "black" ~icon: "right" [%i"Next"] @@ fun () ->
+      next () ;
+      actualise_state_btn () ;
+      get_content_subex () 
+     end ;
+    )
+  else
+    (Manip.appendChild navigation_toolbar subtitle_field ;
+     Manip.SetCss.width subtitle_field "100%";
+    );
+
   (* ---- main toolbar -------------------------------------------------- *)
   let exo_toolbar = find_component "learnocaml-exo-toolbar" in
   let toolbar_button = button ~container: exo_toolbar ~theme: "light" in
@@ -288,6 +431,11 @@ let () =
         Ace.focus ace ;
         typecheck true
   end ;
+  if nav_available then 
+    begin toolbar_button
+            ~icon: "reload" [%i"Grade everything!"] @@ fun () ->
+                                               typecheck true
+    end;
   (* Small but cross-compatible hack (tested with Firefox-ESR, Chromium, Safari)
    * that reuses part of this commit:
    * https://github.com/pfitaxel/learn-ocaml/commit/15780b5b7c91689a26cfeaf33f3ed2cdb3a5e801

@@ -179,7 +179,19 @@ let log conn api_req =
       flush oc
 
 let check_report exo report grade =
-  let max_grade = Learnocaml_exercise.(access File.max_score) exo in
+  let max_grade = match exo with
+    | Learnocaml_exercise.Subexercise (subexs) ->
+       let rec aux acc = function
+         | [] -> 0
+         | (ex,subex) :: l ->
+            let open Learnocaml_exercise in
+            aux (acc + subex.student_weight *
+                         (access true File.max_score (Exercise ex)))
+              l
+       in
+       aux 0 subexs
+    | ex -> Learnocaml_exercise.(access true File.max_score) ex
+  in
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade
 
@@ -450,13 +462,17 @@ module Request_handler = struct
          lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Exercise (Some token, id) ->
+      	   print_string ("Server_multipart_0 : "^id^"\n");
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
+             lwt_catch_fail (fun () ->
               Exercise.Meta.get id >>= fun meta ->
               Exercise.get id >>= fun ex ->
               respond_json cache
                 (meta, ex,
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
+           )
+           (fun exn -> (`Not_found, Printexc.to_string exn))
           | `Closed ->
              lwt_fail (`Forbidden, "Exercise closed"))
       | Api.Exercise (None, _) ->

@@ -86,7 +86,9 @@ let request req =
   in
   Lwt.catch (fun () ->
       Api_client.make_request (fun http_request ->
-          Lwt.catch (fun () -> do_req http_request >|= fun body -> Ok (body))
+          Lwt.catch (fun () -> 
+          do_req http_request >|= fun body -> 
+          Ok (body))
           @@ function
           | Lwt_request.Request_failed (0, s) ->
               Lwt.return (Error (`Unreachable s))

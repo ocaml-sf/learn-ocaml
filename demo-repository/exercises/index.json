@@ -2,4 +2,4 @@
   "groups":
   { "demo":
     { "title": "Demo exercise pack",
-      "exercises": [ "demo", "demo2" ] } } }
+      "exercises": [ "demo", "demo2", "demo-multi" ] } } }

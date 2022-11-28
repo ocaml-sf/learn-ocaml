@@ -549,7 +549,8 @@ let stars_div stars =
     H.img ~alt ~src ()
   ]
 
-let exercise_text ex_meta exo =
+let exercise_text ex_meta ex =
+
   let mathjax_url =
     api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
   in
@@ -575,10 +576,10 @@ let exercise_text ex_meta exo =
   let descr =
     let lang = "" in
     try
-      List.assoc lang (Learnocaml_exercise.(access File.descr exo))
+      List.assoc lang (Learnocaml_exercise.(access false File.descr (ex)))
     with
       Not_found ->
-        try List.assoc "" (Learnocaml_exercise.(access File.descr exo))
+        try List.assoc "" (Learnocaml_exercise.(access false File.descr (ex)))
         with Not_found -> [%i "No description available for this exercise." ]
   in
   Format.asprintf
@@ -980,6 +981,9 @@ module Editor_button (E : Editor_info) = struct
 
 end
 
+(*let update_template template (E : Editor_info) = Ace.set_contents E.ace template;
+  Lwt.return ()*)
+
 let setup_editor id solution =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor =
@@ -1032,7 +1036,7 @@ let setup_tab_text_prelude_pane prelude =
   let open Tyxml_js.Html5 in
   let state =
     ref (match arg "tab_text_prelude" with
-         | exception Not_found -> true
+         | exception Not_found -> false
          | "shown" -> true
          | "hidden" -> false
          | _ -> failwith "Bad format for argument prelude.") in
@@ -1059,6 +1063,33 @@ let setup_tab_text_prelude_pane prelude =
     (fun _ -> state := not !state ; update () ; true) ;
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
+
+
+let update_prelude prelude =
+  if prelude = "" then () else
+  let prelude_pane = find_component "learnocaml-exo-prelude" in
+  let open Tyxml_js.Html5 in
+  let state =
+    ref (match arg "prelude" with
+         | exception Not_found -> true
+         | "shown" -> true
+         | "hidden" -> false
+         | _ -> failwith "Bad format for argument prelude.") in
+  let prelude_container =
+    pre ~a: [ a_class [ "toplevel-code" ] ]
+      (Learnocaml_toplevel_output.format_ocaml_code prelude) in
+  let update () =
+    if !state then begin
+        Manip.SetCss.display prelude_container "" ;
+      end else begin
+        Manip.SetCss.display prelude_container "none" ;
+      end in
+  update () ;
+  Manip.appendChildren prelude_pane
+    [ prelude_container ]
+
+
+
 
 let setup_prelude_pane ace prelude =
   if prelude = "" then () else
@@ -1240,7 +1271,7 @@ module Display_exercise =
         else
           ignore (onclick cid);
         Manip.removeChildren exp;
-        Manip.appendChild exp (txt (if !displayed then "[-]" else "[+]"));
+        Manip.appendChild exp (txt (if !displayed then "[+]" else "[-]"));
         displayed := not !displayed;
         true
       in

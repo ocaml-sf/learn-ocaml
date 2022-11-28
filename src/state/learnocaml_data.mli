@@ -244,11 +244,50 @@ module Exercise: sig
     val enc: t Json_encoding.encoding
 
   end
+  
+  module Subindex : sig
+
+    type meta = Meta.t
+
+    type part = {
+        subtitle : string;
+        subexercise : string;
+        student_hidden : bool;
+        student_weight : int;
+        teacher_weight : int;
+      }
+
+    type t = {
+        meta : meta;
+        check_all_against : string option;
+        parts : part list;
+      }
+
+    val to_meta : t -> meta
+
+    val to_check : t -> string option
+
+    val to_part : t -> part list
+
+    val get_part_field : part -> string * string * bool * int * int
+
+    val to_subindex : meta -> string option -> part list -> t
+
+    val enc : t Json_encoding.encoding
+
+    val find : t -> string -> part
+
+    val find_opt : t -> string -> part option
+
+    val map_exercises :
+      (('a * t option) list -> part list -> part list) ->
+      ('a * t option) list -> ('a * t option) list
+  end
 
   module Index: sig
 
     type t =
-      | Exercises of (id * Meta.t option) list
+      | Exercises of (id * Meta.t option * Subindex.t option) list
       | Groups of (string * group) list
     and group =
       { title : string;
@@ -264,7 +303,7 @@ module Exercise: sig
 
     val fold_exercises: ('a -> id -> Meta.t -> 'a) -> 'a -> t -> 'a
 
-    val filter: (id -> Meta.t -> bool) -> t -> t
+    val filter: (id -> Subindex.t option -> bool) -> t -> t
 
     (** CPS version of [map_exercises] *)
     val mapk_exercises:
@@ -273,7 +312,7 @@ module Exercise: sig
       (t -> 'a) -> 'a
 
     (** CPS version of [filter] *)
-    val filterk: (id -> Meta.t -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a
+    val filterk: (id -> Subindex.t option -> (bool -> 'a) -> 'a) -> t -> (t -> 'a) -> 'a
 
   end
 

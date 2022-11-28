@@ -258,6 +258,13 @@ module Exercise = struct
         focus = Status.skills_focus m s }
 
   end
+  
+  module Subindex = struct
+    include Exercise.Subindex
+
+    (*let get_from_subindex subindex =
+      Exercise.Subindex*)
+  end
 
   module Index = struct
     include Exercise.Index
@@ -284,6 +291,7 @@ module Exercise = struct
            with type id := id
             and module Meta := Exercise.Meta
             and module Status := Exercise.Status
+            and module Subindex := Exercise.Subindex
             and module Index := Exercise.Index)
 
   let get id =
