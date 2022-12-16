@@ -218,9 +218,7 @@ module Editor_button (_ : Editor_info) : sig
   val sync : Token.t option Lwt.t -> Learnocaml_data.SMap.key -> (unit -> unit) -> unit
 end
 
-val setup_editor : string -> string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
-
-val is_synchronized_with_server_callback : (unit -> bool) ref
+val setup_editor : string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
 
 val typecheck :
   Learnocaml_toplevel.t ->

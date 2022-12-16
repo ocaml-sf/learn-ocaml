@@ -179,8 +179,7 @@ let () =
     Tyxml_js.Html5.[ h1 [ txt ex_meta.Exercise.Meta.title ] ;
                      Tyxml_js.Of_dom.of_iFrame text_iframe ] ;
   (* ---- editor pane --------------------------------------------------- *)
-  let editor, ace = setup_editor id solution in
-  is_synchronized_with_server_callback := (fun () -> Ace.is_synchronized ace);
+  let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   EB.cleanup (Learnocaml_exercise.(access File.template exo));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
