@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019-2020 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -976,7 +976,10 @@ module Editor_button (E : Editor_info) = struct
       sync_exercise token id ~editor:(Ace.get_contents E.ace) on_sync
       >|= fun _save -> ());
     Ace.register_sync_observer E.ace (fun sync ->
-        if sync then disable_button state else enable_button state)
+        (* this is run twice when clicking on Reset, because of Ace's implem *)
+        if sync then disable_button state else enable_button state);
+    (* Disable the Sync button at loading time: *)
+    Ace.set_synchronized E.ace
 
 end
 
@@ -989,6 +992,7 @@ let setup_editor id solution =
   in
   let ace = Ocaml_mode.get_editor editor in
   Ace.set_contents ace ~reset_undo:true solution;
+  (* "Ace.set_synchronized ace" done after "Ace.register_sync_observer" above *)
   Ace.set_font_size ace 18;
   editor, ace
 
