@@ -532,6 +532,7 @@ let sync_exercise token ?answer ?editor id on_sync =
          raise e)
   | None -> set_state_from_save_file save_file;
             handle_serverless ();
+            on_sync ();
             Lwt.return save_file
 
 let string_of_seconds seconds =
