@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019-2020 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -109,7 +109,7 @@ let () =
   let toplevel_toolbar = find_component "learnocaml-exo-toplevel-toolbar" in
   let editor_toolbar = find_component "learnocaml-exo-editor-toolbar" in
   let toplevel_button =
-    button ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
+    button ?id:None ~container: toplevel_toolbar ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
   let id = match Url.Current.path with
     | "" :: "exercises" :: p | "exercises" :: p ->
         String.concat "/" (List.map Url.urldecode (List.filter ((<>) "") p))
@@ -181,7 +181,9 @@ let () =
   (* ---- editor pane --------------------------------------------------- *)
   let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
-  EB.cleanup (Learnocaml_exercise.(access File.template exo));
+  if has_server then
+    EB.reload token id (Learnocaml_exercise.(access File.template exo))
+  else EB.cleanup (Learnocaml_exercise.(access File.template exo));
   EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
@@ -215,7 +217,7 @@ let () =
     typecheck true
   end;
   begin toolbar_button
-          ~icon: "reload" [%i"Grade!"] @@ fun () ->
+      ~icon: "reload" [%i"Grade!"] @@ fun () ->
     check_if_need_refresh has_server >>= fun () ->
     let aborted, abort_message =
       let t, u = Lwt.task () in

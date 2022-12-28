@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -30,6 +30,9 @@ module Report = Learnocaml_report
 module Answer: sig
 
   type t = {
+    (* -- on server: last graded solution;
+       -- on localStorage: last edited solution,
+          see learnocaml_common.set_state_from_save_file. *)
     solution: string ;
     grade: int (* \in [0, 100] *) option ;
     report: Report.t option ;

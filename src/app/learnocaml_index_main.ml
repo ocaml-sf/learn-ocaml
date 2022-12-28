@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -485,7 +485,7 @@ let tutorial_tab select (arg, set_arg, _delete_arg) () =
   load_tutorial !current_tutorial_name !current_step_id () >>= fun () ->
   toplevel_launch >>= fun top ->
   let toplevel_button =
-    button ~container: buttons_div ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
+    button ?id:None ~container: buttons_div ~theme: "dark" ~group:toplevel_buttons_group ?state:None in
   init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button ;
   Lwt.return tutorial_div
 
@@ -505,7 +505,7 @@ let toplevel_tab select _ () =
     (fun _ -> Lwt.async select) toplevel_buttons_group "toplevel"
   >>= fun top ->
   Manip.appendChild El.content div ;
-  let button = button ~container: buttons_div ~theme: "dark" ?group:None ?state:None in
+  let button = button ?id:None ~container: buttons_div ~theme: "dark" ?group:None ?state:None in
   init_toplevel_pane (Lwt.return top) top toplevel_buttons_group button ;
   Lwt.return div
 

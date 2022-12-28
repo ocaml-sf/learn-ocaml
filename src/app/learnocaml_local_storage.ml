@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -235,6 +235,14 @@ let exercise_list,
     [ "exercise-state-list" ]
     [ "exercise-state" ]
     Answer.enc
+
+let graded_list,
+    graded_solution,
+    all_graded_solutions =
+  listed
+    [ "exercise-graded-list" ]
+    [ "exercise-graded" ]
+    Json_encoding.string
 
 let toplevel_history_list,
     toplevel_history,

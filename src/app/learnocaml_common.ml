@@ -283,13 +283,13 @@ let disable_with_button_group component (buttons, _, _) =
     ((component :> < disabled : bool Js.t Js.prop > Js.t), ref false)
     :: !buttons
 
-let button ~container ~theme ?group ?state ~icon lbl cb =
+let button ?id ~container ~theme ?group ?state ~icon lbl cb =
   let (others, mutex, cnt) as group =
     match group with
     | None -> button_group ()
     | Some group -> group in
   let button =
-    H.(button [
+    H.(button ~a:(match id with Some id -> [ H.a_id id ] | _ -> []) [
         img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         txt " " ;
         span ~a:[ a_class [ "label" ] ] [ txt lbl ]
@@ -336,6 +336,32 @@ let dropdown ~id ~title items =
         (title @ [H.txt " \xe2\x96\xb4" (* U+25B4 *)]);
       H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
     ]
+
+let button_dropup ~container ~theme ?state ~icon ~id_menu ~items lbl cb_before =
+  let btn_id = id_menu ^ "-btn" in (* assumed to be unique *)
+  let toggle cb_before () =
+    let menu = find_component id_menu in
+    let disp =
+      match Manip.Css.display menu with
+      | "block" -> "none"
+      | _ ->
+         Lwt.dont_wait (fun () -> cb_before ()) (fun _exc -> ());
+         Lwt_js_events.async (fun () ->
+             Lwt_js_events.click window >|= fun ev ->
+             Js.Opt.case ev##.target (fun () -> ())
+               (fun e ->
+                 if Js.to_string e##.id <> btn_id then
+                   Manip.SetCss.display menu "none"));
+         "block"
+    in
+    Manip.SetCss.display menu disp;
+    Lwt.return_unit
+  in
+  let cb = toggle cb_before in
+  let div_content =
+    H.div ~a: [H.a_id id_menu; H.a_class ["dropup_content"]] items in
+  button ~id:btn_id ~container:container ~theme ?state ~icon lbl cb ;
+  Manip.appendChild container div_content
 
 let gettimeofday () =
   (new%js Js.date_now)##getTime /. 1000.
@@ -391,6 +417,8 @@ let set_state_from_save_file ?token save =
   let open Learnocaml_local_storage in
   (match token with None -> () | Some t -> store sync_token t);
   store nickname save.nickname;
+  store all_graded_solutions
+    (SMap.map (fun ans -> ans.Answer.solution) save.all_exercise_states);
   store all_exercise_states
     (SMap.merge (fun _ ans edi ->
          match ans, edi with
@@ -881,6 +909,9 @@ module Editor_button (E : Editor_info) = struct
   let editor_button =
     button ~container:E.buttons_container ~theme:"light"
 
+  let editor_button_dropup =
+    button_dropup ~container:E.buttons_container ~theme:"light"
+
   let cleanup template =
   editor_button
     ~icon: "cleanup" [%i"Reset"] @@ fun () ->
@@ -890,6 +921,81 @@ module Editor_button (E : Editor_info) = struct
          Ace.set_contents E.ace template);
     Lwt.return ()
 
+  let reload token id template =
+    let rec fetch_draft_solution tok () =
+      match tok with
+      | token ->
+         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+         | Ok save ->
+            set_state_from_save_file ~token save;
+            Lwt.return_some (save.Save.nickname)
+         | Error (`Not_found _) ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognised."];
+            Lwt.return_none
+         | Error e ->
+            lwt_alert ~title:[%i"REQUEST ERROR"] [
+                H.p [H.txt [%i"Could not retrieve data from server"]];
+                H.code [H.txt (Server_caller.string_of_error e)];
+              ] ~buttons:[
+                [%i"Retry"], (fun () -> fetch_draft_solution tok ());
+                [%i"Cancel"], (fun () -> Lwt.return_none);
+              ]
+    in
+    let id_menu = "reload-button-dropup" in (* assumed to be unique *)
+    editor_button_dropup
+      ~icon: "down"
+      ~id_menu
+      ~items: [
+        H.ul [
+            H.li ~a: [ H.a_id (id_menu ^ "-graded"); H.a_onclick (fun _ ->
+                confirm ~title:[%i"Reload latest graded code"]
+                  [H.txt [%i"This will replace your code with your last graded code. Are you sure?"]]
+                  (fun () ->
+                    let graded = Learnocaml_local_storage.(retrieve (graded_solution id)) in
+                    Ace.set_contents E.ace graded; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reload latest graded code"] ];
+
+            H.li ~a: [ H.a_id (id_menu ^ "-draft"); H.a_onclick (fun _ ->
+                confirm ~title:[%i"Reload latest saved draft"]
+                  [H.txt [%i"This will replace your code with your last saved draft. Are you sure?"]]
+                  (fun () ->
+                    let draft = Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution in
+                    Ace.set_contents E.ace draft; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reload latest saved draft"] ];
+
+            H.li ~a: [ H.a_onclick (fun _ ->
+                confirm ~title:[%i"START FROM SCRATCH"]
+                  [H.txt [%i"This will discard all your edits. Are you sure?"]]
+                  (fun () ->
+                    Ace.set_contents E.ace template; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reset to initial template"] ];
+          ]
+      ]
+      [%i"Reload"] @@ fun () ->
+        token >>= function
+          None ->
+          (* We may want to only show "Reset to initial template" in this case,
+             though there is already this code in learnocaml_exercise_main.ml:
+             {| if has_server then EB.reload ... else EB.cleanup ... |}. *)
+           Lwt.return_unit
+        | Some tok ->
+           let found f =
+               match f () with
+               | _val -> true
+               | exception Not_found -> false
+           in
+           fetch_draft_solution tok () >|= fun _save ->
+           let menu_draft = find_component (id_menu ^ "-draft") in
+           Manip.SetCss.display menu_draft
+             (if found (fun () ->
+                     Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution)
+              then "" else "none");
+           let menu_graded = find_component (id_menu ^ "-graded") in
+           Manip.SetCss.display menu_graded
+             (if found (fun () ->
+                     Learnocaml_local_storage.(retrieve (graded_solution id)))
+              then "" else "none")
   let download id =
     editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
