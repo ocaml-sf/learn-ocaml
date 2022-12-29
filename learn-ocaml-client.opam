@@ -42,7 +42,7 @@ depends: [
   "ppxlib"
   "ppx_sexp_conv"
   "ppx_tools"
-  "ssl" {= "0.5.10"}
+  "ssl" {= "0.5.12"}
   "vg"
 ]
 build: [

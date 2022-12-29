@@ -18,6 +18,7 @@
 }
 #learnocaml-report .code {
   font-family: 'Inconsolata', monospace;
+  white-space: pre-wrap;
   display: inline;
   font-size: 18px;
   line-height: 18px;
