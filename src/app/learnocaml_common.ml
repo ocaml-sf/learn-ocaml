@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019-2020 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -283,13 +283,13 @@ let disable_with_button_group component (buttons, _, _) =
     ((component :> < disabled : bool Js.t Js.prop > Js.t), ref false)
     :: !buttons
 
-let button ~container ~theme ?group ?state ~icon lbl cb =
+let button ?id ~container ~theme ?group ?state ~icon lbl cb =
   let (others, mutex, cnt) as group =
     match group with
     | None -> button_group ()
     | Some group -> group in
   let button =
-    H.(button [
+    H.(button ~a:(match id with Some id -> [ H.a_id id ] | _ -> []) [
         img ~alt:"" ~src:(api_server ^ "/icons/icon_" ^ icon ^ "_" ^ theme ^ ".svg") () ;
         txt " " ;
         span ~a:[ a_class [ "label" ] ] [ txt lbl ]
@@ -336,6 +336,32 @@ let dropdown ~id ~title items =
         (title @ [H.txt " \xe2\x96\xb4" (* U+25B4 *)]);
       H.div ~a: [H.a_id id; H.a_class ["dropdown_content"]] items
     ]
+
+let button_dropup ~container ~theme ?state ~icon ~id_menu ~items lbl cb_before =
+  let btn_id = id_menu ^ "-btn" in (* assumed to be unique *)
+  let toggle cb_before () =
+    let menu = find_component id_menu in
+    let disp =
+      match Manip.Css.display menu with
+      | "block" -> "none"
+      | _ ->
+         Lwt.dont_wait (fun () -> cb_before ()) (fun _exc -> ());
+         Lwt_js_events.async (fun () ->
+             Lwt_js_events.click window >|= fun ev ->
+             Js.Opt.case ev##.target (fun () -> ())
+               (fun e ->
+                 if Js.to_string e##.id <> btn_id then
+                   Manip.SetCss.display menu "none"));
+         "block"
+    in
+    Manip.SetCss.display menu disp;
+    Lwt.return_unit
+  in
+  let cb = toggle cb_before in
+  let div_content =
+    H.div ~a: [H.a_id id_menu; H.a_class ["dropup_content"]] items in
+  button ~id:btn_id ~container:container ~theme ?state ~icon lbl cb ;
+  Manip.appendChild container div_content
 
 let gettimeofday () =
   (new%js Js.date_now)##getTime /. 1000.
@@ -391,6 +417,8 @@ let set_state_from_save_file ?token save =
   let open Learnocaml_local_storage in
   (match token with None -> () | Some t -> store sync_token t);
   store nickname save.nickname;
+  store all_graded_solutions
+    (SMap.map (fun ans -> ans.Answer.solution) save.all_exercise_states);
   store all_exercise_states
     (SMap.merge (fun _ ans edi ->
          match ans, edi with
@@ -504,6 +532,7 @@ let sync_exercise token ?answer ?editor id on_sync =
          raise e)
   | None -> set_state_from_save_file save_file;
             handle_serverless ();
+            on_sync ();
             Lwt.return save_file
 
 let string_of_seconds seconds =
@@ -712,72 +741,11 @@ let mouseover_toggle_signal elt sigvalue setter =
   in
   Manip.Ev.onmouseover elt hdl
 
-(*
-
-   If a user has made no change to a solution for the exercise [id]
-   for 180 seconds, [check_valid_editor_state id] ensures that there is
-   no more recent version of this solution in the server. If this is
-   the case, the user is asked if we should download this solution
-   from the server.
-
-   This function reduces the risk of an involuntary overwriting of a
-   student solution when the solution is open in several clients.
-
-*)
-let is_synchronized_with_server_callback = ref (fun () -> false)
-
-let is_synchronized_with_server () = !is_synchronized_with_server_callback ()
-
-let check_valid_editor_state id =
-  let last_changed = ref (Unix.gettimeofday ()) in
-  fun update_content focus_back on_sync ->
-  let update_local_copy checking_time () =
-    let get_solution () =
-      Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution in
-    try let mtime =
-          Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.mtime in
-        if mtime > checking_time then begin
-          let buttons =
-            if is_synchronized_with_server () then
-              [
-                [%i "Fetch from server"],
-                (fun () -> let solution = get_solution () in
-                           Lwt.return (focus_back (); update_content solution; on_sync ()));
-                [%i "Ignore & keep editing"],
-                (fun () -> Lwt.return (focus_back ()));
-              ]
-            else
-              [
-                [%i "Ignore & keep editing"],
-                (fun () -> Lwt.return (focus_back ()));
-                [%i "Fetch from server & overwrite"],
-                (fun () -> let solution = get_solution () in
-                           Lwt.return (focus_back (); update_content solution; on_sync ()));
-              ]
-         in
-         lwt_alert ~title:"Question"
-           ~buttons
-           [ H.p [H.txt [%i "A more recent answer exists on the server. \
-                             Do you want to fetch the new version?"] ] ]
-          end else Lwt.return_unit
-    with
-    | Not_found -> Lwt.return ()
-  in
-  let now = Unix.gettimeofday () in
-  if now -. !last_changed > 180. then (
-    let checking_time = !last_changed in
-    last_changed := now;
-    Lwt.async (update_local_copy checking_time)
-  ) else
-    last_changed := now
-
-
 let ace_display tab =
   let ace = lazy (
     let answer =
       Ocaml_mode.create_ocaml_editor
         (Tyxml_js.To_dom.of_div tab)
-        (fun _ _ _ -> ())
     in
     let ace = Ocaml_mode.get_editor answer in
     Ace.set_font_size ace 16;
@@ -942,6 +910,9 @@ module Editor_button (E : Editor_info) = struct
   let editor_button =
     button ~container:E.buttons_container ~theme:"light"
 
+  let editor_button_dropup =
+    button_dropup ~container:E.buttons_container ~theme:"light"
+
   let cleanup template =
   editor_button
     ~icon: "cleanup" [%i"Reset"] @@ fun () ->
@@ -951,6 +922,81 @@ module Editor_button (E : Editor_info) = struct
          Ace.set_contents E.ace template);
     Lwt.return ()
 
+  let reload token id template =
+    let rec fetch_draft_solution tok () =
+      match tok with
+      | token ->
+         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+         | Ok save ->
+            set_state_from_save_file ~token save;
+            Lwt.return_some (save.Save.nickname)
+         | Error (`Not_found _) ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognised."];
+            Lwt.return_none
+         | Error e ->
+            lwt_alert ~title:[%i"REQUEST ERROR"] [
+                H.p [H.txt [%i"Could not retrieve data from server"]];
+                H.code [H.txt (Server_caller.string_of_error e)];
+              ] ~buttons:[
+                [%i"Retry"], (fun () -> fetch_draft_solution tok ());
+                [%i"Cancel"], (fun () -> Lwt.return_none);
+              ]
+    in
+    let id_menu = "reload-button-dropup" in (* assumed to be unique *)
+    editor_button_dropup
+      ~icon: "down"
+      ~id_menu
+      ~items: [
+        H.ul [
+            H.li ~a: [ H.a_id (id_menu ^ "-graded"); H.a_onclick (fun _ ->
+                confirm ~title:[%i"Reload latest graded code"]
+                  [H.txt [%i"This will replace your code with your last graded code. Are you sure?"]]
+                  (fun () ->
+                    let graded = Learnocaml_local_storage.(retrieve (graded_solution id)) in
+                    Ace.set_contents E.ace graded; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reload latest graded code"] ];
+
+            H.li ~a: [ H.a_id (id_menu ^ "-draft"); H.a_onclick (fun _ ->
+                confirm ~title:[%i"Reload latest saved draft"]
+                  [H.txt [%i"This will replace your code with your last saved draft. Are you sure?"]]
+                  (fun () ->
+                    let draft = Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution in
+                    Ace.set_contents E.ace draft; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reload latest saved draft"] ];
+
+            H.li ~a: [ H.a_onclick (fun _ ->
+                confirm ~title:[%i"START FROM SCRATCH"]
+                  [H.txt [%i"This will discard all your edits. Are you sure?"]]
+                  (fun () ->
+                    Ace.set_contents E.ace template; Ace.focus E.ace) ; true) ]
+              [ H.txt [%i"Reset to initial template"] ];
+          ]
+      ]
+      [%i"Reload"] @@ fun () ->
+        token >>= function
+          None ->
+          (* We may want to only show "Reset to initial template" in this case,
+             though there is already this code in learnocaml_exercise_main.ml:
+             {| if has_server then EB.reload ... else EB.cleanup ... |}. *)
+           Lwt.return_unit
+        | Some tok ->
+           let found f =
+               match f () with
+               | _val -> true
+               | exception Not_found -> false
+           in
+           fetch_draft_solution tok () >|= fun _save ->
+           let menu_draft = find_component (id_menu ^ "-draft") in
+           Manip.SetCss.display menu_draft
+             (if found (fun () ->
+                     Learnocaml_local_storage.(retrieve (exercise_state id)).Answer.solution)
+              then "" else "none");
+           let menu_graded = find_component (id_menu ^ "-graded") in
+           Manip.SetCss.display menu_graded
+             (if found (fun () ->
+                     Learnocaml_local_storage.(retrieve (graded_solution id)))
+              then "" else "none")
   let download id =
     editor_button
       ~icon: "download" [%i"Download"] @@ fun () ->
@@ -976,19 +1022,22 @@ module Editor_button (E : Editor_info) = struct
       sync_exercise token id ~editor:(Ace.get_contents E.ace) on_sync
       >|= fun _save -> ());
     Ace.register_sync_observer E.ace (fun sync ->
-        if sync then disable_button state else enable_button state)
+        (* this is run twice when clicking on Reset, because of Ace's implem *)
+        if sync then disable_button state else enable_button state);
+    (* Disable the Sync button at loading time: *)
+    Ace.set_synchronized E.ace
 
 end
 
-let setup_editor id solution =
+let setup_editor solution =
   let editor_pane = find_component "learnocaml-exo-editor-pane" in
   let editor =
     Ocaml_mode.create_ocaml_editor
       (Tyxml_js.To_dom.of_div editor_pane)
-      (check_valid_editor_state id)
   in
   let ace = Ocaml_mode.get_editor editor in
   Ace.set_contents ace ~reset_undo:true solution;
+  (* "Ace.set_synchronized ace" done after "Ace.register_sync_observer" above *)
   Ace.set_font_size ace 18;
   editor, ace
 
@@ -1108,8 +1157,6 @@ let get_token ?(has_server = true) () =
         Lwt.return
     with
     Not_found ->
-      retrieve (Learnocaml_api.Nonce ())
-      >>= fun nonce ->
       ask_string ~title:"Token"
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->

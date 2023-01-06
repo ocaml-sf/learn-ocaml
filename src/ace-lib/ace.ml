@@ -88,7 +88,7 @@ let set_synchronized_status editor status =
 
 let focus { editor } = editor##focus
 
-let create_editor editor_div check_valid_state =
+let create_editor editor_div =
   let editor = edit editor_div in
   Js.Unsafe.set editor "$blockScrolling" (Js.Unsafe.variable "Infinity");
   let data =
@@ -102,8 +102,6 @@ let create_editor editor_div check_valid_state =
   editor##.customData := (data, None);
   editor##setOption (Js.string "displayIndentGuides") (Js.bool false);
   editor##on (Js.string "change") (fun () ->
-      check_valid_state (set_contents data) (fun () -> focus data)
-        (fun () -> set_synchronized_status data true);
       set_synchronized_status data false);
   data
 

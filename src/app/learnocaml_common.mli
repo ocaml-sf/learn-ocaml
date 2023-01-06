@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2022 OCaml Software Foundation.
  * Copyright (C) 2016-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -91,6 +91,7 @@ val disable_with_button_group :
   button_group -> unit
 
 val button :
+  ?id: string ->
   container: 'a Tyxml_js.Html.elt ->
   theme: string ->
   ?group: button_group ->
@@ -104,6 +105,16 @@ val dropdown :
   title: [< Html_types.button_content_fun > `PCDATA] Tyxml_js.Html.elt list ->
   [< Html_types.div_content_fun ] Tyxml_js.Html.elt list ->
   [> Html_types.div ] Tyxml_js.Html.elt
+
+val button_dropup :
+  container: 'a Tyxml_js.Html5.elt ->
+  theme: string ->
+  ?state: button_state ->
+  icon: string ->
+  id_menu: string ->
+  items: [< Html_types.div_content_fun ] Tyxml_js.Html.elt list ->
+  string -> (unit -> unit Lwt.t) ->
+  unit
 
 val render_rich_text :
   ?on_runnable_clicked: (string -> unit) ->
@@ -213,14 +224,13 @@ end
 
 module Editor_button (_ : Editor_info) : sig
   val cleanup : string -> unit
+  val reload : Learnocaml_data.Token.t option Lwt.t -> string -> string -> unit
   val download : string -> unit
   val eval : Learnocaml_toplevel.t -> (string -> unit) -> unit
   val sync : Token.t option Lwt.t -> Learnocaml_data.SMap.key -> (unit -> unit) -> unit
 end
 
-val setup_editor : string -> string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
-
-val is_synchronized_with_server_callback : (unit -> bool) ref
+val setup_editor : string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
 
 val typecheck :
   Learnocaml_toplevel.t ->

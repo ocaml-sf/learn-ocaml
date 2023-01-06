@@ -69,6 +69,33 @@ body {
     top: 61px;
   }
 }
+/* ---------------- drop up menu ---------------- */
+
+.dropup_content {
+    display: none;
+    position: absolute;
+    bottom: 40px;
+    z-index: 100;
+    background-color: #666;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    width: max-content;
+    transition: all .3s ease .15s; /* optional */
+}
+
+.dropup_content ul {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+.dropup_content li {
+    padding: 5px 10px;
+    font-size: 16px;
+}
+.dropup_content li:hover {
+    background-color: rgba(170,204,255,0.5);
+    cursor: pointer;
+}
+
 /* -------------------- tabs and tab buttons ---------------------- */
 #learnocaml-exo-tab-buttons {
   position: absolute;

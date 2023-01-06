@@ -64,7 +64,7 @@ let main () =
   (* ---- toplevel pane ------------------------------------------------- *)
   init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button ;
   (* ---- editor pane --------------------------------------------------- *)
-  let editor, ace = setup_editor id solution in
+  let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   EB.cleanup playground.Playground.template;
   EB.download id;
