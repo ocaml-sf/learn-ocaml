@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.14.1](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.0...v0.14.1) (2023-01-06)
+
+
+### Bug Fixes
+
+* **learnocaml_common.ml:** Ask token (not secret) when opening exercise url ([#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([b91050e](https://github.com/ocaml-sf/learn-ocaml/commit/b91050e1caaf46fb6c3abb6f3120dd784af701f7))
+* **learnocaml_common.ml:** Remove unused var (leftover of PR [#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([dc5c89c](https://github.com/ocaml-sf/learn-ocaml/commit/dc5c89ccfd9a5f3fe234c9cbdefeb017a66e82d8))
+* **learnocaml_report.css:** Display multiple spaces in code excerpts ([#503](https://github.com/ocaml-sf/learn-ocaml/issues/503)) ([c1054ab](https://github.com/ocaml-sf/learn-ocaml/commit/c1054abeafc2defd14963c50a9f62d036674fca9)), closes [#502](https://github.com/ocaml-sf/learn-ocaml/issues/502)
+* **web-app:** Add Reload button that replaces Mechanism-2 of PR [#372](https://github.com/ocaml-sf/learn-ocaml/issues/372) ([918b79e](https://github.com/ocaml-sf/learn-ocaml/commit/918b79e875d80451b53a0f215da05e9e7223f177)), closes [#493](https://github.com/ocaml-sf/learn-ocaml/issues/493) [#505](https://github.com/ocaml-sf/learn-ocaml/issues/505)
+* **web-app:** Disable Sync after local save for a static deployment ([dd69f3c](https://github.com/ocaml-sf/learn-ocaml/commit/dd69f3c9b0995817f789d9f77ada6cd84ca40075))
+* **web-app:** Disable the Sync button at load time ([1c068dd](https://github.com/ocaml-sf/learn-ocaml/commit/1c068ddd5d933c102ccc4c889a8ea62c240b0b6e))
+* **web-app:** Remove automatic dialog (cf. Mechanism-2 of PR [#372](https://github.com/ocaml-sf/learn-ocaml/issues/372)) ([7ea03f1](https://github.com/ocaml-sf/learn-ocaml/commit/7ea03f14444373fbbc036b4a392c5933f9af466b))
+
+
+### Documentation
+
+* **index.md:** Update index.md ([2fdc853](https://github.com/ocaml-sf/learn-ocaml/commit/2fdc853ba4095147698f8f77d39aa64d3fdf155e))
+* **README.md:** Update/Fix README.md ([7174547](https://github.com/ocaml-sf/learn-ocaml/commit/7174547ff0c97f4feaabbb43c8a49b0e522693ad))
+* **src/main/*:** Document exit codes in man pages forall cmd/subcmd ([c6ae2ca](https://github.com/ocaml-sf/learn-ocaml/commit/c6ae2cad5e68b7f4459c488a36e8900a402b3b9e))
+* **src/main/*:** Move server options to ad-hoc section in man pages ([7c14d4c](https://github.com/ocaml-sf/learn-ocaml/commit/7c14d4c0d67d79b16d4c8b9bc06d6bd35c63ad70))
+
+
+### Build System
+
+* **static-binaries:** Fix building of static binaries on CI ([#497](https://github.com/ocaml-sf/learn-ocaml/issues/497)) ([bcb0ff7](https://github.com/ocaml-sf/learn-ocaml/commit/bcb0ff73123f6e48102e328893d6d94365d8036d)), closes [#496](https://github.com/ocaml-sf/learn-ocaml/issues/496)
+
+
+### Dependencies
+
+* **opam:** Bump ssl (0.5.10 -&gt; 0.5.12) ([#499](https://github.com/ocaml-sf/learn-ocaml/issues/499)) ([9bc28a6](https://github.com/ocaml-sf/learn-ocaml/commit/9bc28a63ab13986dab36c9843142094b05ab5856)), closes [#498](https://github.com/ocaml-sf/learn-ocaml/issues/498)
+* **opam:** Upgrade cmdliner version to 1.1.1 & Improve man pages ([590034f](https://github.com/ocaml-sf/learn-ocaml/commit/590034f9fa6b38a6f7e0032c58cfc257fc253ea8))
+
+
+### CI/CD
+
+* **check-update-index.yml:** Add a workflow to check index.md ([24c56b3](https://github.com/ocaml-sf/learn-ocaml/commit/24c56b3912bc678e4e90d819ba10a02dcf2714f6)), closes [#490](https://github.com/ocaml-sf/learn-ocaml/issues/490)
+* **pin-artifacts.yml:** Add build artifacts links within upstream commits status ([#501](https://github.com/ocaml-sf/learn-ocaml/issues/501)) ([e55cf61](https://github.com/ocaml-sf/learn-ocaml/commit/e55cf61bfb001a8aeeadb3dcd751825f1064e96e)), closes [#475](https://github.com/ocaml-sf/learn-ocaml/issues/475)
+* **update-index.sh:** Add a script to update docs/index.md ([c538200](https://github.com/ocaml-sf/learn-ocaml/commit/c5382005c25d706f6ae2b0458c7fabb9aa96adc1)), closes [#490](https://github.com/ocaml-sf/learn-ocaml/issues/490)
+
 ## [0.14.0](https://www.github.com/ocaml-sf/learn-ocaml/compare/v0.13.1...v0.14.0) (2022-03-06)
 
 
