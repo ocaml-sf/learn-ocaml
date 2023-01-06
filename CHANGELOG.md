@@ -5,13 +5,13 @@
 
 ### Bug Fixes
 
-* **learnocaml_common.ml:** Ask token (not secret) when opening exercise url ([#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([b91050e](https://github.com/ocaml-sf/learn-ocaml/commit/b91050e1caaf46fb6c3abb6f3120dd784af701f7))
-* **learnocaml_common.ml:** Remove unused var (leftover of PR [#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([dc5c89c](https://github.com/ocaml-sf/learn-ocaml/commit/dc5c89ccfd9a5f3fe234c9cbdefeb017a66e82d8))
 * **learnocaml_report.css:** Display multiple spaces in code excerpts ([#503](https://github.com/ocaml-sf/learn-ocaml/issues/503)) ([c1054ab](https://github.com/ocaml-sf/learn-ocaml/commit/c1054abeafc2defd14963c50a9f62d036674fca9)), closes [#502](https://github.com/ocaml-sf/learn-ocaml/issues/502)
-* **web-app:** Add Reload button that replaces Mechanism-2 of PR [#372](https://github.com/ocaml-sf/learn-ocaml/issues/372) ([918b79e](https://github.com/ocaml-sf/learn-ocaml/commit/918b79e875d80451b53a0f215da05e9e7223f177)), closes [#493](https://github.com/ocaml-sf/learn-ocaml/issues/493) [#505](https://github.com/ocaml-sf/learn-ocaml/issues/505)
-* **web-app:** Disable Sync after local save for a static deployment ([dd69f3c](https://github.com/ocaml-sf/learn-ocaml/commit/dd69f3c9b0995817f789d9f77ada6cd84ca40075))
+* **web-app:** Ask token (not secret) when opening exercise url ([#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([b91050e](https://github.com/ocaml-sf/learn-ocaml/commit/b91050e1caaf46fb6c3abb6f3120dd784af701f7)), closes [#488](https://github.com/ocaml-sf/learn-ocaml/issues/488)
 * **web-app:** Disable the Sync button at load time ([1c068dd](https://github.com/ocaml-sf/learn-ocaml/commit/1c068ddd5d933c102ccc4c889a8ea62c240b0b6e))
+* **web-app:** Disable Sync after local save for a static deployment ([dd69f3c](https://github.com/ocaml-sf/learn-ocaml/commit/dd69f3c9b0995817f789d9f77ada6cd84ca40075))
 * **web-app:** Remove automatic dialog (cf. Mechanism-2 of PR [#372](https://github.com/ocaml-sf/learn-ocaml/issues/372)) ([7ea03f1](https://github.com/ocaml-sf/learn-ocaml/commit/7ea03f14444373fbbc036b4a392c5933f9af466b))
+* **web-app:** Add Reload button that replaces Mechanism-2 of PR [#372](https://github.com/ocaml-sf/learn-ocaml/issues/372) ([918b79e](https://github.com/ocaml-sf/learn-ocaml/commit/918b79e875d80451b53a0f215da05e9e7223f177)), closes [#493](https://github.com/ocaml-sf/learn-ocaml/issues/493) [#505](https://github.com/ocaml-sf/learn-ocaml/issues/505)
+* **learnocaml_common.ml:** Remove unused var (leftover of PR [#489](https://github.com/ocaml-sf/learn-ocaml/issues/489)) ([dc5c89c](https://github.com/ocaml-sf/learn-ocaml/commit/dc5c89ccfd9a5f3fe234c9cbdefeb017a66e82d8))
 
 
 ### Documentation
