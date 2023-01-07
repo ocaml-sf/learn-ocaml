@@ -1,0 +1,65 @@
+name: 'Feature request'
+description: 'Suggest an idea for the Learn-OCaml project.'
+title: 'Feature: '
+labels: ['kind: feature']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to open this issue!
+  - type: input
+    id: users
+    attributes:
+      label: 'Related user(s):'
+      description: '(other GitHub users involved, if applicable)'
+      placeholder: '@…, @…'
+  - type: textarea
+    id: related
+    attributes:
+      label: 'Related issue(s) or PR(s):'
+      description: '(if applicable)'
+      placeholder: |-
+        - #…
+        - #…
+  - type: dropdown
+    id: scopes
+    attributes:
+      label: 'Related project scope(s):'
+      description: '(you can select multiple choices)'
+      multiple: true
+      options:
+        - web-app UI
+        - teacher dashboard
+        - partition-view
+        - 'grading, test_lib'
+        - web API
+        - learn-ocaml-client
+        - build
+        - documentation
+        - other
+  - type: textarea
+    id: descr
+    attributes:
+      label: 'The problem:'
+      description: 'A clear and concise description of what the problem is.'
+      placeholder: >-
+        (e.g., I'm always frustrated when …)
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 'Wanted solution:'
+      description: 'A clear and concise description of what you want to happen.'
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 'Considered alternatives:'
+      description: >-
+        A clear and concise description of any alternative solutions or features you considered.
+  - type: textarea
+    id: context
+    attributes:
+      label: 'Additional context:'
+      description: 'Add any other useful details about the problem here.'
