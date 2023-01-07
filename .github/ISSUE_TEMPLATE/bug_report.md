@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Report a bug with this project
-title: 'Bug:'
-labels: bug
+title: 'Bug: '
+labels: 'kind: bug'
 assignees: ''
 
 ---
