@@ -93,7 +93,7 @@ jobs:
       - name: Setup opam repository
         run: |
           mkdir -v -p ~/.opam/plugins/opam-publish/repos/
-          git clone git://github.com/$opam_repo ~/.opam/plugins/opam-publish/repos/${opam_repo/\//%}
+          git clone https://github.com/$opam_repo ~/.opam/plugins/opam-publish/repos/${opam_repo/\//%}
           cd ~/.opam/plugins/opam-publish/repos/${opam_repo/\//%}
           git remote add user https://${{ secrets.OPAM_RELEASE }}@github.com/proofbot/opam-repository
       # Set up our token because opam doesn't support env var tokens
