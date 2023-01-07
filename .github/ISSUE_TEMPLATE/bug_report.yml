@@ -1,0 +1,118 @@
+name: 'Bug report'
+description: 'Report a bug with the Learn-OCaml project.'
+title: 'Bug: '
+labels: ['kind: bug']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug!
+  - type: input
+    id: users
+    attributes:
+      label: 'Related user(s):'
+      description: '(other GitHub users involved, if applicable)'
+      placeholder: '@…, @…'
+  - type: textarea
+    id: related
+    attributes:
+      label: 'Related issue(s) or PR(s):'
+      description: '(if applicable)'
+      placeholder: |-
+        - #…
+        - #…
+  - type: dropdown
+    id: scopes
+    attributes:
+      label: 'Related project scope(s):'
+      description: '(you can select multiple choices)'
+      multiple: true
+      options:
+        - web-app UI
+        - teacher dashboard
+        - partition-view
+        - 'grading, test_lib'
+        - web API
+        - learn-ocaml-client
+        - build
+        - documentation
+        - other
+  - type: textarea
+    id: descr
+    attributes:
+      label: 'Bug description:'
+      description: 'A clear and concise description of what the bug is.'
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 'To reproduce:'
+      description: 'Steps to reproduce the behavior.'
+      placeholder: |-
+        1. Open …
+        1. Click on …
+        1. Then …
+  - type: textarea
+    id: expected
+    attributes:
+      label: 'Expected behavior:'
+      description: 'A clear and concise description of what you expected to happen.'
+  - type: input
+    id: learn-ocaml-version
+    attributes:
+      label: 'learn-ocaml --version'
+      description: '(if you used a released version)'
+  - type: input
+    id: commit
+    attributes:
+      label: 'git describe --long --always --abbrev=40 --tags'
+      description: '(if you compiled the code yourself)'
+  - type: dropdown
+    id: os
+    attributes:
+      label: 'What OS do you use?'
+      multiple: true
+      options:
+        - GNU/Linux
+        - MacOS
+        - Windows
+        - other
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: 'What OS version/distribution do you use?'
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 'What browser(s) do you use with learn-ocaml?'
+      description: '(you can select multiple choices)'
+      multiple: true
+      options:
+        - Firefox
+        - Chromium
+        - Chrome
+        - Safari 
+        - Edge
+        - other
+  - type: input
+    id: browser-version
+    attributes:
+      label: 'What browser(s) version did you used to reproduce the issue?'
+      description: >-
+        (you can omit this question if the issue doesn't involve the web-app)
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 'Screenshots (if need be):'
+      description: 'If applicable, add screenshots to document your problem.'
+  - type: textarea
+    id: context
+    attributes:
+      label: 'Additional context:'
+      description: 'Add any other useful details about the problem here.'
