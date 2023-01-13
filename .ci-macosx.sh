@@ -1,12 +1,27 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 sw_vers
 system_profiler SPSoftwareDataType
 uname -a
 
 brew update
+
+# homebrew fails to upgrade python due to unlinking failure
+# (cf. https://github.com/actions/setup-python/issues/577 )
+rm -f /usr/local/bin/2to3
+rm -f /usr/local/bin/idle3
+rm -f /usr/local/bin/pydoc3
+rm -f /usr/local/bin/python3
+rm -f /usr/local/bin/python3-config
+rm -f /usr/local/bin/2to3-3.11
+rm -f /usr/local/bin/idle3.11
+rm -f /usr/local/bin/pydoc3.11
+rm -f /usr/local/bin/python3.11
+rm -f /usr/local/bin/python3.11-config
+brew upgrade
+
 brew install pkg-config
 brew install opam
 brew install libev
