@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Check out the repo
         # Mandatory step (otherwise, hub raises "fatal: Not a git repository")
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download workflow artifacts
         # cf. https://github.com/actions/download-artifact/issues/3
         uses: dawidd6/action-download-artifact@v2
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup bot user
         run: |
           git config --global user.email "37002148+proofbot@users.noreply.github.com"
@@ -133,7 +133,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -154,7 +154,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -178,7 +178,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Push to Docker Hub
         # https://github.com/docker/build-push-action/tree/releases/v1#readme
         uses: docker/build-push-action@v1
