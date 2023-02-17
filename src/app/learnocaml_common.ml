@@ -1109,7 +1109,7 @@ let get_token ?(has_server = true) () =
     with
     Not_found ->
       retrieve (Learnocaml_api.Nonce ())
-      >>= fun nonce ->
+      >>= fun _nonce ->
       ask_string ~title:"Token"
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->
