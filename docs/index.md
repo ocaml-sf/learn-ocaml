@@ -74,7 +74,7 @@ Authors and Acknowledgements
 
 Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
-It was written by OCamlPro from 2015 to 2019.
+It was written by OCamlPro from 2015 to 2018.
 
 The current main contributors are Érik Martin-Dorel, Yann Régis-Gianas, and Louis Gesbert.
 
