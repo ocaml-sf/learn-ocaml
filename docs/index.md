@@ -74,12 +74,16 @@ Authors and Acknowledgements
 
 Learn-OCaml is a free software by the [OCaml Software Foundation](https://ocaml-sf.org).
 
-* The main authors are Benjamin Canou, Çağdaş Bozman and Grégoire Henry.
+It was written by OCamlPro from 2015 to 2019.
 
-* It builds on the previous experience of Try OCaml by Çağdaş Bozman.
+The current main contributors are Érik Martin-Dorel, Yann Régis-Gianas, and Louis Gesbert.
 
-* We heavily use js_of_ocaml, so thanks to the Ocsigen team.
+The initial authors were Benjamin Canou, Çağdaş Bozman, and Grégoire Henry.
 
-* The text editing component is a customized version of ACE.
+It builds on the previous experience of Try OCaml, by Çağdaş Bozman, and Fabrice Le Fessant.
 
-* We also include a derivative of ppx_metaquot by Alain Frisch.
+We heavily use js_of_ocaml, so thanks to the Ocsigen team.
+
+The text editing component is a customized version of ACE.
+
+We also include a derivative of ppx_metaquot by Alain Frisch.
