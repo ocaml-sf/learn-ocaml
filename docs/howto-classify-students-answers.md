@@ -21,7 +21,7 @@ Follow these steps:
 
 1. Go to the teaching tab in the LearnOCaml Web UI (needs a teacher token).
 
-2. Middle-click on the exercise `x` in the list of exercises.
+2. Hold Ctrl (on macOS: Hold ⌘) and left click on the exercise `x` in the list of exercises.
 
 3. Enter `foo` in the dialog box.
 

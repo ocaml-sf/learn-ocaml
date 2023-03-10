@@ -236,7 +236,13 @@ let rec teacher_tab token _select _params () =
               H.a_ondblclick (fun _ -> open_exercise_ ());
               H.a_onmouseup (fun ev ->
                   Js.Optdef.case ev##.which (fun () -> true) @@ fun btn ->
-                  if btn = Dom_html.Middle_button then open_partition_ () else true);
+                  if (Js.to_bool ev##.ctrlKey ||
+                      Js.to_bool ev##.metaKey (* ⌘ on macOS *))
+                     && btn = Dom_html.Left_button
+                  then
+                    open_partition_ ()
+                  else
+                    true);
             ] [
               auto_checkbox_td ();
               H.td ~a:[indent_style group_level]
