@@ -20,6 +20,8 @@ rm -f /usr/local/bin/idle3.11
 rm -f /usr/local/bin/pydoc3.11
 rm -f /usr/local/bin/python3.11
 rm -f /usr/local/bin/python3.11-config
+rm -f /usr/local/lib/libtcl8.6.dylib
+rm -f /usr/local/lib/libtk8.6.dylib
 brew upgrade
 
 brew install pkg-config
