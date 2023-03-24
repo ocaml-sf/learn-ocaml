@@ -25,7 +25,14 @@
 <!-- You can leave this note below as a reminder for maintainers: -->
 ### Note to maintainers
 
-* Read [this wiki page](https://github.com/ocaml-sf/learn-ocaml/wiki/Checklist-for-testing-and-merging-a-PR)
-* Make sure the PR has a milestone
-* Assign yourself before merging
-* We can squash-merge 1-commit PRs (use a header with a [conventional-commit type](https://github.com/ocaml-sf/learn-ocaml/blob/master/CONTRIBUTING.md#conventional-commits-examples), add a footer with `Fix #…` if need be)
+* Read [this wiki page](https://github.com/ocaml-sf/learn-ocaml/wiki/Checklist-for-testing-and-merging-a-PR).
+* Make sure the PR has a **milestone**.
+* ***Assign*** yourself before merging.
+* Either do a regular **merge**:
+  * for PRs containing *several commits* following [conventional-commits](https://github.com/ocaml-sf/learn-ocaml/blob/master/CONTRIBUTING.md#conventional-commits),
+  * or for PRs containing 1 commit shared with a later PR (to preserve the SHA1)
+* Or do a **squash-merge**:
+  * for PRs containing *only 1 commit* (not shared with a later PR),
+  * or for PRs containing several commits that need not be kept in the history;
+  * → ***Update the commit message header*** with a [conventional-commit type](https://github.com/ocaml-sf/learn-ocaml/blob/master/CONTRIBUTING.md#conventional-commits-examples),
+  * → ***Add a footer*** `Close #…` if a related issue exists.
