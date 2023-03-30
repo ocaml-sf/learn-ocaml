@@ -183,8 +183,9 @@ let gen_assignment (basic, intermediate, consolidated) level =
     let rec fill_requirements = function 
       | []                  -> ()
       | (idx, exe_id)::tl ->
-        let {title;stars;id;requirements} = Hashtbl.find (match a.(idx) with | 1 -> basic | 2 -> intermediate | _ ->
-          consolidated) exe_id in
+        let {title;stars;id;_} = Hashtbl.find (match a.(idx) with | 1 -> basic | 2 -> intermediate | _ ->
+          consolidated) exe_id 
+        in
         if Array.mem title r then fill_requirements tl 
         else ( 
           let new_id = find_place stars in
