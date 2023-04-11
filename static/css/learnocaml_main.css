@@ -169,6 +169,20 @@ body {
 
 /* Large screen: two columns w/ menu in the left column */
 @media (min-width: 1000px) {
+  #learnocaml-main-toolbar a.btn {
+    margin-left: 17px;
+  }
+
+  #learnocaml-main-toolbar a.btn > img {
+    border: 1px #fff solid;
+    background: linear-gradient(to bottom, #bbb 0%, #888 100%);
+    border-radius: 5px;
+    padding: 5px;
+    width: 18px;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+
   #learnocaml-main-toolbar {
     position: absolute;
     left: 0; top: 0; height: 60px; width: 360px;
@@ -181,6 +195,7 @@ body {
   #learnocaml-main-toolbar > button {
     display: none;
   }
+
   #learnocaml-main-toolbar::before {
     z-index: 1004;
     position: absolute;
@@ -215,6 +230,21 @@ body {
 }
 /* Medium screen: one column w/ popup menu */
 @media (max-width: 999px) {
+  #learnocaml-main-toolbar a.btn {
+    margin-left: 10px;
+  }
+
+  #learnocaml-main-toolbar a.btn > img {
+    border: 1px #fff solid;
+    background: linear-gradient(to bottom, #bbb 0%, #888 100%);
+    color: #fff;
+    border-radius: 5px;
+    padding: 5px;
+    width: 18px;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+
   #learnocaml-main-toolbar {
     position: absolute;
     top: 0; left: 0px; right: 0px;
@@ -233,6 +263,7 @@ body {
     position: relative;
     display: block;
   }
+
   #learnocaml-main-toolbar > button > * {
     padding: 5px;
     color: #eee;
@@ -280,6 +311,17 @@ body {
 }
 /* Small screen: no button labels, thinner bars & buttons */
 @media (max-width: 549px) {
+  #learnocaml-main-toolbar a.btn > img {
+    border: 1px #fff solid;
+    background: linear-gradient(to bottom, #bbb 0%, #888 100%);
+    color: #fff;
+    border-radius: 4px;
+    padding: 3px;
+    width: 13px;
+    box-shadow: 0 0 10px 2px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+
   #learnocaml-main-panel,
   #learnocaml-main-content {
     top: 40px;

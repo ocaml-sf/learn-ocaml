@@ -642,8 +642,9 @@ let set_string_translations () =
   List.iter
     (fun (el, text) ->
        (Tyxml_js.To_dom.of_input el)##.placeholder := Js.string text)
-    placeholder_translations
-
+    placeholder_translations;
+  Manip.SetHTMLElement.title (find_component "learnocaml-main-feedback")
+    [%i"Send feedback to Learn-OCaml developers"]
 
 let () =
   Lwt.async_exception_hook := begin fun e ->
