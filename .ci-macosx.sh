@@ -22,6 +22,9 @@ rm -f /usr/local/bin/python3.11
 rm -f /usr/local/bin/python3.11-config
 rm -f /usr/local/lib/libtcl8.6.dylib
 rm -f /usr/local/lib/libtk8.6.dylib
+rm -f /usr/local/bin/go
+rm -f /usr/local/bin/gofmt
+
 brew upgrade
 
 brew install pkg-config
