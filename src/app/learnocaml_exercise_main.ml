@@ -173,6 +173,65 @@ let () =
   (* ---- toplevel pane ------------------------------------------------- *)
   init_toplevel_pane toplevel_launch top toplevel_buttons_group toplevel_button ;
   (* ---- text pane ----------------------------------------------------- *)
+  let mcs = Hashtbl.create 3 in 
+  let find_mc str =
+    let regex = Str.regexp "let mc[^\n\n]+\n\n" in
+    try
+      let start_pos = Str.search_forward regex str 0 in
+      let end_pos = Str.match_end() in
+      (start_pos, end_pos)
+    with Not_found -> (-1, -1)
+  in
+  let add_answers str mcid start_pos =
+    let rec aux id =
+      let c = str.[id] in
+      match c with
+      | '\"' -> ()
+      | _   -> Hashtbl.add mcs mcid c; aux (id+1)
+    in
+    aux (start_pos+11)
+  in
+  let remove_substring str (start_pos, end_pos) id =
+    let prefix = String.sub str 0 start_pos in
+    let suffix = String.sub str end_pos (String.length str - end_pos) in
+    add_answers str id start_pos;
+    prefix ^ suffix
+  in
+  let rec remove_all_mc solution count = 
+    let mc = find_mc solution in
+    if fst mc <> -1 then 
+      let count = count + 1 in
+      let solution = remove_substring solution mc count in
+      remove_all_mc solution count
+    else 
+      solution
+  in
+
+  let solution = remove_all_mc solution 0 in
+
+  let tick_mc id form = 
+    let rec tick = function
+      | []    -> ()
+      | h::t  ->
+          match h with
+          | 'A' -> form##.A##setAttribute "checked" "checked"; tick t 
+          | 'B' -> form##.B##click (); tick t 
+          | 'C' -> (form##.C)##click (); tick t 
+          | _   -> (form##.D)##click (); tick t 
+    in
+    let id = id + 1 in
+    let answers = Hashtbl.find_all mcs id in
+    tick answers
+  in
+  let restore_mcs () = 
+    let document = Js.Unsafe.global##.document in 
+    let text_div = document##getElementById ("learnocaml-exo-tab-text") in
+    let iframe = text_div##.lastChild in
+    let doc = iframe##.contentDocument in
+    let forms = Js.to_array doc##.forms in
+    Array.iteri (tick_mc) forms;
+  in
+
   let text_container = find_component "learnocaml-exo-tab-text" in
   let text_iframe = Dom_html.createIframe Dom_html.document in
   Manip.replaceChildren text_container
@@ -237,7 +296,27 @@ let () =
     show_loading ~id:"learnocaml-exo-loading" [ messages ; abort_message ]
     @@ fun () ->
     Lwt_js.sleep 1. >>= fun () ->
-    let solution = Ace.get_contents ace in
+
+    let form_results = Buffer.create 5 in
+    let isChecked checkbox = checkbox##.checked in 
+    let getCheckedValues i f =
+      let output = Buffer.create 5 in
+      if isChecked (f##.A) then Buffer.add_string output ("A");
+      if isChecked (f##.B) then Buffer.add_string output ("B");
+      if isChecked (f##.C) then Buffer.add_string output ("C");
+      if isChecked (f##.D) then Buffer.add_string output ("D");
+      if Buffer.length output <> 0 then
+        Buffer.add_string form_results ("let mc" ^ string_of_int (i+1) ^ " = \"" ^ (Buffer.contents output) ^ "\"\n\n")
+    in
+    let document = Js.Unsafe.global##.document in 
+    let text_div = document##getElementById ("learnocaml-exo-tab-text") in
+    let iframe = text_div##.lastChild in
+    let doc = iframe##.contentDocument in
+    let forms = Js.to_array (doc##.forms) in
+    Array.iteri (getCheckedValues) forms;
+
+    let solution = (Buffer.contents form_results) ^ (Ace.get_contents ace) in
+
     Learnocaml_toplevel.check top solution >>= fun res ->
     match res with
     | Toploop_results.Ok ((), _) ->
@@ -311,5 +390,6 @@ let () =
   (* ---- return -------------------------------------------------------- *)
   toplevel_launch >>= fun _ ->
   typecheck false >>= fun () ->
+  restore_mcs (); Lwt.return () >>= fun () ->
   hide_loading ~id:"learnocaml-exo-loading" () ;
   Lwt.return ()
