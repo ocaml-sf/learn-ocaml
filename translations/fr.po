@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2022-12-29 00:17+0100\n"
+"PO-Revision-Date: 2023-04-18 19:58+0200\n"
 "Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
 "Language-Team: OCSF\n"
 "Language: french\n"
@@ -522,6 +522,10 @@ msgstr "Vous avez déjà un token ? Par ici !"
 #: File "src/app/learnocaml_index_main.ml", line 630, characters 31-40
 msgid "Connect"
 msgstr "Se connecter"
+
+#: File "src/app/learnocaml_index_main.ml", line 631, characters 35-50
+msgid "Send feedback to Learn-OCaml developers"
+msgstr "Envoyer un commentaire aux développeurs Learn-OCaml"
 
 #: File "src/app/learnocaml_index_main.ml", line 638, characters 9-19 640,
 #: "src/app/learnocaml_teacher_tab.ml", 558, 22-32
@@ -1084,3 +1088,4 @@ msgstr "Erreur inattendue:\n"
 
 #~ msgid "This session has been closed. You can close this tab."
 #~ msgstr "La session a été fermée. Vous pouvez fermer cet onglet."
+

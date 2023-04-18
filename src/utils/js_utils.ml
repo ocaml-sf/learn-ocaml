@@ -455,6 +455,18 @@ module Manip = struct
       elt##.oninput := (bool_cb f)
   end
 
+  module HTMLElement = struct
+    let title elt =
+      let elt = get_elt "HTMLElement.title" elt in
+      Js.to_string (elt##.title)
+  end
+
+  module SetHTMLElement = struct
+    let title elt v =
+      let elt = get_elt "HTMLElement.title" elt in
+      elt##.title := Js.string v
+  end
+
   module Attr = struct
     let clientWidth elt =
       let elt = get_elt "Attr.clientWidth" elt in

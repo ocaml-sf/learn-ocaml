@@ -118,6 +118,16 @@ module Manip : sig
     val oninput: ('a,Dom_html.event) ev
   end
 
+  (** Read the properties of DOM elements. *)
+  module HTMLElement : sig
+    val title: 'a elt -> string
+  end
+
+  (** Modify the properties of DOM elements. *)
+  module SetHTMLElement : sig
+    val title: 'a elt -> string -> unit
+  end
+
   module Attr : sig
     val clientWidth: 'a elt -> int
     val clientHeight: 'a elt -> int
