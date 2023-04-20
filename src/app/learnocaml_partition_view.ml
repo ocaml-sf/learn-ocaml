@@ -181,6 +181,8 @@ let main () =
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
+  Manip.Ev.onclick (find_component "Hide tokens")
+    (fun _ -> alert "Hello" ; true);
   Lwt.return_unit
 
 let () = run_async_with_log  main
