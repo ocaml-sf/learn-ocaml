@@ -15,7 +15,6 @@ open Learnocaml_common
 
 module H = Tyxml_js.Html5
 module React = Lwt_react
-
 let find_tab name = (find_component ("learnocaml-exo-tab-" ^ name))
 
 let tab_select_signal, init_tab, select_tab =
@@ -34,7 +33,7 @@ let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
 
-let list_of_nick = 
+(* let list_of_nick = 
   List.map @@ fun x ->
     let tok = Token.to_string x in
     let nick = "toto" in (*trouver comment récupérer les pseudos*)
@@ -43,13 +42,18 @@ let list_of_nick =
 let list_of_tok =
   List.map @@ fun x ->
     let tok = Token.to_string x in
-    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
+    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")] *)
 
-let right_list =
-  let choice = Manip.value (find_component "Hide tokens")
+let selected_list = 
+  List.map @@ fun x ->
+    let tok = Token.to_string x in
+      let choice = Manip.value (find_component "Hide tokens")
     in match choice with
-  |"nicknames" -> list_of_nick
-  |"tokens" -> list_of_tok
+      |"tokens" -> 
+        H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
+      |"nicknames" ->
+        let nick = "toto" in (*trouver comment récupérer les pseudos*)
+        H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -110,8 +114,8 @@ let exercises_tab part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: right_list part.not_graded)
-  :: H.p ( H.txt bad_type :: right_list part.bad_type)
+  H.p (H.txt not_graded :: selected_list part.not_graded)
+  :: H.p ( H.txt bad_type :: selected_list part.bad_type)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
@@ -130,6 +134,19 @@ let _class_selection_updater =
        true in
   let to_li tok repr p =
     let strtok = Token.to_string tok in
+
+    (* let choice = Manip.value (find_component "Hide tokens")
+    in match choice with
+      |"tokens" -> H.li
+      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
+      [H.txt strtok; p]
+      |"nicknames" ->
+        let nick = "toto" in (*trouver comment récupérer les pseudos*)
+        H.li
+      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
+      [H.txt nick; p] 
+    in *)
+
     H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
       [H.txt strtok; p] in
@@ -193,6 +210,8 @@ let main () =
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
+  Manip.Ev.onchange_select (find_component "Hide tokens")
+    (fun _ -> update_repr_code (React.S.value selected_repr_signal));
   Lwt.return_unit
 
 let () = run_async_with_log  main
