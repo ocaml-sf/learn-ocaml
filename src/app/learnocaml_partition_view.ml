@@ -34,10 +34,22 @@ let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
 
+let list_of_nick = 
+  List.map @@ fun x ->
+    let tok = Token.to_string x in
+    let nick = "toto" in (*trouver comment récupérer les pseudos*)
+    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
+
 let list_of_tok =
   List.map @@ fun x ->
     let tok = Token.to_string x in
     H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
+
+let right_list =
+  let choice = Manip.HTMLElement.select (find_component "Hide tokens")
+    in match choice with
+  |"nicknames" -> list_of_nick
+  |"tokens" -> list_of_tok
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -98,8 +110,8 @@ let exercises_tab part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: list_of_tok part.not_graded)
-  :: H.p ( H.txt bad_type :: list_of_tok part.bad_type)
+  H.p (H.txt not_graded :: right_list part.not_graded)
+  :: H.p ( H.txt bad_type :: right_list part.bad_type)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
@@ -181,8 +193,6 @@ let main () =
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
-  Manip.Ev.onclick (find_component "Hide tokens")
-    (fun _ -> alert "Hello" ; true);
   Lwt.return_unit
 
 let () = run_async_with_log  main
