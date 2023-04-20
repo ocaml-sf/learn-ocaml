@@ -46,7 +46,7 @@ let list_of_tok =
     H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
 
 let right_list =
-  let choice = Manip.HTMLElement.select (find_component "Hide tokens")
+  let choice = Manip.value (find_component "Hide tokens")
     in match choice with
   |"nicknames" -> list_of_nick
   |"tokens" -> list_of_tok

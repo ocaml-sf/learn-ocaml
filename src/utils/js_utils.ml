@@ -459,9 +459,6 @@ module Manip = struct
     let title elt =
       let elt = get_elt "HTMLElement.title" elt in
       Js.to_string (elt##.title)
-    let select elt =
-      let elt = get_elt "HTMLElement.select" elt in
-      Js.to_string (elt##.select)
   end
 
   module SetHTMLElement = struct
