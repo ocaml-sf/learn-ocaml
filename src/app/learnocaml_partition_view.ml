@@ -44,15 +44,15 @@ let list_of_tok =
     let tok = Token.to_string x in
     H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")] *)
 
-let selected_list = 
+let selected_list students= 
   List.map @@ fun x ->
     let tok = Token.to_string x in
-      let choice = Manip.value (find_component "Hide tokens")
-    in match choice with
+    let choice = Manip.value (find_component "Hide tokens") in
+    match choice with
       |"tokens" -> 
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
       |"nicknames" ->
-        let nick = "toto" in (*trouver comment récupérer les pseudos*)
+        let nick = students.nickname in (*trouver comment récupérer les pseudos*)
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
 
 let rec render_tree =
@@ -96,7 +96,7 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let exercises_tab part =
+let exercises_tab students part=
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
@@ -114,8 +114,8 @@ let exercises_tab part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: selected_list part.not_graded)
-  :: H.p ( H.txt bad_type :: selected_list part.bad_type)
+  H.p (H.txt not_graded :: selected_list students part.not_graded)
+  :: H.p ( H.txt bad_type :: selected_list students part.bad_type)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
@@ -205,8 +205,10 @@ let main () =
 
   retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
   >>= fun part ->
-  hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list") (exercises_tab part);
+  hide_loading ~id:"learnocaml-exo-loading" (); 
+  let students = retrieve (Learnocaml_api.Students_list (teacher_token)) in
+              (*>>= fun students ->*)
+  Manip.replaceChildren (find_tab "list") (exercises_tab students part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
