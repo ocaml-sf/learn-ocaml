@@ -44,16 +44,17 @@ let list_of_tok =
     let tok = Token.to_string x in
     H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")] *)
 
-let selected_list students= 
-  List.map @@ fun x ->
+let selected_list =
+  List.map @@ fun s x ->
     let tok = Token.to_string x in
-    let choice = Manip.value (find_component "Hide tokens") in
+    let choice = Manip.value (find_component "learnocaml-select-student-info") in
     match choice with
       |"tokens" -> 
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
       |"nicknames" ->
-        let nick = students.nickname in (*trouver comment récupérer les pseudos*)
+        let nick = s.nickname in (*trouver comment récupérer les pseudos*)
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
+      |_ -> failwith "Error" (*à modifier*)
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -135,7 +136,7 @@ let _class_selection_updater =
   let to_li tok repr p =
     let strtok = Token.to_string tok in
 
-    (* let choice = Manip.value (find_component "Hide tokens")
+    (* let choice = Manip.value (find_component "learnocaml-select-student-info")
     in match choice with
       |"tokens" -> H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
@@ -202,17 +203,27 @@ let main () =
       if tab = "answer"
       then update_repr_code id
       else true in
-
-  retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-  >>= fun part ->
-  hide_loading ~id:"learnocaml-exo-loading" (); 
-  let students = retrieve (Learnocaml_api.Students_list (teacher_token)) in
-              (*>>= fun students ->*)
+  
+  let fetch_students =
+    retrieve (Learnocaml_api.Students_list teacher_token)
+    >>= (fun students_map ->
+    let students = students_map;
+    Lwt.return_unit)
+  in
+  print_string(students);
+  let fetch_part =
+    retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
+    >>= (fun partition -> 
+    let part = partition;
+    Lwt.return_unit)
+  in
+  Lwt.join [fetch_students; fetch_part] >>= fun () ->  
+  hide_loading ~id:"learnocaml-exo-loading" ();
   Manip.replaceChildren (find_tab "list") (exercises_tab students part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
-  Manip.Ev.onchange_select (find_component "Hide tokens")
+  Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
     (fun _ -> update_repr_code (React.S.value selected_repr_signal));
   Lwt.return_unit
 
