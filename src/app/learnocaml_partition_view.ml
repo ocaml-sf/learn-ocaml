@@ -33,26 +33,15 @@ let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
 
-(* let list_of_nick = 
-  List.map @@ fun x ->
-    let tok = Token.to_string x in
-    let nick = "toto" in (*trouver comment récupérer les pseudos*)
-    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
-
-let list_of_tok =
-  List.map @@ fun x ->
-    let tok = Token.to_string x in
-    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")] *)
-
 let selected_list =
-  List.map @@ fun s x ->
+  List.map @@ fun x ->
     let tok = Token.to_string x in
     let choice = Manip.value (find_component "learnocaml-select-student-info") in
     match choice with
       |"tokens" -> 
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
       |"nicknames" ->
-        let nick = s.nickname in (*trouver comment récupérer les pseudos*)
+        let nick = "toto" in (*trouver comment récupérer les pseudos*)
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
       |_ -> failwith "Error" (*à modifier*)
 
@@ -97,7 +86,7 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let exercises_tab students part=
+let exercises_tab part=
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
@@ -115,10 +104,22 @@ let exercises_tab students part=
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: selected_list students part.not_graded)
-  :: H.p ( H.txt bad_type :: selected_list students part.bad_type)
+  H.p (H.txt not_graded :: selected_list part.not_graded)
+  :: H.p ( H.txt bad_type :: selected_list part.bad_type)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
+
+let init_students_details part = 
+  let rec create_div tokens id = match tokens with 
+    | [] -> ()
+    | t::q -> let tok = Token.to_string t in
+      H.div ~a:[H.a_class["anon-id"]] [H.txt (string_of_int(id))];
+      H.div ~a:[H.a_class["token-id"]] [H.txt tok];
+      H.div ~a:[H.a_class["nickname-id"]] [H.txt "toto"]; (*mettre pseudo ici*)
+      create_div q (id + 1);
+      ();
+  in create_div part 1
+
 
 let _class_selection_updater =
   let previous = ref None in
@@ -204,22 +205,20 @@ let main () =
       then update_repr_code id
       else true in
   
-  let fetch_students =
+  (* let fetch_students =
     retrieve (Learnocaml_api.Students_list teacher_token)
     >>= (fun students_map ->
     let students = students_map;
     Lwt.return_unit)
   in
   print_string(students);
-  let fetch_part =
+  let fetch_part = *)
     retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-    >>= (fun partition -> 
-    let part = partition;
-    Lwt.return_unit)
-  in
-  Lwt.join [fetch_students; fetch_part] >>= fun () ->  
+    >>= fun part -> 
+  (* Lwt.join [fetch_students; fetch_part] >>= fun () ->   *)
   hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list") (exercises_tab students part);
+  init_students_details part;
+  Manip.replaceChildren (find_tab "list") (exercises_tab part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
