@@ -14,6 +14,11 @@ code, pre, textarea {
   font-size: 18px;
   line-height: 18px;
 }
+
+.nickname-id, .token-id {
+  display: none;
+}
+
 /* -------------------- fix browser's CSSs ------------------------ */
 button > img {
   vertical-align: -10%;

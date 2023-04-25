@@ -33,6 +33,7 @@ let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
 
+(*
 let selected_list =
   List.map @@ fun x ->
     let tok = Token.to_string x in
@@ -44,6 +45,12 @@ let selected_list =
         let nick = "toto" in (*trouver comment récupérer les pseudos*)
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
       |_ -> failwith "Error" (*à modifier*)
+ *)
+
+let list_of_tok =
+  List.map @@ fun x ->
+    let tok = Token.to_string x in
+    H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -104,22 +111,22 @@ let exercises_tab part=
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: selected_list part.not_graded)
-  :: H.p ( H.txt bad_type :: selected_list part.bad_type)
+  H.p (H.txt not_graded :: list_of_tok part.not_graded)
+  :: H.p ( H.txt bad_type :: list_of_tok part.bad_type)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
-let init_students_details part = 
+let students_details part =
+  let open Partition in
   let rec create_div tokens id = match tokens with 
-    | [] -> ()
+    | [] -> []
     | t::q -> let tok = Token.to_string t in
-      H.div ~a:[H.a_class["anon-id"]] [H.txt (string_of_int(id))];
-      H.div ~a:[H.a_class["token-id"]] [H.txt tok];
-      H.div ~a:[H.a_class["nickname-id"]] [H.txt "toto"]; (*mettre pseudo ici*)
-      create_div q (id + 1);
-      ();
-  in create_div part 1
-
+     let anon_id = H.div ~a:[H.a_class["anon-id"]] [H.txt(string_of_int id)] in
+     let token_id = H.div ~a:[H.a_class["token-id"]] [H.txt tok] in
+     let nickname_id = H.div ~a:[H.a_class["nickname-id"]] [H.txt "toto" ] in (* mettre pseudo ici *)
+    H.div [anon_id; token_id; nickname_id] :: (create_div q (id + 1))
+  in create_div part.not_graded 1 :: create_div part.bad_type (1 + List.length part.not_graded)
+  
 
 let _class_selection_updater =
   let previous = ref None in
@@ -217,13 +224,22 @@ let main () =
     >>= fun part -> 
   (* Lwt.join [fetch_students; fetch_part] >>= fun () ->   *)
   hide_loading ~id:"learnocaml-exo-loading" ();
-  init_students_details part;
   Manip.replaceChildren (find_tab "list") (exercises_tab part);
+  Manip.replaceChildren (find_component "learnocaml-exo-tabs") (students_details part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
-    (fun _ -> update_repr_code (React.S.value selected_repr_signal));
+    (fun _ ->let choice = Manip.value (find_component "learnocaml-select-student-info") in
+              match choice with
+                 |"nicknames" -> Manip.addClass (find_tab "list") "nickname-id";
+                                 Manip.addClass (find_tab "details") "nickname-id";
+                 |"tokens" -> Manip.addClass (find_tab "list") "token-id";
+                              Manip.addClass (find_tab "details") "token-id";
+                 |"anon" -> Manip.addClass (find_tab "list") "anon-id";
+                            Manip.addClass (find_tab "details") "anon-id";
+                 |_ -> failwith "Wrong selection"
+    )
   Lwt.return_unit
 
 let () = run_async_with_log  main
