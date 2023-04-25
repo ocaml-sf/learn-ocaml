@@ -41,7 +41,7 @@ let selected_list =
     match choice with
       |"tokens" -> 
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
-      |"nicknames" ->
+      |"nickname" ->
         let nick = "toto" in (*trouver comment récupérer les pseudos*)
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
       |_ -> failwith "Error" (*à modifier*)
@@ -125,7 +125,7 @@ let students_details part =
      let token_id = H.div ~a:[H.a_class["token-id"]] [H.txt tok] in
      let nickname_id = H.div ~a:[H.a_class["nickname-id"]] [H.txt "toto" ] in (* mettre pseudo ici *)
     H.div [anon_id; token_id; nickname_id] :: (create_div q (id + 1))
-  in create_div part.not_graded 1 :: create_div part.bad_type (1 + List.length part.not_graded)
+  in create_div part.not_graded 1 @ create_div part.bad_type (1 + List.length part.not_graded)
   
 
 let _class_selection_updater =
@@ -149,7 +149,7 @@ let _class_selection_updater =
       |"tokens" -> H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
       [H.txt strtok; p]
-      |"nicknames" ->
+      |"nickname" ->
         let nick = "toto" in (*trouver comment récupérer les pseudos*)
         H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
@@ -225,21 +225,21 @@ let main () =
   (* Lwt.join [fetch_students; fetch_part] >>= fun () ->   *)
   hide_loading ~id:"learnocaml-exo-loading" ();
   Manip.replaceChildren (find_tab "list") (exercises_tab part);
-  Manip.replaceChildren (find_component "learnocaml-exo-tabs") (students_details part);
+  Manip.replaceChildren (find_tab "list") (students_details part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
     (fun _ ->let choice = Manip.value (find_component "learnocaml-select-student-info") in
               match choice with
-                 |"nicknames" -> Manip.addClass (find_tab "list") "nickname-id";
-                                 Manip.addClass (find_tab "details") "nickname-id";
-                 |"tokens" -> Manip.addClass (find_tab "list") "token-id";
-                              Manip.addClass (find_tab "details") "token-id";
+                 |"nickname" -> Manip.addClass (find_tab "list") "nickname-id";
+                                 Manip.addClass (find_tab "details") "nickname-id";true
+                 |"token" -> Manip.addClass (find_tab "list") "token-id";
+                              Manip.addClass (find_tab "details") "token-id";true
                  |"anon" -> Manip.addClass (find_tab "list") "anon-id";
-                            Manip.addClass (find_tab "details") "anon-id";
+                            Manip.addClass (find_tab "details") "anon-id";true
                  |_ -> failwith "Wrong selection"
-    )
+    );
   Lwt.return_unit
 
 let () = run_async_with_log  main
