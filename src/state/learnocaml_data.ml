@@ -280,7 +280,7 @@ module Student = struct
     results: (float * int option) SMap.t;
     creation_date: float;
     tags: SSet.t;
-  }
+    }
 
   let enc =
     let open Json_encoding in

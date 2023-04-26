@@ -15,9 +15,18 @@ code, pre, textarea {
   line-height: 18px;
 }
 
-.nickname-id, .token-id {
-  display: none;
+div.anon-id div.student::before {
+  content: attr(data-anon);
 }
+
+div.token-id div.student::before {
+  content: attr(data-token);
+}
+
+div.nickname-id div.student::before {
+  content: attr(data-nickname);
+}
+
 
 /* -------------------- fix browser's CSSs ------------------------ */
 button > img {

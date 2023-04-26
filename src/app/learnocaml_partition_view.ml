@@ -116,17 +116,20 @@ let exercises_tab part=
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
-let students_details part =
-  let open Partition in
-  let rec create_div tokens id = match tokens with 
+let students_details students =
+  let open Student in
+  let rec create_div students_list id = match students_list with 
     | [] -> []
-    | t::q -> let tok = Token.to_string t in
-     let anon_id = H.div ~a:[H.a_class["anon-id"]] [H.txt(string_of_int id)] in
-     let token_id = H.div ~a:[H.a_class["token-id"]] [H.txt tok] in
-     let nickname_id = H.div ~a:[H.a_class["nickname-id"]] [H.txt "toto" ] in (* mettre pseudo ici *)
-    H.div [anon_id; token_id; nickname_id] :: (create_div q (id + 1))
-  in create_div part.not_graded 1 @ create_div part.bad_type (1 + List.length part.not_graded)
-  
+    | t::q -> let tok = Token.to_string t.token in
+              let nick = Option.value t.nickname ~default:"Student" in
+              H.div ~a:[
+                  H.a_class ["student"];
+                  H.a_user_data "anon" ("Student " ^ string_of_int id);
+                  H.a_user_data "token" tok;
+                  H.a_user_data "nickname" nick;
+                ] []
+              :: (create_div q (id + 1))
+  in create_div students 1
 
 let _class_selection_updater =
   let previous = ref None in
@@ -143,19 +146,6 @@ let _class_selection_updater =
        true in
   let to_li tok repr p =
     let strtok = Token.to_string tok in
-
-    (* let choice = Manip.value (find_component "learnocaml-select-student-info")
-    in match choice with
-      |"tokens" -> H.li
-      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
-      [H.txt strtok; p]
-      |"nickname" ->
-        let nick = "toto" in (*trouver comment récupérer les pseudos*)
-        H.li
-      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
-      [H.txt nick; p] 
-    in *)
-
     H.li
       ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
       [H.txt strtok; p] in
@@ -173,6 +163,16 @@ let _class_selection_updater =
      set_selected_repr (Some (List.hd xs));
      Manip.replaceChildren (find_tab "details")
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
+
+let set_classes s =
+  Manip.removeClass (find_tab "list") ("token-id");
+  Manip.removeClass (find_tab "list") ("anon-id");
+  Manip.removeClass (find_tab "list") ("nickname-id");
+  Manip.removeClass (find_tab "details") ("token-id");
+  Manip.removeClass (find_tab "details") ("anon-id");
+  Manip.removeClass (find_tab "details") ("nickname-id");
+  Manip.addClass (find_tab "list") (s ^ "-id");
+  Manip.addClass (find_tab "details") (s ^ "-id");true
 
 let main () =
   Learnocaml_local_storage.init ();
@@ -211,34 +211,29 @@ let main () =
       if tab = "answer"
       then update_repr_code id
       else true in
-  
-  (* let fetch_students =
+
+  let fetch_students =
     retrieve (Learnocaml_api.Students_list teacher_token)
-    >>= (fun students_map ->
-    let students = students_map;
-    Lwt.return_unit)
+    >>= fun students_map ->
+    let students = students_map in
+    Lwt.return students
   in
-  print_string(students);
-  let fetch_part = *)
+  let fetch_part = 
     retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-    >>= fun part -> 
-  (* Lwt.join [fetch_students; fetch_part] >>= fun () ->   *)
+    >>= fun partition ->
+    let part = partition in
+    Lwt.return part
+  in
+  Lwt.both fetch_students fetch_part >>= fun (students, part) -> 
   hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list") (exercises_tab part);
-  Manip.replaceChildren (find_tab "list") (students_details part);
+  Manip.replaceChildren (find_tab "list")
+    (List.concat[exercises_tab part; students_details students]);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
     (fun _ ->let choice = Manip.value (find_component "learnocaml-select-student-info") in
-              match choice with
-                 |"nickname" -> Manip.addClass (find_tab "list") "nickname-id";
-                                 Manip.addClass (find_tab "details") "nickname-id";true
-                 |"token" -> Manip.addClass (find_tab "list") "token-id";
-                              Manip.addClass (find_tab "details") "token-id";true
-                 |"anon" -> Manip.addClass (find_tab "list") "anon-id";
-                            Manip.addClass (find_tab "details") "anon-id";true
-                 |_ -> failwith "Wrong selection"
+             set_classes choice
     );
   Lwt.return_unit
 
