@@ -12,6 +12,7 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open List
 
 module H = Tyxml_js.Html5
 module React = Lwt_react
@@ -46,11 +47,6 @@ let selected_list =
         H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
       |_ -> failwith "Error" (*à modifier*)
  *)
-
-let list_of_tok =
-  List.map @@ fun x ->
-    let tok = Token.to_string x in
-    H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -93,7 +89,36 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let exercises_tab part=
+let rec students_partition students part =
+  let open Student in
+  match part with
+    |[] -> []
+    |t::q -> let student_t = List.find (fun student -> student.token = t) students in
+             student_t :: students_partition students q
+
+let list_of_students_details students part=
+  let open Student in
+  let open Partition in
+  let bad_type_students = students_partition students part.bad_type in
+  let not_graded_students = students_partition students part.not_graded in
+  let rec create_div students_list id = match students_list with 
+    | [] -> []
+    | t::q -> let tok = Token.to_string t.token in
+              let nick = Option.value t.nickname ~default:"Student" in
+              H.a ~a:[
+                  H.a_ondblclick (fun _ -> open_tok tok);
+                  H.a_class ["student"];
+                  H.a_user_data "anon" ("Student " ^ string_of_int id ^ " ");
+                  H.a_user_data "token" (tok ^ " ");
+                  H.a_user_data "nickname" (nick ^ " ");
+                  (* i added the spaces here in the attribute,
+                     for now i don't see how to do it otherwise*)
+                ] []
+              :: (create_div q (id + 1))
+  in (create_div not_graded_students 1,
+      create_div bad_type_students (1 + List.length not_graded_students))
+
+let exercises_tab students part =
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
@@ -111,25 +136,11 @@ let exercises_tab part=
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: list_of_tok part.not_graded)
-  :: H.p ( H.txt bad_type :: list_of_tok part.bad_type)
+  let (a,b) = list_of_students_details students part in
+  H.p (H.txt not_graded :: a)
+  :: H.p ( H.txt bad_type :: b)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
-
-let students_details students =
-  let open Student in
-  let rec create_div students_list id = match students_list with 
-    | [] -> []
-    | t::q -> let tok = Token.to_string t.token in
-              let nick = Option.value t.nickname ~default:"Student" in
-              H.div ~a:[
-                  H.a_class ["student"];
-                  H.a_user_data "anon" ("Student " ^ string_of_int id);
-                  H.a_user_data "token" tok;
-                  H.a_user_data "nickname" nick;
-                ] []
-              :: (create_div q (id + 1))
-  in create_div students 1
 
 let _class_selection_updater =
   let previous = ref None in
@@ -226,8 +237,7 @@ let main () =
   in
   Lwt.both fetch_students fetch_part >>= fun (students, part) -> 
   hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list")
-    (List.concat[exercises_tab part; students_details students]);
+  Manip.replaceChildren (find_tab "list") (exercises_tab students part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));

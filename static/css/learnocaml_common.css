@@ -15,15 +15,15 @@ code, pre, textarea {
   line-height: 18px;
 }
 
-div.anon-id div.student::before {
+div.anon-id a.student::before {
   content: attr(data-anon);
 }
 
-div.token-id div.student::before {
+div.token-id a.student::before {
   content: attr(data-token);
 }
 
-div.nickname-id div.student::before {
+div.nickname-id a.student::before {
   content: attr(data-nickname);
 }
 
