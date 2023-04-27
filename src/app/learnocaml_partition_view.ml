@@ -208,17 +208,9 @@ let main () =
       then update_repr_code id
       else true in
 
-  let fetch_students =
-    retrieve (Learnocaml_api.Students_list teacher_token)
-    >>= fun students_map ->
-    let students = students_map in
-    Lwt.return students
-  in
-  let fetch_part = 
+  let fetch_students = retrieve (Learnocaml_api.Students_list teacher_token) in
+  let fetch_part =
     retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-    >>= fun partition ->
-    let part = partition in
-    Lwt.return part
   in
   Lwt.both fetch_students fetch_part >>= fun (students, part) -> 
   hide_loading ~id:"learnocaml-exo-loading" ();
