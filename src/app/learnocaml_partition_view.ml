@@ -160,15 +160,15 @@ let _class_selection_updater =
      Manip.replaceChildren (find_tab "details")
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
 
-let set_classes s =
+let set_classes selected =
   Manip.removeClass (find_tab "list") ("token-id");
   Manip.removeClass (find_tab "list") ("anon-id");
   Manip.removeClass (find_tab "list") ("nickname-id");
   Manip.removeClass (find_tab "details") ("token-id");
   Manip.removeClass (find_tab "details") ("anon-id");
   Manip.removeClass (find_tab "details") ("nickname-id");
-  Manip.addClass (find_tab "list") (s ^ "-id");
-  Manip.addClass (find_tab "details") (s ^ "-id");true
+  Manip.addClass (find_tab "list") (selected ^ "-id");
+  Manip.addClass (find_tab "details") (selected ^ "-id"); true
 
 let main () =
   Learnocaml_local_storage.init ();
