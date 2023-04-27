@@ -74,12 +74,8 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let rec students_partition students part =
-  let open Student in
-  match part with
-    |[] -> []
-    |t::q -> let student_t = List.find (fun student -> student.token = t) students in
-             student_t :: students_partition students q
+let students_partition (students : Student.t Token.Map.t) part =
+  List.map (fun t -> Token.Map.find t students) part
 
 let list_of_students_details students part =
   let students =
