@@ -74,13 +74,13 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let students_partition (students : Student.t Token.Map.t) part =
-  List.map (fun t -> Token.Map.find t students) part
-
-let list_of_students_details students part =
-  let students =
+let students_partition students part =
+  let students_map =
       List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
         Token.Map.empty students in
+  List.map (fun t -> Token.Map.find t students_map) part
+
+let list_of_students_details students part =
   let open Student in
   let open Partition in
   let bad_type_students = students_partition students part.bad_type in
@@ -96,7 +96,7 @@ let list_of_students_details students part =
                   H.a_user_data "token" (tok ^ " ");
                   H.a_user_data "nickname" (nick ^ " ");
                   (* i added the spaces here in the attribute,
-                     for now i don't see how to do it otherwise*)
+                     for now i don't see how to do otherwise*)
                 ] []
               :: (create_div q (id + 1))
   in (create_div not_graded_students 1,
@@ -126,6 +126,12 @@ let exercises_tab students part =
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
+let replace_with_students xs students =
+  let students_map =
+      List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
+        Token.Map.empty students in
+  List.map (fun (tok,repr) -> (Token.Map.find tok students_map,repr)) xs
+
 let _class_selection_updater =
   let previous = ref None in
   let of_repr repr = [H.code [H.txt repr]] in
@@ -139,25 +145,38 @@ let _class_selection_updater =
        Manip.replaceChildren p (of_repr repr);
        set_selected_repr (Some (tok,repr));
        true in
-  let to_li tok repr p =
+  let to_li student repr p =
+    let tok = student.Student.token in
+    let nick = Option.value student.Student.nickname ~default:"Student" in
     let strtok = Token.to_string tok in
     H.li
-      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
-      [H.txt strtok; p] in
-  let mkfirst (tok,repr) =
+      ~a:[ onclick p tok repr ;
+           H.a_ondblclick (fun _ -> open_tok strtok);
+           H.a_class ["student"];
+           H.a_user_data "anon" ("Student");
+           H.a_user_data "token" (strtok);
+           H.a_user_data "nickname" (nick);
+      ]
+      [H.txt ""; p] in
+  let mkfirst (students,repr) =
     let p =  H.p (of_repr repr) in
     previous := Some p;
-    to_li tok repr p in
-  let mkelem (tok,repr) =
-    to_li tok repr @@ H.p []
+    to_li students repr p in
+  let mkelem (student,repr) =
+    to_li student repr @@ H.p []
   in
   selected_class_signal |> React.S.map @@ fun id ->
   match id with
-  | None -> ()
+  | None -> Lwt.return_unit
   | Some xs ->
      set_selected_repr (Some (List.hd xs));
+     let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
+     retrieve (Learnocaml_api.Students_list teacher_token)
+     >>= fun students ->
+     let xs = replace_with_students xs students in
      Manip.replaceChildren (find_tab "details")
-       [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
+       [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)];
+     Lwt.return_unit
 
 let set_classes selected =
   Manip.removeClass (find_tab "list") ("token-id");
