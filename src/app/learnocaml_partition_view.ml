@@ -12,7 +12,6 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
-open List
 
 module H = Tyxml_js.Html5
 module React = Lwt_react
@@ -33,20 +32,6 @@ let selected_repr_signal, set_selected_repr   = React.S.create None
 let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
-
-(*
-let selected_list =
-  List.map @@ fun x ->
-    let tok = Token.to_string x in
-    let choice = Manip.value (find_component "learnocaml-select-student-info") in
-    match choice with
-      |"tokens" -> 
-        H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
-      |"nickname" ->
-        let nick = "toto" in (*trouver comment récupérer les pseudos*)
-        H.a ~a:[H.a_ondblclick (fun _ -> open_tok tok)] [H.txt (nick ^ " ")]
-      |_ -> failwith "Error" (*à modifier*)
- *)
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -136,9 +121,9 @@ let exercises_tab students part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  let (a,b) = list_of_students_details students part in
-  H.p (H.txt not_graded :: a)
-  :: H.p ( H.txt bad_type :: b)
+  let (not_graded_students,bad_type_students) = list_of_students_details students part in
+  H.p (H.txt not_graded :: not_graded_students)
+  :: H.p ( H.txt bad_type :: bad_type_students)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
 
@@ -242,9 +227,7 @@ let main () =
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
-    (fun _ ->let choice = Manip.value (find_component "learnocaml-select-student-info") in
-             set_classes choice
-    );
+    (fun _ -> find_component "learnocaml-select-student-info" |> Manip.value |> set_classes);
   Lwt.return_unit
 
 let () = run_async_with_log  main
