@@ -81,7 +81,10 @@ let rec students_partition students part =
     |t::q -> let student_t = List.find (fun student -> student.token = t) students in
              student_t :: students_partition students q
 
-let list_of_students_details students part=
+let list_of_students_details students part =
+  let students =
+      List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
+        Token.Map.empty students in
   let open Student in
   let open Partition in
   let bad_type_students = students_partition students part.bad_type in
