@@ -89,7 +89,7 @@ let list_of_students_details students part =
     | [] -> []
     | t::q -> let tok = Token.to_string t.token in
               let nick = Option.value t.nickname ~default:"Student" in
-              H.a ~a:[
+              H.span ~a:[
                   H.a_ondblclick (fun _ -> open_tok tok);
                   H.a_class ["student"];
                   H.a_user_data "anon" ("Student " ^ string_of_int id ^ " ");
