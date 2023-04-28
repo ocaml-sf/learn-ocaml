@@ -74,11 +74,8 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let students_partition students part =
-  let students_map =
-      List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
-        Token.Map.empty students in
-  List.map (fun t -> Token.Map.find t students_map) part
+let students_partition students_map tokens =
+  List.map (fun t -> Token.Map.find t students_map) tokens
 
 let list_of_students_details students part =
   let open Student in
@@ -102,7 +99,7 @@ let list_of_students_details students part =
   in (create_div not_graded_students 1,
       create_div bad_type_students (1 + List.length not_graded_students))
 
-let exercises_tab students part =
+let exercises_tab students_map part =
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
@@ -120,7 +117,8 @@ let exercises_tab students part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  let (not_graded_students,bad_type_students) = list_of_students_details students part in
+  let (not_graded_students, bad_type_students) =
+    list_of_students_details students_map part in
   H.p (H.txt not_graded :: not_graded_students)
   :: H.p ( H.txt bad_type :: bad_type_students)
   :: H.p [H.txt total_sum]
@@ -226,13 +224,18 @@ let main () =
       then update_repr_code id
       else true in
 
-  let fetch_students = retrieve (Learnocaml_api.Students_list teacher_token) in
+  let fetch_students =
+    retrieve (Learnocaml_api.Students_list teacher_token)
+    >|= fun students ->
+    List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
+      Token.Map.empty students in
+
   let fetch_part =
-    retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-  in
-  Lwt.both fetch_students fetch_part >>= fun (students, part) -> 
+    retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof)) in
+
+  Lwt.both fetch_students fetch_part >>= fun (students_map, part) ->
   hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list") (exercises_tab students part);
+  Manip.replaceChildren (find_tab "list") (exercises_tab students_map part);
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
