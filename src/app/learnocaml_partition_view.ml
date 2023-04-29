@@ -184,7 +184,7 @@ let set_classes selected =
   Manip.removeClass (find_tab "details") ("anon-id");
   Manip.removeClass (find_tab "details") ("nickname-id");
   Manip.addClass (find_tab "list") (selected ^ "-id");
-  Manip.addClass (find_tab "details") (selected ^ "-id"); true
+  Manip.addClass (find_tab "details") (selected ^ "-id")
 
 let main () =
   Learnocaml_local_storage.init ();
@@ -233,14 +233,18 @@ let main () =
   let fetch_part =
     retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof)) in
 
+  let select = find_component "learnocaml-select-student-info" in
+
+  let update_pii_selected () = set_classes (Manip.value select) in
+
   Lwt.both fetch_students fetch_part >>= fun (students_map, part) ->
-  hide_loading ~id:"learnocaml-exo-loading" ();
   Manip.replaceChildren (find_tab "list") (exercises_tab students_map part);
+  Manip.Ev.onchange_select select (fun _ -> update_pii_selected (); true);
+  update_pii_selected ();
+  hide_loading ~id:"learnocaml-exo-loading" ();
   init_tab ();
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
-  Manip.Ev.onchange_select (find_component "learnocaml-select-student-info")
-    (fun _ -> find_component "learnocaml-select-student-info" |> Manip.value |> set_classes);
   Lwt.return_unit
 
 let () = run_async_with_log  main
