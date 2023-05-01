@@ -257,10 +257,18 @@ end
 open Args
 
 let process_html_file orig_file dest_file base_url no_secret =
+  let add_prefix_unless_http prefix url =
+    let https = "https://" and http = "http://" in
+    let starts_with proto =
+      String.(sub url 0 (min (length proto) (length url))) = proto in
+    if starts_with https || starts_with http then url
+    else prefix ^ url in
   let transform_tag e tag attrs attr =
     let attr_pair = ("", attr) in
     match List.assoc_opt attr_pair attrs with
-    | Some url -> `Start_element ((e, tag), (attr_pair, base_url ^ url) :: (List.remove_assoc attr_pair attrs))
+    | Some url -> `Start_element ((e, tag),
+                                  (attr_pair, add_prefix_unless_http base_url url)
+                                  :: (List.remove_assoc attr_pair attrs))
     | None -> `Start_element ((e, tag), attrs) in
   Lwt_io.open_file ~mode:Lwt_io.Input orig_file >>= fun ofile ->
   Lwt_io.open_file ~mode:Lwt_io.Output dest_file >>= fun wfile ->
