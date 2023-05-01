@@ -15,16 +15,34 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v1
+      - name: Set up Docker Buildx
+        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
+        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        uses: docker/setup-buildx-action@v2
         with:
-          always_pull: true
-          add_git_labels: true
-          labels: "org.opencontainers.image.version=master"
+          driver: "docker"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ocamlsf/learn-ocaml
-          tags: master
+      - name: Prepare
+        id: prep
+        run: |
+          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+      - name: Push to Docker Hub
+        # cf. https://github.com/docker/build-push-action#customizing
+        # and https://github.com/docker/build-push-action/pull/119
+        uses: docker/build-push-action@v4
+        with:
+          pull: true
+          push: true
+          tags: "ocamlsf/learn-ocaml:master"
+          labels: |
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.version=master
+            org.opencontainers.image.revision=${{ github.sha }}
   push_client:
     name: Push learn-ocaml-client image to Docker Hub
     if: ${{ github.repository == 'ocaml-sf/learn-ocaml' }}
@@ -32,17 +50,36 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v1
+      - name: Set up Docker Buildx
+        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
+        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        uses: docker/setup-buildx-action@v2
         with:
-          always_pull: true
-          add_git_labels: true
-          labels: "org.opencontainers.image.version=master"
+          driver: "docker"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ocamlsf/learn-ocaml-client
+      - name: Prepare
+        id: prep
+        run: |
+          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+      - name: Push to Docker Hub
+        # cf. https://github.com/docker/build-push-action#customizing
+        # and https://github.com/docker/build-push-action/pull/119
+        uses: docker/build-push-action@v4
+        with:
+          pull: true
+          # load: true # implied by "driver: docker"
+          push: true
           target: client
-          tags: master
+          tags: "ocamlsf/learn-ocaml-client:master"
+          labels: |
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.version=master
+            org.opencontainers.image.revision=${{ github.sha }}
   push_emacs_client:
     name: Push emacs-learn-ocaml-client image to Docker Hub
     if: ${{ github.repository == 'ocaml-sf/learn-ocaml' }}
@@ -51,16 +88,33 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Push to Docker Hub
-        # https://github.com/docker/build-push-action/tree/releases/v1#readme
-        uses: docker/build-push-action@v1
+      - name: Set up Docker Buildx
+        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
+        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        uses: docker/setup-buildx-action@v2
         with:
-          path: ci/docker-emacs-learn-ocaml-client
-          build_args: "base=ocamlsf/learn-ocaml-client,version=master"
-          always_pull: true
-          add_git_labels: true
-          labels: "org.opencontainers.image.version=master"
+          driver: "docker"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ocamlsf/emacs-learn-ocaml-client
-          tags: master
+      - name: Prepare
+        id: prep
+        run: |
+          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+      - name: Push to Docker Hub
+        # cf. https://github.com/docker/build-push-action#customizing
+        # and https://github.com/docker/build-push-action/pull/119
+        uses: docker/build-push-action@v4
+        with:
+          pull: false # because of the previous "load: true"
+          push: true
+          context: ci/docker-emacs-learn-ocaml-client
+          build_args: "base=ocamlsf/learn-ocaml-client,version=master"
+          tags: "ocamlsf/emacs-learn-ocaml-client:master"
+          labels: |
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.version=master
+            org.opencontainers.image.revision=${{ github.sha }}
