@@ -243,7 +243,7 @@ jobs:
           pull: false # because of the previous "load: true"
           push: true
           context: ci/docker-emacs-learn-ocaml-client
-          build_args: "base=ocamlsf/learn-ocaml-client,version=${{ steps.tag.outputs.tag }}"
+          build-args: "base=ocamlsf/learn-ocaml-client,version=${{ steps.tag.outputs.tag }}"
           tags: |
             ocamlsf/emacs-learn-ocaml-client:latest
             ocamlsf/emacs-learn-ocaml-client:${{ steps.tag.outputs.tag }}
