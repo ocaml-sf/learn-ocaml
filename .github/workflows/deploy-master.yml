@@ -111,7 +111,9 @@ jobs:
           pull: false # because of the previous "load: true"
           push: true
           context: ci/docker-emacs-learn-ocaml-client
-          build-args: "base=ocamlsf/learn-ocaml-client,version=master"
+          build-args: |
+            base=ocamlsf/learn-ocaml-client
+            version=master
           tags: "ocamlsf/emacs-learn-ocaml-client:master"
           labels: |
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
