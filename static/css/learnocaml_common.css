@@ -15,21 +15,6 @@ code, pre, textarea {
   line-height: 18px;
 }
 
-div.anon-id span.student::before, 
-div.anon-id li.student::before {
-  content: attr(data-anon);
-}
-
-div.token-id span.student::before,
-div.token-id li.student::before {
-  content: attr(data-token);
-}
-
-div.nickname-id span.student::before,
-div.nickname-id li.student::before {
-  content: attr(data-nickname);
-}
-
 /* -------------------- fix browser's CSSs ------------------------ */
 button > img {
   vertical-align: -10%;
