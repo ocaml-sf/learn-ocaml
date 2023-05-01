@@ -30,14 +30,13 @@ let update_answer_tab, clear_answer_tab = ace_display (find_tab "answer")
 let selected_class_signal, set_selected_class = React.S.create None
 let selected_repr_signal, set_selected_repr   = React.S.create None
 
+let students_map = ref Token.Map.empty
+let anon_id_map = ref Token.Map.empty
+let partition = ref None
+
 let open_tok tok =
   let _win = window_open ("/student-view.html?token="^tok) "_blank" in
   false
-
-let list_of_tok =
-  List.map @@ fun x ->
-    let tok = Token.to_string x in
-    H.a ~a:[H.a_onclick (fun _ -> open_tok tok)] [H.txt (tok ^ " ")]
 
 let rec render_tree =
   let open Asak.Wtree in
@@ -49,7 +48,7 @@ let rec render_tree =
   | Node (f,l,r) ->
      [
        H.p [ H.txt ("Node " ^ string_of_int f) ]
-     ;  H.ul [
+     ; H.ul [
             H.li (render_tree l)
           ; H.li (render_tree r)
           ]
@@ -80,7 +79,59 @@ let render_classes xs =
 
 let sum_with f = List.fold_left (fun acc x -> acc + f x) 0
 
-let exercises_tab part =
+let students_of_tokens tokens =
+  List.map (fun t -> Token.Map.find t !students_map) tokens
+
+(* implements the following, minor feature:
+   give a unique number foreach student involved in the partition *)
+let generate_anon_from_part () =
+  let open Partition in
+  let part = Option.get !partition in
+  let num = ref 0 in
+  let count tokens =
+    let new_map =
+      List.fold_left (fun res st -> incr num; Token.Map.add st !num res)
+        !anon_id_map tokens in
+    anon_id_map := new_map in
+  count part.not_graded;
+  count part.bad_type;
+  let rec wcount = function
+    | Asak.Wtree.Node (_i, wa, wb) -> wcount wa; wcount wb
+    | Asak.Wtree.Leaf list_pair_tok -> count (List.map fst list_pair_tok) in
+  part.partition_by_grade |> List.iter @@ fun (_grade, list) ->
+    list |> List.iter @@ wcount
+
+let anon_id_of_student st =
+  string_of_int @@ Token.Map.find st.Student.token !anon_id_map
+
+let nickname_of_student st =
+  Option.value st.Student.nickname ~default:("Nick" ^ " N/A")
+
+let list_of_students_details () =
+  let open Partition in
+  let part = Option.get !partition in
+  let not_graded_students = students_of_tokens part.not_graded in
+  let bad_type_students = students_of_tokens part.bad_type in
+  let create_div students_list =
+    students_list |>
+      List.concat_map @@
+        fun st ->
+        let anon = anon_id_of_student st in
+        let nick = nickname_of_student st in
+        let tok = Token.to_string st.Student.token in
+        [H.span ~a:[
+             H.a_ondblclick (fun _ -> open_tok tok);
+             H.a_class ["student"];
+             H.a_user_data "anon" ("Student " ^ anon);
+             H.a_user_data "nickname" nick;
+             H.a_user_data "token" tok;
+           ] [];
+         H.txt " "] in
+  (create_div not_graded_students,
+   create_div bad_type_students)
+
+let exercises_tab () =
+  let part = Option.get !partition in
   let open Partition in
   let not_graded =
     string_of_int (List.length part.not_graded)
@@ -98,15 +149,20 @@ let exercises_tab part =
         part.partition_by_grade in
     string_of_int s
     ^ " codes implemented the function with the right type." in
-  H.p (H.txt not_graded :: list_of_tok part.not_graded)
-  :: H.p ( H.txt bad_type :: list_of_tok part.bad_type)
+  let (not_graded_students, bad_type_students) =
+    list_of_students_details () in
+  H.p (H.txt not_graded :: not_graded_students)
+  :: H.p (H.txt bad_type :: bad_type_students)
   :: H.p [H.txt total_sum]
   :: render_classes part.partition_by_grade
+
+let replace_with_students xs =
+  List.map (fun (tok, repr) -> (Token.Map.find tok !students_map, repr)) xs
 
 let _class_selection_updater =
   let previous = ref None in
   let of_repr repr = [H.code [H.txt repr]] in
-  let onclick p tok repr =
+  let onclick p token repr =
      H.a_onclick @@
        fun _ ->
        (match !previous with
@@ -114,27 +170,46 @@ let _class_selection_updater =
         | Some prev -> Manip.replaceChildren prev []);
        previous := Some p;
        Manip.replaceChildren p (of_repr repr);
-       set_selected_repr (Some (tok,repr));
+       set_selected_repr (Some (token, repr));
        true in
-  let to_li tok repr p =
-    let strtok = Token.to_string tok in
+  let to_li st repr p =
+    let anon = anon_id_of_student st in
+    let nick = nickname_of_student st in
+    let tok = Token.to_string st.Student.token in
     H.li
-      ~a:[ onclick p tok repr ; H.a_ondblclick (fun _ -> open_tok strtok)]
-      [H.txt strtok; p] in
-  let mkfirst (tok,repr) =
+      [H.span ~a:[ onclick p st.Student.token repr;
+                   H.a_ondblclick (fun _ -> open_tok tok);
+                   H.a_class ["student"];
+                   H.a_user_data "anon" ("Student " ^ anon);
+                   H.a_user_data "nickname" nick;
+                   H.a_user_data "token" tok;
+         ] [];
+       p] in
+  let mkfirst (students,repr) =
     let p =  H.p (of_repr repr) in
     previous := Some p;
-    to_li tok repr p in
-  let mkelem (tok,repr) =
-    to_li tok repr @@ H.p []
+    to_li students repr p in
+  let mkelem (student,repr) =
+    to_li student repr @@ H.p []
   in
   selected_class_signal |> React.S.map @@ fun id ->
   match id with
   | None -> ()
   | Some xs ->
      set_selected_repr (Some (List.hd xs));
+     let xs = replace_with_students xs in
      Manip.replaceChildren (find_tab "details")
        [H.ul @@ mkfirst (List.hd xs) :: List.map mkelem (List.tl xs)]
+
+let set_classes selected =
+  Manip.removeClass (find_tab "list") ("token-id");
+  Manip.removeClass (find_tab "list") ("anon-id");
+  Manip.removeClass (find_tab "list") ("nickname-id");
+  Manip.removeClass (find_tab "details") ("token-id");
+  Manip.removeClass (find_tab "details") ("anon-id");
+  Manip.removeClass (find_tab "details") ("nickname-id");
+  Manip.addClass (find_tab "list") (selected ^ "-id");
+  Manip.addClass (find_tab "details") (selected ^ "-id")
 
 let main () =
   Learnocaml_local_storage.init ();
@@ -174,11 +249,30 @@ let main () =
       then update_repr_code id
       else true in
 
-  retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
-  >>= fun part ->
+  let fetch_students =
+    retrieve (Learnocaml_api.Students_list teacher_token)
+    >|= fun students ->
+    let map =
+      List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
+        Token.Map.empty students in
+    students_map := map in
+
+  let fetch_part =
+    retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
+    >|= fun part ->
+    partition := Some part in
+
+  let select = find_component "learnocaml-select-student-info" in
+
+  let update_pii_selected () = set_classes (Manip.value select) in
+
+  Lwt.join [fetch_students; fetch_part] >>= fun () ->
+  generate_anon_from_part ();
   hide_loading ~id:"learnocaml-exo-loading" ();
-  Manip.replaceChildren (find_tab "list") (exercises_tab part);
+  Manip.replaceChildren (find_tab "list") (exercises_tab ());
+  update_pii_selected ();
   init_tab ();
+  Manip.Ev.onchange_select select (fun _ -> update_pii_selected (); true);
   Manip.Ev.onclick (find_component "learnocaml-exo-button-answer")
     (fun _ -> select_tab "answer"; update_repr_code (React.S.value selected_repr_signal));
   Lwt.return_unit

@@ -6,7 +6,8 @@
     <title>Learn OCaml by OCamlPro - Partition details</title>
     <link rel="stylesheet" href="/css/learnocaml_common.css">
     <link rel="stylesheet" href="/css/learnocaml_main.css">
-    <link rel="stylesheet" href="/css/learnocaml_student_view.css">
+    <link rel="stylesheet" href="/css/learnocaml_partition_view.css">
+    <link rel="stylesheet" href="/css/learnocaml_student_view.css"><!--kept for now-->
     <link rel="stylesheet" href="/css/learnocaml_report.css">
     <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
     <!-- var editor = ace.edit("learnocaml-exo-editor-pane"); -->
@@ -40,6 +41,11 @@
       <div class="logo">
         <img src="/icons/logo_ocsf.svg">
         <span>Learn OCaml</span>
+        <select id="learnocaml-select-student-info">
+          <option value="anon">Hide PII</option>
+          <option value="nickname" selected="selected">Show nicknames</option>
+          <option value="token">Show tokens</option>
+        </select>
       </div>
       <div id="learnocaml-token">
       </div>
@@ -47,14 +53,18 @@
       </div>
     </div>
     <div id="learnocaml-exo-tab-buttons">
+      <button id="learnocaml-exo-button-list">List</button>
       <button id="learnocaml-exo-button-details" class="front-tab" disabled="">
         Details
       </button>
-      <button id="learnocaml-exo-button-list">Exercises</button>
       <button id="learnocaml-exo-button-answer">Answer</button>
     </div>
     <div id="learnocaml-exo-tabs">
-      <div id="learnocaml-exo-tab-details" class="front-tab"></div>
+      <div id="learnocaml-exo-tab-details" class="front-tab">
+        <div id="txt_click_leaf_details"><!-- to be internationalized -->
+          <p><b>Click on a Leaf to see details</b></p>
+        </div>
+      </div>
       <div id="learnocaml-exo-tab-list"></div>
       <div id="learnocaml-exo-tab-answer">
         <div id="learnocaml-exo-answer-pane" class="pane"></div>
