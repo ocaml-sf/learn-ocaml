@@ -45,8 +45,9 @@ module El = struct
     let report = tid "report"
     let editor = tid "editor"
     let text = tid "text"
+    let draft = tid "draft"
 
-    let all = [stats; list; report; editor; text]
+    let all = [stats; list; report; editor; text; draft]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
@@ -411,6 +412,8 @@ let display_report exo report =
 
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
+let update_draft_tab, clear_draft_tab = ace_display El.Tabs.(draft.tab)
+
 let clear_tabs () =
   restore_report_button ();
   List.iter (fun t ->
@@ -451,8 +454,9 @@ let update_tabs meta exo ans =
   match ans with
   | None -> ()
   | Some ans ->
-      update_report_tab exo ans;
-      update_answer_tab ans.Answer.solution
+     update_report_tab exo ans;
+     update_draft_tab ans.Answer.solution;
+     update_answer_tab ans.Answer.solution
 
 let () =
   run_async_with_log @@ fun () ->
