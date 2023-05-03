@@ -449,13 +449,13 @@ let update_report_tab exo ans =
       Manip.replaceChildren El.Tabs.(report.tab)
         [H.div [H.txt [%i"No report available"]]]
 
-let update_tabs meta exo ans =
+let update_tabs meta exo ans syn=
   update_text_tab meta exo;
   match ans with
   | None -> ()
   | Some ans ->
      update_report_tab exo ans;
-     update_draft_tab ans.Answer.solution;
+     update_draft_tab syn;
      update_answer_tab ans.Answer.solution
 
 let () =
@@ -492,7 +492,11 @@ let () =
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in
-        update_tabs meta exo ans;
+        let syn = match SMap.find_opt ex_id save.Save.all_exercise_editors with
+          |Some syn -> snd syn
+          |None -> ""
+        in
+        update_tabs meta exo ans syn;
         Lwt.return_unit
   in
   Lwt.return_unit
