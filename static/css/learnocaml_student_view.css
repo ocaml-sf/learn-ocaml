@@ -130,6 +130,10 @@
   background: #e80;
   color: white;
 }
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-draft.ongoing {
+  background: #F08080;
+  color: white;
+}
 #learnocaml-exo-button-report > .score {
   padding: 0 5px;
   float: right;
