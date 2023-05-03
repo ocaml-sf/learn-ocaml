@@ -183,6 +183,10 @@ msgstr "Toplevel"
 msgid "Report"
 msgstr "Rapport"
 
+# to fill later
+msgid "Draft"
+msgstr "Brouillon"
+
 #: File "src/app/learnocaml_common.ml", line 816, characters 37-47
 msgid "Exercise"
 msgstr "Exercice"

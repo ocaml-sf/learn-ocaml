@@ -412,7 +412,7 @@ let display_report exo report =
 
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
-let update_draft_tab, clear_draft_tab = ace_display El.Tabs.(draft.tab)
+let update_draft, clear_draft_tab = ace_display El.Tabs.(draft.tab)
 
 let restore_draft_button () =
   let draft_button = El.Tabs.(draft.btn) in
@@ -420,7 +420,7 @@ let restore_draft_button () =
   Manip.replaceChildren draft_button
     Tyxml_js.Html5.[ txt [%i"Draft"] ]
 
-let update_draft syn=
+let update_draft_tab syn=
   restore_draft_button ();
   let draft_button = El.Tabs.(draft.btn) in
   let syn = match syn with
@@ -431,7 +431,7 @@ let update_draft syn=
       snd syn
     |None -> ""
   in
-  update_draft_tab syn;
+  update_draft syn
 
 let clear_tabs () =
   restore_report_button ();
