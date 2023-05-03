@@ -414,6 +414,25 @@ let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
 let update_draft_tab, clear_draft_tab = ace_display El.Tabs.(draft.tab)
 
+let restore_draft_button () =
+  let draft_button = El.Tabs.(draft.btn) in
+  Manip.removeClass draft_button "ongoing";
+  Manip.replaceChildren draft_button
+    Tyxml_js.Html5.[ txt [%i"Draft"] ]
+
+let update_draft syn=
+  restore_draft_button ();
+  let draft_button = El.Tabs.(draft.btn) in
+  let syn = match syn with
+    |Some syn ->
+      Manip.addClass draft_button "ongoing" ;
+      Manip.replaceChildren draft_button
+        Tyxml_js.Html5.[ txt [%i"Draft"] ];
+      snd syn
+    |None -> ""
+  in
+  update_draft_tab syn;
+
 let clear_tabs () =
   restore_report_button ();
   List.iter (fun t ->
@@ -492,10 +511,7 @@ let () =
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in
-        let syn = match SMap.find_opt ex_id save.Save.all_exercise_editors with
-          |Some syn -> snd syn
-          |None -> ""
-        in
+        let syn = SMap.find_opt ex_id save.Save.all_exercise_editors in
         update_tabs meta exo ans syn;
         Lwt.return_unit
   in
