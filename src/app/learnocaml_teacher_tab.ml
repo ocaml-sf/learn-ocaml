@@ -211,7 +211,7 @@ let rec teacher_tab token _select _params () =
             in
             let open_partition_ () =
               Lwt.async (fun () ->
-                ask_string ~title:"Choose a function name"
+                ask_string ~title:"Partitioning of student solutions"
                   [H.txt @@ "Choose a function name to partition codes from "^ id ^": "]
                 >|= fun funname ->
                 let _win =
