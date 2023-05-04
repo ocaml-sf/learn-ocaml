@@ -276,12 +276,13 @@ let rec teacher_tab token _select _params () =
               H.td [stars_div meta.Exercise.Meta.stars];
               H.td [
                 let cls, text =
-                  if Token.Map.is_empty ES.(st.assignments.token_map) then
-                    match ES.(st.assignments.default) with
-                    | ES.Open -> "exo_open", [%i"Open"]
-                    | ES.Closed -> "exo_closed", [%i"Closed"]
-                    | ES.Assigned _ -> "exo_assigned", [%i"Assigned"]
-                  else "exo_assigned", [%i"Assigned"]
+                  match Token.Map.is_empty ES.(st.assignments.token_map),
+                        ES.(st.assignments.default) with
+                  | true, ES.Open -> "exo_open", [%i"Open"]
+                  | true, ES.Closed -> "exo_closed", [%i"Closed"]
+                  | _, (ES.Assigned _ | ES.Closed) ->
+                      "exo_assigned", [%i"Assigned"]
+                  | false, ES.Open -> "exo_assigned", [%i"Open/Assg"]
                 in
                 H.span ~a:[H.a_class [cls]] [H.txt text]
               ];
@@ -830,12 +831,10 @@ let rec teacher_tab token _select _params () =
                 ES.(default_assignment st.assignments = Open))
                 ids
             then ES.(fun assg ->
-                (* fixme: invisible change if the exercise is assigned! *)
                 match default_assignment assg with
                 | Open -> set_default_assignment assg Closed
                 | _ -> assg)
             else ES.(fun assg ->
-                (* fixme: invisible change if the exercise is assigned! *)
                 match default_assignment assg with
                 | Closed -> set_default_assignment assg Open
                 | _ -> assg)
