@@ -70,7 +70,15 @@ let tag_addremove list_id placeholder add_fun remove_fun =
 
 let rec teacher_tab token _select _params () =
   let action_new_token () =
-    retrieve (Learnocaml_api.Create_teacher_token token)
+    Learnocaml_common.ask_string
+       ~title:"NEW TEACHER TOKEN"
+       [H.txt @@ "Enter a nickname for the new token:"]
+    >>= fun nickname ->
+    let nick = match String.trim nickname with
+      | "" -> None
+      | s -> Some s
+    in
+    retrieve (Learnocaml_api.Create_teacher_token (token, nick))
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
