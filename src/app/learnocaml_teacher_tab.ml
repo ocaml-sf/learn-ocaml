@@ -938,6 +938,10 @@ let rec teacher_tab token _select _params () =
   let status_text_div = H.div ~a:[H.a_id "status-text-div"] [] in
   let actions_div =
     H.div ~a:[H.a_id "teacher_menubar"] [
+      H.button ~a:[
+        H.a_id "button_help";
+        H.a_onclick (fun _ -> help_popup (); true);
+      ] [H.txt [%i"?"]];
       status_text_div;
       H.button ~a:[
         H.a_id "button_apply";
@@ -1119,10 +1123,16 @@ let rec teacher_tab token _select _params () =
     if SMap.is_empty !status_changes &&
        Token.Map.is_empty !students_changes then
       (Manip.replaceChildren status_text_div [];
-       Manip.removeClass status_text_div "warning")
+       Manip.removeClass status_text_div "warning";
+       Option.iter
+         (fun b -> Manip.removeClass b "warning")
+         (Manip.by_id "button_apply"))
     else
       (Manip.replaceChildren status_text_div [H.txt [%i"Unsaved changes"]];
-       Manip.addClass status_text_div "warning")
+       Manip.addClass status_text_div "warning";
+       Option.iter
+         (fun b -> Manip.addClass b "warning")
+         (Manip.by_id "button_apply"))
   end;
   toggle_selected_exercises := begin
     fun ?force ?(update = force=None) ids ->
