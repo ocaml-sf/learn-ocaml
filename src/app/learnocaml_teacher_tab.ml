@@ -68,6 +68,29 @@ let tag_addremove list_id placeholder add_fun remove_fun =
     ] [ H.txt "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
   ]
 
+let help_button name (title,md_text) =
+  let dialog () =
+    let text_div =
+      let d =
+        H.div []
+          ~a:[H.a_class ["doc-popup-body"]]
+      in
+      (* Manip.SetCss.maxHeight d "85vh";
+       * Manip.SetCss.overflowY d "auto"; *)
+      let doc_html_string =
+        Omd.(md_text |> of_string |> to_html)
+      in
+      Manip.setInnerHtml d doc_html_string;
+      d
+    in
+    Learnocaml_common.ext_alert ~title [text_div]
+  in
+  H.button ~a:[
+    H.a_id ("button_help_"^name);
+    H.a_onclick (fun _ -> dialog (); true);
+    H.a_style "margin-left: 1em;";
+  ] [H.txt "?"]
+
 let rec teacher_tab token _select _params () =
   let action_new_token () =
     Learnocaml_common.ask_string
@@ -347,11 +370,14 @@ let rec teacher_tab token _select _params () =
   let exercise_skills_list_id = "exercise_skills_list" in
   let exercises_div =
     let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            !toggle_selected_exercises (all_exercises !exercises_index);
-            true);
-      ] [H.txt [%i"Exercises"]; H.txt " \xe2\x98\x90" (* U+2610 *)]
+      H.legend [
+        H.span
+          [ H.txt [%i"Exercises"]; H.txt " \xe2\x98\x90" (* U+2610 *) ]
+          ~a:[H.a_onclick (fun _ ->
+              !toggle_selected_exercises (all_exercises !exercises_index);
+              true)];
+        help_button "exercises" Learnocaml_teacher_tab_doc.exercises_pane_md
+      ]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
@@ -549,23 +575,26 @@ let rec teacher_tab token _select _params () =
   in
   let students_div =
     let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            let all =
-              Token.Map.fold (fun k _ acc -> (`Token k)::acc)
-                !students_map [`Any]
-            in
-            let all =
-              List.filter (fun t ->
-                  not (Manip.hasClass (find_component (student_line_id t))
-                         "student_hidden"))
-                all
-            in
-            !toggle_selected_students all;
-            true
-          );
-      ] [H.txt [%i"Students"];
-         H.txt " \xe2\x98\x90" (* U+2610 ballot box *)]
+      H.legend [
+        H.span
+          [ H.txt [%i"Students"];
+            H.txt " \xe2\x98\x90" (* U+2610 ballot box *) ]
+          ~a:[H.a_onclick (fun _ ->
+              let all =
+                Token.Map.fold (fun k _ acc -> (`Token k)::acc)
+                  !students_map [`Any]
+              in
+              let all =
+                List.filter (fun t ->
+                    not (Manip.hasClass (find_component (student_line_id t))
+                           "student_hidden"))
+                  all
+              in
+              !toggle_selected_students all;
+              true
+            )];
+        help_button "students" Learnocaml_teacher_tab_doc.students_pane_md
+      ]
     in
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
@@ -858,9 +887,16 @@ let rec teacher_tab token _select _params () =
   Manip.appendChild exercises_div exercise_control_div;
   let assignments_div = H.div [] in
   let control_div =
+    let legend =
+      H.legend [
+        H.txt [%i"Assignments"];
+        help_button "assignments"
+          Learnocaml_teacher_tab_doc.assignments_pane_md
+      ]
+    in
     H.div ~a:[H.a_id "control_pane"] [
       H.fieldset
-        ~legend:(H.legend [H.txt [%i"Assignments"]])
+        ~legend
         [assignments_div];
     ]
   in
@@ -938,10 +974,6 @@ let rec teacher_tab token _select _params () =
   let status_text_div = H.div ~a:[H.a_id "status-text-div"] [] in
   let actions_div =
     H.div ~a:[H.a_id "teacher_menubar"] [
-      H.button ~a:[
-        H.a_id "button_help";
-        H.a_onclick (fun _ -> help_popup (); true);
-      ] [H.txt [%i"?"]];
       status_text_div;
       H.button ~a:[
         H.a_id "button_apply";
