@@ -85,13 +85,6 @@ let rec teacher_tab token _select _params () =
                            write it down."]
          (Token.to_string new_token))
   in
-  let action_csv_export () =
-    retrieve (Learnocaml_api.Students_csv (token, [], []))
-    >|= fun csv ->
-    Learnocaml_common.fake_download
-      ~name:"learnocaml.csv"
-      ~contents:(Js.string csv)
-  in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
   in
@@ -190,6 +183,23 @@ let rec teacher_tab token _select _params () =
   let student_change = ref (fun _ -> assert false) in
   let assignment_change = ref (fun _ -> assert false) in
   let assignment_remove = ref (fun _ -> assert false) in
+
+  let action_csv_export () =
+    let exercises =
+      Hashtbl.to_seq_keys selected_exercises |>
+      List.of_seq
+    in
+    let students =
+      Hashtbl.to_seq_keys selected_students |>
+      Seq.filter_map (function `Token tk -> Some tk | `Any -> None) |>
+      List.of_seq
+    in
+    retrieve (Learnocaml_api.Students_csv (token, exercises, students))
+    >|= fun csv ->
+    Learnocaml_common.fake_download
+      ~name:"learnocaml.csv"
+      ~contents:(Js.string csv)
+  in
 
   (* Exercises table *)
   let rec mk_table group_level acc status group =
@@ -940,7 +950,7 @@ let rec teacher_tab token _select _params () =
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
             [ H.txt [%i"Create new teacher token"] ];
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
-            [ H.txt [%i"Download student data as CSV"] ];
+            [ H.txt [%i"Download the data for selected students/exercises as CSV"] ];
         ]
       ];
     ]
