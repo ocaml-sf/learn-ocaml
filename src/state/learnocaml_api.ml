@@ -278,11 +278,15 @@ module Conversions (Json: JSON_CODEC) = struct
   let to_http_request
     : type resp. resp request -> http_request
     =
-    let get ?token path = {
+    let get ?token ?eid path = {
       meth = `GET;
       path;
-      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
-    } in
+      args = match (token, eid) with
+               None, None -> []
+             |Some t, Some eid -> [("exercise_id", eid); ("token", Token.to_string t)];
+             |Some t, None -> ["token", Token.to_string t];
+             |None, Some eid -> ["exercise_id", eid];
+      } in
     let post ~token path body = {
       meth = `POST body;
       path;
@@ -368,8 +372,8 @@ module Conversions (Json: JSON_CODEC) = struct
              status)
 
     | Partition (token, eid, fid, prof) ->
-        get ~token
-          ["partition"; eid; fid; string_of_int prof]
+        get ~token ~eid
+          ["partition"; fid; string_of_int prof]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
