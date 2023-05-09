@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2023-05-04 19:23+0200\n"
+"PO-Revision-Date: 2023-05-09 14:32+0200\n"
 "Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
 "Language-Team: OCSF\n"
 "Language: french\n"
@@ -72,249 +72,266 @@ msgstr "@[<v 2>Réussite %d: %a@]"
 msgid "@[<v 2>Penalty %d: %a@]"
 msgstr "@[<v 2>Pénalité %d: %a@]"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", line 11, characters 5-25
-msgid "Handling exercises"
-msgstr "Gestion des exercices"
+#: File "src/app/learnocaml_common.ml", line 71, characters 21-37
+msgid "INTERNAL ERROR"
+msgstr "ERREUR INTERNE"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 11-46, characters 31-10
-msgid ""
-"\n"
-"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
-"\n"
-"- **Filtering exercises**<br/>\n"
-"  Use the \r9\f8a box on top.\n"
-"  - type for raw text search on the titles\n"
-"  - click again to list the tags and filter based on those\n"
-"  - multiple search terms are allowed\n"
-"\n"
-"- **Selecting which exercises can be seen by the students**\n"
-"  - select the exercises with a click (the box on top (de)selects all; you "
-"can\n"
-"    also click folder titles)\n"
-"  - click the [Open/Close] button to toggle\n"
-"  - for complex selections, use the filter box then select all\n"
-"\n"
-"- **Defining exercise skill tags**<br/>\n"
-"  Those can also be pre-defined in the exercises metadata.\n"
-"  1. Select the exercises to tag\n"
-"  2. Select or type a new tag in one of the boxes on the lower-right of the "
-"pane\n"
-"     (left for requirements, right skills trained by the exercise)\n"
-"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
-"\n"
-"- **Checking an exercise contents**\n"
-"  - double-click an exercise\n"
-"  - it will be opened in a new tab\n"
-"\n"
-"- **Classifying students answers**<br/>\n"
-"  As documented\n"
-"[here](https://ocaml-sf.org/learn-ocaml/howto-classify-students-answers."
-"html):\n"
-"  - Assume you want to analyze students' definitions of function `foo` in\n"
-"    exercise `exo`\n"
-"  - Hold Ctrl (on macOS: Hold `j) and left click on `exo` in the list of\n"
-"    exercises\n"
-"  - Enter `foo` in the dialog box\n"
-"  - The dissimilarity analysis will be opened in a new tab\n"
+#: File "src/app/learnocaml_common.ml", line 106, characters 50-54 140, 33-37
+#: 146, 36-40
+msgid "OK"
+msgstr "OK"
+
+#: File "src/app/learnocaml_common.ml", line 137, characters 21-28
+msgid "ERROR"
+msgstr "ERREUR"
+
+#: File "src/app/learnocaml_common.ml", line 140, characters 58-66 160, 30-38
+#: 455, 12-20 952, 19-27 "src/app/learnocaml_index_main.ml", 583, 17-25
+msgid "Cancel"
+msgstr "Annuler"
+
+#: File "src/app/learnocaml_common.ml", line 447, characters 26-41 947, 32-47
+#: "src/app/learnocaml_index_main.ml", 578,
+msgid "REQUEST ERROR"
+msgstr "ERREUR DE REQUÊTE"
+
+#: File "src/app/learnocaml_common.ml", line 448, characters 22-59 948, 30-67
+#: "src/app/learnocaml_index_main.ml", 579, 28-65
+msgid "Could not retrieve data from server"
+msgstr "Échec lors du téléchargement des données du serveur"
+
+#: File "src/app/learnocaml_common.ml", line 451, characters 12-19 495, 13-20
+#: 951, 19-26 "src/app/learnocaml_index_main.ml", 582, 17-24
+msgid "Retry"
+msgstr "Réessayer"
+
+#: File "src/app/learnocaml_common.ml", line 454, characters 25-33 496, 13-21
+msgid "Ignore"
+msgstr "Ignorer"
+
+#: File "src/app/learnocaml_common.ml", line 491, characters 26-39
+msgid "SYNC FAILED"
+msgstr "ECHEC DE LA SYNCHRONISATION"
+
+#: File "src/app/learnocaml_common.ml", line 492, characters 22-66
+msgid "Could not synchronise save with the server"
+msgstr "Les données n'ont pas pu être synchronisées avec le serveur"
+
+#: File "src/app/learnocaml_common.ml", line 552, characters 39-50
+msgid "%dd %02dh"
+msgstr "%dj %02dh"
+
+#: File "src/app/learnocaml_common.ml", line 553, characters 40-51
+msgid "%02d:%02d"
+msgstr "%02d:%02d"
+
+#: File "src/app/learnocaml_common.ml", line 554, characters 23-36
+msgid "0:%02d:%02d"
+msgstr "0:%02d:%02d"
+
+#: File "src/app/learnocaml_common.ml", line 585, characters 34-55 1209, 38-59
+msgid "difficulty: %d / 40"
+msgstr "difficulté: %d / 40"
+
+#: File "src/app/learnocaml_common.ml", line 620, characters 30-75
+msgid "No description available for this exercise."
+msgstr "Aucune description pour cet exercice."
+
+#: File "src/app/learnocaml_common.ml", line 643, characters 32-41
+#: "src/app/learnocaml_index_main.ml", 132, 54-63
+msgid "project"
+msgstr "projet"
+
+#: File "src/app/learnocaml_common.ml", line 644, characters 32-41
+#: "src/app/learnocaml_index_main.ml", 133, 54-63
+msgid "problem"
+msgstr "problème"
+
+#: File "src/app/learnocaml_common.ml", line 645, characters 33-43
+#: "src/app/learnocaml_index_main.ml", 134, 55-65
+msgid "exercise"
+msgstr "exercice"
+
+#: File "src/app/learnocaml_common.ml", line 797, characters 26-33
+msgid "Clear"
+msgstr "Effacer"
+
+#: File "src/app/learnocaml_common.ml", line 802, characters 25-32 927, 24-31
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: File "src/app/learnocaml_common.ml", line 807, characters 22-35
+msgid "Eval phrase"
+msgstr "Évaluer la phrase"
+
+#: File "src/app/learnocaml_common.ml", line 822, characters 24-51
+msgid "Preparing the environment"
+msgstr "Préparation de l'environnement"
+
+#: File "src/app/learnocaml_common.ml", line 823, characters 39-47 828, 37-45
+msgid "Editor"
+msgstr "Éditeur"
+
+#: File "src/app/learnocaml_common.ml", line 824, characters 41-51
+#: "src/app/learnocaml_index_main.ml", 692, 30-40
+msgid "Toplevel"
+msgstr "Toplevel"
+
+#: File "src/app/learnocaml_common.ml", line 825, characters 39-47 837,
+#: "src/app/learnocaml_exercise_main.ml", 58, 30-38 62, 67,
+#: "src/app/learnocaml_student_view.ml", 383, 28-36 396, 400, 405,
+msgid "Report"
+msgstr "Rapport"
+
+#: File "src/app/learnocaml_common.ml", line 826, characters 37-47
+msgid "Exercise"
+msgstr "Exercice"
+
+#: File "src/app/learnocaml_common.ml", line 827, characters 37-46
+msgid "Details"
+msgstr "Détails"
+
+#: File "src/app/learnocaml_common.ml", line 829, characters 27-70
+msgid "Click the Grade button to get your report"
+msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
+
+#: File "src/app/learnocaml_common.ml", line 834, characters 22-44
+msgid "Loading student data"
+msgstr "Chargement des informations sur les étudiants"
+
+#: File "src/app/learnocaml_common.ml", line 835, characters 38-45
+msgid "Stats"
+msgstr "Statistiques"
+
+#: File "src/app/learnocaml_common.ml", line 836, characters 37-48
+#: "src/app/learnocaml_index_main.ml", 689, 29-40
+#: "src/app/learnocaml_teacher_tab.ml", 375, 21-32
+#: "src/app/learnocaml_exercise_main.ml", 204, 23-34
+msgid "Exercises"
+msgstr "Exercices"
+
+#: File "src/app/learnocaml_common.ml", line 838, characters 37-46
+msgid "Subject"
+msgstr "Énoncé"
+
+#: File "src/app/learnocaml_common.ml", line 839, characters 39-47
+msgid "Answer"
+msgstr "Réponse"
+
+#: File "src/app/learnocaml_common.ml", line 928, characters 22-42 978, 34-54
+msgid "START FROM SCRATCH"
+msgstr "TOUT RECOMMENCER"
+
+#: File "src/app/learnocaml_common.ml", line 929, characters 16-65 979, 28-77
+msgid "This will discard all your edits. Are you sure?"
+msgstr "Toutes vos modifications seront perdues. Êtes-vous sûr·e ?"
+
+#: File "src/app/learnocaml_common.ml", line 943, characters 28-45 1179,
+#: "src/app/learnocaml_index_main.ml", 574,
+msgid "TOKEN NOT FOUND"
+msgstr "TOKEN NON TROUVÉ"
+
+#: File "src/app/learnocaml_common.ml", line 944, characters 17-60 1180,
+#: "src/app/learnocaml_index_main.ml", 575,
+msgid "The entered token couldn't be recognised."
+msgstr "Le token entré n'a pas été reconnu."
+
+#: File "src/app/learnocaml_common.ml", line 962, characters 34-61 967, 25-52
+msgid "Reload latest graded code"
+msgstr "Reprendre le dernier code noté"
+
+#: File "src/app/learnocaml_common.ml", line 963, characters 28-99
+msgid "This will replace your code with your last graded code. Are you sure?"
 msgstr ""
-"\n"
-"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
-"\n"
-"- **Filtering exercises**<br/>\n"
-"  Use the \\r9\f8a box on top.\n"
-"  - type for raw text search on the titles\n"
-"  - click again to list the tags and filter based on those\n"
-"  - multiple search terms are allowed\n"
-"\n"
-"- **Selecting which exercises can be seen by the students**\n"
-"  - select the exercises with a click (the box on top (de)selects all; you can\n"
-"    also click folder titles)\n"
-"  - click the [Open/Close] button to toggle\n"
-"  - for complex selections, use the filter box then select all\n"
-"\n"
-"- **Defining exercise skill tags**<br/>\n"
-"  Those can also be pre-defined in the exercises metadata.\n"
-"  1. Select the exercises to tag\n"
-"  2. Select or type a new tag in one of the boxes on the lower-right of the pane\n"
-"     (left for requirements, right skills trained by the exercise)\n"
-"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
-"\n"
-"- **Checking an exercise contents**\n"
-"  - double-click an exercise\n"
-"  - it will be opened in a new tab\n"
-"\n"
-"- **Classifying students answers**<br/>\n"
-"  As documented\n"
-"[here](https://ocaml-sf.org/learn-ocaml/howto-classify-students-answers.html):\n"
-"  - Assume you want to analyze students' definitions of function `foo` in\n"
-"    exercise `exo`\n"
-"  - Hold Ctrl (on macOS: Hold `j) and left click on `exo` in the list of\n"
-"    exercises\n"
-"  - Enter `foo` in the dialog box\n"
-"  - The dissimilarity analysis will be opened in a new tab\n"
+"Cela va remplacer votre code par la dernière version évaluée. Êtes-vous "
+"sûr·e ?"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", line 49, characters 5-24
-msgid "Handling students"
-msgstr "Gestion des étudiants"
+#: File "src/app/learnocaml_common.ml", line 970, characters 34-61 975, 25-52
+msgid "Reload latest saved draft"
+msgstr "Reprendre le dernier code synchronisé"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 49-85, characters 30-10
-msgid ""
-"\n"
-"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
-"\n"
-"- **Filtering students**<br/>\n"
-"  Use the \r9\f8a box on top.\n"
-"  - type for raw text search on the nicknames\n"
-"  - click again to list the tags and filter based on those\n"
-"  - multiple search terms are allowed\n"
-"\n"
-"- **Tagging students**<br/>\n"
-"  Tags can be used for groups, level, etc.\n"
-"  1. select the students to tag. To select a group, use the filter box and "
-"the\n"
-"     box on top to select all. Use the `Sort by` box on the top right to "
-"easily\n"
-"     select new students or untagged studends\n"
-"  2. select or type the tag on the box to the lower-right\n"
-"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
-"\n"
-"- **Following a student**\n"
-"  - at a glance:\n"
-"    a bar on the right of each student shows a short insight of their "
-"progress,\n"
-"    - vertical stripes correspond to the exercises, in order\n"
-"    - grey is shown for exercises not attempted\n"
-"    - the color otherwise varies from green (good) to red (bad) depending on "
-"the\n"
-"      grade\n"
-"  - in detail:\n"
-"    - double-click on the student line to open their track record in a new "
-"tab\n"
-"    - there you can see their detailed results per exercise, and check "
-"their\n"
-"      answers\n"
-"    - see \"Classifying students answers\" in the exercise pane guide for a "
-"way\n"
-"      to compare solutions between students\n"
-"\n"
-"- **Downloading the grades**\n"
-"  - use the [Actions] menu at the bottom to export a CSV file containing a "
-"line\n"
-"    per student, and two columns (grade and date) per exercise\n"
-"  - if any exercises or students are selected, the CSV will only contain "
-"those\n"
-"  - otherwise everything is exported\n"
+#: File "src/app/learnocaml_common.ml", line 971, characters 28-99
+msgid "This will replace your code with your last saved draft. Are you sure?"
 msgstr ""
-"\n"
-"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
-"\n"
-"- **Filtering students**<br/>\n"
-"  Use the \\r9\f8a box on top.\n"
-"  - type for raw text search on the nicknames\n"
-"  - click again to list the tags and filter based on those\n"
-"  - multiple search terms are allowed\n"
-"\n"
-"- **Tagging students**<br/>\n"
-"  Tags can be used for groups, level, etc.\n"
-"  1. select the students to tag. To select a group, use the filter box and the\n"
-"     box on top to select all. Use the `Sort by` box on the top right to easily\n"
-"     select new students or untagged studends\n"
-"  2. select or type the tag on the box to the lower-right\n"
-"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
-"\n"
-"- **Following a student**\n"
-"  - at a glance:\n"
-"    a bar on the right of each student shows a short insight of their progress,\n"
-"    - vertical stripes correspond to the exercises, in order\n"
-"    - grey is shown for exercises not attempted\n"
-"    - the color otherwise varies from green (good) to red (bad) depending on the\n"
-"      grade\n"
-"  - in detail:\n"
-"    - double-click on the student line to open their track record in a new tab\n"
-"    - there you can see their detailed results per exercise, and check their\n"
-"      answers\n"
-"    - see \"Classifying students answers\" in the exercise pane guide for a way\n"
-"      to compare solutions between students\n"
-"\n"
-"- **Downloading the grades**\n"
-"  - use the [Actions] menu at the bottom to export a CSV file containing a line\n"
-"    per student, and two columns (grade and date) per exercise\n"
-"  - if any exercises or students are selected, the CSV will only contain those\n"
-"  - otherwise everything is exported\n"
+"Cela va remplacer votre code par la dernière version synchronisée. Êtes-vous "
+"sûr·e ?"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", line 88, characters 5-27
-msgid "Handling assignments"
-msgstr "Gestion des devoirs"
+#: File "src/app/learnocaml_common.ml", line 982, characters 25-52
+msgid "Reset to initial template"
+msgstr "Réinitialiser le code"
 
-#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 88-118, characters 33-10
-msgid ""
-"\n"
-"Assignments provide a way to open select exercises to select students for a\n"
-"given period of time. Once due, the students will be restricted to read-"
-"only\n"
-"access.\n"
-"\n"
-"- **Creating an assignment**\n"
-"  1. Select exercises, as above\n"
-"  2. Select students, as above. You can use the \"any future students\" line "
-"to\n"
-"     apply to students who haven't yet registered\n"
-"  3. Click the \"New assignment\" button at the bottom\n"
-"  4. Edit the two dates (start and end of the assignment, resp.)\n"
-"  5. Don't forget to [Apply] on the bottom right\n"
-"  6. Click the assignment again to unselect it and quit assignment mode\n"
-"\n"
-"- **Editing an assignment**\n"
-"  - select it in the bottom pane\n"
-"  - the corresponding exercises and students are automatically selected. "
-"Update\n"
-"    the selection as needed\n"
-"  - click the assignment again when finished (to quit editing mode), and "
-"don't\n"
-"    forget to [Apply]\n"
-"\n"
-"- **Following assignments**\n"
-"  - an additional small \"progression\" bar is shown for each assignment in "
-"the\n"
-"    students pane\n"
-"  - past assignment dates are outlined in red\n"
-"  - when selecting students, exercises assigned to any of them will be "
-"greyed\n"
-"    out to prevent assigning multiple times the same exercise to the same\n"
-"    student\n"
-"  - conversely, when selecting exercises, students who already have them\n"
-"    assigned are greyed out\n"
-msgstr ""
-"\n"
-"Assignments provide a way to open select exercises to select students for a\n"
-"given period of time. Once due, the students will be restricted to read-only\n"
-"access.\n"
-"\n"
-"- **Creating an assignment**\n"
-"  1. Select exercises, as above\n"
-"  2. Select students, as above. You can use the \"any future students\" line to\n"
-"     apply to students who haven't yet registered\n"
-"  3. Click the \"New assignment\" button at the bottom\n"
-"  4. Edit the two dates (start and end of the assignment, resp.)\n"
-"  5. Don't forget to [Apply] on the bottom right\n"
-"  6. Click the assignment again to unselect it and quit assignment mode\n"
-"\n"
-"- **Editing an assignment**\n"
-"  - select it in the bottom pane\n"
-"  - the corresponding exercises and students are automatically selected. Update\n"
-"    the selection as needed\n"
-"  - click the assignment again when finished (to quit editing mode), and don't\n"
-"    forget to [Apply]\n"
-"\n"
-"- **Following assignments**\n"
-"  - an additional small \"progression\" bar is shown for each assignment in the\n"
-"    students pane\n"
-"  - past assignment dates are outlined in red\n"
-"  - when selecting students, exercises assigned to any of them will be greyed\n"
-"    out to prevent assigning multiple times the same exercise to the same\n"
-"    student\n"
-"  - conversely, when selecting exercises, students who already have them\n"
-"    assigned are greyed out\n"
+#: File "src/app/learnocaml_common.ml", line 985, characters 9-17
+msgid "Reload"
+msgstr "Recharger"
+
+#: File "src/app/learnocaml_common.ml", line 1011, characters 27-37
+msgid "Download"
+msgstr "Télécharger"
+
+#: File "src/app/learnocaml_common.ml", line 1019, characters 22-33
+msgid "Eval code"
+msgstr "Exécuter le code"
+
+#: File "src/app/learnocaml_common.ml", line 1029, characters 23-29
+msgid "Sync"
+msgstr "Sync"
+
+#: File "src/app/learnocaml_common.ml", line 1098, characters 34-49 1133,
+msgid "OCaml prelude"
+msgstr "Prélude OCaml"
+
+#: File "src/app/learnocaml_common.ml", line 1105, characters 59-65 1140,
+msgid "Hide"
+msgstr "Cacher"
+
+#: File "src/app/learnocaml_common.ml", line 1110, characters 59-65 1147,
+msgid "Show"
+msgstr "Montrer"
+
+#: File "src/app/learnocaml_common.ml", line 1170, characters 18-36
+#: "src/app/learnocaml_index_main.ml", 629, 31-49
+msgid "Enter your token"
+msgstr "Entrez votre token"
+
+#: File "src/app/learnocaml_common.ml", line 1215, characters 22-35
+msgid "Difficulty:"
+msgstr "Difficulté :"
+
+#: File "src/app/learnocaml_common.ml", line 1229, characters 39-49
+msgid "Kind: %s"
+msgstr "Type : %s"
+
+#: File "src/app/learnocaml_common.ml", line 1370, characters 46-59
+msgid "Identifier:"
+msgstr "Identifiant de l'exercice :"
+
+#: File "src/app/learnocaml_common.ml", line 1374, characters 48-57
+msgid "Author:"
+msgstr "Auteur :"
+
+#: File "src/app/learnocaml_common.ml", line 1375, characters 47-57
+msgid "Authors:"
+msgstr "Auteurs :"
+
+#: File "src/app/learnocaml_common.ml", line 1380, characters 31-48
+msgid "Skills trained:"
+msgstr "Compétences pratiquées :"
+
+#: File "src/app/learnocaml_common.ml", line 1384, characters 31-49
+msgid "Skills required:"
+msgstr "Compétences requises :"
+
+#: File "src/app/learnocaml_common.ml", line 1389, characters 36-57
+msgid "Previous exercises:"
+msgstr "Exercices précédents :"
+
+#: File "src/app/learnocaml_common.ml", line 1392, characters 35-52
+msgid "Next exercises:"
+msgstr "Exercices suivants :"
+
+#: File "src/app/learnocaml_common.ml", line 1397, characters 26-36
+msgid "Metadata"
+msgstr "Métadonnées"
 
 #: File "src/toplevel/learnocaml_toplevel.ml", line 79, characters 7-41
 msgid "The toplevel has been cleared.\n"
@@ -414,21 +431,6 @@ msgstr "Exercice fermé"
 msgid "Time left: %s"
 msgstr "Temps restant: %s"
 
-#: File "src/app/learnocaml_index_main.ml", line 132, characters 54-63
-#: "src/app/learnocaml_common.ml", 643, 32-41
-msgid "project"
-msgstr "projet"
-
-#: File "src/app/learnocaml_index_main.ml", line 133, characters 54-63
-#: "src/app/learnocaml_common.ml", 644, 32-41
-msgid "problem"
-msgstr "problème"
-
-#: File "src/app/learnocaml_index_main.ml", line 134, characters 55-65
-#: "src/app/learnocaml_common.ml", 645, 33-43
-msgid "exercise"
-msgstr "exercice"
-
 #: File "src/app/learnocaml_index_main.ml", line 154, characters 28-61
 msgid "No open exercises at the moment"
 msgstr "Aucun exercice n'est encore ouvert"
@@ -481,36 +483,6 @@ msgstr ""
 msgid "Please write it down."
 msgstr "Notez-le !"
 
-#: File "src/app/learnocaml_index_main.ml", line 574, characters 28-45
-#: "src/app/learnocaml_common.ml", 943, 1179,
-msgid "TOKEN NOT FOUND"
-msgstr "TOKEN NON TROUVÉ"
-
-#: File "src/app/learnocaml_index_main.ml", line 575, characters 17-60
-#: "src/app/learnocaml_common.ml", 944, 1180,
-msgid "The entered token couldn't be recognised."
-msgstr "Le token entré n'a pas été reconnu."
-
-#: File "src/app/learnocaml_index_main.ml", line 578, characters 32-47
-#: "src/app/learnocaml_common.ml", 447, 26-41 947,
-msgid "REQUEST ERROR"
-msgstr "ERREUR DE REQUÊTE"
-
-#: File "src/app/learnocaml_index_main.ml", line 579, characters 28-65
-#: "src/app/learnocaml_common.ml", 448, 22-59 948, 30-67
-msgid "Could not retrieve data from server"
-msgstr "Échec lors du téléchargement des données du serveur"
-
-#: File "src/app/learnocaml_index_main.ml", line 582, characters 17-24
-#: "src/app/learnocaml_common.ml", 451, 12-19 495, 13-20 951, 19-26
-msgid "Retry"
-msgstr "Réessayer"
-
-#: File "src/app/learnocaml_index_main.ml", line 583, characters 17-25
-#: "src/app/learnocaml_common.ml", 140, 58-66 160, 30-38 455, 12-20 952, 19-27
-msgid "Cancel"
-msgstr "Annuler"
-
 #: File "src/app/learnocaml_index_main.ml", line 617, characters 7-21
 msgid "Connected as"
 msgstr "Connecté en tant que"
@@ -551,11 +523,6 @@ msgstr "Utilisateur existant"
 msgid "Already have a token? Click here!"
 msgstr "Vous avez déjà un token ? Par ici !"
 
-#: File "src/app/learnocaml_index_main.ml", line 629, characters 31-49
-#: "src/app/learnocaml_common.ml", 1170, 18-36
-msgid "Enter your token"
-msgstr "Entrez votre token"
-
 #: File "src/app/learnocaml_index_main.ml", line 630, characters 31-40
 msgid "Connect"
 msgstr "Se connecter"
@@ -580,18 +547,6 @@ msgstr "Tutoriels"
 #: File "src/app/learnocaml_index_main.ml", line 687, characters 29-38
 msgid "Lessons"
 msgstr "Cours"
-
-#: File "src/app/learnocaml_index_main.ml", line 689, characters 29-40
-#: "src/app/learnocaml_common.ml", 836, 37-48
-#: "src/app/learnocaml_teacher_tab.ml", 375, 21-32
-#: "src/app/learnocaml_exercise_main.ml", 204, 23-34
-msgid "Exercises"
-msgstr "Exercices"
-
-#: File "src/app/learnocaml_index_main.ml", line 692, characters 30-40
-#: "src/app/learnocaml_common.ml", 824, 41-51
-msgid "Toplevel"
-msgstr "Toplevel"
 
 #: File "src/app/learnocaml_index_main.ml", line 694, characters 32-44
 #: "src/app/learnocaml_playground_main.ml", 77, 23-35
@@ -643,205 +598,6 @@ msgstr "Télécharger tous les fichiers sources"
 #: File "src/app/learnocaml_index_main.ml", line 828, characters 38-44
 msgid "Menu"
 msgstr "Menu"
-
-#: File "src/app/learnocaml_common.ml", line 71, characters 21-37
-msgid "INTERNAL ERROR"
-msgstr "ERREUR INTERNE"
-
-#: File "src/app/learnocaml_common.ml", line 106, characters 50-54 140, 33-37
-#: 146, 36-40
-msgid "OK"
-msgstr "OK"
-
-#: File "src/app/learnocaml_common.ml", line 137, characters 21-28
-msgid "ERROR"
-msgstr "ERREUR"
-
-#: File "src/app/learnocaml_common.ml", line 454, characters 25-33 496, 13-21
-msgid "Ignore"
-msgstr "Ignorer"
-
-#: File "src/app/learnocaml_common.ml", line 491, characters 26-39
-msgid "SYNC FAILED"
-msgstr "ECHEC DE LA SYNCHRONISATION"
-
-#: File "src/app/learnocaml_common.ml", line 492, characters 22-66
-msgid "Could not synchronise save with the server"
-msgstr "Les données n'ont pas pu être synchronisées avec le serveur"
-
-#: File "src/app/learnocaml_common.ml", line 552, characters 39-50
-msgid "%dd %02dh"
-msgstr "%dj %02dh"
-
-#: File "src/app/learnocaml_common.ml", line 553, characters 40-51
-msgid "%02d:%02d"
-msgstr "%02d:%02d"
-
-#: File "src/app/learnocaml_common.ml", line 554, characters 23-36
-msgid "0:%02d:%02d"
-msgstr "0:%02d:%02d"
-
-#: File "src/app/learnocaml_common.ml", line 585, characters 34-55 1209, 38-59
-msgid "difficulty: %d / 40"
-msgstr "difficulté: %d / 40"
-
-#: File "src/app/learnocaml_common.ml", line 620, characters 30-75
-msgid "No description available for this exercise."
-msgstr "Aucune description pour cet exercice."
-
-#: File "src/app/learnocaml_common.ml", line 797, characters 26-33
-msgid "Clear"
-msgstr "Effacer"
-
-#: File "src/app/learnocaml_common.ml", line 802, characters 25-32 927, 24-31
-msgid "Reset"
-msgstr "Réinitialiser"
-
-#: File "src/app/learnocaml_common.ml", line 807, characters 22-35
-msgid "Eval phrase"
-msgstr "Évaluer la phrase"
-
-#: File "src/app/learnocaml_common.ml", line 822, characters 24-51
-msgid "Preparing the environment"
-msgstr "Préparation de l'environnement"
-
-#: File "src/app/learnocaml_common.ml", line 823, characters 39-47 828, 37-45
-msgid "Editor"
-msgstr "Éditeur"
-
-#: File "src/app/learnocaml_common.ml", line 825, characters 39-47 837,
-#: "src/app/learnocaml_exercise_main.ml", 58, 30-38 62, 67,
-#: "src/app/learnocaml_student_view.ml", 383, 28-36 396, 400, 405,
-msgid "Report"
-msgstr "Rapport"
-
-#: File "src/app/learnocaml_common.ml", line 826, characters 37-47
-msgid "Exercise"
-msgstr "Exercice"
-
-#: File "src/app/learnocaml_common.ml", line 827, characters 37-46
-msgid "Details"
-msgstr "Détails"
-
-#: File "src/app/learnocaml_common.ml", line 829, characters 27-70
-msgid "Click the Grade button to get your report"
-msgstr "Cliquez sur le bouton Noter pour obtenir votre rapport"
-
-#: File "src/app/learnocaml_common.ml", line 834, characters 22-44
-msgid "Loading student data"
-msgstr "Chargement des informations sur les étudiants"
-
-#: File "src/app/learnocaml_common.ml", line 835, characters 38-45
-msgid "Stats"
-msgstr "Statistiques"
-
-#: File "src/app/learnocaml_common.ml", line 838, characters 37-46
-msgid "Subject"
-msgstr "Énoncé"
-
-#: File "src/app/learnocaml_common.ml", line 839, characters 39-47
-msgid "Answer"
-msgstr "Réponse"
-
-#: File "src/app/learnocaml_common.ml", line 928, characters 22-42 978, 34-54
-msgid "START FROM SCRATCH"
-msgstr "TOUT RECOMMENCER"
-
-#: File "src/app/learnocaml_common.ml", line 929, characters 16-65 979, 28-77
-msgid "This will discard all your edits. Are you sure?"
-msgstr "Toutes vos modifications seront perdues. Êtes-vous sûr·e ?"
-
-#: File "src/app/learnocaml_common.ml", line 962, characters 34-61 967, 25-52
-msgid "Reload latest graded code"
-msgstr "Reprendre le dernier code noté"
-
-#: File "src/app/learnocaml_common.ml", line 963, characters 28-99
-msgid "This will replace your code with your last graded code. Are you sure?"
-msgstr ""
-"Cela va remplacer votre code par la dernière version évaluée. Êtes-vous "
-"sûr·e ?"
-
-#: File "src/app/learnocaml_common.ml", line 970, characters 34-61 975, 25-52
-msgid "Reload latest saved draft"
-msgstr "Reprendre le dernier code synchronisé"
-
-#: File "src/app/learnocaml_common.ml", line 971, characters 28-99
-msgid "This will replace your code with your last saved draft. Are you sure?"
-msgstr ""
-"Cela va remplacer votre code par la dernière version synchronisée. Êtes-vous "
-"sûr·e ?"
-
-#: File "src/app/learnocaml_common.ml", line 982, characters 25-52
-msgid "Reset to initial template"
-msgstr "Réinitialiser le code"
-
-#: File "src/app/learnocaml_common.ml", line 985, characters 9-17
-msgid "Reload"
-msgstr "Recharger"
-
-#: File "src/app/learnocaml_common.ml", line 1011, characters 27-37
-msgid "Download"
-msgstr "Télécharger"
-
-#: File "src/app/learnocaml_common.ml", line 1019, characters 22-33
-msgid "Eval code"
-msgstr "Exécuter le code"
-
-#: File "src/app/learnocaml_common.ml", line 1029, characters 23-29
-msgid "Sync"
-msgstr "Sync"
-
-#: File "src/app/learnocaml_common.ml", line 1098, characters 34-49 1133,
-msgid "OCaml prelude"
-msgstr "Prélude OCaml"
-
-#: File "src/app/learnocaml_common.ml", line 1105, characters 59-65 1140,
-msgid "Hide"
-msgstr "Cacher"
-
-#: File "src/app/learnocaml_common.ml", line 1110, characters 59-65 1147,
-msgid "Show"
-msgstr "Montrer"
-
-#: File "src/app/learnocaml_common.ml", line 1215, characters 22-35
-msgid "Difficulty:"
-msgstr "Difficulté :"
-
-#: File "src/app/learnocaml_common.ml", line 1229, characters 39-49
-msgid "Kind: %s"
-msgstr "Type : %s"
-
-#: File "src/app/learnocaml_common.ml", line 1370, characters 46-59
-msgid "Identifier:"
-msgstr "Identifiant de l'exercice :"
-
-#: File "src/app/learnocaml_common.ml", line 1374, characters 48-57
-msgid "Author:"
-msgstr "Auteur :"
-
-#: File "src/app/learnocaml_common.ml", line 1375, characters 47-57
-msgid "Authors:"
-msgstr "Auteurs :"
-
-#: File "src/app/learnocaml_common.ml", line 1380, characters 31-48
-msgid "Skills trained:"
-msgstr "Compétences pratiquées :"
-
-#: File "src/app/learnocaml_common.ml", line 1384, characters 31-49
-msgid "Skills required:"
-msgstr "Compétences requises :"
-
-#: File "src/app/learnocaml_common.ml", line 1389, characters 36-57
-msgid "Previous exercises:"
-msgstr "Exercices précédents :"
-
-#: File "src/app/learnocaml_common.ml", line 1392, characters 35-52
-msgid "Next exercises:"
-msgstr "Exercices suivants :"
-
-#: File "src/app/learnocaml_common.ml", line 1397, characters 26-36
-msgid "Metadata"
-msgstr "Métadonnées"
 
 #: File "src/app/learnocaml_teacher_tab.ml", line 106, characters 20-35
 msgid "TEACHER TOKEN"
@@ -968,6 +724,256 @@ msgstr "Télécharger un CSV des exercices/étudiants sélectionnés"
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
+#: File "src/app/learnocaml_teacher_tab_doc.ml", line 11, characters 5-25
+msgid "Handling exercises"
+msgstr "Gestion des exercices"
+
+#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 11-46, characters 31-10
+msgid ""
+"\n"
+"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
+"\n"
+"- **Filtering exercises**<br/>\n"
+"  Use the 🔍 box on top.\n"
+"  - type for raw text search on the titles\n"
+"  - click again to list the tags and filter based on those\n"
+"  - multiple search terms are allowed\n"
+"\n"
+"- **Selecting which exercises can be seen by the students**\n"
+"  - select the exercises with a click (the box on top (de)selects all; you "
+"can\n"
+"    also click folder titles)\n"
+"  - click the [Open/Close] button to toggle\n"
+"  - for complex selections, use the filter box then select all\n"
+"\n"
+"- **Defining exercise skill tags**<br/>\n"
+"  Those can also be pre-defined in the exercises metadata.\n"
+"  1. Select the exercises to tag\n"
+"  2. Select or type a new tag in one of the boxes on the lower-right of the "
+"pane\n"
+"     (left for requirements, right for skills trained by the exercise)\n"
+"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
+"\n"
+"- **Checking an exercise contents**\n"
+"  - double-click an exercise\n"
+"  - it will be opened in a new tab\n"
+"\n"
+"- **Classifying students answers**<br/>\n"
+"  As documented\n"
+"[here](https://ocaml-sf.org/learn-ocaml/howto-classify-students-answers."
+"html):\n"
+"  - Assume you want to analyze students' definitions of function `foo` in\n"
+"    exercise `exo`\n"
+"  - Hold Ctrl (on macOS: Hold ⌘) and left click on `exo` in the list of\n"
+"    exercises\n"
+"  - Enter `foo` in the dialog box\n"
+"  - The dissimilarity analysis will be opened in a new tab\n"
+msgstr ""
+"\n"
+"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
+"\n"
+"- **Filtering exercises**<br/>\n"
+"  Use the 🔍 box on top.\n"
+"  - type for raw text search on the titles\n"
+"  - click again to list the tags and filter based on those\n"
+"  - multiple search terms are allowed\n"
+"\n"
+"- **Selecting which exercises can be seen by the students**\n"
+"  - select the exercises with a click (the box on top (de)selects all; you can\n"
+"    also click folder titles)\n"
+"  - click the [Open/Close] button to toggle\n"
+"  - for complex selections, use the filter box then select all\n"
+"\n"
+"- **Defining exercise skill tags**<br/>\n"
+"  Those can also be pre-defined in the exercises metadata.\n"
+"  1. Select the exercises to tag\n"
+"  2. Select or type a new tag in one of the boxes on the lower-right of the pane\n"
+"     (left for requirements, right for skills trained by the exercise)\n"
+"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
+"\n"
+"- **Checking an exercise contents**\n"
+"  - double-click an exercise\n"
+"  - it will be opened in a new tab\n"
+"\n"
+"- **Classifying students answers**<br/>\n"
+"  As documented\n"
+"[here](https://ocaml-sf.org/learn-ocaml/howto-classify-students-answers.html):\n"
+"  - Assume you want to analyze students' definitions of function `foo` in\n"
+"    exercise `exo`\n"
+"  - Hold Ctrl (on macOS: Hold ⌘) and left click on `exo` in the list of\n"
+"    exercises\n"
+"  - Enter `foo` in the dialog box\n"
+"  - The dissimilarity analysis will be opened in a new tab\n"
+
+#: File "src/app/learnocaml_teacher_tab_doc.ml", line 49, characters 5-24
+msgid "Handling students"
+msgstr "Gestion des étudiants"
+
+#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 49-85, characters 30-10
+msgid ""
+"\n"
+"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
+"\n"
+"- **Filtering students**<br/>\n"
+"  Use the 🔍 box on top.\n"
+"  - type for raw text search on the nicknames\n"
+"  - click again to list the tags and filter based on those\n"
+"  - multiple search terms are allowed\n"
+"\n"
+"- **Tagging students**<br/>\n"
+"  Tags can be used for groups, level, etc.\n"
+"  1. select the students to tag. To select a group, use the filter box and "
+"the\n"
+"     box on top to select all. Use the `Sort by` box on the top right to "
+"easily\n"
+"     select new students or untagged studends\n"
+"  2. select or type the tag on the box to the lower-right\n"
+"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
+"\n"
+"- **Following a student**\n"
+"  - at a glance:\n"
+"    a bar on the right of each student shows a short insight of their "
+"progress,\n"
+"    - vertical stripes correspond to the exercises, in order\n"
+"    - grey is shown for exercises not attempted\n"
+"    - the color otherwise varies from green (good) to red (bad) depending on "
+"the\n"
+"      grade\n"
+"  - in detail:\n"
+"    - double-click on the student line to open their track record in a new "
+"tab\n"
+"    - there you can see their detailed results per exercise, and check "
+"their\n"
+"      answers\n"
+"    - see \"Classifying students answers\" in the exercise pane guide for a "
+"way\n"
+"      to compare solutions between students\n"
+"\n"
+"- **Downloading the grades**\n"
+"  - use the [Actions] menu at the bottom to export a CSV file containing a "
+"line\n"
+"    per student, and two columns (grade and date) per exercise\n"
+"  - if any exercises or students are selected, the CSV will only contain "
+"those\n"
+"  - otherwise everything is exported\n"
+msgstr ""
+"\n"
+"> Don't forget to click \"Apply\" on the bottom-right after any changes\n"
+"\n"
+"- **Filtering students**<br/>\n"
+"  Use the 🔍 box on top.\n"
+"  - type for raw text search on the nicknames\n"
+"  - click again to list the tags and filter based on those\n"
+"  - multiple search terms are allowed\n"
+"\n"
+"- **Tagging students**<br/>\n"
+"  Tags can be used for groups, level, etc.\n"
+"  1. select the students to tag. To select a group, use the filter box and the\n"
+"     box on top to select all. Use the `Sort by` box on the top right to easily\n"
+"     select new students or untagged studends\n"
+"  2. select or type the tag on the box to the lower-right\n"
+"  3. Click the corresponding [+] button to add the tag ([-] to remove)\n"
+"\n"
+"- **Following a student**\n"
+"  - at a glance:\n"
+"    a bar on the right of each student shows a short insight of their progress,\n"
+"    - vertical stripes correspond to the exercises, in order\n"
+"    - grey is shown for exercises not attempted\n"
+"    - the color otherwise varies from green (good) to red (bad) depending on the\n"
+"      grade\n"
+"  - in detail:\n"
+"    - double-click on the student line to open their track record in a new tab\n"
+"    - there you can see their detailed results per exercise, and check their\n"
+"      answers\n"
+"    - see \"Classifying students answers\" in the exercise pane guide for a way\n"
+"      to compare solutions between students\n"
+"\n"
+"- **Downloading the grades**\n"
+"  - use the [Actions] menu at the bottom to export a CSV file containing a line\n"
+"    per student, and two columns (grade and date) per exercise\n"
+"  - if any exercises or students are selected, the CSV will only contain those\n"
+"  - otherwise everything is exported\n"
+
+#: File "src/app/learnocaml_teacher_tab_doc.ml", line 88, characters 5-27
+msgid "Handling assignments"
+msgstr "Gestion des devoirs"
+
+#: File "src/app/learnocaml_teacher_tab_doc.ml", lines 88-118, characters 33-10
+msgid ""
+"\n"
+"Assignments provide a way to open select exercises to select students for a\n"
+"given period of time. Once due, the students will be restricted to read-"
+"only\n"
+"access.\n"
+"\n"
+"- **Creating an assignment**\n"
+"  1. Select exercises, as above\n"
+"  2. Select students, as above. You can use the \"any future students\" line "
+"to\n"
+"     apply to students who haven't yet registered\n"
+"  3. Click the \"New assignment\" button at the bottom\n"
+"  4. Edit the two dates (start and end of the assignment, resp.)\n"
+"  5. Don't forget to [Apply] on the bottom right\n"
+"  6. Click the assignment again to unselect it and quit assignment mode\n"
+"\n"
+"- **Editing an assignment**\n"
+"  - select it in the bottom pane\n"
+"  - the corresponding exercises and students are automatically selected. "
+"Update\n"
+"    the selection as needed\n"
+"  - click the assignment again when finished (to quit editing mode), and "
+"don't\n"
+"    forget to [Apply]\n"
+"\n"
+"- **Following assignments**\n"
+"  - an additional small \"progression\" bar is shown for each assignment in "
+"the\n"
+"    students pane\n"
+"  - past assignment dates are outlined in red\n"
+"  - when selecting students, exercises assigned to any of them will be "
+"greyed\n"
+"    out to prevent assigning multiple times the same exercise to the same\n"
+"    student\n"
+"  - conversely, when selecting exercises, students who already have them\n"
+"    assigned are greyed out\n"
+msgstr ""
+"\n"
+"Assignments provide a way to open select exercises to select students for a\n"
+"given period of time. Once due, the students will be restricted to read-"
+"only\n"
+"access.\n"
+"\n"
+"- **Creating an assignment**\n"
+"  1. Select exercises, as above\n"
+"  2. Select students, as above. You can use the \"any future students\" line "
+"to\n"
+"     apply to students who haven't yet registered\n"
+"  3. Click the \"New assignment\" button at the bottom\n"
+"  4. Edit the two dates (start and end of the assignment, resp.)\n"
+"  5. Don't forget to [Apply] on the bottom right\n"
+"  6. Click the assignment again to unselect it and quit assignment mode\n"
+"\n"
+"- **Editing an assignment**\n"
+"  - select it in the bottom pane\n"
+"  - the corresponding exercises and students are automatically selected. "
+"Update\n"
+"    the selection as needed\n"
+"  - click the assignment again when finished (to quit editing mode), and "
+"don't\n"
+"    forget to [Apply]\n"
+"\n"
+"- **Following assignments**\n"
+"  - an additional small \"progression\" bar is shown for each assignment in "
+"the\n"
+"    students pane\n"
+"  - past assignment dates are outlined in red\n"
+"  - when selecting students, exercises assigned to any of them will be "
+"greyed\n"
+"    out to prevent assigning multiple times the same exercise to the same\n"
+"    student\n"
+"  - conversely, when selecting exercises, students who already have them\n"
+"    assigned are greyed out\n"
+
 #: File "src/grader/grading.ml", line 16, characters 28-67
 msgid ""
 "Exercise definition error %s:\n"
@@ -1033,38 +1039,6 @@ msgstr "lors du chargement des dépendances"
 #: File "src/grader/grading.ml", line 191, characters 38-67
 msgid "while testing your solution"
 msgstr "lors du test de la solution utilisateur"
-
-#: File "src/grader/grader_jsoo_worker.ml", line 57, characters 34-67
-msgid ""
-"Error in your solution:\n"
-"%a\n"
-"%!"
-msgstr ""
-"Erreur dans votre solution:\n"
-"%a\n"
-"%!"
-
-#: File "src/grader/grader_jsoo_worker.ml", line 60, characters 34-68
-msgid ""
-"Error in the exercise %s\n"
-"%a\n"
-"%!"
-msgstr ""
-"Erreur dans l'exercice %s\n"
-"%a\n"
-"%!"
-
-#: File "src/grader/grader_jsoo_worker.ml", line 64, characters 17-71
-msgid ""
-"Internal error:\n"
-"The grader did not return a report."
-msgstr ""
-"Erreur interne:\n"
-"Le moteur de notation n'a pas retourné de rapport."
-
-#: File "src/grader/grader_jsoo_worker.ml", line 66, characters 17-38
-msgid "Unexpected error:\n"
-msgstr "Erreur inattendue:\n"
 
 #: File "src/app/learnocaml_exercise_main.ml", line 29, characters 22-81
 msgid "WARNING: You have an older grader version than the server"
@@ -1217,6 +1191,38 @@ msgstr "Aucun rapport"
 msgid "Status of student: "
 msgstr "Suivi étudiant: "
 
+#: File "src/grader/grader_jsoo_worker.ml", line 57, characters 34-67
+msgid ""
+"Error in your solution:\n"
+"%a\n"
+"%!"
+msgstr ""
+"Erreur dans votre solution:\n"
+"%a\n"
+"%!"
+
+#: File "src/grader/grader_jsoo_worker.ml", line 60, characters 34-68
+msgid ""
+"Error in the exercise %s\n"
+"%a\n"
+"%!"
+msgstr ""
+"Erreur dans l'exercice %s\n"
+"%a\n"
+"%!"
+
+#: File "src/grader/grader_jsoo_worker.ml", line 64, characters 17-71
+msgid ""
+"Internal error:\n"
+"The grader did not return a report."
+msgstr ""
+"Erreur interne:\n"
+"Le moteur de notation n'a pas retourné de rapport."
+
+#: File "src/grader/grader_jsoo_worker.ml", line 66, characters 17-38
+msgid "Unexpected error:\n"
+msgstr "Erreur inattendue:\n"
+
 #~ msgid "Download student data as CSV"
 #~ msgstr "Exporter les données étudiants en CSV"
 
@@ -1304,11 +1310,11 @@ msgstr "Suivi étudiant: "
 #~ "icon_upload_white.svg\" class=\"icon\" alt=\"Restaurer\">."
 
 #~ msgid ""
-#~ "Save online using the <img src=\"icons/icon_sync_white.svg\" class=\"icon"
-#~ "\" alt=\"sync\"> button above."
+#~ "Save online using the <img src=\"icons/icon_sync_white.svg\" "
+#~ "class=\"icon\" alt=\"sync\"> button above."
 #~ msgstr ""
-#~ "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white.svg"
-#~ "\" class=\"icon\" alt=\"Sync\">."
+#~ "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white."
+#~ "svg\" class=\"icon\" alt=\"Sync\">."
 
 #~ msgid "Before log out, be sure to save your token"
 #~ msgstr "Avant de vous déconnecter, assurez-vous de sauvegarder votre token"

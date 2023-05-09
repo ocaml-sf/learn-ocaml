@@ -27,7 +27,7 @@ let exercises_pane_md =
   Those can also be pre-defined in the exercises metadata.
   1. Select the exercises to tag
   2. Select or type a new tag in one of the boxes on the lower-right of the pane
-     (left for requirements, right skills trained by the exercise)
+     (left for requirements, right for skills trained by the exercise)
   3. Click the corresponding [+] button to add the tag ([-] to remove)
 
 - **Checking an exercise contents**
