@@ -44,11 +44,6 @@ COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bi
 
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml-client"]
 
-LABEL org.opencontainers.image.title="learn-ocaml-client"
-LABEL org.opencontainers.image.description="learn-ocaml command-line client"
-LABEL org.opencontainers.image.url="https://ocaml-sf.org/"
-LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
-
 
 FROM alpine:3.13 as program
 
@@ -74,8 +69,3 @@ COPY --from=compilation "$opam_switch/lib/ocaml" "$opam_switch/lib/ocaml/"
 
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
-
-LABEL org.opencontainers.image.title="learn-ocaml"
-LABEL org.opencontainers.image.description="learn-ocaml app manager"
-LABEL org.opencontainers.image.url="https://ocaml-sf.org/"
-LABEL org.opencontainers.image.vendor="The OCaml Software Foundation"
