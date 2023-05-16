@@ -160,8 +160,12 @@ jobs:
             ocamlsf/learn-ocaml:latest
             ocamlsf/learn-ocaml:${{ steps.tag.outputs.tag }}
           labels: |
+            org.opencontainers.image.title=learn-ocaml
+            org.opencontainers.image.description=learn-ocaml app manager
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
   push_client:
@@ -203,8 +207,12 @@ jobs:
             ocamlsf/learn-ocaml-client:latest
             ocamlsf/learn-ocaml-client:${{ steps.tag.outputs.tag }}
           labels: |
+            org.opencontainers.image.title=learn-ocaml-client
+            org.opencontainers.image.description=learn-ocaml command-line client
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
   push_emacs_client:
@@ -250,7 +258,11 @@ jobs:
             ocamlsf/emacs-learn-ocaml-client:latest
             ocamlsf/emacs-learn-ocaml-client:${{ steps.tag.outputs.tag }}
           labels: |
+            org.opencontainers.image.title=learn-ocaml-client with emacs
+            org.opencontainers.image.description=learn-ocaml command-line client with emacs
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}

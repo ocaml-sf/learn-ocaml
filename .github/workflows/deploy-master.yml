@@ -39,8 +39,12 @@ jobs:
           push: true
           tags: "ocamlsf/learn-ocaml:master"
           labels: |
+            org.opencontainers.image.title=learn-ocaml
+            org.opencontainers.image.description=learn-ocaml app manager
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=master
             org.opencontainers.image.revision=${{ github.sha }}
   push_client:
@@ -76,8 +80,12 @@ jobs:
           target: client
           tags: "ocamlsf/learn-ocaml-client:master"
           labels: |
+            org.opencontainers.image.title=learn-ocaml-client
+            org.opencontainers.image.description=learn-ocaml command-line client
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=master
             org.opencontainers.image.revision=${{ github.sha }}
   push_emacs_client:
@@ -116,7 +124,11 @@ jobs:
             version=master
           tags: "ocamlsf/emacs-learn-ocaml-client:master"
           labels: |
+            org.opencontainers.image.title=learn-ocaml-client with emacs
+            org.opencontainers.image.description=learn-ocaml command-line client with emacs
+            org.opencontainers.image.url=https://ocaml-sf.org/
+            org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
             org.opencontainers.image.version=master
             org.opencontainers.image.revision=${{ github.sha }}
