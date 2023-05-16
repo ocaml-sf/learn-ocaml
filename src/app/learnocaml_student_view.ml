@@ -435,9 +435,11 @@ let update_draft_tab syn=
 
 let clear_tabs () =
   restore_report_button ();
+  restore_draft_button ();
   List.iter (fun t ->
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
+  clear_draft_tab ();
   clear_answer_tab ()
 
 let update_text_tab meta exo =
