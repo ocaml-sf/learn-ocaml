@@ -165,7 +165,7 @@ jobs:
             org.opencontainers.image.url=https://ocaml-sf.org/
             org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
   push_client:
@@ -212,7 +212,7 @@ jobs:
             org.opencontainers.image.url=https://ocaml-sf.org/
             org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
   push_emacs_client:
@@ -263,6 +263,6 @@ jobs:
             org.opencontainers.image.url=https://ocaml-sf.org/
             org.opencontainers.image.vendor=The OCaml Software Foundation
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.source=${{ github.server_url }}${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
             org.opencontainers.image.revision=${{ github.sha }}
