@@ -412,7 +412,10 @@ let display_report exo report =
 
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
-let update_draft, clear_draft_tab = ace_display El.Tabs.(draft.tab)
+let update_draft, clear_draft_tab =
+  let draft_editor = H.div ~a: [] [] in
+  Manip.appendChild El.Tabs.(draft.tab) draft_editor;
+  ace_display draft_editor
 
 let restore_draft_button () =
   let draft_button = El.Tabs.(draft.btn) in
@@ -422,6 +425,9 @@ let restore_draft_button () =
 
 let update_draft_tab syn=
   restore_draft_button ();
+  let draft_tab = El.Tabs.(draft.tab) in
+  Manip.removeChild draft_tab @@ find_component "test";
+  Manip.appendChildFirst draft_tab (H.div ~a:[H.a_class ["test"]][H.txt "test"]); 
   let draft_button = El.Tabs.(draft.btn) in
   let syn = match syn with
     |Some syn ->
