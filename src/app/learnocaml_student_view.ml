@@ -40,14 +40,14 @@ module El = struct
       btn = snd (id ("learnocaml-exo-button-" ^ name));
       tab = snd (id ("learnocaml-exo-tab-" ^ name));
     }
-    let stats = tid "stats"
     let list = tid "list"
+    let stats = tid "stats"
     let report = tid "report"
     let editor = tid "editor"
-    let text = tid "text"
     let draft = tid "draft"
+    let text = tid "text"
 
-    let all = [stats; list; report; editor; text; draft]
+    let all = [list; stats; report; editor; draft; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
