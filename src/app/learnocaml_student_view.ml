@@ -433,9 +433,9 @@ let update_draft_tab syn=
       Manip.addClass draft_button "ongoing" ;
       Manip.replaceChildren draft_button
         Tyxml_js.Html5.[ txt [%i"Draft"] ];
-      Manip.removeChild draft_tab @@ find_component "sync_time";
+      Manip.removeChild draft_tab @@ find_component "learnocaml-sync-time";
       Manip.appendChildFirst draft_tab (
-          H.div ~a:[H.a_id "sync_time"]
+          H.div ~a:[H.a_id "learnocaml-sync-time"]
             [H.txt @@ [%i"Ungraded draft, synced on "] ^
                         string_of_date ~time:true @@ fst syn]
         ); 
