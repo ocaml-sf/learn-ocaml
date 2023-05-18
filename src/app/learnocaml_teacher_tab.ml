@@ -722,21 +722,108 @@ let rec teacher_tab token _select _params () =
     in
     let new_assg_id = "new_assignment" in
     let new_assg_button = H.button [H.txt [%i"New assignment"]] in
+    let gen_assg_button = H.button [H.txt [%i"Generate assignment"]] in
     let table = H.table [] in
     let new_assg_line =
       H.tr ~a:[
         H.a_id new_assg_id;
       ] [
-        H.td ~a:[H.a_colspan 10] [ new_assg_button ]
+        H.td ~a:[H.a_colspan 10] [ new_assg_button; gen_assg_button ]
       ]
     in
-    let new_assignment () =
-      let start, stop =
-        let tm = Unix.(gmtime (time ())) in
-        let tm = Unix.{tm with tm_hour = 0; tm_min = 0; tm_sec = 0} in
-        fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 1}),
-        fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 8})
+    let gen_timestamp () =
+      let tm = Unix.(gmtime (time ())) in
+      let tm = Unix.{tm with tm_hour = 0; tm_min = 0; tm_sec = 0} in
+      fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 1}),
+      fst Unix.(mktime {tm with tm_mday = tm.tm_mday + 8})
+    in
+    let gen_assignment () =
+      let open Gen_assignment in
+      let get_exercise_meta id = 
+      (* Find exercise and get meta *)
+        let rec iter_exercises_index = function
+          | []                  -> {title = ""; stars = Basic; id = -1.; requirements = []}
+          | (idx, Some meta)::t -> if id = idx then {title = idx; stars = Gen_assignment.float_to_diff meta.Exercise.Meta.stars; id = float_of_string (Option.get meta.Exercise.Meta.id); requirements = (List.map float_of_string meta.Exercise.Meta.requirements)}
+                                   else iter_exercises_index t 
+          | _                   -> {title = ""; stars = Basic; id = -3.; requirements = []}
+        in
+        let rec iter_groups (l : (string * Learnocaml_data.Exercise.Index.group) list) = 
+          match l with
+          | []          -> {title = ""; stars = Basic; id = -2.; requirements = []}
+          | (_, gp)::t  -> let open Learnocaml_data.Exercise.Index in
+                           let exe =
+                            (match gp.contents with
+                            | Exercise.Index.Exercises exlist -> iter_exercises_index exlist
+                            | _                               -> {title = ""; stars = Basic; id = -4.; requirements = []}) in
+                           if exe.id >= 0. then exe else iter_groups t
+        in                            
+        match !exercises_index with
+        | Exercise.Index.Groups gplist  -> iter_groups gplist
+        | _                             -> {title = ""; stars = Basic; id = -5.; requirements = []}
       in
+      let rec create_exercise_list acc = function
+        | []    -> acc
+        | id::t -> create_exercise_list ((get_exercise_meta id)::acc) t
+      in
+      let get_all_assignments htbl = 
+      (* Create assignment list *)
+        let rec iter_htbl acc ht = function
+          | []      -> acc
+          | exel::t ->
+            let tkl = Hashtbl.find_all ht exel in
+            while Hashtbl.mem ht exel do
+              Hashtbl.remove ht exel
+            done;
+            let exe_set = List.fold_left (fun s id -> SSet.add id s) SSet.empty exel in
+            let token_list = Learnocaml_data.Token.Set.of_list tkl in
+            iter_htbl ((exe_set, token_list)::acc) ht t 
+        in
+        let uniq_list l = 
+          List.fold_left (fun l ele -> if List.mem ele l then l else ele::l) [] l 
+        in
+        let keys = uniq_list (htbl_keys htbl) in
+        iter_htbl [] htbl keys
+      in
+      let add_assignments_to_tbl l = 
+      (* Add all assignments to table *)
+        let rec aux = function
+          | []                      -> ()
+          | (exercises, tokens)::t  -> 
+            let start, stop = gen_timestamp () in
+            let line = make_line (start, stop) tokens exercises false in
+            let id = !line_n in
+            Dom.insertBefore (H.toelt table)
+              (H.toelt line)
+              (Js.some (H.toelt new_assg_line));
+            !assignment_change id;
+            !toggle_select_assignment id;
+            aux t
+        in
+        aux l
+      in
+      let create_student x = 
+      (* Get students meta *)
+        let open Learnocaml_data.Student in
+        let student = get_student x in
+        let tags    = Learnocaml_data.SSet.elements student.tags in
+        try
+          Gen_assignment.create_student x (List.hd tags)
+        with _ -> Gen_assignment.create_student x ""
+      in
+      let get_students_meta () =
+        let tokens,_ = get_student_selection () in
+        let tokens = Learnocaml_data.Token.Set.elements tokens in
+        List.map (fun x -> create_student x) tokens
+      in
+      let exercises = htbl_keys selected_exercises in
+      let exercises = create_exercise_list [] exercises in
+      let tokens = get_students_meta () in
+      let assignments = Gen_assignment.iter_tokens tokens exercises in
+      let new_assignment_list = get_all_assignments assignments in
+      add_assignments_to_tbl new_assignment_list
+    in
+    let new_assignment () =
+      let start, stop = gen_timestamp () in
       let tokens, default = get_student_selection () in
       let exercises =
         Hashtbl.fold (fun id () -> SSet.add id) selected_exercises SSet.empty
@@ -755,6 +842,7 @@ let rec teacher_tab token _select _params () =
       !toggle_select_assignment id
     in
     Manip.Ev.onclick new_assg_button (fun _ -> new_assignment (); false);
+    Manip.Ev.onclick gen_assg_button (fun _ -> gen_assignment (); false);
     Manip.replaceChildren table @@
     List.map (fun (assg, tokens, dft, exos) -> make_line assg tokens exos dft)
       assignments @
@@ -1362,3 +1450,4 @@ let rec teacher_tab token _select _params () =
   fill_control_div ();
   fill_students_progression ();
   Lwt.return div
+

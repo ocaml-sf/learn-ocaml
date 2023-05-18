@@ -39,7 +39,8 @@
             learnocaml_toplevel
             js_of_ocaml-ppx
             ocplib_i18n)
- (modules Learnocaml_teacher_tab
+ (modules Gen_assignment
+          Learnocaml_teacher_tab
           Learnocaml_index_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
 )

@@ -681,6 +681,10 @@ msgstr "%d+ étudiants"
 msgid "New assignment"
 msgstr "Nouveau devoir"
 
+#: File "src/app/learnocaml_teacher_tab.ml", line 726, characters 47-65
+msgid "Generate assignment"
+msgstr "Générer un devoir"
+
 #: File "src/app/learnocaml_teacher_tab.ml", line 821, characters 16-28
 msgid "Open/Close"
 msgstr "Ouvrir/Fermer"
