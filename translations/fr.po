@@ -928,6 +928,10 @@ msgstr "moyenne sur les exercices requérant les compétences"
 msgid "Success over exercises requiring skill "
 msgstr "Moyenne sur les exercices requérant la compétence "
 
+#: File "src/app/learnocaml_student_view.ml", line 439
+msgid "Ungraded draft, synced on "
+msgstr "Brouillon non noté, synchronisé le"
+
 #: File "src/app/learnocaml_student_view.ml", line 443, characters 26-67
 msgid "GRADE DOESN'T MATCH: cheating suspected"
 msgstr "NOTE INCOHÉRENTE: suspicion de triche"
