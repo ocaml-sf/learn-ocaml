@@ -184,11 +184,14 @@
     display: flex;
     flex-direction: column;
   }
-#learnocaml-exo-tab-draft > #draft_editor {
+#learnocaml-exo-tab-draft > #learnocaml-draft-editor {
   flex: 2;
 }
-#learnocaml-exo-tab-draft > #learnocaml-draft-editor {
+#learnocaml-exo-tab-draft > #learnocaml-draft-time {
   font-family: 'Inconsolata', monospace;
+  color: #333;
+  font-size: 18px;
+  background: #eee;
 }
 
 /* -------------------- two columns mode -------------------------- */
@@ -218,7 +221,6 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
-
 }
 /* -------------------- one column mode --------------------------- */
 @media (max-width: 1199px) {

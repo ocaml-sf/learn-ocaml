@@ -414,9 +414,9 @@ let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
 let update_draft, clear_draft_tab =
   let draft_editor =
-    H.div ~a: [H.a_id ("draft_editor")] [] in
+    H.div ~a: [H.a_id ("learnocaml-draft-editor")] [] in
   Manip.insertChildAfter El.Tabs.(draft.tab)
-    (find_component "learnocaml-sync-time") draft_editor;
+    (find_component "learnocaml-draft-time") draft_editor;
   ace_display draft_editor
 
 let restore_draft_button () =
@@ -435,7 +435,7 @@ let update_draft_tab syn=
       Manip.replaceChildren draft_button
         Tyxml_js.Html5.[ txt [%i"Draft"] ];
       Manip.appendChildFirst draft_tab (
-          H.div ~a:[H.a_id "learnocaml-sync-time"]
+          H.div ~a:[H.a_id "learnocaml-draft-time"]
             [H.txt [%i"Ungraded draft, synced on "];
              date ~time:true @@ fst syn]
         );
@@ -451,7 +451,7 @@ let clear_tabs () =
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
   clear_draft_tab ();
-  match Js_utils.Manip.by_id "learnocaml-sync-time" with
+  match Js_utils.Manip.by_id "learnocaml-draft-time" with
   | Some div -> Manip.removeChild El.Tabs.(draft.tab) div;
   | None -> ();
   clear_answer_tab ()
