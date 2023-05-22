@@ -232,6 +232,14 @@
     background: linear-gradient(to bottom, #444 0, #444 5px,
       rgba(0,0,0,0.5) 5px, transparent 10px) ;
   }
+  #learnocaml-exo-tab-draft::after {
+    position: absolute;
+    z-index: 1005;
+    left: 0; top: 0; height: 10px; width: 100%;
+    content: "";
+    background: linear-gradient(to bottom, #444 0, #444 5px,
+      rgba(0,0,0,0.5) 5px, transparent 10px) ;
+  }
 }
 @media (min-width: 550px) and (max-width: 1199px) {
   #learnocaml-exo-tab-buttons {

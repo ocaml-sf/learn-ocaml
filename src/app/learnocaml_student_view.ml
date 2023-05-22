@@ -436,9 +436,9 @@ let update_draft_tab syn=
       Manip.removeChild draft_tab @@ find_component "learnocaml-sync-time";
       Manip.appendChildFirst draft_tab (
           H.div ~a:[H.a_id "learnocaml-sync-time"]
-            [H.txt @@ [%i"Ungraded draft, synced on "] ^
-                        string_of_date ~time:true @@ fst syn]
-        ); 
+            [H.txt [%i"Ungraded draft, synced on "];
+             date ~time:true @@ fst syn]
+        );
       snd syn
     |None -> ""
   in
