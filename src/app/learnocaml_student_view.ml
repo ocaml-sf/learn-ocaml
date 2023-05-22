@@ -451,7 +451,9 @@ let clear_tabs () =
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
   clear_draft_tab ();
-  Manip.removeChild El.Tabs.(draft.tab) @@ find_component "learnocaml-sync-time";
+  match Js_utils.Manip.by_id "learnocaml-sync-time" with
+  | Some div -> Manip.removeChild El.Tabs.(draft.tab) div;
+  | None -> ();
   clear_answer_tab ()
 
 let update_text_tab meta exo =
