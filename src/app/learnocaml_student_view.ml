@@ -413,9 +413,10 @@ let display_report exo report =
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
 let update_draft, clear_draft_tab =
-  let draft_editor = find_component "draft_editor" in
-    (*H.div ~a: [] [] in
-  Manip.appendChild El.Tabs.(draft.tab) draft_editor;*)
+  let draft_editor =
+    H.div ~a: [H.a_id ("draft_editor")] [] in
+  Manip.insertChildAfter El.Tabs.(draft.tab)
+    (find_component "learnocaml-sync-time") draft_editor;
   ace_display draft_editor
 
 let restore_draft_button () =

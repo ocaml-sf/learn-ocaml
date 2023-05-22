@@ -240,6 +240,17 @@
     background: linear-gradient(to bottom, #444 0, #444 5px,
       rgba(0,0,0,0.5) 5px, transparent 10px) ;
   }
+  #learnocaml-exo-tab-draft {
+    display: flex;
+    flex-direction: column;
+  }
+  #learnocaml-exo-tab-draft > #learnocaml-syn-time {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  #learnocaml-exo-tab-draft > #draft_editor {
+    flex: 2;
+  }
 }
 @media (min-width: 550px) and (max-width: 1199px) {
   #learnocaml-exo-tab-buttons {
@@ -248,6 +259,17 @@
   #learnocaml-exo-tabs > * {
     top: 100px;
   }
+  #learnocaml-exo-tab-draft {
+    display: flex;
+    flex-direction: column;
+  }
+  #learnocaml-exo-tab-draft > #learnocaml-syn-time {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  #learnocaml-exo-tab-draft > #draft_editor {
+    flex: 2;
+  }
 }
 @media (max-width: 549px) {
   #learnocaml-exo-tab-buttons {
@@ -255,6 +277,17 @@
   }
   #learnocaml-exo-tabs > * {
     top: 80px;
+  }
+  #learnocaml-exo-tab-draft {
+    display: flex;
+    flex-direction: column;
+  }
+  #learnocaml-exo-tab-draft > #learnocaml-syn-time {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  #learnocaml-exo-tab-draft > #draft_editor {
+    flex: 2;
   }
 }
 /* -------------------- stats pane ------------------------------ */
