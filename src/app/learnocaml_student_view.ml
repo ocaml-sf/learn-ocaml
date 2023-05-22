@@ -434,7 +434,6 @@ let update_draft_tab syn=
       Manip.addClass draft_button "ongoing" ;
       Manip.replaceChildren draft_button
         Tyxml_js.Html5.[ txt [%i"Draft"] ];
-      Manip.removeChild draft_tab @@ find_component "learnocaml-sync-time";
       Manip.appendChildFirst draft_tab (
           H.div ~a:[H.a_id "learnocaml-sync-time"]
             [H.txt [%i"Ungraded draft, synced on "];
@@ -452,6 +451,7 @@ let clear_tabs () =
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
   clear_draft_tab ();
+  Manip.removeChild El.Tabs.(draft.tab) @@ find_component "learnocaml-sync-time";
   clear_answer_tab ()
 
 let update_text_tab meta exo =
