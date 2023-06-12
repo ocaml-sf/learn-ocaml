@@ -45,6 +45,7 @@ val confirm :
 val ask_string :
   title: string ->
   ?ok_label: string ->
+  ?may_cancel: bool ->
   [< Html_types.div_content > `Input] Tyxml_js.Html.elt list ->
   string Lwt.t
 

@@ -35,16 +35,21 @@ static/dune:
 # Generates up-to-date translation template for lang % from the sources
 LANGS = $(patsubst translations/%.po,%,$(wildcard translations/*.po))
 translations/$(LANGS:=.pot):
-	@for f in $(LANGS); do echo >> translations/$$f.po; done
-	@rm -f translations/*.pot
+	@for f in $(LANGS); do \
+	  echo >> translations/$$f.po; \
+	  rm -f translations/$$f.pot; \
+	  cp translations/$$f.po.header translations/$$f.pot; \
+	 done
 	@${DUNE} clean ${DUNE_ARGS}
 	-rm -f ${INDEX_ODOC_PATH}
 	@DUMP_POT=1 ${DUNE} build ${DUNE_ARGS} -j 1
 	@for f in $(LANGS); do \
 	  mv translations/$$f.pot translations/$$f.pot.bak; \
-	  msguniq translations/$$f.pot.bak > translations/$$f.pot; \
-	  rm translations/$$f.pot.bak; \
+	  msguniq -t utf-8 translations/$$f.pot.bak > translations/$$f.pot \
+	  && rm translations/$$f.pot.bak; \
 	done
+
+.PHONY: translations/$(LANGS:=.pot)
 
 # Updates existing translations (.po) for the latest source template
 update-%-translation: translations/%.pot

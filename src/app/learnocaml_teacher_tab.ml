@@ -68,21 +68,45 @@ let tag_addremove list_id placeholder add_fun remove_fun =
     ] [ H.txt "\xe2\x9e\x96" (* U+2796 heavy minus sign *) ];
   ]
 
+let help_button name (title,md_text) =
+  let dialog () =
+    let text_div =
+      let d =
+        H.div []
+          ~a:[H.a_class ["doc-popup-body"]]
+      in
+      (* Manip.SetCss.maxHeight d "85vh";
+       * Manip.SetCss.overflowY d "auto"; *)
+      let doc_html_string =
+        Omd.(md_text |> of_string |> to_html)
+      in
+      Manip.setInnerHtml d doc_html_string;
+      d
+    in
+    Learnocaml_common.ext_alert ~title [text_div]
+  in
+  H.button ~a:[
+    H.a_id ("button_help_"^name);
+    H.a_onclick (fun _ -> dialog (); true);
+    H.a_style "margin-left: 1em;";
+  ] [H.txt "?"]
+
 let rec teacher_tab token _select _params () =
   let action_new_token () =
-    retrieve (Learnocaml_api.Create_teacher_token token)
+    Learnocaml_common.ask_string
+       ~title:"NEW TEACHER TOKEN"
+       [H.txt @@ "Enter a nickname for the new token:"]
+    >>= fun nickname ->
+    let nick = match String.trim nickname with
+      | "" -> None
+      | s -> Some s
+    in
+    retrieve (Learnocaml_api.Create_teacher_token (token, nick))
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
                            write it down."]
          (Token.to_string new_token))
-  in
-  let action_csv_export () =
-    retrieve (Learnocaml_api.Students_csv (token, [], []))
-    >|= fun csv ->
-    Learnocaml_common.fake_download
-      ~name:"learnocaml.csv"
-      ~contents:(Js.string csv)
   in
   let indent_style lvl =
     H.a_style (Printf.sprintf "text-align: left; padding-left: %dem;" lvl)
@@ -183,6 +207,23 @@ let rec teacher_tab token _select _params () =
   let assignment_change = ref (fun _ -> assert false) in
   let assignment_remove = ref (fun _ -> assert false) in
 
+  let action_csv_export () =
+    let exercises =
+      Hashtbl.to_seq_keys selected_exercises |>
+      List.of_seq
+    in
+    let students =
+      Hashtbl.to_seq_keys selected_students |>
+      Seq.filter_map (function `Token tk -> Some tk | `Any -> None) |>
+      List.of_seq
+    in
+    retrieve (Learnocaml_api.Students_csv (token, exercises, students))
+    >|= fun csv ->
+    Learnocaml_common.fake_download
+      ~name:"learnocaml.csv"
+      ~contents:(Js.string csv)
+  in
+
   (* Exercises table *)
   let rec mk_table group_level acc status group =
     match group with
@@ -211,7 +252,7 @@ let rec teacher_tab token _select _params () =
             in
             let open_partition_ () =
               Lwt.async (fun () ->
-                ask_string ~title:"Choose a function name"
+                ask_string ~title:"Partitioning of student solutions"
                   [H.txt @@ "Choose a function name to partition codes from "^ id ^": "]
                 >|= fun funname ->
                 let _win =
@@ -258,12 +299,13 @@ let rec teacher_tab token _select _params () =
               H.td [stars_div meta.Exercise.Meta.stars];
               H.td [
                 let cls, text =
-                  if Token.Map.is_empty ES.(st.assignments.token_map) then
-                    match ES.(st.assignments.default) with
-                    | ES.Open -> "exo_open", [%i"Open"]
-                    | ES.Closed -> "exo_closed", [%i"Closed"]
-                    | ES.Assigned _ -> "exo_assigned", [%i"Assigned"]
-                  else "exo_assigned", [%i"Assigned"]
+                  match Token.Map.is_empty ES.(st.assignments.token_map),
+                        ES.(st.assignments.default) with
+                  | true, ES.Open -> "exo_open", [%i"Open"]
+                  | true, ES.Closed -> "exo_closed", [%i"Closed"]
+                  | _, (ES.Assigned _ | ES.Closed) ->
+                      "exo_assigned", [%i"Assigned"]
+                  | false, ES.Open -> "exo_assigned", [%i"Open/Assg"]
                 in
                 H.span ~a:[H.a_class [cls]] [H.txt text]
               ];
@@ -328,11 +370,14 @@ let rec teacher_tab token _select _params () =
   let exercise_skills_list_id = "exercise_skills_list" in
   let exercises_div =
     let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            !toggle_selected_exercises (all_exercises !exercises_index);
-            true);
-      ] [H.txt [%i"Exercises"]; H.txt " \xe2\x98\x90" (* U+2610 *)]
+      H.legend [
+        H.span
+          [ H.txt [%i"Exercises"]; H.txt " \xe2\x98\x90" (* U+2610 *) ]
+          ~a:[H.a_onclick (fun _ ->
+              !toggle_selected_exercises (all_exercises !exercises_index);
+              true)];
+        help_button "exercises" Learnocaml_teacher_tab_doc.exercises_pane_md
+      ]
     in
     H.div ~a:[H.a_id "exercises_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "exercises_filter_box"] [
@@ -530,23 +575,26 @@ let rec teacher_tab token _select _params () =
   in
   let students_div =
     let legend =
-      H.legend ~a:[
-        H.a_onclick (fun _ ->
-            let all =
-              Token.Map.fold (fun k _ acc -> (`Token k)::acc)
-                !students_map [`Any]
-            in
-            let all =
-              List.filter (fun t ->
-                  not (Manip.hasClass (find_component (student_line_id t))
-                         "student_hidden"))
-                all
-            in
-            !toggle_selected_students all;
-            true
-          );
-      ] [H.txt [%i"Students"];
-         H.txt " \xe2\x98\x90" (* U+2610 ballot box *)]
+      H.legend [
+        H.span
+          [ H.txt [%i"Students"];
+            H.txt " \xe2\x98\x90" (* U+2610 ballot box *) ]
+          ~a:[H.a_onclick (fun _ ->
+              let all =
+                Token.Map.fold (fun k _ acc -> (`Token k)::acc)
+                  !students_map [`Any]
+              in
+              let all =
+                List.filter (fun t ->
+                    not (Manip.hasClass (find_component (student_line_id t))
+                           "student_hidden"))
+                  all
+              in
+              !toggle_selected_students all;
+              true
+            )];
+        help_button "students" Learnocaml_teacher_tab_doc.students_pane_md
+      ]
     in
     H.div ~a:[H.a_id "students_pane"; H.a_class ["learnocaml_pane"]] [
       H.div ~a:[H.a_id "students_filter_box"] [
@@ -812,12 +860,10 @@ let rec teacher_tab token _select _params () =
                 ES.(default_assignment st.assignments = Open))
                 ids
             then ES.(fun assg ->
-                (* fixme: invisible change if the exercise is assigned! *)
                 match default_assignment assg with
                 | Open -> set_default_assignment assg Closed
                 | _ -> assg)
             else ES.(fun assg ->
-                (* fixme: invisible change if the exercise is assigned! *)
                 match default_assignment assg with
                 | Closed -> set_default_assignment assg Open
                 | _ -> assg)
@@ -841,9 +887,16 @@ let rec teacher_tab token _select _params () =
   Manip.appendChild exercises_div exercise_control_div;
   let assignments_div = H.div [] in
   let control_div =
+    let legend =
+      H.legend [
+        H.txt [%i"Assignments"];
+        help_button "assignments"
+          Learnocaml_teacher_tab_doc.assignments_pane_md
+      ]
+    in
     H.div ~a:[H.a_id "control_pane"] [
       H.fieldset
-        ~legend:(H.legend [H.txt [%i"Assignments"]])
+        ~legend
         [assignments_div];
     ]
   in
@@ -932,7 +985,7 @@ let rec teacher_tab token _select _params () =
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_new_token; true) ]
             [ H.txt [%i"Create new teacher token"] ];
           H.li ~a: [ H.a_onclick (fun _ -> Lwt.async action_csv_export; true) ]
-            [ H.txt [%i"Download student data as CSV"] ];
+            [ H.txt [%i"Download the data for selected students/exercises as CSV"] ];
         ]
       ];
     ]
@@ -1102,10 +1155,16 @@ let rec teacher_tab token _select _params () =
     if SMap.is_empty !status_changes &&
        Token.Map.is_empty !students_changes then
       (Manip.replaceChildren status_text_div [];
-       Manip.removeClass status_text_div "warning")
+       Manip.removeClass status_text_div "warning";
+       Option.iter
+         (fun b -> Manip.removeClass b "warning")
+         (Manip.by_id "button_apply"))
     else
       (Manip.replaceChildren status_text_div [H.txt [%i"Unsaved changes"]];
-       Manip.addClass status_text_div "warning")
+       Manip.addClass status_text_div "warning";
+       Option.iter
+         (fun b -> Manip.addClass b "warning")
+         (Manip.by_id "button_apply"))
   end;
   toggle_selected_exercises := begin
     fun ?force ?(update = force=None) ids ->

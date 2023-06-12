@@ -101,7 +101,7 @@ type _ request =
   | Create_token:
       string * student token option * string option -> student token request
   | Create_teacher_token:
-      teacher token -> teacher token request
+      teacher token * string option -> teacher token request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -299,9 +299,10 @@ module Conversions (Json: JSON_CODEC) = struct
     | Create_token (secret_candiate, token, nick) ->
         get ?token (["sync"; "new"; secret_candiate] @
                     (match nick with None -> [] | Some n -> [n]))
-    | Create_teacher_token token ->
+    | Create_teacher_token (token, nick) ->
         assert (Token.is_teacher token);
-        get ~token ["teacher"; "new"]
+        get ~token (["teacher"; "new"] @
+                    (match nick with None -> [] | Some n -> [n]))
 
     | Fetch_save token ->
         get ~token ["save.json"]
@@ -415,8 +416,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["sync"; "new"; secret_candidate; nick], token ->
           Create_token (secret_candidate, token, Some nick) |> k
       | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
-          Create_teacher_token token |> k
-
+          Create_teacher_token (token, None) |> k
+      | `GET, ["teacher"; "new"; nick], Some token when Token.is_teacher token ->
+          Create_teacher_token (token, Some nick) |> k
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
       | `GET, ["archive.zip"], Some token ->

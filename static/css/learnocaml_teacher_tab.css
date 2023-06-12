@@ -54,8 +54,17 @@
     cursor: cell;
 }
 
+#learnocaml-main-teacher > #teacher_menubar {
+    margin-top: auto;
+    max-height: 4ex;
+}
+
 #learnocaml-main-teacher > #teacher_menubar > * {
     float: right;
+}
+
+#learnocaml-main-teacher > #teacher_menubar button {
+    margin: 5px;
 }
 
 #learnocaml-main-teacher > #teacher_menubar > #status-text-div {
@@ -66,6 +75,13 @@
 #learnocaml-main-teacher > #teacher_menubar .warning {
     font-weight: bold;
     color: red;
+}
+
+#learnocaml-main-teacher > #teacher_menubar button.warning {
+    color: black;
+    background-color: #d62;
+    border-color: #910;
+    border-radius: 4px;
 }
 
 #learnocaml-main-teacher table {
@@ -662,4 +678,28 @@ td.skills-prereq {
     font-size: 18px;
     line-height: 24px;
     margin: 0 5px;
+}
+
+.doc-popup-body {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.doc-popup-body blockquote p {
+    background-color: #555;
+    padding: 4px 4px 4px 4px;
+}
+.doc-popup-body code {
+    display: inline !important;
+    background-color: #222;
+    font-size: 80%;
+    padding: 0;
+    border: 1px solid #666;
+    border-radius: 3px;
+}
+.doc-popup-body > ul > li {
+    margin: 2ex 0;
+    line-height: 120%;
+}
+.doc-popup-body li li {
+    line-height: 110%;
 }
