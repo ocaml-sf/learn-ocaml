@@ -8,7 +8,7 @@
 
 open Lwt.Infix
 open Learnocaml_data
-open Token_index
+open Learnocaml_token_index
 
 module J = Json_encoding
 
