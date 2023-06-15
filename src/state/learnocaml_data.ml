@@ -906,7 +906,7 @@ module Exercise = struct
         List.fold_left (fun exs skill ->
             List.fold_left (fun exs id ->
                 (ex_node exercises id, [Skill skill]) :: exs)
-              exs (SMap.find skill focus)
+              exs (try SMap.find skill focus with Not_found -> [])
           ) exs ex_meta.Meta.requirements
       in
       let exs = merge_children exs in
@@ -964,6 +964,27 @@ module Exercise = struct
         end
       in
       compute [] graph
+
+    let fold f acc graph =
+      let visited_nodes = Hashtbl.create 17 in
+      let rec fold_nodes acc graph =
+        let rec fold_children acc node =
+          if Hashtbl.mem visited_nodes node.name
+          then acc
+          else let acc =
+            List.fold_left
+              fold_children acc
+              (List.map fst node.children)
+          in
+          Hashtbl.add visited_nodes node.name ();
+          f acc node
+        in
+        match graph with
+        | [] -> acc
+        | node :: nodes ->
+          fold_nodes (fold_children acc node) nodes
+      in
+      fold_nodes acc graph
 
     let dump_dot fmt nodes =
       let print_kind fmt = function

@@ -431,6 +431,18 @@ msgstr "Temps restant: %s"
 msgid "No open exercises at the moment"
 msgstr "Aucun exercice n'est encore ouvert"
 
+#: File "src/app/learnocaml_index_main.ml", line 209, characters 54-65
+msgid "By legacy"
+msgstr "Par groupe"
+
+#: File "src/app/learnocaml_index_main.ml", line 211, characters 50-60
+msgid "By order"
+msgstr "Par ordre"
+
+#: File "src/app/learnocaml_index_main.ml", line 213, characters 52-61
+msgid "By stars"
+msgstr "Par difficulté"
+
 #: File "src/app/learnocaml_index_main.ml", line 161, characters 18-38
 msgid "Loading playground"
 msgstr "Chargement du bac-à-sable"

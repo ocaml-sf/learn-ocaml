@@ -418,6 +418,23 @@ body {
 
 /* -- Exercises activity --------------------------------------------------- */
 
+#learnocaml-main-exercise-bar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#learnocaml-main-exercise-bar button {
+  flex-grow: 1;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  text-shadow: 0 0 10px #000;
+}
+
+#learnocaml-main-exercise-bar button.active {
+  background: linear-gradient(to bottom, #f29100 0%, #ec670f 100%);
+}
+
 #learnocaml-main-exercise-list > .exercise + .exercise {
   border-top: 1px #333 solid;
 }

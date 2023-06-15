@@ -303,6 +303,9 @@ module Exercise: sig
         exercise. *)
     val compute_exercise_set : node -> string list
 
+    (** Fold function that handles every exercise's dependency before handling exercise itself *)
+    val fold : ('a -> node -> 'a) -> 'a -> node list -> 'a
+
     (** Dumps the graph as a `dot` representation, into the given formatter. *)
     val dump_dot : Format.formatter -> node list -> unit
 
