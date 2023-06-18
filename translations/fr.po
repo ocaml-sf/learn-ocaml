@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2023-04-18 19:58+0200\n"
+"PO-Revision-Date: 2023-06-18 18:44+0200\n"
 "Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
 "Language-Team: OCSF\n"
 "Language: french\n"
@@ -928,9 +928,13 @@ msgstr "moyenne sur les exercices requérant les compétences"
 msgid "Success over exercises requiring skill "
 msgstr "Moyenne sur les exercices requérant la compétence "
 
-#: File "src/app/learnocaml_student_view.ml", line 439
-msgid "Ungraded draft, synced on "
-msgstr "Brouillon non noté, synchronisé le "
+#: File "src/app/learnocaml_student_view.ml", line 444
+msgid "Ungraded draft, synced on: "
+msgstr "Brouillon non noté, synchronisé le : "
+
+#: File "src/app/learnocaml_student_view.ml", line 446
+msgid "Draft not available."
+msgstr "Brouillon non disponible."
 
 #: File "src/app/learnocaml_student_view.ml", line 443, characters 26-67
 msgid "GRADE DOESN'T MATCH: cheating suspected"

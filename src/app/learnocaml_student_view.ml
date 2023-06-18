@@ -386,6 +386,7 @@ let restore_report_button () =
 let display_report exo report =
   let score, _failed = Report.result report in
   let report_button = El.Tabs.(report.btn) in
+  let editor_button = El.Tabs.(editor.btn) in
   restore_report_button ();
   let grade =
     let max = Learnocaml_exercise.(access File.max_score exo) in
@@ -400,7 +401,7 @@ let display_report exo report =
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else begin
-    Manip.addClass report_button "partial" ;
+      Manip.addClass report_button "partial" ;
     let pct = Format.asprintf "%2d%%" grade in
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ;
@@ -412,37 +413,18 @@ let display_report exo report =
 
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
+let init_draft_tab () =
+  let draft_time = H.div ~a:[H.a_id "learnocaml-exo-draft-time"]
+    [H.txt [%i"No draft available."]] in
+  let draft_editor = find_component "learnocaml-exo-draft-editor" in
+  Manip.appendChild ~before:draft_editor El.Tabs.(draft.tab) draft_time;
+  Manip.replaceChildren El.Tabs.(draft.btn) Tyxml_js.Html5.[ txt [%i"Draft"] ]
+
 let update_draft, clear_draft_tab =
-  let draft_editor =
-    H.div ~a: [H.a_id ("learnocaml-draft-editor")] [] in
-  Manip.insertChildAfter El.Tabs.(draft.tab)
-    (find_component "learnocaml-draft-time") draft_editor;
-  ace_display draft_editor
+  ace_display (find_component "learnocaml-exo-draft-editor")
 
 let restore_draft_button () =
-  let draft_button = El.Tabs.(draft.btn) in
-  Manip.removeClass draft_button "ongoing";
-  Manip.replaceChildren draft_button
-    Tyxml_js.Html5.[ txt [%i"Draft"] ]
-
-let update_draft_tab syn=
-  restore_draft_button ();
-  let draft_tab = El.Tabs.(draft.tab) in
-  let draft_button = El.Tabs.(draft.btn) in
-  let syn = match syn with
-    |Some syn ->
-      Manip.addClass draft_button "ongoing" ;
-      Manip.replaceChildren draft_button
-        Tyxml_js.Html5.[ txt [%i"Draft"] ];
-      Manip.appendChildFirst draft_tab (
-          H.div ~a:[H.a_id "learnocaml-draft-time"]
-            [H.txt [%i"Ungraded draft, synced on "];
-             date ~time:true @@ fst syn]
-        );
-      snd syn
-    |None -> ""
-  in
-  update_draft syn
+  Manip.removeClass El.Tabs.(draft.btn) "ongoing"
 
 let clear_tabs () =
   restore_report_button ();
@@ -451,10 +433,21 @@ let clear_tabs () =
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
   clear_draft_tab ();
-  match Js_utils.Manip.by_id "learnocaml-draft-time" with
-  | Some div -> Manip.removeChild El.Tabs.(draft.tab) div;
-  | None -> ();
+  Manip.removeChildren (find_component "learnocaml-exo-draft-time");
   clear_answer_tab ()
+
+let update_draft_tab syn =
+  restore_draft_button ();
+  let draft_button = El.Tabs.(draft.btn) in
+  let inner_div_time, syn_draft = match syn with
+    | Some syn ->
+       let () = Manip.addClass draft_button "ongoing" in
+       ([H.txt [%i"Ungraded draft, synced on: "]; date ~time:true @@ fst syn], snd syn)
+    | None ->
+       ([H.txt [%i"No draft available."]], "")
+  in
+  Manip.replaceChildren (find_component "learnocaml-exo-draft-time") inner_div_time;
+  update_draft syn_draft
 
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -484,13 +477,13 @@ let update_report_tab exo ans =
       Manip.replaceChildren El.Tabs.(report.tab)
         [H.div [H.txt [%i"No report available"]]]
 
-let update_tabs meta exo ans syn=
+let update_tabs meta exo ans syn =
   update_text_tab meta exo;
+  update_draft_tab syn;
   match ans with
   | None -> ()
   | Some ans ->
      update_report_tab exo ans;
-     update_draft_tab syn;
      update_answer_tab ans.Answer.solution
 
 let () =
@@ -509,6 +502,7 @@ let () =
     try Token.parse (List.assoc "token" Url.Current.arguments)
     with Not_found | Failure _ -> failwith "Student token missing or invalid"
   in
+  init_draft_tab ();
   Manip.setInnerText El.token
     ([%i"Status of student: "] ^ Token.to_string student_token);
   retrieve (Learnocaml_api.Fetch_save student_token)

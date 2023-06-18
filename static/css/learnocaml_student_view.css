@@ -180,18 +180,24 @@
   height:5px; background: pink;
   background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0, transparent 100%)
 }
+
 #learnocaml-exo-tab-draft {
-    display: flex;
-    flex-direction: column;
-  }
-#learnocaml-exo-tab-draft > #learnocaml-draft-editor {
-  flex: 2;
+  display: flex;
+  flex-flow: column;
 }
-#learnocaml-exo-tab-draft > #learnocaml-draft-time {
+#learnocaml-exo-draft-time {
+  flex: 0 1 auto;
+  border-bottom: 1px solid black;
+  padding: 5px;
   font-family: 'Inconsolata', monospace;
-  color: #333;
   font-size: 18px;
   background: #eee;
+}
+#learnocaml-exo-draft-editor {
+  flex: 1 1 auto;
+  z-index: 997;
+  background: #eee;
+  padding: 0;
 }
 
 /* -------------------- two columns mode -------------------------- */
@@ -245,7 +251,7 @@
     background: linear-gradient(to bottom, #444 0, #444 5px,
       rgba(0,0,0,0.5) 5px, transparent 10px) ;
   }
-  #learnocaml-exo-tab-draft::after {
+  #learnocaml-exo-draft-editor::after {
     position: absolute;
     z-index: 1005;
     left: 0; top: 0; height: 10px; width: 100%;
