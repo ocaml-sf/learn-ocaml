@@ -436,7 +436,8 @@ let clear_tabs () =
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
   clear_draft_tab ();
-  Manip.removeChildren (find_component "learnocaml-exo-draft-time");
+  Manip.replaceChildren (find_component "learnocaml-exo-draft-time")
+    [H.txt [%i"No draft available."]];
   clear_answer_tab ()
 
 let update_draft_tab syn =
@@ -486,8 +487,8 @@ let update_tabs meta exo ans syn =
   match ans with
   | None -> ()
   | Some ans ->
-     update_report_tab exo ans;
-     update_answer_tab ans.Answer.solution
+      update_report_tab exo ans;
+      update_answer_tab ans.Answer.solution
 
 let () =
   run_async_with_log @@ fun () ->
