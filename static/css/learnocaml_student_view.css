@@ -130,6 +130,18 @@
   background: #e80;
   color: white;
 }
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-editor.success {
+  background: #0a0;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-editor.failure {
+  background: #b00;
+  color: white;
+}
+#learnocaml-exo-tab-buttons > #learnocaml-exo-button-editor.partial {
+  background: #e80;
+  color: white;
+}
 #learnocaml-exo-tab-buttons > #learnocaml-exo-button-draft.ongoing {
   background: #F08080;
   color: white;
@@ -366,6 +378,9 @@ tr.exercise-highlight {
 }
 
 /* -------------------- ACE overriding ---------------------------- */
+/* XXX Erik: this section looks like dead CSS code,
+   given the id learnocaml-exo-editor-pane does not exist anymore
+   after dynamic (js_of_ocaml) rendering */
 #learnocaml-exo-editor-pane {
   font-size: 16px;
   font-family: 'Inconsolata', monospace;

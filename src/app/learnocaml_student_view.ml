@@ -377,9 +377,11 @@ let _exercise_selection_updater =
 
 let restore_report_button () =
   let report_button = El.Tabs.(report.btn) in
-  Manip.removeClass report_button "success";
-  Manip.removeClass report_button "failure";
-  Manip.removeClass report_button "partial";
+  let editor_button = El.Tabs.(editor.btn) in
+  let remove_class (b1, b2) c = Manip.removeClass b1 c; Manip.removeClass b2 c in
+  remove_class (report_button, editor_button) "success";
+  remove_class (report_button, editor_button) "failure";
+  remove_class (report_button, editor_button) "partial";
   Manip.replaceChildren report_button
     Tyxml_js.Html5.[ txt [%i"Report"] ]
 
@@ -387,21 +389,22 @@ let display_report exo report =
   let score, _failed = Report.result report in
   let report_button = El.Tabs.(report.btn) in
   let editor_button = El.Tabs.(editor.btn) in
+  let add_class (b1, b2) c = Manip.addClass b1 c; Manip.addClass b2 c in
   restore_report_button ();
   let grade =
     let max = Learnocaml_exercise.(access File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
-    Manip.addClass report_button "success" ;
+    add_class (report_button, editor_button) "success" ;
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else if grade = 0 then begin
-    Manip.addClass report_button "failure" ;
+    add_class (report_button, editor_button) "failure" ;
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else begin
-      Manip.addClass report_button "partial" ;
+    add_class (report_button, editor_button) "partial" ;
     let pct = Format.asprintf "%2d%%" grade in
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ;
