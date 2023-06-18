@@ -279,12 +279,15 @@ module Request_handler = struct
             (function
              | Failure body -> (`Bad_request, body)
              | exn -> (`Internal_server_error, Printexc.to_string exn))
-      | Api.Create_teacher_token token ->
+      | Api.Create_teacher_token (token, nick) ->
          verify_teacher_token token
          >?= fun () ->
          Token.create_teacher ()
-         >>= respond_json cache
-
+         >>= fun tok ->
+         (match nick with | None -> Lwt.return_unit
+                          | Some nickname ->
+                              Save.set tok Save.{empty with nickname})
+         >>= fun () -> respond_json cache tok
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->

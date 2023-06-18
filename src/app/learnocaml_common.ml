@@ -143,16 +143,25 @@ let confirm ~title ?(ok_label=[%i"OK"]) ?(cancel_label=[%i"Cancel"]) contents f 
     close_button cancel_label;
   ]
 
-let ask_string ~title ?(ok_label=[%i"OK"]) contents =
+let ask_string ~title ?(ok_label=[%i"OK"]) ?(may_cancel=true) contents =
   let input_field =
     H.input ~a:[
         H.a_input_type `Text;
       ] ()
   in
   let result_t, up = Lwt.wait () in
-  ext_alert ~title (contents @ [input_field]) ~buttons:[
-      box_button ok_label (fun () -> Lwt.wakeup up @@ Manip.value input_field)
-    ];
+  let validate _ =
+    Lwt.wakeup up @@ Manip.value input_field
+  in
+  Manip.Ev.onreturn input_field validate;
+  let buttons =
+    box_button ok_label validate
+    :: (if may_cancel
+        then [close_button [%i"Cancel"]]
+        else [])
+  in
+  ext_alert ~title (contents @ [input_field]) ~buttons;
+  Manip.focus input_field;
   result_t
 
 let default_exn_printer = function
@@ -1158,7 +1167,7 @@ let get_token ?(has_server = true) () =
         Lwt.return
     with
     Not_found ->
-      ask_string ~title:"Token"
+      ask_string ~title:"Token" ~may_cancel:false
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->
       let token = Token.parse (input_tok) in
