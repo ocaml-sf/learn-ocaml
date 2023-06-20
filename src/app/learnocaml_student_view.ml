@@ -363,17 +363,13 @@ let _exercise_selection_updater =
   let previously_selected = ref None in
   selected_exercise_signal |> React.S.map @@ fun id ->
   let line id = find_component (El.Dyn.exercise_line_id id) in
-  (match !previously_selected with
-   | None -> ()
-   | Some id -> Manip.removeClass (line id) "selected");
+  Option.iter (fun id -> Manip.removeClass (line id) "selected") !previously_selected;
   previously_selected := id;
-  match id with
-  | None -> ()
-  | Some id ->
+  Option.iter (fun id ->
       Manip.addClass (line id) "selected";
       let selected_tab =  React.S.value tab_select_signal in
       if selected_tab = El.Tabs.list || selected_tab = El.Tabs.stats then
-        select_tab El.Tabs.report
+        select_tab El.Tabs.report) id
 
 let restore_report_button () =
   let report_button = El.Tabs.(report.btn) in
@@ -484,18 +480,16 @@ let update_report_tab exo ans =
 let update_tabs meta exo ans syn =
   update_text_tab meta exo;
   update_draft_tab syn;
-  match ans with
-  | None -> ()
-  | Some ans ->
+  Option.iter (fun ans ->
       update_report_tab exo ans;
-      update_answer_tab ans.Answer.solution
+      update_answer_tab ans.Answer.solution) ans
 
 let () =
   run_async_with_log @@ fun () ->
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
+  Js_utils.get_lang () |> Option.iter (fun l -> Ocplib_i18n.set_lang l);
   set_string_translations_view ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then

@@ -378,9 +378,8 @@ tr.exercise-highlight {
 }
 
 /* -------------------- ACE overriding ---------------------------- */
-/* XXX Erik: this section looks like dead CSS code,
-   given the id learnocaml-exo-editor-pane does not exist anymore
-   after dynamic (js_of_ocaml) rendering */
+/* XXX Erik: this section looks like dead CSS code
+   See https://github.com/ocaml-sf/learn-ocaml/issues/556 */
 #learnocaml-exo-editor-pane {
   font-size: 16px;
   font-family: 'Inconsolata', monospace;
