@@ -30,7 +30,7 @@
  (name learnocaml_token_index)
  (wrapped false)
  (modules Learnocaml_token_index)
- (libraries lwt lwt.unix lwt_utils learnocaml_api learnocaml_data cryptokit netstring safepass irmin irmin-git irmin-git.unix)
+ (libraries lwt lwt.unix lwt_utils learnocaml_api learnocaml_data cryptokit safepass irmin irmin-git irmin-git.unix)
 )
 
 (library
