@@ -40,13 +40,14 @@ module El = struct
       btn = snd (id ("learnocaml-exo-button-" ^ name));
       tab = snd (id ("learnocaml-exo-tab-" ^ name));
     }
-    let stats = tid "stats"
     let list = tid "list"
+    let stats = tid "stats"
     let report = tid "report"
     let editor = tid "editor"
+    let draft = tid "draft"
     let text = tid "text"
 
-    let all = [stats; list; report; editor; text]
+    let all = [list; stats; report; editor; draft; text]
   end
 
   let nickname_id, nickname = id "learnocaml-student-nickname"
@@ -362,44 +363,44 @@ let _exercise_selection_updater =
   let previously_selected = ref None in
   selected_exercise_signal |> React.S.map @@ fun id ->
   let line id = find_component (El.Dyn.exercise_line_id id) in
-  (match !previously_selected with
-   | None -> ()
-   | Some id -> Manip.removeClass (line id) "selected");
+  Option.iter (fun id -> Manip.removeClass (line id) "selected") !previously_selected;
   previously_selected := id;
-  match id with
-  | None -> ()
-  | Some id ->
+  Option.iter (fun id ->
       Manip.addClass (line id) "selected";
       let selected_tab =  React.S.value tab_select_signal in
       if selected_tab = El.Tabs.list || selected_tab = El.Tabs.stats then
-        select_tab El.Tabs.report
+        select_tab El.Tabs.report) id
 
 let restore_report_button () =
   let report_button = El.Tabs.(report.btn) in
-  Manip.removeClass report_button "success";
-  Manip.removeClass report_button "failure";
-  Manip.removeClass report_button "partial";
+  let editor_button = El.Tabs.(editor.btn) in
+  let remove_class (b1, b2) c = Manip.removeClass b1 c; Manip.removeClass b2 c in
+  remove_class (report_button, editor_button) "success";
+  remove_class (report_button, editor_button) "failure";
+  remove_class (report_button, editor_button) "partial";
   Manip.replaceChildren report_button
     Tyxml_js.Html5.[ txt [%i"Report"] ]
 
 let display_report exo report =
   let score, _failed = Report.result report in
   let report_button = El.Tabs.(report.btn) in
+  let editor_button = El.Tabs.(editor.btn) in
+  let add_class (b1, b2) c = Manip.addClass b1 c; Manip.addClass b2 c in
   restore_report_button ();
   let grade =
     let max = Learnocaml_exercise.(access File.max_score exo) in
     if max = 0 then 999 else score * 100 / max
   in
   if grade >= 100 then begin
-    Manip.addClass report_button "success" ;
+    add_class (report_button, editor_button) "success" ;
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else if grade = 0 then begin
-    Manip.addClass report_button "failure" ;
+    add_class (report_button, editor_button) "failure" ;
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ]
   end else begin
-    Manip.addClass report_button "partial" ;
+    add_class (report_button, editor_button) "partial" ;
     let pct = Format.asprintf "%2d%%" grade in
     Manip.replaceChildren report_button
       Tyxml_js.Html5.[ txt [%i"Report"] ;
@@ -411,12 +412,42 @@ let display_report exo report =
 
 let update_answer_tab, clear_answer_tab = ace_display El.Tabs.(editor.tab)
 
+let init_draft_tab () =
+  let draft_time = H.div ~a:[H.a_id "learnocaml-exo-draft-time"]
+    [H.txt [%i"No draft available."]] in
+  let draft_editor = find_component "learnocaml-exo-draft-editor" in
+  Manip.appendChild ~before:draft_editor El.Tabs.(draft.tab) draft_time;
+  Manip.replaceChildren El.Tabs.(draft.btn) Tyxml_js.Html5.[ txt [%i"Draft"] ]
+
+let update_draft, clear_draft_tab =
+  ace_display (find_component "learnocaml-exo-draft-editor")
+
+let restore_draft_button () =
+  Manip.removeClass El.Tabs.(draft.btn) "ongoing"
+
 let clear_tabs () =
   restore_report_button ();
+  restore_draft_button ();
   List.iter (fun t ->
       Manip.replaceChildren El.Tabs.(t.tab) [])
     El.Tabs.([report; text]);
+  clear_draft_tab ();
+  Manip.replaceChildren (find_component "learnocaml-exo-draft-time")
+    [H.txt [%i"No draft available."]];
   clear_answer_tab ()
+
+let update_draft_tab syn =
+  restore_draft_button ();
+  let draft_button = El.Tabs.(draft.btn) in
+  let inner_div_time, syn_draft = match syn with
+    | Some syn ->
+       let () = Manip.addClass draft_button "ongoing" in
+       ([H.txt [%i"Ungraded draft, synced on: "]; date ~time:true @@ fst syn], snd syn)
+    | None ->
+       ([H.txt [%i"No draft available."]], "")
+  in
+  Manip.replaceChildren (find_component "learnocaml-exo-draft-time") inner_div_time;
+  update_draft syn_draft
 
 let update_text_tab meta exo =
   let text_iframe = Dom_html.createIframe Dom_html.document in
@@ -446,20 +477,19 @@ let update_report_tab exo ans =
       Manip.replaceChildren El.Tabs.(report.tab)
         [H.div [H.txt [%i"No report available"]]]
 
-let update_tabs meta exo ans =
+let update_tabs meta exo ans syn =
   update_text_tab meta exo;
-  match ans with
-  | None -> ()
-  | Some ans ->
+  update_draft_tab syn;
+  Option.iter (fun ans ->
       update_report_tab exo ans;
-      update_answer_tab ans.Answer.solution
+      update_answer_tab ans.Answer.solution) ans
 
 let () =
   run_async_with_log @@ fun () ->
   (* set_string_translations (); *)
   (* Manip.setInnerText El.version ("v."^Learnocaml_api.version); *)
   Learnocaml_local_storage.init ();
-  (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
+  Option.iter Ocplib_i18n.set_lang (Js_utils.get_lang ());
   set_string_translations_view ();
   let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
   if not (Token.is_teacher teacher_token) then
@@ -470,6 +500,7 @@ let () =
     try Token.parse (List.assoc "token" Url.Current.arguments)
     with Not_found | Failure _ -> failwith "Student token missing or invalid"
   in
+  init_draft_tab ();
   Manip.setInnerText El.token
     ([%i"Status of student: "] ^ Token.to_string student_token);
   retrieve (Learnocaml_api.Fetch_save student_token)
@@ -488,7 +519,8 @@ let () =
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in
-        update_tabs meta exo ans;
+        let syn = SMap.find_opt ex_id save.Save.all_exercise_editors in
+        update_tabs meta exo ans syn;
         Lwt.return_unit
   in
   Lwt.return_unit

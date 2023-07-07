@@ -835,6 +835,7 @@ let set_string_translations_view () =
     "learnocaml-exo-button-stats", [%i"Stats"];
     "learnocaml-exo-button-list", [%i"Exercises"];
     "learnocaml-exo-button-report", [%i"Report"];
+    "learnocaml-exo-button-draft", [%i"Draft"];
     "learnocaml-exo-button-text", [%i"Subject"];
     "learnocaml-exo-button-editor", [%i"Answer"];
   ] in set_inner_list translations
