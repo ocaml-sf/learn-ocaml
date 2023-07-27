@@ -1201,7 +1201,11 @@ let parse_fragment () =
 let set_fragment args =
   let pairs = List.map (fun (n, v) -> n ^ "=" ^ v) args in
   let fragment = String.concat "&" pairs in
-  Url.Current.set_fragment fragment
+  (* TODO: Replace with
+  {| Url.Current.set_fragment fragment |}
+  when https://github.com/ocsigen/js_of_ocaml/pull/1497 is shipped
+  within learn-ocaml's dependencies. *)
+  Dom_html.window##.location##.hash := Js.bytestring fragment
 
 let local_args = ref []
 
