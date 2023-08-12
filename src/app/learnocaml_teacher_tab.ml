@@ -299,13 +299,12 @@ let rec teacher_tab token _select _params () =
               H.td [stars_div meta.Exercise.Meta.stars];
               H.td [
                 let cls, text =
-                  match Token.Map.is_empty ES.(st.assignments.token_map),
-                        ES.(st.assignments.default) with
-                  | true, ES.Open -> "exo_open", [%i"Open"]
-                  | true, ES.Closed -> "exo_closed", [%i"Closed"]
-                  | _, (ES.Assigned _ | ES.Closed) ->
-                      "exo_assigned", [%i"Assigned"]
-                  | false, ES.Open -> "exo_assigned", [%i"Open/Assg"]
+                  let open ES in
+                  match is_open_or_assigned_globally st.assignments with
+                  | GloballyOpen -> "exo_open", [%i"Open"]
+                  | GloballyOpenOrAssigned -> "exo_assigned", [%i"Open/Assigned"]
+                  | GloballyClosedOrAssigned -> "exo_assigned", [%i"Assigned"]
+                  | GloballyClosed -> "exo_closed", [%i"Closed"]
                 in
                 H.span ~a:[H.a_class [cls]] [H.txt text]
               ];
@@ -856,17 +855,12 @@ let rec teacher_tab token _select _params () =
           let ids = htbl_keys selected_exercises in
           let fstat =
             if List.exists (fun id ->
-                let st = get_status id in
-                ES.(default_assignment st.assignments = Open))
+                   let st = get_status id in
+                   let open_assg = ES.is_open_or_assigned_globally st.ES.assignments in
+                   open_assg = ES.GloballyOpen || open_assg = ES.GloballyOpenOrAssigned)
                 ids
-            then ES.(fun assg ->
-                match default_assignment assg with
-                | Open -> set_default_assignment assg Closed
-                | _ -> assg)
-            else ES.(fun assg ->
-                match default_assignment assg with
-                | Closed -> set_default_assignment assg Open
-                | _ -> assg)
+            then ES.set_close_or_assigned_globally
+            else ES.set_open_or_assigned_globally
           in
           !exercise_status_change (htbl_keys selected_exercises) fstat;
           true)
@@ -1330,7 +1324,11 @@ let rec teacher_tab token _select _params () =
     in
     let open_exercises =
       SMap.fold (fun ex st acc ->
-          if ES.(st.assignments.default = Open) then ex::acc else acc)
+          let open ES in
+          let global_st = is_open_or_assigned_globally st.assignments in
+          if global_st = GloballyOpen
+             || global_st = GloballyOpenOrAssigned
+          then ex :: acc else acc)
         !status_map []
       |> List.rev
     in

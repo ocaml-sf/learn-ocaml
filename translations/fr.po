@@ -612,7 +612,7 @@ msgid "Assigned"
 msgstr "Devoir"
 
 #: File "src/app/learnocaml_teacher_tab.ml", line 308, characters 57-68
-msgid "Open/Assg"
+msgid "Open/Assigned"
 msgstr "Ouvert/Devoir"
 
 #: File "src/app/learnocaml_teacher_tab.ml", line 368, characters 49-61 391,
