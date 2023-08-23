@@ -595,8 +595,11 @@ let launch () =
   Learnocaml_store.Server.get () >>= fun config ->
   let callback conn req body =
     let uri = Request.uri req in
-    let path = Uri.path uri in
-    let path = Stringext.split ~on:'/' path in
+    let path =
+        Uri.path uri |>
+        Uri.pct_decode |> (* %-decoding must happen before `/`-splitting *)
+        Stringext.split ~on:'/'
+    in
     let path =
       let rec clean = function
         | [] | [_] as l -> l
@@ -605,7 +608,6 @@ let launch () =
       in
       clean path
     in
-    let path = List.map Uri.pct_decode path in
     let query = Uri.query uri in
     let args = List.map (fun (s, l) -> s, String.concat "," l) query in
     let use_compression =
