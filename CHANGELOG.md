@@ -5,31 +5,31 @@
 
 ### Features
 
-* **js_utils:** Add HTMLElement.title support ([3a7c42e](https://github.com/ocaml-sf/learn-ocaml/commit/3a7c42e41ff2636a8022ac82906c4fda499f956f))
 * **partition-view:** Add a selector to show (tokens, nicks, or anon IDs) ([#540](https://github.com/ocaml-sf/learn-ocaml/issues/540)) ([58b3644](https://github.com/ocaml-sf/learn-ocaml/commit/58b3644a6d5a3f43cf8d7cb21ebbe40b588f176f)), closes [#528](https://github.com/ocaml-sf/learn-ocaml/issues/528)
-* **ui:** add some inline documentation to the teacher tab ([651456a](https://github.com/ocaml-sf/learn-ocaml/commit/651456a159963e979c1258ab698903aeb220599a))
-* **ui:** allow name input on teacher token creation ([c341fca](https://github.com/ocaml-sf/learn-ocaml/commit/c341fcaf6d3da48edceaf37131869d9137277464))
-* **ui:** allow partial CSV export ([d5d82fc](https://github.com/ocaml-sf/learn-ocaml/commit/d5d82fccb497385e2da1798a158f7581d12d64fc))
+* **teacher-tab:** Add some inline documentation to the teacher tab ([651456a](https://github.com/ocaml-sf/learn-ocaml/commit/651456a159963e979c1258ab698903aeb220599a))
+* **teacher-tab:** Allow name input on teacher token creation ([c341fca](https://github.com/ocaml-sf/learn-ocaml/commit/c341fcaf6d3da48edceaf37131869d9137277464))
+* **teacher-tab:** Allow partial CSV export ([d5d82fc](https://github.com/ocaml-sf/learn-ocaml/commit/d5d82fccb497385e2da1798a158f7581d12d64fc))
+* **teacher-tab**: Display last synced student's draft (≠ graded code) ([#548](https://github.com/ocaml-sf/learn-ocaml/issues/548)) ([48583ba](https://github.com/ocaml-sf/learn-ocaml/commit/48583ba4d1376ad006227d7b5ee1b9cfaf9ad8f7)), closes [#527](https://github.com/ocaml-sf/learn-ocaml/issues/527)
+* **teacher-tab:** Highlight the "apply" button on unsaved changes ([b20ce4e](https://github.com/ocaml-sf/learn-ocaml/commit/b20ce4ee9955cd5854e3a6ee97f509770452d966))
+* **js_utils:** Add HTMLElement.title support ([3a7c42e](https://github.com/ocaml-sf/learn-ocaml/commit/3a7c42e41ff2636a8022ac82906c4fda499f956f))
+* **ui:** Add feedback button with internationalized tooltip ([6b7b226](https://github.com/ocaml-sf/learn-ocaml/commit/6b7b226cc7ca7ad80e3301b15f62028790b3d147)), closes [#525](https://github.com/ocaml-sf/learn-ocaml/issues/525)
 * **ui:** better string input dialog ([03669eb](https://github.com/ocaml-sf/learn-ocaml/commit/03669eb2980fbb42575707e91e50c5be96e4c2dc))
-* **ui:** teacher tab: Display last synced student's draft (≠ graded code) ([#548](https://github.com/ocaml-sf/learn-ocaml/issues/548)) ([48583ba](https://github.com/ocaml-sf/learn-ocaml/commit/48583ba4d1376ad006227d7b5ee1b9cfaf9ad8f7))
-* **ui:** teacher tab: highlight the "apply" button on unsaved changes ([b20ce4e](https://github.com/ocaml-sf/learn-ocaml/commit/b20ce4ee9955cd5854e3a6ee97f509770452d966))
-* **web-app:** Add feedback button with internationalized tooltip ([6b7b226](https://github.com/ocaml-sf/learn-ocaml/commit/6b7b226cc7ca7ad80e3301b15f62028790b3d147)), closes [#525](https://github.com/ocaml-sf/learn-ocaml/issues/525)
 
 
 ### Bug Fixes
 
 * **i18n:** fix escaping issue in i18n ([e060517](https://github.com/ocaml-sf/learn-ocaml/commit/e060517daecc1f3c5a2fc58223f1d318bd40dd54))
 * **partition-view:** Use Ctrl-click or ⌘-click (instead of middle-click) ([#516](https://github.com/ocaml-sf/learn-ocaml/issues/516)) ([a6e4c5e](https://github.com/ocaml-sf/learn-ocaml/commit/a6e4c5e61362f569d6279d5d990705d3ac1d4f94)), closes [#500](https://github.com/ocaml-sf/learn-ocaml/issues/500)
-* **ui:** show different status for open and closed assigned exercises ([8c2c639](https://github.com/ocaml-sf/learn-ocaml/commit/8c2c639490cd4986c1d45a5abe30de3cedfc00c7))
-* **ui:** update fr translation ([1b88a18](https://github.com/ocaml-sf/learn-ocaml/commit/1b88a18d41188e747b166af3e9705a5b91d49d46))
-* **ui:** Use proper URL fragments ("#tab=…", not "#tab%3D…") ([#557](https://github.com/ocaml-sf/learn-ocaml/issues/557)) ([7f2b6cf](https://github.com/ocaml-sf/learn-ocaml/commit/7f2b6cfc5e1c7ce25c074cef281fd6b33ebae1ca)), closes [#539](https://github.com/ocaml-sf/learn-ocaml/issues/539)
-* **web-api:** percent-decode before path-splitting ([#560](https://github.com/ocaml-sf/learn-ocaml/issues/560)) ([1a0c2ef](https://github.com/ocaml-sf/learn-ocaml/commit/1a0c2efaedf6f7eab5bdf10a2347276827d7c06a))
-* **web-app:** Fix `process_html_file` w.r.t. `base_url` ([84bc393](https://github.com/ocaml-sf/learn-ocaml/commit/84bc393e8cc6e1f9ec3a5f25822d565333ed7d57))
+* **teacher-tab:** show different status for open and closed assigned exercises ([8c2c639](https://github.com/ocaml-sf/learn-ocaml/commit/8c2c639490cd4986c1d45a5abe30de3cedfc00c7))
+* **ui:** Update fr translation ([1b88a18](https://github.com/ocaml-sf/learn-ocaml/commit/1b88a18d41188e747b166af3e9705a5b91d49d46))
+* **ui:** Use proper URL fragments (`"#tab=…"`, not `"#tab%3D…"`) ([#557](https://github.com/ocaml-sf/learn-ocaml/issues/557)) ([7f2b6cf](https://github.com/ocaml-sf/learn-ocaml/commit/7f2b6cfc5e1c7ce25c074cef281fd6b33ebae1ca)), closes [#539](https://github.com/ocaml-sf/learn-ocaml/issues/539)
+* **html:** Fix `process_html_file` w.r.t. `base_url` ([84bc393](https://github.com/ocaml-sf/learn-ocaml/commit/84bc393e8cc6e1f9ec3a5f25822d565333ed7d57))
+* **vuln:** percent-decode before path-splitting ([#560](https://github.com/ocaml-sf/learn-ocaml/issues/560)) ([1a0c2ef](https://github.com/ocaml-sf/learn-ocaml/commit/1a0c2efaedf6f7eab5bdf10a2347276827d7c06a))
 
 
 ### Code Refactoring
 
-* **partition-view:** Move adhoc CSS code to learnocaml_partition_view.css ([8d86f01](https://github.com/ocaml-sf/learn-ocaml/commit/8d86f018ede1666983cdc36fcab5e7c93d434be4))
+* **partition-view:** Move adhoc CSS code to `learnocaml_partition_view.css` ([8d86f01](https://github.com/ocaml-sf/learn-ocaml/commit/8d86f018ede1666983cdc36fcab5e7c93d434be4))
 
 
 ### CI/CD
