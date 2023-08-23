@@ -8,6 +8,7 @@ platform from the command line."""
 maintainer: [
   "Érik Martin-Dorel <erik.martin-dorel@irit.fr>"
   "Yann Régis-Gianas <yann.regis-gianas@nomadic-labs.com>"
+  "Louis Gesbert <louis.gesbert@ocamlpro.com>"
 ]
 authors: [
   "Benjamin Canou (OCamlPro)"
