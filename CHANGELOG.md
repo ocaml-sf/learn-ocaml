@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.15.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.1...v0.15.0) (2023-08-23)
+
+
+### Features
+
+* **partition-view:** Add a selector to show (tokens, nicks, or anon IDs) ([#540](https://github.com/ocaml-sf/learn-ocaml/issues/540)) ([58b3644](https://github.com/ocaml-sf/learn-ocaml/commit/58b3644a6d5a3f43cf8d7cb21ebbe40b588f176f)), closes [#528](https://github.com/ocaml-sf/learn-ocaml/issues/528)
+* **teacher-tab:** Add some inline documentation to the teacher tab ([651456a](https://github.com/ocaml-sf/learn-ocaml/commit/651456a159963e979c1258ab698903aeb220599a))
+* **teacher-tab:** Allow name input on teacher token creation ([c341fca](https://github.com/ocaml-sf/learn-ocaml/commit/c341fcaf6d3da48edceaf37131869d9137277464))
+* **teacher-tab:** Allow partial CSV export ([d5d82fc](https://github.com/ocaml-sf/learn-ocaml/commit/d5d82fccb497385e2da1798a158f7581d12d64fc))
+* **teacher-tab**: Display last synced student's draft (≠ graded code) ([#548](https://github.com/ocaml-sf/learn-ocaml/issues/548)) ([48583ba](https://github.com/ocaml-sf/learn-ocaml/commit/48583ba4d1376ad006227d7b5ee1b9cfaf9ad8f7)), closes [#527](https://github.com/ocaml-sf/learn-ocaml/issues/527)
+* **teacher-tab:** Highlight the "apply" button on unsaved changes ([b20ce4e](https://github.com/ocaml-sf/learn-ocaml/commit/b20ce4ee9955cd5854e3a6ee97f509770452d966))
+* **js_utils:** Add HTMLElement.title support ([3a7c42e](https://github.com/ocaml-sf/learn-ocaml/commit/3a7c42e41ff2636a8022ac82906c4fda499f956f))
+* **ui:** Add feedback button with internationalized tooltip ([6b7b226](https://github.com/ocaml-sf/learn-ocaml/commit/6b7b226cc7ca7ad80e3301b15f62028790b3d147)), closes [#525](https://github.com/ocaml-sf/learn-ocaml/issues/525)
+* **ui:** better string input dialog ([03669eb](https://github.com/ocaml-sf/learn-ocaml/commit/03669eb2980fbb42575707e91e50c5be96e4c2dc))
+
+
+### Bug Fixes
+
+* **i18n:** fix escaping issue in i18n ([e060517](https://github.com/ocaml-sf/learn-ocaml/commit/e060517daecc1f3c5a2fc58223f1d318bd40dd54))
+* **partition-view:** Use Ctrl-click or ⌘-click (instead of middle-click) ([#516](https://github.com/ocaml-sf/learn-ocaml/issues/516)) ([a6e4c5e](https://github.com/ocaml-sf/learn-ocaml/commit/a6e4c5e61362f569d6279d5d990705d3ac1d4f94)), closes [#500](https://github.com/ocaml-sf/learn-ocaml/issues/500)
+* **teacher-tab:** show different status for open and closed assigned exercises ([8c2c639](https://github.com/ocaml-sf/learn-ocaml/commit/8c2c639490cd4986c1d45a5abe30de3cedfc00c7))
+* **ui:** Update fr translation ([1b88a18](https://github.com/ocaml-sf/learn-ocaml/commit/1b88a18d41188e747b166af3e9705a5b91d49d46))
+* **ui:** Use proper URL fragments (`"#tab=…"`, not `"#tab%3D…"`) ([#557](https://github.com/ocaml-sf/learn-ocaml/issues/557)) ([7f2b6cf](https://github.com/ocaml-sf/learn-ocaml/commit/7f2b6cfc5e1c7ce25c074cef281fd6b33ebae1ca)), closes [#539](https://github.com/ocaml-sf/learn-ocaml/issues/539)
+* **html:** Fix `process_html_file` w.r.t. `base_url` ([84bc393](https://github.com/ocaml-sf/learn-ocaml/commit/84bc393e8cc6e1f9ec3a5f25822d565333ed7d57))
+* **vuln:** percent-decode before path-splitting ([#560](https://github.com/ocaml-sf/learn-ocaml/issues/560)) ([1a0c2ef](https://github.com/ocaml-sf/learn-ocaml/commit/1a0c2efaedf6f7eab5bdf10a2347276827d7c06a))
+
+
+### Code Refactoring
+
+* **partition-view:** Move adhoc CSS code to `learnocaml_partition_view.css` ([8d86f01](https://github.com/ocaml-sf/learn-ocaml/commit/8d86f018ede1666983cdc36fcab5e7c93d434be4))
+
+
+### CI/CD
+
+* ***.yml:** Use actions/checkout@v3 ([6cb8165](https://github.com/ocaml-sf/learn-ocaml/commit/6cb8165e871ce182851302ab7ccc8098dcbbb394))
+* **docker:** Fix build-args syntax (docker/build-push-action@v4) ([046087d](https://github.com/ocaml-sf/learn-ocaml/commit/046087d596c35a8918e7d6a51b54c6c64b5a2397))
+* **docker:** Fix GHA input name: s/build_args/build-args/ ([a31ff2b](https://github.com/ocaml-sf/learn-ocaml/commit/a31ff2b1f33499e4b9ee14a75f00e21f5307fa87))
+* **docker:** Replace `LABEL` Dockerfile commands with `labels:` (GHA) ([#551](https://github.com/ocaml-sf/learn-ocaml/issues/551)) ([ce8c006](https://github.com/ocaml-sf/learn-ocaml/commit/ce8c006a9c178dcd815903ac0c20fe67c9d91cf1)), closes [#545](https://github.com/ocaml-sf/learn-ocaml/issues/545)
+* **docker:** Use docker/build-push-action@v4 ([#544](https://github.com/ocaml-sf/learn-ocaml/issues/544)) ([69006f8](https://github.com/ocaml-sf/learn-ocaml/commit/69006f818dce579511d8da0a4beb456dbfe83fc8))
+* **macos:** Fix `brew upgrade` failure ([a99c61b](https://github.com/ocaml-sf/learn-ocaml/commit/a99c61b5e43f57c2b84ba75778b286daa7d9b566))
+* **macos:** Fix `brew upgrade` failure, bis ([#518](https://github.com/ocaml-sf/learn-ocaml/issues/518)) ([68221ba](https://github.com/ocaml-sf/learn-ocaml/commit/68221ba119514dbb3ab48950b6198e294cf39af2))
+* **macos:** Fix `brew upgrade` failure, ter ([#536](https://github.com/ocaml-sf/learn-ocaml/issues/536)) ([af83c70](https://github.com/ocaml-sf/learn-ocaml/commit/af83c701230ed8582c362090c6eede66019d244e))
+* **macos:** Run the `macOS` workflow as well in the weekly CI build ([84b7863](https://github.com/ocaml-sf/learn-ocaml/commit/84b7863df98392aeb0d190e880c2fbc261099a82))
+
+
+### Documentation
+
+* Fix date in README.md and Copyright headers ([#517](https://github.com/ocaml-sf/learn-ocaml/issues/517)) ([04bb39f](https://github.com/ocaml-sf/learn-ocaml/commit/04bb39faa16d34efd4857ba5e6a04f0a1359acb7))
+* Refactor `ISSUE_TEMPLATE`s to use GitHub issue forms ([#509](https://github.com/ocaml-sf/learn-ocaml/issues/509)) ([7205c39](https://github.com/ocaml-sf/learn-ocaml/commit/7205c391d0860a7448c84a0ff7521b9dc7a821e2))
+
 ## [0.14.1](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.0...v0.14.1) (2023-01-06)
 
 
