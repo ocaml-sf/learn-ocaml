@@ -1,0 +1,15 @@
+# LEARN-OCAML FRENCH TRANSLATION
+# Copyright (C) 2019 OCaml Software Foundation.
+# Copyright (C) 2018 OCamlPro
+# Louis Gesbert <louis.gesbert@ocamlpro.com>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: learn-ocaml ~dev\n"
+"PO-Revision-Date: 2023-08-25 12:59+0200\n"
+"Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
+"Language-Team: OCSF\n"
+"Language: french\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
