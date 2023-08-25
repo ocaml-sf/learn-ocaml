@@ -1,12 +1,12 @@
 # LEARN-OCAML FRENCH TRANSLATION
-# Copyright (C) 2020 OCaml Software Foundation.
+# Copyright (C) 2019 OCaml Software Foundation.
 # Copyright (C) 2018 OCamlPro
 # Louis Gesbert <louis.gesbert@ocamlpro.com>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2023-06-25 22:27+0200\n"
+"PO-Revision-Date: 2023-08-25 12:59+0200\n"
 "Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
 "Language-Team: OCSF\n"
 "Language: french\n"
@@ -179,7 +179,7 @@ msgstr "Toplevel"
 
 #: File "src/app/learnocaml_common.ml", line 825, characters 39-47 837,
 #: "src/app/learnocaml_exercise_main.ml", 58, 30-38 62, 67,
-#: "src/app/learnocaml_student_view.ml", 386, 28-36 401, 405, 410,
+#: "src/app/learnocaml_student_view.ml", 382, 28-36 397, 401, 406,
 msgid "Report"
 msgstr "Rapport"
 
@@ -211,7 +211,7 @@ msgid "Exercises"
 msgstr "Exercices"
 
 #: File "src/app/learnocaml_common.ml", line 838, characters 38-45
-#: "src/app/learnocaml_student_view.ml", 424, 68-75
+#: "src/app/learnocaml_student_view.ml", 420, 68-75
 msgid "Draft"
 msgstr "Brouillon"
 
@@ -247,9 +247,7 @@ msgstr "Reprendre le dernier code noté"
 
 #: File "src/app/learnocaml_common.ml", line 964, characters 28-99
 msgid "This will replace your code with your last graded code. Are you sure?"
-msgstr ""
-"Cela va remplacer votre code par la dernière version évaluée. Êtes-vous "
-"sûr·e ?"
+msgstr "Cela va remplacer votre code par la dernière version évaluée. Êtes-vous sûr·e ?"
 
 #: File "src/app/learnocaml_common.ml", line 971, characters 34-61 976, 25-52
 msgid "Reload latest saved draft"
@@ -257,9 +255,7 @@ msgstr "Reprendre le dernier code synchronisé"
 
 #: File "src/app/learnocaml_common.ml", line 972, characters 28-99
 msgid "This will replace your code with your last saved draft. Are you sure?"
-msgstr ""
-"Cela va remplacer votre code par la dernière version synchronisée. Êtes-vous "
-"sûr·e ?"
+msgstr "Cela va remplacer votre code par la dernière version synchronisée. Êtes-vous sûr·e ?"
 
 #: File "src/app/learnocaml_common.ml", line 983, characters 25-52
 msgid "Reset to initial template"
@@ -401,24 +397,16 @@ msgstr ""
 #: File "src/toplevel/learnocaml_toplevel.ml", lines 407-412, characters 5-39
 msgid ""
 "Printf.printf \"Welcome to OCaml %s\\n%!\" (Sys.ocaml_version);\n"
-"print_endline \" - type your OCaml phrase in the box below and press "
-"[Enter]\";\n"
-"print_endline \" - use [Shift-Enter] to break lines without triggering "
-"execution\";\n"
-"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] once to reuse the previous "
-"entry\";\n"
-"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] to "
-"navigate through history\" ;;"
+"print_endline \" - type your OCaml phrase in the box below and press [Enter]\";\n"
+"print_endline \" - use [Shift-Enter] to break lines without triggering execution\";\n"
+"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] once to reuse the previous entry\";\n"
+"print_endline \" - use [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] to navigate through history\" ;;"
 msgstr ""
 "Printf.printf \"Bienvenue sur OCaml %s\\n%!\" (Sys.ocaml_version);\n"
-"print_endline \" - entrez une phrase OCaml dans le champ ci-dessous et "
-"appuyez sur [Entrée]\";\n"
-"print_endline \" - utilisez [Maj-entrée] pour passer à la ligne sans "
-"déclencher d'exécution\";\n"
-"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] pour retrouver votre "
-"entrée précédente\";\n"
-"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] "
-"pour naviguer dans l'historique\";;"
+"print_endline \" - entrez une phrase OCaml dans le champ ci-dessous et appuyez sur [Entrée]\";\n"
+"print_endline \" - utilisez [Maj-entrée] pour passer à la ligne sans déclencher d'exécution\";\n"
+"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] pour retrouver votre entrée précédente\";\n"
+"print_endline \" - utilisez [Ctrl-\\xe2\\x86\\x91] / [Ctrl-\\xe2\\x86\\x93] pour naviguer dans l'historique\";;"
 
 #: File "src/toplevel/learnocaml_toplevel.ml", line 518, characters 11-43
 msgid "The toplevel has been reset.\n"
@@ -477,12 +465,8 @@ msgid "Your Learn-OCaml token"
 msgstr "Votre token Learn-OCaml"
 
 #: File "src/app/learnocaml_index_main.ml", lines 534-535, characters 18-70
-msgid ""
-"Your token is displayed below. It identifies you and allows to share your "
-"workspace between devices."
-msgstr ""
-"Votre token est affiché ci-dessous. Il vous identifie et permet de partager "
-"un même espace de travail entre plusieurs machines."
+msgid "Your token is displayed below. It identifies you and allows to share your workspace between devices."
+msgstr "Votre token est affiché ci-dessous. Il vous identifie et permet de partager un même espace de travail entre plusieurs machines."
 
 #: File "src/app/learnocaml_index_main.ml", line 536, characters 18-41
 msgid "Please write it down."
@@ -567,13 +551,8 @@ msgid "Be sure to write down your token before logging out:"
 msgstr "Assurez-vous d'avoir noté votre token :"
 
 #: File "src/app/learnocaml_index_main.ml", lines 797-799, characters 15-26
-msgid ""
-"WARNING: the data could not be synchronised with the server. Logging out "
-"will lose your local changes, be sure you exported a backup."
-msgstr ""
-"ATTENTION: l'espace de travail n'a pas pu être synchronisé avec le serveur. "
-"En vous déconnectant, vous perdrez tous les changements locaux, à moins "
-"d'avoir exporté votre espace de travail au préalable."
+msgid "WARNING: the data could not be synchronised with the server. Logging out will lose your local changes, be sure you exported a backup."
+msgstr "ATTENTION: l'espace de travail n'a pas pu être synchronisé avec le serveur. En vous déconnectant, vous perdrez tous les changements locaux, à moins d'avoir exporté votre espace de travail au préalable."
 
 #: File "src/app/learnocaml_index_main.ml", line 801, characters 22-30 45-53
 #: 823, 9-17
@@ -1023,8 +1002,7 @@ msgstr "lors du test de la solution utilisateur"
 
 #: File "src/app/learnocaml_exercise_main.ml", line 29, characters 22-81
 msgid "WARNING: You have an older grader version than the server"
-msgstr ""
-"ATTENTION: La version locale du grader est plus ancienne que celle du serveur"
+msgstr "ATTENTION: La version locale du grader est plus ancienne que celle du serveur"
 
 #: File "src/app/learnocaml_exercise_main.ml", line 30, characters 25-43
 msgid "Refresh the page"
@@ -1035,26 +1013,16 @@ msgid "I will do it myself!"
 msgstr "Je sais le faire moi-même!"
 
 #: File "src/app/learnocaml_exercise_main.ml", line 33, characters 24-180
-msgid ""
-"The server has been updated, please refresh the page to make sure you are "
-"using the latest version of Learn-OCaml server (none of your work will be "
-"lost)."
-msgstr ""
-"Le serveur a été mis à jour, veuillez actualiser la page pour être sûr "
-"d'utiliser la dernière version du serveur Learn-OCaml (votre travail ne sera "
-"pas perdu)."
+msgid "The server has been updated, please refresh the page to make sure you are using the latest version of Learn-OCaml server (none of your work will be lost)."
+msgstr "Le serveur a été mis à jour, veuillez actualiser la page pour être sûr d'utiliser la dernière version du serveur Learn-OCaml (votre travail ne sera pas perdu)."
 
 #: File "src/app/learnocaml_exercise_main.ml", line 92, characters 18-29
 msgid "TIME'S UP"
 msgstr "TEMPS ÉCOULÉ"
 
 #: File "src/app/learnocaml_exercise_main.ml", lines 93-94, characters 7-44
-msgid ""
-"The deadline for this exercise has expired. Any changes you make from now on "
-"will remain local only."
-msgstr ""
-"La date limite de rendu de cet exercice est passée. Vos changements ne "
-"seront plus sauvegardés sur le serveur."
+msgid "The deadline for this exercise has expired. Any changes you make from now on will remain local only."
+msgstr "La date limite de rendu de cet exercice est passée. Vos changements ne seront plus sauvegardés sur le serveur."
 
 #: File "src/app/learnocaml_exercise_main.ml", line 130, characters 25-49
 #: "src/app/learnocaml_playground_main.ml", 47, 19-43
@@ -1081,8 +1049,7 @@ msgstr "abandonner"
 
 #: File "src/app/learnocaml_exercise_main.ml", lines 228-229, characters 35-65
 msgid "Grading is taking a lot of time, maybe your code is looping? "
-msgstr ""
-"La notation prend du temps, peut-être une boucle infinie dans votre code ? "
+msgstr "La notation prend du temps, peut-être une boucle infinie dans votre code ? "
 
 #: File "src/app/learnocaml_exercise_main.ml", line 235, characters 35-57
 msgid "Launching the grader"
@@ -1160,24 +1127,24 @@ msgstr "moyenne sur les exercices requérant les compétences"
 msgid "Success over exercises requiring skill "
 msgstr "Moyenne sur les exercices requérant la compétence "
 
-#: File "src/app/learnocaml_student_view.ml", line 421, characters 14-35 440,
-#: 451, 18-39
+#: File "src/app/learnocaml_student_view.ml", line 417, characters 14-35 436,
+#: 447, 18-39
 msgid "No draft available."
 msgstr "Aucun brouillon disponible."
 
-#: File "src/app/learnocaml_student_view.ml", line 449, characters 18-47
+#: File "src/app/learnocaml_student_view.ml", line 445, characters 18-47
 msgid "Ungraded draft, synced on: "
 msgstr "Brouillon non noté, synchronisé le : "
 
-#: File "src/app/learnocaml_student_view.ml", line 478, characters 26-67
+#: File "src/app/learnocaml_student_view.ml", line 474, characters 26-67
 msgid "GRADE DOESN'T MATCH: cheating suspected"
 msgstr "NOTE INCOHÉRENTE: suspicion de triche"
 
-#: File "src/app/learnocaml_student_view.ml", line 482, characters 25-46
+#: File "src/app/learnocaml_student_view.ml", line 478, characters 25-46
 msgid "No report available"
 msgstr "Aucun rapport"
 
-#: File "src/app/learnocaml_student_view.ml", line 511, characters 8-29
+#: File "src/app/learnocaml_student_view.ml", line 505, characters 8-29
 msgid "Status of student: "
 msgstr "Suivi étudiant: "
 
@@ -1228,12 +1195,8 @@ msgstr "Erreur inattendue:\n"
 #~ msgid "Fetch from server & overwrite"
 #~ msgstr "Télécharger du serveur & écraser"
 
-#~ msgid ""
-#~ "A more recent answer exists on the server. Do you want to fetch the new "
-#~ "version?"
-#~ msgstr ""
-#~ "Une version plus récente de cette réponse existe sur le serveur. Voulez-"
-#~ "vous télécharger la nouvelle version ?"
+#~ msgid "A more recent answer exists on the server. Do you want to fetch the new version?"
+#~ msgstr "Une version plus récente de cette réponse existe sur le serveur. Voulez-vous télécharger la nouvelle version ?"
 
 #~ msgid "Enter the secret"
 #~ msgstr "Entrez le secret"
@@ -1242,9 +1205,7 @@ msgstr "Erreur inattendue:\n"
 #~ msgstr "Try OCaml"
 
 #~ msgid "Failed to download archive. Please try again later!"
-#~ msgstr ""
-#~ "Le téléchargement de l'archive a échoué. Veuillez réessayer "
-#~ "ulterieurement!"
+#~ msgstr "Le téléchargement de l'archive a échoué. Veuillez réessayer ulterieurement!"
 
 #~ msgid "Do you want to save your work before closing?"
 #~ msgstr "Souhaitez-vous enregistrer votre travail avant de quitter?"
@@ -1288,26 +1249,14 @@ msgstr "Erreur inattendue:\n"
 #~ msgid "Progression is saved locally in the browser."
 #~ msgstr "Vos progrès sont sauvegardés dans le navigateur."
 
-#~ msgid ""
-#~ "Save it to a file using the <img src=\"icons/icon_download_white.svg\" "
-#~ "class=\"icon\" alt=\"save\"> button above."
-#~ msgstr ""
-#~ "Sauvez dans un fichier local avec le bouton <img src=\"icons/"
-#~ "icon_download_white.svg\" class=\"icon\" alt=\"Sauver\">."
+#~ msgid "Save it to a file using the <img src=\"icons/icon_download_white.svg\" class=\"icon\" alt=\"save\"> button above."
+#~ msgstr "Sauvez dans un fichier local avec le bouton <img src=\"icons/icon_download_white.svg\" class=\"icon\" alt=\"Sauver\">."
 
-#~ msgid ""
-#~ "Restore it from a file using the <img src=\"icons/icon_upload_white.svg\" "
-#~ "class=\"icon\" alt=\"restore\"> button above."
-#~ msgstr ""
-#~ "Restaurez depuis un fichier avec le bouton <img src=\"icons/"
-#~ "icon_upload_white.svg\" class=\"icon\" alt=\"Restaurer\">."
+#~ msgid "Restore it from a file using the <img src=\"icons/icon_upload_white.svg\" class=\"icon\" alt=\"restore\"> button above."
+#~ msgstr "Restaurez depuis un fichier avec le bouton <img src=\"icons/icon_upload_white.svg\" class=\"icon\" alt=\"Restaurer\">."
 
-#~ msgid ""
-#~ "Save online using the <img src=\"icons/icon_sync_white.svg\" class=\"icon"
-#~ "\" alt=\"sync\"> button above."
-#~ msgstr ""
-#~ "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white.svg"
-#~ "\" class=\"icon\" alt=\"Sync\">."
+#~ msgid "Save online using the <img src=\"icons/icon_sync_white.svg\" class=\"icon\" alt=\"sync\"> button above."
+#~ msgstr "Sauvez sur le serveur avec le bouton <img src=\"icons/icon_sync_white.svg\" class=\"icon\" alt=\"Sync\">."
 
 #~ msgid "Before log out, be sure to save your token"
 #~ msgstr "Avant de vous déconnecter, assurez-vous de sauvegarder votre token"

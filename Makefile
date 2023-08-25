@@ -45,7 +45,7 @@ translations/$(LANGS:=.pot):
 	@DUMP_POT=1 ${DUNE} build ${DUNE_ARGS} -j 1
 	@for f in $(LANGS); do \
 	  mv translations/$$f.pot translations/$$f.pot.bak; \
-	  msguniq -t utf-8 translations/$$f.pot.bak > translations/$$f.pot \
+	  msguniq --no-wrap -t utf-8 translations/$$f.pot.bak > translations/$$f.pot \
 	  && rm translations/$$f.pot.bak; \
 	done
 
@@ -53,7 +53,7 @@ translations/$(LANGS:=.pot):
 
 # Updates existing translations (.po) for the latest source template
 update-%-translation: translations/%.pot
-	@msgmerge -U translations/$*.po translations/$*.pot
+	@msgmerge --no-wrap -U translations/$*.po translations/$*.pot
 	@rm -f translations/$*.pot
 
 opaminstall: install
