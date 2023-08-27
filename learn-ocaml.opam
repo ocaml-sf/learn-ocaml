@@ -54,8 +54,10 @@ depends: [
   "odoc" {build}
   "omd" {<= "1.3.1"}
   "pprint"
-  "ppx_cstruct"
   "ppxlib"
+  "ppx_cstruct"
+  "ppx_expect"
+  "ppx_inline_test"
   "ppx_sexp_conv"
   "ppx_tools"
   "ppx_tools_versioned"
@@ -70,6 +72,7 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
   [make "detect-libs"] {with-test}
 ]
+run-test: [make "test"]
 install: [
   ["mkdir" "-p" "%{_:share}%"]
   ["cp" "-r" "demo-repository" "%{_:share}%/repository"]

@@ -35,7 +35,13 @@ opam init -y -a --bare
 
 opam switch create . ocaml-base-compiler --deps-only --locked -y -j 2 # -v
 eval $(opam env)
+
+# Run unit tests
+# Note: we might want to run them in Linux as well in the CI
+make test
+
 make
+
 make opaminstall
 
 # See src/main/linking_flags.sh

@@ -11,6 +11,14 @@ build-deps:
 build:
 	@${DUNE} build ${DUNE_ARGS}
 
+.PHONY: test
+test:
+	@${DUNE} runtest --root .
+
+.PHONY: test-promote
+test-promote:
+	@${DUNE} runtest --root . --auto-promote
+
 .PHONY: static
 static:
 	@${MAKE} -C static
