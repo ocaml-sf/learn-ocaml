@@ -305,6 +305,7 @@ let rec teacher_tab token _select _params () =
                   | GloballyOpenOrAssigned -> "exo_assigned", [%i"Open/Assigned"]
                   | GloballyClosedOrAssigned -> "exo_assigned", [%i"Assigned"]
                   | GloballyClosed -> "exo_closed", [%i"Closed"]
+                  | GloballyInconsistent -> "exo_closed", [%i"Inconsistent"]
                 in
                 H.span ~a:[H.a_class [cls]] [H.txt text]
               ];
@@ -857,7 +858,8 @@ let rec teacher_tab token _select _params () =
             if List.exists (fun id ->
                    let st = get_status id in
                    let open_assg = ES.is_open_or_assigned_globally st.ES.assignments in
-                   open_assg = ES.GloballyOpen || open_assg = ES.GloballyOpenOrAssigned)
+                   open_assg = ES.GloballyOpen || open_assg = ES.GloballyOpenOrAssigned
+                   || open_assg = ES.GloballyInconsistent)
                 ids
             then ES.set_close_or_assigned_globally
             else ES.set_open_or_assigned_globally

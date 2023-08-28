@@ -225,6 +225,7 @@ module Exercise: sig
       | GloballyClosed           (** "Closed" *)
       | GloballyOpenOrAssigned   (** "Open/Assigned" *)
       | GloballyClosedOrAssigned (** "Assigned" *)
+      | GloballyInconsistent     (** "Inconsistent" *)
 
     val is_open_or_assigned_globally: assignments -> global_status
 
@@ -244,8 +245,8 @@ module Exercise: sig
         Return false if there are at least one Open and at least one Closed. *)
     val check_open_close: assignments -> bool
 
-    (** Replace all Open with Closed. *)
-    val fix_open_close: assignments -> assignments
+    (** Replace all Open with Closed (or conversly if close=false). *)
+    val fix_open_close: ?close:bool -> assignments -> assignments
 
     (** Call [check_open_close] then (if need be) [fix_open_close] *)
     val check_and_fix_open_close: assignments -> assignments

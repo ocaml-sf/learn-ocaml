@@ -20,6 +20,7 @@ let%test_module _ =
        | GloballyClosed -> "GloballyClosed"
        | GloballyOpenOrAssigned -> "GloballyOpenOrAssigned"
        | GloballyClosedOrAssigned -> "GloballyClosedOrAssigned"
+       | GloballyInconsistent -> "GloballyInconsistent"
 
      let testdata_map_of list =
        List.fold_right (fun (tok, st) res -> Token.Map.add tok st res) list Token.Map.empty
@@ -62,7 +63,7 @@ let%test_module _ =
        List.iter (fun glob -> Printf.printf "%s\n"
                               @@ testdata_str_of_globalstatus
                               @@ is_open_or_assigned_globally glob)
-         testdata_good_assignments;
+         (testdata_good_assignments @ testdata_wrong_assignments);
        [%expect{|
                 GloballyOpen
                 GloballyClosed
@@ -73,7 +74,10 @@ let%test_module _ =
                 GloballyClosedOrAssigned
                 GloballyOpen
                 GloballyClosed
-                GloballyClosedOrAssigned |}]
+                GloballyClosedOrAssigned
+                GloballyInconsistent
+                GloballyInconsistent
+                GloballyInconsistent |}]
 
      let%test "check_open_close/good" =
        List.for_all check_open_close testdata_good_assignments
