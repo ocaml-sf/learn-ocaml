@@ -90,17 +90,27 @@ let asak_partition prof fun_name sol by_grade =
       (ans.Partition.bad_type @ bad_type, (i,ans.Partition.clusters) :: res)
     ) by_grade ([],[])
 
+let read_cmi_from_file cmi_str =
+  (* Cmi_format.input_cmi only supports reading from a channel *)
+  let magic_len = String.length Config.cmi_magic_number in
+  if String.length cmi_str < magic_len ||
+     String.sub cmi_str 0 magic_len <> Config.cmi_magic_number then
+    Printf.ksprintf failwith "Bad cmi file";
+  (* we ignore crc and flags *)
+  (Marshal.from_string cmi_str magic_len : (string*Types.signature_item list))
+
 let partition exo_name fun_name prof =
   Learnocaml_store.Exercise.get exo_name
   >>= fun exo ->
   let prelude = Learnocaml_exercise.(access File.prelude_ml exo) in
   let prepare = Learnocaml_exercise.(decipher File.prepare_ml exo) in
   let prelude = prelude ^ "\n" ^ prepare in
-  let solution = Learnocaml_exercise.(decipher File.solution exo) in
-  let solution = prelude ^ "\n" ^ solution in
+  let (_,solution) =
+    read_cmi_from_file (Learnocaml_exercise.(decipher File.solution_cmi exo)) in
+  let sol_typ = Asak.Partition.find_value_type_from_signature fun_name solution in
   get_all_saves exo_name prelude
   >|= fun saves ->
   let not_graded,lst = partition_was_graded saves in
   let by_grade = partition_by_grade fun_name lst in
-  let bad_type,partition_by_grade = asak_partition prof fun_name solution by_grade in
+  let bad_type,partition_by_grade = asak_partition prof fun_name sol_typ by_grade in
   {not_graded; bad_type; partition_by_grade}
