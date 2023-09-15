@@ -508,10 +508,125 @@ module Exercise = struct
 
     let set_default_assignment a default = {a with default}
 
+    let make_assignments token_map default =
+      { token_map; default }
+
     let get_status token a =
       match Token.Map.find_opt token a.token_map with
       | Some a -> a
       | None -> a.default
+
+    (* Global assignment status, w.r.t. all students as a whole
+
+        Invariants: forall exo_status : t,
+
+        1.(REQUIRED):
+        (exo_status.assignments.default <> Open && Token.Map.for_all (fun _ st -> st <> Open) exo_status.assignments.token_map)
+        || (exo_status.assignments.default <> Closed && Token.Map.for_all (fun _ st -> st <> Closed) exo_status.assignments.token_map)
+
+        2.(IfNormalized):
+        is_open_assigned_globally exo_status.assignments \in \{GloballyOpen, GloballyClosed\} ->
+        exo_status.assignments.token_map = Token.Map.empty *)
+    type global_status =
+      | GloballyOpen             (** "Open" *)
+      | GloballyClosed           (** "Closed" *)
+      | GloballyOpenOrAssigned   (** "Open/Assigned" *)
+      | GloballyClosedOrAssigned (** "Assigned" *)
+      | GloballyInconsistent     (** "Inconsistent" *)
+
+    let check_open_close a =
+      match a.default with
+      | Open ->
+         Token.Map.for_all (fun _tok st -> st <> Closed) a.token_map
+      | Closed ->
+         Token.Map.for_all (fun _tok st -> st <> Open) a.token_map
+      | Assigned _ ->
+         let o, c =
+           Token.Map.fold (fun _tok st (o, c) ->
+               (o && st <> Closed,
+                c && st <> Open)) a.token_map (true, true) in
+         o || c
+
+    let fix_open_close ?(close=true) a =
+      if close then
+        let mp =
+          Token.Map.map (function Open -> Closed | st -> st) a.token_map in
+        match a.default with
+        | Open | Closed ->
+           make_assignments mp Closed
+        | assg ->
+           make_assignments mp assg
+      else
+        let mp =
+          Token.Map.map (function Closed -> Open | st -> st) a.token_map in
+        match a.default with
+        | Open | Closed ->
+           make_assignments mp Open
+        | assg ->
+           make_assignments mp assg
+
+    let check_and_fix_open_close a =
+      if check_open_close a then a
+      else fix_open_close a
+
+    let is_open_or_assigned_globally a =
+      match a.default with
+      | Assigned _ ->
+         let o, c =
+           Token.Map.fold (fun _tok st (o, c) ->
+               (o || st = Open,
+                c || st = Closed)) a.token_map (false, false) in
+         begin match o, c with
+         | true, true -> GloballyInconsistent
+         | true, false -> GloballyOpenOrAssigned
+         | false, _ -> GloballyClosedOrAssigned
+         end
+      | Open ->
+         let d, c =
+           Token.Map.fold (fun _tok st (d, c) ->
+               (d || (match st with Assigned _ -> true | _ -> false),
+                c || st = Closed)) a.token_map (false, false) in
+         begin match d, c with
+         | _, true -> GloballyInconsistent
+         | true, false -> GloballyOpenOrAssigned
+         | false, false -> GloballyOpen
+         end
+      | Closed ->
+         let d, o =
+           Token.Map.fold (fun _tok st (d, o) ->
+               (d || (match st with Assigned _ -> true | _ -> false),
+                o || st = Open)) a.token_map (false, false) in
+         begin match d, o with
+         | _, true -> GloballyInconsistent
+         | true, false -> GloballyClosedOrAssigned
+         | false, false -> GloballyClosed
+         end
+
+    let set_close_or_assigned_globally a =
+      match is_open_or_assigned_globally a with
+      | GloballyOpen -> make_assignments Token.Map.empty Closed
+      | GloballyOpenOrAssigned ->
+         make_assignments
+           (Token.Map.map (function Open -> Closed | st -> st) a.token_map)
+           (match a.default with Open -> Closed | a -> a)
+      (* otherwise, maybe: forget the map and re-add all tokens ? *)
+      | GloballyClosedOrAssigned -> a
+      | GloballyClosed -> a
+      | GloballyInconsistent -> fix_open_close ~close:true a
+
+    let set_open_or_assigned_globally a =
+      match is_open_or_assigned_globally a with
+      | GloballyClosed -> make_assignments Token.Map.empty Open
+      | GloballyClosedOrAssigned ->
+         make_assignments
+           (Token.Map.map (function Closed -> Open | st -> st) a.token_map)
+           (match a.default with Closed -> Open | a -> a)
+      (* otherwise, maybe: forget the map and re-add all tokens ? *)
+      | GloballyOpenOrAssigned -> a
+      | GloballyOpen -> a
+      | GloballyInconsistent -> fix_open_close ~close:false a
+
+    (* Note/Erik: we may also want to implement set_assigned_globally *)
 
     let is_open_assignment token a =
       match get_status token a with
@@ -639,9 +754,6 @@ module Exercise = struct
         skills_prereq;
         skills_focus;
         assignments = { default; token_map } }
-
-    let make_assignments token_map default =
-      { token_map; default }
 
     let enc =
       let status_enc =

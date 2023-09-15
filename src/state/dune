@@ -16,6 +16,15 @@
 )
 
 (library
+  (name learnocaml_data_test)
+  (wrapped false)
+  (modules Learnocaml_data_test)
+  (libraries learnocaml_data)
+  (inline_tests)
+  (preprocess (pps ppx_expect ppx_inline_test))
+)
+
+(library
  (name learnocaml_api)
  (wrapped false)
  (flags :standard -warn-error +8)

@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: learn-ocaml ~dev\n"
-"PO-Revision-Date: 2023-08-25 12:59+0200\n"
+"PO-Revision-Date: 2023-08-28 09:10+0200\n"
 "Last-Translator: Erik Martin-Dorel <erik.martin-dorel@irit.fr>\n"
 "Language-Team: OCSF\n"
 "Language: french\n"
@@ -599,21 +599,25 @@ msgstr ""
 "\n"
 "Notez-le !"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 304, characters 52-58
+#: File "src/app/learnocaml_teacher_tab.ml", line 304, characters 51-57
 msgid "Open"
 msgstr "Ouvert"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 305, characters 56-64
-msgid "Closed"
-msgstr "Fermé"
+#: File "src/app/learnocaml_teacher_tab.ml", line 305, characters 65-80
+msgid "Open/Assigned"
+msgstr "Ouvert/Devoir"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 307, characters 41-51
+#: File "src/app/learnocaml_teacher_tab.ml", line 306, characters 67-77
 msgid "Assigned"
 msgstr "Devoir"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 308, characters 57-68
-msgid "Open/Assg"
-msgstr "Ouvert/Devoir"
+#: File "src/app/learnocaml_teacher_tab.ml", line 307, characters 55-63
+msgid "Closed"
+msgstr "Fermé"
+
+#: File "src/app/learnocaml_teacher_tab.ml", line 308, characters 61-75
+msgid "Inconsistent"
+msgstr "Incohérent"
 
 #: File "src/app/learnocaml_teacher_tab.ml", line 368, characters 49-61 391,
 #: 48-60
@@ -672,39 +676,39 @@ msgstr "%d+ étudiants"
 msgid "New assignment"
 msgstr "Nouveau devoir"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 873, characters 16-28
+#: File "src/app/learnocaml_teacher_tab.ml", line 869, characters 16-28
 msgid "Open/Close"
 msgstr "Ouvrir/Fermer"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 879, characters 47-64
+#: File "src/app/learnocaml_teacher_tab.ml", line 875, characters 47-64
 msgid "required skills"
 msgstr "comp. requises"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 883, characters 47-63
+#: File "src/app/learnocaml_teacher_tab.ml", line 879, characters 47-63
 msgid "trained skills"
 msgstr "comp. travaillées"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 892, characters 17-30
+#: File "src/app/learnocaml_teacher_tab.ml", line 888, characters 17-30
 msgid "Assignments"
 msgstr "Devoirs"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 982, characters 18-25
+#: File "src/app/learnocaml_teacher_tab.ml", line 978, characters 18-25
 msgid "Apply"
 msgstr "Appliquer"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 983, characters 54-63
+#: File "src/app/learnocaml_teacher_tab.ml", line 979, characters 54-63
 msgid "Actions"
 msgstr "Actions"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 986, characters 23-49
+#: File "src/app/learnocaml_teacher_tab.ml", line 982, characters 23-49
 msgid "Create new teacher token"
 msgstr "Créer un nouveau token enseignant"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 988, characters 23-81
+#: File "src/app/learnocaml_teacher_tab.ml", line 984, characters 23-81
 msgid "Download the data for selected students/exercises as CSV"
 msgstr "Télécharger un CSV des exercices/étudiants sélectionnés"
 
-#: File "src/app/learnocaml_teacher_tab.ml", line 1163, characters 55-72
+#: File "src/app/learnocaml_teacher_tab.ml", line 1159, characters 55-72
 msgid "Unsaved changes"
 msgstr "Modifications non sauvegardées"
 
