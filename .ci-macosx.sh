@@ -24,6 +24,11 @@ rm -f /usr/local/lib/libtcl8.6.dylib
 rm -f /usr/local/lib/libtk8.6.dylib
 rm -f /usr/local/bin/go
 rm -f /usr/local/bin/gofmt
+rm -f /usr/local/lib/node_modules/npm/bin/npm.ps1
+rm -f /usr/local/lib/node_modules/npm/bin/npx.ps1
+rm -f /usr/local/lib/node_modules/npm/lib/cli-entry.js
+rm -f /usr/local/lib/node_modules/npm/lib/es6/validate-engines.js
+rm -fr /usr/local/lib/node_modules/npm/node_modules/
 
 brew upgrade
 
