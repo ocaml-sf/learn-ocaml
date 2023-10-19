@@ -57,6 +57,8 @@ module El = struct
     (** Elements that are dynamically created (ids only) *)
     let exercise_list_id = "learnocaml-main-exercise-list"
     let exercise_bar = "learnocaml-main-exercise-bar"
+    let exercise_pane = "learnocaml-main-exercise-pane"
+    let filter_box = "learnocaml-filter-box"
     let tutorial_id = "learnocaml-main-tutorial"
     let lesson_id = "learnocaml-main-lesson"
     let toplevel_id = "learnocaml-main-toplevel"
@@ -75,151 +77,221 @@ let get_url token dynamic_url static_url id =
   | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
   | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
 
-let exercises_display index display construct_exo =
-  let open Tyxml_js.Html5 in
-  let rec display_by_legacy lvl acc contents =
-    match contents with
-    | Exercise.Index.Exercises exercises ->
-      List.fold_left
-        (fun acc (exercise_id, meta_opt) ->
-           match meta_opt with
-           | None -> acc
-           | Some meta -> construct_exo exercise_id meta :: acc)
-        acc exercises
-    | Exercise.Index.Groups groups ->
-      let h = match lvl with 1 -> h1 | 2 -> h2 | _ -> h3 in
-      List.fold_left
-        (fun acc (_, Exercise.Index.{ title ; contents }) ->
-           display_by_legacy (succ lvl)
-             (h ~a:[ a_class [ "pack" ] ] [ txt title ] :: acc)
-             contents)
-        acc groups
-  in
-  let display_by_stars index =
-    let cat1,cat2,cat3,cat4 = "1 star","2 stars","3 stars","4 stars" in
-    let add acc id meta =
-      let stars = meta.Exercise.Meta.stars in
-      let key = if stars <= 1. then cat1 else
-      if stars <= 2. then cat2 else
-      if stars <= 3. then cat3 else cat4 in
-      SMap.update key
-        (function None -> Some [(id,meta)]
-        | Some l -> Some ((id,meta) :: l))
-        acc
-    in
-      let by_stars = Exercise.Index.fold_exercises add SMap.empty index |> SMap.bindings in
-      List.map (fun (star_cat,exos) ->
-        h1 ~a:[ a_class [ "pack" ] ] [ txt star_cat ] ::
-        List.map (fun (id,meta) -> construct_exo id meta) exos
-        ) by_stars
-      |> List.flatten
-  in
-  match display with
-  | `By_legacy -> List.rev (display_by_legacy 1 [] index)
-  | `By_deps ->
-    Exercise.Graph.(compute_graph index |>
-      fold (fun acc node ->
-        let id = node_exercise node in
-        construct_exo id (Exercise.Index.find index id) :: acc
-      ) [])
-  | `By_stars -> display_by_stars index
+type exercise_ordering = By_category | By_prereq | By_difficulty
 
-let exercises_tab token : tab_handler=
-  fun select_f (get,set,_) () ->
+let (exercise_filter_signal: string option React.signal), set_exercise_filter =
+  React.S.create None
+
+let (exercise_sort_signal: exercise_ordering React.signal), set_exercise_sort =
+  React.S.create By_category
+
+let make_exercises_to_display_signal index =
+  let get_index exo_sort exo_filter =
+    let index =
+      match exo_sort with
+      | By_category -> index
+      | By_prereq ->
+          Exercise.Index.Exercises
+            Exercise.Graph.(compute_graph index |>
+                            fold (fun acc node ->
+                                let id = node_exercise node in
+                                (id, Some (Exercise.Index.find index id)) :: acc
+                              ) [] |>
+                            List.rev)
+      | By_difficulty ->
+          let module IntMap = Map.Make(Int) in
+          let starmap =
+            Exercise.Index.fold_exercises (fun map id meta ->
+                IntMap.update
+                  (int_of_float (Float.ceil meta.Exercise.Meta.stars))
+                  (function None -> Some [id, Some meta]
+                          | Some l -> Some ((id, Some meta) :: l))
+                  map)
+              IntMap.empty index
+          in
+          let groups =
+            IntMap.fold (fun stars exercises acc ->
+                let title =
+                  if stars = 1 then [%i"1 star"]
+                  else Printf.sprintf [%if"%d stars"] stars
+                in
+                (title,
+                 {Exercise.Index.title;
+                  contents = Exercise.Index.Exercises (List.rev exercises)})
+                :: acc)
+              starmap []
+          in
+          Exercise.Index.Groups (List.rev groups)
+    in
+    let index =
+      match exo_filter with
+      | None -> index
+      | Some filt_str ->
+          Exercise.Index.filter (fun _ meta ->
+              let re = Re.(compile (no_case (str filt_str))) in
+              List.exists (Re.execp re)
+                (meta.Exercise.Meta.title ::
+                 Option.to_list meta.Exercise.Meta.short_description @
+                 List.map fst meta.Exercise.Meta.author @
+                 List.map snd meta.Exercise.Meta.author @
+                 meta.Exercise.Meta.focus @
+                 meta.Exercise.Meta.requirements))
+            index
+    in
+    if index = Exercise.Index.Exercises [] then
+      Exercise.Index.Groups
+        ["empty_group",
+         { Exercise.Index.title = [%i"No exercises found"];
+           Exercise.Index.contents = Exercise.Index.Exercises []; }]
+    else index
+  in
+  React.S.l2 get_index exercise_sort_signal exercise_filter_signal
+
+let retain_signals = ref (React.S.const ())
+(* Used to register signals as GC roots *)
+
+let exercises_tab token : tab_handler =
+  fun _ _ () ->
     let open Tyxml_js.Html5 in
     show_loading  [%i"Loading exercises"] @@ fun () ->
     Lwt_js.sleep 0.5 >>= fun () ->
     retrieve (Learnocaml_api.Exercise_index token)
     >>= fun (index, deadlines) ->
-    let display =
-      match get "display" with
-      | "legacy" -> `By_legacy
-      | "deps" -> `By_deps
-      | "stars" -> `By_stars
-      | exception Not_found | _ -> `By_legacy
+    let exercises_to_display_signal =
+      make_exercises_to_display_signal index
     in
-    let format_exercise_list all_exercise_states =
-      let format_exercise exercise_id {Exercise.Meta.kind; title; short_description; stars; _ } =
-        let pct_init =
-          match SMap.find exercise_id all_exercise_states with
-          | exception Not_found -> None
-          | { Answer.grade ; _ } -> grade in
-        let pct_signal, pct_signal_set = React.S.create pct_init in
-        Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
-          Some (function
-              | Some { Answer.grade ; _ } -> pct_signal_set grade
-              | None -> pct_signal_set None) ;
-        let pct_text_signal =
-          React.S.map
-            (function
-              | None -> "--"
-              | Some 0 -> "0%"
-              | Some pct -> string_of_int pct ^ "%")
-            pct_signal in
-        let time_left = match List.assoc_opt exercise_id deadlines with
-          | None -> ""
-          | Some 0. -> [%i"Exercise closed"]
-          | Some f -> Printf.sprintf [%if"Time left: %s"]
-                        (string_of_seconds (int_of_float f))
-        in
-        let status_classes_signal =
-          React.S.map
-            (function
-              | None -> [ "stats" ]
-              | Some 0 -> [ "stats" ; "failure" ]
-              | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
-              | Some _ -> [ "stats" ; "partial" ])
-            pct_signal in
-        a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
-               a_class [ "exercise" ] ] [
-          div ~a:[ a_class [ "descr" ] ] (
-            h1 [ txt title ] ::
-            begin match short_description with
-              | None -> []
-              | Some text -> [ txt text ]
-            end
-          );
-          div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
-          div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
-            stars_div stars;
-            div ~a:[ a_class [ "length" ] ] [
-              match kind with
-              | Exercise.Meta.Project -> txt [%i"project"]
-              | Exercise.Meta.Problem -> txt [%i"problem"]
-              | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
-            div ~a:[ a_class [ "score" ] ] [
-              Tyxml_js.R.Html5.txt pct_text_signal
-            ]
-          ] ]
-      in exercises_display index display format_exercise
+    let all_exercise_states =
+      Learnocaml_local_storage.(retrieve all_exercise_states)
     in
-    let list_div =
-      match format_exercise_list Learnocaml_local_storage.(retrieve all_exercise_states) with
-      | [] -> H.div [H.txt [%i"No open exercises at the moment"]]
-      | l ->
-        let btns =
-          H.div ~a:[ a_id El.Dyn.exercise_bar ] @@
-            List.map (fun (id, active, name, callback) ->
-              let btn = button ~a:[a_id id] [ txt name ] in
-              if active then Manip.addClass btn "active";
-              Manip.Ev.onclick btn
-                (fun _ -> ignore @@ callback () ; true);
-              btn)
-              [
-                "by_legacy", display = `By_legacy, [%i"By legacy"],
-                  (fun () -> set "display" "legacy"; select_f ~clear_cache:true ());
-                "by_deps", display = `By_deps, [%i"By order"],
-                  (fun () -> set "display" "deps"; select_f ~clear_cache:true ());
-                "by_deps", display = `By_stars, [%i"By stars"],
-                  (fun () -> set "display" "stars"; select_f ~clear_cache:true ())
-              ]
+    let format_exercise exercise_id {Exercise.Meta.kind; title; short_description; stars; _ } =
+      let pct_init =
+        match SMap.find exercise_id all_exercise_states with
+        | exception Not_found -> None
+        | { Answer.grade ; _ } -> grade in
+      let pct_signal, pct_signal_set = React.S.create pct_init in
+      Learnocaml_local_storage.(listener (exercise_state exercise_id)) :=
+        Some (function
+            | Some { Answer.grade ; _ } -> pct_signal_set grade
+            | None -> pct_signal_set None) ;
+      let pct_text_signal =
+        React.S.map
+          (function
+            | None -> "--"
+            | Some 0 -> "0%"
+            | Some pct -> string_of_int pct ^ "%")
+          pct_signal in
+      let time_left = match List.assoc_opt exercise_id deadlines with
+        | None -> ""
+        | Some 0. -> [%i"Exercise closed"]
+        | Some f -> Printf.sprintf [%if"Time left: %s"]
+                      (string_of_seconds (int_of_float f))
+      in
+      let status_classes_signal =
+        React.S.map
+          (function
+            | None -> [ "stats" ]
+            | Some 0 -> [ "stats" ; "failure" ]
+            | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
+            | Some _ -> [ "stats" ; "partial" ])
+          pct_signal in
+      a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
+             a_class [ "exercise" ] ] [
+        div ~a:[ a_class [ "descr" ] ] (
+          h1 [ txt title ] ::
+          begin match short_description with
+            | None -> []
+            | Some text -> [ txt text ]
+          end
+        );
+        div ~a:[ a_class [ "time-left" ] ] [H.txt time_left];
+        div ~a:[ Tyxml_js.R.Html5.a_class status_classes_signal ] [
+          stars_div stars;
+          div ~a:[ a_class [ "length" ] ] [
+            match kind with
+            | Exercise.Meta.Project -> txt [%i"project"]
+            | Exercise.Meta.Problem -> txt [%i"problem"]
+            | Exercise.Meta.Exercise -> txt [%i"exercise"] ] ;
+          div ~a:[ a_class [ "score" ] ] [
+            Tyxml_js.R.Html5.txt pct_text_signal
+          ]
+        ] ]
+    in
+    let rec format_exercise_list index =
+      match index with
+      | Exercise.Index.Exercises el ->
+          H.ul @@
+          List.map
+            (fun (id, meta) -> H.li [format_exercise id (Option.get meta)])
+            el
+      | Exercise.Index.Groups gl ->
+          H.ul @@
+          List.map (fun (id, grp) ->
+              let clas =
+                "group-title" ::
+                match gl with [] | [_] -> [] | _ -> ["collapsed"]
+              in
+              let title =
+                H.div ~a:[a_id id; a_class clas]
+                  [H.txt grp.Exercise.Index.title];
+              in
+              let exos = format_exercise_list grp.Exercise.Index.contents in
+              Manip.Ev.onclick title
+                (fun _ ->
+                   ignore (Manip.toggleClass title "collapsed");
+                   false);
+              H.li [title; exos])
+            gl
+    in
+    let exercise_list_signal =
+      React.S.l1 format_exercise_list exercises_to_display_signal
+    in
+    let btns_sigs =
+      List.map (fun (id, sort, name) ->
+          let btn = button ~a:[a_id id] [ txt name ] in
+          Manip.Ev.onclick btn
+            (fun _ -> set_exercise_sort sort; true);
+          let signal =
+            React.S.map (fun s ->
+                (if sort = s then Manip.addClass else Manip.removeClass)
+                  btn "active"
+              ) exercise_sort_signal
+          in
+          btn, signal)
+        [
+          "by_category", By_category, [%i"By category"];
+          "by_prereq", By_prereq, [%i"By prerequisites"];
+          "by_difficulty", By_difficulty, [%i"By difficulty"];
+        ]
+    in
+    let btns, btns_sigs = List.split btns_sigs in
+    let btns =
+      btns @
+      [
+        let input_field =
+          H.input ~a:[H.a_input_type `Search] ()
         in
-          H.div ~a:[H.a_id El.Dyn.exercise_list_id]
-          (btns :: l)
+        Manip.Ev.oninput input_field (fun _ev ->
+            set_exercise_filter (Some (Manip.value input_field));
+            true);
+        H.div ~a:[H.a_class ["filter-box"]] [input_field];
+      ]
+    in
+    let exercise_list_html =
+      H.div ~a:[H.a_id El.Dyn.exercise_list_id] btns
+    in
+    let pane_div =
+      H.div ~a:[H.a_id El.Dyn.exercise_pane]
+        [H.div ~a:[H.a_id El.Dyn.exercise_bar] btns; exercise_list_html]
     in
     Manip.removeChildren El.content;
-    Manip.appendChild El.content list_div;
-    Lwt.return list_div
+    Manip.appendChild El.content pane_div;
+    let list_update_signal =
+      React.S.map (fun l -> Manip.replaceChildren exercise_list_html [l])
+        exercise_list_signal
+    in
+    retain_signals :=
+      React.S.merge (fun () () -> ()) () (list_update_signal :: btns_sigs);
+    Lwt.return pane_div
 
 let playground_tab token : tab_handler =
   fun _ _ () ->
