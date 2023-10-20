@@ -24,11 +24,16 @@ rm -f /usr/local/lib/libtcl8.6.dylib
 rm -f /usr/local/lib/libtk8.6.dylib
 rm -f /usr/local/bin/go
 rm -f /usr/local/bin/gofmt
-rm -f /usr/local/lib/node_modules/npm/bin/npm.ps1
-rm -f /usr/local/lib/node_modules/npm/bin/npx.ps1
-rm -f /usr/local/lib/node_modules/npm/lib/cli-entry.js
-rm -f /usr/local/lib/node_modules/npm/lib/es6/validate-engines.js
-rm -fr /usr/local/lib/node_modules/npm/node_modules/
+rm -f /usr/local/bin/node
+rm -f /usr/local/bin/npm
+rm -f /usr/local/bin/npx
+rm -f -r /usr/local/include/node
+rm -f -r /usr/local/share/doc/node
+rm -f -r /usr/local/lib/node_modules
+rm -f /usr/local/lib/dtrace/node.d
+rm -f /usr/local/share/man/man1/node.1
+rm -f /usr/local/share/systemtap
+brew uninstall node@18
 
 brew upgrade
 
