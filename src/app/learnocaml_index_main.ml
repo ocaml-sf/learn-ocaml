@@ -77,7 +77,7 @@ let get_url token dynamic_url static_url id =
   | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
   | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
 
-type exercise_ordering = By_category | By_prereq | By_difficulty
+type exercise_ordering = By_category | By_skill | By_difficulty
 
 let (exercise_filter_signal: string option React.signal), set_exercise_filter =
   React.S.create None
@@ -90,14 +90,34 @@ let make_exercises_to_display_signal index =
     let index =
       match exo_sort with
       | By_category -> index
-      | By_prereq ->
-          Exercise.Index.Exercises
-            Exercise.Graph.(compute_graph index |>
-                            fold (fun acc node ->
-                                let id = node_exercise node in
-                                (id, Some (Exercise.Index.find index id)) :: acc
-                              ) [] |>
-                            List.rev)
+      | By_skill ->
+          let module StrMap = Map.Make(struct
+              type t = string
+              (* Case-insensitive ordering *)
+              let compare a b =
+                String.(compare (lowercase_ascii a) (lowercase_ascii b))
+            end)
+          in
+          let by_skill =
+            Exercise.Index.fold_exercises (fun map id meta ->
+                List.fold_left (fun acc skill ->
+                    StrMap.update skill
+                      (function None -> Some [id, Some meta]
+                              | Some l -> Some ((id, Some meta) :: l))
+                      acc)
+                  map
+                  meta.Exercise.Meta.focus)
+              StrMap.empty index
+          in
+          let groups =
+            StrMap.fold (fun skill exercises acc ->
+                (skill,
+                 {Exercise.Index.title = skill;
+                  contents = Exercise.Index.Exercises (List.rev exercises)})
+                :: acc)
+              by_skill []
+          in
+          Exercise.Index.Groups (List.rev groups)
       | By_difficulty ->
           let module IntMap = Map.Make(Int) in
           let starmap =
@@ -259,7 +279,7 @@ let exercises_tab token : tab_handler =
           btn, signal)
         [
           "by_category", By_category, [%i"By category"];
-          "by_prereq", By_prereq, [%i"By prerequisites"];
+          "by_skill", By_skill, [%i"By skill"];
           "by_difficulty", By_difficulty, [%i"By difficulty"];
         ]
     in
