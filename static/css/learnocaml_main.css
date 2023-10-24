@@ -418,16 +418,58 @@ body {
 
 /* -- Exercises activity --------------------------------------------------- */
 
-#learnocaml-main-exercise-list > .exercise + .exercise {
+#learnocaml-main-exercise-bar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#learnocaml-main-exercise-bar button {
+  flex-grow: 1;
+  background: linear-gradient(to bottom, #9bd 0%, #5581ff 100%);
+  color: #fff;
+  text-shadow: 0 0 10px #000;
+}
+
+#learnocaml-main-exercise-bar button.active {
+  background: linear-gradient(to bottom, #f29100 0%, #ec670f 100%);
+}
+
+#learnocaml-main-exercise-list .collapsed + ul {
+  display: none;
+}
+
+.filter-box input {
+    padding-left: 22px;
+    padding-right: 22px;
+}
+.filter-box::before {
+  position: absolute;
+  margin: 3px;
+  content: "🔍";
+  width: 16px;
+}
+
+#learnocaml-main-exercise-list ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#learnocaml-main-exercise-list ul ul .group-title {
+  padding-left: 2em;
+}
+
+#learnocaml-main-exercise-list .exercise + .exercise {
   border-top: 1px #333 solid;
 }
-#learnocaml-main-exercise-list > .exercise {
+#learnocaml-main-exercise-list .exercise {
   position: relative;
   background: linear-gradient(to top, #aaa 0px, #eee 10px, #ddd 100%);
   color: black;
   text-decoration: none;
 }
-#learnocaml-main-exercise-list > .exercise:hover::after {
+#learnocaml-main-exercise-list .exercise:hover::after {
   position: absolute;
   background: #acf;
   opacity: 0.3;
@@ -435,20 +477,20 @@ body {
   left:0; right:0; bottom:0; top:0;
   content:"";
 }
-#learnocaml-main-exercise-list > .exercise > .descr {
+#learnocaml-main-exercise-list .exercise > .descr {
   padding: 10px;
   flex: 1 1 auto;
 }
-#learnocaml-main-exercise-list > .exercise > .descr > h1 {
+#learnocaml-main-exercise-list .exercise > .descr > h1 {
   margin: 0 0 10px 0; padding: 0;
   font-size: 18px;
   font-weight: bold;
 }
-#learnocaml-main-exercise-list > .exercise > .descr > p {
+#learnocaml-main-exercise-list .exercise > .descr > p {
   margin: 10px 0 0 0; padding: 0;
   text-align: justify;
 }
-#learnocaml-main-exercise-list > .pack {
+#learnocaml-main-exercise-list .group-title {
   padding: 10px;
   margin: 0;
   background: #222;
@@ -456,7 +498,15 @@ body {
   font-weight: bold;
   font-size: 20px;
   line-height: 26px;
+  cursor: pointer;
 }
+#learnocaml-main-exercise-list .group-title.collapsed::before {
+  content: "▶ ";
+}
+#learnocaml-main-exercise-list .group-title:not(.collapsed)::before {
+  content: "▼ ";
+}
+
 @media (min-width: 1000px) {
   #learnocaml-main-exercise-list {
     position: relative;
@@ -470,13 +520,13 @@ body {
   }
 }
 @media (min-width: 550px) {
-  #learnocaml-main-exercise-list > .exercise {
+  #learnocaml-main-exercise-list .exercise {
     display: flex;
     flex-direction: row;
     position: relative;
     z-index: 999;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats {
+  #learnocaml-main-exercise-list .exercise > .stats {
     flex: 0;
     display: flex;
     flex-direction: column;
@@ -488,65 +538,65 @@ body {
     linear-gradient(to bottom, #bbb 0px, #ccc 36px, rgba(0,0,0,0) 36px),
     linear-gradient(to top, #999 0px, #ccc 10px);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .stars {
+  #learnocaml-main-exercise-list .exercise > .stats > .stars {
     min-height: 20px;
     flex: 0 1 auto;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .length {
+  #learnocaml-main-exercise-list .exercise > .stats > .length {
     flex: 1 1 auto;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .score {
+  #learnocaml-main-exercise-list .exercise > .stats > .score {
     font-size: 20px;
     color: #666;
     flex: 0 1 auto;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.success {
+  #learnocaml-main-exercise-list .exercise > .stats.success {
     background:
     linear-gradient(to bottom, #7b6 0px, #8c7 36px, rgba(0,0,0,0) 36px),
     linear-gradient(to top, #483 0px, #8c7 10px);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.success > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.success > .score {
     color: #080;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.failure {
+  #learnocaml-main-exercise-list .exercise > .stats.failure {
     background:
     linear-gradient(to bottom, #f44 0px, #f55 36px, rgba(0,0,0,0) 36px),
     linear-gradient(to top, #844 0px, #f55 10px);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.failure > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.failure > .score {
     color: #800;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.partial {
+  #learnocaml-main-exercise-list .exercise > .stats.partial {
     background:
     linear-gradient(to bottom, #fc4 0px, #fd5 36px, rgba(0,0,0,0) 36px),
     linear-gradient(to top, #874 0px, #fd5 10px);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.partial > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.partial > .score {
     color: #C80;
   }
 }
 @media (max-width: 549px) {
-  #learnocaml-main-exercise-list > .exercise {
+  #learnocaml-main-exercise-list .exercise {
     display: block;
     position: relative;
     z-index: 999;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > *,
-  #learnocaml-main-exercise-list > .exercise > .descr > * {
+  #learnocaml-main-exercise-list .exercise > .stats > *,
+  #learnocaml-main-exercise-list .exercise > .descr > * {
     position: relative;
     z-index: 1000;
   }
-  #learnocaml-main-exercise-list > .exercise > .descr > p {
+  #learnocaml-main-exercise-list .exercise > .descr > p {
     margin: 0 0 30px 0;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .stars {
+  #learnocaml-main-exercise-list .exercise > .stats > .stars {
     position: absolute;
     line-height: 20px;
     height: 30px;
     bottom: 0; left: 10px;
     vertical-align: bottom;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .length {
+  #learnocaml-main-exercise-list .exercise > .stats > .length {
     position: absolute;
     display: inline-block;
     line-height: 20px;
@@ -554,7 +604,7 @@ body {
     bottom: 0; left: 90px;
     vertical-align: bottom;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats > .score {
+  #learnocaml-main-exercise-list .exercise > .stats > .score {
     width: 70px;
     text-align: center;
     font-size: 20px;
@@ -562,30 +612,30 @@ body {
     bottom: 15px; right: 10px;
     color: #666;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats::after {
+  #learnocaml-main-exercise-list .exercise > .stats::after {
     background: linear-gradient(to top, #999 0px, #ccc 10px, rgba(0,0,0,0) 100%);
     bottom: 0; right: 0; top: 0; left: 0;
     content:"";
     position: absolute;
     z-index: 999;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.success::after {
+  #learnocaml-main-exercise-list .exercise > .stats.success::after {
     background: linear-gradient(to top, #483 0px, #8c7 10px, #8c7 100%);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.success > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.success > .score {
     color: #080;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.failure::after {
+  #learnocaml-main-exercise-list .exercise > .stats.failure::after {
     background: linear-gradient(to top, #844 0px, #f55 10px);
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.failure > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.failure > .score {
     color: #800;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.partial::after {
+  #learnocaml-main-exercise-list .exercise > .stats.partial::after {
     background: linear-gradient(to top, #874 0px, #fd5 10px);
     color: #C80;
   }
-  #learnocaml-main-exercise-list > .exercise > .stats.partial > .score {
+  #learnocaml-main-exercise-list .exercise > .stats.partial > .score {
     color: #C80;
   }
 }
