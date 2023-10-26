@@ -234,7 +234,7 @@ do
 
     if ! ( set -x; docker run --entrypoint '' \
            -v "$(realpath "$corpus"):/repository" \
-           learn-ocaml /bin/sh -c "learn-ocaml --repo=/repository build" ); then
+           learn-ocaml /bin/sh -c "learn-ocaml --repo=/repository build -j 2" ); then
         red "Failed to build $corpus"
         exit 1
     fi

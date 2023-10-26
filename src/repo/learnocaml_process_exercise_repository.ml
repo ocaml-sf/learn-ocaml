@@ -230,6 +230,8 @@ let main dest_dir =
              Lwt_list.map_p,
              spawn_grader
          in
+         let static_dir = String.concat Filename.dir_sep [dest_dir; "static"] in
+         Lwt_utils.mkdir_p static_dir >>= fun () ->
          listmap (fun (id, ex_dir, exercise, json_path, changed, dump_outputs,dump_reports) ->
              let dst_ex_dir = String.concat Filename.dir_sep [dest_dir; "static"; id] in
              Lwt_utils.mkdir_p dst_ex_dir >>= fun () ->
