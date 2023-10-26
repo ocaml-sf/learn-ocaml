@@ -52,23 +52,29 @@ let get_grade ?callback ?timeout ?dirname exo solution =
   | 0 ->
       (* /!\ there must be strictly no Lwt calls in the child *)
       Unix.close in_fd;
-      let oc = Unix.out_channel_of_descr out_fd in
-      let (ret: grader_answer) =
-        Load_path.init [ cmis_dir ] ;
-        Toploop_unix.initialize () ;
-        let divert name chan cb =
-          let redirection = Toploop_unix.redirect_channel name chan cb in
-          fun () -> Toploop_unix.stop_channel_redirection redirection in
-        let load_code compiled_code =
-          try
-            Toploop_unix.use_compiled_string compiled_code.Learnocaml_exercise.cma;
-            Toploop_ext.Ok (true, [])
-          with _ -> Toploop_ext.Ok (false, [])
-        in
-        Grading.get_grade ?callback ?timeout ?dirname ~divert ~load_code
-          exo solution
+      let () =
+        try
+          let oc = Unix.out_channel_of_descr out_fd in
+          let (ret: grader_answer) =
+            Load_path.init [ cmis_dir ] ;
+            Toploop_unix.initialize () ;
+            let divert name chan cb =
+              let redirection = Toploop_unix.redirect_channel name chan cb in
+              fun () -> Toploop_unix.stop_channel_redirection redirection in
+            let load_code compiled_code =
+              try
+                Toploop_unix.use_compiled_string
+                  compiled_code.Learnocaml_exercise.cma;
+                Toploop_ext.Ok (true, [])
+              with _ -> Toploop_ext.Ok (false, [])
+            in
+            Grading.get_grade ?callback ?timeout ?dirname ~divert ~load_code
+              exo solution
+          in
+          output_value oc ret
+        with e ->
+          Format.eprintf "Subprocess failed with: %s\n%!" (Printexc.to_string e)
       in
-      output_value oc ret;
       flush_all ();
       Unix._exit 0
   | child_pid ->
@@ -79,6 +85,7 @@ let get_grade ?callback ?timeout ?dirname exo solution =
         (function End_of_file -> Lwt.return_none | exn -> Lwt.fail exn)
       >>= fun (ans: grader_answer option) ->
       Lwt_unix.waitpid [] child_pid >>= fun (_pid, stat) ->
+      Lwt_io.close ic >>= fun () ->
       match ans, stat with
       | _, Unix.WSIGNALED n ->
           Printf.ksprintf Lwt.fail_with "Grading sub-process was killed (%d)" n
