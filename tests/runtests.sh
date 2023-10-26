@@ -69,15 +69,14 @@ run_server () {
     REPO="$srcdir"/"$dir"/repo
     chmod -R a+w "$REPO"
 
-    mkdir "$SYNC" 2>/dev/null
+    mkdir -p "$SYNC" 2>/dev/null
     chmod o+w "$SYNC"
 
     # Run the server in background
-    SERVERID=$(set -x; docker run --entrypoint '' -d -p 8080:8080 \
+    SERVERID=$(set -x; docker run -d -p 8080:8080 \
       -v "$srcdir/$dir":/home/learn-ocaml/actual \
       -v "$SYNC":/sync -v "$REPO":/repository \
-      learn-ocaml /bin/sh -c \
-        "learn-ocaml --sync-dir=/sync --repo=/repository build serve")
+      learn-ocaml)
 
     # Wait for the server to be initialized
     if ! wait_for_it "http://localhost:8080/version" "$build_timeout" sleep 1s ||
@@ -233,9 +232,11 @@ while IFS= read -r corpus;
 do
     echo "---> Testing corpus $corpus:"
 
-    if ! ( set -x; docker run --entrypoint '' \
+    chmod -R a+w "$corpus"
+
+    if ! ( set -x; docker run --rm \
            -v "$(realpath "$corpus"):/repository" \
-           learn-ocaml /bin/sh -c "learn-ocaml --repo=/repository build" ); then
+           learn-ocaml build ); then
         red "Failed to build $corpus"
         exit 1
     fi

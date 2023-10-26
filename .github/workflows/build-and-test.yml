@@ -26,9 +26,9 @@ jobs:
       - name: Run learn-ocaml build on demo-repository
         run: "docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build"
       - name: Clone learn-ocaml-corpus inside tests/corpuses
-        run: "mkdir tests/corpuses && cd tests/corpuses && git clone --depth=1 https://github.com/ocaml-sf/learn-ocaml-corpus.git && cd ../.."
+        run: "git clone --depth=1 https://github.com/ocaml-sf/learn-ocaml-corpus.git tests/corpuses/learn-ocaml-corpus"
       - name: Run tests
-        run: "cd tests && bash -c ./runtests.sh"
+        run: "tests/runtests.sh"
 
   client_using_other_server:
     name: Build learn-ocaml-client and run quick tests
