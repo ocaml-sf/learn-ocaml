@@ -15,6 +15,11 @@ let grading_cmis_dir =
   let ( / ) = Filename.concat in
   ref (prefix/"lib"/"learn-ocaml"/"test_lib")
 
+let extra_cmis_dirs =
+  let prefix = Filename.dirname (Filename.dirname (Sys.executable_name)) in
+  let ( / ) = Filename.concat in
+  ref [prefix/"lib"/"vg"; prefix/"lib"/"gg"]
+
 let run ?dir cmd args =
   Lwt_process.exec ?cwd:dir ("", Array.of_list (cmd::args)) >>= function
   | Unix.WEXITED 0 -> Lwt.return_unit
@@ -42,6 +47,9 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ?(ppx=[]) ~source ~target args =
       ppx args
   in
   let args = "-I" :: dir :: "-I" :: !grading_cmis_dir :: args in
+  let args =
+    List.flatten (List.map (fun d -> ["-I"; d]) !extra_cmis_dirs) @ args
+  in
   let args = args @ List.map d source @ ["-o"; d target] in
   let args = List.fold_right (fun m acc -> "-open" :: m :: acc) opn args in
   run "ocamlc" args
