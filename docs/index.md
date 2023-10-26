@@ -53,7 +53,7 @@ The Inconsolata font is released under the Open Font License.
 See [http://www.levien.com/type/myfonts/inconsolata.html](http://www.levien.com/type/myfonts/inconsolata.html).
 
 The Biolinum font is licensed under the GNU General Public License with
-a the 'Font-Exception'.
+a 'Font-Exception'.
 See [http://www.linuxlibertine.org](http://www.linuxlibertine.org).
 
 The public instance of Learn OCaml uses the Fontin font instead of
@@ -78,9 +78,9 @@ It was written by OCamlPro from 2015 to 2018.
 
 The current main contributors are Érik Martin-Dorel, Yann Régis-Gianas, and Louis Gesbert.
 
-The initial authors were Benjamin Canou, Çağdaş Bozman, and Grégoire Henry.
+The initial authors were Benjamin Canou, Çağdaş Bozman, Grégoire Henry, and Louis Gesbert.
 
-It builds on the previous experience of Try OCaml, by Çağdaş Bozman, and Fabrice Le Fessant.
+It builds on the previous experience of Try OCaml, by Çağdaş Bozman and Fabrice Le Fessant.
 
 We heavily use js_of_ocaml, so thanks to the Ocsigen team.
 
