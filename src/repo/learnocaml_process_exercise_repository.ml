@@ -62,7 +62,7 @@ let spawn_grader
     ?print_result ?dirname meta ex_dir output_json =
   let rec sleep () =
     if !n_processes <= 0 then
-      Lwt_main.yield () >>= sleep
+      Lwt.pause () >>= sleep
     else (
       decr n_processes; Lwt.return_unit
     )

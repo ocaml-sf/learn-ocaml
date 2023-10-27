@@ -715,3 +715,35 @@ let launch () =
   | e ->
       Printf.eprintf "Server error: %s\n%!" (Printexc.to_string e);
       Lwt.return false
+
+let check_running () =
+  try
+    let ic = Printf.ksprintf Unix.open_process_in "lsof -Qti tcp:%d -s tcp:LISTEN" !port in
+    let pid = match input_line ic with
+      | "" -> None
+      | s -> int_of_string_opt s
+      | exception End_of_file -> None
+    in
+    close_in ic;
+    pid
+  with Unix.Unix_error _ ->
+    Printf.eprintf "Warning: could not check for previously running instance";
+    None
+
+let kill_running pid =
+  let timeout = 15 in
+  Unix.kill pid Sys.sigint;
+  Printf.eprintf "Waiting for process %d to terminate... %2d%!" pid timeout;
+  let rec aux tout =
+    Printf.eprintf "\027[2D%2d" tout;
+    if Printf.ksprintf Sys.command "lsof -ti tcp:%d -p %d >/dev/null" !port pid
+       = 0
+    then
+      if tout <= 0 then
+        (prerr_endline "Error: process didn't terminate in time"; exit 10)
+      else
+        (Unix.sleep 1;
+         aux (tout - 1))
+  in
+  aux timeout;
+  prerr_endline "\027[2Dok"

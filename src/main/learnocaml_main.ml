@@ -292,9 +292,15 @@ let process_html_file orig_file dest_file base_url no_secret =
   Lwt_io.close ofile >>= fun () ->
   Lwt_io.close wfile
 
+let temp_app_dir o =
+  let open Filename in
+  concat
+    (dirname o.app_dir)
+    ((basename o.app_dir) ^ ".temp")
+
 let main o =
-  Printf.printf "Learnocaml v.%s running.\n" Learnocaml_api.version;
-  let grade () =
+  Printf.printf "Learnocaml v.%s running.\n%!" Learnocaml_api.version;
+  let grade o =
     if List.mem Grade o.commands then
       (if List.mem Build o.commands || List.mem Serve o.commands then
          failwith "The 'grade' command is incompatible with 'build' and \
@@ -322,9 +328,34 @@ let main o =
        >|= fun i -> Some i)
     else Lwt.return_none
   in
-  let generate () =
+  let generate o =
     if List.mem Build o.commands then
-      (Printf.printf "Updating app at %s\n%!" o.app_dir;
+      (let get_app_dir o =
+         if not (List.mem Serve o.commands) then
+           Lwt.return o.app_dir
+         else if o.server.Server.replace then
+           let app_dir = temp_app_dir o in
+           (if Sys.file_exists app_dir then
+             (Printf.eprintf "Warning: temporary directory %s already exists\n%!"
+                app_dir;
+              Lwt.return_unit)
+            else if Sys.file_exists o.app_dir then
+              Lwt_utils.copy_tree o.app_dir app_dir
+            else
+              Lwt.return_unit)
+           >>= fun () -> Lwt.return app_dir
+         else if Learnocaml_server.check_running () <> None then
+           (Printf.eprintf
+              "Error: another server is already running on port %d \
+               (consider using option `--replace`)\n%!"
+              !Learnocaml_server.port;
+            exit 10)
+         else Lwt.return o.app_dir
+       in
+       get_app_dir o >>= fun app_dir ->
+       let o = { o with app_dir } in
+       Learnocaml_store.static_dir := app_dir;
+       Printf.printf "Updating app at %s\n%!" o.app_dir;
        Lwt.catch
          (fun () -> Lwt_utils.copy_tree o.builder.Builder.contents_dir o.app_dir)
          (function
@@ -404,8 +435,44 @@ let main o =
     else
       Lwt.return true
   in
-  let run_server () =
+  let run_server o =
     if List.mem Serve o.commands then
+      let () =
+        if o.server.Server.replace then
+          let running = Learnocaml_server.check_running () in
+          Option.iter Learnocaml_server.kill_running running;
+          let temp = temp_app_dir o in
+          let app_dir =
+            if Filename.is_relative o.app_dir
+            then Filename.concat (Sys.getcwd ()) o.app_dir
+            else o.app_dir
+          in
+          let bak =
+            let f =
+              Filename.temp_file
+                ~temp_dir:(Filename.dirname app_dir)
+                (Filename.basename app_dir ^ ".bak.")
+                ""
+            in
+            Unix.unlink f; f
+          in
+          if Sys.file_exists app_dir then Sys.rename app_dir bak;
+          Sys.rename temp o.app_dir;
+          Learnocaml_store.static_dir := app_dir;
+          if Sys.file_exists bak then
+            Lwt.dont_wait (fun () ->
+                Lwt.pause () >>= fun () ->
+                Lwt_process.exec ("rm",[|"rm";"-rf";bak|]) >>= fun r ->
+                if r <> Unix.WEXITED 0 then
+                  Lwt.fail_with "Remove command failed"
+                else Lwt.return_unit
+              )
+              (fun ex ->
+                 Printf.eprintf
+                   "Warning: while cleaning up older application \
+                    directory %s:\n    %s\n%!"
+                   bak (Printexc.to_string ex))
+      in
       let native_server = Sys.executable_name ^ "-server" in
       if Sys.file_exists native_server then
         let server_args =
@@ -416,30 +483,39 @@ let main o =
           ("--port="^string_of_int o.server.port) ::
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
-        Unix.execv native_server (Array.of_list (native_server::server_args))
+        Lwt.return
+          (`Continuation
+             (fun () ->
+                Unix.execv native_server
+                  (Array.of_list (native_server::server_args))))
       else begin
           Printf.printf "Starting server on port %d\n%!"
             !Learnocaml_server.port;
           if o.builder.Builder.base_url <> "" then
             Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
-          Learnocaml_server.launch ()
+          Learnocaml_server.launch () >>= fun ret ->
+          Lwt.return (`Success ret)
         end
     else
-      Lwt.return true
+      Lwt.return (`Success true)
   in
   let ret =
     Lwt_main.run
-      (grade () >>= function
-        | Some i -> Lwt.return i
+      (grade o >>= function
+        | Some i -> Lwt.return (`Code i)
         | None ->
-            generate () >>= fun success ->
+            generate o >>= fun success ->
             if success then
-              run_server () >>= fun r ->
-              if r then Lwt.return 0 else Lwt.return 10
+              run_server o >>= function
+                | `Success true -> Lwt.return (`Code 0)
+                | `Success false -> Lwt.return (`Code 10)
+                | `Continuation f -> Lwt.return (`Continuation f)
             else
-              Lwt.return 1)
+              Lwt.return (`Code 1))
   in
-  exit ret
+  match ret with
+  | `Code n -> exit n
+  | `Continuation f -> f ()
 
 let man = 
   let open Manpage in

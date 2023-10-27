@@ -31,6 +31,17 @@ let main o =
     Learnocaml_api.version o.port;
   if o.base_url <> "" then
     Printf.printf "Base URL: %s\n%!" o.base_url;
+  let () =
+    match Learnocaml_server.check_running (), o.replace with
+    | None, _ -> ()
+    | Some _, false ->
+        Printf.eprintf "Error: another server is already running on port %d \
+                        (consider using option `--replace`)\n%!"
+          !Learnocaml_server.port;
+        exit 10
+    | Some pid, true ->
+        Learnocaml_server.kill_running pid
+  in
   let rec run () =
     let minimum_duration = 15. in
     let t0 = Unix.time () in
