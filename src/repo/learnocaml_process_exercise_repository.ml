@@ -59,7 +59,7 @@ let print_grader_error exercise = function
 
 let spawn_grader
     dump_outputs dump_reports
-    ?print_result ?dirname meta exercise output_json =
+    ?print_result ?dirname meta ex_dir output_json =
   let rec sleep () =
     if !n_processes <= 0 then
       Lwt_main.yield () >>= sleep
@@ -69,6 +69,7 @@ let spawn_grader
   in
   sleep () >>= fun () ->
   Lwt.catch (fun () ->
+      read_exercise ex_dir >>= fun exercise ->
       Grader_cli.grade
         ~dump_outputs ~dump_reports ~display_callback:false
         ?print_result ?dirname meta exercise output_json
@@ -213,7 +214,8 @@ let main dest_dir =
            if !n_processes = 1 then
              Lwt_list.map_s,
              fun dump_outputs dump_reports ?print_result ?dirname
-               meta exercise json_path ->
+               meta ex_dir json_path ->
+               read_exercise ex_dir >>= fun exercise ->
                Grader_cli.grade
                  ~dump_outputs ~dump_reports ~display_callback:true
                  ?print_result ?dirname
@@ -239,10 +241,8 @@ let main dest_dir =
                end else begin
                  Learnocaml_precompile_exercise.precompile ~exercise_dir:ex_dir
                  >>= fun () ->
-                 read_exercise ex_dir
-                 >>= fun exercise ->
                  grade dump_outputs dump_reports
-                   ~dirname:ex_dir (Index.find index id) exercise (Some json_path)
+                   ~dirname:ex_dir (Index.find index id) ex_dir (Some json_path)
                  >>= function
                  | Ok () ->
                      Format.printf "%-24s     [OK]@." id ;
@@ -256,6 +256,10 @@ let main dest_dir =
        Lwt.return (List.for_all ((=) true) results))
     (fun exn ->
        let print_unknown ppf = function
+         | Unix.Unix_error (Unix.EMFILE, _, _) ->
+             Format.fprintf ppf
+               "Too many open files. Try reducing the number of concurrent jobs \
+                (with the `-j` flag) or use `ulimit -n` with a higher value"
          | Failure msg -> Format.fprintf ppf "Cannot process exercises: %s" msg
          | exn -> Format.fprintf ppf "Cannot process exercises: %s"  (Printexc.to_string exn) in
        Json_encoding.print_error ~print_unknown Format.err_formatter exn ;
