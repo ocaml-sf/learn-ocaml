@@ -251,6 +251,18 @@ module Exercise: sig
     (** Call [check_open_close] then (if need be) [fix_open_close] *)
     val check_and_fix_open_close: assignments -> assignments
 
+    (** Update [status_map: Exercise.Status.t SMap.t] if an assignment changes:
+        [update_exercise_assignments g (s0,e0,d0) (s,e,d) (t0,t1) m status_map]
+        turns [(stu0,exo0,dft0)] to [(s,e,d) + Assigned{t0;t1}] in [status_map]
+        from [g = get_status_t: string -> t] (status of exo) and [m = stud_map] *)
+    val update_exercise_assignments: (string -> t) ->
+      Token.Set.t * SSet.t * bool ->
+      Token.Set.t * SSet.t * bool ->
+      float * float ->
+      Student.t Token.Map.t ->
+      t SMap.t ->
+      t SMap.t
+
     val is_open_assignment:
       Token.t -> assignments -> [> `Open | `Closed | `Deadline of float]
 
