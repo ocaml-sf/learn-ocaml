@@ -215,8 +215,7 @@ let%test_module "Exercise.Status" =
          s.id
          (testdata_str_of_assignments s.assignments)
 
-     (* TODO: Change globalstatus *)
-     let testdata_str_of_smap ?(globalstatus=false) (s : t SMap.t) =
+     let testdata_str_of_smap ?(globalstatus=true) (s : t SMap.t) =
        let list =
          SMap.fold (fun eid tt acc ->
              if eid <> tt.id
@@ -299,76 +298,76 @@ let%test_module "Exercise.Status" =
          ];
        [%expect {|
          # initial status_map:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_exo1:
-         {id = exo1; assignments = {default = Open; token_map = { }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_exo2:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Closed; token_map = { }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_exo3:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Closed; token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_add_exo6_7_true:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo7; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo7; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
 
          # a8d_rm_exo4:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a8d_rm_exo5:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a8d_add_exo6_7_false:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo7; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} |}]
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo7; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned |}]
 
      let testdata_t2_a7d_add_stu2 : triple =
        (testdata_tokset_of [fst testdata_token; snd testdata_token],(*<-*)
@@ -411,58 +410,58 @@ let%test_module "Exercise.Status" =
          ];
        [%expect {|
          # initial status_map:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_add_stu2:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_stu1:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Open); (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Closed); (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Closed); }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Open); (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Closed); (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (JBG-B9B-3S1-NZO, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_dflt:
-         {id = exo1; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); }}}
-         {id = exo2; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); }}}
-         {id = exo3; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692482400.)); }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692482400.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692482400.)); }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a8d_add_stu2:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a8d_add_dflt:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo5; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}} |}]
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed |}]
 
      let testdata_t3_a7d_rm_assignment : triple =
        (testdata_tokset_of [],(*<-*)
@@ -486,31 +485,31 @@ let%test_module "Exercise.Status" =
           "a8d_rm_assignment", testdata_t0_a8d, testdata_t3_a8d_rm_assignment, testdata_8d];
        [%expect {|
          # initial status_map:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_rm_assignment:
-         {id = exo1; assignments = {default = Open; token_map = { }}}
-         {id = exo2; assignments = {default = Closed; token_map = { }}}
-         {id = exo3; assignments = {default = Closed; token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo2; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo3; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a8d_rm_assignment:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { }}}
-         {id = exo5; assignments = {default = Closed; token_map = { }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}} |}]
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo5; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed |}]
 
      let%expect_test "update_exercise_assignments/set_assignment" =
        Printf.printf "# initial status_map:\n%s\n" @@
@@ -523,21 +522,21 @@ let%test_module "Exercise.Status" =
          ["a7d_to_a8d", testdata_t0_a7d, testdata_t0_a7d, testdata_8d];
        [%expect {|
          # initial status_map:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}}
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692482400.); token_map = { }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed
 
          # a7d_to_a8d:
-         {id = exo1; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Open); }}}
-         {id = exo2; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}}
-         {id = exo3; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692482400.)); }}}
-         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}}
-         {id = exo6; assignments = {default = Open; token_map = { }}}
-         {id = exo7; assignments = {default = Closed; token_map = { }}} |}]
+         {id = exo1; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Open); }}} -> GloballyOpenOrAssigned
+         {id = exo2; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Closed); }}} -> GloballyClosedOrAssigned
+         {id = exo3; assignments = {default = Assigned(1691877600.,1692568800.); token_map = { (KOK-W3L-NE1-SVY, Assigned(1691877600.,1692482400.)); }}} -> GloballyClosedOrAssigned
+         {id = exo4; assignments = {default = Open; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyOpenOrAssigned
+         {id = exo5; assignments = {default = Closed; token_map = { (JBG-B9B-3S1-NZO, Assigned(1691877600.,1692568800.)); }}} -> GloballyClosedOrAssigned
+         {id = exo6; assignments = {default = Open; token_map = { }}} -> GloballyOpen
+         {id = exo7; assignments = {default = Closed; token_map = { }}} -> GloballyClosed |}]
 
    end)
