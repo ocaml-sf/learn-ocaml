@@ -633,14 +633,18 @@ module Exercise = struct
         SSet.fold (fun ex_id acc ->
             let st = get_status_t ex_id in
             let assg = st.assignments in
+            let global_status = is_open_or_assigned_globally assg in
             let old_default = assg.default in
             let new_default =
               if default then status
-              else if default0 then Closed
+              else if default0 (* the future_students flag was removed *)
+              then match global_status with
+                   | GloballyOpenOrAssigned | GloballyOpen -> Open
+                   | _ -> Closed
               else old_default
             in
             let add tk st tmap =
-              if st = new_default then tmap
+              if st = new_default then tmap (* normalize the token map *)
               else Token.Map.add tk st tmap
             in
             let token_map =
@@ -648,9 +652,12 @@ module Exercise = struct
                   if Token.Set.mem tk students then
                     if default then acc
                     else Token.Map.add tk status acc
-                  else if Token.Set.mem tk students0 then
-                    if default then Token.Map.add tk Closed acc
-                    else Token.Map.remove tk acc
+                  else if Token.Set.mem tk students0 then (* the student was unassigned *)
+                    if default
+                    then match global_status with
+                         | GloballyOpenOrAssigned | GloballyOpen -> Token.Map.add tk Open acc
+                         | _ -> Token.Map.add tk Closed acc
+                    else (* Token.Map.remove tk (unneeded call) *) acc
                   else add tk (get_status tk assg) acc)
                 students_map Token.Map.empty
             in
@@ -668,7 +675,11 @@ module Exercise = struct
           let st = get_status_t ex_id in
           let assg = st.assignments in
           let dft_status =
-            if default0 then Closed else default_assignment assg
+            if default0 (* the old default was Assigned(_, _) *)
+            then match is_open_or_assigned_globally assg with
+                 | GloballyOpenOrAssigned | GloballyOpen -> Open
+                 | _ -> Closed
+            else default_assignment assg
           in
           let token_map =
             Token.Set.fold Token.Map.remove students0 assg.token_map
