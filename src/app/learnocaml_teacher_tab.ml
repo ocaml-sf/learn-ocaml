@@ -1032,73 +1032,23 @@ let rec teacher_tab token _select _params () =
          current_assignment)
   in
   let set_assignment ?assg ?students ?exos ?default id =
+    (* - get the currently saved assignment *)
     let (assg0, students0, exos0, default0) = Hashtbl.find assignments_tbl id in
+    (* - update the assignment fields if related arg <> None *)
     let dft x0 = function Some x -> x | None -> x0 in
     let start, stop = dft assg0 assg in
     let students = dft students0 students in
     let exos = dft exos0 exos in
     let default = dft default0 default in
+    (* - update the assignment *)
     Hashtbl.replace assignments_tbl id
       ((start, stop), students, exos, default);
     (match Manip.by_id (assg_line_id id) with
      | Some l -> Manip.replaceSelf l (assignment_line id)
      | None -> failwith "Assignment line not found");
-    let status = ES.(Assigned {start; stop}) in
+    (* - update (!status_changes : ES.t SMap.t) (initially empty) *)
     let exercise_status_changes =
-      SSet.fold (fun ex_id acc ->
-          let st = get_status ex_id in
-          let assg = st.ES.assignments in
-          let old_default = assg.ES.default in
-          let new_default =
-            if default then status
-            else if default0 then ES.Closed
-            else old_default
-          in
-          let add tk st tmap =
-            if st = new_default then tmap
-            else Token.Map.add tk st tmap
-          in
-          let token_map =
-            Token.Map.fold (fun tk _ acc ->
-                if Token.Set.mem tk students then
-                  if default then acc
-                  else Token.Map.add tk status acc
-                else if Token.Set.mem tk students0 then
-                  if default then Token.Map.add tk ES.Closed acc
-                  else Token.Map.remove tk acc
-                else add tk (ES.get_status tk assg) acc)
-              !students_map Token.Map.empty
-          in
-          SMap.add ex_id
-            ES.{st with assignments = {
-                token_map;
-                default = new_default;
-              }}
-            acc)
-        exos
-        !status_changes
-    in
-    let exercise_status_changes =
-      SSet.fold (fun ex_id acc ->
-          let st = get_status ex_id in
-          let assg = st.ES.assignments in
-          let dft_status =
-            if default0 then ES.Closed else ES.default_assignment assg
-          in
-          let token_map =
-            Token.Set.fold Token.Map.remove students0 assg.ES.token_map
-          in
-          let token_map =
-            Token.Map.filter (fun _ a -> a <> dft_status) token_map
-          in
-          SMap.add ex_id
-            ES.{st with assignments = {
-                token_map;
-                default = dft_status
-              }}
-            acc)
-        (SSet.diff exos0 exos)
-        exercise_status_changes
+      ES.update_exercise_assignments get_status (students0, exos0, default0) (students, exos, default) (start, stop) !students_map !status_changes
     in
     status_changes := exercise_status_changes;
     fill_exercises_pane ();

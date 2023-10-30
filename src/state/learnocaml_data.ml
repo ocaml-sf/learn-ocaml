@@ -626,7 +626,75 @@ module Exercise = struct
       | GloballyOpen -> a
       | GloballyInconsistent -> fix_open_close ~close:false a
 
-    (* Note/Erik: we may also want to implement set_assigned_globally *)
+    let update_exercise_assignments (get_status_t : string -> t) (students0, exos0, default0) (students, exos, default) (start, stop) students_map status_map =
+      let status = Assigned {start; stop} in
+      (* - walk accross the new list of exos *)
+      let status_map =
+        SSet.fold (fun ex_id acc ->
+            let st = get_status_t ex_id in
+            let assg = st.assignments in
+            let global_status = is_open_or_assigned_globally assg in
+            let old_default = assg.default in
+            let new_default =
+              if default then status
+              else if default0 (* the future_students flag was removed *)
+              then match global_status with
+                   | GloballyOpenOrAssigned | GloballyOpen -> Open
+                   | _ -> Closed
+              else old_default
+            in
+            let add tk st tmap =
+              if st = new_default then tmap (* normalize the token map *)
+              else Token.Map.add tk st tmap
+            in
+            let token_map =
+              Token.Map.fold (fun tk _ acc ->
+                  if Token.Set.mem tk students then
+                    if default then acc
+                    else Token.Map.add tk status acc
+                  else if Token.Set.mem tk students0 then (* the student was unassigned *)
+                    if default
+                    then match global_status with
+                         | GloballyOpenOrAssigned | GloballyOpen -> Token.Map.add tk Open acc
+                         | _ -> Token.Map.add tk Closed acc
+                    else (* Token.Map.remove tk (unneeded call) *) acc
+                  else add tk (get_status tk assg) acc)
+                students_map Token.Map.empty
+            in
+            SMap.add ex_id
+              {st with assignments = {
+                  token_map;
+                  default = new_default;
+              }}
+              acc)
+          exos
+          status_map
+      in
+      (* - walk accross the list of removed exos *)
+      SSet.fold (fun ex_id acc ->
+          let st = get_status_t ex_id in
+          let assg = st.assignments in
+          let dft_status =
+            if default0 (* the old default was Assigned(_, _) *)
+            then match is_open_or_assigned_globally assg with
+                 | GloballyOpenOrAssigned | GloballyOpen -> Open
+                 | _ -> Closed
+            else default_assignment assg
+          in
+          let token_map =
+            Token.Set.fold Token.Map.remove students0 assg.token_map
+          in
+          let token_map =
+            Token.Map.filter (fun _ a -> a <> dft_status) token_map
+          in
+          SMap.add ex_id
+            {st with assignments = {
+                token_map;
+                default = dft_status
+            }}
+            acc)
+        (SSet.diff exos0 exos)
+        status_map
 
     let is_open_assignment token a =
       match get_status token a with
