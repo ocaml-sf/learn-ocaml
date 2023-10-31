@@ -68,12 +68,16 @@ COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
 COPY --from=compilation "$opam_switch/lib/ocaml" "$opam_switch/lib/ocaml/"
 COPY --from=compilation "$opam_switch/bin/js_of_ocaml" "$opam_switch/bin/"
 COPY --from=compilation "$opam_switch/lib/js_of_ocaml" "$opam_switch/lib/js_of_ocaml"
+COPY --from=compilation "$opam_switch/lib/vg" "$opam_switch/lib/vg"
+COPY --from=compilation "$opam_switch/lib/gg" "$opam_switch/lib/gg"
 
 # Fixes for ocamlfind
 COPY --from=compilation "$opam_switch/lib/findlib.conf" "$opam_switch/lib/"
 COPY --from=compilation "$opam_switch/lib/stdlib" "$opam_switch/lib/stdlib"
 ENV PATH="${opam_switch}/bin:${PATH}"
 ENV OCAMLPATH="/usr/lib"
+RUN ln -sf "$opam_switch/lib/vg" "/usr/lib"
+RUN ln -sf "$opam_switch/lib/gg" "/usr/lib"
 
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
