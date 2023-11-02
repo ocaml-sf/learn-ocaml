@@ -1762,7 +1762,7 @@ module Make
         if dups then sample else
           let prev = Hashtbl.create max_size in
           let rec sample_new steps =
-            if steps = 0 then invalid_arg "sample_array" else
+            if steps = 0 then sample () else
               let s = sample () in
               try Hashtbl.find prev s ; sample_new (steps - 1)
               with Not_found -> Hashtbl.add prev s () ; s in

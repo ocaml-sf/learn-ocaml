@@ -466,7 +466,9 @@ module type S = sig
        sorted.
 
      If [~dups:false] ([true] by default), all elements of generated
-       array are unique.*)
+       arrays are unique, or at least try hard to be in a reasonable time:
+       if the codomain of [sampler] is too small there might still be
+       duplicates.*)
     val sample_array :
       ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool
       -> 'a sampler
