@@ -36,8 +36,15 @@
 )
 
 (library
+ (name learnocaml_token_index)
+ (wrapped false)
+ (modules Learnocaml_token_index)
+ (libraries lwt lwt.unix lwt_utils learnocaml_api learnocaml_data cryptokit safepass irmin irmin-git irmin-git.unix)
+)
+
+(library
  (name learnocaml_store)
  (wrapped false)
  (modules Learnocaml_store)
- (libraries lwt_utils learnocaml_api)
+ (libraries learnocaml_token_index lwt_utils learnocaml_api)
 )

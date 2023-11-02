@@ -8,6 +8,7 @@
 
 open Lwt.Infix
 open Learnocaml_data
+open Learnocaml_token_index
 
 module J = Json_encoding
 
@@ -340,7 +341,7 @@ module Token = struct
       | Unix.Unix_error (Unix.EEXIST, _, _) -> aux ()
       | e -> Lwt.fail e
     in
-    aux ()
+    aux () >>= fun t -> TokenIndex.add_token !sync_dir t >|= fun _ -> t
 
   let register ?(allow_teacher=false) token =
     if not allow_teacher && is_teacher token then
@@ -384,32 +385,7 @@ module Token = struct
 
     let enc = J.(list enc)
 
-    let get () =
-      let base = !sync_dir in
-      let ( / ) dir f = if dir = "" then f else Filename.concat dir f in
-      let rec scan f d acc =
-        let rec aux s acc =
-          Lwt.catch (fun () ->
-              Lwt_stream.get s >>= function
-              | Some ("." | "..") -> aux s acc
-              | Some x -> scan f (d / x) acc >>= aux s
-              | None -> Lwt.return acc)
-          @@ function
-          | Unix.Unix_error (Unix.ENOTDIR, _, _) -> f d acc
-          | Unix.Unix_error _ -> Lwt.return acc
-          | e -> Lwt.fail e
-        in
-        aux (Lwt_unix.files_of_directory (base / d)) acc
-      in
-      scan (fun d acc ->
-          let d =
-            if Filename.basename d = "save.json" then Filename.dirname d
-            else d
-          in
-          let stok = String.map (function '/' | '\\' -> '-' | c -> c) d in
-          try Lwt.return (Token.parse stok :: acc)
-          with Failure _ -> Lwt.return acc
-        ) "" []
+    let get () = TokenIndex.get_tokens !sync_dir
 
   end
 
