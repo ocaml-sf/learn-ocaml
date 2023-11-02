@@ -1,0 +1,85 @@
+name: OPAM Publish
+# See also release.yml
+# and https://docs.github.com/en/actions/using-workflows/reusing-workflows#creating-a-reusable-workflow
+on:
+  workflow_call:
+    inputs:
+      release:
+        type: string
+        # not boolean
+        # see also https://github.com/actions/runner/issues/1483#issuecomment-1372133232
+        required: false
+        default: "false"
+      tag_name:
+        type: string
+        required: true
+        default: "v0.1.0"
+      body:
+        type: string
+        required: true
+        default: "## 0.1.0"
+    secrets:
+      OPAM_RELEASE:
+        required: true
+        # = proofbot.token with scopes repo,workflow
+
+jobs:
+  opam-release:
+    name: Publish to opam registry
+    env:
+      # Note: Update if need be
+      source_repo: "ocaml-sf/learn-ocaml"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Prepare target package repository
+        id: prep
+        run: |
+          # Test inputs.release
+          if [ "${{ inputs.release }}" = 'true' ]; then
+            echo "opam_repo=ocaml/opam-repository" >> "$GITHUB_OUTPUT"
+            echo "release mode: target ocaml/opam-repository"
+          else
+            # Note: Update if need be
+            echo "opam_repo=erikmd/opam-repository" >> "$GITHUB_OUTPUT"
+            echo "dry-run mode: target erikmd/opam-repository"
+          fi
+      - name: Setup bot user
+        run: |
+          # Note: Update if need be
+          git config --global user.email "37002148+proofbot@users.noreply.github.com"
+          git config --global user.name "Learn-OCaml Bot"
+      # Some hacks to make sure opam doesn't pull the repo in a way we can't deal with
+      - name: Setup opam repository and token
+        env:
+          var_opam_repo: ${{ steps.prep.outputs.opam_repo }}
+        run: |
+          mkdir -v -p ~/.opam/plugins/opam-publish/repos/
+          git clone https://github.com/$var_opam_repo ~/.opam/plugins/opam-publish/repos/${var_opam_repo/\//%}
+          cd ~/.opam/plugins/opam-publish/repos/${var_opam_repo/\//%}
+          git remote add user https://github.com/proofbot/opam-repository
+          git config --global credential.helper 'store --file ~/.git-credentials'
+          # See also https://stackoverflow.com/a/74841589/9164010
+          printf "host=github.com\nprotocol=https\nusername=proofbot\npassword=${{ secrets.OPAM_RELEASE }}" | git credential-store store
+          echo -n ${{ secrets.OPAM_RELEASE }} > ~/.opam/plugins/opam-publish/proofbot.token
+      - name: Generate CHANGES file
+        env:
+          CHANGES: ${{ inputs.body }}
+        run: |
+          printf "%s" "$CHANGES" > CHANGES.md
+      # TODO: Docker-based caching
+      - name: Setup OCaml
+        uses: avsm/setup-ocaml@v1
+        # TODO: Keep up-to-date!
+        with:
+          ocaml-version: 4.12.0
+      - name: Install opam-publish
+        run: |
+          opam install -y -j 2 "opam-publish>=2.3.0"
+      - name: Publish to opam
+        env:
+          var_opam_repo: ${{ steps.prep.outputs.opam_repo }}
+        run: |
+          export GIT_PAGER=cat
+          opam publish --no-browser --no-confirmation --msg-file=CHANGES.md --tag="${{ inputs.tag_name }}" --repo="$var_opam_repo" "$source_repo"
