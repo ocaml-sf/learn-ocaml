@@ -71,3 +71,5 @@ get the files for the second step, and so on and so forth.
 - Separating the grader code
 
 [Step 9 : Introspection of students code](tutorials/step-9.md)    
+
+[Step 10 : Create a trivial multiplce choice question exercise](tutorials/step-10.md)
