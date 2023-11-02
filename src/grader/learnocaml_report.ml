@@ -78,7 +78,7 @@ and item =
 
 and status =
   | Success of int | Penalty of int | Failure
-  | Warning | Informative | Important
+  | Warning | Informative | Important | Absent
 
 and text = inline list
 
@@ -100,7 +100,7 @@ let result items =
           | Success n -> (n, false)
           | Penalty n -> (-n, true)
           | Failure -> (0, true)
-          | Warning | Informative | Important -> (0, false) end
+          | Warning | Informative | Important | Absent -> (0, false) end
     | Section (_title, contents) ->
         do_report contents
     | SectionMin (_title, contents, min) ->
@@ -158,6 +158,7 @@ let enc =
                                             else Failure) ;
         case
           (string_enum [ "failure", Failure ;
+                         "absent", Absent ;
                          "warning", Warning ;
                          "informative", Informative ;
                          "important", Important ])
@@ -220,6 +221,7 @@ let format items =
           | Penalty n ->
               (-n, true), "warning", Some ("-" ^ string_of_int n ^ " pts")
           | Failure -> (0, true), "failure", Some "0 pt"
+          | Absent -> (0, false), "absent", None
           | Warning -> (0, false), "warning", None
           | Informative -> (0, false), "informative", None
           | Important -> (0, false), "important", None in
@@ -561,6 +563,7 @@ let print ppf items =
     | Section (text, contents) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@]@,%a@]" print_text text print_report contents
     | SectionMin (text, contents, min) -> Format.fprintf ppf "@[<v 2>@[<hv>%a@ %a@]@,%a@]" print_text text print_min min print_report contents
     | Message (text, Failure) -> Format.fprintf ppf [%if"@[<v 2>Failure: %a@]"] print_text text
+    | Message (text, Absent) -> Format.fprintf ppf [%if"@[<v 2>Absent: %a@]"] print_text text
     | Message (text, Warning) -> Format.fprintf ppf [%if"@[<v 2>Warning: %a@]"] print_text text
     | Message (text, Informative) -> Format.fprintf ppf "@[<v 2>%a@]" print_text text
     | Message (text, Important) -> Format.fprintf ppf [%if"@[<v 2>Important: %a@]"] print_text text
@@ -621,6 +624,8 @@ let success ~points ~message =
   Message (split_text message, Success points)
 let failure ~message =
   Message (split_text message, Failure)
+let absent ~message =
+  Message (split_text message, Absent)
 let message ~message =
   Message (split_text message, Informative)
 let info ~message =
