@@ -12,6 +12,7 @@ open Js_utils
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
+open Learnocaml_config
 
 module H = Tyxml_js.Html5
 module React = Lwt_react
@@ -35,7 +36,8 @@ let anon_id_map = ref Token.Map.empty
 let partition = ref None
 
 let open_tok tok =
-  let _win = window_open ("/student-view.html?token="^tok) "_blank" in
+  let _win = window_open (Learnocaml_config.api_server^"/student-view.html?token="^tok) "_blank"
+  in
   false
 
 let rec render_tree =

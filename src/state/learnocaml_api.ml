@@ -278,11 +278,13 @@ module Conversions (Json: JSON_CODEC) = struct
   let to_http_request
     : type resp. resp request -> http_request
     =
-    let get ?token path = {
+    let get ?(e_arg = []) ?token path = {
       meth = `GET;
       path;
-      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
-    } in
+      args = match token with
+               None-> []
+             |Some t -> [("token", Token.to_string t)] @ e_arg
+      } in
     let post ~token path body = {
       meth = `POST body;
       path;
@@ -369,8 +371,8 @@ module Conversions (Json: JSON_CODEC) = struct
              status)
 
     | Partition (token, eid, fid, prof) ->
-        get ~token
-          ["partition"; eid; fid; string_of_int prof]
+        get ~token ~e_arg:[("exercise_id", eid)]
+          ["partition"; fid; string_of_int prof]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -499,9 +501,12 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
-      | `GET, ["partition"; eid; fid; prof], Some token
-        when Token.is_teacher token ->
-          Partition (token, eid, fid, int_of_string prof) |> k
+      | `GET, ["partition"; fid; prof], Some token
+           when Token.is_teacher token ->
+         (match List.assoc_opt "exercise_id" request.args with
+           | None -> Invalid_request ("Exercise_id missing") |> k
+           | Some eid ->
+         Partition (token, eid, fid, int_of_string prof) |> k)
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
