@@ -73,54 +73,19 @@ jobs:
         run:
           hub release edit $(find artifacts/target -type f -printf "-a %p ") -m "" "${{ needs.release-please.outputs.tag_name }}"
 
-  opam-release:
+  call-opam-publish:
     needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created }}
-    name: Publish to opam registry
-    env:
-      # Can be changed for debugging
-      source_repo: "ocaml-sf/learn-ocaml"
-      opam_repo: "ocaml/opam-repository"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Setup bot user
-        run: |
-          git config --global user.email "37002148+proofbot@users.noreply.github.com"
-          git config --global user.name "Learn-OCaml Bot"
-      # Some hacks to make sure opam doesn't pull the repo in a way we can't deal with
-      - name: Setup opam repository
-        run: |
-          mkdir -v -p ~/.opam/plugins/opam-publish/repos/
-          git clone https://github.com/$opam_repo ~/.opam/plugins/opam-publish/repos/${opam_repo/\//%}
-          cd ~/.opam/plugins/opam-publish/repos/${opam_repo/\//%}
-          git remote add user https://${{ secrets.OPAM_RELEASE }}@github.com/proofbot/opam-repository
-      # Set up our token because opam doesn't support env var tokens
-      - name: Setup token
-        run: |
-          mkdir -p  ~/.opam/plugins/opam-publish/
-          echo -n ${{ secrets.OPAM_RELEASE }} > ~/.opam/plugins/opam-publish/proofbot.token
-      - name: Generate CHANGES file
-        env:
-          CHANGES: ${{ needs.release-please.outputs.body }}
-        run: |
-          printf "%s" "$CHANGES" > CHANGES.md
-      # TODO: Docker-based caching
-      - name: Setup OCaml
-        uses: avsm/setup-ocaml@v1
-        with:
-          ocaml-version: 4.12.0
-      - name: Install opam-publish
-        run: |
-          opam install -y -j 2 opam-publish
-      - name: Install expect
-        run: |
-          sudo apt-get update -y -q
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends expect
-      - name: Publish to opam
-        run: |
-          ./scripts/opam-publish.exp "${{ needs.release-please.outputs.tag_name }}" "$opam_repo" "$source_repo"
+    uses: ./.github/workflows/opam-publish.yml
+    with:
+      release: "true"
+      tag_name: ${{ needs.release-please.outputs.tag_name }}
+      body: |
+        Cc @erikmd @yurug @AltGr FYI
+        
+        ${{ needs.release-please.outputs.body }}
+    secrets:
+      OPAM_RELEASE: ${{ secrets.OPAM_RELEASE }}
 
   # Note: you may want to update the jobs below and deploy-master.yml at once
   push_server:
