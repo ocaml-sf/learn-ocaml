@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.16.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.15.0...v0.16.0) (2023-11-02)
+
+
+### Features
+
+* **UI:** add exercise sorting by focus skill ([4f9766b](https://github.com/ocaml-sf/learn-ocaml/commit/4f9766ba0db73eacaef8f02b9562cd01a0a37e27))
+* **UI:** Add possibility to choose exercise display order ([25780ba](https://github.com/ocaml-sf/learn-ocaml/commit/25780ba2ff2bbe50d7ad74d9ac6fb3097759ed03))
+* **UI:** Rework of the exercise index ([91f827b](https://github.com/ocaml-sf/learn-ocaml/commit/91f827b3b78b4466093da781d627db3979d11943))
+
+
+### Bug Fixes
+
+* **teacher_tab:** Display (Open/Close)GloballyInconsistent exos and fix them ([10c9fc3](https://github.com/ocaml-sf/learn-ocaml/commit/10c9fc30e391036b0847e7d4ff2bc88e2be25e55))
+* **teacher_tab:** partly fix Open/Close handling w.r.t. Assignments ([6c41457](https://github.com/ocaml-sf/learn-ocaml/commit/6c414578a70c5529387f7cb3266b9ea1e85cc97d)), closes [#534](https://github.com/ocaml-sf/learn-ocaml/issues/534) [#558](https://github.com/ocaml-sf/learn-ocaml/issues/558)
+* **translations:** Add missing fr.po.header ([f7ffc6f](https://github.com/ocaml-sf/learn-ocaml/commit/f7ffc6fd14c7a4618aba940cdb0003d24150083d)), closes [#555](https://github.com/ocaml-sf/learn-ocaml/issues/555)
+* update_exercise_assignments's handling of Closed/Open status ([49d82e4](https://github.com/ocaml-sf/learn-ocaml/commit/49d82e49c900000c9e04da845f1f47579f974332)), closes [#558](https://github.com/ocaml-sf/learn-ocaml/issues/558)
+
+
+### Code Refactoring
+
+* **Learnocaml_teacher_tab:** Move critical code apart in update_exercise_assignments ([bf6a931](https://github.com/ocaml-sf/learn-ocaml/commit/bf6a931f122d41e8d6afb0a59ecc4a96a30d9b1a))
+* **translations:** gettext: Use CLI option `--no-wrap` ([ea4f2bc](https://github.com/ocaml-sf/learn-ocaml/commit/ea4f2bc3538ba1efaca3e388ab7fc5e65821081b))
+
+
+### Dependencies
+
+* **opam:** learn-ocaml 0.x does not build with asak 0.4 ([#570](https://github.com/ocaml-sf/learn-ocaml/issues/570)) ([9176975](https://github.com/ocaml-sf/learn-ocaml/commit/9176975ab1df493ab0cecab8711223e1a692ab76))
+
+
+### Tests
+
+* Add ppx_expect tests for update_exercise_assignments ([c18da2a](https://github.com/ocaml-sf/learn-ocaml/commit/c18da2a89a88ebfdbed512f4dc813c63c0648d73))
+* **Learnocaml_data:** Add support for ppx_expect & ppx_inline_test ([3a0ceb4](https://github.com/ocaml-sf/learn-ocaml/commit/3a0ceb469d9f60979d15a889454fd2965c7fa72f))
+* Refactor ppx_expect tests to display more details in the trace ([569d536](https://github.com/ocaml-sf/learn-ocaml/commit/569d536d8ed5889bafa8bd88fa8d21b89f60810e))
+
+
+### CI/CD
+
+* ***.yml:** Move opam-publish in a separate workflow to enable testing ([#571](https://github.com/ocaml-sf/learn-ocaml/issues/571)) ([b84132e](https://github.com/ocaml-sf/learn-ocaml/commit/b84132ee7328fdf132743a17722c5e26b391b2e7))
+
+
+### Documentation
+
+* **opam:** Cite Louis Gesbert in the Learn-OCaml maintainers team ([c9a833b](https://github.com/ocaml-sf/learn-ocaml/commit/c9a833be624b8bda7d2f4a310ccf832fc10cae7f))
+
 ## [0.15.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.1...v0.15.0) (2023-08-23)
 
 
