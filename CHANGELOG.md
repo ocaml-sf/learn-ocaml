@@ -5,9 +5,9 @@
 
 ### Features
 
-* **UI:** add exercise sorting by focus skill ([4f9766b](https://github.com/ocaml-sf/learn-ocaml/commit/4f9766ba0db73eacaef8f02b9562cd01a0a37e27))
-* **UI:** Rework of the exercise index ([91f827b](https://github.com/ocaml-sf/learn-ocaml/commit/91f827b3b78b4466093da781d627db3979d11943))
 * **UI:** Add possibility to choose exercise display order ([25780ba](https://github.com/ocaml-sf/learn-ocaml/commit/25780ba2ff2bbe50d7ad74d9ac6fb3097759ed03))
+* **UI:** Rework of the exercise index ([91f827b](https://github.com/ocaml-sf/learn-ocaml/commit/91f827b3b78b4466093da781d627db3979d11943))
+* **UI:** Add exercise sorting by focus skill ([4f9766b](https://github.com/ocaml-sf/learn-ocaml/commit/4f9766ba0db73eacaef8f02b9562cd01a0a37e27))
 
 
 ### Bug Fixes
@@ -29,21 +29,11 @@
 * **opam:** learn-ocaml 0.x does not build with asak 0.4 ([#570](https://github.com/ocaml-sf/learn-ocaml/issues/570)) ([9176975](https://github.com/ocaml-sf/learn-ocaml/commit/9176975ab1df493ab0cecab8711223e1a692ab76))
 
 
-### Dependencies
-
-* **opam:** learn-ocaml 0.x does not build with asak 0.4 ([#570](https://github.com/ocaml-sf/learn-ocaml/issues/570)) ([9176975](https://github.com/ocaml-sf/learn-ocaml/commit/9176975ab1df493ab0cecab8711223e1a692ab76))
-
-
 ### Tests
 
 * **Learnocaml_data:** Add support for ppx_expect & ppx_inline_test ([3a0ceb4](https://github.com/ocaml-sf/learn-ocaml/commit/3a0ceb469d9f60979d15a889454fd2965c7fa72f))
 * **Learnocaml_data:** Add ppx_expect tests for update_exercise_assignments ([c18da2a](https://github.com/ocaml-sf/learn-ocaml/commit/c18da2a89a88ebfdbed512f4dc813c63c0648d73))
 * **Learnocaml_data:** Refactor ppx_expect tests to display more details in the trace ([569d536](https://github.com/ocaml-sf/learn-ocaml/commit/569d536d8ed5889bafa8bd88fa8d21b89f60810e))
-
-
-### CI/CD
-
-* ***.yml:** Move opam-publish in a separate workflow to enable testing ([#571](https://github.com/ocaml-sf/learn-ocaml/issues/571)) ([b84132e](https://github.com/ocaml-sf/learn-ocaml/commit/b84132ee7328fdf132743a17722c5e26b391b2e7))
 
 
 ### CI/CD
