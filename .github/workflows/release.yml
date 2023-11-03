@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        # Mandatory step (otherwise, hub raises "fatal: Not a git repository")
+        # Mandatory step (otherwise, gh could raise "fatal: Not a git repository")
         uses: actions/checkout@v3
       - name: Download workflow artifacts
         # cf. https://github.com/actions/download-artifact/issues/3
@@ -71,7 +71,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run:
-          hub release edit $(find artifacts/target -type f -printf "-a %p ") -m "" "${{ needs.release-please.outputs.tag_name }}"
+          gh release -R ocaml-sf/learn-ocaml upload "${{ needs.release-please.outputs.tag_name }}" $(find artifacts/target -type f -printf "%p ")
 
   call-opam-publish:
     needs: [release-please]
