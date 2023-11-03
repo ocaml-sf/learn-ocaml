@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -109,7 +109,8 @@ type _ request =
   | Exercise_index:
       'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
-      'a token option * string -> (Exercise.Meta.t * Exercise.t * float option) request
+      'a token option * string * bool ->
+      (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index:
       unit -> (string * string) list request

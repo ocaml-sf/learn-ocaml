@@ -1,45 +1,42 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-exception Internal_error of string * Toploop_ext.error
-exception User_code_error of Toploop_ext.error
-exception Invalid_grader
+(* Define a non-extensible type to allow marshalling *)
+type error =
+  | Internal_error of string * Toploop_ext.error
+  | User_code_error of Toploop_ext.error
+  | Invalid_grader
 
-let string_of_exn = function
+exception Grading_error of error
+
+let string_of_err = function
   | Internal_error (msg, error) ->
-      let msg =
-        Format.asprintf [%if"Exercise definition error %s:\n%a\n%!"]
-          msg Location.print_report (Toploop_results.to_error error)
-      in
-      Some  msg
+      Format.asprintf [%if"Exercise definition error %s:\n%a\n%!"]
+        msg Location.print_report (Toploop_results.to_error error)
   | User_code_error error ->
-      let msg =
-        Format.asprintf [%if"Error in user code:\n\n%a\n%!"]
-          Location.print_report (Toploop_results.to_error error)
-      in
-      Some msg
-  | _ -> None
+      Format.asprintf [%if"Error in user code:\n\n%a\n%!"]
+        Location.print_report (Toploop_results.to_error error)
+  | Invalid_grader ->
+      [%i"The grader is invalid"]
 
 let () =
-  Location.register_error_of_exn (fun exn ->
-      match string_of_exn exn with
-      | Some msg -> Some (Location.error msg)
-      | None -> None)
-
+  Location.register_error_of_exn (function
+      | Grading_error e -> Some (Location.error (string_of_err e))
+      | _ -> None)
 
 let internal_error name err =
-  raise (Internal_error (name, err))
+  raise (Grading_error (Internal_error (name, err)))
 
 let user_code_error err =
-  raise (User_code_error err)
+  raise (Grading_error (User_code_error err))
 
 let get_grade
-    ?callback ?timeout ?(dirname="") ~divert
+    ?callback ?timeout ?(dirname="") ~divert ~load_code
     (exo : Learnocaml_exercise.t) code =
 
   let file f = String.concat Filename.dir_sep [dirname; f] in
@@ -93,115 +90,118 @@ let get_grade
         fail err in
 
   let result = try
-      handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer
-        {|let print_html _ = assert false|};
-
-      set_progress [%i"Loading the prelude."] ;
-      handle_error (internal_error [%i"while loading the prelude"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prelude.ml")
-        (Learnocaml_exercise.(decipher File.prelude exo)) ;
+      let saved_toplevel_state = Symtable.current_state () in
+      let () =
+        (* Prelude/Prepare might use these callbacks, but they shouldn't appear
+           in the solutions: provide dummy implementations here *)
+        Toploop_ext.load_cmi_from_string
+          OCamlRes.(Res.find (Path.of_string "learnocaml_callback.cmi") Embedded_grading_lib.root) ;
+        let module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS = struct
+          let print_html s = output_string stdout s
+          let print_svg s = output_string stdout s
+        end in
+        Toploop_ext.inject_global "Learnocaml_callback"
+          (Obj.repr (module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS));
+      in
+      let () =
+        let module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL = struct
+          let install_printer = Toploop_ext.install_printer
+          exception Undefined
+        end in
+        Toploop_ext.inject_global "Learnocaml_internal"
+          (Obj.repr (module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL))
+      in
 
       set_progress [%i"Preparing the test environment."] ;
+      Toploop_ext.load_cmi_from_string (Learnocaml_exercise.(decipher File.prelude_cmi exo)) ;
+      Toploop_ext.load_cmi_from_string (Learnocaml_exercise.(decipher File.prepare_cmi exo)) ;
+
       handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "prepare.ml")
-        (Learnocaml_exercise.(decipher File.prepare exo)) ;
+      load_code Learnocaml_exercise.{
+          cma = decipher File.exercise_cma exo ;
+          js = decipher File.exercise_js exo ;
+        };
+
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome ~ppf_answer
+        {|include Prelude|};
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|module Prelude = struct end|};
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|include Prepare|};
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer
+        {|module Prepare = struct end|};
 
       set_progress [%i"Loading your code."] ;
       handle_error user_code_error @@
       Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Code"
         ~filename:(file "solution.ml") code ;
 
-      set_progress [%i"Loading the solution."] ;
-      handle_error (internal_error [%i"while loading the solution"]) @@
-      Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname:"Solution"
-        (Learnocaml_exercise.(decipher File.solution exo)) ;
+      Toploop_ext.load_cmi_from_string (Learnocaml_exercise.(decipher File.solution_cmi exo)) ;
 
       set_progress [%i"Preparing to launch the tests."] ;
-      Introspection.allow_introspection ~divert ;
-      Introspection.insert_mod_ast_in_env ~var_name: "code_ast" code ;
-      let get_result =
-        Introspection.create_ref "results"
-          [%ty: Learnocaml_report.t option]
-          None in
-      Introspection.register_callback "set_progress"
-        [%ty: string]
-        set_progress ;
-      Introspection.insert_in_env "timeout" [%ty: int option] timeout ;
-      handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer
-        "module Test_lib = Test_lib.Make(struct\n\
-        \  let results = results\n\
-        \  let set_progress = set_progress\n\
-        \  let timeout = timeout\n\
-        \  module Introspection = Introspection\n\
-         end)" ;
-      handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer
-        "module Report = Learnocaml_report" ;
-      (* The following 3 lines are just a workaround for issue #457 *)
-      handle_error (internal_error [%i"while preparing the tests"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer
-        "module Introspection = Introspection" ;
-      set_progress [%i"Launching the test bench."] ;
-
-      let () =
-        let open Learnocaml_exercise in
-        let files = File.dependencies (access File.depend exo) in
-        let rec load_dependencies signatures = function
-        | [] -> () (* signatures without implementation are ignored *)
-        | file::fs ->
-          let path = File.key file
-          and content = decipher file exo in
-          let modname = String.capitalize_ascii @@
-                        Filename.remove_extension @@ Filename.basename path in
-          match Filename.extension path with
-          | ".mli" -> load_dependencies ((modname,content) :: signatures) fs
-          | ".ml" -> 
-            let included,content = 
-              (* the first line of an .ml file can contain an annotation       *)
-              (* [@@@included] which denotes that this file has to be included *)
-              (* directly in the toplevel environment, and not in an module.   *)
-              match String.index_opt content '\n' with
-              | None -> (false,content)
-              | Some i -> 
-                (match String.trim (String.sub content 0 i) with 
-                 | "[@@@included]" -> 
-                    let content' = String.sub content i @@ 
-                                   (String.length content - i)
-                    in (true,content')
-                 | _ -> (false,content))
-            in
-            (handle_error (internal_error [%i"while loading user dependencies"]) @@
-             match included with
-             | true -> Toploop_ext.use_string ~print_outcome ~ppf_answer 
-                                  ~filename:(Filename.basename path) content 
-             | false ->
-               let use_mod = 
-                 Toploop_ext.use_mod_string ~print_outcome ~ppf_answer ~modname in
-               match List.assoc_opt modname signatures with 
-               | Some sig_code -> use_mod ~sig_code content
-               | None -> use_mod content); 
-               load_dependencies signatures fs
-          | _ -> failwith ("uninterpreted dependency \"" ^ path ^
-                           "\", file extension expected : .ml or .mli") in 
-          load_dependencies [] files
+      let module Intro_inner =
+        (val Introspection.allow_introspection ~divert)
       in
-
+      let code_ast = Introspection.get_mod_ast ~var_name:"code_ast" code in
+      let results: Learnocaml_report.t option ref = ref None in
+      let get_result () = !results in
+      let () =
+        let module Pre_test: Introspection_intf.PRE_TEST = struct
+          module Introspection = Intro_inner
+          let code_ast = code_ast
+          let results = results
+          let set_progress = set_progress
+          let timeout = timeout
+        end in
+        (* Hack: register Pre_test as a compilation unit usable by the compiled
+           modules loaded later-on *)
+        Toploop_ext.inject_global "Pre_test"
+          (Obj.repr (module Pre_test: Introspection_intf.PRE_TEST));
+      in
+      Toploop_ext.load_cmi_from_string
+        OCamlRes.(Res.find (Path.of_string "test_lib.cmi")
+                    Embedded_grading_lib.root) ;
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      load_code
+        { Learnocaml_exercise.
+          cma = OCamlRes.(Res.find (Path.of_string "testing_dyn.cma")
+                            Embedded_grading_lib.root) ;
+          js = OCamlRes.(Res.find (Path.of_string "testing_dyn.js")
+                           Embedded_grading_lib.root) };
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Test_lib.Open_me|};
+      (* Registering the samplers that may be defined in [test.ml] requires
+         having their types and the definitions of the types they sample, hence
+         the need for an opened [test_cmi]*)
+      Toploop_ext.load_cmi_from_string (Learnocaml_exercise.(decipher File.test_cmi exo)) ;
+      handle_error (internal_error [%i"while preparing the tests"]) @@
+      Toploop_ext.use_string ~print_outcome:false ~ppf_answer {|open! Test|};
       handle_error (internal_error [%i"while testing your solution"]) @@
-      Toploop_ext.use_string ~print_outcome ~ppf_answer ~filename:(file "test.ml")
-        (Learnocaml_exercise.(decipher File.test exo)) ;
+      load_code Learnocaml_exercise.{
+          cma = decipher File.test_cma exo ;
+          js = decipher File.test_js exo ;
+        };
 
       (* Memory cleanup... *)
       Toploop.initialize_toplevel_env () ;
-      (* TODO: Also clear the object table, once the OCaml's Toploop allows to. *)
+      Symtable.restore_state saved_toplevel_state;
+      (* TODO: Also clear the object table, once the OCaml's Toploop allows to.
+         Toploop.toplevel_value_bindings := String.Map.empty; (* not exported :( *)
+         here we run in a forked sub-process then exit as a workaround *)
       !flush_stderr () ;
       !flush_stdout () ;
       match get_result () with
       | Some report -> Ok report
       | None -> Error Invalid_grader
-    with exn ->
-      Error exn in
+    with
+    | Grading_error err -> Error err
+    | e -> Error (Internal_error (Printexc.to_string e,
+                                  ((Location.none, ""),[])))
+ in
   Format.fprintf ppf_answer "@." ;
   (result,
    Buffer.contents stdout_buffer,

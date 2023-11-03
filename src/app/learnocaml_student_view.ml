@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -515,7 +515,7 @@ let () =
     | None -> ()
     | Some ex_id ->
         Lwt.async @@ fun () ->
-        retrieve (Learnocaml_api.Exercise (Some teacher_token, ex_id))
+        retrieve (Learnocaml_api.Exercise (Some teacher_token, ex_id, true))
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in

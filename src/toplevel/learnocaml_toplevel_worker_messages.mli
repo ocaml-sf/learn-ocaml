@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -15,11 +15,13 @@ type _ host_msg =
   | Reset : unit host_msg
   | Execute : int option * bool * int * string -> bool host_msg
   | Use_string : string option * bool * int * string -> bool host_msg
+  | Use_compiled_string : int * string -> bool host_msg
   | Use_mod_string : int * bool * string * string option * string -> bool host_msg
   | Set_debug : bool -> unit host_msg
   | Register_callback : string * int -> unit host_msg
   | Set_checking_environment : unit host_msg
   | Check : string -> unit host_msg
+  | Load_cmi_from_string : string -> unit host_msg
 
 type _ msg_ty =
   | Unit : unit msg_ty

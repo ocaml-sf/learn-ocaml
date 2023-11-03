@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -70,3 +70,26 @@ let stop_channel_redirection ({ target_fd ; read_fd ; backup_fd ; _ } as redirec
 
 let initialize () =
   Toploop.initialize_toplevel_env ()
+
+let use_compiled_string code =
+  let cma = Filename.temp_file "learnocaml-file" ".cma" in
+  let r =
+    try
+      let oc = open_out_bin cma in
+      output_string oc code;
+      close_out oc;
+      Topdirs.load_file Format.std_formatter cma
+    with
+    | Symtable.Error e ->
+        Format.kasprintf (fun msg -> Sys.remove cma; failwith msg)
+          "%a"
+          Symtable.report_error e
+    | exn ->
+        Sys.remove cma;
+        raise exn
+  in
+  Sys.remove cma;
+  Toploop_ext.register_pending_printers ();
+  flush_all ();
+  if r then ()
+  else failwith "Failed to load compiled code"

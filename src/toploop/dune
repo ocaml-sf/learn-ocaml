@@ -28,6 +28,6 @@
  (name toploop_unix)
  (wrapped false)
  (modes byte)
- (libraries lwt.unix toploop)
+ (libraries toploop dynlink)
  (modules Toploop_unix)
 )

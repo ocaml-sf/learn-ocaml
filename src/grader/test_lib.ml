@@ -1,461 +1,15 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-module type S = sig
-
-  val set_result : Learnocaml_report.t -> unit
-
-  type nonrec 'a result = ('a, exn) result
-
-  (*----------------------------------------------------------------------------*)
-
-  module Ast_checker : sig
-    type 'a ast_checker =
-      ?on_expression: (Parsetree.expression -> Learnocaml_report.t) ->
-      ?on_pattern: (Parsetree.pattern -> Learnocaml_report.t) ->
-      ?on_structure_item: (Parsetree.structure_item -> Learnocaml_report.t) ->
-      ?on_external: (Parsetree.value_description -> Learnocaml_report.t) ->
-      ?on_include: (Parsetree.include_declaration -> Learnocaml_report.t) ->
-      ?on_open: (Parsetree.open_declaration -> Learnocaml_report.t) ->
-      ?on_module_occurence: (string -> Learnocaml_report.t) ->
-      ?on_variable_occurence: (string -> Learnocaml_report.t) ->
-      ?on_function_call: ((Parsetree.expression * (string * Parsetree.expression) list) -> Learnocaml_report.t) ->
-      'a -> Learnocaml_report.t
-
-    val ast_check_expr : Parsetree.expression ast_checker
-    val ast_check_structure : Parsetree.structure ast_checker
-
-    val find_binding : Parsetree.structure -> string -> (Parsetree.expression -> Learnocaml_report.t) -> Learnocaml_report.t
-
-    val forbid : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-    val restrict : string -> ('a -> string) -> 'a list -> ('a -> Learnocaml_report.t)
-    val require : string -> ('a -> string) -> 'a -> ('a -> Learnocaml_report.t)
-
-    val forbid_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-    val restrict_expr : string -> Parsetree.expression list -> (Parsetree.expression -> Learnocaml_report.t)
-    val require_expr : string -> Parsetree.expression -> (Parsetree.expression -> Learnocaml_report.t)
-    val forbid_syntax : string -> (_ -> Learnocaml_report.t)
-    val require_syntax : string -> (_ -> Learnocaml_report.t)
-
-    val ast_sanity_check : ?modules: string list -> Parsetree.structure -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
-
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  type 'a tester =
-    'a Ty.ty -> 'a result -> 'a result -> Learnocaml_report.t
-
-  type io_tester =
-    string -> string -> Learnocaml_report.t
-
-  type io_postcond =
-    string -> Learnocaml_report.t
-
-  exception Timeout of int
-
-  (*----------------------------------------------------------------------------*)
-
-  module Tester : sig
-
-    val test : 'a tester
-    val test_ignore : 'a tester
-    val test_eq : ('a result -> 'a result -> bool) -> 'a tester
-    val test_eq_ok : ('a -> 'a -> bool) -> 'a tester
-    val test_eq_exn : (exn -> exn -> bool) -> 'a tester
-    val test_canon : ('a result -> 'a result) -> 'a tester
-    val test_canon_ok : ('a -> 'a) -> 'a tester
-    val test_canon_error : (exn -> exn) -> 'a tester
-    val test_translate : ('a -> 'b) -> 'b tester -> 'b Ty.ty -> 'a tester
-
-    val io_test_ignore : io_tester
-    val io_test_equals :
-      ?trim: char list -> ?drop: char list -> io_tester
-    val io_test_lines :
-      ?trim: char list -> ?drop: char list ->
-      ?skip_empty: bool -> ?test_line: io_tester -> io_tester
-    val io_test_items :
-      ?split: char list -> ?trim: char list -> ?drop: char list ->
-      ?skip_empty: bool -> ?test_item: io_tester -> io_tester
-
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  module Mutation : sig
-
-    type 'arg arg_mutation_test_callbacks =
-      { before_reference : 'arg -> unit ;
-        before_user : 'arg -> unit ;
-        test : 'ret. ?test_result: 'ret tester -> 'ret tester }
-
-    val arg_mutation_test_callbacks:
-      ?test: 'a tester -> dup: ('a -> 'a) -> blit:('a -> 'a -> unit) -> 'a Ty.ty ->
-      'a arg_mutation_test_callbacks
-
-    val array_arg_mutation_test_callbacks:
-      ?test: 'a array tester -> 'a array Ty.ty ->
-      'a array arg_mutation_test_callbacks
-
-    val ref_arg_mutation_test_callbacks:
-      ?test: 'a ref tester -> 'a ref Ty.ty ->
-      'a ref arg_mutation_test_callbacks
-
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  module Sampler : sig
-    type 'a sampler = unit -> 'a
-    val sample_int : int sampler
-    val sample_float : float sampler
-    val sample_string : string sampler
-    val sample_char : char sampler
-    val sample_bool : bool sampler
-    val sample_list : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a list sampler
-    val sample_array : ?min_size: int -> ?max_size: int -> ?dups: bool -> ?sorted: bool -> 'a sampler -> 'a array sampler
-    val sample_pair : 'a sampler -> 'b sampler -> ('a * 'b) sampler
-    val sample_alternatively : 'a sampler list -> 'a sampler
-    val sample_cases : 'a list -> 'a sampler
-    val sample_option : 'a sampler -> 'a option sampler
-
-    val printable_fun : string -> (_ -> _ as 'f) -> 'f
-  end
-
-(*----------------------------------------------------------------------------*)
-
-  module Test_functions_ref_var : sig
-
-    val test_ref :
-      'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.t
-
-    val test_variable :
-      'a Ty.ty -> string -> 'a -> Learnocaml_report.t
-
-    val test_variable_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
-
-    val test_variable_against_solution :
-      'a Ty.ty -> string -> Learnocaml_report.t
-
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  module Test_functions_types : sig
-    val compatible_type : expected:string -> string -> Learnocaml_report.t
-
-    val existing_type : ?score:int -> string -> bool * Learnocaml_report.t
-
-    val abstract_type : ?allow_private:bool -> ?score:int -> string -> bool * Learnocaml_report.t
-
-    val test_student_code : 'a Ty.ty -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
-
-    val test_module_property :
-      'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  module Test_functions_function : sig
-
-    val test_function_1 :
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b) Ty.ty -> string -> ('a * 'b * string * string) list -> Learnocaml_report.t
-
-    val test_function_1_against :
-      ?gen: int ->
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> ('a -> 'b) -> 'a list -> Learnocaml_report.t
-
-    val test_function_1_against_solution :
-      ?gen: int ->
-      ?test: 'b tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> ('b * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
-
-    val test_function_1_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> unit) ->
-      ?before_user : ('a -> unit) ->
-      ?after : ('a -> ('b * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a) ->
-      ('a -> 'b Ty.ty -> 'b result -> Learnocaml_report.t) ->
-      ('a -> 'b) Ty.ty -> string -> 'a list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
-
-    val test_function_2 :
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b * 'c * string * string) list -> Learnocaml_report.t
-
-    val test_function_2_against :
-      ?gen: int ->
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a -> 'b -> 'c) -> ('a * 'b) list -> Learnocaml_report.t
-
-    val test_function_2_against_solution :
-      ?gen: int ->
-      ?test: 'c tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> ('c * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
-
-    val test_function_2_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> unit) ->
-      ?before_user : ('a -> 'b -> unit) ->
-      ?after : ('a -> 'b -> ('c * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b) ->
-      ('a -> 'b -> 'c Ty.ty -> 'c result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c) Ty.ty -> string -> ('a * 'b) list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
-
-    val test_function_3 :
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c * 'd * string * string) list -> Learnocaml_report.t
-
-    val test_function_3_against :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd) -> ('a * 'b * 'c) list -> Learnocaml_report.t
-
-    val test_function_3_against_solution :
-      ?gen: int ->
-      ?test: 'd tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
-
-    val test_function_3_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> 'c -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> unit) ->
-      ?after : ('a -> 'b -> 'c -> ('d * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c) ->
-      ('a -> 'b -> 'c -> 'd Ty.ty -> 'd result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd) Ty.ty -> string -> ('a * 'b * 'c) list -> Learnocaml_report.t
-
-    (*----------------------------------------------------------------------------*)
-
-    val test_function_4 :
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd * 'e * string * string) list -> Learnocaml_report.t
-
-    val test_function_4_against :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a -> 'b -> 'c -> 'd -> 'e)
-      -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-
-    val test_function_4_against_solution :
-      ?gen: int ->
-      ?test: 'e tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-
-    val test_function_4_against_postcond :
-      ?gen: int ->
-      ?test_stdout: io_postcond ->
-      ?test_stderr: io_postcond ->
-      ?before_reference : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?before_user : ('a -> 'b -> 'c -> 'd -> unit) ->
-      ?after : ('a -> 'b -> 'c -> 'd -> ('e * string * string) -> Learnocaml_report.t) ->
-      ?sampler : (unit -> 'a * 'b * 'c * 'd) ->
-      ('a -> 'b -> 'c -> 'd -> 'e Ty.ty -> 'e result -> Learnocaml_report.t) ->
-      ('a -> 'b -> 'c -> 'd -> 'e) Ty.ty -> string -> ('a * 'b * 'c * 'd) list -> Learnocaml_report.t
-
-  end
-
-  (*----------------------------------------------------------------------------*)
-
-  module Test_functions_generic : sig
-
-    val run_timeout : ?time:int -> (unit -> 'a) -> 'a
-
-    val exec : (unit -> 'a) -> ('a * string * string) result
-
-    val result : (unit -> 'a) -> 'a result
-
-    (*----------------------------------------------------------------------------*)
-
-    include (module type of Fun_ty
-                            with type ('a, 'b, 'c) args = ('a, 'b, 'c) Fun_ty.args
-                            and type ('a, 'b, 'c) fun_ty = ('a, 'b, 'c) Fun_ty.fun_ty)
-
-    val ty_of_prot :
-      (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty -> ('ar -> 'row) Ty.ty
-    [@@ocaml.deprecated "Use ty_of_fun_ty instead."]
-
-    type 'a lookup = unit -> [ `Found of string * Learnocaml_report.t * 'a | `Unbound of string * Learnocaml_report.t ]
-
-    val lookup : 'a Ty.ty -> ?display_name: string -> string -> 'a lookup
-    val lookup_student : 'a Ty.ty -> string -> 'a lookup
-    val lookup_solution : 'a Ty.ty -> string -> 'a lookup
-    val found : string -> 'a -> 'a lookup
-    val name : 'a lookup -> string
-
-    val test_value : 'a lookup -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
-
-    val test_function :
-      ?test: 'ret tester ->
-      ?test_stdout: io_tester ->
-      ?test_stderr: io_tester ->
-      ?before :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-       unit) ->
-    ?after :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-       ('ret * string * string) ->
-       ('ret * string * string) ->
-       Learnocaml_report.t) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-    ('ar -> 'row) lookup ->
-    (('ar -> 'row, 'ar -> 'urow, 'ret) args * (unit -> 'ret)) list ->
-    Learnocaml_report.t
-
-  val test_function_against :
-    ?gen: int ->
-    ?test: 'ret tester ->
-    ?test_stdout: io_tester ->
-    ?test_stderr: io_tester ->
-    ?before_reference :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-    ?before_user :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-    ?after :
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-       ('ret * string * string) ->
-       ('ret * string * string) ->
-       Learnocaml_report.t) ->
-    ?sampler:
-      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-    ('ar -> 'row) lookup -> ('ar -> 'row) lookup ->
-    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
-    Learnocaml_report.t
-
-  val test_function_against_solution :
-    ?gen:int ->
-    ?test: 'ret tester ->
-    ?test_stdout: io_tester ->
-    ?test_stderr: io_tester ->
-    ?before_reference:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-    ?before_user:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args -> unit) ->
-    ?after:
-      (('ar -> 'row, 'ar -> 'urow, 'ret) args ->
-        'ret * string * string ->
-        'ret * string * string ->
-        Learnocaml_report.item list) ->
-    ?sampler:
-      (unit -> ('ar -> 'row, 'ar -> 'urow, 'ret) args) ->
-    (('ar -> 'row) Ty.ty, 'ar -> 'urow, 'ret) fun_ty ->
-    string ->
-    ('ar -> 'row, 'ar -> 'urow, 'ret) args list ->
-    Learnocaml_report.item list
-
-  val (==>) : 'params -> 'ret -> 'params * (unit -> 'ret)
-
-  end
-
-  val (@@@) : ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t) -> ('a -> Learnocaml_report.t)
-  val (@@>) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
-  val (@@=) : Learnocaml_report.t -> (unit -> Learnocaml_report.t) -> Learnocaml_report.t
-
-  (**/**)
-  include (module type of Ast_checker)
-  include (module type of Tester)
-  include (module type of Mutation)
-  include (module type of Sampler)
-  include (module type of Test_functions_types)
-  include (module type of Test_functions_ref_var)
-  include (module type of Test_functions_function)
-  include (module type of Test_functions_generic)
-
-end
-
-module Make
-    (Params : sig
-       val results : Learnocaml_report.t option ref
-       (* val set_progress : string -> unit *)
-       val timeout : int option
-       module Introspection : Introspection_intf.INTROSPECTION
-     end) : S = struct
+module Intro = Pre_test.Introspection
 
   let set_result report =
-      Params.results := Some report
+      Pre_test.results := Some report
 
   type nonrec 'a result = ('a, exn) result
 
@@ -818,24 +372,24 @@ module Make
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_types = struct
-    open Params
+    open Pre_test
 
     let compatible_type ~expected:exp got =
       let open Learnocaml_report in
       [ Message ([ Text "Checking that " ; Code got ;
                    Text "is compatible with " ; Code exp ], Informative) ;
-        match Introspection.compatible_type exp ("Code." ^ got) with
-        | Introspection.Absent ->
+        match Intro.compatible_type exp ("Code." ^ got) with
+        | Intro.Absent ->
            Message ([ Text "Type not found" ], Failure)
-        | Introspection.Incompatible msg ->
+        | Intro.Incompatible msg ->
            Message ([ Text msg ], Failure)
-        | Introspection.Present () ->
+        | Intro.Present () ->
            Message ([ Text "Type found and compatible" ], Success 5) ]
 
     let existing_type ?(score = 1) name =
       let open Learnocaml_report in
       try
-          let lid = Longident.parse ("Code." ^ name) in
+          let[@alert "-deprecated"]  lid = Longident.parse ("Code." ^ name) in
           let path, _ = Env.find_type_by_name lid !Toploop.toplevel_env in
           let _ = Env.find_type path !Toploop.toplevel_env in
           true, [ Message ( [ Text "Type" ; Code name ; Text "found" ], Success score ) ]
@@ -844,7 +398,7 @@ module Make
     let abstract_type ?(allow_private = true) ?(score = 5) name =
       let open Learnocaml_report in
       try
-          let lid = Longident.parse ("Code." ^ name) in
+          let[@alert "-deprecated"] lid = Longident.parse ("Code." ^ name) in
           let path, _ = Env.find_type_by_name lid !Toploop.toplevel_env in
           match Env.find_type path !Toploop.toplevel_env with
           | { Types. type_kind = Types.Type_abstract ; Types. type_manifest = None; _ } ->
@@ -857,20 +411,20 @@ module Make
 
     let test_student_code ty cb =
       let open Learnocaml_report in
-      match Introspection.get_value "Code" ty with
-      | Introspection.Present v -> cb v
-      | Introspection.Absent -> assert false
-      | Introspection.Incompatible msg ->
+      match Intro.get_value "Code" ty with
+      | Intro.Present v -> cb v
+      | Intro.Absent -> assert false
+      | Intro.Incompatible msg ->
          [ Message ([ Text "Your code doesn't match the expected signature." ; Break ;
                       Code msg (* TODO: hide or fix locations *) ], Failure) ]
 
     let test_module_property ty name cb =
       let open Learnocaml_report in
-      match Introspection.get_value ("Code." ^ name) ty with
-      | Introspection.Present v -> cb v
-      | Introspection.Absent ->
+      match Intro.get_value ("Code." ^ name) ty with
+      | Intro.Present v -> cb v
+      | Intro.Absent ->
          [ Message ([ Text "Module" ; Code name ; Text "not found." ], Failure) ]
-      | Introspection.Incompatible msg ->
+      | Intro.Incompatible msg ->
          [ Message ([ Text "Module" ; Code name ; Text "doesn't match the expected signature." ;
                       Break ; Code msg (* TODO: hide or fix locations *) ], Failure) ]
 
@@ -888,7 +442,7 @@ module Make
     string -> Learnocaml_report.t
 
   let typed_printer ty ppf v =
-    Introspection.print_value ppf v ty
+    Intro.print_value ppf v ty
 
   exception Timeout of int
 
@@ -1122,7 +676,7 @@ module Make
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_generic = struct
-    open Params
+    open Pre_test
     open Tester
 
     let sigalrm_handler time =
@@ -1139,23 +693,23 @@ module Make
            reset_sigalrm (); raise exc
 
     let run_timeout ?time v =
-      match time, Params.timeout with
+      match time, Pre_test.timeout with
       | Some time, _ | None, Some time ->
           run_timeout ~time v
       | None, None ->
           v()
 
     let exec v =
-      Introspection.grab_stdout () ;
-      Introspection.grab_stderr () ;
+      Intro.grab_stdout () ;
+      Intro.grab_stderr () ;
       try
         let res = run_timeout v in
-        let out = Introspection.release_stdout () in
-        let err = Introspection.release_stderr () in
+        let out = Intro.release_stdout () in
+        let err = Intro.release_stderr () in
         Ok (res, out, err)
       with exn ->
-        ignore (Introspection.release_stdout ()) ;
-        ignore (Introspection.release_stderr ()) ;
+        ignore (Intro.release_stdout ()) ;
+        ignore (Intro.release_stderr ()) ;
         Error exn
 
     let result v = match exec v with
@@ -1212,7 +766,7 @@ module Make
 
     module Aux = struct
       let typed_printer = typed_printer
-      let typed_sampler = Introspection.get_sampler
+      let typed_sampler = Intro.get_sampler
     end
     module FunTyAux = Make(Aux)
 
@@ -1223,16 +777,16 @@ module Make
     let lookup ty ?display_name name =
       let display_name = match display_name with None -> name | Some name -> name in
       let open Learnocaml_report in
-      let res = match Introspection.get_value name ty with
-        | Introspection.Present v ->
+      let res = match Intro.get_value name ty with
+        | Intro.Present v ->
            let msg =
              [ Message ([ Text "Found" ; Code display_name ;
                           Text "with compatible type." ], Informative) ] in
            `Found (display_name, msg, v)
-        | Introspection.Absent ->
+        | Intro.Absent ->
            `Unbound
              (name, [ Message ([ Text "Cannot find " ; Code display_name ], Failure) ])
-        | Introspection.Incompatible msg ->
+        | Intro.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Found" ; Code display_name ;
                                  Text "with unexpected type:" ; Break ;
@@ -1241,16 +795,16 @@ module Make
 
     let lookup_student ty name =
       let open Learnocaml_report in
-      let res = match Introspection.get_value ("Code." ^ name) ty with
-        | Introspection.Present v ->
+      let res = match Intro.get_value ("Code." ^ name) ty with
+        | Intro.Present v ->
            let msg =
              [ Message ([ Text "Found" ; Code name ;
                           Text "with compatible type." ], Informative) ] in
            `Found (name, msg, v)
-        | Introspection.Absent ->
+        | Intro.Absent ->
            `Unbound
              (name, [ Message ([ Text "Cannot find " ; Code name ], Failure) ])
-        | Introspection.Incompatible msg ->
+        | Intro.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Found" ; Code name ;
                                  Text "with unexpected type:" ; Break ;
@@ -1259,14 +813,14 @@ module Make
 
     let lookup_solution ty name =
       let open Learnocaml_report in
-      let res = match Introspection.get_value ("Solution." ^ name) ty with
-        | Introspection.Present v ->
+      let res = match Intro.get_value ("Solution." ^ name) ty with
+        | Intro.Present v ->
            `Found (name, [], v)
-        | Introspection.Absent ->
+        | Intro.Absent ->
            `Unbound
              (name, [ Message ([ Text "Looking for " ; Code name  ], Informative) ;
                       Message ([ Text "Solution not found!" ], Failure) ])
-        | Introspection.Incompatible msg ->
+        | Intro.Incompatible msg ->
            `Unbound
              (name, [ Message ([ Text "Looking for " ; Code name  ], Informative) ;
                       Message ([ Text "Solution is wrong!" ; Break ; Code msg ], Failure) ]) in
@@ -1772,10 +1326,16 @@ module Make
       if sorted then Array.sort compare arr ;
       arr
 
+    let sample_list sample () =
+      (* version without parameters for ppx_autoregister *)
+      Array.to_list (sample_array sample ())
+
     let sample_list ?min_size ?max_size ?dups ?sorted sample () =
       Array.to_list (sample_array ?min_size ?max_size ?dups ?sorted sample ())
 
-    let sample_pair sample1 sample2 () =
+    type ('a, 'b) pair = 'a * 'b
+    let sample_pair: 'a sampler -> 'b sampler -> ('a, 'b) pair sampler =
+      fun sample1 sample2 () ->
       (sample1 (), sample2 ())
 
     let printable_funs = ref []
@@ -1797,7 +1357,22 @@ module Make
     let () =
       let path = Path.Pident (Ident.create_local "fun_printer") in
       let ty = Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj [%ty: _ -> _ ]) in
-      Toploop.install_printer path ty.Typedtree.ctyp_type fun_printer
+      Intro.install_printer path ty.Typedtree.ctyp_type fun_printer
+  end
+  module Sampler_reg = struct
+    include Sampler
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_bool" "bool" sample_bool
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_int" "int" sample_int
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_float" "float" sample_float
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_char" "char" sample_char
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_string" "string" sample_string
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_option" "option" sample_option
+    let sample_array sample () = sample_array sample ()
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_array" "array" sample_array
+    let sample_list sample () = sample_list sample ()
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_list" "list" sample_list
+    type ('a, 'b) pair = 'a * 'b
+    let () = Intro.register_sampler "Test_lib.Sampler_reg" "sample_pair" "pair" sample_pair
   end
 
   let (@@@) f g = fun x -> f x @ g x
@@ -1814,7 +1389,12 @@ module Make
   include Test_functions_function
   include Test_functions_generic
 
-end
+(* end *)
 
 let () =
   Random.self_init ()
+
+module Open_me = struct
+  module Report = Learnocaml_report
+  include Pre_test
+end

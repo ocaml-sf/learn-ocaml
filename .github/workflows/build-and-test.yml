@@ -21,12 +21,14 @@ jobs:
         uses: actions/checkout@v3
       - name: Build Docker images
         run: "make docker-images"
+      - name: Fix permissions
+        run: "chmod -R a+wX demo-repository"
       - name: Run learn-ocaml build on demo-repository
         run: "docker run --rm -v $(pwd)/demo-repository:/repository learn-ocaml -- build"
       - name: Clone learn-ocaml-corpus inside tests/corpuses
-        run: "mkdir tests/corpuses && cd tests/corpuses && git clone --depth=1 https://github.com/ocaml-sf/learn-ocaml-corpus.git && cd ../.."
+        run: "git clone --depth=1 https://github.com/ocaml-sf/learn-ocaml-corpus.git tests/corpuses/learn-ocaml-corpus"
       - name: Run tests
-        run: "cd tests && bash -c ./runtests.sh"
+        run: "tests/runtests.sh"
 
   client_using_other_server:
     name: Build learn-ocaml-client and run quick tests
@@ -36,8 +38,8 @@ jobs:
       fail-fast: false
       matrix:
         server_image:
-          - 'ocamlsf/learn-ocaml:0.12'
-          - 'ocamlsf/learn-ocaml:0.13.0'
+          # - 'ocamlsf/learn-ocaml:0.12'
+          # - 'ocamlsf/learn-ocaml:0.13.0'
           - 'learn-ocaml'  # use learn-ocaml image built from master
     env:
       USE_CLIENT_IMAGE: 'true'

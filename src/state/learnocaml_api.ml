@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -120,7 +120,8 @@ type _ request =
   | Exercise_index:
       'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
-      'a token option * string -> (Exercise.Meta.t * Exercise.t * float option) request
+      'a token option * string * bool ->
+      (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index:
       unit -> (string * string) list request
@@ -166,7 +167,7 @@ let supported_versions
   | Set_students_list (_, _)
   | Students_csv (_, _, _)
   | Exercise_index _
-  | Exercise (_, _)
+  | Exercise (_, _, _)
   | Lesson_index _
   | Lesson _
   | Tutorial_index _
@@ -278,10 +279,10 @@ module Conversions (Json: JSON_CODEC) = struct
   let to_http_request
     : type resp. resp request -> http_request
     =
-    let get ?token path = {
+    let get ?token ?(args=[]) path = {
       meth = `GET;
       path;
-      args = match token with None -> [] | Some t -> ["token", Token.to_string t];
+      args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @ args;
     } in
     let post ~token path body = {
       meth = `POST body;
@@ -335,10 +336,13 @@ module Conversions (Json: JSON_CODEC) = struct
     | Exercise_index None ->
        get ["exercise-index.json"]
 
-    | Exercise (Some token, id) ->
-       get ~token ("exercises" :: String.split_on_char '/' (id^".json"))
-    | Exercise (None, id) ->
+    | Exercise (Some token, id, js) ->
+       get ~token
+         ("exercises" :: String.split_on_char '/' (id^".json"))
+         ~args:["mode", if js then "js" else "byte"]
+    | Exercise (None, id, js) ->
        get ("exercises" :: String.split_on_char '/' (id^".json"))
+         ~args:["mode", if js then "js" else "byte"]
 
     | Lesson_index () ->
         get ["lessons.json"]
@@ -463,7 +467,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                (match token with
                 | Some token ->
                     let id = Filename.chop_suffix (String.concat "/" path) ".json" in
-                    Exercise (Some token, id) |> k
+                    let js = List.assoc_opt "mode" request.args = Some "js" in
+                    Exercise (Some token, id, js) |> k
                 | None -> Invalid_request "Missing token" |> k)
            | Some "" ->
                Static ["exercise.html"] |> k

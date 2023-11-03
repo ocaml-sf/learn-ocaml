@@ -15,5 +15,17 @@ let to_file encoding fn value =
 let from_file encoding fn =
   Lwt_io.(with_file ~mode: Input) fn @@ fun chan ->
   Lwt_io.read chan >>= fun str ->
-  let json = Ezjsonm.from_string str in
+  let json =
+    match Ezjsonm.from_string_result str with
+    | Ok json -> json
+    | Error err ->
+        let loc = match Ezjsonm.read_error_location err with
+          | None -> fn
+          | Some ((li, col), _) ->
+              Printf.sprintf "%s, line %d, column %d" fn li col
+        in
+        Printf.ksprintf failwith
+          "Parse error in %s:\n  %s" loc
+          (Ezjsonm.read_error_description err);
+  in
   Lwt.return (Json_encoding.destruct encoding json)

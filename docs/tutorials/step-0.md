@@ -13,7 +13,8 @@ specific shape, illustrated by the following ascii art:
 │   │   ├── prepare.ml
 │   │   ├── solution.ml
 │   │   ├── template.ml
-│   │   └── test.ml
+│   │   ├── test.ml
+│   │   └── test_libs.txt
 │   ├── exercise2
 │   │   ├── ...
 │   ├── index.json
@@ -67,6 +68,8 @@ The complete format specification for exercise description is given in
     student answer.
 
   - `test.ml` is the grader code.
+
+  - `test_libs.txt` optionally lists grader-helper libraries used by `test.ml`
 
 - `lessons` and `tutorials` are ignored in this tutorial.
 

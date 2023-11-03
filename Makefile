@@ -70,7 +70,7 @@ REPO ?= demo-repository
 
 testrun: build install
 	rm -rf www/css
-	learn-ocaml build --repo $(REPO) -j1
+	learn-ocaml build --repo $(REPO)
 	rm -rf www/css
 	ln -s ../static/css www
 	LEARNOCAML_SERVER_NOCACHE=1 learn-ocaml serve
@@ -82,7 +82,7 @@ docker-images: Dockerfile learn-ocaml.opam
 	@docker build -t learn-ocaml-compilation --target compilation docker
 	@docker build -t learn-ocaml --target program docker
 	@docker build -t learn-ocaml-client --target client docker
-	@echo "Use with 'docker run --rm -v \$$PWD/sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
+	@echo "Use with 'docker run --rm -v learn-ocaml-sync:/sync -v \$$PWD:/repository -p PORT:8080 learn-ocaml -- ARGS'"
 
 VERSION = $(shell opam show ./learn-ocaml.opam -f version)
 

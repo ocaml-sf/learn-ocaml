@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -13,8 +13,9 @@ type t
 
 type id = string
 
-(* JSON encoding of the exercise representation. Includes cipher and decipher at
-   at encoding and decoding. *)
+type compiled_lib = { cma: string; js: string }
+
+(* JSON encoding of the exercise representation. *)
 val encoding: t Json_encoding.encoding
 
 (** Intermediate representation of files, resulting of reading the exercise directory *)
@@ -54,20 +55,34 @@ module File : sig
   (** Maximum score for the exercise *)
   val max_score: int file
 
-  (** Returns the (private, already deciphered) [prepare.ml] *)
-  val prepare: string file
-
-  (** Returns the (private, already deciphered) [solution.ml] *)
-  val solution: string file
-
-  (** Returns the (private, already deciphered) [test.ml] *)
-  val test: string file
-
   (** Returns the (public) [prelude.ml] *)
-  val prelude: string file
+  val prelude_ml: string file
+
+  (** Returns the (private) [prepare.ml] *)
+  val prepare_ml: string file
 
   (** Returns the (public) [template.ml] *)
   val template: string file
+
+  (** Returns the (private) [solution.ml], only when loaded from disk (for
+      building the exercises). Otherwise the empty string *)
+  val solution: string file
+
+  val prelude_cmi: string file
+
+  val prepare_cmi: string file
+
+  val solution_cmi: string file
+
+  val test_cmi: string file
+
+  val exercise_cma: string file
+
+  val exercise_js: string file
+
+  val test_cma: string file
+
+  val test_js: string file
 
   (** Returns the (public) [descr.html] *)
   val descr: (string * string) list file
@@ -75,7 +90,7 @@ module File : sig
   (** Returns the (public) depend file *)
   val depend: string option file
 
-  (** [dependencies txt] create the (private, already deciphered) dependencies 
+  (** [dependencies txt] create the (private, already deciphered) dependencies
       declared in [txt] *)
   val dependencies: string option -> string file list
 end
@@ -97,28 +112,33 @@ val update: 'a File.file -> 'a -> t -> t
     ciphers it. *)
 val cipher: string File.file -> string -> t -> t
 
+(** Selectively removes compiled data from an exercise.
+    If the first arg [js] is [true], keep only the javascript.
+    Otherwise, keep only the bytecode. *)
+val strip: bool -> t -> t
+
 (** Reader and decipherer *)
 val read:
   read_field:(string -> string option) ->
-  ?id:string -> ?decipher:bool -> unit ->
+  ?id:string -> unit ->
   t
 
 (** Writer and cipherer, ['a] can be [unit] *)
 val write:
   write_field:(string -> string -> 'a -> 'a) ->
-  t -> ?cipher:bool -> 'a ->
+  t -> 'a ->
   'a
 
 (** Reader and decipherer with {!Lwt} *)
 val read_lwt:
   read_field:(string -> string option Lwt.t) ->
-  ?id:string -> ?decipher:bool -> unit ->
+  ?id:string -> unit ->
   t Lwt.t
 
 (** Writer and cipherer with {!Lwt}, ['a] can be [unit] *)
 val write_lwt:
   write_field:(string -> string -> 'a -> 'a Lwt.t) ->
-  t -> ?cipher:bool -> 'a ->
+  t -> 'a ->
   'a Lwt.t
 
 (** JSON serializer, with {!id} file included *)

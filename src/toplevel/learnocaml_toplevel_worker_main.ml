@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -129,6 +129,15 @@ let make_answer_ppf fd_answer =
     (fun str -> check_first_call () ; orig_print_string str)
     (fun () -> check_first_call () ; orig_flush ())
 
+(* For callbacks that are part of Learnocaml_internal_intf.CALLBACKS and
+   expected to be registered in advance *)
+let print_html_callback = ref (fun _ -> ())
+let print_svg_callback = ref (fun _ -> ())
+let pre_registered_callbacks = [
+  "print_html", print_html_callback;
+  "print_svg", print_svg_callback;
+]
+
 (** Code compilation and execution *)
 
 (* TODO protect execution with a mutex! *)
@@ -159,6 +168,20 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let result = Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
       if !debug then Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
       iter_option close_fd fd_code;
+      close_fd fd_answer;
+      unwrap_result result
+  | Use_compiled_string (fd_answer, js_code) ->
+      let ppf_answer = make_answer_ppf fd_answer in
+      if !debug then
+        Js_utils.debug "Worker: -> Use_js_string (%S)" js_code;
+      let result =
+        try Toploop_jsoo.use_compiled_string js_code; Toploop_ext.Ok (true, [])
+        with exn ->
+          Firebug.console##log (Js.string (Printexc.to_string exn));
+          Format.fprintf ppf_answer "%s" (Printexc.to_string exn); Toploop_ext.Ok (false, [])
+      in
+      if !debug then
+        Js_utils.debug "Worker: <- Use_js_string (%B)" (is_success result);
       close_fd fd_answer;
       unwrap_result result
   | Use_string (filename, print_outcome, fd_answer, code) ->
@@ -210,6 +233,9 @@ let handler : type a. a host_msg -> a return Lwt.t = function
             val_loc = Location.none }
           !Toploop.toplevel_env ;
       Toploop.setvalue name (Obj.repr callback) ;
+      (match List.assoc_opt name pre_registered_callbacks with
+       | Some cbr -> cbr := callback
+       | None -> ());
       return_unit_success
   | Check code ->
       let saved = !Toploop.toplevel_env in
@@ -217,17 +243,22 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let result = Toploop_ext.check code in
       Toploop.toplevel_env := saved ;
       unwrap_result result
+  | Load_cmi_from_string cmi ->
+      Toploop_ext.load_cmi_from_string cmi;
+      return_unit_success
 
 let ty_of_host_msg : type t. t host_msg -> t msg_ty = function
   | Init -> Unit
   | Reset -> Unit
   | Execute _ -> Bool
   | Use_string _ -> Bool
+  | Use_compiled_string _ -> Bool
   | Use_mod_string _ -> Bool
   | Set_debug _ -> Unit
   | Check _ -> Unit
   | Set_checking_environment -> Unit
   | Register_callback _ -> Unit
+  | Load_cmi_from_string _ -> Unit
 
 let () =
   let handler (type t) data =
@@ -267,3 +298,24 @@ let () =
     "debug_worker"
     (Toploop.Directive_bool (fun b -> debug := b));
   Worker.set_onmessage (fun s -> Lwt.async (fun () -> handler s))
+
+(* Register some dynamic modules that are expected by compiled artifacts loaded
+   into the exercises. These have no cmi (hence are invisible to non-compiled
+   code) and are lightweight, so they should not affect the non-exercise
+   toplevels *)
+
+let () =
+  let module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS = struct
+    let print_html s = !print_html_callback s
+    let print_svg s = !print_svg_callback s
+  end in
+  Toploop_ext.inject_global "Learnocaml_callback"
+    (Obj.repr (module Learnocaml_callback: Learnocaml_internal_intf.CALLBACKS))
+
+let () =
+  let module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL = struct
+    let install_printer = Toploop_ext.install_printer
+    exception Undefined
+  end in
+  Toploop_ext.inject_global "Learnocaml_internal"
+    (Obj.repr (module Learnocaml_internal: Learnocaml_internal_intf.INTERNAL))

@@ -32,15 +32,6 @@ type 'a mutant_info = string * int * 'a
     For testing a function called [foo], the student's tests
     should be in a variable called [foo_tests].
 
-    This module needs to be instantiated with an instance of
-    [Test_lib], which is available to the grader code:
-
-    {[
-      module M = Mutation_test.Make (Test_lib)
-
-      M.test_unit_tests_1 ...
-    ]}
-
     A grading function is defined for each arity function from
     one to four:
 
@@ -58,7 +49,7 @@ type 'a mutant_info = string * int * 'a
     expected and actual outputs, and defaults to structural
     equality ([(=)]).
 *)
-module type S = sig
+module M: sig
 
   (** Run a test (a pair of input and expected output) on a mutant
       function.
@@ -109,4 +100,7 @@ module type S = sig
   val passed_mutation_testing: Learnocaml_report.t -> bool
 end
 
-module Make (_: Test_lib.S) : S
+include module type of M
+
+(** For backwards compatibility *)
+module Make (_: module type of Test_lib): module type of M

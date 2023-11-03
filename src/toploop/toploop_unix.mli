@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -8,6 +8,9 @@
 
 (** To be called before using any [Toploop] function. *)
 val initialize: unit -> unit
+
+(** Load the given compiled code *)
+val use_compiled_string: string -> unit
 
 (** Materializes an output channel redirection. *)
 type redirection
@@ -30,7 +33,7 @@ val flush_redirected_channel : redirection -> unit
 (** Flushes the channel and then cancel the redirection.
     The redirection must be the last one performed, otherwise an
     [Invalid_argument] will be raised.
-    A stack of redirections is maintained for all fire descriptors. So
+    A stack of redirections is maintained for all file descriptors. So
     the channel is then restored to either the previous redirection or
     to the original file descriptor. *)
 val stop_channel_redirection : redirection -> unit

@@ -1,0 +1,17 @@
+(library
+ (name mutation_testing)
+ (public_name learn-ocaml.mutation_testing)
+ (wrapped false)
+ (modes byte)
+ (libraries compiler-libs)
+ ;; The following lines are specific for compiling from within learn-ocaml.
+ ;; When writing grader-helper libs, use instead:
+ ;; (libraries learn-ocaml.test_lib)
+ ;; (preprocess (action (run %{libexec:learn-ocaml.test_lib:grader-ppx} %{input-file})))
+ (flags (:standard -I src/grader/test_lib -open Test_lib.Open_me))
+ (modules mutation_test)
+ (preprocess (pps grader_ppx))
+ (preprocessor_deps (file ../grader/grading.cma)
+                    (alias ../grader/test_lib/test_lib_cmis))
+ ;; these are not a preprocessor deps, but dune does not allow other kinds of deps...
+)

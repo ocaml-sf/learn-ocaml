@@ -12,7 +12,6 @@ GNU/Linux and MacOS X are supported.
 > use:
 >
 >     docker version # If this fails, find out how to run Docker, first
->     docker login
 >     docker run --rm \
 >       -v $REPOSITORY:/repository:ro \
 >       -v learn-ocaml-sync:/sync \
@@ -63,7 +62,6 @@ ready:
 
 ```
 opam switch create . --deps-only --locked
-opam install opam-installer
 eval $(opam env)
 ```
 
@@ -74,7 +72,7 @@ your current opam switch, without creating a dedicated one.)
 Second, compile and install the platform:
 
 ```
-make && make opaminstall
+make && make install
 ```
 
 At this point, you should get a working `learn-ocaml` program in

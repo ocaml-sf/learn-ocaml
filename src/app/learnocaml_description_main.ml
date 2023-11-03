@@ -1,3 +1,10 @@
+(* This file is part of Learn-OCaml.
+ *
+ * Copyright (C) 2022-2023 OCaml Software Foundation.
+ *
+ * Learn-OCaml is distributed under the terms of the MIT license. See the
+ * included LICENSE file for details. *)
+
 open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Js_utils
@@ -66,12 +73,12 @@ let () =
      match get_encoded_token () with
      | Some { arg_name = _; raw_arg = _; token } -> begin
          let exercise_fetch =
-           retrieve (Learnocaml_api.Exercise (Some token, id))
+           retrieve (Learnocaml_api.Exercise (Some token, id, true))
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->
          (* display exercise questions and prelude *)
-         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude exo);
+         setup_tab_text_prelude_pane Learnocaml_exercise.(decipher File.prelude_ml exo);
          let text_iframe = Dom_html.createIframe Dom_html.document in
          Manip.replaceChildren title_container
            Tyxml_js.Html5.[ h1 [ txt ex_meta.title] ];

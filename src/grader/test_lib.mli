@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -8,7 +8,6 @@
 
 (** Documentation for [test_lib] library. [Test_lib] module can be
    used to write graders for learn-ocaml.  *)
-module type S = sig
 
   val set_result : Learnocaml_report.t -> unit
 
@@ -496,6 +495,21 @@ module type S = sig
     (**  {2 Utilities} *)
 
     val printable_fun : string -> (_ -> _ as 'f) -> 'f
+  end
+
+  (** For internal use, needed for the default samplers registration *)
+  module Sampler_reg : sig
+    type 'a sampler = 'a Sampler.sampler
+    val sample_int : int sampler
+    val sample_float : float sampler
+    val sample_string : string sampler
+    val sample_char : char sampler
+    val sample_bool : bool sampler
+    val sample_list : 'a sampler -> 'a list sampler
+    val sample_array : 'a sampler -> 'a array sampler
+    val sample_option : 'a sampler -> 'a option sampler
+    type ('a, 'b) pair = 'a * 'b
+    val sample_pair : 'a sampler -> 'b sampler -> ('a, 'b) pair sampler
   end
 
   (** {1 Grading functions for references and variables } *)
@@ -1248,12 +1262,18 @@ module type S = sig
    include (module type of Test_functions_ref_var)
    include (module type of Test_functions_function)
    include (module type of Test_functions_generic)
-end
+(* end *)
 
-module Make : functor
-  (_ : sig
-     val results : Learnocaml_report.t option ref
-     val set_progress : string -> unit
-     val timeout : int option
-     module Introspection : Introspection_intf.INTROSPECTION
-   end) -> S
+(* module Make : functor
+ *   (_ : sig
+ *      val results : Learnocaml_report.t option ref
+ *      val set_progress : string -> unit
+ *      val timeout : int option
+ *      module Introspection : Introspection_intf.INTROSPECTION
+ *    end) -> S *)
+(* module Report = Learnocaml_report
+ * include (module type of Pre_test) *)
+module Open_me: sig
+  module Report = Learnocaml_report
+  include module type of Pre_test
+end

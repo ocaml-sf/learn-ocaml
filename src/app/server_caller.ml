@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -114,8 +114,8 @@ let fetch_lesson_index () =
 let fetch_lesson id =
   request_exn (Learnocaml_api.Lesson id)
 
-let fetch_exercise token id =
-  request_exn (Learnocaml_api.Exercise (token,id))
+let fetch_exercise token id js =
+  request_exn (Learnocaml_api.Exercise (token,id,js))
 
 let fetch_tutorial_index () =
   request_exn (Learnocaml_api.Tutorial_index ())

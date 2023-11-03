@@ -8,6 +8,13 @@
             toploop_results)
 )
 
+(library
+ (name learnocaml_internal_intf)
+ (wrapped false)
+ (modules learnocaml_internal_intf)
+ (modules_without_implementation learnocaml_internal_intf)
+)
+
 (executable
  (name learnocaml_toplevel_worker_main)
  (modes (byte js))
@@ -20,6 +27,7 @@
             toploop_results
             ocplib-ocamlres.runtime
             embedded_cmis
+            learnocaml_internal_intf
             learnocaml_toplevel_worker_messages)
  (modules Learnocaml_toplevel_worker_main)
  (preprocess (pps js_of_ocaml-ppx))

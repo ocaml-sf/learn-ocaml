@@ -4,7 +4,7 @@
  (modules Learnocaml_index
           Learnocaml_exercise)
  (libraries ocplib-json-typed
-            learnocaml_xor
+            base64
             omd
             lwt
             ezjsonm)
@@ -41,9 +41,10 @@
  (name learnocaml_process_repository_lib)
  (wrapped false)
  (modules Learnocaml_process_common
+          Learnocaml_precompile_exercise
           Learnocaml_process_exercise_repository
           Learnocaml_process_tutorial_repository
-    Learnocaml_process_playground_repository)
+          Learnocaml_process_playground_repository)
  (libraries ezjsonm
             str
             lwt.unix

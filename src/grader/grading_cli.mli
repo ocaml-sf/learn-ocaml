@@ -7,11 +7,11 @@
  * included LICENSE file for details. *)
 
 (** Take an exercise, a solution, and return the report, stdout,
-    stderr and outcomes of the toplevel, or raise ont of the
+    stderr and outcomes of the toplevel, or raise one of the
     exceptions defined in module {!Grading}. *)
 val get_grade:
   ?callback:(string -> unit) ->
   ?timeout:int ->
   ?dirname:string ->
   Learnocaml_exercise.t -> string ->
-  ((Learnocaml_report.t, exn) result * string * string * string) Lwt.t
+  ((Learnocaml_report.t, Grading.error) result * string * string * string) Lwt.t

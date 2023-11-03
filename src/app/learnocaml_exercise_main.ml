@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019-2022 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -119,20 +119,29 @@ let () =
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
     token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id))
+    retrieve (Learnocaml_api.Exercise (token, id, true))
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
-    begin match Learnocaml_exercise.(decipher File.prelude exo) with
-      | "" -> Lwt.return true
-      | prelude ->
-          Learnocaml_toplevel.load ~print_outcome:true top
-            ~message: [%i"loading the prelude..."]
-            prelude
-    end >>= fun r1 ->
-    Learnocaml_toplevel.load ~print_outcome:false top
-      (Learnocaml_exercise.(decipher File.prepare exo)) >>= fun r2 ->
-    if not r1 || not r2 then failwith [%i"error in prelude"] ;
+    let exercise_js = Learnocaml_exercise.(decipher File.exercise_js exo) in
+    Learnocaml_toplevel.load_cmi_from_string top
+      Learnocaml_exercise.(decipher File.prelude_cmi exo) >>= fun _ ->
+    Learnocaml_toplevel.load_cmi_from_string top
+      Learnocaml_exercise.(decipher File.prepare_cmi exo) >>= fun _ ->
+    Learnocaml_toplevel.load_js ~print_outcome:false top
+      exercise_js
+    >>= fun r ->
+    if not r then Lwt.fail_with  [%i"error in prelude"] else
+    Learnocaml_toplevel.load top "include Prelude ;;"
+      ~message: [%i"loading the prelude..."] >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load ~print_outcome:false top "module Prelude = struct end;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load ~print_outcome:false top "include Prepare ;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    Learnocaml_toplevel.load ~print_outcome:false top "module Prepare = struct end;;" >>= fun r ->
+    if not r then Lwt.fail_with [%i"error in prelude"] else
+    (* TODO: maybe remove Prelude, Prepare modules from the env ? *)
     Learnocaml_toplevel.set_checking_environment top >>= fun () ->
     Lwt.return () in
   let toplevel_launch =
@@ -189,7 +198,7 @@ let () =
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
 (*------------- prelude -----------------*)
-  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude exo);
+  setup_prelude_pane ace Learnocaml_exercise.(decipher File.prelude_ml exo);
   Js.Opt.case
     (text_iframe##.contentDocument)
     (fun () -> failwith "cannot edit iframe document")

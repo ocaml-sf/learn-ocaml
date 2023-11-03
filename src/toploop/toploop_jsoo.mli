@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -9,6 +9,9 @@
 (** To be called before using any [Toploop] function. Takes cmi dirs ([-I]) as
     argument*)
 val initialize: string list -> unit
+
+(** Load compiled code as a string *)
+val use_compiled_string: string -> unit
 
 (** Materializes an output channel redirection. *)
 type redirection

@@ -1,6 +1,6 @@
 (* This file is part of Learn-OCaml.
  *
- * Copyright (C) 2019 OCaml Software Foundation.
+ * Copyright (C) 2019-2023 OCaml Software Foundation.
  * Copyright (C) 2015-2018 OCamlPro.
  *
  * Learn-OCaml is distributed under the terms of the MIT license. See the
@@ -8,42 +8,82 @@
 
 type id = string
 
+type compiled_lib = { cma: string; js: string }
+
+type compiled = {
+  prelude_cmi: string;
+  prepare_cmi: string;
+  solution_cmi: string;
+  test_cmi: string;
+  exercise_lib: compiled_lib; (* includes prelude, prepare and solution *)
+  test_lib: compiled_lib;
+}
+
 type t =
   { id : id ;
-    prelude : string ;
+    prelude_ml : string ;
+    prepare_ml : string ;
+    (* absent from the json, empty except when building the exercises *)
     template : string ;
-    descr : (string * string) list ;
-    prepare : string ;
-    test : string ;
     solution : string ;
+    (* absent from the json, empty except when building the exercises *)
+    descr : (string * string) list ;
+    compiled : compiled ;
     max_score : int ;
     depend : string option ;
-    dependencies : string list;
+    dependencies : string list; (* TODO: move to test.cma + list of cmi file contents *)
   }
 
 let encoding =
   let open Json_encoding in
+  let b64 =
+    (* TODO: try to use the native implementation on browsers ? *)
+    conv
+      (fun s -> Base64.encode_string s)
+      (fun b -> Result.get_ok (Base64.decode b))
+      string
+  in
+  let compiled_lib_encoding =
+    conv
+      (fun {cma; js} -> cma, js)
+      (fun (cma, js) -> {cma; js})
+      (obj2
+        (dft "cma" b64 "")
+        (dft "js" string ""))
+  in
+  let compiled_encoding =
+    conv
+      (fun {prelude_cmi; prepare_cmi; solution_cmi; test_cmi; exercise_lib; test_lib} ->
+         (prelude_cmi, prepare_cmi, solution_cmi, test_cmi, exercise_lib, test_lib))
+      (fun (prelude_cmi, prepare_cmi, solution_cmi, test_cmi, exercise_lib, test_lib) ->
+         {prelude_cmi; prepare_cmi; solution_cmi; test_cmi; exercise_lib; test_lib})
+      (obj6
+         (req "prelude_cmi" b64)
+         (req "prepare_cmi" b64)
+         (req "solution_cmi" b64)
+         (req "test_cmi" b64)
+         (req "exercise_lib" compiled_lib_encoding)
+         (req "test_lib" compiled_lib_encoding))
+  in
   conv
-    (fun { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies} ->
-       id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies)
-    (fun (id, prelude, template, descr, prepare, test, solution, max_score,depend, dependencies) ->
-       { id ; prelude ; template ; descr ; prepare ; test ; solution ; max_score ; depend ; dependencies})
-    (obj10
+    (fun { id ; prelude_ml ; prepare_ml = _; template ; descr ; compiled ; max_score ; depend ; dependencies ; solution = _} ->
+       (id, prelude_ml, template, descr, compiled, max_score, depend, dependencies))
+    (fun ((id, prelude_ml, template, descr, compiled, max_score, depend, dependencies)) ->
+       { id ; prelude_ml ; prepare_ml = ""; template ; descr ; compiled ; max_score ; depend ; dependencies; solution = ""})
+    (obj8
        (req "id" string)
-       (req "prelude" string)
+       (req "prelude_ml" string)
        (req "template" string)
        (req "descr" (list (tup2 string string)))
-       (req "prepare" string)
-       (req "test" string)
-       (req "solution" string)
+       (req "compiled" compiled_encoding)
        (req "max-score" int)
-       (opt "depend" (string))
+       (opt "depend" string)
        (dft "dependencies" (list string) []))
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
  *   |> Json_encoding.destruct Learnocaml_meta.encoding
- * 
+ *
  * let meta_to_string m =
  *   Json_encoding.construct Learnocaml_meta.encoding m
  *   |> (function
@@ -85,7 +125,6 @@ module File = struct
 
   type 'a file =
     { key : string ;
-      ciphered : bool ;
       decode : string -> 'a ;
       encode : 'a -> string ;
       field : t -> 'a ;
@@ -94,37 +133,27 @@ module File = struct
 
   exception Missing_file of string
 
-  let get { key ; ciphered ; decode ; _ } ex =
+  let get { key ; decode ; _ } ex =
     try
       let raw = StringMap.find key ex in
-      if ciphered then
-        let prefix =
-          Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
-        decode (Learnocaml_xor.decode ~prefix raw)
-      else
-        decode raw
+      decode raw
     with Not_found -> raise (Missing_file ("get  " ^ key))
 
   let get_opt file ex =
-    try (* a missing file here is necessarily [file] *) 
-      get file ex 
-    with Missing_file _ -> None 
+    try (* a missing file here is necessarily [file] *)
+      get file ex
+    with Missing_file _ -> None
 
   let has { key ; _ } ex =
     StringMap.mem key ex
 
-  let set { key ; ciphered ; encode  ; _ } raw ex =
-    if ciphered then
-      let prefix =
-        Digest.string (StringMap.find "id" ex  ^ "_" ^ key) in
-      StringMap.add key (Learnocaml_xor.encode ~prefix (encode raw)) ex
-    else
-      StringMap.add key (encode raw) ex
+  let set { key ; encode  ; _ } raw ex =
+    StringMap.add key (encode raw) ex
 
   let key file = file.key
 
   let id =
-    { key = "id" ; ciphered = false ;
+    { key = "id" ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
       field = (fun ex -> ex.id) ;
       update = (fun id ex -> { ex with id })
@@ -148,52 +177,81 @@ module File = struct
    *    } *)
   let max_score =
     let key = "max_score.txt" in
-    { key ; ciphered = false ;
+    { key ;
       decode = (fun v -> int_of_string v) ; encode = (fun v -> string_of_int v) ;
       field = (fun ex -> ex.max_score);
       update = (fun max_score ex -> { ex with max_score });
      }
-  let prelude =
-    { key = "prelude.ml" ; ciphered = false ;
+  let prelude_ml =
+    { key = "prelude.ml" ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
-      field = (fun ex -> ex.prelude) ;
-      update = (fun prelude ex -> { ex with prelude })
+      field = (fun ex -> ex.prelude_ml) ;
+      update = (fun prelude_ml ex -> { ex with prelude_ml })
+     }
+  let prepare_ml =
+    { key = "prepare.ml" ;
+      decode = (fun v -> v) ; encode = (fun v -> v) ;
+      field = (fun ex -> ex.prepare_ml) ;
+      update = (fun prepare_ml ex -> { ex with prepare_ml })
      }
   let template =
-    { key = "template.ml" ; ciphered = false ;
+    { key = "template.ml" ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
       field = (fun ex -> ex.template) ;
       update = (fun template ex -> { ex with template })
      }
-  let descr : (string * string) list file =
-    { key = "descr.html" ; ciphered = false ;
-      decode = descrs_from_string ; encode = descrs_to_string ;
-      field = (fun ex -> ex.descr) ;
-      update = (fun descr ex -> { ex with descr })
-     }
-  let prepare =
-    { key = "prepare.ml" ; ciphered = true ;
-      decode = (fun v -> v) ; encode = (fun v -> v) ;
-      field = (fun ex -> ex.prepare) ;
-      update = (fun prepare ex -> { ex with prepare })
-     }
-  let test =
-    { key = "test.ml" ; ciphered = true ;
-      decode = (fun v -> v) ; encode = (fun v -> v) ;
-      field = (fun ex -> ex.test) ;
-      update = (fun test ex -> { ex with test })
-     }
   let solution =
-    { key = "solution.ml" ; ciphered = true ;
+    { key = "solution.ml" ;
       decode = (fun v -> v) ; encode = (fun v -> v) ;
       field = (fun ex -> ex.solution) ;
       update = (fun solution ex -> { ex with solution })
      }
-
+  let descr : (string * string) list file =
+    { key = "descr.html" ;
+      decode = descrs_from_string ; encode = descrs_to_string ;
+      field = (fun ex -> ex.descr) ;
+      update = (fun descr ex -> { ex with descr })
+     }
+  let compiled key get set =
+    { key;
+      decode = (fun v -> v) ; encode = (fun v -> v) ;
+      field = (fun ex -> get ex.compiled) ;
+      update = (fun v ex -> { ex with compiled = set v ex.compiled }) }
+  let prelude_cmi =
+    compiled "prelude.cmi"
+      (fun comp -> comp.prelude_cmi)
+      (fun prelude_cmi c -> { c with prelude_cmi })
+  let prepare_cmi =
+    compiled "prepare.cmi"
+      (fun comp -> comp.prepare_cmi)
+      (fun prepare_cmi c -> { c with prepare_cmi })
+  let solution_cmi =
+    compiled "solution.cmi"
+      (fun comp -> comp.solution_cmi)
+      (fun solution_cmi c -> { c with solution_cmi })
+  let test_cmi =
+    compiled "test.cmi"
+      (fun comp -> comp.test_cmi)
+      (fun test_cmi c -> { c with test_cmi })
+  let compiled_lib key get set =
+    compiled (key^".cma")
+      (fun comp -> (get comp).cma)
+      (fun cma c -> let l = get c in set { l with cma } c),
+    compiled (key^".js")
+      (fun comp -> (get comp).js)
+      (fun js c -> let l = get c in set { l with js } c)
+  let exercise_cma, exercise_js =
+    compiled_lib "exercise"
+      (fun comp -> comp.exercise_lib)
+      (fun exercise_lib c -> { c with exercise_lib })
+  let test_cma, test_js =
+    compiled_lib "test"
+      (fun comp -> comp.test_lib)
+      (fun test_lib c -> { c with test_lib })
   let depend =
-    { key = "depend.txt" ; ciphered = false ;
-      decode = (fun v -> Some v) ; 
-      encode = (function 
+    { key = "depend.txt" ;
+      decode = (fun v -> Some v) ;
+      encode = (function
                 | None -> "" (* no `depend` ~ empty `depend` *)
                 | Some txt -> txt) ;
       field = (fun ex -> ex.depend) ;
@@ -202,7 +260,7 @@ module File = struct
 
   (* [parse_dependencies txt] extracts dependencies from the string [txt].
     Dependencies are file names separated by at least one line break.
-    [txt] may contain comments starting with characters ';' or '#' 
+    [txt] may contain comments starting with characters ';' or '#'
     and ending by a line break. *)
   let parse_dependencies txt =
     let remove_comment ~start:c line =
@@ -217,19 +275,19 @@ module File = struct
     | None -> []
     | Some txt ->
       let filenames = parse_dependencies txt in
-      List.mapi 
+      List.mapi
         (fun pos filename ->
-          { key = filename ; ciphered = true ;
+          { key = filename ;
             decode = (fun v -> v) ; encode = (fun v -> v) ;
             field = (fun ex -> List.nth ex.dependencies pos) ;
-            update = (fun v ex -> 
-                        let dependencies = 
+            update = (fun v ex ->
+                        let dependencies =
                           List.mapi (fun i v' -> if i = pos then v else v')
                             ex.dependencies in { ex with dependencies }) })
         filenames
-  
+
   module MakeReader (Concur : Concur) = struct
-    let read ~read_field ?id: ex_id ?(decipher = true) () =
+    let read ~read_field ?id: ex_id () =
       let open Concur in
       let ex = ref StringMap.empty in
       read_field id.key >>= fun pr_id ->
@@ -248,18 +306,11 @@ module File = struct
        *       return (meta_from_string meta_json)
        * end >>= fun meta_json ->
        * ex := set meta meta_json !ex; *)
-      let read_file ({ key ; ciphered ; decode ; _ } as field) =
+      let read_file ({ key ; decode ; _ } as field) =
         read_field key >>= function
         | Some raw ->
-            let deciphered =
-              if ciphered && decipher then
-                let prefix =
-                  Digest.string (ex_id  ^ "_" ^ key) in
-                Learnocaml_xor.decode ~prefix raw
-              else
-                raw in
             (* decode / encode now to catch malformed fields earlier *)
-            ex := set field (decode deciphered) !ex ;
+            ex := set field (decode raw) !ex ;
             return ()
         | None -> return () in
       (* let read_title () =
@@ -352,12 +403,19 @@ module File = struct
       in
       join
         [ (* read_title () ; *)
-          read_file prelude ;
+          read_file prelude_ml ;
+          read_file prepare_ml ;
           read_file template ;
-          read_descrs () ;
-          read_file prepare ;
           read_file solution ;
-          read_file test ;
+          read_descrs () ;
+          read_file prelude_cmi ;
+          read_file prepare_cmi ;
+          read_file solution_cmi ;
+          read_file test_cmi ;
+          read_file exercise_cma ;
+          read_file exercise_js ;
+          read_file test_cma ;
+          read_file test_js ;
           read_file depend ;
           (* read_max_score () *) ] >>= fun () ->
       join (List.map read_file (dependencies (get_opt depend !ex))) >>= fun () ->
@@ -373,76 +431,83 @@ let access f ex =
 let decipher f ex =
   let open File in
   let raw = f.field ex in
-  if f.ciphered then
-    let prefix =
-      Digest.string (ex.id  ^ "_" ^ f.key) in
-    f.decode (Learnocaml_xor.decode ~prefix raw)
-  else
-    f.decode raw
+  f.decode raw
 
 let update f v ex =
   f.File.update v ex
 
 let cipher f v ex =
   let open File in
-  if f.ciphered then
-    let prefix =
-      Digest.string (ex.id  ^ "_" ^ f.key) in
-    f.update (Learnocaml_xor.encode ~prefix (f.encode v)) ex
-  else
-    f.update (f.encode v) ex
+  f.update (f.encode v) ex
 
 let field_from_file file files =
   try File.(StringMap.find file.key files |> file.decode)
   with Not_found -> raise File.(Missing_file file.key)
 
+let strip need_js ex =
+  let f {cma; js} =
+    if need_js then {cma= ""; js} else {cma; js = ""}
+  in
+  { ex with
+    compiled =
+      { ex.compiled with
+        exercise_lib = f ex.compiled.exercise_lib;
+        test_lib = f ex.compiled.test_lib } }
+
+
 module MakeReaderAnddWriter (Concur : Concur) = struct
-  
+
   module FileReader = File.MakeReader(Concur)
 
-  let read ~read_field ?id ?decipher () =
+  let read ~read_field ?id () =
     let open Concur in
-    FileReader.read ~read_field ?id ?decipher () >>= fun ex ->
+    FileReader.read ~read_field ?id () >>= fun ex ->
     try
       let depend = File.get_opt File.depend ex in
       return
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
-          prelude = field_from_file File.prelude ex ;
+          prelude_ml = field_from_file File.prelude_ml ex ;
+          prepare_ml = field_from_file File.prepare_ml ex ;
           template = field_from_file File.template ex ;
-          descr = field_from_file File.descr ex ;
-          prepare = field_from_file File.prepare ex ;
-          test = field_from_file File.test ex ;
           solution = field_from_file File.solution ex ;
+          descr = field_from_file File.descr ex ;
+          compiled = {
+            prelude_cmi = field_from_file File.prelude_cmi ex;
+            prepare_cmi = field_from_file File.prepare_cmi ex;
+            solution_cmi = field_from_file File.solution_cmi ex;
+            test_cmi = field_from_file File.test_cmi ex;
+            exercise_lib = {
+              cma = field_from_file File.exercise_cma ex;
+              js = field_from_file File.exercise_js ex;
+            };
+            test_lib = {
+              cma = field_from_file File.test_cma ex;
+              js = field_from_file File.test_js ex;
+            };
+          };
           max_score = 0 ;
           depend ;
-          dependencies = 
+          dependencies =
             let field_from_dependency file =
               try field_from_file file ex
-              with File.Missing_file msg 
-              -> let msg' = msg ^ ": dependency declared in " 
+              with File.Missing_file msg
+              -> let msg' = msg ^ ": dependency declared in "
                                 ^ File.(key depend) ^ ", but not found" in
-                 raise (File.Missing_file msg') 
-            in 
-            List.map field_from_dependency (File.dependencies depend)             
+                 raise (File.Missing_file msg')
+            in
+            List.map field_from_dependency (File.dependencies depend)
         }
     with File.Missing_file _ as e -> fail e
 
-  let write ~write_field ex ?(cipher = true) acc =
+  let write ~write_field ex acc =
     let open Concur in
     let open File in
     let acc = ref acc in
-    let ex_id = ex.id in
-    let write_field { key ; ciphered ; encode ; field ; _  } =
+    let write_field { key ; encode ; field ; _  } =
       try
         let raw = field ex |> encode in
-        let ciphered = if ciphered && (not cipher) then
-            let prefix =
-              Digest.string (ex_id  ^ "_" ^ key) in
-            Learnocaml_xor.decode ~prefix raw
-          else
-            raw in
-        write_field key ciphered !acc >>= fun nacc ->
+        write_field key raw !acc >>= fun nacc ->
         acc := nacc ;
         return ()
       with Not_found -> Concur.return () in
@@ -450,14 +515,20 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
       ([ write_field id ;
         (* write_field meta ;
          * write_field title ; *)
-        write_field prelude ;
+         write_field prelude_ml ;
+         (* prepare not written on purpose *)
         write_field template ;
+         (* solution not written on purpose *)
         write_field descr ;
-        write_field prepare ;
-        write_field solution ;
-        write_field test ;
+        write_field prelude_cmi ;
+        write_field prepare_cmi ;
+        write_field solution_cmi ;
+        write_field exercise_cma ;
+        write_field exercise_js ;
+        write_field test_cma ;
+        write_field test_js ;
         write_field depend ;
-        (* write_field max_score *) ] 
+        (* write_field max_score *) ]
         @ (List.map write_field (dependencies (access depend ex))) )
         >>= fun () ->
     return !acc

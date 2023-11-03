@@ -13,29 +13,52 @@
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
+;; needs to be a separate lib because the module is shared between evaluator
+;; parts (Grading) and dynamic parts (Test_lib)
 (library
- (name testing)
+ (name introspection_intf)
+ (wrapped false)
+ (modules introspection_intf)
+ (modules_without_implementation introspection_intf)
+ (libraries learnocaml_report ty))
+
+;; dynamic part, on which Test_lib depends
+(library
+ (name pre_test)
+ (wrapped false)
+ (modules learnocaml_callback learnocaml_internal pre_test)
+ (modules_without_implementation learnocaml_callback learnocaml_internal pre_test)
+ (libraries compiler-libs
+            learnocaml_report
+            learnocaml_internal_intf
+            introspection_intf))
+
+;; dynamic (but pre-compiled) part
+(library
+ (name testing_dyn)
  (wrapped false)
  (modes byte)
  (library_flags :standard -linkall)
  (libraries ty
             toploop
-            learnocaml_ppx_metaquot
             learnocaml_ppx_metaquot_lib
+            grader_ppx
             ocplib-json-typed
             learnocaml_report
-            learnocaml_repository)
- (modules Introspection_intf
-          Introspection
-          Test_lib
-          Mutation_test)
- (modules_without_implementation Introspection_intf)
- (preprocess (pps learnocaml_ppx_metaquot))
+            learnocaml_repository
+            introspection_intf
+            pre_test)
+ (modules Test_lib)
+ (preprocess (pps grader_ppx))
 )
+(rule
+ (target testing_dyn.js)
+ (deps testing_dyn.cma)
+ (action (run js_of_ocaml %{deps} --wrap-with dynload)))
 
 (rule
  (targets test_lib.odoc)
- (deps .testing.objs/byte/test_lib.cmti)
+ (deps .testing_dyn.objs/byte/test_lib.cmti)
  (action (run odoc compile --package learn-ocaml %{deps} -o %{targets}))
 )
 
@@ -138,25 +161,16 @@
 )
 
 (rule
- (targets embedded_grading_cmis.ml)
- (deps (:compiler-cmis
-        %{ocaml-config:standard_library}/compiler-libs/longident.cmi
-        %{ocaml-config:standard_library}/compiler-libs/asttypes.cmi
-        %{ocaml-config:standard_library}/compiler-libs/ast_helper.cmi
-        %{ocaml-config:standard_library}/compiler-libs/ast_mapper.cmi
-        %{ocaml-config:standard_library}/compiler-libs/parsetree.cmi
-        %{ocaml-config:standard_library}/compiler-libs/location.cmi
-        %{ocaml-config:standard_library}/compiler-libs/parse.cmi
-        %{ocaml-config:standard_library}/compiler-libs/pprintast.cmi)
-       (:generated-cmis
-        ../ppx-metaquot/.ty.objs/byte/ty.cmi
-        ../ppx-metaquot/.fun_ty.objs/byte/fun_ty.cmi
-        .testing.objs/byte/introspection_intf.cmi
-        .learnocaml_report.objs/byte/learnocaml_report.cmi
-        .testing.objs/byte/test_lib.cmi
-        .testing.objs/byte/mutation_test.cmi))
+ (targets embedded_grading_lib.ml)
+ (deps
+  .pre_test.objs/byte/learnocaml_callback.cmi
+  .pre_test.objs/byte/learnocaml_internal.cmi
+  ;; .pre_test.objs/byte/pre_test.cmi -- only test_lib should be needed
+  .testing_dyn.objs/byte/test_lib.cmi
+  testing_dyn.cma
+  testing_dyn.js)
  (action (with-stdout-to %{targets}
-           (run ocp-ocamlres -format ocamlres %{compiler-cmis} %{generated-cmis})))
+           (run ocp-ocamlres -format ocamlres %{deps})))
 )
 
 (library
@@ -164,15 +178,19 @@
  (wrapped false)
  (modes byte)
  (library_flags :standard -linkall)
- (libraries testing
-            learnocaml_ppx_metaquot
+ (libraries grader_ppx
             ocplib-ocamlres.runtime
+            toploop
+            learnocaml_internal_intf
+            introspection_intf
             embedded_cmis
             ocplib_i18n
-            learnocaml_report)
- (modules Embedded_grading_cmis
+            learnocaml_report
+            learnocaml_repository)
+ (modules Introspection
+          Embedded_grading_lib
           Grading)
- (preprocess (per_module ((pps ppx_ocplib_i18n learnocaml_ppx_metaquot) Grading)))
+ (preprocess (per_module ((pps ppx_ocplib_i18n grader_ppx) Grading)))
 )
 
 
