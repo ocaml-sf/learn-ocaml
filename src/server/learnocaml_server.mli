@@ -16,5 +16,12 @@ val args: (Arg.key * Arg.spec * Arg.doc) list
 
 (** Main *)
 
-(* Returns [false] if interrupted prematurely due to an error *)
+val check_running: unit -> int option
+(** Returns the pid or an existing process listening on the tcp port *)
+
+val kill_running: int -> unit
+(** Kills the given process and waits for termination (fails upon
+    reaching a timeout) *)
+
 val launch: unit -> bool Lwt.t
+(** Returns [false] if interrupted prematurely due to an error *)

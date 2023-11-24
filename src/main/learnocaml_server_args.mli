@@ -16,6 +16,7 @@ module type S = sig
     base_url: string;
     port: int;
     cert: string option;
+    replace: bool;
   }
 
   val term: string Cmdliner.Term.t -> string Cmdliner.Term.t -> t Cmdliner.Term.t
