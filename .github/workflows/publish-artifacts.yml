@@ -53,13 +53,13 @@ jobs:
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-linux-x86_64
-          path: artifacts/
+          path: artifacts/linux-x86_64
       - name: Get previous artifact learn-ocaml-darwin-x86_64
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-darwin-x86_64
-          path: artifacts/
+          path: artifacts/darwin-x86_64
       - name: Move into place and generate HTML index
         run: |
           sudo mv artifacts _site
