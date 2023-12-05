@@ -2,7 +2,7 @@ name: Generate static binaries
 on:
   push:
     branches:
-      - master
+      - test-deploy
     tags:
       - '*'
   pull_request:
@@ -67,53 +67,54 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}/*
-  static-bin-macos:
-    name: Builds static Macos binaries
-    if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
-    runs-on: macos-latest
-    env:
-      OPAMYES: 1
-      OPAMDEPEXTYES: 1
-    strategy:
-      matrix:
-        artifact: ["learn-ocaml-darwin-x86_64"]
-        # we could use an env var, albeit it would be less convenient
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Show OS version
-        run: |
-          sw_vers
-          system_profiler SPSoftwareDataType
-          uname -a
-      - name: Retrieve opam
-        run: |
-          mkdir "$HOME/bin"
-          wget https://github.com/ocaml/opam/releases/download/2.1.0/opam-2.1.0-x86_64-macos -O $HOME/bin/opam
-          chmod a+x $HOME/bin/opam
-          echo "$HOME/bin" >> $GITHUB_PATH
-      - name: Prepare build environment
-        run: |
-          opam init -a --bare
-          brew install openssl@3  # Workaround https://github.com/ocaml/opam-repository/issues/19676
-          opam switch create . ocaml-base-compiler --deps-only
-      - name: Build the binaries
-        run: |
-          opam exec -- make LINKING_MODE=static
-      - name: Test the binaries
-        run: |
-          bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
-          dir="_build/install/default/bin"
-          file "$dir"/*
-          otool -L "$dir"/*
-          for b in "${bin[@]}"; do ( set -x; "$dir/$b" --version ); done
-      - name: Archive static binaries
-        run: |
-          uname -a
-          mkdir -p ${{ matrix.artifact }}
-          cp _build/install/default/bin/learn-ocaml{,-server,-client} ${{ matrix.artifact }}
-      - name: Upload static binaries
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}/*
+  # static-bin-macos:
+  #   name: Builds static Macos binaries
+  #   if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
+  #   runs-on: macos-latest
+  #   env:
+  #     OPAMYES: 1
+  #     OPAMDEPEXTYES: 1
+  #   strategy:
+  #     matrix:
+  #       artifact: ["learn-ocaml-darwin-x86_64"]
+  #       # we could use an env var, albeit it would be less convenient
+  #   steps:
+  #     - name: Check out the repo
+  #       uses: actions/checkout@v3
+  #     - name: Show OS version
+  #       run: |
+  #         sw_vers
+  #         system_profiler SPSoftwareDataType
+  #         uname -a
+  #     - name: Retrieve opam
+  #       run: |
+  #         mkdir "$HOME/bin"
+  #         wget https://github.com/ocaml/opam/releases/download/2.1.0/opam-2.1.0-x86_64-macos -O $HOME/bin/opam
+  #         chmod a+x $HOME/bin/opam
+  #         echo "$HOME/bin" >> $GITHUB_PATH
+  #     - name: Prepare build environment
+  #       run: |
+  #         opam init -a --bare
+  #         brew install openssl@3  # Workaround https://github.com/ocaml/opam-repository/issues/19676
+  #         opam switch create . ocaml-base-compiler --deps-only
+  #     - name: Build the binaries
+  #       run: |
+  #         opam exec -- make LINKING_MODE=static
+  #     - name: Test the binaries
+  #       run: |
+  #         bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
+  #         dir="_build/install/default/bin"
+  #         file "$dir"/*
+  #         otool -L "$dir"/*
+  #         for b in "${bin[@]}"; do ( set -x; "$dir/$b" --version ); done
+  #     - name: Archive static binaries
+  #       run: |
+  #         uname -a
+  #         mkdir -p ${{ matrix.artifact }}
+  #         cp _build/install/default/bin/learn-ocaml{,-server,-client} ${{ matrix.artifact }}
+  #     - name: Upload static binaries
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: ${{ matrix.artifact }}
+  #         path: ${{ matrix.artifact }}/*
+g
