@@ -63,9 +63,9 @@ jobs:
       - name: Move into place and generate HTML index
         run: |
           sudo mv artifacts _site
-          cd _site/artifacts && \
-            tree -H . --noreport --dirsfirst -T 'Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
-          sudo chown -R root:root _site/artifacts
+          cd _site/artifacts
+          tree -H . --noreport --dirsfirst -T 'Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
+          sudo chown -R root:root .
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 
