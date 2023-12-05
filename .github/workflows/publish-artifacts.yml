@@ -46,23 +46,26 @@ jobs:
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-www.zip
-          path: _site/artifacts/
+          path: artifacts/
       - name: Get previous artifact learn-ocaml-linux-x86_64
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-linux-x86_64
-          path: _site/artifacts/
+          path: artifacts/
       - name: Get previous artifact learn-ocaml-darwin-x86_64
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-darwin-x86_64
-          path: _site/artifacts/
-      - name: Generate HTML index
+          path: artifacts/
+      - name: Move into place and generate HTML index
         run: |
-          cd _site/artifacts
-          tree -H . -L 1 --noreport --dirsfirst -T Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
+          ls -hal _site
+          ls -hal artifacts
+          mv artifacts _site
+          cd _site/artifacts && \
+            tree -H . -L 1 --noreport --dirsfirst -T Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 
