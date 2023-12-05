@@ -1,0 +1,81 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy Jekyll site and static content to Pages
+
+on:
+  # Run on master branch after the static builds are successful
+  workflow_run:
+    workflows: ["Generate static binaries"]
+    branches: [$default-branch]
+    types:
+      - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      # Not the default gh download-artifact action, which doesn't work
+      # between workflows
+      - name: Get previous artifact learn-ocaml-www.zip
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: learn-ocaml-www.zip
+          path: _site/artifacts/
+      - name: Get previous artifact learn-ocaml-linux-x86_64
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: learn-ocaml-linux-x86_64
+          path: _site/artifacts/
+      - name: Get previous artifact learn-ocaml-darwin-x86_64
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: learn-ocaml-darwin-x86_64
+          path: _site/artifacts/
+      - name: Generate HTML index
+        run: |
+          cd _site/artifacts
+          tree -H . -L 1 --noreport --dirsfirst -T Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+
+  # Deployment job
+  deploy:
+    # Don't run if tests failed
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v3
