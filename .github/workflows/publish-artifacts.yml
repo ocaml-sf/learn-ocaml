@@ -47,6 +47,7 @@ jobs:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-www
           path: artifacts/
+          skip_unpack: true
       - name: Get previous artifact learn-ocaml-linux-x86_64
         uses: dawidd6/action-download-artifact@v2
         with:
@@ -61,11 +62,10 @@ jobs:
           path: artifacts/
       - name: Move into place and generate HTML index
         run: |
-          ls -hal _site
-          ls -hal artifacts
-          mv artifacts _site
+          sudo mv artifacts _site
           cd _site/artifacts && \
-            tree -H . -L 1 --noreport --dirsfirst -T Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
+            tree -H . --noreport --dirsfirst -T 'Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
+          sudo chown -R root:root _site/artifacts
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 
