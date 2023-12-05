@@ -5,7 +5,7 @@ on:
   # Run on master branch after the static builds are successful
   workflow_run:
     workflows: ["Generate static binaries"]
-    branches: [$default-branch]
+    branches: [master]
     types:
       - completed
 

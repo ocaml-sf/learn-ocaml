@@ -2,7 +2,7 @@ name: Generate static binaries
 on:
   push:
     branches:
-      - $default-branch
+      - master
     tags:
       - '*'
   pull_request:
