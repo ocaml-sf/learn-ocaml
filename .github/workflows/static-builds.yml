@@ -36,7 +36,7 @@ jobs:
             '${{ matrix.arch_dir }}'
           docker rm "$container"
       - name: 'Upload ${{ matrix.arch_dir }}'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.arch_dir }}
           path: ${{ matrix.arch_dir }}/*
@@ -65,7 +65,7 @@ jobs:
           mkdir -p ${{ matrix.artifact }}
           cp learn-ocaml learn-ocaml-server learn-ocaml-client ${{ matrix.artifact }}
       - name: Upload static binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}/*
@@ -115,7 +115,7 @@ jobs:
           mkdir -p ${{ matrix.artifact }}
           cp _build/install/default/bin/learn-ocaml{,-server,-client} ${{ matrix.artifact }}
       - name: Upload static binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}/*

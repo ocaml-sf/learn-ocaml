@@ -41,11 +41,11 @@ jobs:
           destination: ./_site
       # Not the default gh download-artifact action, which doesn't work
       # between workflows
-      - name: Get previous artifact learn-ocaml-www.zip
+      - name: Get previous artifact learn-ocaml-www
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
-          name: learn-ocaml-www.zip
+          name: learn-ocaml-www
           path: artifacts/
       - name: Get previous artifact learn-ocaml-linux-x86_64
         uses: dawidd6/action-download-artifact@v2
