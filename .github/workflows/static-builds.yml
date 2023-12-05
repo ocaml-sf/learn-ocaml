@@ -2,7 +2,7 @@ name: Generate static binaries
 on:
   push:
     branches:
-      - master
+      - $default-branch
     tags:
       - '*'
   pull_request:
@@ -11,6 +11,9 @@ on:
   schedule:
     # test master every Saturday at 08:00 UTC
     - cron: '0 8 * * 6'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 jobs:
   learn-ocaml-www-zip:
     name: Build learn-ocaml-www.zip archive
@@ -41,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        artifact: ["learn-ocaml-linux-x86_64.tar.gz"]
+        artifact: ["learn-ocaml-linux-x86_64"]
         # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
@@ -57,13 +60,13 @@ jobs:
       - name: Archive static binaries
         run: |
           uname -a
-          tar cvzf ${{ matrix.artifact }} \
-            learn-ocaml learn-ocaml-server learn-ocaml-client
+          mkdir -p ${{ matrix.artifact }}
+          cp learn-ocaml learn-ocaml-server learn-ocaml-client ${{ matrix.artifact }}
       - name: Upload static binaries
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}/*
   static-bin-macos:
     name: Builds static Macos binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
@@ -73,7 +76,7 @@ jobs:
       OPAMDEPEXTYES: 1
     strategy:
       matrix:
-        artifact: ["learn-ocaml-darwin-x86_64.tar.gz"]
+        artifact: ["learn-ocaml-darwin-x86_64"]
         # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
@@ -107,11 +110,10 @@ jobs:
       - name: Archive static binaries
         run: |
           uname -a
-          cd _build/install/default/bin
-          tar cvzhf "$OLDPWD"/${{ matrix.artifact }} \
-            learn-ocaml learn-ocaml-server learn-ocaml-client
+          mkdir -p ${{ matrix.artifact }}
+          cp _build/install/default/bin/learn-ocaml{,-server,-client} ${{ matrix.artifact }}
       - name: Upload static binaries
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}/*
