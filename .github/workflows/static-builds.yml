@@ -30,14 +30,16 @@ jobs:
         run: 'docker build -t learn-ocaml-compilation --target=compilation .'
       - name: 'Build ${{ matrix.arch_dir }}.zip'
         run: |
-          docker run -i --rm -w /home/opam/install-prefix/share/learn-ocaml -u 0 --entrypoint='' learn-ocaml-compilation sh -c \
-          'mv www "${{ matrix.arch_dir }}" >&2 && apk add --no-cache zip >&2 && zip -r "${{ matrix.arch_dir }}.zip" "${{ matrix.arch_dir }}" >&2 && tar c "${{ matrix.arch_dir }}.zip"' | \
-          tar vx
-      - name: 'Upload ${{ matrix.arch_dir }}.zip'
+          container=$(docker create learn-ocaml-compilation)
+          docker cp \
+            "$container:/home/opam/install-prefix/share/learn-ocaml/www" \
+            '${{ matrix.arch_dir }}'
+          docker rm "$container"
+      - name: 'Upload ${{ matrix.arch_dir }}'
         uses: actions/upload-artifact@v2
         with:
-          name: '${{ matrix.arch_dir }}.zip'
-          path: '${{ matrix.arch_dir }}.zip'
+          name: ${{ matrix.arch_dir }}
+          path: ${{ matrix.arch_dir }}/*
   static-bin-linux:
     name: Builds static Linux binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
