@@ -16,6 +16,7 @@ rm -f /usr/local/bin/pydoc3
 rm -f /usr/local/bin/python3
 rm -f /usr/local/bin/python3-config
 rm -f /usr/local/bin/2to3-3.11
+rm -f /usr/local/bin/2to3-3.12
 rm -f /usr/local/bin/idle3.11
 rm -f /usr/local/bin/pydoc3.11
 rm -f /usr/local/bin/python3.11
