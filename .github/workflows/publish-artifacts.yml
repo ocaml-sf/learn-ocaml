@@ -37,7 +37,7 @@ jobs:
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./
+          source: ./docs
           destination: ./_site
       # Not the default gh download-artifact action, which doesn't work
       # between workflows
