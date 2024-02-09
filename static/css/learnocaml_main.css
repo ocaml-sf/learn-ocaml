@@ -590,11 +590,9 @@ body {
     margin: 0 0 30px 0;
   }
   #learnocaml-main-exercise-list .exercise > .stats > .stars {
-    position: absolute;
     line-height: 20px;
     height: 30px;
-    bottom: 0; left: 10px;
-    vertical-align: bottom;
+    left: 10px;
   }
   #learnocaml-main-exercise-list .exercise > .stats > .length {
     position: absolute;
