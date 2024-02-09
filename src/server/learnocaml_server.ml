@@ -718,7 +718,7 @@ let launch () =
 
 let check_running () =
   try
-    let ic = Printf.ksprintf Unix.open_process_in "lsof -Qti tcp:%d -s tcp:LISTEN" !port in
+    let ic = Printf.ksprintf Unix.open_process_in "lsof -ti tcp:%d -s tcp:LISTEN" !port in
     let pid = match input_line ic with
       | "" -> None
       | s -> int_of_string_opt s
