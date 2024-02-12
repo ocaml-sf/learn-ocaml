@@ -5,92 +5,90 @@
 
 ### ⚠ BREAKING CHANGES
 
-* Remove doc tutorial on `depend.txt` (it will need rewriting)
-* Implement pre-compilation of exercises and graders
+* Implement pre-compilation of exercises and graders.  
+  Prefix **pre-compilation** indicates the related commits below (sorted in chronological order).
+* Remove doc tutorial on `depend.txt` (it will need rewriting; relying on the new server engine).
+
 
 ### Features
 
-* Add CLI option `learn-ocaml build --build-dir=[./_learn-ocaml-build]` ([#585](https://github.com/ocaml-sf/learn-ocaml/issues/585)) ([6535692](https://github.com/ocaml-sf/learn-ocaml/commit/6535692bc77eba471a97bb671658b4db4c86b4f4))
-* Add support for a `test_libs.txt` file in exercises ([d22a788](https://github.com/ocaml-sf/learn-ocaml/commit/d22a78822b007e92f576288713dfa5ed6be2b1de))
-* **CI:** Deploy artifacts to github-pages ([01eae90](https://github.com/ocaml-sf/learn-ocaml/commit/01eae90b18c2129619f653b7f465a94b0d61226e))
-* Enable downloading for only the relevant artifacts (bc or js) ([47d5a06](https://github.com/ocaml-sf/learn-ocaml/commit/47d5a0614f82e313520c79739922616b99d8c868))
-* **grader:** Show a status line on what is being built ([995a79d](https://github.com/ocaml-sf/learn-ocaml/commit/995a79d5f02b787981eb29bffb012d6993e3c63f))
-* Implement pre-compilation of exercises and graders ([b03bdfe](https://github.com/ocaml-sf/learn-ocaml/commit/b03bdfe5a7c9ed5d4677b1ee2eb11d37e953cbe3))
-* Include Prelude/Prepare and shadow them ([787840b](https://github.com/ocaml-sf/learn-ocaml/commit/787840bda9701ae932ce5f9d56c5929dbb889e17))
-* **ppx-metaquot:** Add transformation introducing the `register_sampler` calls ([3cd75f5](https://github.com/ocaml-sf/learn-ocaml/commit/3cd75f5fbf580ab7ec388ef36976a0b32ca118ce))
-* Preprocessing and typing of samplers and printers ([e768616](https://github.com/ocaml-sf/learn-ocaml/commit/e7686163f9b23acc6140cabd406f2999f228fb50))
-* Provide lib to compile grader helper libraries ([3fc41ca](https://github.com/ocaml-sf/learn-ocaml/commit/3fc41caf632ede074476d760b892ebd61b790b9e))
-* Restore compatibility with static deployment ([f0e8346](https://github.com/ocaml-sf/learn-ocaml/commit/f0e8346450a826a9955a71b69aa4504865d2d56a))
+* **pre-compilation:** Implement pre-compilation of exercises and graders ([b03bdfe](https://github.com/ocaml-sf/learn-ocaml/commit/b03bdfe5a7c9ed5d4677b1ee2eb11d37e953cbe3))
+* **pre-compilation:** Enable downloading for only the relevant artifacts (bc or js) ([47d5a06](https://github.com/ocaml-sf/learn-ocaml/commit/47d5a0614f82e313520c79739922616b99d8c868))
+* **pre-compilation:** Include Prelude/Prepare and shadow them ([787840b](https://github.com/ocaml-sf/learn-ocaml/commit/787840bda9701ae932ce5f9d56c5929dbb889e17))
+* **pre-compilation: ppx-metaquot:** Add transformation introducing the `register_sampler` calls ([3cd75f5](https://github.com/ocaml-sf/learn-ocaml/commit/3cd75f5fbf580ab7ec388ef36976a0b32ca118ce))
+* **pre-compilation:** Restore compatibility with static deployment ([f0e8346](https://github.com/ocaml-sf/learn-ocaml/commit/f0e8346450a826a9955a71b69aa4504865d2d56a))
+* **pre-compilation:** Add support for a `test_libs.txt` file in exercises ([d22a788](https://github.com/ocaml-sf/learn-ocaml/commit/d22a78822b007e92f576288713dfa5ed6be2b1de))
+* **pre-compilation:** Preprocessing and typing of samplers and printers ([e768616](https://github.com/ocaml-sf/learn-ocaml/commit/e7686163f9b23acc6140cabd406f2999f228fb50))
+* **pre-compilation:** Provide lib to compile grader helper libraries ([3fc41ca](https://github.com/ocaml-sf/learn-ocaml/commit/3fc41caf632ede074476d760b892ebd61b790b9e))
 * **server:** add a `--replace` option ([82d9bea](https://github.com/ocaml-sf/learn-ocaml/commit/82d9bea4db4034857747b4da2e7b3121bd6c2b28))
+* **grader:** Show a status line on what is being built ([995a79d](https://github.com/ocaml-sf/learn-ocaml/commit/995a79d5f02b787981eb29bffb012d6993e3c63f))
+* **CI: static-binaries:** Deploy artifacts to GitHub Pages ([01eae90^..9cf5486](https://github.com/ocaml-sf/learn-ocaml/compare/6cee13c160aba5db8aba0968df16d069e02e8fda...9cf5486b02d098f556a72d5bd639196701bee633)), closes [#575](https://github.com/ocaml-sf/learn-ocaml/issues/575)
+* **pre-compilation: CLI:** Add CLI option `learn-ocaml build --build-dir=[./_learn-ocaml-build]` to increase compatibility with existing workflows ([#585](https://github.com/ocaml-sf/learn-ocaml/issues/585)) ([6535692](https://github.com/ocaml-sf/learn-ocaml/commit/6535692bc77eba471a97bb671658b4db4c86b4f4))
 
 
 ### Bug Fixes
 
-* Allow printer registration in prepare/prelude & Fix print callbacks' usage ([1ec3af6](https://github.com/ocaml-sf/learn-ocaml/commit/1ec3af6ebec857f79f440706779190541636ce68))
-* Avoid double-printing of internal grader errors ([7422ca4](https://github.com/ocaml-sf/learn-ocaml/commit/7422ca439fb450af6dab362ccc95e094f4297b41))
-* Avoid using `lsof -Q` which is only available from lsof 4.95.0 ([a242084](https://github.com/ocaml-sf/learn-ocaml/commit/a242084cde9eaf4ab25b205b71c244c23279704f))
-* Be more precise on the definition and lookup of samplers ([7825a6b](https://github.com/ocaml-sf/learn-ocaml/commit/7825a6b6d15b213b1297d7878e8fb36057ec7b81))
-* **build:** update lockfiles ([f1abb7d](https://github.com/ocaml-sf/learn-ocaml/commit/f1abb7d48e00e19edd3d922a043d309767b4c339))
-* **CI:** attempt to fix running the docker image on the corpus ([b94f053](https://github.com/ocaml-sf/learn-ocaml/commit/b94f05368a02038e5efb978976d8f7e20154fcc6))
-* **CI:** disable compat tests with 0.12, 0.13 ([91a418e](https://github.com/ocaml-sf/learn-ocaml/commit/91a418eeadf3be73e716a83ae16153332d7d19e7))
-* **ci:** Fix permission issues ([fa2cd23](https://github.com/ocaml-sf/learn-ocaml/commit/fa2cd23babafcea0ff7a2d685993a838af65eada))
-* **CLI:** Report JSON parse error origin and locations ([ee57ac1](https://github.com/ocaml-sf/learn-ocaml/commit/ee57ac18dc7d395108defaa38079affb13f6ccaf))
-* Do exercise recompilation correctly with `--replace` ([#584](https://github.com/ocaml-sf/learn-ocaml/issues/584)) ([fe2a806](https://github.com/ocaml-sf/learn-ocaml/commit/fe2a806fa306a46b1c978fe47fbd3c26170ee52c)), closes [#583](https://github.com/ocaml-sf/learn-ocaml/issues/583)
-* Do some cleanup & Fix `mutation_testing` test lib ([c432909](https://github.com/ocaml-sf/learn-ocaml/commit/c43290947491dc3e1de76a5df3581531971332aa))
-* **docker:** Include jsoo in Dockerfile, which is now needed ([466e80c](https://github.com/ocaml-sf/learn-ocaml/commit/466e80ca8e5ea1ab99590d4795f7913188dd0333))
-* **docker:** install more libs in server image ([6ce797f](https://github.com/ocaml-sf/learn-ocaml/commit/6ce797f818766047c85d543188767fb4d3609352))
-* Expose `prepare.ml` file ([365cbb7](https://github.com/ocaml-sf/learn-ocaml/commit/365cbb719a5048a6f422278fc986f822ad17770b))
-* Fix a small race condition in builder ([87ee902](https://github.com/ocaml-sf/learn-ocaml/commit/87ee902e1c60fd3d5b6fcb40e68b563062b70662))
-* Fix dune dependency glitch on recompilation of `mutation_test` ([32ad13e](https://github.com/ocaml-sf/learn-ocaml/commit/32ad13e1915239af563f88fa673b73649d685f28))
-* Fix printer registration in the grader ([7d27523](https://github.com/ocaml-sf/learn-ocaml/commit/7d2752392ec7bf74a21d1604e2f35a221377e3f1))
-* Fix segfault on graders using samplers returning newly defined exceptions ([c61a4d0](https://github.com/ocaml-sf/learn-ocaml/commit/c61a4d06715180069e9c6625f9c9559af476054d))
-* **grader:** allow exercises to use vg, gg ([ead187e](https://github.com/ocaml-sf/learn-ocaml/commit/ead187e387d5794d3f16bb420a77e643b95f4b5a))
-* **grader:** avoid errors with too many open files on parallel builds ([6583af4](https://github.com/ocaml-sf/learn-ocaml/commit/6583af4bbb3547b302963922279e0516edd9d6b4))
 * **grading:** avoid failing on sampling arrays with unique elements ([6a3ce07](https://github.com/ocaml-sf/learn-ocaml/commit/6a3ce077e1ce0946e9e10324b5e1e1b51669e62c))
-* **partition-view:** Reactivate the feature ([57ca10b](https://github.com/ocaml-sf/learn-ocaml/commit/57ca10b0a40157e6b97d974c76c9963a1e00a0aa))
-* Properly type samplers ([a97f813](https://github.com/ocaml-sf/learn-ocaml/commit/a97f81367bcce970e6474f39d3f5940df77cb880))
-* **teacher_tab:** use newer asak compatible with precompilation ([942edc2](https://github.com/ocaml-sf/learn-ocaml/commit/942edc2fb1b30336f45caf9027d18f2bd5221ea9))
+* **pre-compilation:** Fix a small race condition in builder ([87ee902](https://github.com/ocaml-sf/learn-ocaml/commit/87ee902e1c60fd3d5b6fcb40e68b563062b70662))
+* **pre-compilation:** Properly type samplers ([a97f813](https://github.com/ocaml-sf/learn-ocaml/commit/a97f81367bcce970e6474f39d3f5940df77cb880))
+* **pre-compilation:** Avoid double-printing of internal grader errors ([7422ca4](https://github.com/ocaml-sf/learn-ocaml/commit/7422ca439fb450af6dab362ccc95e094f4297b41))
+* **pre-compilation:** Fix segfault on graders using samplers returning newly defined exceptions ([c61a4d0](https://github.com/ocaml-sf/learn-ocaml/commit/c61a4d06715180069e9c6625f9c9559af476054d))
+* **pre-compilation:** Be more precise on the definition and lookup of samplers ([7825a6b](https://github.com/ocaml-sf/learn-ocaml/commit/7825a6b6d15b213b1297d7878e8fb36057ec7b81))
+* **pre-compilation:** Fix printer registration in the grader ([7d27523](https://github.com/ocaml-sf/learn-ocaml/commit/7d2752392ec7bf74a21d1604e2f35a221377e3f1))
+* **pre-compilation:** Do some cleanup & Fix `mutation_testing` test lib ([c432909](https://github.com/ocaml-sf/learn-ocaml/commit/c43290947491dc3e1de76a5df3581531971332aa))
+* **pre-compilation:** Allow printer registration in prepare/prelude & Fix print callbacks' usage ([1ec3af6](https://github.com/ocaml-sf/learn-ocaml/commit/1ec3af6ebec857f79f440706779190541636ce68))
+* **pre-compilation: dune:** Fix dune dependency glitch on recompilation of `mutation_test` ([32ad13e](https://github.com/ocaml-sf/learn-ocaml/commit/32ad13e1915239af563f88fa673b73649d685f28))
+* **pre-compilation: docker:** Include jsoo in Dockerfile, which is now needed ([466e80c](https://github.com/ocaml-sf/learn-ocaml/commit/466e80ca8e5ea1ab99590d4795f7913188dd0333))
+* **pre-compilation: CI:** Fix permission issues ([fa2cd23](https://github.com/ocaml-sf/learn-ocaml/commit/fa2cd23babafcea0ff7a2d685993a838af65eada))
+* **pre-compilation:** Expose `prepare.ml` file ([365cbb7](https://github.com/ocaml-sf/learn-ocaml/commit/365cbb719a5048a6f422278fc986f822ad17770b))
+* **pre-compilation: partition-view:** Reactivate the feature ([57ca10b](https://github.com/ocaml-sf/learn-ocaml/commit/57ca10b0a40157e6b97d974c76c9963a1e00a0aa))
+* **pre-compilation: CLI:** Report JSON parse error origin and locations ([ee57ac1](https://github.com/ocaml-sf/learn-ocaml/commit/ee57ac18dc7d395108defaa38079affb13f6ccaf))
+* **pre-compilation: grader:**: Add a safeguard against grading workers going haywire ([cb417d1](https://github.com/ocaml-sf/learn-ocaml/commit/cb417d186a32b2b0d11aea4228c264642b64bf34))
+* **pre-compilation: grader:** allow exercises to use vg, gg ([ead187e](https://github.com/ocaml-sf/learn-ocaml/commit/ead187e387d5794d3f16bb420a77e643b95f4b5a))
+* **pre-compilation: partition-view:** use newer asak compatible with precompilation ([942edc2](https://github.com/ocaml-sf/learn-ocaml/commit/942edc2fb1b30336f45caf9027d18f2bd5221ea9))
+* **pre-compilation: build:** update lockfiles ([f1abb7d](https://github.com/ocaml-sf/learn-ocaml/commit/f1abb7d48e00e19edd3d922a043d309767b4c339))
+* **pre-compilation: CI:** attempt to fix running the docker image on the corpus ([b94f053](https://github.com/ocaml-sf/learn-ocaml/commit/b94f05368a02038e5efb978976d8f7e20154fcc6))
+* **pre-compilation: CI:** disable compat tests with 0.12, 0.13 ([91a418e](https://github.com/ocaml-sf/learn-ocaml/commit/91a418eeadf3be73e716a83ae16153332d7d19e7))
+* **pre-compilation: docker:** install more libs in server image ([6ce797f](https://github.com/ocaml-sf/learn-ocaml/commit/6ce797f818766047c85d543188767fb4d3609352))
+* **pre-compilation: grader:** avoid errors with too many open files on parallel builds ([6583af4](https://github.com/ocaml-sf/learn-ocaml/commit/6583af4bbb3547b302963922279e0516edd9d6b4))
+* **pre-compilation:** Avoid using `lsof -Q` which is only available from lsof 4.95.0 ([a242084](https://github.com/ocaml-sf/learn-ocaml/commit/a242084cde9eaf4ab25b205b71c244c23279704f)), closes [#580](https://github.com/ocaml-sf/learn-ocaml/issues/580)
 * **UI:** Small CSS fix for exercise lists on small screens ([3c9c123](https://github.com/ocaml-sf/learn-ocaml/commit/3c9c1237f5e2565cc173e7f57b864866d190a83d)), closes [#574](https://github.com/ocaml-sf/learn-ocaml/issues/574)
+* **server:** Do exercise recompilation correctly with `--replace` ([#584](https://github.com/ocaml-sf/learn-ocaml/issues/584)) ([fe2a806](https://github.com/ocaml-sf/learn-ocaml/commit/fe2a806fa306a46b1c978fe47fbd3c26170ee52c)), closes [#583](https://github.com/ocaml-sf/learn-ocaml/issues/583)
 
 
 ### Performance Improvements
 
-* Dump the cmis for grading only once ([e63359e](https://github.com/ocaml-sf/learn-ocaml/commit/e63359e38760ee052b62d6ccf3e46ad1db46e988))
-* Make `learn-ocaml build` parallel by default ([eaad14c](https://github.com/ocaml-sf/learn-ocaml/commit/eaad14cfe1d693081c43277c71dca8a74bd5a5a7))
+* **pre-compilation:** Make `learn-ocaml build` parallel by default ([eaad14c](https://github.com/ocaml-sf/learn-ocaml/commit/eaad14cfe1d693081c43277c71dca8a74bd5a5a7))
+* **pre-compilation:** Dump the cmis for grading only once ([e63359e](https://github.com/ocaml-sf/learn-ocaml/commit/e63359e38760ee052b62d6ccf3e46ad1db46e988))
 
 
 ### Code Refactoring
 
-* Disable debug flags ([54851dd](https://github.com/ocaml-sf/learn-ocaml/commit/54851dd368e1c8a5635a2a193751aec1e46f1d97))
-* Generalize sampler typing ([264db4c](https://github.com/ocaml-sf/learn-ocaml/commit/264db4c0436f581c5fc68f222305e8f8770fd674))
-* Get rid of the pseudo-cipher ([2792faf](https://github.com/ocaml-sf/learn-ocaml/commit/2792faf8f49b7b874ae9a854ccafb2c4a2922383))
-* Rename and generalise `recorder` to `ppx_autoregister` ([99e913d](https://github.com/ocaml-sf/learn-ocaml/commit/99e913d847c54e021669c7068ca991ae24de89f2))
+* **pre-compilation:** Get rid of the pseudo-cipher ([2792faf](https://github.com/ocaml-sf/learn-ocaml/commit/2792faf8f49b7b874ae9a854ccafb2c4a2922383))
+* **pre-compilation:** Rename and generalise `recorder` to `ppx_autoregister` ([99e913d](https://github.com/ocaml-sf/learn-ocaml/commit/99e913d847c54e021669c7068ca991ae24de89f2))
+* **pre-compilation:** Generalize sampler typing ([264db4c](https://github.com/ocaml-sf/learn-ocaml/commit/264db4c0436f581c5fc68f222305e8f8770fd674))
+* **pre-compilation:** Disable debug flags ([54851dd](https://github.com/ocaml-sf/learn-ocaml/commit/54851dd368e1c8a5635a2a193751aec1e46f1d97))
 
 
 ### Build System
 
-* Make `make testrun` parallel ([46631d8](https://github.com/ocaml-sf/learn-ocaml/commit/46631d8e62385d934012ae16d756ce6f4bee4139))
+* **pre-compilation:** Make `make testrun` parallel ([46631d8](https://github.com/ocaml-sf/learn-ocaml/commit/46631d8e62385d934012ae16d756ce6f4bee4139))
 
 
 ### CI/CD
 
-* Fix jekyll-build-pages source for https://ocaml-sf.org/learn-ocaml/ ([#577](https://github.com/ocaml-sf/learn-ocaml/issues/577)) ([9cf5486](https://github.com/ocaml-sf/learn-ocaml/commit/9cf5486b02d098f556a72d5bd639196701bee633))
-* Fixing artifacts publication ([d863e57](https://github.com/ocaml-sf/learn-ocaml/commit/d863e574dd4b080c7c721f96d1393ed334951858))
-* Fixing artifacts publication ([bd6ebf8](https://github.com/ocaml-sf/learn-ocaml/commit/bd6ebf83faee05ee37263bade8c5406ccbc8762b))
-* Fixing artifacts publication ([1b78dea](https://github.com/ocaml-sf/learn-ocaml/commit/1b78dea943ea5e8618470d68afe064a1aabf3687))
-* Fixing artifacts publication ([38f746e](https://github.com/ocaml-sf/learn-ocaml/commit/38f746ed81fc0fce56258bf3a23040560938fa86))
-* Fixing artifacts publication ([e56d654](https://github.com/ocaml-sf/learn-ocaml/commit/e56d65460d33f35ee6c857166d00e0e9d9fea882))
-* Fixing artifacts publication ([27b3b7e](https://github.com/ocaml-sf/learn-ocaml/commit/27b3b7e35bf7b99bd94f00c34e2ff261bb86cf01))
-* **release.yml:** Next release version will be 1.0.0 ([6e9cd2b](https://github.com/ocaml-sf/learn-ocaml/commit/6e9cd2bbdb4a695397a7eea0d2560bb8e694cf37))
 * **release.yml:** Replace `hub` (not installed anymore) with `gh` ([cad060f](https://github.com/ocaml-sf/learn-ocaml/commit/cad060f801dba21976cffc03f2fcb4119a3dec75))
+* **release.yml:** Next release version will be 1.0.0 ([6e9cd2b](https://github.com/ocaml-sf/learn-ocaml/commit/6e9cd2bbdb4a695397a7eea0d2560bb8e694cf37))
 
 
 ### Documentation
 
-* Add/Update copyright headers ([5b4e0ab](https://github.com/ocaml-sf/learn-ocaml/commit/5b4e0abaf1c16c1f1964014ab0b4feecc6bcdef8))
-* Remove doc tutorial on `depend.txt` (it will need rewriting) ([9155145](https://github.com/ocaml-sf/learn-ocaml/commit/915514524c501317d79c6e40ee8a948f6a3e5af1))
-* Update doc for pre-compiled exercises + `test_libs.txt` ([2c89d9e](https://github.com/ocaml-sf/learn-ocaml/commit/2c89d9e0935cfce90031502c85cfb6ffa7ca000e))
-* Update French translation ([f028b75](https://github.com/ocaml-sf/learn-ocaml/commit/f028b75b09676120669ea6f4b9e0beff686c9302))
+* **pre-compilation: translations:** Update French translation ([f028b75](https://github.com/ocaml-sf/learn-ocaml/commit/f028b75b09676120669ea6f4b9e0beff686c9302))
+* **pre-compilation:** Remove doc tutorial on `depend.txt` (it will need rewriting) ([9155145](https://github.com/ocaml-sf/learn-ocaml/commit/915514524c501317d79c6e40ee8a948f6a3e5af1))
+* **pre-compilation:** Update doc for pre-compiled exercises + `test_libs.txt` ([2c89d9e](https://github.com/ocaml-sf/learn-ocaml/commit/2c89d9e0935cfce90031502c85cfb6ffa7ca000e))
+* **pre-compilation:** Add/Update copyright headers ([5b4e0ab](https://github.com/ocaml-sf/learn-ocaml/commit/5b4e0abaf1c16c1f1964014ab0b4feecc6bcdef8))
+* **pre-compilation:** Update index.md ([f572990](https://github.com/ocaml-sf/learn-ocaml/commit/f572990b4a25363da2b907f08b1f5aa0065273f4))
+
 
 ## [0.16.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.15.0...v0.16.0) (2023-11-03)
 
