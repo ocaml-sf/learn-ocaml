@@ -55,8 +55,6 @@ RUN apk update \
 VOLUME ["/repository"]
 RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
 VOLUME ["/sync"]
-RUN mkdir -p /build && chown learn-ocaml:learn-ocaml /build
-VOLUME ["/build"]
 EXPOSE 8080
 EXPOSE 8443
 
@@ -81,5 +79,5 @@ ENV OCAMLPATH="/usr/lib"
 RUN ln -sf "$opam_switch/lib/vg" "/usr/lib"
 RUN ln -sf "$opam_switch/lib/gg" "/usr/lib"
 
-ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository","--build-dir=/build"]
+ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
 CMD ["build","serve"]
