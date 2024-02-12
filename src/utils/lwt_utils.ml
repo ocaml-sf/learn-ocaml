@@ -40,7 +40,7 @@ let copy_tree src dst =
         mkdir_p dst >>= fun () ->
         let cmd =
           Array.concat
-            [[|"cp"; "-PR"|];
+            [[|"cp"; "-PpR"|];
              Array.map (Filename.concat src) files;
              [|dst|]]
         in
