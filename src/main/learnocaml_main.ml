@@ -30,6 +30,8 @@ let absolute_filename path =
   then Filename.concat (Sys.getcwd ()) path
   else path
 
+let dflt_build_dir = "_learn-ocaml-build"
+
 module Args = struct
   open Arg
 
@@ -51,9 +53,14 @@ module Args = struct
        tutorials."
 
   let build_dir =
-    value & opt dir "./_learn-ocaml-build" & info ["build-dir"] ~docs ~docv:"DIR" ~doc:
-      "Directory where the repository exercises should be copied and precompiled. \
-       Giving the same path as `--repo` is a valid value for `--build-dir`."
+    value & opt dir ("./" ^ dflt_build_dir) & info ["build-dir"] ~docs ~docv:"DIR" ~doc:
+    (Printf.sprintf
+       "Directory where the repo exercises are copied and precompiled. \
+        When $(docv) takes its default value (e.g. when it is omitted in CLI), \
+        '$(b,learn-ocaml build)' first erases the '$(docv)/exercises' subfolder. \
+        Note that the default value for $(docv), './%s', is generally a sensible choice. \
+        But passing the same argument as the one for $(i,--repo) is also a valid value for $(docv)."
+     dflt_build_dir)
 
   let app_dir =
     value & opt string "./www" & info ["app-dir"; "o"] ~docs ~docv:"DIR" ~doc:
@@ -344,20 +351,39 @@ let main o =
   let copy_build_exercises o =
     (* NOTE: if `--build` = `--repo`, then no copy is needed.
        Before checking path equality, we need to get canonical paths *)
-    let repo_dir = readlink o.repo_dir / "exercises" in
-    let build_dir = readlink o.build_dir / "exercises" in
-    if repo_dir <> build_dir then begin
-        Printf.printf "Populating %s\n%!" (o.build_dir / "exercises");
+    let repo_exos_dir = readlink o.repo_dir / "exercises" in
+    let build_exos_dir = readlink o.build_dir / "exercises" in
+    if repo_exos_dir <> build_exos_dir then begin
+        (* NOTE: if the CLI arg is "./_learn-ocaml-build" or "_learn-ocaml-build"
+           then the exercises subdirectory is erased beforehand *)
+        begin
+          if (o.build_dir = dflt_build_dir || o.build_dir = "./" ^ dflt_build_dir)
+             && Sys.file_exists build_exos_dir then
+            Lwt.catch (fun () ->
+                Lwt_process.exec ("rm",[|"rm";"-rf"; build_exos_dir|]) >>= fun r ->
+                if r <> Unix.WEXITED 0 then
+                  Lwt.fail_with "Remove command failed"
+                else Lwt.return_unit)
+              (fun ex ->
+                Printf.eprintf
+                  "Error: while removing previous build-dir \
+                   %s:\n    %s\n%!"
+                  build_exos_dir (Printexc.to_string ex);
+                exit 1)
+          else
+            Lwt.return_unit
+        end >>= fun () ->
+        Printf.printf "Building %s\n%!" (o.build_dir / "exercises");
         (* NOTE: we choose to reuse Lwt_utils.copy_tree,
            even if we could use "rsync" (upside: "--delete-delay",
            but downside: would require the availability of rsync). *)
         Lwt.catch
-          (fun () -> Lwt_utils.copy_tree repo_dir build_dir)
+          (fun () -> Lwt_utils.copy_tree repo_exos_dir build_exos_dir)
           (function
            | Failure _ ->
               Lwt.fail_with @@ Printf.sprintf
                                  "Failed to copy repo exercises to %s"
-                                 (build_dir)
+                                 (build_exos_dir)
            | e -> Lwt.fail e)
       (* NOTE: no chown is needed,
          but we may want to run "chmod -R u+w exercises"
