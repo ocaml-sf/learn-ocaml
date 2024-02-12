@@ -24,6 +24,12 @@ let readlink f =
   try Sys.chdir cwd; f
   with Sys_error _ -> Sys.chdir (Filename.get_temp_dir_name ()); f
 
+let absolute_filename path =
+  (* Note: symlinks are not taken into account *)
+  if Filename.is_relative path
+  then Filename.concat (Sys.getcwd ()) path
+  else path
+
 module Args = struct
   open Arg
 
@@ -43,6 +49,11 @@ module Args = struct
     value & opt dir "." & info ["repo"] ~docs ~docv:"DIR" ~doc:
       "The path to the repository containing the exercises, lessons and \
        tutorials."
+
+  let build_dir =
+    value & opt dir "./_learn-ocaml-build" & info ["build-dir"] ~docs ~docv:"DIR" ~doc:
+      "Directory where the repository exercises should be copied and precompiled. \
+       Giving the same path as `--repo` is a valid value for `--build-dir`."
 
   let app_dir =
     value & opt string "./www" & info ["app-dir"; "o"] ~docs ~docv:"DIR" ~doc:
@@ -215,9 +226,10 @@ module Args = struct
       Term.(const apply $contents_dir $try_ocaml $lessons $exercises $playground $toplevel $base_url)
 
     let repo_conf =
-      let apply repo_dir exercises_filtered jobs =
+      let apply repo_dir build_dir exercises_filtered jobs =
         Learnocaml_process_exercise_repository.exercises_dir :=
-          repo_dir/"exercises";
+          (* not repo_dir/"exercises" here - since we need write permissions *)
+          build_dir/"exercises";
         Learnocaml_process_exercise_repository.exercises_filtered :=
           Learnocaml_data.SSet.of_list (List.flatten exercises_filtered);
         Learnocaml_process_tutorial_repository.tutorials_dir :=
@@ -227,7 +239,7 @@ module Args = struct
         Learnocaml_process_exercise_repository.n_processes := jobs;
         ()
       in
-      Term.(const apply $repo_dir $exercises_filtered $jobs)
+      Term.(const apply $repo_dir $build_dir $exercises_filtered $jobs)
 
     let term =
       let apply conf () = conf in
@@ -243,16 +255,17 @@ module Args = struct
     commands: command list;
     app_dir: string;
     repo_dir: string;
+    build_dir: string;
     grader: Grader.t;
     builder: Builder.t;
     server: Server.t;
   }
 
   let term =
-    let apply commands app_dir repo_dir grader builder server =
-      { commands; app_dir; repo_dir; grader; builder; server }
+    let apply commands app_dir repo_dir build_dir grader builder server =
+      { commands; app_dir; repo_dir; build_dir; grader; builder; server }
     in
-    Term.(const apply $commands $app_dir $repo_dir
+    Term.(const apply $commands $app_dir $repo_dir $build_dir
           $Grader.term $Builder.term $Server.term app_dir base_url)
 end
 
@@ -327,6 +340,30 @@ let main o =
          0 o.grader.Grader.exercises
        >|= fun i -> Some i)
     else Lwt.return_none
+  in
+  let copy_build_exercises o =
+    (* NOTE: if `--build` = `--repo`, then no copy is needed.
+       Before checking path equality, we need to get canonical paths *)
+    let repo_dir = readlink o.repo_dir / "exercises" in
+    let build_dir = readlink o.build_dir / "exercises" in
+    if repo_dir <> build_dir then begin
+        Printf.printf "Populating %s\n%!" (o.build_dir / "exercises");
+        (* NOTE: we choose to reuse Lwt_utils.copy_tree,
+           even if we could use "rsync" (upside: "--delete-delay",
+           but downside: would require the availability of rsync). *)
+        Lwt.catch
+          (fun () -> Lwt_utils.copy_tree repo_dir build_dir)
+          (function
+           | Failure _ ->
+              Lwt.fail_with @@ Printf.sprintf
+                                 "Failed to copy repo exercises to %s"
+                                 (build_dir)
+           | e -> Lwt.fail e)
+      (* NOTE: no chown is needed,
+         but we may want to run "chmod -R u+w exercises"
+         if the source repository has bad permissions... *)
+      end
+    else Lwt.return_unit
   in
   let generate o =
     if List.mem Build o.commands then
@@ -412,7 +449,9 @@ let main o =
          (fun _ -> Learnocaml_process_playground_repository.main (o.app_dir))
        >>= fun playground_ret ->
        if_enabled o.builder.Builder.exercises (o.repo_dir/"exercises")
-         (fun _ -> Learnocaml_process_exercise_repository.main (o.app_dir))
+         (fun _ ->
+           copy_build_exercises o >>= fun () ->
+           Learnocaml_process_exercise_repository.main (o.app_dir))
        >>= fun exercises_ret ->
        Lwt_io.with_file ~mode:Lwt_io.Output (o.app_dir/"js"/"learnocaml-config.js")
          (fun oc ->
@@ -442,11 +481,7 @@ let main o =
           let running = Learnocaml_server.check_running () in
           Option.iter Learnocaml_server.kill_running running;
           let temp = temp_app_dir o in
-          let app_dir =
-            if Filename.is_relative o.app_dir
-            then Filename.concat (Sys.getcwd ()) o.app_dir
-            else o.app_dir
-          in
+          let app_dir = absolute_filename o.app_dir in
           let bak =
             let f =
               Filename.temp_file

@@ -61,6 +61,8 @@ RUN apk update \
 VOLUME ["/repository"]
 RUN mkdir -p /sync && chown learn-ocaml:learn-ocaml /sync
 VOLUME ["/sync"]
+RUN mkdir -p /build && chown learn-ocaml:learn-ocaml /build
+VOLUME ["/build"]
 EXPOSE 8080
 EXPOSE 8443
 
@@ -73,5 +75,5 @@ COPY --from=compilation /home/opam/install-prefix /usr
 COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
 COPY --from=compilation "$opam_switch/lib/ocaml" "$opam_switch/lib/ocaml/"
 
-ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository"]
+ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml","--sync-dir=/sync","--repo=/repository","--build-dir=/build"]
 CMD ["build","serve"]
