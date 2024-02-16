@@ -51,7 +51,7 @@
 * **pre-compilation: CI:** disable compat tests with 0.12, 0.13 ([91a418e](https://github.com/ocaml-sf/learn-ocaml/commit/91a418eeadf3be73e716a83ae16153332d7d19e7))
 * **pre-compilation: docker:** install more libs in server image ([6ce797f](https://github.com/ocaml-sf/learn-ocaml/commit/6ce797f818766047c85d543188767fb4d3609352))
 * **pre-compilation: grader:** avoid errors with too many open files on parallel builds ([6583af4](https://github.com/ocaml-sf/learn-ocaml/commit/6583af4bbb3547b302963922279e0516edd9d6b4))
-* **pre-compilation:** Avoid using `lsof -Q` which is only available from lsof 4.95.0 ([a242084](https://github.com/ocaml-sf/learn-ocaml/commit/a242084cde9eaf4ab25b205b71c244c23279704f)), closes [#580](https://github.com/ocaml-sf/learn-ocaml/issues/580)
+* **server:** Avoid using `lsof -Q` which is only available from lsof 4.95.0 ([a242084](https://github.com/ocaml-sf/learn-ocaml/commit/a242084cde9eaf4ab25b205b71c244c23279704f)), closes [#580](https://github.com/ocaml-sf/learn-ocaml/issues/580)
 * **UI:** Small CSS fix for exercise lists on small screens ([3c9c123](https://github.com/ocaml-sf/learn-ocaml/commit/3c9c1237f5e2565cc173e7f57b864866d190a83d)), closes [#574](https://github.com/ocaml-sf/learn-ocaml/issues/574)
 * **server:** Do exercise recompilation correctly with `--replace` ([#584](https://github.com/ocaml-sf/learn-ocaml/issues/584)) ([fe2a806](https://github.com/ocaml-sf/learn-ocaml/commit/fe2a806fa306a46b1c978fe47fbd3c26170ee52c)), closes [#583](https://github.com/ocaml-sf/learn-ocaml/issues/583)
 
