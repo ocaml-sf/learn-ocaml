@@ -397,16 +397,16 @@ let main o =
          if not (List.mem Serve o.commands) then
            Lwt.return o.app_dir
          else if o.server.Server.replace then
-           let app_dir = temp_app_dir o in
-           (if Sys.file_exists app_dir then
+           let temp_dir = temp_app_dir o in
+           (if Sys.file_exists temp_dir then
              (Printf.eprintf "Warning: temporary directory %s already exists\n%!"
-                app_dir;
+                temp_dir;
               Lwt.return_unit)
             else if Sys.file_exists o.app_dir then
-              Lwt_utils.copy_tree o.app_dir app_dir
+              Lwt_utils.copy_tree o.app_dir temp_dir
             else
               Lwt.return_unit)
-           >>= fun () -> Lwt.return app_dir
+           >>= fun () -> Lwt.return temp_dir
          else if Learnocaml_server.check_running () <> None then
            (Printf.eprintf
               "Error: another server is already running on port %d \
