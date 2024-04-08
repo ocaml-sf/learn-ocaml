@@ -25,22 +25,63 @@ let signal_waiter =
   let _ = Lwt_unix.on_signal Sys.sigterm handler in
   waiter
 
+let kill_once pid =
+  let already = ref false in
+  fun () ->
+  if !already then () else
+    (already := true;
+     Unix.kill pid Sys.sigint;
+     Printf.eprintf "Waiting for child process %d to terminate... %!" pid;
+     ignore (Unix.waitpid [] pid);
+     prerr_endline "ok ")
+
 let main o =
   let open Server_args in
-  Printf.printf "Learnocaml server v.%s starting on port %d\n%!"
-    Learnocaml_api.version o.port;
+  let check_comment =
+    match o.child_pid with
+    | Some n when n < 0 ->
+       (Printf.eprintf "Error: incorrect value for option `--child-pid=%d`\n%!" n;
+        exit 10)
+    | None -> ""
+    | Some n ->
+       if o.replace then
+         (Printf.eprintf "Error: option `--replace` is incompatible with option `--child-pid`\n%!";
+          exit 10);
+       if n = 0 then
+         "(temporary)"
+       else
+         "(main)"
+  in
+  (* Note: "int_child_pid > 0 then at_exit (kill_once int_child_pid);" is
+     unneeded as "learn-ocaml serve" already made sure the child terminated. *)
+  Printf.printf "Learnocaml server%s v.%s starting on port %d\n%!"
+    check_comment Learnocaml_api.version o.port;
   if o.base_url <> "" then
     Printf.printf "Base URL: %s\n%!" o.base_url;
   let () =
-    match Learnocaml_server.check_running (), o.replace with
-    | None, _ -> ()
-    | Some _, false ->
-        Printf.eprintf "Error: another server is already running on port %d \
-                        (consider using option `--replace`)\n%!"
-          !Learnocaml_server.port;
-        exit 10
-    | Some pid, true ->
-        Learnocaml_server.kill_running pid
+    match Learnocaml_server.check_running (), o.replace, o.child_pid with
+    | None, _, _ -> ()
+    | Some _, false, None ->
+       Printf.eprintf "Error: another server is already running on port %d \
+                       (consider using option `--replace`)\n%!"
+         !Learnocaml_server.port;
+       exit 10
+    | Some _, false, Some 0 ->
+       Printf.eprintf "Warning(child): another server is running on port %d \
+                       (skipping temporary server start)\n%!"
+         !Learnocaml_server.port;
+       exit 0
+    | Some pid, false, Some pid' ->
+       if pid = pid' then
+         kill_once pid' ()
+       else
+         (Printf.eprintf "Error: another server (pid %d) is already running on port %d \
+                          (while expecting `--child-pid=%d`)\n%!"
+            pid !Learnocaml_server.port pid';
+          kill_once pid' ();
+          exit 10)
+    | Some pid, true, _ ->
+       Learnocaml_server.kill_running pid
   in
   let rec run () =
     let minimum_duration = 15. in
@@ -98,6 +139,18 @@ let base_url =
        Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
        which typically occurs for static deployment."
 
+let child_pid =
+  let open Arg in
+  value & opt (some int) None &
+    info ["child-pid"] ~docv:"CHILD_PID" ~doc:
+      "For internal purposes."
+(* This flag is used by learn-ocaml's exec call to tell learn-ocaml-server
+   about the pid of the child process created by 'Lwt_unix.fork' when using
+   the CLI option '--serve-during-build'. If 'CHILD_PID' gets the value 0,
+   it means the current instance is the temporary server (child process).
+   If 'CHILD_PID' is ommitted or has the value None, it means no fork occurred
+   and the server should check no concurrent server is running on this port. *)
+
 let  exits =
   let open Cmd.Exit in
   [ info ~doc:"Default exit." ok
@@ -116,7 +169,7 @@ let main_info =
     "learn-ocaml-server"
 
 
-let main_term = Term.(const main $ Server_args.term app_dir base_url)
+let main_term = Term.(const main $ Server_args.term app_dir base_url child_pid)
 
 let () =
   match
