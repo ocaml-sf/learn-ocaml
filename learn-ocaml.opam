@@ -17,6 +17,9 @@ license: "MIT"
 homepage: "https://github.com/ocaml-sf/learn-ocaml"
 bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 dev-repo: "git+https://github.com/ocaml-sf/learn-ocaml"
+depexts: [
+  ["lsof"] {os-distribution = "alpine"}
+]
 depends: [
   "asak" { >= "0.4"}
   "base64"
