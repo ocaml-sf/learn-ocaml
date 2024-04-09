@@ -54,7 +54,7 @@ let main o =
   in
   (* Note: "int_child_pid > 0 then at_exit (kill_once int_child_pid);" is
      unneeded as "learn-ocaml serve" already made sure the child terminated. *)
-  Printf.printf "Learnocaml server%s v.%s starting on port %d\n%!"
+  Printf.printf "Learnocaml server%s v%s starting on port %d\n%!"
     check_comment Learnocaml_api.version o.port;
   if o.base_url <> "" then
     Printf.printf "Base URL: %s\n%!" o.base_url;

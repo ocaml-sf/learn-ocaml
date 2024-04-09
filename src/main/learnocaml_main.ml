@@ -337,7 +337,7 @@ let temp_app_dir o =
     ((basename o.app_dir) ^ ".temp")
 
 let main o =
-  Printf.printf "Learnocaml v.%s running.\n%!" Learnocaml_api.version;
+  Printf.printf "Learnocaml v%s running.\n%!" Learnocaml_api.version;
   let grade o =
     if List.mem Grade o.commands then
       (if List.mem Build o.commands || List.mem Serve o.commands then
