@@ -33,7 +33,6 @@ rm -f -r /usr/local/lib/node_modules
 rm -f /usr/local/lib/dtrace/node.d
 rm -f /usr/local/share/man/man1/node.1
 rm -f /usr/local/share/systemtap
-brew uninstall node@18
 
 brew upgrade
 
