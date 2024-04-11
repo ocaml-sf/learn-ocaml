@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build Docker images
         run: "make docker-images"
       - name: Fix permissions
@@ -45,7 +45,7 @@ jobs:
       USE_CLIENT_IMAGE: 'true'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build Docker images
         run: "make docker-images"
       - name: Pull server_image
@@ -68,7 +68,7 @@ jobs:
           - 'Dockerfile.test-server'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run docker build
         run: 'file=${{ matrix.dockerfile }} && docker build -t "learn-ocaml-${file#*.}" -f "$file" .'
 

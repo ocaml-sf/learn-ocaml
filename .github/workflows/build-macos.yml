@@ -17,6 +17,6 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build learn-ocaml
         run: 'sh .ci-macosx.sh'
