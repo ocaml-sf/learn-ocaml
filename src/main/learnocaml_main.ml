@@ -76,6 +76,23 @@ module Args = struct
          Mandatory for '$(b,learn-ocaml build)' if the site is not hosted in path '/', \
          which typically occurs for static deployment."
 
+  let serve_during_build =
+    value & flag &
+      info ["serve-during-build"] ~docs:"SERVER OPTIONS"
+        ~env:(Cmd.Env.info "LEARNOCAML_SERVE_DURING_BUILD") ~doc:
+        "If the directory specified by $(b,--app-dir) already exists from a \
+         previous build, create a temporary child process to serve it \
+         while the build completes, in order to reduce server downtime. \
+         This flag requires to run both commands '$(b,learn-ocaml build serve)'. \
+         After the build, the child process stops and a new server starts. \
+         This flag is useful in a docker-compose context, and can be enabled \
+         by adding to the environment: '$(env)=true'."
+
+  let child_pid =
+    (* Note: option `--child-pid` is specific to the native learn-ocaml-server,
+       hence this dummy value here, to avoid copying it in "SERVER OPTIONS". *)
+    Term.const (None: int option)
+
   module Grader = struct
     let info = info ~docs:"GRADER OPTIONS"
 
@@ -263,17 +280,18 @@ module Args = struct
     app_dir: string;
     repo_dir: string;
     build_dir: string;
+    serve_during_build: bool;
     grader: Grader.t;
     builder: Builder.t;
     server: Server.t;
   }
 
-  let term =
-    let apply commands app_dir repo_dir build_dir grader builder server =
-      { commands; app_dir; repo_dir; build_dir; grader; builder; server }
+  let term child_pid =
+    let apply commands app_dir repo_dir build_dir grader builder server serve_during_build =
+      { commands; app_dir; repo_dir; build_dir; grader; builder; server; serve_during_build }
     in
     Term.(const apply $commands $app_dir $repo_dir $build_dir
-          $Grader.term $Builder.term $Server.term app_dir base_url)
+          $Grader.term $Builder.term $Server.term app_dir base_url child_pid $serve_during_build)
 end
 
 open Args
@@ -319,7 +337,7 @@ let temp_app_dir o =
     ((basename o.app_dir) ^ ".temp")
 
 let main o =
-  Printf.printf "Learnocaml v.%s running.\n%!" Learnocaml_api.version;
+  Printf.printf "Learnocaml v%s running.\n%!" Learnocaml_api.version;
   let grade o =
     if List.mem Grade o.commands then
       (if List.mem Build o.commands || List.mem Serve o.commands then
@@ -391,23 +409,24 @@ let main o =
       end
     else Lwt.return_unit
   in
-  let generate o =
+  let generate ?(check_port = true) o =
     if List.mem Build o.commands then
       (let get_app_dir o =
          if not (List.mem Serve o.commands) then
            Lwt.return o.app_dir
-         else if o.server.Server.replace then
-           let app_dir = temp_app_dir o in
-           (if Sys.file_exists app_dir then
+         else if o.server.Server.replace || o.serve_during_build then
+           let temp_dir = temp_app_dir o in
+           (if Sys.file_exists temp_dir then
              (Printf.eprintf "Warning: temporary directory %s already exists\n%!"
-                app_dir;
+                temp_dir;
               Lwt.return_unit)
             else if Sys.file_exists o.app_dir then
-              Lwt_utils.copy_tree o.app_dir app_dir
+              Lwt_utils.copy_tree o.app_dir temp_dir
             else
               Lwt.return_unit)
-           >>= fun () -> Lwt.return app_dir
-         else if Learnocaml_server.check_running () <> None then
+           >>= fun () -> Lwt.return temp_dir
+         else if check_port && Learnocaml_server.check_running () <> None then
+           (* This server-specific check is here to fail earlier if need be *)
            (Printf.eprintf
               "Error: another server is already running on port %d \
                (consider using option `--replace`)\n%!"
@@ -500,12 +519,29 @@ let main o =
     else
       Lwt.return true
   in
-  let run_server o =
+  let kill_once pid =
+    let already = ref false in
+    fun () ->
+    if !already then () else
+      (already := true;
+       Unix.kill pid Sys.sigint;
+       Printf.eprintf "Waiting for child process %d to terminate... %!" pid;
+       ignore (Unix.waitpid [] pid);
+       prerr_endline "ok ")
+  in
+  (* child_pid = None => no --serve-during-build
+     child_pid = Some 0 => --serve-during-build, child process
+     child_pid = Some n, n>0 => --serve-during-build, main process *)
+  let run_server ~child_pid o =
     if List.mem Serve o.commands then
       let () =
-        if o.server.Server.replace then
-          let running = Learnocaml_server.check_running () in
-          Option.iter Learnocaml_server.kill_running running;
+        let int_child_pid = Option.value child_pid ~default:(-1) in
+        if o.server.Server.replace || (o.serve_during_build && int_child_pid > 0) then
+          let () =
+            (if int_child_pid > 0 then kill_once int_child_pid ()
+             else let running = Learnocaml_server.check_running () in
+                  Option.iter Learnocaml_server.kill_running running)
+          in
           let temp = temp_app_dir o in
           let app_dir = absolute_filename o.app_dir in
           let bak =
@@ -542,6 +578,8 @@ let main o =
           ("--sync-dir="^o.server.sync_dir) ::
           ("--base-url="^o.builder.Builder.base_url) ::
           ("--port="^string_of_int o.server.port) ::
+          (match child_pid with None -> [] | Some n -> ["--child-pid="^string_of_int n])
+          @
           (match o.server.cert with None -> [] | Some c -> ["--cert="^c])
         in
         Lwt.return
@@ -550,8 +588,13 @@ let main o =
                 Unix.execv native_server
                   (Array.of_list (native_server::server_args))))
       else begin
-          Printf.printf "Starting server on port %d\n%!"
-            !Learnocaml_server.port;
+          let comment = match child_pid with
+            | None -> ""
+            | Some 0 -> "(temporary)"
+            | Some _pid -> "(main)"
+          in
+          Printf.printf "Starting server%s on port %d\n%!"
+            comment !Learnocaml_server.port;
           if o.builder.Builder.base_url <> "" then
             Printf.printf "Base URL: %s\n%!" o.builder.Builder.base_url;
           Learnocaml_server.launch () >>= fun ret ->
@@ -560,19 +603,57 @@ let main o =
     else
       Lwt.return (`Success true)
   in
+  let lwt_run_server ~child_pid build_ok =
+    if build_ok then
+      run_server ~child_pid o >>= function
+      | `Success true -> Lwt.return (`Code 0)
+      | `Success false -> Lwt.return (`Code 10)
+      | `Continuation f -> Lwt.return (`Continuation f)
+    else
+      Lwt.return (`Code 1)
+  in
+  (* NOTE: the code below handles "learn-ocaml build serve --serve-during-build"
+     by relying on Lwt_unix.fork; and to stay on the safe side, we make sure
+     that this fork is triggered before the first Lwt_main.run command. *)
   let ret =
-    Lwt_main.run
-      (grade o >>= function
-        | Some i -> Lwt.return (`Code i)
-        | None ->
-            generate o >>= fun success ->
-            if success then
-              run_server o >>= function
-                | `Success true -> Lwt.return (`Code 0)
-                | `Success false -> Lwt.return (`Code 10)
-                | `Continuation f -> Lwt.return (`Continuation f)
-            else
-              Lwt.return (`Code 1))
+    if o.serve_during_build then begin
+        if not (List.mem Build o.commands && List.mem Serve o.commands) then
+          (Printf.eprintf
+             "Error: option `--serve-during-build` requires both commands `build serve`.\n%!";
+           exit 1)
+        else if o.server.Server.replace then
+          (Printf.eprintf
+             "Error: option `--replace` is incompatible with option `--serve-during-build`.\n%!";
+           exit 10)
+        else if Learnocaml_server.check_running () <> None then
+          (Printf.eprintf
+             "Error: another server is already running on port %d \
+              (consider using option `--replace` instead of `--serve-during-build`)\n%!"
+             !Learnocaml_server.port;
+           exit 10);
+        match Lwt_unix.fork () with
+        | 0 ->
+           if Sys.file_exists o.app_dir then
+             Lwt_main.run (lwt_run_server ~child_pid:(Some 0) true)
+           else
+             (Printf.eprintf
+                "Info: no existing app-dir in '%s', \
+                 will be available at next run (skipping temporary server start).\n%!" o.app_dir;
+              `Code 0)
+        | child_pid ->
+           at_exit (kill_once child_pid);
+           Lwt_main.run
+             (grade o >>= function
+              | Some i -> Lwt.return (`Code i)
+              | None ->
+                 generate ~check_port:false o >>= lwt_run_server ~child_pid:(Some child_pid))
+      end
+    else
+      Lwt_main.run
+        (grade o >>= function
+         | Some i -> Lwt.return (`Code i)
+         | None ->
+            generate o >>= lwt_run_server ~child_pid:None)
   in
   match ret with
   | `Code n -> exit n
@@ -627,7 +708,7 @@ let main_info =
     ~version:Learnocaml_api.version 
     "learn-ocaml"
 
-let main_term = Term.(const main $ Args.term)
+let main_term = Term.(const main $ Args.term child_pid)
 
 let () =
   match

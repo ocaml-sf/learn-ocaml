@@ -17,9 +17,10 @@ module type S = sig
     port: int;
     cert: string option;
     replace: bool;
+    child_pid: int option;
   }
 
-  val term: string Cmdliner.Term.t -> string Cmdliner.Term.t -> t Cmdliner.Term.t
+  val term: string Cmdliner.Term.t -> string Cmdliner.Term.t -> int option Cmdliner.Term.t -> t Cmdliner.Term.t
 end
 
 module Args : functor (_ : Section_name) -> S
