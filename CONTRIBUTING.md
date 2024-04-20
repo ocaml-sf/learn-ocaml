@@ -146,7 +146,7 @@ As specified in commit [`87bb9b5`](https://github.com/ocaml-sf/learn-ocaml/commi
 | `test`      | Tests                     | Add missing tests or correct existing tests |
 | `ci`        | CI/CD                     | Change the CI/CD configuration |
 | `docs`      | Documentation             | Change documentation only |
-| `style`     | Style                     | (hidden by default) Change code without affecting its meaning (white-space, formatting, semi-colons or so) |
+| `style`     | Style                     | Change code without affecting its meaning (white-space, formatting, semi-colons or so) |
 | `chore`     | Miscellaneous Chores      | (hidden by default) Change files unrelated to code, tests, docs, build or ci config |
 
 See also:
