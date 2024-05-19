@@ -4,7 +4,7 @@ How to deploy learn-ocaml statically
 This section explains how to deploy a static version of learn-ocaml on
 an HTTP server.
 
-## Using pre-built docker images
+## Compilation using pre-built docker images
 
 You will just need to:
 
@@ -12,10 +12,14 @@ You will just need to:
 - build the `www` folder by using the commands below
 - use an HTTP server to serve learn-ocaml statically.
 
+Then use either of the following approaches:
+
+### Manual docker commands
+
 Assuming your exercise repository is in directory `$REPOSITORY` and
 you want to generate the website contents in directory `$TARGET/www`
 to serve it at `$URL` (the base URL **without trailing slash**), then
-you can run:
+run the following commands:
 
 ```bash
 # Remove old version
@@ -39,11 +43,18 @@ then you should first run:
 export URL=https://user-name.github.io/repo-name
 ```
 
+### An automatic deploy script
+
+Just use the following script, committed within a GitHub Pages repo:
+
+- <https://github.com/erikmd/learn-ocaml-meetup-demo/blob/master/deploy>
+
 For a comprehensive example of one such deployment, you may take a
-look at the following repository:
-- <https://github.com/pfitaxel/pfitaxel-demo>
-- deployed to <https://pfitaxel.github.io/pfitaxel-demo>
-- thanks to this [`deploy` script](https://github.com/pfitaxel/pfitaxel-demo/blob/master/deploy).
+look at the following repos:
+
+- <https://github.com/erikmd/learn-ocaml-meetup-demo-repository> (with extensive documentation in the [README.md](https://github.com/erikmd/learn-ocaml-meetup-demo-repository#readme))
+- <https://github.com/erikmd/learn-ocaml-meetup-demo> (separated repo containing a .gitignore and the `deploy` script)
+- <https://erikmd.github.io/learn-ocaml-meetup-demo/> (URL of the deployment)
 
 ## Manual compilation
 
