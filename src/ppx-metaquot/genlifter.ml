@@ -94,7 +94,7 @@ module Main : sig end = struct
             (lam
                (Pat.record (List.map fst l) Closed)
                (selfcall "record" [str ty; list (List.map snd l)]))
-      | Type_variant l, _ ->
+      | Type_variant (l, _rep), _ ->
           let case cd =
             let c = Ident.name cd.cd_id in
             let qc = prefix ^ c in
