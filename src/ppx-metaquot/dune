@@ -1,8 +1,15 @@
+(library
+ (name ast_convenience)
+ (modules Ast_convenience)
+ (preprocess (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{input-file})))
+ (libraries compiler-libs.common)
+)
+
 (executable
  (name genlifter)
  (modules Genlifter)
  (preprocess (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{input-file})))
- (libraries compiler-libs.common ppx_tools)
+ (libraries ast_convenience)
 )
 
 (rule
@@ -18,7 +25,7 @@
  (flags :standard -w -17)
  (library_flags :standard -linkall)
  (modules Ast_lifter Ppx_metaquot)
- (libraries ppx_tools compiler-libs)
+ (libraries ast_convenience)
 )
 
 (library

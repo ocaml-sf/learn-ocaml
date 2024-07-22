@@ -32,7 +32,7 @@ depends: [
   "ipaddr" {= "2.9.0" }
   "lwt" {>= "4.0.0"}
   "lwt_ssl"
-  "ocaml" {(>= "4.12") & (< "4.13~")}
+  "ocaml" {(>= "4.12") & (< "4.14~")}
   "ocamlfind" {build}
   "ocp-indent-nlfork"
   "ocplib-json-typed" {>= "0.7"}
@@ -43,7 +43,6 @@ depends: [
   "ppx_inline_test"
   "ppx_fields_conv"
   "ppx_sexp_conv"
-  "ppx_tools"
   "ssl" {= "0.5.12"}
   "vg"
 ]
