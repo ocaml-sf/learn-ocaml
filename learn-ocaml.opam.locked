@@ -42,7 +42,7 @@ depends: [
   "conf-pkg-config" {= "2"}
   "cppo" {= "1.6.8"}
   "csexp" {= "1.5.1"}
-  "cstruct" {= "5.2.0"}
+  "cstruct" {= "6.2.0"}
   "decompress" {= "0.8.1"}
   "digestif" {= "1.1.0"}
   "dune" {= "2.9.3"}
@@ -77,14 +77,14 @@ depends: [
   "menhirSdk" {= "20220210"}
   "mmap" {= "1.1.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.12.1"}
+  "ocaml" {= "4.13.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-config" {= "2"}
   "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.1"}
   "ocamlfind" {= "1.9.3"}
-  "ocp-indent-nlfork" {= "1.5.4"}
+  "ocp-indent-nlfork" {= "1.5.5"}
   "ocp-ocamlres" {= "0.4"}
   "ocplib-endian" {= "1.2"}
   "ocplib-json-typed" {= "0.7.1"}
@@ -100,19 +100,17 @@ depends: [
   "ppx_base" {= "v0.14.0"}
   "ppx_cold" {= "v0.14.0"}
   "ppx_compare" {= "v0.14.0"}
-  "ppx_cstruct" {= "5.2.0"}
+  "ppx_cstruct" {= "6.2.0"}
   "ppx_derivers" {= "1.2.1"}
   "ppx_enumerate" {= "v0.14.0"}
-  "ppx_expect" {= "v0.14.0"}
+  "ppx_expect" {= "v0.14.2"}
   "ppx_hash" {= "v0.14.0"}
   "ppx_here" {= "v0.14.0"}
   "ppx_inline_test" {= "v0.14.1"}
   "ppx_js_style" {= "v0.14.1"}
-  "ppx_optcomp" {= "v0.14.0"}
-  "ppx_sexp_conv" {= "v0.14.1"}
-  "ppx_tools" {= "6.4"}
-  "ppx_tools_versioned" {= "5.4.0"}
-  "ppxlib" {= "0.15.0"}
+  "ppx_optcomp" {= "v0.14.3"}
+  "ppx_sexp_conv" {= "v0.14.3"}
+  "ppxlib" {= "0.25.1"}
   "re" {= "1.10.3"}
   "react" {= "1.2.2"}
   "reactiveData" {= "0.2.2"}
@@ -149,3 +147,11 @@ This contains the binaries forming the engine for the learn-ocaml platform, and
 the common files. A demo exercise repository is also provided as example.
 """
 run-test: [make "test"]
+depexts: ["lsof"] {os-distribution = "alpine"}
+pin-depends: [
+  ["asak.0.4" "git+https://github.com/nobrakal/asak#922ceed"]
+  [
+    "ocp-indent-nlfork.1.5.5"
+    "git+ssh://git@github.com/OCamlPro/ocp-indent#nlfork"
+  ]
+]

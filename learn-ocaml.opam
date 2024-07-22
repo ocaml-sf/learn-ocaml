@@ -47,7 +47,7 @@ depends: [
   "magic-mime"
   "markup"
   "markup-lwt"
-  "ocaml" {(>= "4.12") & (< "4.13~")}
+  "ocaml" {(>= "4.13") & (< "4.14~")}
   "ocamlfind" {build}
   "ocp-indent-nlfork" {>= "1.5.5"}
   "ocplib-json-typed" {>= "0.7"}
@@ -61,8 +61,6 @@ depends: [
   "ppx_expect"
   "ppx_inline_test"
   "ppx_sexp_conv"
-  "ppx_tools"
-  "ppx_tools_versioned"
   "re"
   "ssl" {= "0.5.12"}
   "uutf" {>= "1.0" }
