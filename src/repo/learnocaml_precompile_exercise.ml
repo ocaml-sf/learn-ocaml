@@ -43,7 +43,7 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ?(ppx=[]) ~source ~target args =
   if is_fresh ~dir target source then Lwt.return_unit else
   let args =
     List.fold_right (fun ppx args ->
-        "-ppx" :: Filename.concat !grading_cmis_dir (ppx^" --as-ppx") :: args)
+        "-ppx" :: Filename.concat !grading_cmis_dir ppx :: args)
       ppx args
   in
   let args = "-I" :: dir :: "-I" :: !grading_cmis_dir :: args in

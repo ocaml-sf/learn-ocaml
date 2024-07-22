@@ -162,7 +162,7 @@ let get_value lid ty =
         Typetexp.transl_type_scheme !Toploop.toplevel_env (Ty.obj ty) in
       let path, { Types.val_type; _ } =
         Env.find_value_by_name lid !Toploop.toplevel_env in
-      if Ctype.moregeneral !Toploop.toplevel_env true val_type exp_type then
+      if Ctype.is_moregeneral !Toploop.toplevel_env true val_type exp_type then
         Present (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)
       else
         failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
@@ -327,8 +327,14 @@ let sample_value ty =
   | true ->
     let path, { Types.val_type; _ } =
       Env.find_value_by_name (Longident.Lident lid) !Toploop.toplevel_env in
-    let gty = Types.{ty with desc = Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok) } in
-    if Ctype.moregeneral !Toploop.toplevel_env true val_type gty then
+    let gty =
+      Types.Private_type_expr.create
+        Types.(Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok))
+        ~level:ty.Types.level
+        ~scope:ty.Types.scope
+        ~id:ty.Types.id
+    in
+    if Ctype.is_moregeneral !Toploop.toplevel_env true val_type gty then
       (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)
     else (failwith "sampler has the wrong type !")
   | false ->
