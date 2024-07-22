@@ -6,4 +6,4 @@
  * included LICENSE file for details. *)
 
 let () =
-  Migrate_parsetree.Driver.run_main ~exit_on_error:true ()
+  Ppxlib.Driver.run_as_ppx_rewriter ()
