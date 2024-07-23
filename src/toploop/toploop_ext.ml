@@ -212,7 +212,7 @@ let use_mod_string
 let check_phrase env = function
   | Parsetree.Ptop_def sstr ->
       Typecore.reset_delayed_checks ();
-      let (str, sg, sn, newenv) = Typemod.type_toplevel_phrase env sstr in
+      let (str, sg, sn, _shape, newenv) = Typemod.type_toplevel_phrase env sstr in
       let sg' = Typemod.Signature_names.simplify newenv sn sg in
       ignore (Includemod.signatures env ~mark:Includemod.Mark_positive sg sg');
       Typecore.force_delayed_checks ();
@@ -314,7 +314,7 @@ let install_printer modname id tyname pr =
   in
   let printer_path = inmodpath id in
   let env = !Toploop.toplevel_env in
-  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, Cunknown)) in
+  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, commu_var ())) in
   let gen_printer_type ty =
     let format_ty =
       let ( +. ) a b = Path.Pdot (a, b) in
@@ -384,22 +384,31 @@ let install_printer modname id tyname pr =
       in
       (* Register for our custom 'Printer' as used by the graders *)
       let () =
-        match ty_decl.type_params, ty_target.desc with
-        | [], _ ->
-            Printer.install_printer register_as_path ty_target
-              (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
-        | _, (Tconstr (ty_path, args, _) | Tlink {desc = Tconstr (ty_path, args, _); _})
-          when Ctype.all_distinct_vars env args ->
-            Printer.install_generic_printer' register_as_path ty_path
-              (build_generic (Obj.repr pr) ty_decl.type_params)
-        | _, ty ->
+        if ty_decl.type_params = [] then
+          Printer.install_printer register_as_path ty_target
+            (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
+        else
+          let ty_path_args =
+            match get_desc ty_target with
+            | Tconstr (ty_path, args, _) -> Some (ty_path, args)
+            | Tlink ty -> (match get_desc ty with
+                | Tconstr (ty_path, args, _) -> Some (ty_path, args)
+                | _ -> None)
+            | _ -> None
+          in
+          match ty_path_args with
+          | Some (ty_path, args)
+            when Ctype.all_distinct_vars env args ->
+              Printer.install_generic_printer' register_as_path ty_path
+                (build_generic (Obj.repr pr) ty_decl.type_params)
+          | _ ->
             Format.printf
               "Warning: invalid printer for %a = %a: OCaml doesn't support \
                printers for types with partially instanciated variables. \
                Define a generic printer and a printer for the type of your \
                variable instead."
               Printtyp.path ty_path
-              Printtyp.type_expr (Ctype.newty ty)
+              Printtyp.type_expr (Ctype.newty (get_desc ty_target))
       in
       (* Register for the toplevel built-in printer (the API doesn't allow us to
          override it). Attempting to use the printer registered this way before

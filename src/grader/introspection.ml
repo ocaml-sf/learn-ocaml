@@ -165,7 +165,7 @@ let get_value lid ty =
       if Ctype.is_moregeneral !Toploop.toplevel_env true val_type exp_type then
         Present (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)
       else
-        failwith (Format.asprintf "Wrong type %a." Printtyp.type_sch val_type)
+        failwith (Format.asprintf "Wrong type %a." Printtyp.type_scheme val_type)
 
 let base_print_value env obj ppf ty =
   !Oprint.out_value ppf @@
@@ -258,7 +258,7 @@ let register_sampler modname id tyname f =
       in
       let sampler_ty_expected =
         List.fold_right (fun fn_arg ty ->
-            Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, Cunknown)))
+            Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, commu_var ())))
           fn_args (Ctype.newconstr gen_sampler_type [ty_target])
       in
       (try
@@ -301,7 +301,7 @@ let sample_value ty =
     let open Ast_helper in
     let sampler_id suffix =
       Exp.ident (Location.mknoloc (Longident.Lident ("sample_" ^ suffix))) in
-    let rec phrase ty = match ty.desc with
+    let rec phrase ty = match get_desc ty with
       | Tconstr (path, [], _) ->
           sampler_id (Path.last path)
       | Tconstr (path, tl, _) ->
@@ -328,11 +328,11 @@ let sample_value ty =
     let path, { Types.val_type; _ } =
       Env.find_value_by_name (Longident.Lident lid) !Toploop.toplevel_env in
     let gty =
-      Types.Private_type_expr.create
-        Types.(Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, Cok))
-        ~level:ty.Types.level
-        ~scope:ty.Types.scope
-        ~id:ty.Types.id
+      Types.create_expr
+        Types.(Tarrow (Asttypes.Nolabel, Predef.type_unit, ty, commu_ok))
+        ~level:(Types.get_level ty)
+        ~scope:(Types.get_scope ty)
+        ~id:(Types.get_id ty)
     in
     if Ctype.is_moregeneral !Toploop.toplevel_env true val_type gty then
       (Obj.obj @@ Toploop.eval_value_path !Toploop.toplevel_env path)

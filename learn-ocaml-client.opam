@@ -32,7 +32,7 @@ depends: [
   "ipaddr" {= "2.9.0" }
   "lwt" {>= "4.0.0"}
   "lwt_ssl"
-  "ocaml" {(>= "4.12") & (< "4.14~")}
+  "ocaml" {(>= "4.14") & (< "4.15~")}
   "ocamlfind" {build}
   "ocp-indent-nlfork"
   "ocplib-json-typed" {>= "0.7"}
