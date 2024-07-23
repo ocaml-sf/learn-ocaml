@@ -9,5 +9,10 @@
 (env
   (release (flags -safe-string -w +a-4-42-44-45-48-3-58-32-33-70)
            (ocamlc_flags)
-           (ocamlopt_flags))
+           (ocamlopt_flags)
+           (js_of_ocaml
+            (flags :standard --no-sourcemap --enable=effects)))
+  (dev     (flags (:standard -safe-string -warn-error -a+8))
+           (js_of_ocaml
+            (flags :standard --no-sourcemap --enable=effects)))
 )
