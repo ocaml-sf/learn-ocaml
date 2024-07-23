@@ -9,6 +9,7 @@
  (wrapped false)
  (modules Learnocaml_data)
  (libraries sha
+            unix
             learnocaml_toplevel_history
             learnocaml_report
             learnocaml_repository)

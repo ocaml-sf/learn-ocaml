@@ -53,9 +53,9 @@ let setup = lazy (
                "function %s(){caml_failwith(\"%s not implemented\")}" p p
              :: !stubs)
       prims;
-    let output_program = Driver.from_string prims s in
+    let output_program = Driver.from_string ~prims s in
     let b = Buffer.create 100 in
-    output_program (Pretty_print.to_buffer b);
+    output_program ~debug:[||] (Pretty_print.to_buffer b);
     Format.(pp_print_flush std_formatter ());
     Format.(pp_print_flush err_formatter ());
     flush stdout; flush stderr;
