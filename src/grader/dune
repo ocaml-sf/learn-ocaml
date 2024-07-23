@@ -80,6 +80,7 @@
        %{ocaml-config:standard_library}/stdlib__Arg.cmi
        %{ocaml-config:standard_library}/stdlib__Array.cmi
        %{ocaml-config:standard_library}/stdlib__ArrayLabels.cmi
+       %{ocaml-config:standard_library}/stdlib__Atomic.cmi
        %{ocaml-config:standard_library}/stdlib__Bigarray.cmi
        %{ocaml-config:standard_library}/stdlib__Bool.cmi
        %{ocaml-config:standard_library}/stdlib__Buffer.cmi
@@ -88,18 +89,22 @@
        %{ocaml-config:standard_library}/stdlib__Callback.cmi
        %{ocaml-config:standard_library}/stdlib__Char.cmi
        %{ocaml-config:standard_library}/stdlib__Complex.cmi
+       %{ocaml-config:standard_library}/stdlib__Condition.cmi
        %{ocaml-config:standard_library}/stdlib__Digest.cmi
+       %{ocaml-config:standard_library}/stdlib__Domain.cmi
+       %{ocaml-config:standard_library}/stdlib__Effect.cmi
+       %{ocaml-config:standard_library}/stdlib__Either.cmi
        %{ocaml-config:standard_library}/stdlib__Ephemeron.cmi
        %{ocaml-config:standard_library}/stdlib__Filename.cmi
        %{ocaml-config:standard_library}/stdlib__Float.cmi
        %{ocaml-config:standard_library}/stdlib__Format.cmi
        %{ocaml-config:standard_library}/stdlib__Fun.cmi
        %{ocaml-config:standard_library}/stdlib__Gc.cmi
-       %{ocaml-config:standard_library}/stdlib__Genlex.cmi
        %{ocaml-config:standard_library}/stdlib__Hashtbl.cmi
-       %{ocaml-config:standard_library}/stdlib__Int.cmi
+       %{ocaml-config:standard_library}/stdlib__In_channel.cmi
        %{ocaml-config:standard_library}/stdlib__Int32.cmi
        %{ocaml-config:standard_library}/stdlib__Int64.cmi
+       %{ocaml-config:standard_library}/stdlib__Int.cmi
        %{ocaml-config:standard_library}/stdlib__Lazy.cmi
        %{ocaml-config:standard_library}/stdlib__Lexing.cmi
        %{ocaml-config:standard_library}/stdlib__List.cmi
@@ -107,23 +112,24 @@
        %{ocaml-config:standard_library}/stdlib__Map.cmi
        %{ocaml-config:standard_library}/stdlib__Marshal.cmi
        %{ocaml-config:standard_library}/stdlib__MoreLabels.cmi
+       %{ocaml-config:standard_library}/stdlib__Mutex.cmi
        %{ocaml-config:standard_library}/stdlib__Nativeint.cmi
        %{ocaml-config:standard_library}/stdlib__Obj.cmi
        %{ocaml-config:standard_library}/stdlib__Oo.cmi
        %{ocaml-config:standard_library}/stdlib__Option.cmi
+       %{ocaml-config:standard_library}/stdlib__Out_channel.cmi
        %{ocaml-config:standard_library}/stdlib__Parsing.cmi
-       %{ocaml-config:standard_library}/stdlib__Pervasives.cmi
        %{ocaml-config:standard_library}/stdlib__Printexc.cmi
        %{ocaml-config:standard_library}/stdlib__Printf.cmi
        %{ocaml-config:standard_library}/stdlib__Queue.cmi
        %{ocaml-config:standard_library}/stdlib__Random.cmi
        %{ocaml-config:standard_library}/stdlib__Result.cmi
        %{ocaml-config:standard_library}/stdlib__Scanf.cmi
+       %{ocaml-config:standard_library}/stdlib__Semaphore.cmi
        %{ocaml-config:standard_library}/stdlib__Seq.cmi
        %{ocaml-config:standard_library}/stdlib__Set.cmi
        %{ocaml-config:standard_library}/stdlib__Stack.cmi
        %{ocaml-config:standard_library}/stdlib__StdLabels.cmi
-       %{ocaml-config:standard_library}/stdlib__Stream.cmi
        %{ocaml-config:standard_library}/stdlib__String.cmi
        %{ocaml-config:standard_library}/stdlib__StringLabels.cmi
        %{ocaml-config:standard_library}/stdlib__Sys.cmi
@@ -135,9 +141,13 @@
        %{ocaml-config:standard_library}/camlinternalLazy.cmi
        %{ocaml-config:standard_library}/camlinternalMod.cmi
        %{ocaml-config:standard_library}/camlinternalOO.cmi
-       %{ocaml-config:standard_library}/bigarray.cmi
+       %{ocaml-config:standard_library}/arith_status.cmi
+       %{ocaml-config:standard_library}/big_int.cmi
+       %{ocaml-config:standard_library}/nat.cmi
+       %{ocaml-config:standard_library}/num.cmi
+       %{ocaml-config:standard_library}/ratio.cmi
        %{ocaml-config:standard_library}/std_exit.cmi
-       %{ocaml-config:standard_library}/topdirs.cmi)
+       %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi)
     (:local_cmis
        ../toplevel/.learnocaml_toplevel_pp.objs/byte/learnocaml_toplevel_pp.cmi)
 
