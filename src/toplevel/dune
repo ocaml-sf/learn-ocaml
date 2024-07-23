@@ -71,6 +71,7 @@
           Learnocaml_toplevel_input
           Learnocaml_toplevel)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 
