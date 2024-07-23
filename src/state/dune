@@ -28,7 +28,7 @@
  (wrapped false)
  (flags :standard -warn-error +8)
  (modules Learnocaml_version Learnocaml_api)
- (libraries ocplib-json-typed
+ (libraries json-data-encoding
             ezjsonm
             conduit
             learnocaml_data)

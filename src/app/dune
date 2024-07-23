@@ -14,7 +14,7 @@
               ((pps ppx_ocplib_i18n js_of_ocaml-ppx)
                Learnocaml_common)))
  (libraries
-    ocplib-json-typed-browser
+    json-data-encoding-browser
     js_of_ocaml
     js_of_ocaml-ppx
     js_of_ocaml-tyxml
