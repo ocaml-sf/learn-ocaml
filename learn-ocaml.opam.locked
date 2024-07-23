@@ -77,7 +77,7 @@ depends: [
   "menhirSdk" {= "20220210"}
   "mmap" {= "1.1.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.13.1"}
+  "ocaml" {= "4.14.2"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-config" {= "2"}
   "ocaml-options-vanilla" {= "1"}
@@ -130,7 +130,7 @@ depends: [
   "uri-sexp" {= "4.2.0"}
   "uutf" {= "1.0.3"}
   "vg" {= "0.9.4"}
-  "yojson" {= "2.1.0"}
+  "yojson" {= "2.2.2"}
 ]
 build: [
   [make "static"]
@@ -149,9 +149,6 @@ the common files. A demo exercise repository is also provided as example.
 run-test: [make "test"]
 depexts: ["lsof"] {os-distribution = "alpine"}
 pin-depends: [
-  ["asak.0.4" "git+https://github.com/nobrakal/asak#922ceed"]
-  [
-    "ocp-indent-nlfork.1.5.5"
-    "git+ssh://git@github.com/OCamlPro/ocp-indent#nlfork"
-  ]
+  "ocp-indent-nlfork.1.5.5"
+  "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
 ]
