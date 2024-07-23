@@ -4,6 +4,7 @@
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
  (preprocess (pps ppx_ocplib_i18n))
+ (preprocessor_deps (sandbox none))
  (libraries json-data-encoding ocplib_i18n)
 )
 
@@ -191,6 +192,7 @@
           Embedded_grading_lib
           Grading)
  (preprocess (per_module ((pps ppx_ocplib_i18n grader_ppx) Grading)))
+ (preprocessor_deps (sandbox none))
 )
 
 
@@ -252,6 +254,7 @@
             grader_jsoo_messages)
  (modules Grader_jsoo_worker)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
  (js_of_ocaml (flags :standard --toplevel --nocmis
                      +dynlink.js +toplevel.js))
 )

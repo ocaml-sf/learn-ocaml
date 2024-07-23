@@ -13,6 +13,7 @@
                Server_caller)
               ((pps ppx_ocplib_i18n js_of_ocaml-ppx)
                Learnocaml_common)))
+ (preprocessor_deps (sandbox none))
  (libraries
     json-data-encoding-browser
     js_of_ocaml
@@ -43,6 +44,7 @@
           Learnocaml_teacher_tab
           Learnocaml_index_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 (executable
@@ -60,6 +62,7 @@
             ocplib_i18n)
  (modules Learnocaml_exercise_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 (executable
@@ -76,6 +79,7 @@
             ocplib_i18n)
  (modules Learnocaml_playground_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 (executable
@@ -92,6 +96,7 @@
             ocplib_i18n)
  (modules Learnocaml_student_view)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 (executable
@@ -106,6 +111,7 @@
             ocplib_i18n)
  (modules Learnocaml_description_main)
  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
 )
 
 
