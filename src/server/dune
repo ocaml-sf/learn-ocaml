@@ -3,7 +3,7 @@
  (wrapped false)
  (flags :standard -warn-error +8)
  (modules Learnocaml_server)
- (libraries ocplib-json-typed
+ (libraries json-data-encoding
             ezjsonm
             lwt.unix
             lwt_utils

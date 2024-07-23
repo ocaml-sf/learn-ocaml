@@ -87,8 +87,8 @@ depends: [
   "ocp-indent-nlfork" {= "1.5.5"}
   "ocp-ocamlres" {= "0.4"}
   "ocplib-endian" {= "1.2"}
-  "ocplib-json-typed" {= "0.7.1"}
-  "ocplib-json-typed-browser" {= "0.7.1"}
+  "json-data-encoding" {= "0.7.1"}
+  "json-data-encoding-browser" {= "0.7.1"}
   "octavius" {= "1.2.2"}
   "odoc" {= "2.1.0"}
   "odoc-parser" {= "1.0.0"}

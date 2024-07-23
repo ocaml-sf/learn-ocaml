@@ -4,7 +4,7 @@
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
  (preprocess (pps ppx_ocplib_i18n))
- (libraries ocplib-json-typed ocplib_i18n)
+ (libraries json-data-encoding ocplib_i18n)
 )
 
 (rule
@@ -43,7 +43,7 @@
             toploop
             learnocaml_ppx_metaquot_lib
             grader_ppx
-            ocplib-json-typed
+            json-data-encoding
             learnocaml_report
             learnocaml_repository
             introspection_intf
@@ -226,7 +226,7 @@
             js_of_ocaml-ppx
             ezjsonm
             jsutils
-            ocplib-json-typed-browser
+            json-data-encoding-browser
             learnocaml_repository
             learnocaml_report
             grader_jsoo_messages)
@@ -242,7 +242,7 @@
  (libraries toploop_jsoo
             grading
             ezjsonm
-            ocplib-json-typed-browser
+            json-data-encoding-browser
             js_of_ocaml
             js_of_ocaml-ppx
             ocplib_i18n
