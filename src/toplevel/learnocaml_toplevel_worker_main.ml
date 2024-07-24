@@ -294,9 +294,10 @@ let () =
          Location.print_loc loc
    | e ->
        Js_utils.log "FAILED INIT %s" (Printexc.to_string e));
-  Hashtbl.add Toploop.directive_table
+  Toploop.add_directive
     "debug_worker"
-    (Toploop.Directive_bool (fun b -> debug := b));
+    (Toploop.Directive_bool (fun b -> debug := b))
+    {Toploop.section="Learn-OCaml specific"; doc=""};
   Worker.set_onmessage (fun s -> Lwt.async (fun () -> handler s))
 
 (* Register some dynamic modules that are expected by compiled artifacts loaded

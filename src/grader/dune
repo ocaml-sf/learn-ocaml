@@ -21,7 +21,7 @@
  (wrapped false)
  (modules introspection_intf)
  (modules_without_implementation introspection_intf)
- (libraries learnocaml_report ty))
+ (libraries unix learnocaml_report ty))
 
 ;; dynamic part, on which Test_lib depends
 (library

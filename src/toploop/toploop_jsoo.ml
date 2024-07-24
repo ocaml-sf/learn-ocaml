@@ -20,16 +20,17 @@ let split_primitives p =
   Array.of_list(split 0 0)
 
 let setup = lazy (
-  Hashtbl.add Toploop.directive_table "enable"
-    (Toploop.Directive_string Config.Flag.enable);
-  Hashtbl.add Toploop.directive_table "disable"
-    (Toploop.Directive_string Config.Flag.disable);
-  Hashtbl.add Toploop.directive_table "debug_on"
-    (Toploop.Directive_string Debug.enable);
-  Hashtbl.add Toploop.directive_table "debug_off"
-    (Toploop.Directive_string Debug.disable);
-  Hashtbl.add Toploop.directive_table "tailcall"
-    (Toploop.Directive_string (Config.Param.set "tc"));
+  let info = Toploop.{section="Learn-OCaml specific"; doc=""} in
+  Toploop.add_directive "enable"
+    (Toploop.Directive_string Config.Flag.enable) info;
+  Toploop.add_directive "disable"
+    (Toploop.Directive_string Config.Flag.disable) info;
+  Toploop.add_directive "debug_on"
+    (Toploop.Directive_string Debug.enable) info;
+  Toploop.add_directive "debug_off"
+    (Toploop.Directive_string Debug.disable) info;
+  Toploop.add_directive "tailcall"
+    (Toploop.Directive_string (Config.Param.set "tc")) info;
   (* Workaround Marshal bug triggered by includemod.ml:607 *)
   Clflags.error_size := 0 ;
   (* Disable inlining of JSOO which may blow the JS stack *)

@@ -56,7 +56,9 @@ let get_grade ?callback ?timeout ?dirname exo solution =
         try
           let oc = Unix.out_channel_of_descr out_fd in
           let (ret: grader_answer) =
-            Load_path.init [ cmis_dir ] ;
+            Load_path.init
+              ~auto_include:Load_path.no_auto_include
+              [ cmis_dir ] ;
             Toploop_unix.initialize () ;
             let divert name chan cb =
               let redirection = Toploop_unix.redirect_channel name chan cb in
