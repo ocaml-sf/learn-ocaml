@@ -34,7 +34,7 @@ module El = struct
       name: string;
       btn: Html_types.div H.elt;
       tab: Html_types.div H.elt;
-    }
+    }[@@ocaml.warning "-69"]
     let tid name = {
       name;
       btn = snd (id ("learnocaml-exo-button-" ^ name));

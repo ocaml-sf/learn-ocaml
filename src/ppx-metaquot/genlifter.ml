@@ -261,3 +261,4 @@ module Main : sig end = struct
       Printf.eprintf "** fatal error: %s\n%!" (Printexc.to_string exn)
 
 end
+open Main
