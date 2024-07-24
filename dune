@@ -11,8 +11,12 @@
            (ocamlc_flags)
            (ocamlopt_flags)
            (js_of_ocaml
-            (flags :standard --no-sourcemap --enable=effects)))
-  (dev     (flags (:standard -safe-string -warn-error -a+8))
+            (compilation_mode whole_program)
+            (flags :standard --no-sourcemap --pretty)
+            (build_runtime_flags :standard --no-sourcemap --pretty --enable=effects)))
+
+  (dev     (flags (:standard -safe-string -w -32 -warn-error -a+8))
            (js_of_ocaml
-            (flags :standard --no-sourcemap --enable=effects)))
+            (compilation_mode whole_program)
+            ))
 )
