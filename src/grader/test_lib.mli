@@ -517,9 +517,9 @@
   (** Grading function for variables and references. *)
   module Test_functions_ref_var : sig
 
-    (** [test_ref ty got exp] returns {!LearnOcaml_report.Success 1}
+    (** [test_ref ty got exp] returns {!Learnocaml_report.Success 1}
        report if reference [got] value is equal to [exp] and
-       {!LearnOcaml_report.Failure} report otherwise.
+       {!Learnocaml_report.Failure} report otherwise.
 
         {e WARNING:} contrary to other grading functions, you cannot
        use this function to evaluate a reference defined or modified
@@ -529,22 +529,22 @@
     val test_ref :
       'a Ty.ty -> 'a ref -> 'a -> Learnocaml_report.t
 
-    (** [test_variable ty name r] returns {!LearnOcaml_report.Success
+    (** [test_variable ty name r] returns {!Learnocaml_report.Success
         1} report if variable named [name] exists and is equal to
-        [r]. Otherwise returns {!LearnOcaml_report.Failure} report.*)
+        [r]. Otherwise returns {!Learnocaml_report.Failure} report.*)
     val test_variable :
       'a Ty.ty -> string -> 'a -> Learnocaml_report.t
 
     (** [test_variable_property ty name cb] returns the report
         resulting of application of cb to variable named [name] if it
-        exists.  Otherwise returns {!LearnOcaml_report.Failure} report.  *)
+        exists.  Otherwise returns {!Learnocaml_report.Failure} report.  *)
     val test_variable_property :
       'a Ty.ty -> string -> ('a -> Learnocaml_report.t) -> Learnocaml_report.t
 
-    (** [test_variable ty name r] returns {!LearnOcaml_report.Success
+    (** [test_variable ty name r] returns {!Learnocaml_report.Success
         1} report if variable named [name] exists and is equal to
         variable with the same name defined in solution. Otherwise returns
-        {!LearnOcaml_report.Failure} report.*)
+        {!Learnocaml_report.Failure} report.*)
     val test_variable_against_solution :
       'a Ty.ty -> string -> Learnocaml_report.t
 
@@ -620,7 +620,7 @@
        outputs.
 
      A test [(arg-1, r, out, err)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1] is equal to [r] and if standard output and
        standard error messages match [out] and [err] respectively. The
        result of a test is a {!Learnocaml_report.Failure} report otherwise.
@@ -642,7 +642,7 @@
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [arg-1] results in a {!LearnOcaml_report.Success 1} report
+     A test [arg-1] results in a {!Learnocaml_report.Success 1} report
        if the student function applied to [arg-1] gives the same
        result than the solution function [rf] applied to [arg-1]. Otherwise
        the result of a test is a {!Learnocaml_report.Failure} report.
@@ -668,7 +668,7 @@
        which must be defined under name [name] in the corresponding
        [solution.ml] file.
 
-     A test [arg-1] results in a {!LearnOcaml_report.Success 1} report
+     A test [arg-1] results in a {!Learnocaml_report.Success 1} report
        if the student function applied to [arg-1] gives the same
        result than the solution function [rf] applied to
        [arg-1]. Otherwise the result of a test is a
@@ -713,7 +713,7 @@
        outputs.
 
      A test [(arg-1, arg-2, r, out, err)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1] and [arg-2] is equal to [r] and if standard
        output and standard error messages match [out] and [err]
        respectively. The result of a test is a
@@ -738,7 +738,7 @@
        named [name] by comparing outputs obtained with the student
        function against outputs of [rf].
 
-     A test [(arg-1, arg-2)] results in a {!LearnOcaml_report.Success
+     A test [(arg-1, arg-2)] results in a {!Learnocaml_report.Success
        1} report if the student function applied to [arg-1] and
        [arg-2] gives the same result than the solution function [rf]
        applied to the same arguments. Otherwise the result of a test is a
@@ -768,7 +768,7 @@
        be defined under name [name] in the corresponding [solution.ml]
        file.
 
-     A test [(arg-1, arg-2)] results in a {!LearnOcaml_report.Success
+     A test [(arg-1, arg-2)] results in a {!Learnocaml_report.Success
        1} report if the student function applied to [arg-1] and
        [arg-2] gives the same result than the solution function [rf]
        applied to the same arguments. Otherwise the result of a test
@@ -813,7 +813,7 @@
        outputs.
 
      A test [(arg-1, arg-2, arg-3, r, out, err)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] is equal to [r] and if
        standard output and standard error messages match [out] and
        [err] respectively. The result of a test is a
@@ -838,7 +838,7 @@
        function against outputs of [rf].
 
      A test [(arg-1, arg-2, arg-3)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] gives the same result
        than the solution function [rf] applied to the same
        arguments. Otherwise the result of a test is a
@@ -870,7 +870,7 @@
        file.
 
      A test [(arg-1, arg-2, arg-3)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2] and [arg-3] gives the same result
        than the solution function [rf] applied to the same
        arguments. Otherwise the result of a test is a
@@ -916,7 +916,7 @@
        outputs.
 
      A test [(arg-1, arg-2, arg-3, arg-4, r, out, err)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] is equal to
        [r] and if standard output and standard error messages match
        [out] and [err] respectively. The result of a test is a
@@ -942,7 +942,7 @@
        function against outputs of [rf].
 
      A test [(arg-1, arg-2, arg-3m arg-4)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
        result than the solution function [rf] applied to the same
        arguments. Otherwise the result of a test is a
@@ -972,7 +972,7 @@
        [solution.ml] file.
 
      A test [(arg-1, arg-2, arg-3, arg-4)] results in a
-       {!LearnOcaml_report.Success 1} report if the student function
+       {!Learnocaml_report.Success 1} report if the student function
        applied to [arg-1], [arg-2], [arg-3] and [arg-4] gives the same
        result than the solution function [rf] applied to the same
        arguments. Otherwise the result of a test is a

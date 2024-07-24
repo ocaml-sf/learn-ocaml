@@ -14,8 +14,6 @@ open Learnocaml_common
 open Learnocaml_data
 open Learnocaml_config
 
-module H = Tyxml_js.Html
-
 let init_tabs, select_tab =
   mk_tab_handlers "toplevel" ["editor"]
 

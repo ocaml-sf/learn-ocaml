@@ -14,7 +14,8 @@
  (name learnocaml_tutorial_parser)
  (wrapped false)
  (modules Learnocaml_tutorial_parser)
- (libraries learnocaml_repository
+ (libraries str
+            learnocaml_repository
             learnocaml_data
             lwt.unix
             markup
