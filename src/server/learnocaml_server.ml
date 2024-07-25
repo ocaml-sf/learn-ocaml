@@ -718,7 +718,7 @@ let launch () =
 
 let check_running () =
   try
-    let ic = Printf.ksprintf Unix.open_process_in "lsof -Qti tcp:%d -s tcp:LISTEN" !port in
+    let ic = Printf.ksprintf Unix.open_process_in "lsof -ti tcp:%d -s tcp:LISTEN" !port in
     let pid = match input_line ic with
       | "" -> None
       | s -> int_of_string_opt s
@@ -733,9 +733,9 @@ let check_running () =
 let kill_running pid =
   let timeout = 15 in
   Unix.kill pid Sys.sigint;
-  Printf.eprintf "Waiting for process %d to terminate... %2d%!" pid timeout;
+  Printf.eprintf "Waiting for process %d to terminate... %2d %!" pid timeout;
   let rec aux tout =
-    Printf.eprintf "\027[2D%2d" tout;
+    Printf.eprintf "\027[3D%2d %!" tout;
     if Printf.ksprintf Sys.command "lsof -ti tcp:%d -p %d >/dev/null" !port pid
        = 0
     then
@@ -746,4 +746,4 @@ let kill_running pid =
          aux (tout - 1))
   in
   aux timeout;
-  prerr_endline "\027[2Dok"
+  prerr_endline "\027[3Dok "

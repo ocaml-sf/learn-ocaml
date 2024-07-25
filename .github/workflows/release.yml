@@ -32,8 +32,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: ocaml
           package-name: learn-ocaml
-          bump-minor-pre-major: true
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"revert","section":"Reverts","hidden":false},{"type":"perf","section":"Performance Improvements","hidden":false},{"type":"refactor","section":"Code Refactoring","hidden":false},{"type":"deps","section":"Dependencies","hidden":false},{"type":"build","section":"Build System","hidden":false},{"type":"test","section":"Tests","hidden":false},{"type":"ci","section":"CI/CD","hidden":false},{"type":"docs","section":"Documentation","hidden":false},{"type":"style","section":"Style","hidden":true},{"type":"chore","section":"Miscellaneous Chores","hidden":true}]'
+          bump-minor-pre-major: false
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"revert","section":"Reverts","hidden":false},{"type":"perf","section":"Performance Improvements","hidden":false},{"type":"refactor","section":"Code Refactoring","hidden":false},{"type":"deps","section":"Dependencies","hidden":false},{"type":"build","section":"Build System","hidden":false},{"type":"test","section":"Tests","hidden":false},{"type":"ci","section":"CI/CD","hidden":false},{"type":"docs","section":"Documentation","hidden":false},{"type":"style","section":"Style","hidden":false},{"type":"chore","section":"Miscellaneous Chores","hidden":true}]'
 
   add-binaries:
     needs: [release-please]
@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Check out the repo
         # Mandatory step (otherwise, gh could raise "fatal: Not a git repository")
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download workflow artifacts
         # cf. https://github.com/actions/download-artifact/issues/3
         uses: dawidd6/action-download-artifact@v2
@@ -98,7 +98,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
@@ -143,7 +143,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
@@ -192,7 +192,7 @@ jobs:
         run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
         id: tag
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver

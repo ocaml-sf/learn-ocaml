@@ -16,16 +16,18 @@ jobs:
   call-opam-publish:
     uses: ./.github/workflows/opam-publish.yml
     with:
-      # release: "false" # by default
-      tag_name: "v0.15.0"
+      # release: "false"  # beware: keep this flag set to false
+      tag_name: "v0.16.0" # beware: put here an existing (old) tag
       body: |
         Cc @erikmd
 
-        ## [0.15.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.14.1...v0.15.0) (2023-08-23)
-        
+        ## [1.0.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.16.0...v1.0.0) (2024-02-12)
+
+        Preflight!
+
         ### Features
         
-        * **partition-view:** Add a selector to show (tokens, nicks, or anon IDs) (`#540`) ([58b3644](https://github.com/ocaml-sf/learn-ocaml/commit/58b3644a6d5a3f43cf8d7cb21ebbe40b588f176f)), closes `#528`
+        * **pre-compilation:** Implement pre-compilation of exercises and graders ([b03bdfe](https://github.com/ocaml-sf/learn-ocaml/commit/b03bdfe5a7c9ed5d4677b1ee2eb11d37e953cbe3))
         * etc.
     secrets:
       OPAM_RELEASE: ${{ secrets.OPAM_RELEASE }}

@@ -25,7 +25,7 @@ jobs:
         # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build learn-ocaml-compilation
         run: 'docker build -t learn-ocaml-compilation --target=compilation .'
       - name: 'Build ${{ matrix.arch_dir }}.zip'
@@ -50,7 +50,7 @@ jobs:
         # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build the binaries
         run: |
           ./scripts/static-build.sh
@@ -82,7 +82,7 @@ jobs:
         # we could use an env var, albeit it would be less convenient
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Show OS version
         run: |
           sw_vers

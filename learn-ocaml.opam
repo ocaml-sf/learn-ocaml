@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml"
-version: "0.16.0"
+version: "1.0.0"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
@@ -17,6 +17,9 @@ license: "MIT"
 homepage: "https://github.com/ocaml-sf/learn-ocaml"
 bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 dev-repo: "git+https://github.com/ocaml-sf/learn-ocaml"
+depexts: [
+  ["lsof"] {os-distribution = "alpine"}
+]
 depends: [
   "asak" { >= "0.4"}
   "base64"
