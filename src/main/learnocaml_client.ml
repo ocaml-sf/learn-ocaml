@@ -812,11 +812,11 @@ module Grade = struct
          (Printf.eprintf "Results NOT saved to server (deadline expired)\n";
           Lwt.return 1)
        else
-         match token with
-         | Some token ->
+         match eo.submit, token with
+         | true, Some token ->
             upload_report server token exercise solution report >>= fun _ ->
             Printf.eprintf "Results saved to server\n"; Lwt.return 0
-         | None -> Lwt.return 0
+         | _ -> Lwt.return 0
 
   let man =
     man
