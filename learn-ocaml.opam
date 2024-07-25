@@ -46,7 +46,7 @@ depends: [
   "magic-mime"
   "markup"
   "markup-lwt"
-  "ocaml" {(>= "4.14") & (< "5.1~")}
+  "ocaml" {(>= "5.1") & (< "5.2~")}
   "ocamlfind" {build}
   "ocp-indent-nlfork" {>= "1.5.5"}
   "json-data-encoding" {>= "0.7"}
