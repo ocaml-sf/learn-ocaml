@@ -90,10 +90,10 @@ depends: [
   "magic-mime" {= "1.2.0"}
   "markup" {= "1.0.3"}
   "markup-lwt" {= "0.5.0"}
-  "menhir" {= "20240715"}
-  "menhirCST" {= "20240715"}
-  "menhirLib" {= "20240715"}
-  "menhirSdk" {= "20240715"}
+  "menhir" {= "20231231"}
+  "menhirCST" {= "20231231"}
+  "menhirLib" {= "20231231"}
+  "menhirSdk" {= "20231231"}
   "mirage-crypto" {= "0.11.3"}
   "mirage-crypto-ec" {= "0.11.3"}
   "mirage-crypto-pk" {= "0.11.3"}
@@ -104,7 +104,7 @@ depends: [
   "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocamlbuild" {= "0.15.0"}
+  "ocamlbuild" {= "0.14.3"}
   "ocamlfind" {= "1.9.6"}
   "ocp-indent-nlfork" {= "1.5.5"}
   "ocp-ocamlres" {= "0.4"}
@@ -155,7 +155,7 @@ depends: [
   "vg" {= "0.9.4"}
   "x509" {= "0.16.5"}
   "yojson" {= "2.2.2"}
-  "zarith" {= "1.14"}
+  "zarith" {= "1.13"}
 ]
 build: [
   [make "static"]
