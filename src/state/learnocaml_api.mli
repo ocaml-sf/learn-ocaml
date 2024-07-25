@@ -137,8 +137,8 @@ type _ request =
     (** The two Status.t correspond to the states before and after changes, used
         for three-way merge *)
 
-  (* | Partition:
-   *     teacher token * Exercise.id * string * int -> Partition.t request *)
+  | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request

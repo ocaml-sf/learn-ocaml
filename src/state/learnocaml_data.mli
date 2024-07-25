@@ -453,19 +453,19 @@ module Tutorial: sig
 
 end
 
-(* module Partition : sig
- *   type t =
- *   {
- *     not_graded : Token.t list;
- *     bad_type   : Token.t list;
- *     partition_by_grade :
- *       (int *
- *          (((Token.t * string) list) Asak.Wtree.wtree list))
- *         list;
- *   }
- * 
- *   val enc: t Json_encoding.encoding
- * end *)
+module Partition : sig
+  type t =
+  {
+    not_graded : Token.t list;
+    bad_type   : Token.t list;
+    partition_by_grade :
+      (int *
+         (((Token.t * string) list) Asak.Wtree.wtree list))
+        list;
+  }
+
+  val enc: t Json_encoding.encoding
+end
 
 module Playground : sig
   type id = string

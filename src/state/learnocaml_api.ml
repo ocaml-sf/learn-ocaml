@@ -145,8 +145,8 @@ type _ request =
   | Set_exercise_status:
       teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
-  (* | Partition:
-   *     teacher token * Exercise.id * string * int -> Partition.t request *)
+  | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request
@@ -177,7 +177,7 @@ let supported_versions
   | Exercise_status_index _
   | Exercise_status (_, _)
   | Set_exercise_status (_, _)
-  (* | Partition (_, _, _, _) *)
+  | Partition (_, _, _, _)
   | Invalid_request _ -> Compat.(Since (v "0.12"))
 
 let is_supported
@@ -266,8 +266,8 @@ module Conversions (Json: JSON_CODEC) = struct
       | Set_exercise_status _ ->
           json J.unit
 
-      (* | Partition _ ->
-       *     json Partition.enc *)
+      | Partition _ ->
+          json Partition.enc
 
       | Invalid_request _ ->
           str
@@ -372,9 +372,9 @@ module Conversions (Json: JSON_CODEC) = struct
              (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
              status)
 
-    (* | Partition (token, eid, fid, prof) ->
-     *     get ~token
-     *       ["partition"; eid; fid; string_of_int prof] *)
+    | Partition (token, eid, fid, prof) ->
+        get ~token
+          ["partition"; eid; fid; string_of_int prof]
 
     | Invalid_request s ->
         failwith ("Error request "^s)
@@ -504,9 +504,9 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
       | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
-      (* | `GET, ["partition"; eid; fid; prof], Some token
-       *   when Token.is_teacher token ->
-       *     Partition (token, eid, fid, int_of_string prof) |> k *)
+      | `GET, ["partition"; eid; fid; prof], Some token
+        when Token.is_teacher token ->
+          Partition (token, eid, fid, int_of_string prof) |> k
 
       | `GET, ["teacher"; "exercise-status.json"], Some token
         when Token.is_teacher token ->
