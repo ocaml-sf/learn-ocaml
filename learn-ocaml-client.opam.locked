@@ -22,6 +22,7 @@ homepage: "https://github.com/ocaml-sf/learn-ocaml"
 bug-reports: "https://github.com/ocaml-sf/learn-ocaml/issues"
 depends: [
   "angstrom" {= "0.15.0"}
+  "asak" {= "0.5"}
   "asn1-combinators" {= "0.2.6"}
   "astring" {= "0.8.5"}
   "base" {= "v0.16.3"}
@@ -143,6 +144,9 @@ depends: [
 build: ["dune" "build" "@install" "-p" name "-j" jobs]
 dev-repo: "git+https://github.com/ocaml-sf/learn-ocaml"
 pin-depends: [
+  ["asak.0.5" "git+https://github.com/AltGr/asak#ocaml5"]
+  [
   "ocp-indent-nlfork.1.5.5"
   "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
+]
 ]

@@ -73,7 +73,6 @@ COPY --from=compilation "$opam_switch/lib/gg" "$opam_switch/lib/gg"
 
 # Fixes for ocamlfind
 COPY --from=compilation "$opam_switch/lib/findlib.conf" "$opam_switch/lib/"
-COPY --from=compilation "$opam_switch/lib/stdlib" "$opam_switch/lib/stdlib"
 ENV PATH="${opam_switch}/bin:${PATH}"
 ENV OCAMLPATH="/usr/lib"
 RUN ln -sf "$opam_switch/lib/vg" "/usr/lib"
