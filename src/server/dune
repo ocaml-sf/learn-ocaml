@@ -16,6 +16,5 @@
             learnocaml_data
             learnocaml_api
             learnocaml_store
-	    ;; learnocaml_partition_create
-            )
+	    learnocaml_partition_create)
 )

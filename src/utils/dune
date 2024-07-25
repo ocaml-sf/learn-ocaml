@@ -41,10 +41,10 @@
  (modules sha)
 )
 
-;; (library
-;;  (name learnocaml_partition_create)
-;;  (wrapped false)
-;;  (flags :standard -warn-error A-4-42-44-45-48)
-;;  (libraries lwt learnocaml_store learnocaml_data)
-;;  (modules learnocaml_partition_create)
-;; )
+(library
+ (name learnocaml_partition_create)
+ (wrapped false)
+ (flags :standard -warn-error A-4-42-44-45-48)
+ (libraries asak lwt learnocaml_store learnocaml_data)
+ (modules learnocaml_partition_create)
+)
