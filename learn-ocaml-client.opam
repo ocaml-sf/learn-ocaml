@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "learn-ocaml-client"
-version: "1.0.0"
+version: "1.1.0"
 authors: [
   "Benjamin Canou (OCamlPro)"
   "Çağdaş Bozman (OCamlPro)"
