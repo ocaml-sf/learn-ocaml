@@ -67,8 +67,6 @@ depends: [
   "gg" {= "1.0.0"}
   "gmap" {= "0.3.0"}
   "hex" {= "1.4.0"}
-  "host-arch-x86_64" {= "1"}
-  "host-system-other" {= "1"}
   "ipaddr" {= "5.6.0"}
   "ipaddr-sexp" {= "5.6.0"}
   "jane-street-headers" {= "v0.16.0"}
@@ -100,7 +98,6 @@ depends: [
   "mirage-crypto-rng" {= "0.11.3"}
   "num" {= "1.4"}
   "ocaml" {= "5.0.0"}
-  "ocaml-base-compiler" {= "5.0.0"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-config" {= "3"}
   "ocaml-options-vanilla" {= "1"}
