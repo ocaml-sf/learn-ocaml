@@ -1,7 +1,7 @@
 # This Dockerfile is useful for testing purposes
 # to ensure learn-ocaml-client can be built alone from learn-ocaml-client.opam
 
-FROM ocaml/opam:alpine-3.13-ocaml-4.12 as compilation
+FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -13,7 +13,7 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
   && opam repository set-url default http://opam.ocaml.org \
-  && opam switch 4.12 \
+  && opam switch 5.1 \
   && echo 'pre-session-commands: [ "sudo" "apk" "add" depexts ]' >> ~/.opam/config \
   && opam pin add -n -y -k path learn-ocaml-client . \
   && opam install learn-ocaml-client --deps-only
