@@ -336,43 +336,45 @@ let install_printer modname id tyname pr =
          must be found in the cmi file (no mli file allowed).@."
         modname tyname
   | printer_desc, (ty_path, ty_decl) ->
-      Ctype.begin_def();
-      let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
       let ty_target =
-        Ctype.expand_head env
-          (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
+        Ctype.with_local_level @@ fun () ->
+        let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
+        let ty_target =
+          Ctype.expand_head env
+            (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
+        in
+        let printer_ty_expected =
+          List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
+            ty_args
+            (gen_printer_type ty_target)
+        in
+        (try
+           Ctype.unify env
+             printer_ty_expected
+             (Ctype.instance printer_desc.val_type)
+         with Ctype.Unify _ ->
+           Format.printf
+             "Warning: mismatching type for print function %s.print_%s.@;\
+              The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
+             modname tyname
+             (Format.pp_print_list
+                (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
+                    (Printtyp.type_expr)))
+             ty_args
+             (fun ppf -> function
+                | [] -> ()
+                | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
+                | args ->
+                    Format.fprintf ppf "(%a) "
+                      (Format.pp_print_list
+                         ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
+                         Printtyp.type_expr)
+                      args)
+             ty_args
+             tyname);
+        Ctype.generalize printer_ty_expected;
+        ty_target
       in
-      let printer_ty_expected =
-        List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
-          ty_args
-          (gen_printer_type ty_target)
-      in
-      (try
-         Ctype.unify env
-           printer_ty_expected
-           (Ctype.instance printer_desc.val_type)
-       with Ctype.Unify _ ->
-         Format.printf
-           "Warning: mismatching type for print function %s.print_%s.@;\
-            The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
-           modname tyname
-           (Format.pp_print_list
-              (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
-                  (Printtyp.type_expr)))
-           ty_args
-           (fun ppf -> function
-              | [] -> ()
-              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
-              | args ->
-                  Format.fprintf ppf "(%a) "
-                    (Format.pp_print_list
-                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
-                       Printtyp.type_expr)
-                    args)
-           ty_args
-           tyname);
-      Ctype.end_def ();
-      Ctype.generalize printer_ty_expected;
       let register_as_path = inmodpath ("print_"^tyname) in
       let rec build_generic v = function
         | [] ->
@@ -415,8 +417,10 @@ let install_printer modname id tyname pr =
          the module is fully loaded would risk crashes (e.g. on extensible
          variants) *)
       let rec path_to_longident = function
-        | Path.Pdot (p, s) -> Longident.Ldot (path_to_longident p, s)
+        | Path.Pdot (p, s) | Path.Pextra_ty (p, Path.Pcstr_ty s) ->
+            Longident.Ldot (path_to_longident p, s)
         | Path.Pident i -> Longident.Lident (Ident.name i)
+        | Path.Pextra_ty (p, Path.Pext_ty) -> path_to_longident p
         | Path.Papply _ -> assert false
       in
       pending_installed_printers :=

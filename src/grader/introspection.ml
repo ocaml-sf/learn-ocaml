@@ -246,45 +246,46 @@ let register_sampler modname id tyname f =
          sampler must be found in the cmi file (no mli file allowed)@."
         modname tyname
   | sampler_desc, (sampled_ty_path, sampled_ty_decl) ->
-      Ctype.begin_def();
-      let ty_args =
-        List.map (fun _ -> Ctype.newvar ()) sampled_ty_decl.type_params
+      let () =
+        Ctype.with_local_level @@ fun () ->
+        let ty_args =
+          List.map (fun _ -> Ctype.newvar ()) sampled_ty_decl.type_params
+        in
+        let ty_target =
+          Ctype.newty (Tconstr (sampled_ty_path, ty_args, ref Mnil))
+        in
+        let fn_args =
+          List.map (fun ty -> Ctype.newconstr gen_sampler_type [ty]) ty_args
+        in
+        let sampler_ty_expected =
+          List.fold_right (fun fn_arg ty ->
+              Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, commu_var ())))
+            fn_args (Ctype.newconstr gen_sampler_type [ty_target])
+        in
+        (try
+           Ctype.unify env
+             sampler_ty_expected
+             (Ctype.instance sampler_desc.val_type)
+         with Ctype.Unify _ ->
+           Format.kasprintf failwith
+             "Mismatching type for sampling function %s.sample_%s.@;\
+              The type must be@ @[<hov>%aunit -> %a%s@]@."
+             modname tyname
+             (Format.pp_print_list
+                (fun ppf -> Format.fprintf ppf "(unit -> %a) ->@ " (Printtyp.type_expr)))
+             ty_args
+             (fun ppf -> function
+                | [] -> ()
+                | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
+                | args ->
+                    Format.fprintf ppf "(%a) "
+                      (Format.pp_print_list
+                         ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
+                         Printtyp.type_expr)
+                      args)
+             ty_args
+             tyname);
       in
-      let ty_target =
-        Ctype.newty (Tconstr (sampled_ty_path, ty_args, ref Mnil))
-      in
-      let fn_args =
-        List.map (fun ty -> Ctype.newconstr gen_sampler_type [ty]) ty_args
-      in
-      let sampler_ty_expected =
-        List.fold_right (fun fn_arg ty ->
-            Ctype.newty (Tarrow (Asttypes.Nolabel, fn_arg, ty, commu_var ())))
-          fn_args (Ctype.newconstr gen_sampler_type [ty_target])
-      in
-      (try
-         Ctype.unify env
-           sampler_ty_expected
-           (Ctype.instance sampler_desc.val_type)
-       with Ctype.Unify _ ->
-         Format.kasprintf failwith
-           "Mismatching type for sampling function %s.sample_%s.@;\
-            The type must be@ @[<hov>%aunit -> %a%s@]@."
-           modname tyname
-           (Format.pp_print_list
-              (fun ppf -> Format.fprintf ppf "(unit -> %a) ->@ " (Printtyp.type_expr)))
-           ty_args
-           (fun ppf -> function
-              | [] -> ()
-              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
-              | args ->
-                  Format.fprintf ppf "(%a) "
-                    (Format.pp_print_list
-                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
-                       Printtyp.type_expr)
-                    args)
-           ty_args
-           tyname);
-      Ctype.end_def ();
       let def_name = "sample_" ^ tyname in
       Toploop.toplevel_env :=
         Env.add_value (Ident.create_local def_name) sampler_desc
