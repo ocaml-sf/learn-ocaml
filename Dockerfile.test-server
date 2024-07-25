@@ -37,7 +37,7 @@ RUN opam install learn-ocaml --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml
 
 
-FROM alpine:3.13 as program
+FROM alpine:3.20 as program
 
 ARG BUILD_DATE
 ARG VCS_BRANCH
