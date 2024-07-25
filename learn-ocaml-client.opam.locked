@@ -51,7 +51,7 @@ depends: [
   "cppo" {= "1.6.8"}
   "csexp" {= "1.5.1"}
   "cstruct" {= "6.2.0"}
-  "digestif" {= "1.1.0"}
+  "digestif" {= "1.2.0"}
   "domain-name" {= "0.4.0"}
   "dune" {= "3.16.0"}
   "dune-configurator" {= "2.9.3"}
@@ -70,9 +70,9 @@ depends: [
   "ipaddr" {= "5.6.0"}
   "ipaddr-sexp" {= "5.6.0"}
   "jane-street-headers" {= "v0.16.0"}
-  "js_of_ocaml" {= "5.1.1"}
-  "js_of_ocaml-compiler" {= "5.1.1"}
-  "js_of_ocaml-ppx" {= "5.1.1"}
+  "js_of_ocaml" {= "5.8.2"}
+  "js_of_ocaml-compiler" {= "5.8.2"}
+  "js_of_ocaml-ppx" {= "5.8.2"}
   "json-data-encoding" {= "1.0.1"}
   "jsonm" {= "1.0.1"}
   "jst-config" {= "v0.16.0"}

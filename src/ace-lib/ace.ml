@@ -287,7 +287,7 @@ let define_mode name helpers =
         js_helpers##.autoOutdent := Js.wrap_callback auto_outdent
   end;
   Js.Unsafe.fun_call
-    (Js.Unsafe.variable "define_ocaml_mode")
+    (Js.Unsafe.pure_js_expr "define_ocaml_mode")
     [| Js.Unsafe.inject (Js.string ("ace/mode/" ^ name)) ;
        Js.Unsafe.inject js_helpers |]
 

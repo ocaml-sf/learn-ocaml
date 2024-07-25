@@ -282,7 +282,6 @@ let () =
         List.iter (rec_mount (name::path)) children
     | OCamlRes.Res.File (name, content) ->
         let name = "/" ^ String.concat "/" (List.rev (name::path)) in
-        Js.Unsafe.set content (Js.string "t") 9 ; (* XXX hack *)
         Sys_js.create_file ~name ~content
     | OCamlRes.Res.Error _ -> ()
   in

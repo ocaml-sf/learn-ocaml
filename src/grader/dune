@@ -55,7 +55,7 @@
 (rule
  (target testing_dyn.js)
  (deps testing_dyn.cma)
- (action (run js_of_ocaml %{deps} --wrap-with dynload)))
+ (action (run js_of_ocaml --no-source-map --opt=2 --enable=use-js-string --target-env=browser %{deps})))
 
 (rule
  (targets test_lib.odoc)
@@ -141,11 +141,6 @@
        %{ocaml-config:standard_library}/camlinternalLazy.cmi
        %{ocaml-config:standard_library}/camlinternalMod.cmi
        %{ocaml-config:standard_library}/camlinternalOO.cmi
-       %{ocaml-config:standard_library}/arith_status.cmi
-       %{ocaml-config:standard_library}/big_int.cmi
-       %{ocaml-config:standard_library}/nat.cmi
-       %{ocaml-config:standard_library}/num.cmi
-       %{ocaml-config:standard_library}/ratio.cmi
        %{ocaml-config:standard_library}/std_exit.cmi
        %{ocaml-config:standard_library}/compiler-libs/topdirs.cmi)
     (:local_cmis
