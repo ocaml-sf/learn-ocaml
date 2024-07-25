@@ -45,6 +45,7 @@ depends: [
   "ssl" {>= "0.5.12"}
   "vg"
   "asak" {>= "0.5"}
+  "js_of_ocaml" {>= "5.0.0"}
 ]
 build: [
   ["dune" "build" "@install" "-p" name "-j" jobs]

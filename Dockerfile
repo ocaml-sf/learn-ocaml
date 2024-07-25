@@ -31,7 +31,7 @@ RUN opam install . --destdir /home/opam/install-prefix --locked
 FROM alpine:3.13 as client
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init openssl \
+  && apk add ncurses-libs libev dumb-init libssl3 libcrypto3 \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 
