@@ -7,7 +7,6 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
-open Js_of_ocaml_tyxml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common

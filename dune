@@ -12,11 +12,11 @@
            (ocamlopt_flags)
            (js_of_ocaml
             (compilation_mode whole_program)
-            (flags :standard --no-sourcemap --pretty)
-            (build_runtime_flags :standard --no-sourcemap --pretty --enable=effects)))
+            (flags --no-source-map --opt=2 --enable=use-js-string --target-env=browser)))
 
   (dev     (flags (:standard -safe-string -w -32 -warn-error -a+8))
            (js_of_ocaml
             (compilation_mode whole_program)
+            (flags --source-map-inline --pretty --enable=use-js-string --target-env=browser)
             ))
 )
