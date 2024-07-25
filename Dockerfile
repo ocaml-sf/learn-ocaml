@@ -1,4 +1,4 @@
-FROM ocaml/opam:alpine-3.13-ocaml-4.12 as compilation
+FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -9,7 +9,7 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
   && opam repository set-url default http://opam.ocaml.org \
-  && opam switch 4.12 \
+  && opam switch 5.1 \
   && echo 'pre-session-commands: [ "sudo" "apk" "add" depexts ]' >> ~/.opam/config \
   && opam install . --deps-only --locked
 
@@ -61,7 +61,7 @@ EXPOSE 8443
 USER learn-ocaml
 WORKDIR /home/learn-ocaml
 
-ARG opam_switch="/home/opam/.opam/4.12"
+ARG opam_switch="/home/opam/.opam/5.1"
 
 COPY --from=compilation /home/opam/install-prefix /usr
 COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
