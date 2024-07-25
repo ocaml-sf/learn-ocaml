@@ -44,6 +44,7 @@ depends: [
   "ppx_sexp_conv"
   "ssl" {>= "0.5.12"}
   "vg"
+  "asak" {>= "0.5"}
 ]
 build: [
   ["dune" "build" "@install" "-p" name "-j" jobs]
@@ -53,3 +54,9 @@ description: """
 This contains the binaries to interact with the learn-ocaml
 platform from the command line.
 """
+pin-depends: [
+   [
+     "asak.0.5"
+     "git+https://github.com/AltGr/asak#ocaml5"
+   ]
+]
