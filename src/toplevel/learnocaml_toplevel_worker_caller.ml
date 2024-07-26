@@ -59,7 +59,7 @@ type t = {
   mutable after_init: t -> unit Lwt.t;
   pp_stdout: string -> unit;
   pp_stderr: string -> unit;
-}
+} [@@ocaml.warning "-69"]
 
 
 exception Not_equal

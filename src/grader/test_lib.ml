@@ -372,7 +372,6 @@ module Intro = Pre_test.Introspection
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_types = struct
-    open Pre_test
 
     let compatible_type ~expected:exp got =
       let open Learnocaml_report in
@@ -676,7 +675,6 @@ module Intro = Pre_test.Introspection
   (*----------------------------------------------------------------------------*)
 
   module Test_functions_generic = struct
-    open Pre_test
     open Tester
 
     let sigalrm_handler time =

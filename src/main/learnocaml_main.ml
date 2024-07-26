@@ -9,8 +9,6 @@
 open Lwt.Infix
 open Cmdliner
 
-module StringSet = Set.Make(String)
-
 let ( / ) = Filename.concat
 
 let readlink f =

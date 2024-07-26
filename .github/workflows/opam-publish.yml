@@ -73,7 +73,7 @@ jobs:
         uses: avsm/setup-ocaml@v1
         # TODO: Keep up-to-date!
         with:
-          ocaml-version: 4.12.0
+          ocaml-version: 5.1.1
       - name: Install opam-publish
         run: |
           opam install -y -j 2 "opam-publish>=2.3.0"

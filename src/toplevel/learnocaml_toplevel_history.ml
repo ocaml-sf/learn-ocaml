@@ -7,8 +7,8 @@
  * included LICENSE file for details. *)
 
 type history =
-  { mutable storage : string array ;
-    mutable updated : string array ;
+  { storage : string array ;
+    updated : string array ;
     mutable first : int ;
     mutable stored : int ;
     mutable current : [ `Floating | `Index of int ] ;

@@ -6,7 +6,12 @@
  * included LICENSE file for details. *)
 
 let () =
-  Migrate_parsetree.Driver.register ~name:"ppx_metaquot" (module Migrate_parsetree.OCaml_412)
-    (fun _config _cookies -> Ppx_metaquot.Main.expander []);
+  let mapper = Ppx_metaquot.expander [] in
+  let impl = mapper.Ast_mapper.structure mapper in
+  let intf = mapper.Ast_mapper.signature mapper in
+  Ppxlib.Driver.register_transformation_using_ocaml_current_ast
+    "ppx_metaquot" ~impl ~intf
+
+let () =
   Ppxlib.Driver.register_transformation "print_recorder" ~impl:Printer_recorder.expand;
   Ppxlib.Driver.register_transformation "sample_recorder" ~impl:Sampler_recorder.expand

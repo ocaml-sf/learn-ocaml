@@ -19,8 +19,21 @@ module Main : sig end = struct
 
   (*************************************************************************)
 
+  module Compat = struct
+#if OCAML_VERSION >= (4, 14, 0)
+    let get_desc = Types.get_desc
+    let repr = Transient_expr.repr
+#else
+    let get_desc x = x.desc
+    let repr x = x
+#endif
+  end
 
+#if OCAML_VERSION >= (5, 0, 0)
+  let env = Env.initial
+#else
   let env = Env.initial_safe_string
+#endif
 
   let clean s =
     let s = Bytes.of_string s in
@@ -50,7 +63,11 @@ module Main : sig end = struct
     if Hashtbl.mem printed ty then ()
     else let tylid = Longident.parse ty [@ocaml.warning "-3"] in
       let td =
+#if OCAML_VERSION >= (4, 10, 0)
         try snd (Env.find_type_by_name tylid env)
+#else
+        try Env.find_type (Env.lookup_type tylid env) env
+#endif
         with Not_found ->
           Format.eprintf "** Cannot resolve type %s@." ty;
           exit 2
@@ -64,7 +81,7 @@ module Main : sig end = struct
       in
       Hashtbl.add printed ty ();
       let params = List.mapi (fun i _ -> mknoloc (Printf.sprintf "f%i" i)) td.type_params in
-      let env = List.map2 (fun s t -> t.id, evar s.txt) params td.type_params in
+      let env = List.map2 (fun s t -> (Compat.repr t).id, evar s.txt) params td.type_params in
       let make_result_t tyargs = Typ.(arrow Asttypes.Nolabel (constr (lid ty) tyargs) (var "res")) in
       let make_t tyargs =
         List.fold_right
@@ -94,7 +111,11 @@ module Main : sig end = struct
             (lam
                (Pat.record (List.map fst l) Closed)
                (selfcall "record" [str ty; list (List.map snd l)]))
+#if OCAML_VERSION >= (4, 13, 0)
+      | Type_variant (l, _rep), _ ->
+#else
       | Type_variant l, _ ->
+#endif
           let case cd =
             let c = Ident.name cd.cd_id in
             let qc = prefix ^ c in
@@ -132,9 +153,9 @@ module Main : sig end = struct
     List.split (List.mapi arg tl)
 
   and tyexpr env ty x =
-    match ty.desc with
+    match Compat.get_desc ty with
     | Tvar _ ->
-        (match List.assoc ty.id env with
+        (match List.assoc (Compat.repr ty).id env with
          | f -> app f [x]
          | exception Not_found ->
              use_existentials := true;
@@ -205,7 +226,11 @@ module Main : sig end = struct
     Printf.sprintf "%s [options] <type names>\n" Sys.argv.(0)
 
   let main () =
+#if OCAML_VERSION >= (5, 0, 0)
+    Load_path.init ~auto_include:Load_path.no_auto_include [Config.standard_library];
+#else
     Load_path.init [Config.standard_library];
+#endif
     Arg.parse (Arg.align args) gen usage;
     let meths = !meths in
     let meths =
@@ -221,7 +246,11 @@ module Main : sig end = struct
         meths
     in
     let cl = Cstr.mk (pvar "this") meths in
+#if OCAML_VERSION >= (4, 12, 0)
     let params = [Typ.var "res", (NoVariance, NoInjectivity)] in
+#else
+    let params = [Typ.var "res", Invariant] in
+#endif
     let cl = Ci.mk ~virt:Virtual ~params (mknoloc "lifter") (Cl.structure cl) in
     let s = [Str.class_ [cl]] in
     Format.printf "%a@." Pprintast.structure (simplify.Ast_mapper.structure simplify s)
@@ -232,3 +261,5 @@ module Main : sig end = struct
       Printf.eprintf "** fatal error: %s\n%!" (Printexc.to_string exn)
 
 end
+
+let _ = let module _ = Main in ()
