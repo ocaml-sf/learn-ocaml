@@ -115,21 +115,22 @@
 )
 
 
-;; (executable
-;;  (name learnocaml_partition_view)
-;;  (modes byte js)
-;;  (flags :standard -warn-error -9-27-33)
-;;  (libraries ezjsonm
-;;             grading_jsoo
-;;             ace
-;;             learnocaml_repository
-;;             learnocaml_app_common
-;;             lwt_react
-;;             js_of_ocaml-ppx
-;;             ocplib_i18n)
-;;  (modules Learnocaml_partition_view)
-;;  (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
-;; )
+(executable
+ (name learnocaml_partition_view)
+ (modes byte js)
+ (flags :standard -warn-error -9-27-33)
+ (libraries ezjsonm
+            grading_jsoo
+            ace
+            learnocaml_repository
+            learnocaml_app_common
+            lwt_react
+            js_of_ocaml-ppx
+            ocplib_i18n)
+ (modules Learnocaml_partition_view)
+ (preprocess (pps ppx_ocplib_i18n js_of_ocaml-ppx))
+ (preprocessor_deps (sandbox none))
+)
 
 (install
  (package learn-ocaml)
@@ -138,7 +139,7 @@
         (learnocaml_exercise_main.bc.js as www/js/learnocaml-exercise.js)
         (learnocaml_student_view.bc.js as www/js/learnocaml-student-view.js)
         (learnocaml_description_main.bc.js as www/js/learnocaml-description.js)
-        ;; (learnocaml_partition_view.bc.js as www/js/learnocaml-partition-view.js)
+        (learnocaml_partition_view.bc.js as www/js/learnocaml-partition-view.js)
         (learnocaml_playground_main.bc.js as www/js/learnocaml-playground.js))
 )
 
