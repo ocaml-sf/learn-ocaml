@@ -72,7 +72,7 @@ jobs:
   static-bin-macos:
     name: Builds static Macos binaries
     if: ${{ github.event_name != 'schedule' || github.repository == 'ocaml-sf/learn-ocaml' }}
-    runs-on: macos-latest
+    runs-on: macos-13
     env:
       OPAMYES: 1
       OPAMDEPEXTYES: 1
