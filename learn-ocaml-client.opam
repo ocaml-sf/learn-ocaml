@@ -36,7 +36,7 @@ depends: [
   "ocp-indent-nlfork"
   "json-data-encoding" {>= "0.7"}
   "ocp-ocamlres" {>= "0.4"}
-  "omd" {<= "2.0"}
+  "omd" {< "2.0"}
   "ppxlib"
   "ppx_expect"
   "ppx_inline_test"
