@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.1.0](https://github.com/ocaml-sf/learn-ocaml/compare/v1.0.0...v1.1.0) (2024-08-03)
+
+
+### Features
+
+* **CLI:** Add option `learn-ocaml build serve --serve-during-build` ([a47f8dd](https://github.com/ocaml-sf/learn-ocaml/commit/a47f8ddef2762ad20c2bb168f05d706d6fa31dd5)), closes [#594](https://github.com/ocaml-sf/learn-ocaml/issues/594)
+
+
+### Bug Fixes
+
+* **CI:** Use macos-13 for static-builds ([#603](https://github.com/ocaml-sf/learn-ocaml/issues/603)) ([d2c8d65](https://github.com/ocaml-sf/learn-ocaml/commit/d2c8d65b12c2512bd35204305d59c5eb486d8a96))
+* **docker:** Add missing alpine package (lsof) ([cc6caa3](https://github.com/ocaml-sf/learn-ocaml/commit/cc6caa34947000e6e60c175b607f5b0437609dc9))
+* **server:** Add missing flush in Learnocaml_server.kill_running ([3b14462](https://github.com/ocaml-sf/learn-ocaml/commit/3b14462aebd7e9a3a0c9a109442182fbb3af2671))
+
+
+### CI/CD
+
+* **GHA:** Use actions/checkout@v4 ([#599](https://github.com/ocaml-sf/learn-ocaml/issues/599)) ([b7ed29c](https://github.com/ocaml-sf/learn-ocaml/commit/b7ed29c4748ab2d8dfe6969ac1479f0ced68eb80))
+* **macos:** s/macos-latest/macos-14/ ([#598](https://github.com/ocaml-sf/learn-ocaml/issues/598)) ([0a69394](https://github.com/ocaml-sf/learn-ocaml/commit/0a69394bd4a1462fe0891b375e6efd08938f0c8c))
+
+
+### Documentation
+
+* **CONTRIBUTING.md:** minor update ([f318b95](https://github.com/ocaml-sf/learn-ocaml/commit/f318b958dae945d7f7e7a7b8fe091f51eb22263e))
+
+
+### Style
+
+* Fix displayed version to adapt to git tags naming convention ([2784290](https://github.com/ocaml-sf/learn-ocaml/commit/2784290e758a2fcfef7807cce5fd4e9c5e44e59f))
+
 ## [1.0.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.16.0...v1.0.0) (2024-02-12)
 
 
