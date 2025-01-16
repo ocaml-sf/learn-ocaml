@@ -48,7 +48,7 @@ depends: [
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
   "conf-libssl" {= "3"}
-  "conf-pkg-config" {= "2"}
+  "conf-pkg-config" {= "3"}
   "cppo" {= "1.6.8"}
   "crunch" {= "3.3.1"}
   "csexp" {= "1.5.1"}
