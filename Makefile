@@ -8,8 +8,9 @@ build-deps:
 	opam install . --deps-only --locked
 
 .PHONY: build
+# cf. man 5 dune-config
 build:
-	@${DUNE} build ${DUNE_ARGS}
+	@${DUNE} build ${DUNE_ARGS} --display=short
 
 .PHONY: test
 test:
