@@ -27,6 +27,7 @@ depends: [
   "cohttp" {>= "2.0.0"}
   "cohttp-lwt" {>= "2.0.0"}
   "cohttp-lwt-unix" {>= "2.0.0"}
+  "conduit-lwt-unix" {< "7.1.0"}
   "conf-git"
   "decompress" {= "0.8.1"}
   "digestif" {>= "1.2.0"}

@@ -23,6 +23,7 @@ depends: [
   "cmdliner" {>= "1.1.0"}
   "cohttp" {>= "2.0.0"}
   "cohttp-lwt-unix" {>= "2.0.0"}
+  "conduit-lwt-unix" {< "7.1.0"}
   "cstruct" {>= "3.3.0"}
   "digestif" {>= "0.7.1"}
   "dune" {>= "2.3.0"}
