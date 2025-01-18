@@ -36,8 +36,9 @@ case "$1" in
     # the following two lines are called when building the bytecode binaries
     macosx) shift; EXTRA_LIBS="curses $*";;
     linux) shift; EXTRA_LIBS="$*";;
-    # the following line is only used when building the native server binary
-    --) shift; EXTRA_LIBS="$*";;
+    # the following two lines are called when building the native server binary
+    ++macosx) shift; EXTRA_LIBS="zstd $*";;
+    ++linux) shift; EXTRA_LIBS="$*";;
     *) echo "Not supported %{ocamlc-config:system} '$1'." >&2; help_exit
 esac
 

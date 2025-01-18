@@ -72,4 +72,5 @@
 (rule
   (targets linking_server.sexp)
   (action  (with-stdout-to %{targets}
-    (run ./linking_flags.sh linking_server.sexp %{env:LINKING_MODE=dynamic} -- camlstrnat checkseum_c_stubs threadsnat unixnat))))
+    (run ./linking_flags.sh linking_server.sexp %{env:LINKING_MODE=dynamic} ++%{ocaml-config:system} camlstrnat checkseum_c_stubs threadsnat unixnat))))
+
