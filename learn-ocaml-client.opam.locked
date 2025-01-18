@@ -47,7 +47,7 @@ depends: [
   "conf-bash" {= "1"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
-  "conf-libssl" {= "3"}
+  "conf-libssl" {= "4"}
   "conf-pkg-config" {= "3"}
   "cppo" {= "1.6.8"}
   "csexp" {= "1.5.1"}
