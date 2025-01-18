@@ -12,7 +12,7 @@
            (ocamlopt_flags)
            (js_of_ocaml
             (compilation_mode whole_program)
-            (flags --no-source-map --opt=2 --enable=use-js-string --target-env=browser)))
+            (flags --opt=2 --enable=use-js-string --target-env=browser)))
 
   (dev     (flags (:standard -safe-string -w -32 -warn-error -a+8))
            (js_of_ocaml
