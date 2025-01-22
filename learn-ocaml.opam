@@ -83,13 +83,3 @@ description: """
 This contains the binaries forming the engine for the learn-ocaml platform, and
 the common files. A demo exercise repository is also provided as example.
 """
-pin-depends: [
-   [
-     "ocp-indent-nlfork.1.5.5"
-     "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
-   ]
-   [
-     "asak.0.5"
-     "git+https://github.com/AltGr/asak#ocaml5"
-   ]
-]

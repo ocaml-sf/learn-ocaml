@@ -173,10 +173,3 @@ the common files. A demo exercise repository is also provided as example.
 """
 run-test: [make "test"]
 depexts: ["lsof"] {os-distribution = "alpine"}
-pin-depends: [
-  ["asak.0.5" "git+https://github.com/AltGr/asak#ocaml5"]
-  [
-  "ocp-indent-nlfork.1.5.5"
-  "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
-]
-]

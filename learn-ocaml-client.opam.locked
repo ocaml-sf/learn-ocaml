@@ -143,10 +143,3 @@ depends: [
 ]
 build: ["dune" "build" "@install" "-p" name "-j" jobs]
 dev-repo: "git+https://github.com/ocaml-sf/learn-ocaml"
-pin-depends: [
-  ["asak.0.5" "git+https://github.com/AltGr/asak#ocaml5"]
-  [
-  "ocp-indent-nlfork.1.5.5"
-  "git+https://git@github.com/OCamlPro/ocp-indent.git#nlfork"
-]
-]

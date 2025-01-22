@@ -56,9 +56,3 @@ description: """
 This contains the binaries to interact with the learn-ocaml
 platform from the command line.
 """
-pin-depends: [
-   [
-     "asak.0.5"
-     "git+https://github.com/AltGr/asak#ocaml5"
-   ]
-]
