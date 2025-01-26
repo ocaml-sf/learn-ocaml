@@ -1,5 +1,60 @@
 # Changelog
 
+## [1.1.0](https://github.com/ocaml-sf/learn-ocaml/compare/v1.0.0...v1.1.0) (2025-01-26)
+
+
+### Features
+
+* **build:** Migrate ocplib-i18n to ppxlib ([e34b5f7](https://github.com/ocaml-sf/learn-ocaml/commit/e34b5f77e358e8f5289c25f41c0bbb5d5c9a8848))
+* bump version to 1.1.0 ([9d757cd](https://github.com/ocaml-sf/learn-ocaml/commit/9d757cd29889e36eb0b62eb418ac5b8865023ed7))
+* **CLI:** Add option `learn-ocaml build serve --serve-during-build` ([a47f8dd](https://github.com/ocaml-sf/learn-ocaml/commit/a47f8ddef2762ad20c2bb168f05d706d6fa31dd5)), closes [#594](https://github.com/ocaml-sf/learn-ocaml/issues/594)
+* complete porting to OCaml 5.1 and jsoo 5.8 ([5f5dbb7](https://github.com/ocaml-sf/learn-ocaml/commit/5f5dbb7be1307adda6223838847a6b92806de643))
+* Reenable asak (using pin-depends for compat patch with OCaml 5) ([046d7dd](https://github.com/ocaml-sf/learn-ocaml/commit/046d7dd92fee318f17540fcca9ddaf86b215cecb))
+
+
+### Bug Fixes
+
+* Actually bind the `--dry-run` flag ([1a76ddb](https://github.com/ocaml-sf/learn-ocaml/commit/1a76ddba19acf32d35f91554e9ece3a355b33b83))
+* **build:** Fix static build on macOS w.r.t. libzstd ([3e8afe8](https://github.com/ocaml-sf/learn-ocaml/commit/3e8afe8bce87abe0b165d3bb7d1b866e22094015))
+* **build:** Fix/disable some warnings ([49c7208](https://github.com/ocaml-sf/learn-ocaml/commit/49c72080c7e412a047eed2326b150b48bd024ba0))
+* **build:** Update linking flags (needed for POSIX & macOS static binaries) ([6b0bc56](https://github.com/ocaml-sf/learn-ocaml/commit/6b0bc56bfbe46b2ea86dcc1562c78ea90d1d3a07))
+* **CI:** fix base Alpine version for final Docker images ([e721ad4](https://github.com/ocaml-sf/learn-ocaml/commit/e721ad4cd1dd292dbe2288712f9a9768459e3e0a))
+* **CI:** fix Dockerfile and client dependencies ([8012c6b](https://github.com/ocaml-sf/learn-ocaml/commit/8012c6b3bc6ebbb9692437063abf5b0620435abb))
+* **CI:** fix static builds and some specific deps ([283456d](https://github.com/ocaml-sf/learn-ocaml/commit/283456d52c164d106b29914e735ac3899209f7ef))
+* **CI:** Use macos-13 for static-builds ([#603](https://github.com/ocaml-sf/learn-ocaml/issues/603)) ([d2c8d65](https://github.com/ocaml-sf/learn-ocaml/commit/d2c8d65b12c2512bd35204305d59c5eb486d8a96))
+* **CI:** use older dependency releases in lockfile ([a5b4abf](https://github.com/ocaml-sf/learn-ocaml/commit/a5b4abf91285f7076320acd67fb348a01566d57b))
+* **docker:** Add missing alpine package (lsof) ([cc6caa3](https://github.com/ocaml-sf/learn-ocaml/commit/cc6caa34947000e6e60c175b607f5b0437609dc9))
+* **server:** Add missing flush in Learnocaml_server.kill_running ([3b14462](https://github.com/ocaml-sf/learn-ocaml/commit/3b14462aebd7e9a3a0c9a109442182fbb3af2671))
+
+
+### Dependencies
+
+* **opam:** Bump conf-libssl ([2081069](https://github.com/ocaml-sf/learn-ocaml/commit/20810690c73b1ae6996985fb037267818558d62d))
+* **opam:** Bump conf-pkg-config ([c50b77d](https://github.com/ocaml-sf/learn-ocaml/commit/c50b77d212699935f56fb735702059900fba19b2))
+* **opam:** Skip conduit-lwt-unix's latest release for now ([a636b26](https://github.com/ocaml-sf/learn-ocaml/commit/a636b26c14eac8203c406d9a66c7261848d9a924))
+
+
+### Build System
+
+* **deps:** bump dawidd6/action-download-artifact from 2 to 6 in /.github/workflows ([#605](https://github.com/ocaml-sf/learn-ocaml/issues/605)) ([5780d3a](https://github.com/ocaml-sf/learn-ocaml/commit/5780d3ab58961b0d386d89bf608c8fa8798ae1b1))
+* **js_of_ocaml:** Remove `--no-source-map` from root dune file ([6f6be0f](https://github.com/ocaml-sf/learn-ocaml/commit/6f6be0f6c80fa27a002c0268d087fe0f37965f2f))
+
+
+### CI/CD
+
+* **GHA:** Use actions/checkout@v4 ([#599](https://github.com/ocaml-sf/learn-ocaml/issues/599)) ([b7ed29c](https://github.com/ocaml-sf/learn-ocaml/commit/b7ed29c4748ab2d8dfe6969ac1479f0ced68eb80))
+* **macos:** s/macos-latest/macos-14/ ([#598](https://github.com/ocaml-sf/learn-ocaml/issues/598)) ([0a69394](https://github.com/ocaml-sf/learn-ocaml/commit/0a69394bd4a1462fe0891b375e6efd08938f0c8c))
+
+
+### Documentation
+
+* **CONTRIBUTING.md:** minor update ([f318b95](https://github.com/ocaml-sf/learn-ocaml/commit/f318b958dae945d7f7e7a7b8fe091f51eb22263e))
+
+
+### Style
+
+* Fix displayed version to adapt to git tags naming convention ([2784290](https://github.com/ocaml-sf/learn-ocaml/commit/2784290e758a2fcfef7807cce5fd4e9c5e44e59f))
+
 ## [1.0.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.16.0...v1.0.0) (2024-02-12)
 
 
