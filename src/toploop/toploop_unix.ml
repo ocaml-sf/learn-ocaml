@@ -78,7 +78,7 @@ let use_compiled_string code =
       let oc = open_out_bin cma in
       output_string oc code;
       close_out oc;
-      Topdirs.load_file Format.std_formatter cma
+      Toploop.load_file Format.std_formatter cma
     with
     | Symtable.Error e ->
         Format.kasprintf (fun msg -> Sys.remove cma; failwith msg)

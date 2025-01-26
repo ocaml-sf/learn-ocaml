@@ -10,6 +10,7 @@
  (modules Learnocaml_data)
  (libraries asak
             sha
+            unix
             learnocaml_toplevel_history
             learnocaml_report
             learnocaml_repository)
@@ -29,7 +30,7 @@
  (wrapped false)
  (flags :standard -warn-error +8)
  (modules Learnocaml_version Learnocaml_api)
- (libraries ocplib-json-typed
+ (libraries json-data-encoding
             ezjsonm
             conduit
             learnocaml_data)

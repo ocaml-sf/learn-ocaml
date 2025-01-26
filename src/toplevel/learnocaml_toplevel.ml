@@ -23,18 +23,18 @@ let (>>=) = Lwt.(>>=)
 
 type t = {
   timeout_delay: float;
-  mutable timeout_prompt: t -> unit Lwt.t;
+  timeout_prompt: t -> unit Lwt.t;
   mutable current_timeout_prompt: unit Lwt.t;
   flood_limit: int;
-  mutable flood_prompt: t -> Html_types.nmtoken -> (unit -> int) -> bool Lwt.t;
+  flood_prompt: t -> Html_types.nmtoken -> (unit -> int) -> bool Lwt.t;
   mutable current_flood_prompt: unit Lwt.t;
   flood_reset: t -> unit;
   worker: Learnocaml_toplevel_worker_caller.t;
   container: [ `Div ] Html5.elt;
   oldify: bool;
   mutable status: [ `Reset of (unit Lwt.t * unit Lwt.u) | `Execute of unit Lwt.t | `Idle ] ;
-  mutable on_enable_input: t -> unit;
-  mutable on_disable_input: t -> unit;
+  on_enable_input: t -> unit;
+  on_disable_input: t -> unit;
   mutable disabled : int;
   output: Learnocaml_toplevel_output.output;
   input: Learnocaml_toplevel_input.input;
@@ -525,7 +525,7 @@ let create
       >>= fun _ -> Lwt.return_unit) ;
   let first_time = ref true in
   let after_init top =
-    if !first_time || not oldify then
+    if !first_time || not top.oldify then
       Learnocaml_toplevel_output.clear output
     else
       Learnocaml_toplevel_output.oldify output;
@@ -536,7 +536,7 @@ let create
       | `Idle | `Execute _ -> assert false
     end ;
     top.status <- `Idle;
-    begin if display_welcome && (!first_time || not oldify) then
+    begin if display_welcome && (!first_time || not top.oldify) then
         Learnocaml_toplevel_worker_caller.execute
           ~pp_answer: (fun _ -> ())
           ~print_outcome: false

@@ -212,7 +212,7 @@ let use_mod_string
 let check_phrase env = function
   | Parsetree.Ptop_def sstr ->
       Typecore.reset_delayed_checks ();
-      let (str, sg, sn, newenv) = Typemod.type_toplevel_phrase env sstr in
+      let (str, sg, sn, _shape, newenv) = Typemod.type_toplevel_phrase env sstr in
       let sg' = Typemod.Signature_names.simplify newenv sn sg in
       ignore (Includemod.signatures env ~mark:Includemod.Mark_positive sg sg');
       Typecore.force_delayed_checks ();
@@ -314,7 +314,7 @@ let install_printer modname id tyname pr =
   in
   let printer_path = inmodpath id in
   let env = !Toploop.toplevel_env in
-  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, Cunknown)) in
+  let ( @-> ) a b = Ctype.newty (Tarrow (Asttypes.Nolabel, a, b, commu_var ())) in
   let gen_printer_type ty =
     let format_ty =
       let ( +. ) a b = Path.Pdot (a, b) in
@@ -336,43 +336,45 @@ let install_printer modname id tyname pr =
          must be found in the cmi file (no mli file allowed).@."
         modname tyname
   | printer_desc, (ty_path, ty_decl) ->
-      Ctype.begin_def();
-      let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
       let ty_target =
-        Ctype.expand_head env
-          (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
+        Ctype.with_local_level @@ fun () ->
+        let ty_args = List.map (fun _ -> Ctype.newvar ()) ty_decl.type_params in
+        let ty_target =
+          Ctype.expand_head env
+            (Ctype.newty (Tconstr (ty_path, ty_args, ref Mnil)))
+        in
+        let printer_ty_expected =
+          List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
+            ty_args
+            (gen_printer_type ty_target)
+        in
+        (try
+           Ctype.unify env
+             printer_ty_expected
+             (Ctype.instance printer_desc.val_type)
+         with Ctype.Unify _ ->
+           Format.printf
+             "Warning: mismatching type for print function %s.print_%s.@;\
+              The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
+             modname tyname
+             (Format.pp_print_list
+                (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
+                    (Printtyp.type_expr)))
+             ty_args
+             (fun ppf -> function
+                | [] -> ()
+                | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
+                | args ->
+                    Format.fprintf ppf "(%a) "
+                      (Format.pp_print_list
+                         ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
+                         Printtyp.type_expr)
+                      args)
+             ty_args
+             tyname);
+        Ctype.generalize printer_ty_expected;
+        ty_target
       in
-      let printer_ty_expected =
-        List.fold_right (fun argty ty -> gen_printer_type argty @-> ty)
-          ty_args
-          (gen_printer_type ty_target)
-      in
-      (try
-         Ctype.unify env
-           printer_ty_expected
-           (Ctype.instance printer_desc.val_type)
-       with Ctype.Unify _ ->
-         Format.printf
-           "Warning: mismatching type for print function %s.print_%s.@;\
-            The type must be@ @[<hov>%aformatter -> %a%s -> unit@]@."
-           modname tyname
-           (Format.pp_print_list
-              (fun ppf -> Format.fprintf ppf "(formatter -> %a -> unit) ->@ "
-                  (Printtyp.type_expr)))
-           ty_args
-           (fun ppf -> function
-              | [] -> ()
-              | [arg] -> Format.fprintf ppf "%a " Printtyp.type_expr arg
-              | args ->
-                  Format.fprintf ppf "(%a) "
-                    (Format.pp_print_list
-                       ~pp_sep:(fun ppf () -> Format.pp_print_string ppf ", ")
-                       Printtyp.type_expr)
-                    args)
-           ty_args
-           tyname);
-      Ctype.end_def ();
-      Ctype.generalize printer_ty_expected;
       let register_as_path = inmodpath ("print_"^tyname) in
       let rec build_generic v = function
         | [] ->
@@ -384,30 +386,41 @@ let install_printer modname id tyname pr =
       in
       (* Register for our custom 'Printer' as used by the graders *)
       let () =
-        match ty_decl.type_params, ty_target.desc with
-        | [], _ ->
-            Printer.install_printer register_as_path ty_target
-              (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
-        | _, (Tconstr (ty_path, args, _) | Tlink {desc = Tconstr (ty_path, args, _); _})
-          when Ctype.all_distinct_vars env args ->
-            Printer.install_generic_printer' register_as_path ty_path
-              (build_generic (Obj.repr pr) ty_decl.type_params)
-        | _, ty ->
+        if ty_decl.type_params = [] then
+          Printer.install_printer register_as_path ty_target
+            (fun ppf repr -> Obj.magic pr ppf (Obj.obj repr))
+        else
+          let ty_path_args =
+            match get_desc ty_target with
+            | Tconstr (ty_path, args, _) -> Some (ty_path, args)
+            | Tlink ty -> (match get_desc ty with
+                | Tconstr (ty_path, args, _) -> Some (ty_path, args)
+                | _ -> None)
+            | _ -> None
+          in
+          match ty_path_args with
+          | Some (ty_path, args)
+            when Ctype.all_distinct_vars env args ->
+              Printer.install_generic_printer' register_as_path ty_path
+                (build_generic (Obj.repr pr) ty_decl.type_params)
+          | _ ->
             Format.printf
               "Warning: invalid printer for %a = %a: OCaml doesn't support \
                printers for types with partially instanciated variables. \
                Define a generic printer and a printer for the type of your \
                variable instead."
               Printtyp.path ty_path
-              Printtyp.type_expr (Ctype.newty ty)
+              Printtyp.type_expr (Ctype.newty (get_desc ty_target))
       in
       (* Register for the toplevel built-in printer (the API doesn't allow us to
          override it). Attempting to use the printer registered this way before
          the module is fully loaded would risk crashes (e.g. on extensible
          variants) *)
       let rec path_to_longident = function
-        | Path.Pdot (p, s) -> Longident.Ldot (path_to_longident p, s)
+        | Path.Pdot (p, s) | Path.Pextra_ty (p, Path.Pcstr_ty s) ->
+            Longident.Ldot (path_to_longident p, s)
         | Path.Pident i -> Longident.Lident (Ident.name i)
+        | Path.Pextra_ty (p, Path.Pext_ty) -> path_to_longident p
         | Path.Papply _ -> assert false
       in
       pending_installed_printers :=

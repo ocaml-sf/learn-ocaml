@@ -43,7 +43,7 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ?(ppx=[]) ~source ~target args =
   if is_fresh ~dir target source then Lwt.return_unit else
   let args =
     List.fold_right (fun ppx args ->
-        "-ppx" :: Filename.concat !grading_cmis_dir (ppx^" --as-ppx") :: args)
+        "-ppx" :: Filename.concat !grading_cmis_dir ppx :: args)
       ppx args
   in
   let args = "-I" :: dir :: "-I" :: !grading_cmis_dir :: args in
@@ -57,7 +57,13 @@ let ocamlc ?(dir=Sys.getcwd ()) ?(opn=[]) ?(ppx=[]) ~source ~target args =
 let jsoo ?(dir=Sys.getcwd ()) ~source ~target args =
   let d = Filename.concat dir in
   if is_fresh ~dir target [source] then Lwt.return_unit else
-  let args = "--wrap-with=dynload" :: args in
+  let args =
+    "--no-source-map" ::
+    "--opt=2" ::
+    "--enable=use-js-string" ::
+    "--target-env=browser" ::
+    args
+  in
   let args = args @ [d source; "-o"; d target] in
   run "js_of_ocaml" args
 

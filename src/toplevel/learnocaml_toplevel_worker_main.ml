@@ -17,6 +17,10 @@ let is_success = function
   | Toploop_ext.Ok _ -> true
   | Toploop_ext.Error _ -> false
 
+let success_string = function
+  | Toploop_ext.Ok _ -> "OK"
+  | Toploop_ext.Error (((_, e),_),_) -> "Error: "^e
+
 type 'a return =
   | ReturnSuccess of 'a * Toploop_ext.warning list
   | ReturnError of Toploop_ext.error * Toploop_ext.warning list
@@ -166,7 +170,8 @@ let handler : type a. a host_msg -> a return Lwt.t = function
       let ppf_answer = make_answer_ppf fd_answer in
       if !debug then Js_utils.debug "Worker: -> Execute (%S)" code;
       let result = Toploop_ext.execute ?ppf_code ~print_outcome ~ppf_answer code in
-      if !debug then Js_utils.debug "Worker: <- Execute (%B)" (is_success result);
+      if !debug then
+        Js_utils.debug "Worker: <- Execute (%s)" (success_string result);
       iter_option close_fd fd_code;
       close_fd fd_answer;
       unwrap_result result
@@ -178,10 +183,11 @@ let handler : type a. a host_msg -> a return Lwt.t = function
         try Toploop_jsoo.use_compiled_string js_code; Toploop_ext.Ok (true, [])
         with exn ->
           Firebug.console##log (Js.string (Printexc.to_string exn));
-          Format.fprintf ppf_answer "%s" (Printexc.to_string exn); Toploop_ext.Ok (false, [])
+          Format.fprintf ppf_answer "%s" (Printexc.to_string exn);
+          Toploop_ext.Ok (false, [])
       in
       if !debug then
-        Js_utils.debug "Worker: <- Use_js_string (%B)" (is_success result);
+        Js_utils.debug "Worker: <- Use_js_string (%s)" (success_string result);
       close_fd fd_answer;
       unwrap_result result
   | Use_string (filename, print_outcome, fd_answer, code) ->
@@ -190,7 +196,7 @@ let handler : type a. a host_msg -> a return Lwt.t = function
         Js_utils.debug "Worker: -> Use_string (%S)" code;
       let result = Toploop_ext.use_string ?filename ~print_outcome ~ppf_answer code in
       if !debug then
-        Js_utils.debug "Worker: <- Use_string (%B)" (is_success result);
+        Js_utils.debug "Worker: <- Use_string (%s)" (success_string result);
       close_fd fd_answer;
       unwrap_result result
   | Use_mod_string (fd_answer, print_outcome, modname, sig_code, impl_code) ->
@@ -202,7 +208,7 @@ let handler : type a. a host_msg -> a return Lwt.t = function
           ~ppf_answer ~print_outcome ~modname ?sig_code impl_code in
       if !debug then
         Js_utils.debug
-          "Worker: <- Use_mod_string %s (%B)" modname (is_success result);
+          "Worker: <- Use_mod_string %s (%s)" modname (success_string result);
       close_fd fd_answer;
       unwrap_result result
   | Set_debug b ->
@@ -282,7 +288,6 @@ let () =
         List.iter (rec_mount (name::path)) children
     | OCamlRes.Res.File (name, content) ->
         let name = "/" ^ String.concat "/" (List.rev (name::path)) in
-        Js.Unsafe.set content (Js.string "t") 9 ; (* XXX hack *)
         Sys_js.create_file ~name ~content
     | OCamlRes.Res.Error _ -> ()
   in
@@ -294,9 +299,10 @@ let () =
          Location.print_loc loc
    | e ->
        Js_utils.log "FAILED INIT %s" (Printexc.to_string e));
-  Hashtbl.add Toploop.directive_table
+  Toploop.add_directive
     "debug_worker"
-    (Toploop.Directive_bool (fun b -> debug := b));
+    (Toploop.Directive_bool (fun b -> debug := b))
+    {Toploop.section="Learn-OCaml specific"; doc=""};
   Worker.set_onmessage (fun s -> Lwt.async (fun () -> handler s))
 
 (* Register some dynamic modules that are expected by compiled artifacts loaded

@@ -7,7 +7,16 @@
 )
 
 (env
-  (release (flags -safe-string -w +a-4-42-44-45-48-3-58-32-33)
+  (release (flags -safe-string -w +a-4-42-44-45-48-3-58-32-33-70)
            (ocamlc_flags)
-           (ocamlopt_flags))
+           (ocamlopt_flags)
+           (js_of_ocaml
+            (compilation_mode whole_program)
+            (flags --opt=2 --enable=use-js-string --target-env=browser)))
+
+  (dev     (flags (:standard -safe-string -w -32 -warn-error -a+8))
+           (js_of_ocaml
+            (compilation_mode whole_program)
+            (flags --source-map-inline --pretty --enable=use-js-string --target-env=browser)
+            ))
 )

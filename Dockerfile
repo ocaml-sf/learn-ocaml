@@ -1,4 +1,4 @@
-FROM ocaml/opam:alpine-3.13-ocaml-4.12 as compilation
+FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -9,7 +9,7 @@ RUN sudo chown -R opam:nogroup .
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
   && opam repository set-url default http://opam.ocaml.org \
-  && opam switch 4.12 \
+  && opam switch 5.1 \
   && echo 'pre-session-commands: [ "sudo" "apk" "add" depexts ]' >> ~/.opam/config \
   && opam install . --deps-only --locked
 
@@ -28,10 +28,10 @@ RUN cat /proc/cpuinfo /proc/meminfo
 RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
-FROM alpine:3.13 as client
+FROM alpine:3.20 as client
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init openssl \
+  && apk add ncurses-libs libev dumb-init libssl3 libcrypto3 \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 
@@ -45,7 +45,7 @@ COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bi
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml-client"]
 
 
-FROM alpine:3.13 as program
+FROM alpine:3.20 as program
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init git openssl lsof \
@@ -61,7 +61,7 @@ EXPOSE 8443
 USER learn-ocaml
 WORKDIR /home/learn-ocaml
 
-ARG opam_switch="/home/opam/.opam/4.12"
+ARG opam_switch="/home/opam/.opam/5.1"
 
 COPY --from=compilation /home/opam/install-prefix /usr
 COPY --from=compilation "$opam_switch/bin"/ocaml* "$opam_switch/bin/"
@@ -73,7 +73,6 @@ COPY --from=compilation "$opam_switch/lib/gg" "$opam_switch/lib/gg"
 
 # Fixes for ocamlfind
 COPY --from=compilation "$opam_switch/lib/findlib.conf" "$opam_switch/lib/"
-COPY --from=compilation "$opam_switch/lib/stdlib" "$opam_switch/lib/stdlib"
 ENV PATH="${opam_switch}/bin:${PATH}"
 ENV OCAMLPATH="/usr/lib"
 RUN ln -sf "$opam_switch/lib/vg" "/usr/lib"

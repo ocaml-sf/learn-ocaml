@@ -7,14 +7,11 @@
  * included LICENSE file for details. *)
 
 open Js_of_ocaml
-open Js_of_ocaml_tyxml
 open Js_utils
 open Lwt.Infix
 open Learnocaml_common
 open Learnocaml_data
 open Learnocaml_config
-
-module H = Tyxml_js.Html
 
 let init_tabs, select_tab =
   mk_tab_handlers "toplevel" ["editor"]

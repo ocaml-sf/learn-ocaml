@@ -3,7 +3,7 @@
  (wrapped false)
  (modules Learnocaml_index
           Learnocaml_exercise)
- (libraries ocplib-json-typed
+ (libraries json-data-encoding
             base64
             omd
             lwt
@@ -14,7 +14,8 @@
  (name learnocaml_tutorial_parser)
  (wrapped false)
  (modules Learnocaml_tutorial_parser)
- (libraries learnocaml_repository
+ (libraries str
+            learnocaml_repository
             learnocaml_data
             lwt.unix
             markup

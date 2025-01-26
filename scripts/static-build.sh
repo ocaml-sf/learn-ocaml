@@ -10,7 +10,7 @@ cd $(dirname "$0")/..
 set -o pipefail
 git ls-files -z | xargs -0 tar c | \
   docker run --rm -i \
-    ocamlpro/ocaml:4.12 \
+    ocamlpro/ocaml:5.1 \
     sh -uexc \
       'tar x >&2 &&
        sudo apk add openssl-libs-static bash >&2 &&

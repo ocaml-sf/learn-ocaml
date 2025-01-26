@@ -6,8 +6,6 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-open Toploop_ext
-
 type error =
   | Internal_error of string * Toploop_ext.error
   | User_code_error of Toploop_ext.error

@@ -33,9 +33,12 @@ esac
 
 shift
 case "$1" in
+    # the following two lines are called when building the bytecode binaries
     macosx) shift; EXTRA_LIBS="curses $*";;
     linux) shift; EXTRA_LIBS="$*";;
-    --) shift; EXTRA_LIBS="$*";;
+    # the following two lines are called when building the native server binary
+    ++macosx) shift; EXTRA_LIBS="zstd $*";;
+    ++linux) shift; EXTRA_LIBS="$*";;
     *) echo "Not supported %{ocamlc-config:system} '$1'." >&2; help_exit
 esac
 
@@ -52,7 +55,7 @@ case $(uname -s) in
     Linux)
         case $(. /etc/os-release && echo $ID) in
             alpine)
-                COMMON_LIBS="camlstr ssl_stubs ssl crypto cstruct_stubs bigstringaf_stubs lwt_unix_stubs unix c"
+                COMMON_LIBS="ssl_stubs ssl crypto cstruct_stubs bigstringaf_stubs lwt_unix_stubs c"
                 # `m` and `pthread` are built-in musl
                 echo2 '(-noautolink'
                 echo2 ' -cclib -Wl,-Bstatic'
@@ -68,7 +71,7 @@ case $(uname -s) in
         esac
         ;;
     Darwin)
-        COMMON_LIBS="camlstr ssl_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs bigstringaf_stubs lwt_unix_stubs unix"
+        COMMON_LIBS="ssl_stubs /usr/local/opt/openssl/lib/libssl.a /usr/local/opt/openssl/lib/libcrypto.a cstruct_stubs bigstringaf_stubs lwt_unix_stubs"
         # `m` and `pthread` are built-in in libSystem
         echo2 '(-noautolink'
         for l in $EXTRA_LIBS $COMMON_LIBS; do

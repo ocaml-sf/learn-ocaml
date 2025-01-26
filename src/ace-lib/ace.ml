@@ -24,7 +24,7 @@ type 'a editor = {
   mutable sync_observers : (bool -> unit) list;
 }
 
-let ace : Ace_types.ace Js.t = Js.Unsafe.variable "ace"
+let ace : Ace_types.ace Js.t = Js.Unsafe.pure_js_expr "ace"
 let edit el = ace##(edit el)
 
 let create_position r c =
@@ -90,7 +90,7 @@ let focus { editor } = editor##focus
 
 let create_editor editor_div =
   let editor = edit editor_div in
-  Js.Unsafe.set editor "$blockScrolling" (Js.Unsafe.variable "Infinity");
+  Js.Unsafe.set editor "$blockScrolling" (Js.Unsafe.pure_js_expr "Infinity");
   let data =
     { editor; editor_div;
       marks = [];
@@ -130,7 +130,7 @@ let string_of_make_type: mark_type -> string = function
   | Warning -> "warning"
   | Message -> "message"
 
-let require s = (Js.Unsafe.variable "ace")##(require (Js.string s))
+let require s = (Js.Unsafe.pure_js_expr "ace")##(require (Js.string s))
 
 type range = Ace_types.range Js.t
 let range_cstr = (require  "ace/range")##._Range
@@ -287,7 +287,7 @@ let define_mode name helpers =
         js_helpers##.autoOutdent := Js.wrap_callback auto_outdent
   end;
   Js.Unsafe.fun_call
-    (Js.Unsafe.variable "define_ocaml_mode")
+    (Js.Unsafe.pure_js_expr "define_ocaml_mode")
     [| Js.Unsafe.inject (Js.string ("ace/mode/" ^ name)) ;
        Js.Unsafe.inject js_helpers |]
 
