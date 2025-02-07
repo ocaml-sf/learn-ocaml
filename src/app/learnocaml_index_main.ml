@@ -536,6 +536,8 @@ let tutorial_tab : tab_handler =
   let next_button_state = button_state () in
   let prev_step_button_state = button_state () in
   let next_step_button_state = button_state () in
+  let reload_mathjax () =
+      ignore (Js.Unsafe.meth_call (Js.Unsafe.pure_js_expr "MathJax") "typeset" [||]) in
   let load_tutorial tutorial_name step_id () =
     retrieve ~ignore:{Tutorial.title = []; steps = []}
       (Learnocaml_api.Tutorial tutorial_name) >>= fun { Tutorial.steps; _ } ->
@@ -600,6 +602,7 @@ let tutorial_tab : tab_handler =
           phrases in
       render_phrases step.step_contents in
     Manip.replaceChildren step_items_container items ;
+    reload_mathjax () ;
     toplevel_launch >>= fun top ->
     Learnocaml_toplevel.scroll top ;
     Lwt.return () in

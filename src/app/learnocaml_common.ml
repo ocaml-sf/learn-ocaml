@@ -399,7 +399,7 @@ let render_rich_text ?on_runnable_clicked text =
     | Image _ :: _ -> assert false
     | Math code :: rest ->
         render
-          (H.txt ("`" ^ code ^ "`") :: acc)
+          (H.txt (" $" ^ code ^ "$ ") :: acc)
           rest in
   (render [] text
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] H.elt list)
