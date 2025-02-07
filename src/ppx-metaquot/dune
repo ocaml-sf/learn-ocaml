@@ -1,5 +1,6 @@
 (library
  (name ast_convenience)
+ (public_name learn-ocaml.ast_convenience)
  (modules Ast_convenience)
  (preprocess (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{input-file})))
  (libraries compiler-libs.common)
@@ -21,6 +22,7 @@
 
 (library
  (name learnocaml_ppx_metaquot_lib)
+ (public_name learn-ocaml.ppx_metaquot_lib)
  (wrapped false)
  (flags :standard -w -17)
  (library_flags :standard -linkall)
@@ -30,6 +32,7 @@
 
 (library
  (name ppx_autoregister)
+ (public_name learn-ocaml.ppx_autoregister)
  (wrapped false)
  (libraries ppxlib)
  (modules Ppx_autoregister Printer_recorder))
@@ -44,6 +47,7 @@
 
 (library
  (name grader_ppx)
+ (public_name learn-ocaml.grader_ppx)
  (wrapped false)
  (libraries learnocaml_ppx_metaquot_lib ty fun_ty ppx_autoregister)
  (modules Sampler_recorder Grader_ppx)
@@ -69,6 +73,7 @@
 
 (library
  (name ty)
+ (public_name learn-ocaml.ty)
  (wrapped false)
  (library_flags :standard -linkall)
  (modules Ty)
@@ -77,6 +82,7 @@
 
 (library
  (name fun_ty)
+ (public_name learn-ocaml.fun_ty)
  (wrapped false)
  (library_flags :standard -linkall)
  (modules Fun_ty)

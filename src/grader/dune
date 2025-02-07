@@ -19,6 +19,7 @@
 ;; parts (Grading) and dynamic parts (Test_lib)
 (library
  (name introspection_intf)
+ (public_name learn-ocaml.introspection_intf)
  (wrapped false)
  (modules introspection_intf)
  (modules_without_implementation introspection_intf)
@@ -27,6 +28,7 @@
 ;; dynamic part, on which Test_lib depends
 (library
  (name pre_test)
+ (public_name learn-ocaml.pre_test)
  (wrapped false)
  (modules learnocaml_callback learnocaml_internal pre_test)
  (modules_without_implementation learnocaml_callback learnocaml_internal pre_test)
@@ -183,6 +185,7 @@
 
 (library
  (name grading)
+ (public_name learn-ocaml.grading)
  (wrapped false)
  (modes byte)
  (library_flags :standard -linkall)

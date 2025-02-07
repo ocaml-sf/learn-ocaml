@@ -10,6 +10,7 @@
 
 (library
  (name learnocaml_internal_intf)
+ (public_name learn-ocaml.internal_intf)
  (wrapped false)
  (modules learnocaml_internal_intf)
  (modules_without_implementation learnocaml_internal_intf)
