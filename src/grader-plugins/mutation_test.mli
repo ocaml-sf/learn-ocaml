@@ -6,7 +6,7 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(* This module provides functions for automatically grading
+(** This module provides functions for automatically grading
    a student's unit tests using *mutation testing*.
 
    A student's tests for a function [foo] are run against several

@@ -1,5 +1,6 @@
 (library
  (name learnocaml_report)
+ (public_name learn-ocaml.report)
  (wrapped false)
  (flags :standard -w -37-41 -warn-error -27-39)
  (modules Learnocaml_report)
@@ -37,6 +38,7 @@
 ;; dynamic (but pre-compiled) part
 (library
  (name testing_dyn)
+ (public_name learn-ocaml.test_lib)
  (wrapped false)
  (modes byte)
  (library_flags :standard -linkall)
