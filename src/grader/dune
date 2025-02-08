@@ -161,6 +161,7 @@
 
 (library
  (name embedded_cmis)
+ (public_name learn-ocaml.embedded_cmis)
  (wrapped false)
  (modes byte)
  (modules Embedded_cmis)

@@ -45,6 +45,7 @@
 
 (library
   (name learnocaml_toplevel_pp)
+  (public_name learn-ocaml.toplevel_pp)
   (wrapped false)
   (modes byte)
   (libraries vg gg vg.svg)
