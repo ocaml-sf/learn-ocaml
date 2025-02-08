@@ -6,8 +6,8 @@
  * Learn-OCaml is distributed under the terms of the MIT license. See the
  * included LICENSE file for details. *)
 
-(** Documentation for [test_lib] library. [Test_lib] module can be
-   used to write graders for learn-ocaml.  *)
+(** Documentation for learn-ocaml's [test_lib] library.
+    The [Test_lib] module can be used to write graders for learn-ocaml. *)
 
   val set_result : Learnocaml_report.t -> unit
 
