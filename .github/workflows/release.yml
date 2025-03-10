@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Download workflow artifacts
         # cf. https://github.com/actions/download-artifact/issues/3
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: static-builds.yml
           workflow_conclusion: success

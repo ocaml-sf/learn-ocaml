@@ -42,20 +42,20 @@ jobs:
       # Not the default gh download-artifact action, which doesn't work
       # between workflows
       - name: Get previous artifact learn-ocaml-www
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-www
           path: artifacts/
           skip_unpack: true
       - name: Get previous artifact learn-ocaml-linux-x86_64
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-linux-x86_64
           path: artifacts/linux-x86_64
       - name: Get previous artifact learn-ocaml-darwin-x86_64
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-darwin-x86_64
