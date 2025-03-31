@@ -188,6 +188,23 @@ module Save = struct
 
 end
 
+module Session = struct
+  type t = string
+
+  (** TODO generate robust token with cryptokit?*)
+  let generate () : t =
+    let length = 32 in
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
+    let alphabet_len = String.length alphabet in
+    String.init length (fun _ -> alphabet.[Random.int alphabet_len])
+
+  (** TODO parsing with the corect format*)
+  let parse session = session
+
+  let enc = J.conv (fun s -> s) parse J.string
+end
+type 'a session = Session.t
+
 module Token = struct
 
   type t = string list

@@ -15,6 +15,7 @@ val static_dir: string ref
 
 (** All mutable data access will be made relative to this directory *)
 val sync_dir: string ref
+val data_dir: string ref
 
 (** {2 Utility server-side conversion functions} *)
 
@@ -111,6 +112,32 @@ end
 
 
 (** {2 Dynamic data} *)
+module Session: sig
+
+  include module type of struct include Session end
+
+  val file : string
+
+  val enc : (t * Token.t * float) list Json_encoding.encoding
+
+  val path : string -> string
+
+  (** Loads the session table from disk. *)
+  val load : string -> (t * Token.t * float) list Lwt.t
+
+  (** Saves the given session table to disk *)
+  val save : string -> (t * Token.t * float) list -> unit Lwt.t
+
+  (** Retrieves the token associated with the given session. *)
+  val get_user_token : t -> Token.t option Lwt.t
+
+  (** Associates a token to a session. *)
+  val set_session : t -> Token.t -> unit Lwt.t
+
+   (** Generates a fresh session identifier *) 
+  val gen_session : unit -> t
+end
+
 
 module Token: sig
 

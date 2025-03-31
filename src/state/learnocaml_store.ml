@@ -15,6 +15,8 @@ let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
+let data_dir = ref (Filename.concat !sync_dir "data")
+
 module Json_codec = struct
   let decode enc s =
     (match s with
@@ -294,6 +296,55 @@ module Exercise = struct
       (function
         | Unix.Unix_error _ -> Lwt.fail Not_found
         | e -> Lwt.fail e)
+
+end
+
+module Session = struct
+
+  include Session
+
+  let file = "sessions.json"
+
+  let enc =
+    let open Json_encoding in
+    list (obj3
+      (req "session" Session.enc)
+      (req "token" Token.enc)
+      (req "last_connection" float))
+
+  let path dir = Filename.concat dir file
+
+  let load dir =
+    let p = path dir in
+    Lwt_unix.file_exists dir >>= fun dir_exists ->
+    (if not dir_exists then Lwt_unix.mkdir dir 0o700 else Lwt.return_unit) >>= fun () ->
+    Lwt_unix.file_exists p >>= function
+    | false ->
+        Printf.printf "No session file, creating empty list\n%!";
+        Lwt.return []
+    | true ->
+        Printf.printf "Loading sessions from: %s\n%!" p;
+        get_from_file enc p
+
+  let save dir table =
+    write_to_file enc table (path dir)
+
+  let get_user_token session =
+    load !data_dir >>= fun table ->
+    match List.find_opt (fun (s, _, _) -> s = session) table with
+    | Some (_, token, _) -> Lwt.return_some token
+    | None -> Lwt.return_none
+
+  let set_session session token =
+    let now = Unix.gettimeofday () in
+    load !data_dir >>= fun table ->
+    let table =
+      (session, token, now)
+      :: List.filter (fun (s, _, _) -> s <> session) table
+    in
+    save !data_dir table
+  
+  let gen_session () = generate ()
 
 end
 
