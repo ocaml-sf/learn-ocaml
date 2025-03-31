@@ -288,6 +288,27 @@ module Request_handler = struct
                           | Some nickname ->
                               Save.set tok Save.{empty with nickname})
          >>= fun () -> respond_json cache tok
+      | Api.Login token ->
+         lwt_catch_fail
+           (fun () ->
+             Token.exists token >>= fun exists ->
+             lwt_option_fail
+               (if exists then Some token else None)
+               (`Not_found, "Token does not exist")
+             @@ fun token ->
+              Session.load !data_dir >>= fun table ->
+              match List.find_opt (fun (_, t, _) -> t = token) table with
+              | Some (existing_session, _, _) ->
+                  (* Update last connection date *)
+                  Session.set_session existing_session token >>= fun () ->
+                  respond_json cache existing_session
+              | None ->
+                  (* Create a new session *)
+                  let session = Session.gen_session () in
+                  Session.set_session session token >>= fun () ->
+                  respond_json cache session
+          )
+           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->

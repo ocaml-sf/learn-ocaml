@@ -88,6 +88,8 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token * string option -> teacher token request
+  | Login: 
+      'a token -> Session.t request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:

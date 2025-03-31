@@ -102,6 +102,8 @@ type _ request =
       string * student token option * string option -> student token request
   | Create_teacher_token:
       teacher token * string option -> teacher token request
+  | Login: 
+      'a token -> Session.t request
   | Fetch_save:
       'a token -> Save.t request
   | Archive_zip:
@@ -159,6 +161,7 @@ let supported_versions
   | Nonce _
   | Create_token (_, _, _)
   | Create_teacher_token _
+  | Login _
   | Fetch_save _
   | Archive_zip _
   | Update_save (_, _)
@@ -229,6 +232,8 @@ module Conversions (Json: JSON_CODEC) = struct
       | Create_teacher_token _ ->
           json J.(obj1 (req "token" string)) +>
           Token.(to_string, parse)
+      | Login _ ->
+          json J.(obj1 (req "session" string)) 
       | Fetch_save _ ->
           json Save.enc
       | Archive_zip _ ->
@@ -304,7 +309,8 @@ module Conversions (Json: JSON_CODEC) = struct
         assert (Token.is_teacher token);
         get ~token (["teacher"; "new"] @
                     (match nick with None -> [] | Some n -> [n]))
-
+    | Login token ->
+        get ~token ["login"]
     | Fetch_save token ->
         get ~token ["save.json"]
     | Archive_zip token ->
@@ -423,6 +429,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Create_teacher_token (token, None) |> k
       | `GET, ["teacher"; "new"; nick], Some token when Token.is_teacher token ->
           Create_teacher_token (token, Some nick) |> k
+      | `GET, ["login"], Some token ->
+        Login token |> k
       | `GET, ["save.json"], Some token ->
           Fetch_save token |> k
       | `GET, ["archive.zip"], Some token ->
