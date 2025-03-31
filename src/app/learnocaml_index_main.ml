@@ -727,17 +727,33 @@ let init_token_dialog () =
         Manip.SetCss.borderColor input "#f44";
         Lwt.return_none
     | token ->
-        Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
-        | Ok save ->
-            set_state_from_save_file ~token save;
-            Lwt.return_some (token, save.Save.nickname)
-        | Error (`Not_found _) ->
-            alert ~title:[%i"TOKEN NOT FOUND"]
-              [%i"The entered token couldn't be recognised."];
-            Lwt.return_none
-        | Error e ->
-            lwt_alert ~title:[%i"REQUEST ERROR"] [
-              H.p [H.txt [%i"Could not retrieve data from server"]];
+       Server_caller.request (Learnocaml_api.Login token) >>= function
+       | Ok temp_token ->
+          Learnocaml_local_storage.(store sync_token) token;
+          Server_caller.request (Learnocaml_api.Fetch_save token)
+          >>= (function
+               | Ok save ->
+                  set_state_from_save_file ~token:token save;
+                  Lwt.return_some (token, save.Save.nickname)
+               | Error (`Not_found _) ->
+                  alert ~title:[%i"TOKEN NOT FOUND"]
+                    [%i"Token was accepted but no save found"];
+                  Lwt.return_none
+               | Error e ->
+                  lwt_alert ~title:[%i"REQUEST ERROR"] [
+                      H.p [H.txt [%i"Could not retrieve save from server"]];
+                      H.code [H.txt (Server_caller.string_of_error e)];
+                    ] ~buttons:[
+                      [%i"Retry"], (fun () -> login_token ());
+                      [%i"Cancel"], (fun () -> Lwt.return_none);
+              ])
+       | Error (`Not_found _) ->
+          alert ~title:[%i"TOKEN NOT FOUND"]
+            [%i"Invalid token"];
+          Lwt.return_none
+       | Error e ->
+          lwt_alert ~title:[%i"REQUEST ERROR"] [
+              H.p [H.txt [%i"Could not login to server"]];
               H.code [H.txt (Server_caller.string_of_error e)];
             ] ~buttons:[
               [%i"Retry"], (fun () -> login_token ());
