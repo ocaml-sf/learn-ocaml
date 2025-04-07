@@ -114,8 +114,8 @@ let fetch_lesson_index () =
 let fetch_lesson id =
   request_exn (Learnocaml_api.Lesson id)
 
-let fetch_exercise token id js =
-  request_exn (Learnocaml_api.Exercise (token,id,js))
+let fetch_exercise session id js =
+  request_exn (Learnocaml_api.Exercise (session,id,js))
 
 let fetch_tutorial_index () =
   request_exn (Learnocaml_api.Tutorial_index ())

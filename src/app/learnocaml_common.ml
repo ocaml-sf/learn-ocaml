@@ -471,8 +471,8 @@ let get_state_as_save_file ?(include_reports = false) () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let rec sync_save token save_file on_sync =
-  Server_caller.request (Learnocaml_api.Update_save (token, save_file))
+let rec sync_save token session save_file on_sync =
+  Server_caller.request (Learnocaml_api.Update_save (session, save_file))
   >>= function
   | Ok save ->
      set_state_from_save_file ~token save;
@@ -483,7 +483,7 @@ let rec sync_save token save_file on_sync =
         (Learnocaml_api.Create_token ("", Some token, None)) >>= fun _token ->
       assert (_token = token);
       Server_caller.request_exn
-        (Learnocaml_api.Update_save (token, save_file)) >>= fun save ->
+        (Learnocaml_api.Update_save (session, save_file)) >>= fun save ->
       set_state_from_save_file ~token save;
       on_sync ();
       Lwt.return save
@@ -492,13 +492,13 @@ let rec sync_save token save_file on_sync =
         H.p [H.txt [%i"Could not synchronise save with the server"]];
         H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:[
-          [%i"Retry"], (fun () -> sync_save token save_file on_sync);
+          [%i"Retry"], (fun () -> sync_save token session save_file on_sync);
           [%i"Ignore"], (fun () -> Lwt.return save_file);
       ]
 
-let sync token on_sync = sync_save token (get_state_as_save_file ()) on_sync
+let sync token session on_sync = sync_save token session (get_state_as_save_file ()) on_sync
 
-let sync_exercise token ?answer ?editor id on_sync =
+let sync_exercise token session ?answer ?editor id on_sync =
   let handle_serverless () =
     (* save the text at least locally (but not the report & grade, that could
        be misleading) *)
@@ -533,13 +533,13 @@ let sync_exercise token ?answer ?editor id on_sync =
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = opt_to_map toplevel_history;
   } in
-  match token with
-  | Some token ->
-     Lwt.catch (fun () -> sync_save token save_file on_sync)
+  match token,session with
+  | Some token, Some session ->
+     Lwt.catch (fun () -> sync_save token session save_file on_sync)
        (fun e ->
          handle_serverless ();
          raise e)
-  | None -> set_state_from_save_file save_file;
+  | _,_ -> set_state_from_save_file save_file;
             handle_serverless ();
             on_sync ();
             Lwt.return save_file
@@ -936,7 +936,8 @@ module Editor_button (E : Editor_info) = struct
     let rec fetch_draft_solution tok () =
       match tok with
       | token ->
-         Server_caller.request (Learnocaml_api.Fetch_save token) >>= function
+         let session = Learnocaml_local_storage.(retrieve sync_session) in
+         Server_caller.request (Learnocaml_api.Fetch_save session) >>= function
          | Ok save ->
             set_state_from_save_file ~token save;
             Lwt.return_some (save.Save.nickname)
@@ -1023,13 +1024,13 @@ module Editor_button (E : Editor_info) = struct
       select_tab "toplevel";
       Lwt.return_unit
 
-  let sync token id on_sync =
+  let sync token session id on_sync =
     let state = button_state () in
     (editor_button
       ~state
       ~icon: "sync" [%i"Sync"] @@ fun () ->
-      token >>= fun token ->
-      sync_exercise token id ~editor:(Ace.get_contents E.ace) on_sync
+      token >>= fun token -> session >>= fun session ->
+      sync_exercise token session id ~editor:(Ace.get_contents E.ace) on_sync
       >|= fun _save -> ());
     Ace.register_sync_observer E.ace (fun sync ->
         (* this is run twice when clicking on Reset, because of Ace's implem *)
@@ -1171,11 +1172,36 @@ let get_token ?(has_server = true) () =
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->
       let token = Token.parse (input_tok) in
-        Server_caller.request (Learnocaml_api.Fetch_save token)
+      let session = Learnocaml_local_storage.(retrieve sync_session) in
+        Server_caller.request (Learnocaml_api.Fetch_save session)
         >>= function
         | Ok save ->
             set_state_from_save_file ~token save;
             Lwt.return_some token
+        | _ ->
+            alert ~title:[%i"TOKEN NOT FOUND"]
+              [%i"The entered token couldn't be recognised."];
+            Lwt.return_none
+
+let get_session ?(has_server = true) () =
+  if not has_server then
+    Lwt.return None
+  else
+    try
+      Some Learnocaml_local_storage.(retrieve sync_session) |>
+        Lwt.return
+    with
+    Not_found ->
+      ask_string ~title:"Token" ~may_cancel:false
+        [H.txt [%i"Enter your token"]]
+      >>= fun input_tok ->
+      let token = Token.parse (input_tok) in
+      let session = Learnocaml_local_storage.(retrieve sync_session) in
+        Server_caller.request (Learnocaml_api.Fetch_save session)
+        >>= function
+        | Ok save ->
+            set_state_from_save_file ~token save;
+            Lwt.return_some session
         | _ ->
             alert ~title:[%i"TOKEN NOT FOUND"]
               [%i"The entered token couldn't be recognised."];
@@ -1254,9 +1280,9 @@ module Display_exercise =
       in
       gen [] l |> List.rev
 
-    let get_skill_index token =
+    let get_skill_index session =
       let index = lazy (
-                      retrieve (Learnocaml_api.Exercise_index (Some token))
+                      retrieve (Learnocaml_api.Exercise_index (Some session))
     >|= fun (index, _) ->
                       Exercise.Index.fold_exercises (fun (req, focus) id meta ->
                           let add sk id map =
@@ -1366,7 +1392,7 @@ module Display_exercise =
         | [] -> None
         | l -> Some (caption, display_list ~sep:(H.txt "") l)
 
-    let display_meta token ex_meta id =
+    let display_meta session ex_meta id =
       let open Learnocaml_data.Exercise in
       let ident = Format.asprintf "%s %s" [%i "Identifier:" ] id in
       let authors =
@@ -1374,7 +1400,7 @@ module Display_exercise =
         | [] -> None
         | [author] -> Some (display_authors [%i "Author:"] [author])
         | authors -> Some (display_authors [%i "Authors:"] authors) in
-      retrieve (Learnocaml_api.Exercise_index token)
+      retrieve (Learnocaml_api.Exercise_index session)
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in
       let focus =

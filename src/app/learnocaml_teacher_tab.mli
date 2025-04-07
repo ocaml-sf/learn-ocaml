@@ -9,5 +9,5 @@
 open Js_of_ocaml_tyxml
 
 val teacher_tab:
-  Learnocaml_data.Token.t -> (unit -> 'a Lwt.t) -> 'b  -> unit ->
+  Learnocaml_data.Token.t -> Learnocaml_data.Session.t -> (unit -> 'a Lwt.t) -> 'b  -> unit ->
   [> Html_types.div ] Tyxml_js.Html5.elt Lwt.t

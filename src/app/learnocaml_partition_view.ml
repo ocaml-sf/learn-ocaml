@@ -215,8 +215,9 @@ let main () =
   Learnocaml_local_storage.init ();
   (match Js_utils.get_lang() with Some l -> Ocplib_i18n.set_lang l | None -> ());
   set_string_translations_view ();
-  let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
-  if not (Token.is_teacher teacher_token) then
+  let session = Learnocaml_local_storage.(retrieve sync_session) in
+  let is_teacher = Learnocaml_local_storage.(retrieve is_teacher) in
+  if not (is_teacher) then
     (* No security here: it's client-side, and we don't check that the token is
        registered server-side *)
     failwith "The page you are trying to access is for teachers only";
@@ -234,7 +235,7 @@ let main () =
     | None -> true
     | Some (tok,_) ->
        Lwt.async (fun () ->
-           retrieve (Learnocaml_api.Fetch_save tok)
+           retrieve (Learnocaml_api.Fetch_save session)
            >|= fun save ->
            match SMap.find_opt exercise_id save.Save.all_exercise_states with
            | None -> ()
@@ -250,7 +251,7 @@ let main () =
       else true in
 
   let fetch_students =
-    retrieve (Learnocaml_api.Students_list teacher_token)
+    retrieve (Learnocaml_api.Students_list session)
     >|= fun students ->
     let map =
       List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
@@ -258,7 +259,7 @@ let main () =
     students_map := map in
 
   let fetch_part =
-    retrieve (Learnocaml_api.Partition (teacher_token, exercise_id, fun_id, prof))
+    retrieve (Learnocaml_api.Partition (session, exercise_id, fun_id, prof))
     >|= fun part ->
     partition := Some part in
 

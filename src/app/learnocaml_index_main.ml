@@ -72,8 +72,8 @@ type tab_handler =
 
 let show_loading msg = show_loading ~id:El.loading_id H.[ul [li [txt msg]]]
 
-let get_url token dynamic_url static_url id =
-  match token with
+let get_url session dynamic_url static_url id =
+  match session with
   | Some _ -> dynamic_url ^ Url.urlencode id ^ "/"
   | None -> api_server ^ "/" ^ static_url ^ Url.urlencode id
 
@@ -170,12 +170,12 @@ let make_exercises_to_display_signal index =
 let retain_signals = ref (React.S.const ())
 (* Used to register signals as GC roots *)
 
-let exercises_tab token : tab_handler =
+let exercises_tab session: tab_handler =
   fun _ _ () ->
     let open Tyxml_js.Html5 in
     show_loading  [%i"Loading exercises"] @@ fun () ->
     Lwt_js.sleep 0.5 >>= fun () ->
-    retrieve (Learnocaml_api.Exercise_index token)
+    retrieve (Learnocaml_api.Exercise_index session)
     >>= fun (index, deadlines) ->
     let exercises_to_display_signal =
       make_exercises_to_display_signal index
@@ -214,7 +214,7 @@ let exercises_tab token : tab_handler =
             | Some pct when  pct >= 100 -> [ "stats" ; "success" ]
             | Some _ -> [ "stats" ; "partial" ])
           pct_signal in
-      a ~a:[ a_href (get_url token "/exercises/" "exercise.html#id=" exercise_id) ;
+      a ~a:[ a_href (get_url session "/exercises/" "exercise.html#id=" exercise_id) ;
              a_class [ "exercise" ] ] [
         div ~a:[ a_class [ "descr" ] ] (
           h1 [ txt title ] ::
@@ -313,7 +313,7 @@ let exercises_tab token : tab_handler =
       React.S.merge (fun () () -> ()) () (list_update_signal :: btns_sigs);
     Lwt.return pane_div
 
-let playground_tab token : tab_handler =
+let playground_tab session : tab_handler =
   fun _ _ () ->
   show_loading [%i"Loading playground"] @@ fun () ->
   Lwt_js.sleep 0.5 >>= fun () ->
@@ -324,7 +324,7 @@ let playground_tab token : tab_handler =
       let open Tyxml_js.Html5 in
       let title = pmeta.Playground.Meta.title in
       let short_description = pmeta.Playground.Meta.short_description in
-      a ~a:[ a_href (get_url token "/playground/" "playground.html#id=" id) ;
+      a ~a:[ a_href (get_url session "/playground/" "playground.html#id=" id) ;
              a_class [ "exercise" ] ] [
           div ~a:[ a_class [ "descr" ] ] (
               h1 [ txt title ] ::
@@ -669,16 +669,18 @@ let toplevel_tab : tab_handler =
   init_toplevel_pane (Lwt.return top) top toplevel_buttons_group button ;
   Lwt.return div
 
-let teacher_tab token : tab_handler =
+let teacher_tab token session: tab_handler =
   fun a b () ->
   show_loading [%i"Loading student info"] @@ fun () ->
-  Learnocaml_teacher_tab.teacher_tab token a b () >>= fun div ->
+  Learnocaml_teacher_tab.teacher_tab token session a b () >>= fun div ->
   Lwt.return div
 
 let get_stored_token () =
   Learnocaml_local_storage.(retrieve sync_token)
+let get_stored_session () =
+  Learnocaml_local_storage.(retrieve sync_session)
 
-let sync () = sync (get_stored_token ())
+let sync () = sync (get_stored_token ()) (get_stored_session ())
 
 let token_disp_div token =
   H.input ~a: [
@@ -728,9 +730,11 @@ let init_token_dialog () =
         Lwt.return_none
     | token ->
        Server_caller.request (Learnocaml_api.Login token) >>= function
-       | Ok temp_token ->
+       | Ok session ->
           Learnocaml_local_storage.(store sync_token) token;
-          Server_caller.request (Learnocaml_api.Fetch_save token)
+          Learnocaml_local_storage.(store sync_session) session;
+          Learnocaml_local_storage.(store is_teacher) (Token.is_teacher token);
+          Server_caller.request (Learnocaml_api.Fetch_save session)
           >>= (function
                | Ok save ->
                   set_state_from_save_file ~token:token save;
@@ -774,18 +778,19 @@ let init_token_dialog () =
   get_token >|= fun (token, nickname) ->
   (Tyxml_js.To_dom.of_input nickname_field)##.value := Js.string nickname;
   Manip.SetCss.display login_overlay "none";
-  token
+  let session = Learnocaml_local_storage.(retrieve sync_session) in
+  token,session
 
 let init_sync_token button_group =
   catch
     (fun () ->
        begin try
-           Lwt.return Learnocaml_local_storage.(retrieve sync_token)
+           Lwt.return (Learnocaml_local_storage.(retrieve sync_token),Learnocaml_local_storage.(retrieve sync_session))
          with Not_found -> init_token_dialog ()
-       end >>= fun token ->
+       end >>= fun (token,session) ->
        enable_button_group button_group ;
-       Lwt.return (Some token))
-    (fun _ -> Lwt.return None)
+       Lwt.return ((Some token),(Some session)))
+    (fun _ -> Lwt.return (None,None))
 
 let set_string_translations () =
   let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in
@@ -855,7 +860,7 @@ let () =
     Manip.appendChild El.content div ;
     delete_arg "activity"
   in
-  let init_tabs token =
+  let init_tabs token session =
     let get_opt o = Js.Optdef.get o (fun () -> false) in
     let tabs : (string * (string * tab_handler)) list =
       (if get_opt config##.enableTutorials
@@ -863,16 +868,16 @@ let () =
       (if get_opt config##.enableLessons
        then [ "lessons", ([%i"Lessons"], lessons_tab) ] else []) @
         (if get_opt config##.enableExercises then
-           ["exercises", ([%i"Exercises"], exercises_tab token)]
+           ["exercises", ([%i"Exercises"], exercises_tab session)]
         else []) @
       (if get_opt config##.enableToplevel
        then [ "toplevel", ([%i"Toplevel"], toplevel_tab) ] else []) @
         (if get_opt config##.enablePlayground
        then [ "playground", ([%i"Playground"], playground_tab token) ] else []) @
-      (match token with
-       | Some t when Token.is_teacher t ->
-           [ "teacher", ([%i"Teach"], teacher_tab t) ]
-       | _ -> [])
+      (match token,session with
+       | (Some t,Some s) when Token.is_teacher t ->
+           [ "teacher", ([%i"Teach"], teacher_tab t s) ]
+       | _,_ -> [])
     in
     let container = El.tab_buttons_container in
     let current_btn = ref None in
@@ -968,7 +973,7 @@ let () =
   let logout_dialog () =
     Server_caller.request
       (Learnocaml_api.Update_save
-         (get_stored_token (), get_state_as_save_file ()))
+         (get_stored_session (), get_state_as_save_file ()))
     >|= (function
         | Ok _ ->
             [%i"Be sure to write down your token before logging out:"]
@@ -1041,8 +1046,8 @@ let () =
       true);
   Server_caller.request (Learnocaml_api.Version ()) >>=
     (function
-     | Ok _ -> init_sync_token sync_button_group >|= init_tabs
-     | Error _ -> Lwt.return (init_tabs None)) >>= fun tabs ->
+     | Ok _ -> init_sync_token sync_button_group >|= (fun (token, session) -> init_tabs token session)
+     | Error _ -> Lwt.return (init_tabs None None)) >>= fun tabs ->
   try
     let activity = arg "activity" in
     let (_, select) = List.assoc activity tabs in
