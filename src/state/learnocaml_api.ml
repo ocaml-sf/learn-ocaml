@@ -105,24 +105,24 @@ type _ request =
   | Login: 
       'a token -> Session.t request
   | Fetch_save:
-      'a token -> Save.t request
+      'a session -> Save.t request
   | Archive_zip:
-      'a token -> string request
+      'a session -> string request
   | Update_save:
-      'a token * Save.t -> Save.t request
+      'a session * Save.t -> Save.t request
   | Git: 'a token * string list -> string request
 
   | Students_list:
-      teacher token -> Student.t list request
+      'a session -> Student.t list request
   | Set_students_list:
-      teacher token * (Student.t * Student.t) list -> unit request
+      'a session * (Student.t * Student.t) list -> unit request
   | Students_csv:
-      teacher token * Exercise.id list * Token.t list -> string request
+      'a session * Exercise.id list * Token.t list -> string request
 
   | Exercise_index:
-      'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
+      'a session option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
-      'a token option * string * bool ->
+      'a session option * string * bool ->
       (Exercise.Meta.t * Exercise.t * float option) request
 
   | Lesson_index:
@@ -141,14 +141,14 @@ type _ request =
       string -> Playground.t request
 
   | Exercise_status_index:
-      teacher token -> Exercise.Status.t list request
+      'a session -> Exercise.Status.t list request
   | Exercise_status:
-      teacher token * Exercise.id -> Exercise.Status.t request
+      'a session * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
-      teacher token * (Exercise.Status.t * Exercise.Status.t) list -> unit request
+      'a session * (Exercise.Status.t * Exercise.Status.t) list -> unit request
 
   | Partition:
-      teacher token * Exercise.id * string * int -> Partition.t request
+      'a session * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:
       string -> string request
@@ -284,15 +284,17 @@ module Conversions (Json: JSON_CODEC) = struct
   let to_http_request
     : type resp. resp request -> http_request
     =
-    let get ?token ?(args=[]) path = {
+    let get ?token ?session ?(args=[]) path = {
       meth = `GET;
       path;
-      args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @ args;
+      args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @
+      (match session with None -> [] | Some s -> ["session", s]) @ args;
     } in
-    let post ~token path body = {
+    let post ?token ?session path body = {
       meth = `POST body;
       path;
-      args = ["token", Token.to_string token];
+      args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @
+      (match session with None -> [] | Some s -> ["session", s]);
     } in
     function
     | Static path ->
@@ -311,39 +313,36 @@ module Conversions (Json: JSON_CODEC) = struct
                     (match nick with None -> [] | Some n -> [n]))
     | Login token ->
         get ~token ["login"]
-    | Fetch_save token ->
-        get ~token ["save.json"]
-    | Archive_zip token ->
-        get ~token ["archive.zip"]
-    | Update_save (token, save) ->
-        post ~token ["sync"] (Json.encode Save.enc save)
+    | Fetch_save session ->
+        get ~session ["save.json"]
+    | Archive_zip session ->
+        get ~session ["archive.zip"]
+    | Update_save (session, save) ->
+        post ~session ["sync"] (Json.encode Save.enc save)
     | Git _ ->
         assert false (* Reserved for the [git] client *)
 
-    | Students_list token ->
-        assert (Token.is_teacher token);
-        get ~token ["teacher"; "students.json"]
-    | Set_students_list (token, students) ->
-        assert (Token.is_teacher token);
-        post ~token
+    | Students_list session ->
+        get ~session ["teacher"; "students.json"]
+    | Set_students_list (session, students) ->
+        post ~session
           ["teacher"; "students.json"]
           (Json.encode (J.list (J.tup2 Student.enc Student.enc)) students)
-    | Students_csv (token, exercises, students) ->
-        assert (Token.is_teacher token);
-        post ~token ["teacher"; "students.csv"]
+    | Students_csv (session, exercises, students) ->
+        post ~session ["teacher"; "students.csv"]
           (Json.encode
              (J.obj2
                 (J.dft "exercises" (J.list J.string) [])
                 (J.dft "students" (J.list Token.enc) []))
              (exercises, students))
 
-    | Exercise_index (Some token) ->
-       get ~token ["exercise-index.json"]
+    | Exercise_index (Some session) ->
+       get ~session ["exercise-index.json"]
     | Exercise_index None ->
        get ["exercise-index.json"]
 
-    | Exercise (Some token, id, js) ->
-       get ~token
+    | Exercise (Some session, id, js) ->
+       get ~session
          ("exercises" :: String.split_on_char '/' (id^".json"))
          ~args:["mode", if js then "js" else "byte"]
     | Exercise (None, id, js) ->
@@ -365,21 +364,20 @@ module Conversions (Json: JSON_CODEC) = struct
     | Tutorial id ->
         get ["tutorials"; id^".json"]
 
-    | Exercise_status_index token ->
-        assert (Token.is_teacher token);
-        get ~token ["teacher"; "exercise-status.json"]
-    | Exercise_status (token, id) ->
-        get ~token
+    | Exercise_status_index session ->
+        get ~session ["teacher"; "exercise-status.json"]
+    | Exercise_status (session, id) ->
+        get ~session
           ("teacher" :: "exercise-status" :: String.split_on_char '/' id)
-    | Set_exercise_status (token, status) ->
-        post ~token
+    | Set_exercise_status (session, status) ->
+        post ~session
           ["teacher"; "exercise-status"]
           (Json.encode
              (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
              status)
 
-    | Partition (token, eid, fid, prof) ->
-        get ~token
+    | Partition (session, eid, fid, prof) ->
+        get ~session
           ["partition"; eid; fid; string_of_int prof]
 
     | Invalid_request s ->
@@ -413,50 +411,51 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
             try Some (Token.parse stoken)
             with Failure _ -> None
       in
-      match request.meth, request.path, token with
-      | `GET, ([] | [""]), _ ->
+      let session =
+        match List.assoc_opt "session" request.args with
+        | None -> None
+        | Some session -> Some session
+      in
+      match request.meth, request.path, token, session with
+      | `GET, ([] | [""]), _,_ ->
           Static ["index.html"] |> k
-      | `GET, ["version"], _ ->
+      | `GET, ["version"], _, _ ->
           Version () |> k
 
-      | `GET, ["nonce"], _ ->
+      | `GET, ["nonce"], _, _ ->
           Nonce () |> k
-      | `GET, ["sync"; "new"; secret_candidate], token ->
+      | `GET, ["sync"; "new"; secret_candidate], token, _ ->
           Create_token (secret_candidate, token, None) |> k
-      | `GET, ["sync"; "new"; secret_candidate; nick], token ->
+      | `GET, ["sync"; "new"; secret_candidate; nick], token, _ ->
           Create_token (secret_candidate, token, Some nick) |> k
-      | `GET, ["teacher"; "new"], Some token when Token.is_teacher token ->
+      | `GET, ["teacher"; "new"], Some token, _ when Token.is_teacher token ->
           Create_teacher_token (token, None) |> k
-      | `GET, ["teacher"; "new"; nick], Some token when Token.is_teacher token ->
+      | `GET, ["teacher"; "new"; nick], Some token, _ when Token.is_teacher token ->
           Create_teacher_token (token, Some nick) |> k
-      | `GET, ["login"], Some token ->
+      | `GET, ["login"], Some token, _ ->
         Login token |> k
-      | `GET, ["save.json"], Some token ->
-          Fetch_save token |> k
-      | `GET, ["archive.zip"], Some token ->
-          Archive_zip token |> k
-      | `POST body, ["sync"], Some token ->
+      | `GET, ["save.json"], _, Some session ->
+          Fetch_save session |> k
+      | `GET, ["archive.zip"], _, Some session ->
+          Archive_zip session |> k
+      | `POST body, ["sync"], _, Some session ->
           (match Json.decode Save.enc body with
-           | save -> Update_save (token, save) |> k
+           | save -> Update_save (session, save) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
-      | `GET, (stoken::"learnocaml-workspace.git"::p), None ->
+      | `GET, (stoken::"learnocaml-workspace.git"::p), None, _ ->
           (match Token.parse stoken with
            | token -> Git (token, p) |> k
            | exception Failure e -> Invalid_request e |> k)
 
-      | `GET, ["teacher"; "students.json"], Some token
-        when Token.is_teacher token ->
-          Students_list token |> k
-      | `POST body, ["teacher"; "students.json"], Some token
-        when Token.is_teacher token ->
+      | `GET, ["teacher"; "students.json"], _, Some session ->
+          Students_list session |> k
+      | `POST body, ["teacher"; "students.json"], _, Some session ->
           (match Json.decode (J.list (J.tup2 Student.enc Student.enc)) body with
-           | students -> Set_students_list (token, students) |> k
+           | students -> Set_students_list (session, students) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
-      | `GET, ["teacher"; "students.csv"], Some token
-        when Token.is_teacher token ->
-          Students_csv (token, [], []) |> k
-      | `POST body, ["teacher"; "students.csv"], Some token
-        when Token.is_teacher token ->
+      | `GET, ["teacher"; "students.csv"], _, Some session ->
+          Students_csv (session, [], []) |> k
+      | `POST body, ["teacher"; "students.csv"], _, Some session ->
           (match Json.decode
                    (J.obj2
                       (J.dft "exercises" (J.list J.string) [])
@@ -464,29 +463,29 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
                    body
            with
            | exercises, students ->
-               Students_csv (token, exercises, students) |> k
+               Students_csv (session, exercises, students) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
-      | `GET, ["exercise-index.json"], token ->
-         Exercise_index token |> k
-      | `GET, ("exercises"::path), token ->
+      | `GET, ["exercise-index.json"], _, session ->
+         Exercise_index session |> k
+      | `GET, ("exercises"::path), _, session ->
           (match last path with
            | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
-               (match token with
-                | Some token ->
+               (match session with
+                | Some session ->
                     let id = Filename.chop_suffix (String.concat "/" path) ".json" in
                     let js = List.assoc_opt "mode" request.args = Some "js" in
-                    Exercise (Some token, id, js) |> k
-                | None -> Invalid_request "Missing token" |> k)
+                    Exercise (Some session, id, js) |> k
+                | None -> Invalid_request "Missing session" |> k)
            | Some "" ->
                Static ["exercise.html"] |> k
            | _ ->
               Static ("static"::path) |> k)
-      | `GET, ("description"::_), _token ->
+      | `GET, ("description"::_), _token, _ ->
          (* match token with
           | None -> Invalid_request "Missing token" |> k *)
           Static ["description.html"] |> k
-      | `GET, ("playground"::path), _token ->
+      | `GET, ("playground"::path), _token, _ ->
          begin
            match last path with
            | Some s when String.lowercase_ascii (Filename.extension s) = ".json" ->
@@ -497,39 +496,35 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
            | _ ->
               Static ("static"::path) |> k
          end
-      | `GET, ["lessons.json"], _ ->
+      | `GET, ["lessons.json"], _, _ ->
           Lesson_index () |> k
-      | `GET, ["lessons"; f], _ when Filename.check_suffix f ".json" ->
+      | `GET, ["lessons"; f], _, _ when Filename.check_suffix f ".json" ->
           Lesson (Filename.chop_suffix f ".json") |> k
 
-      | `GET, ["tutorials.json"], _ ->
+      | `GET, ["tutorials.json"], _, _ ->
           Tutorial_index () |> k
-      | `GET, ["tutorials"; f], _ when Filename.check_suffix f ".json" ->
+      | `GET, ["tutorials"; f], _, _ when Filename.check_suffix f ".json" ->
          Tutorial (Filename.chop_suffix f ".json") |> k
 
-      | `GET, ["playgrounds.json"], _ ->
+      | `GET, ["playgrounds.json"], _, _ ->
           Playground_index () |> k
-      | `GET, ["playgrounds"; f], _ when Filename.check_suffix f ".json" ->
+      | `GET, ["playgrounds"; f], _, _ when Filename.check_suffix f ".json" ->
           Playground (Filename.chop_suffix f ".json") |> k
 
-      | `GET, ["partition"; eid; fid; prof], Some token
-        when Token.is_teacher token ->
-          Partition (token, eid, fid, int_of_string prof) |> k
+      | `GET, ["partition"; eid; fid; prof], _, Some session ->
+          Partition (session, eid, fid, int_of_string prof) |> k
 
-      | `GET, ["teacher"; "exercise-status.json"], Some token
-        when Token.is_teacher token ->
-          Exercise_status_index token |> k
-      | `GET, ("teacher" :: "exercise-status" :: id), Some token
-        when Token.is_teacher token ->
-          Exercise_status (token, String.concat "/" id) |> k
-      | `POST body, ["teacher"; "exercise-status"], Some token
-        when Token.is_teacher token ->
+      | `GET, ["teacher"; "exercise-status.json"], _, Some session ->
+          Exercise_status_index session |> k
+      | `GET, ("teacher" :: "exercise-status" :: id), _, Some session ->
+          Exercise_status (session, String.concat "/" id) |> k
+      | `POST body, ["teacher"; "exercise-status"], _, Some session ->
           (match Json.decode
                    (J.list (J.tup2 Exercise.Status.enc Exercise.Status.enc))
                    body
            with
            | status ->
-               Set_exercise_status (token, status) |> k
+               Set_exercise_status (session, status) |> k
            | exception e -> Invalid_request (Printexc.to_string e) |> k)
 
       | `GET,
@@ -540,13 +535,13 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         | ["description.html"]
         | ["partition-view.html"]
         | ("js"|"fonts"|"icons"|"css"|"static") :: _ as path),
-        _ ->
+        _, _ ->
           Static path |> k
 
-      | `GET, ["favicon.ico"], _ ->
+      | `GET, ["favicon.ico"], _, _ ->
           Static ["icons"; "favicon.ico"] |> k
 
-      | meth, path, _ ->
+      | meth, path, _, _ ->
           Invalid_request
             (Printf.sprintf "%s /%s%s"
                (match meth with `GET -> "GET" | `POST _ -> "POST")

@@ -232,6 +232,11 @@ module Request_handler = struct
       (`Forbidden, "No address information avaible")
       lwt_ok
 
+  let wrap_user_session session f =
+    Session.get_user_token session >>= function
+    | Some token -> f token
+    | None ->  Lwt.fail_with "Invalid session"
+
   let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
                     caching -> resp Api.request ->
                     (resp response, error) result Lwt.t
@@ -309,7 +314,8 @@ module Request_handler = struct
                   respond_json cache session
           )
            (fun exn -> (`Internal_server_error, Printexc.to_string exn))
-      | Api.Fetch_save token ->
+      | Api.Fetch_save session ->
+         wrap_user_session session @@ fun token ->
          lwt_catch_fail
            (fun () ->
              Save.get token >>= fun tokopt ->
@@ -317,9 +323,10 @@ module Request_handler = struct
                tokopt
                (`Not_found, "token not found")
                (respond_json cache))
-         (fun exn -> (`Internal_server_error, Printexc.to_string exn))
-      | Api.Archive_zip token ->
+           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Archive_zip session ->
           let open Lwt_process in
+          wrap_user_session session @@ fun token ->
           let path = Filename.concat !sync_dir (Token.to_path token) in 
           let cmd = shell ("git archive master --format=zip -0 --remote="^path)
           and stdout = `FD_copy Unix.stdout in
@@ -327,7 +334,8 @@ module Request_handler = struct
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
                                caching = Nocache }
-      | Api.Update_save (token, save) ->
+      | Api.Update_save (session, save) ->
+          wrap_user_session session @@ fun token ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
           (Token.check_teacher token >>= function
@@ -368,11 +376,13 @@ module Request_handler = struct
                            caching = Nocache })
             (fun e -> (`Not_found, Printexc.to_string e))
 
-      | Api.Students_list token ->
+      | Api.Students_list session ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Student.Index.get ()
           >>= respond_json cache
-      | Api.Set_students_list (token, students) ->
+      | Api.Set_students_list (session, students) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Lwt_list.map_s
             (fun (ancestor, ours) ->
@@ -386,7 +396,8 @@ module Request_handler = struct
             students >>=
           Student.Index.set
           >>= respond_json cache
-      | Api.Students_csv (token, exercises, students) ->
+      | Api.Students_csv (session, exercises, students) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           (match students with
            | [] -> Token.Index.get () >|= List.filter Token.is_student
@@ -454,7 +465,8 @@ module Request_handler = struct
                       content_type = "text/csv";
                       caching = Nocache}
 
-      | Api.Exercise_index (Some token) ->
+      | Api.Exercise_index (Some session) ->
+          wrap_user_session session @@ fun token ->
           Exercise.Index.get () >>= fun index ->
           Token.check_teacher token >>= (function
               | true -> Lwt.return (index, [])
@@ -473,7 +485,8 @@ module Request_handler = struct
       | Api.Exercise_index None ->
          lwt_fail (`Forbidden, "Forbidden")
 
-      | Api.Exercise (Some token, id, js) ->
+      | Api.Exercise (Some session, id, js) ->
+          wrap_user_session session @@ fun token ->
           (Exercise.Status.is_open id token >>= function
           | `Open | `Deadline _ as o ->
               Exercise.Meta.get id >>= fun meta ->
@@ -502,13 +515,16 @@ module Request_handler = struct
       | Api.Playground id ->
           Playground.get id >>= respond_json cache
 
-      | Api.Exercise_status_index token ->
+      | Api.Exercise_status_index session ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Exercise.Status.all () >>= respond_json cache
-      | Api.Exercise_status (token, id) ->
+      | Api.Exercise_status (session, id) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Exercise.Status.get id >>= respond_json cache
-      | Api.Set_exercise_status (token, status) ->
+      | Api.Set_exercise_status (session, status) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Lwt_list.iter_s
             Exercise.Status.(fun (ancestor, ours) ->
@@ -517,7 +533,8 @@ module Request_handler = struct
             status
           >>= respond_json cache
 
-      | Api.Partition (token, eid, fid, prof) ->
+      | Api.Partition (session, eid, fid, prof) ->
+          wrap_user_session session @@ fun token ->
          lwt_catch_fail (fun () ->
            verify_teacher_token token
            >?= fun () ->
