@@ -338,13 +338,13 @@ module Session = struct
   let set_session session token =
     let now = Unix.gettimeofday () in
     load !data_dir >>= fun table ->
-    let table =
-      (session, token, now)
-      :: List.filter (fun (s, _, _) -> s <> session) table
-    in
+    let table = (session, token, now) :: table in
     save !data_dir table
-  
-  let gen_session () = generate ()
+
+  let gen_session () =
+    let len = 32 in
+    Cryptokit.Random.string Cryptokit.Random.secure_rng len
+  |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
 
 end
 

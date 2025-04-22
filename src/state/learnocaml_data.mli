@@ -73,7 +73,9 @@ end
 module Session : sig
   type t = string
 
-  val generate : unit -> t
+  val to_string: t -> string
+  
+  val parse: string -> t
 
   val enc : t Json_encoding.encoding
 end

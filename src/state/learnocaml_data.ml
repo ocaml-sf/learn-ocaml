@@ -191,15 +191,21 @@ end
 module Session = struct
   type t = string
 
-  (** TODO generate robust token with cryptokit?*)
-  let generate () : t =
-    let length = 32 in
-    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" in
-    let alphabet_len = String.length alphabet in
-    String.init length (fun _ -> alphabet.[Random.int alphabet_len])
+  let parse session =
+    let len = 32 in
+    if String.length session <> 2 * len then
+      failwith "Bad session length"
+    else if not (String.for_all 
+      (fun c -> match c with
+        | '0'..'9' | 'a'..'z' -> true
+        | _ -> false)
+        session)
+    then
+      failwith "Invalid hex character"
+    else
+      session
 
-  (** TODO parsing with the corect format*)
-  let parse session = session
+  let to_string s = s
 
   let enc = J.conv (fun s -> s) parse J.string
 end

@@ -49,8 +49,10 @@ depends: [
   "conf-gmp-powm-sec" {= "3"}
   "conf-libssl" {= "4"}
   "conf-pkg-config" {= "3"}
+  "conf-zlib" {= "1"}
   "cppo" {= "1.6.8"}
   "crunch" {= "3.3.1"}
+  "cryptokit" {= "1.20"}
   "csexp" {= "1.5.1"}
   "cstruct" {= "6.2.0"}
   "decompress" {= "0.8.1"}

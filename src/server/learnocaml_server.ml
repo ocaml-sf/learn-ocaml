@@ -301,17 +301,9 @@ module Request_handler = struct
                (if exists then Some token else None)
                (`Not_found, "Token does not exist")
              @@ fun token ->
-              Session.load !data_dir >>= fun table ->
-              match List.find_opt (fun (_, t, _) -> t = token) table with
-              | Some (existing_session, _, _) ->
-                  (* Update last connection date *)
-                  Session.set_session existing_session token >>= fun () ->
-                  respond_json cache existing_session
-              | None ->
-                  (* Create a new session *)
-                  let session = Session.gen_session () in
-                  Session.set_session session token >>= fun () ->
-                  respond_json cache session
+                let session = Session.gen_session () in
+                Session.set_session session token >>= fun () ->
+                respond_json cache session
           )
            (fun exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Fetch_save session ->
