@@ -55,8 +55,6 @@ val all_toplevel_histories : Learnocaml_toplevel_history.snapshot SMap.t storage
 
 val server_id : int storage_key
 
-val sync_token : Token.t storage_key
-
 val sync_session : Session.t storage_key
 
 val is_teacher : bool storage_key

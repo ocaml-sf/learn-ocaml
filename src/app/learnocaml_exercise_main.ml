@@ -101,8 +101,6 @@ let () =
     (function
      | Ok (_, server_id) -> Learnocaml_local_storage.(store server_id) server_id; Lwt.return_true
      | Error _ -> Lwt.return_false) >>= fun has_server ->
-  let token = get_token ~has_server ()
-  in
   let session = get_session ~has_server ()
   in
   (* ---- launch everything --------------------------------------------- *)
@@ -193,9 +191,9 @@ let () =
   let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   if has_server then
-    EB.reload token id (Learnocaml_exercise.(access File.template exo))
+    EB.reload session id (Learnocaml_exercise.(access File.template exo))
   else EB.cleanup (Learnocaml_exercise.(access File.template exo));
-  EB.sync token session id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
+  EB.sync session id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
@@ -279,8 +277,8 @@ let () =
           else
             Some solution, None
         in
-        token >>= fun token -> session >>= fun session ->
-        sync_exercise token session id ?answer ?editor (fun () -> Ace.set_synchronized ace)
+        session >>= fun session ->
+        sync_exercise session id ?answer ?editor (fun () -> Ace.set_synchronized ace)
         >>= fun _save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->

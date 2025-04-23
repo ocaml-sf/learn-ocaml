@@ -142,15 +142,6 @@ let server_id =
   { key = Some key ; dependent_keys = (=) key ;
     store ; retrieve ; delete ; listeners = [] }
 
-let sync_token =
-  let key = mangle [ "sync-token" ] in
-  let enc = Json_encoding.(obj1 (req "token" string)) in
-  let store value = store_single key enc (Token.to_string value)
-  and retrieve () = retrieve_single key enc () |> Token.parse
-  and delete () = delete_single key enc () in
-  { key = Some key ; dependent_keys = (=) key ;
-    store ; retrieve ; delete ; listeners = [] }
-
 let sync_session =
   let key = mangle [ "sync-session" ] in
   let enc = Json_encoding.(obj1 (req "session" string)) in

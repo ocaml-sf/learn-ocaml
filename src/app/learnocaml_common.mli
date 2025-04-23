@@ -126,7 +126,7 @@ val extract_text_from_rich_text : Learnocaml_data.Tutorial.text -> string
 
 (** Sets the local storage from the data in a save file *)
 val set_state_from_save_file :
-  ?token:Token.t -> Save.t -> unit
+  ?session:Session.t -> Save.t -> unit
 
 (** Gets a save file containing the locally stored data *)
 val get_state_as_save_file : ?include_reports:bool -> unit -> Save.t
@@ -139,12 +139,12 @@ val get_state_as_save_file : ?include_reports:bool -> unit -> Save.t
     Notice that this function synchronizes student {b,content} but not the
     reports which are only synchronized when an actual "grading" is done.
 *)
-val sync: Token.t -> Session.t -> (unit -> unit) -> Save.t Lwt.t
+val sync: Session.t -> (unit -> unit) -> Save.t Lwt.t
 
 (** The same, but limiting the submission to the given exercise, using the given
     answer if any, and the given editor text, if any. *)
 val sync_exercise:
-  Token.t option -> Session.t option -> ?answer:Learnocaml_data.Answer.t -> ?editor:string ->
+  Session.t option -> ?answer:Learnocaml_data.Answer.t -> ?editor:string ->
   Learnocaml_data.Exercise.id ->
   (unit -> unit) ->
   Save.t Lwt.t
@@ -225,10 +225,10 @@ end
 
 module Editor_button (_ : Editor_info) : sig
   val cleanup : string -> unit
-  val reload : Learnocaml_data.Token.t option Lwt.t -> string -> string -> unit
+  val reload : Learnocaml_data.Session.t option Lwt.t -> string -> string -> unit
   val download : string -> unit
   val eval : Learnocaml_toplevel.t -> (string -> unit) -> unit
-  val sync : Token.t option Lwt.t -> Session.t option Lwt.t -> Learnocaml_data.SMap.key -> (unit -> unit) -> unit
+  val sync : Session.t option Lwt.t -> Learnocaml_data.SMap.key -> (unit -> unit) -> unit
 end
 
 val setup_editor : string -> Ocaml_mode.editor * Ocaml_mode.editor Ace.editor
@@ -242,8 +242,6 @@ val set_nickname_div : unit -> unit
 val setup_tab_text_prelude_pane : string -> unit
 
 val setup_prelude_pane : 'a Ace.editor -> string -> unit
-
-val get_token : ?has_server:bool -> unit -> Learnocaml_data.Token.t option Lwt.t
 
 val get_session : ?has_server:bool -> unit -> Learnocaml_data.Session.t option Lwt.t
 

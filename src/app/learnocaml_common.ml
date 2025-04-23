@@ -421,10 +421,10 @@ let extract_text_from_rich_text text =
         render (("$" ^ code ^ "$") :: acc) rest in
   render [] text
 
-let set_state_from_save_file ?token save =
+let set_state_from_save_file ?session save =
   let open Learnocaml_data.Save in
   let open Learnocaml_local_storage in
-  (match token with None -> () | Some t -> store sync_token t);
+  (match session with None -> () | Some s -> store sync_session s);
   store nickname save.nickname;
   store all_graded_solutions
     (SMap.map (fun ans -> ans.Answer.solution) save.all_exercise_states);
@@ -471,34 +471,35 @@ let get_state_as_save_file ?(include_reports = false) () =
     all_exercise_toplevel_histories = retrieve all_exercise_toplevel_histories;
   }
 
-let rec sync_save token session save_file on_sync =
+let rec sync_save session save_file on_sync =
   Server_caller.request (Learnocaml_api.Update_save (session, save_file))
   >>= function
   | Ok save ->
-     set_state_from_save_file ~token save;
+     set_state_from_save_file ~session save;
      on_sync ();
      Lwt.return save
+  (* Removed auto-create fallback; token must already exist
   | Error (`Not_found _) ->
       Server_caller.request_exn
         (Learnocaml_api.Create_token ("", Some token, None)) >>= fun _token ->
       assert (_token = token);
       Server_caller.request_exn
         (Learnocaml_api.Update_save (session, save_file)) >>= fun save ->
-      set_state_from_save_file ~token save;
+      set_state_from_save_file ~session save;
       on_sync ();
-      Lwt.return save
+      Lwt.return save*)
   | Error e ->
       lwt_alert ~title:[%i"SYNC FAILED"] [
         H.p [H.txt [%i"Could not synchronise save with the server"]];
         H.code [H.txt (Server_caller.string_of_error e)];
       ] ~buttons:[
-          [%i"Retry"], (fun () -> sync_save token session save_file on_sync);
+          [%i"Retry"], (fun () -> sync_save session save_file on_sync);
           [%i"Ignore"], (fun () -> Lwt.return save_file);
       ]
 
-let sync token session on_sync = sync_save token session (get_state_as_save_file ()) on_sync
+let sync session on_sync = sync_save session (get_state_as_save_file ()) on_sync
 
-let sync_exercise token session ?answer ?editor id on_sync =
+let sync_exercise session ?answer ?editor id on_sync =
   let handle_serverless () =
     (* save the text at least locally (but not the report & grade, that could
        be misleading) *)
@@ -533,13 +534,13 @@ let sync_exercise token session ?answer ?editor id on_sync =
     all_toplevel_histories = SMap.empty;
     all_exercise_toplevel_histories = opt_to_map toplevel_history;
   } in
-  match token,session with
-  | Some token, Some session ->
-     Lwt.catch (fun () -> sync_save token session save_file on_sync)
+  match session with
+  |  Some session ->
+     Lwt.catch (fun () -> sync_save session save_file on_sync)
        (fun e ->
          handle_serverless ();
          raise e)
-  | _,_ -> set_state_from_save_file save_file;
+  | _ -> set_state_from_save_file save_file;
             handle_serverless ();
             on_sync ();
             Lwt.return save_file
@@ -884,7 +885,7 @@ let mk_tab_handlers default_tab other_tabs =
     Manip.addClass
       (find_component ("learnocaml-exo-tab-" ^ name))
       "front-tab" ;
-    Manip.disable
+   Manip.disable
       (find_component ("learnocaml-exo-button-" ^ name)) ;
     current := name in
   let init_tabs () =
@@ -932,14 +933,13 @@ module Editor_button (E : Editor_info) = struct
          Ace.set_contents E.ace template);
     Lwt.return ()
 
-  let reload token id template =
-    let rec fetch_draft_solution tok () =
-      match tok with
-      | token ->
-         let session = Learnocaml_local_storage.(retrieve sync_session) in
+  let reload session id template =
+    let rec fetch_draft_solution sess () =
+      match sess with
+      | session ->
          Server_caller.request (Learnocaml_api.Fetch_save session) >>= function
          | Ok save ->
-            set_state_from_save_file ~token save;
+            set_state_from_save_file ~session save;
             Lwt.return_some (save.Save.nickname)
          | Error (`Not_found _) ->
             alert ~title:[%i"TOKEN NOT FOUND"]
@@ -950,7 +950,7 @@ module Editor_button (E : Editor_info) = struct
                 H.p [H.txt [%i"Could not retrieve data from server"]];
                 H.code [H.txt (Server_caller.string_of_error e)];
               ] ~buttons:[
-                [%i"Retry"], (fun () -> fetch_draft_solution tok ());
+                [%i"Retry"], (fun () -> fetch_draft_solution sess ());
                 [%i"Cancel"], (fun () -> Lwt.return_none);
               ]
     in
@@ -985,19 +985,19 @@ module Editor_button (E : Editor_info) = struct
           ]
       ]
       [%i"Reload"] @@ fun () ->
-        token >>= function
+        session >>= function
           None ->
           (* We may want to only show "Reset to initial template" in this case,
              though there is already this code in learnocaml_exercise_main.ml:
              {| if has_server then EB.reload ... else EB.cleanup ... |}. *)
            Lwt.return_unit
-        | Some tok ->
+        | Some sess ->
            let found f =
                match f () with
                | _val -> true
                | exception Not_found -> false
            in
-           fetch_draft_solution tok () >|= fun _save ->
+           fetch_draft_solution sess () >|= fun _save ->
            let menu_draft = find_component (id_menu ^ "-draft") in
            Manip.SetCss.display menu_draft
              (if found (fun () ->
@@ -1024,13 +1024,13 @@ module Editor_button (E : Editor_info) = struct
       select_tab "toplevel";
       Lwt.return_unit
 
-  let sync token session id on_sync =
+  let sync session id on_sync =
     let state = button_state () in
     (editor_button
       ~state
       ~icon: "sync" [%i"Sync"] @@ fun () ->
-      token >>= fun token -> session >>= fun session ->
-      sync_exercise token session id ~editor:(Ace.get_contents E.ace) on_sync
+      session >>= fun session ->
+      sync_exercise session id ~editor:(Ace.get_contents E.ace) on_sync
       >|= fun _save -> ());
     Ace.register_sync_observer E.ace (fun sync ->
         (* this is run twice when clicking on Reset, because of Ace's implem *)
@@ -1159,30 +1159,6 @@ let setup_prelude_pane ace prelude =
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
 
-let get_token ?(has_server = true) () =
-  if not has_server then
-    Lwt.return None
-  else
-    try
-      Some Learnocaml_local_storage.(retrieve sync_token) |>
-        Lwt.return
-    with
-    Not_found ->
-      ask_string ~title:"Token" ~may_cancel:false
-        [H.txt [%i"Enter your token"]]
-      >>= fun input_tok ->
-      let token = Token.parse (input_tok) in
-      let session = Learnocaml_local_storage.(retrieve sync_session) in
-        Server_caller.request (Learnocaml_api.Fetch_save session)
-        >>= function
-        | Ok save ->
-            set_state_from_save_file ~token save;
-            Lwt.return_some token
-        | _ ->
-            alert ~title:[%i"TOKEN NOT FOUND"]
-              [%i"The entered token couldn't be recognised."];
-            Lwt.return_none
-
 let get_session ?(has_server = true) () =
   if not has_server then
     Lwt.return None
@@ -1196,16 +1172,21 @@ let get_session ?(has_server = true) () =
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->
       let token = Token.parse (input_tok) in
-      let session = Learnocaml_local_storage.(retrieve sync_session) in
-        Server_caller.request (Learnocaml_api.Fetch_save session)
-        >>= function
-        | Ok save ->
-            set_state_from_save_file ~token save;
-            Lwt.return_some session
-        | _ ->
-            alert ~title:[%i"TOKEN NOT FOUND"]
-              [%i"The entered token couldn't be recognised."];
-            Lwt.return_none
+      Server_caller.request (Learnocaml_api.Login token) >>= function
+      | Ok session ->
+         (Server_caller.request (Learnocaml_api.Fetch_save session)
+          >>= function
+          | Ok save ->
+             set_state_from_save_file ~session save;
+             Lwt.return_some session
+          | _ ->
+             alert ~title:[%i"TOKEN NOT FOUND"]
+               [%i"The entered token couldn't be recognised."];
+             Lwt.return_none)
+      | _ ->
+         alert ~title:[%i"TOKEN NOT FOUND"]
+           [%i"The entered token couldn't be recognised."];
+         Lwt.return_none
 
 module Display_exercise =
   functor (
