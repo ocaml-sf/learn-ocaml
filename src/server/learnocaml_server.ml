@@ -316,6 +316,9 @@ module Request_handler = struct
                (`Not_found, "token not found")
                (respond_json cache))
            (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Get_token session ->
+         wrap_user_session session @@ fun token ->
+          respond_json cache token
       | Api.Archive_zip session ->
           let open Lwt_process in
           wrap_user_session session @@ fun token ->

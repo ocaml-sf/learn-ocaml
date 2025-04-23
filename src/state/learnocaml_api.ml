@@ -106,6 +106,8 @@ type _ request =
       'a token -> Session.t request
   | Fetch_save:
       'a session -> Save.t request
+  | Get_token:
+      'a session -> Token.t request
   | Archive_zip:
       'a session -> string request
   | Update_save:
@@ -163,6 +165,7 @@ let supported_versions
   | Create_teacher_token _
   | Login _
   | Fetch_save _
+  | Get_token _
   | Archive_zip _
   | Update_save (_, _)
   | Git (_, _)
@@ -236,6 +239,9 @@ module Conversions (Json: JSON_CODEC) = struct
           json J.(obj1 (req "session" string)) 
       | Fetch_save _ ->
           json Save.enc
+      | Get_token _ ->
+          json J.(obj1 (req "token" string)) +>
+          Token.(to_string, parse)
       | Archive_zip _ ->
           str
       | Update_save _ ->
@@ -315,6 +321,8 @@ module Conversions (Json: JSON_CODEC) = struct
         get ~token ["login"]
     | Fetch_save session ->
         get ~session ["save.json"]
+    | Get_token session ->
+        get ~session ["token"]
     | Archive_zip session ->
         get ~session ["archive.zip"]
     | Update_save (session, save) ->
@@ -436,6 +444,8 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
         Login token |> k
       | `GET, ["save.json"], _, Some session ->
           Fetch_save session |> k
+      | `GET, ["token"], _, Some session ->
+          Get_token session |> k
       | `GET, ["archive.zip"], _, Some session ->
           Archive_zip session |> k
       | `POST body, ["sync"], _, Some session ->

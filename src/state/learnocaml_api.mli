@@ -92,6 +92,8 @@ type _ request =
       'a token -> Session.t request
   | Fetch_save:
       'a session -> Save.t request
+  | Get_token:
+      'a session -> Token.t request
   | Archive_zip:
       'a session -> string request
   | Update_save:
