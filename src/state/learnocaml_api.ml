@@ -101,7 +101,7 @@ type _ request =
   | Create_token:
       string * student token option * string option -> student token request
   | Create_teacher_token:
-      teacher token * string option -> teacher token request
+      'a session * string option -> teacher token request
   | Login: 
       'a token -> Session.t request
   | Fetch_save:
@@ -313,9 +313,8 @@ module Conversions (Json: JSON_CODEC) = struct
     | Create_token (secret_candiate, token, nick) ->
         get ?token (["sync"; "new"; secret_candiate] @
                     (match nick with None -> [] | Some n -> [n]))
-    | Create_teacher_token (token, nick) ->
-        assert (Token.is_teacher token);
-        get ~token (["teacher"; "new"] @
+    | Create_teacher_token (session, nick) ->
+        get ~session (["teacher"; "new"] @
                     (match nick with None -> [] | Some n -> [n]))
     | Login token ->
         get ~token ["login"]
@@ -436,10 +435,10 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Create_token (secret_candidate, token, None) |> k
       | `GET, ["sync"; "new"; secret_candidate; nick], token, _ ->
           Create_token (secret_candidate, token, Some nick) |> k
-      | `GET, ["teacher"; "new"], Some token, _ when Token.is_teacher token ->
-          Create_teacher_token (token, None) |> k
-      | `GET, ["teacher"; "new"; nick], Some token, _ when Token.is_teacher token ->
-          Create_teacher_token (token, Some nick) |> k
+      | `GET, ["teacher"; "new"], _, Some session ->
+          Create_teacher_token (session, None) |> k
+      | `GET, ["teacher"; "new"; nick], _, Some session ->
+          Create_teacher_token (session, Some nick) |> k
       | `GET, ["login"], Some token, _ ->
         Login token |> k
       | `GET, ["save.json"], _, Some session ->

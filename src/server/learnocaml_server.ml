@@ -284,7 +284,8 @@ module Request_handler = struct
             (function
              | Failure body -> (`Bad_request, body)
              | exn -> (`Internal_server_error, Printexc.to_string exn))
-      | Api.Create_teacher_token (token, nick) ->
+      | Api.Create_teacher_token (session, nick) ->
+         wrap_user_session session @@ fun token ->
          verify_teacher_token token
          >?= fun () ->
          Token.create_teacher ()

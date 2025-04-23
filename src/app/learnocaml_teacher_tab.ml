@@ -91,7 +91,7 @@ let help_button name (title,md_text) =
     H.a_style "margin-left: 1em;";
   ] [H.txt "?"]
 
-let rec teacher_tab token session _select _params () =
+let rec teacher_tab session _select _params () =
   let action_new_token () =
     Learnocaml_common.ask_string
        ~title:"NEW TEACHER TOKEN"
@@ -101,7 +101,7 @@ let rec teacher_tab token session _select _params () =
       | "" -> None
       | s -> Some s
     in
-    retrieve (Learnocaml_api.Create_teacher_token (token, nick))
+    retrieve (Learnocaml_api.Create_teacher_token (session, nick))
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
@@ -953,7 +953,7 @@ let rec teacher_tab token session _select _params () =
          (Learnocaml_api.Set_students_list (session, students_changes)))
     >>= fun () ->
     (* Reload the full tab: a bit more costly, but safer & simpler *)
-    teacher_tab token session _select _params () >|=
+    teacher_tab session _select _params () >|=
     Manip.replaceSelf (find_component "learnocaml-main-teacher")
     (* status_map := status_current ();
      * status_changes := SMap.empty;
