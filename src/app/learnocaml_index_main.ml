@@ -175,7 +175,7 @@ let exercises_tab session: tab_handler =
     let open Tyxml_js.Html5 in
     show_loading  [%i"Loading exercises"] @@ fun () ->
     Lwt_js.sleep 0.5 >>= fun () ->
-    retrieve (Learnocaml_api.Exercise_index session)
+    retrieve (Learnocaml_api.Exercise_index_s session)
     >>= fun (index, deadlines) ->
     let exercises_to_display_signal =
       make_exercises_to_display_signal index
@@ -741,7 +741,7 @@ let init_token_dialog () =
        | Ok session ->
           Learnocaml_local_storage.(store sync_session) session;
           Learnocaml_local_storage.(store is_teacher) (Token.is_teacher token);
-          Server_caller.request (Learnocaml_api.Fetch_save session)
+          Server_caller.request (Learnocaml_api.Fetch_save_s session)
           >>= (function
                | Ok save ->
                   set_state_from_save_file ~session:session save;
@@ -981,7 +981,7 @@ let () =
   let logout_dialog () =
     fetch_token () >>= fun token ->
     Server_caller.request
-      (Learnocaml_api.Update_save
+      (Learnocaml_api.Update_save_s
          (get_stored_session (), get_state_as_save_file ()))
     >|= (function
         | Ok _ ->

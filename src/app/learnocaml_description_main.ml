@@ -63,7 +63,7 @@ let () =
      match get_encoded_session () with
      | Some { arg_name = _; raw_arg = _; session } -> begin
          let exercise_fetch =
-           retrieve (Learnocaml_api.Exercise (Some session, id, true))
+           retrieve (Learnocaml_api.Exercise_s (Some session, id, true))
          in
          init_tabs ();
          exercise_fetch >>= fun (ex_meta, exo, _deadline) ->

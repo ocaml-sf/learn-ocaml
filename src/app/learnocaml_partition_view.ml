@@ -235,7 +235,7 @@ let main () =
     | None -> true
     | Some (tok,_) ->
        Lwt.async (fun () ->
-           retrieve (Learnocaml_api.Fetch_save session)
+           retrieve (Learnocaml_api.Fetch_save_s session)
            >|= fun save ->
            match SMap.find_opt exercise_id save.Save.all_exercise_states with
            | None -> ()
@@ -251,7 +251,7 @@ let main () =
       else true in
 
   let fetch_students =
-    retrieve (Learnocaml_api.Students_list session)
+    retrieve (Learnocaml_api.Students_list_s session)
     >|= fun students ->
     let map =
       List.fold_left (fun res st -> Token.Map.add st.Student.token st res)
@@ -259,7 +259,7 @@ let main () =
     students_map := map in
 
   let fetch_part =
-    retrieve (Learnocaml_api.Partition (session, exercise_id, fun_id, prof))
+    retrieve (Learnocaml_api.Partition_s (session, exercise_id, fun_id, prof))
     >|= fun part ->
     partition := Some part in
 

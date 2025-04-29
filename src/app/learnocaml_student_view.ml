@@ -349,9 +349,9 @@ let stats_tab assignments answers =
   ]
 
 let init_exercises_and_stats_tabs student_token session answers =
-  retrieve (Learnocaml_api.Exercise_index (Some session))
+  retrieve (Learnocaml_api.Exercise_index_s (Some session))
   >>= fun (index, _) ->
-  retrieve (Learnocaml_api.Exercise_status_index session)
+  retrieve (Learnocaml_api.Exercise_status_index_s session)
   >>= fun status ->
   let assignments = gather_assignments student_token index status in
   Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
@@ -504,7 +504,7 @@ let () =
   init_draft_tab ();
   Manip.setInnerText El.token
     ([%i"Status of student: "] ^ Token.to_string student_token);
-  retrieve (Learnocaml_api.Fetch_save session)
+  retrieve (Learnocaml_api.Fetch_save_s session)
   >>= fun save ->
   Manip.setInnerText El.nickname save.Save.nickname;
   init_exercises_and_stats_tabs
@@ -516,7 +516,7 @@ let () =
     | None -> ()
     | Some ex_id ->
         Lwt.async @@ fun () ->
-        retrieve (Learnocaml_api.Exercise (Some session, ex_id, true))
+        retrieve (Learnocaml_api.Exercise_s (Some session, ex_id, true))
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in

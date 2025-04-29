@@ -87,32 +87,51 @@ type _ request =
   | Create_token:
       string * student token option * string option -> student token request
   | Create_teacher_token:
+      teacher token * string option -> teacher token request
+  | Create_teacher_token_s:
       'a session * string option -> teacher token request
   | Login: 
       'a token -> Session.t request
   | Fetch_save:
+      'a token -> Save.t request
+  | Fetch_save_s:
       'a session -> Save.t request
   | Get_token:
       'a session -> Token.t request
   | Archive_zip:
+      'a token -> string request
+  | Archive_zip_s:
       'a session -> string request
   | Update_save:
+      'a token * Save.t -> Save.t request
+  | Update_save_s:
       'a session * Save.t -> Save.t request
   | Git:
       'a token * string list -> string request
 
   | Students_list:
+      teacher token -> Student.t list request
+  | Students_list_s:
       'a session -> Student.t list request
   | Set_students_list:
+      teacher token * (Student.t * Student.t) list -> unit request
+  | Set_students_list_s:
       'a session * (Student.t * Student.t) list -> unit request
     (** Does not affect the students absent from the list. the pairs are the
         before/after states, used for merging *)
   | Students_csv:
+      teacher token * Exercise.id list * Token.t list -> string request
+  | Students_csv_s:
       'a session * Exercise.id list * Token.t list -> string request
 
   | Exercise_index:
+      'a token option -> (Exercise.Index.t * (Exercise.id * float) list) request
+  | Exercise_index_s:
       'a session option -> (Exercise.Index.t * (Exercise.id * float) list) request
   | Exercise:
+      'a token option * string * bool ->
+      (Exercise.Meta.t * Exercise.t * float option) request
+  | Exercise_s:
       'a session option * string * bool ->
       (Exercise.Meta.t * Exercise.t * float option) request
 
@@ -132,16 +151,25 @@ type _ request =
       string -> Playground.t request
 
   | Exercise_status_index:
+      teacher token -> Exercise.Status.t list request
+  | Exercise_status_index_s:
       'a session -> Exercise.Status.t list request
   | Exercise_status:
+      teacher token * Exercise.id -> Exercise.Status.t request
+  | Exercise_status_s:
       'a session * Exercise.id -> Exercise.Status.t request
   | Set_exercise_status:
+      teacher token * (Exercise.Status.t * Exercise.Status.t) list ->
+      unit request
+  | Set_exercise_status_s:
       'a session * (Exercise.Status.t * Exercise.Status.t) list ->
       unit request
     (** The two Status.t correspond to the states before and after changes, used
         for three-way merge *)
 
   | Partition:
+      teacher token * Exercise.id * string * int -> Partition.t request
+  | Partition_s:
       'a session * Exercise.id * string * int -> Partition.t request
 
   | Invalid_request:

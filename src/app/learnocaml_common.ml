@@ -472,7 +472,7 @@ let get_state_as_save_file ?(include_reports = false) () =
   }
 
 let rec sync_save session save_file on_sync =
-  Server_caller.request (Learnocaml_api.Update_save (session, save_file))
+  Server_caller.request (Learnocaml_api.Update_save_s (session, save_file))
   >>= function
   | Ok save ->
      set_state_from_save_file ~session save;
@@ -937,7 +937,7 @@ module Editor_button (E : Editor_info) = struct
     let rec fetch_draft_solution sess () =
       match sess with
       | session ->
-         Server_caller.request (Learnocaml_api.Fetch_save session) >>= function
+         Server_caller.request (Learnocaml_api.Fetch_save_s session) >>= function
          | Ok save ->
             set_state_from_save_file ~session save;
             Lwt.return_some (save.Save.nickname)
@@ -1174,7 +1174,7 @@ let get_session ?(has_server = true) () =
       let token = Token.parse (input_tok) in
       Server_caller.request (Learnocaml_api.Login token) >>= function
       | Ok session ->
-         (Server_caller.request (Learnocaml_api.Fetch_save session)
+         (Server_caller.request (Learnocaml_api.Fetch_save_s session)
           >>= function
           | Ok save ->
              set_state_from_save_file ~session save;
@@ -1263,7 +1263,7 @@ module Display_exercise =
 
     let get_skill_index session =
       let index = lazy (
-                      retrieve (Learnocaml_api.Exercise_index (Some session))
+                      retrieve (Learnocaml_api.Exercise_index_s (Some session))
     >|= fun (index, _) ->
                       Exercise.Index.fold_exercises (fun (req, focus) id meta ->
                           let add sk id map =
@@ -1381,7 +1381,7 @@ module Display_exercise =
         | [] -> None
         | [author] -> Some (display_authors [%i "Author:"] [author])
         | authors -> Some (display_authors [%i "Authors:"] authors) in
-      retrieve (Learnocaml_api.Exercise_index session)
+      retrieve (Learnocaml_api.Exercise_index_s session)
       >|= fun (index, _) ->
       let req_map, focus_map = extract_maps_exo_index index in
       let focus =
