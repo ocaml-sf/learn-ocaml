@@ -799,6 +799,41 @@ let init_sync_session button_group =
        Lwt.return (Some session))
     (fun _ -> Lwt.return None)
 
+(** [migrate_from_legacy_token] runs once to move old browsers
+    that still keep the old [sync-token] (v 1.x and earlier)
+    over to the new session-based login used since Learn-OCaml 2.0. *)
+let migrate_from_legacy_token () =
+    let token =
+      try
+        Some (Learnocaml_local_storage.(retrieve sync_token))
+      with Not_found -> None
+    in
+    match token with
+    | None -> Lwt.return ()
+    | Some token ->
+      Server_caller.request (Learnocaml_api.Login token) >>= function
+      | Error e ->
+          Learnocaml_common.alert
+            ~title:[%i"Migration error"]
+            (Server_caller.string_of_error e);
+          Lwt.return_unit
+
+      | Ok session ->
+          Learnocaml_local_storage.(delete sync_token);
+          Learnocaml_local_storage.(store sync_session session);
+          Learnocaml_local_storage.(store is_teacher (Learnocaml_data.Token.is_teacher token));
+
+          Server_caller.request (Learnocaml_api.Fetch_save_s session) >>= (function
+            | Ok save ->
+                set_state_from_save_file ~session save;
+                Learnocaml_common.alert
+                  ~title:[%i"Connection preserved"]
+                  [%i"The application has been upgraded to a session-based \
+                      authentication. Your previous connection was restored"];
+                Lwt.return_unit
+            | Error _ ->
+                Lwt.return_unit)
+
 let set_string_translations () =
   let configured v s = Js.Optdef.case v (fun () -> s) Js.to_string in
   let translations = [
@@ -855,6 +890,7 @@ let () =
     Js.string ("Learn OCaml" ^ " v"^Learnocaml_api.version);
   Manip.setInnerText El.version ("v"^Learnocaml_api.version);
   Learnocaml_local_storage.init () ;
+  migrate_from_legacy_token () >>= fun () ->
   let sync_button_group = button_group () in
   disable_button_group sync_button_group;
   let menu_hidden = ref true in
