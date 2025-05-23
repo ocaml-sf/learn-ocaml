@@ -12,8 +12,8 @@ If you create an exercise statement, you probably want to add your own static co
 Lets see how to include `OCaml.png` in exercise `demo`.
 Follow these steps:
 
-1. Create a directory `<repo>/exercices/demo/images`.
+1. Create a directory `<repo>/exercices/demo/subdirectory`. (The name of the `subdirectory` is free.)
 2. Put `OCaml.png` in there.
-3. In `<repo>/exercises/demo/decr.html` or `<repo>/exercises/demo/descr.md`, use the following syntaxe <br> `<img src="/static/demo/images/OCaml.png">`. 
+3. In `<repo>/exercises/demo/decr.html` or `<repo>/exercises/demo/descr.md`, use the following syntaxe <br> `<img src="/static/demo/subdirectory/OCaml.png">`. 
 
 To do this we can't use relative URLs. 
