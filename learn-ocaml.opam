@@ -30,12 +30,13 @@ depends: [
   "conduit-lwt-unix" {< "7.1.0"}
   "conf-git"
   "cryptokit"
-  "decompress" {= "0.8.1"}
+  "decompress" {>= "1.5.3"}
   "digestif" {>= "1.2.0"}
   "dune" {>= "2.3.0"}
   "easy-format" {>= "1.3.0" }
   "ezjsonm"
   "ipaddr" {>= "2.9.0" }
+  "irmin-git" {= "3.10.0"}
   "js_of_ocaml" {>= "5.0.0" & < "6.0.0"}
   "js_of_ocaml-compiler" {>= "5.0.0" & < "6.0.0"}
   "js_of_ocaml-lwt"

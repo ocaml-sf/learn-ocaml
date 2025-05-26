@@ -22,8 +22,7 @@ let args = Arg.align @@
     "PATH where static files should be found (./www)" ;
     "-sync-dir", Arg.Set_string sync_dir,
     "PATH where sync tokens are stored (./sync)" ;
-    "-base-url", Arg.Set_string base_url,
-    "BASE_URL of the website. \
+    "-base-url", Arg.Set_string base_url,"BASE_URL of the website. \
      Should not end with a trailing slash. \
      Currently, this has no effect on the native backend. \
      Mandatory for 'learn-ocaml build' if the site is not hosted in path '/', \
@@ -785,36 +784,44 @@ let last_modified = (* server startup time *)
     (tm.tm_year + 1900)
     tm.tm_hour tm.tm_min tm.tm_sec
 
-(* Taken from the source of "decompress", from bin/easy.ml *)
+(* Adapted from the source of "decompress.1.5.3", from bin/decompress.ml *)
 let compress ?(level = 4) data =
-  let input_buffer = Bytes.create 0xFFFF in
-  let output_buffer = Bytes.create 0xFFFF in
-
-  let pos = ref 0 in
-  let res = Buffer.create (String.length data) in
-
+  let bigstring_output o off len buf =
+    let res = Bytes.create len in
+    for i = 0 to len - 1 do
+      Bytes.set res i o.{off + i}
+    done
+    ; Buffer.add_bytes buf res in
+  let src_len   = String.length data in
+  let dst_bound = max (De.Def.Ns.compress_bound src_len) De.io_buffer_size in
+  let o = De.bigstring_create dst_bound in
+  (* buffer.mli: nothing bad will happen if the buffer grows beyond that limit: *)
+  let buf = Buffer.create dst_bound in
+  (* de.mli: we recommend a queue as large as output buffer: *)
+  let q = De.Queue.create De.io_buffer_size in
+  (* LZ77 with a 32.kB sliding-window compression: *)
+  let w = De.Lz77.make_window ~bits:15 in
+  let open Zl in
+  let encoder = Def.encoder (`String data) `Manual ~q ~w ~level in
+  let rec go encoder =
+    match Def.encode encoder with
+    | `Await _encoder ->
+       Error "Zl.Def.encode: could not compress"
+    | `Flush encoder ->
+       let len = De.io_buffer_size - Def.dst_rem encoder in
+       bigstring_output o 0 len buf
+       ; Def.dst encoder o 0 De.io_buffer_size |> go
+    | `End encoder ->
+       let len = De.io_buffer_size - Def.dst_rem encoder in
+       if len > 0 then bigstring_output o 0 len buf
+       ; Ok (Buffer.contents buf) in
   Lwt_preemptive.detach
-    (Decompress.Zlib_deflate.bytes
-       input_buffer
-       output_buffer
-       (fun input_buffer -> function
-          | Some max ->
-              let n = min max (min 0xFFFF (String.length data - !pos)) in
-              Bytes.blit_string data !pos input_buffer 0 n;
-              pos := !pos + n;
-              n
-          | None ->
-              let n = min 0xFFFF (String.length data - !pos) in
-              Bytes.blit_string data !pos input_buffer 0 n;
-              pos := !pos + n;
-              n)
-       (fun output_buffer len ->
-          Buffer.add_subbytes res output_buffer 0 len;
-          0xFFFF))
-    (Decompress.Zlib_deflate.default ~witness:Decompress.B.bytes level)
+    (fun () ->
+      Def.dst encoder o 0 De.io_buffer_size |> go)
+    ()
   >>= function
-  | Ok _ -> Lwt.return (Buffer.contents res)
-  | Error _ -> Lwt.fail_with "Could not compress"
+  | Ok str -> Lwt.return str
+  | Error e -> Lwt.fail_with e
 
 let launch () =
   Random.self_init () ;

@@ -11,7 +11,8 @@
             magic-mime
 	    sha
             checkseum.c
-            decompress
+            decompress.de
+            decompress.zl
             learnocaml_report
             learnocaml_data
             learnocaml_api
