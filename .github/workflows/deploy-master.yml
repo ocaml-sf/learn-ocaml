@@ -38,6 +38,7 @@ jobs:
           pull: true
           push: true
           tags: "ocamlsf/learn-ocaml:master"
+          platforms: "linux/amd64,linux/arm54/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml
             org.opencontainers.image.description=learn-ocaml app manager
