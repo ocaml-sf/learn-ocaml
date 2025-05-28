@@ -40,5 +40,5 @@
  (name learnocaml_store)
  (wrapped false)
  (modules Learnocaml_store)
- (libraries cryptokit lwt_utils learnocaml_api)
+ (libraries cryptokit lwt_utils learnocaml_api irmin irmin-git irmin-git.unix)
 )
