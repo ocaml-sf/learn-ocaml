@@ -38,6 +38,7 @@ jobs:
           pull: true
           push: true
           tags: "ocamlsf/learn-ocaml:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml
             org.opencontainers.image.description=learn-ocaml app manager
@@ -79,6 +80,7 @@ jobs:
           push: true
           target: client
           tags: "ocamlsf/learn-ocaml-client:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client
             org.opencontainers.image.description=learn-ocaml command-line client
@@ -123,6 +125,7 @@ jobs:
             base=ocamlsf/learn-ocaml-client
             version=master
           tags: "ocamlsf/emacs-learn-ocaml-client:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client with emacs
             org.opencontainers.image.description=learn-ocaml command-line client with emacs
