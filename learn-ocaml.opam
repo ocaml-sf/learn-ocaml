@@ -83,3 +83,4 @@ description: """
 This contains the binaries forming the engine for the learn-ocaml platform, and
 the common files. A demo exercise repository is also provided as example.
 """
+x-maintenance-intent: [ "(latest)" ]

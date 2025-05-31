@@ -56,3 +56,4 @@ description: """
 This contains the binaries to interact with the learn-ocaml
 platform from the command line.
 """
+x-maintenance-intent: [ "(latest)" ]
