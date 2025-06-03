@@ -196,6 +196,9 @@ module type JSON_CODEC = sig
   val encode: ?minify:bool -> 'a Json_encoding.encoding -> 'a -> string
 end
 
+(** Used both for file i/o and request handling *)
+module Json_codec: JSON_CODEC
+
 module type REQUEST_HANDLER = sig
   type 'resp ret
 

@@ -253,6 +253,23 @@ module type JSON_CODEC = sig
   val encode: ?minify:bool -> 'a J.encoding -> 'a -> string
 end
 
+(* Erik: Json_codec was initially in learnocaml_store.ml,
+   which induced unneeded dependencies:
+   learn-ocaml-client -> irmin-git.unix, cryptokit *)
+module Json_codec = struct
+  let decode enc s =
+    (match s with
+     | "" -> `O []
+     | s -> Ezjsonm.from_string s)
+    |> J.destruct enc
+
+  let encode ?minify enc x =
+    match J.construct enc x with
+    | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
+    | `Null -> ""
+    | _ -> assert false
+end
+
 module Conversions (Json: JSON_CODEC) = struct
 
   let response_codec

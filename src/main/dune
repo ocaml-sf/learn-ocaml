@@ -43,7 +43,6 @@
             cohttp-lwt-unix
             grading_cli
             learnocaml_data
-	    learnocaml_store
             learnocaml_api)
 )
 (install

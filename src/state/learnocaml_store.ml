@@ -17,26 +17,13 @@ let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
 let data_dir = ref (Filename.concat !sync_dir "data")
 
-module Json_codec = struct
-  let decode enc s =
-    (match s with
-     | "" -> `O []
-     | s -> Ezjsonm.from_string s)
-    |> J.destruct enc
-
-  let encode ?minify enc x =
-    match J.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
-    | `Null -> ""
-    | _ -> assert false
-end
 let get_from_file enc p =
   Lwt_io.(with_file ~mode: Input p read) >|=
-    Json_codec.decode enc
+    Learnocaml_api.Json_codec.decode enc
 
 let write_to_file enc s p =
   let open Lwt_io in
-  let s = Json_codec.encode enc s in
+  let s = Learnocaml_api.Json_codec.encode enc s in
   with_file ~mode:output p @@ fun oc -> write oc s
 
 let sanitise_path prefix subpath =
@@ -217,7 +204,7 @@ module Exercise = struct
     let save () =
       Lazy.force tbl >>= fun tbl ->
       let l = Hashtbl.fold (fun _ s acc -> s::acc) tbl [] in
-      let s = Json_codec.encode (J.list enc) l in
+      let s = Learnocaml_api.Json_codec.encode (J.list enc) l in
       write (store_file ()) s
 
     let get id =
@@ -503,7 +490,7 @@ module Save = struct
     in
     Lwt.catch (fun () ->
         write ~no_create:(Token.is_teacher token) ~extra file
-          (Json_codec.encode ~minify:false enc save))
+          (Learnocaml_api.Json_codec.encode ~minify:false enc save))
       (function
         | Not_found -> Lwt.fail_with "Unregistered teacher token"
         | e -> Lwt.fail e)
@@ -566,7 +553,7 @@ module Student = struct
 
     let save () =
       Lazy.force map >>= fun map ->
-      let s = Json_codec.encode store_enc !map in
+      let s = Learnocaml_api.Json_codec.encode store_enc !map in
       write (store_file ()) s
 
     let get_student map token =
