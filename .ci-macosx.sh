@@ -40,6 +40,9 @@ brew install pkg-config
 brew install opam
 brew install libev
 brew install openssl
+brew install libffi
+brew install zlib
+
 opam init -y -a --bare
 
 opam switch create . ocaml-base-compiler --deps-only --locked -y -j 2 # -v

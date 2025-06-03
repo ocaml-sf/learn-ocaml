@@ -1,10 +1,11 @@
-FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
+FROM ocaml/opam:alpine-3.21-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
 
 COPY learn-ocaml.opam learn-ocaml.opam.locked learn-ocaml-client.opam learn-ocaml-client.opam.locked ./
 RUN sudo chown -R opam:nogroup .
+RUN sudo ln -sf /usr/bin/opam-2.3 /usr/bin/opam && opam init --reinit -ni
 
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
@@ -28,7 +29,7 @@ RUN cat /proc/cpuinfo /proc/meminfo
 RUN opam install . --destdir /home/opam/install-prefix --locked
 
 
-FROM alpine:3.20 as client
+FROM alpine:3.21 as client
 
 RUN apk update \
   && apk add ncurses-libs libev dumb-init libssl3 libcrypto3 \
@@ -45,10 +46,10 @@ COPY --from=compilation /home/opam/install-prefix/bin/learn-ocaml-client /usr/bi
 ENTRYPOINT ["dumb-init","/usr/bin/learn-ocaml-client"]
 
 
-FROM alpine:3.20 as program
+FROM alpine:3.21 as program
 
 RUN apk update \
-  && apk add ncurses-libs libev dumb-init git openssl lsof \
+  && apk add ncurses-libs libev dumb-init git gmp openssl lsof \
   && addgroup learn-ocaml \
   && adduser learn-ocaml -DG learn-ocaml
 

@@ -1,7 +1,7 @@
 # This Dockerfile is useful for testing purposes
 # to ensure learn-ocaml-client can be built alone from learn-ocaml-client.opam
 
-FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
+FROM ocaml/opam:alpine-3.21-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -9,6 +9,7 @@ WORKDIR /home/opam/learn-ocaml
 # Note: don't copy learn-ocaml.opam.locked
 COPY learn-ocaml-client.opam learn-ocaml.opam ./
 RUN sudo chown -R opam:nogroup .
+RUN sudo ln -sf /usr/bin/opam-2.3 /usr/bin/opam && opam init --reinit -ni
 
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
@@ -34,7 +35,7 @@ RUN opam install learn-ocaml-client --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml-client
 
 
-FROM alpine:3.20 as client
+FROM alpine:3.21 as client
 
 ARG BUILD_DATE
 ARG VCS_BRANCH

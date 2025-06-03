@@ -15,26 +15,15 @@ let static_dir = ref (Filename.concat (Sys.getcwd ()) "www")
 
 let sync_dir = ref (Filename.concat (Sys.getcwd ()) "sync")
 
-module Json_codec = struct
-  let decode enc s =
-    (match s with
-     | "" -> `O []
-     | s -> Ezjsonm.from_string s)
-    |> J.destruct enc
+let data_dir = ref (Filename.concat !sync_dir "data")
 
-  let encode ?minify enc x =
-    match J.construct enc x with
-    | `A _ | `O _ as json -> Ezjsonm.to_string ?minify json
-    | `Null -> ""
-    | _ -> assert false
-end
 let get_from_file enc p =
   Lwt_io.(with_file ~mode: Input p read) >|=
-    Json_codec.decode enc
+    Learnocaml_api.Json_codec.decode enc
 
 let write_to_file enc s p =
   let open Lwt_io in
-  let s = Json_codec.encode enc s in
+  let s = Learnocaml_api.Json_codec.encode enc s in
   with_file ~mode:output p @@ fun oc -> write oc s
 
 let sanitise_path prefix subpath =
@@ -215,7 +204,7 @@ module Exercise = struct
     let save () =
       Lazy.force tbl >>= fun tbl ->
       let l = Hashtbl.fold (fun _ s acc -> s::acc) tbl [] in
-      let s = Json_codec.encode (J.list enc) l in
+      let s = Learnocaml_api.Json_codec.encode (J.list enc) l in
       write (store_file ()) s
 
     let get id =
@@ -295,6 +284,55 @@ module Exercise = struct
         | Unix.Unix_error _ -> Lwt.fail Not_found
         | e -> Lwt.fail e)
 
+end
+
+module Session = struct
+
+  include Session
+  open Lwt.Syntax
+
+  module Store = Irmin_git_unix.FS.KV(Irmin.Contents.Json_value)
+  module Info = Irmin_git_unix.Info(Store.Info)
+
+  let repo_path = ref "./session_store.git"
+
+  let config () = Irmin_git.config ~bare:true !repo_path
+
+  type entry = {
+      session : Session.t;
+      token : Token.t;
+      last_connection : float;
+    }
+
+  let enc =
+    let open Json_encoding in
+    conv
+      (fun {session; token; last_connection} -> (session, token, last_connection))
+      (fun (session, token, last_connection) -> {session; token; last_connection})
+      (obj3
+         (req "session" Session.enc)
+         (req "token" Token.enc)
+         (req "last_connection" float))
+
+  let set_session session token =
+    let now = Unix.gettimeofday () in
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    Store.set_exn t ~info:(Info.v "Set session/token") [Session.to_string session] (Json_encoding.construct enc {session; token; last_connection = now})
+
+  let get_user_token session =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    Store.find t [Session.to_string session] >|= function
+    | Some value ->
+       let entry = Json_encoding.destruct enc value in
+       Some entry.token
+    | None -> None
+
+  let gen_session () =
+    let len = 32 in
+    Cryptokit.Random.string Cryptokit.Random.secure_rng len
+    |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
 end
 
 module Token = struct
@@ -452,7 +490,7 @@ module Save = struct
     in
     Lwt.catch (fun () ->
         write ~no_create:(Token.is_teacher token) ~extra file
-          (Json_codec.encode ~minify:false enc save))
+          (Learnocaml_api.Json_codec.encode ~minify:false enc save))
       (function
         | Not_found -> Lwt.fail_with "Unregistered teacher token"
         | e -> Lwt.fail e)
@@ -515,7 +553,7 @@ module Student = struct
 
     let save () =
       Lazy.force map >>= fun map ->
-      let s = Json_codec.encode store_enc !map in
+      let s = Learnocaml_api.Json_codec.encode store_enc !map in
       write (store_file ()) s
 
     let get_student map token =

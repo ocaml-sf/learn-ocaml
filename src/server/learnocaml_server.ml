@@ -22,8 +22,7 @@ let args = Arg.align @@
     "PATH where static files should be found (./www)" ;
     "-sync-dir", Arg.Set_string sync_dir,
     "PATH where sync tokens are stored (./sync)" ;
-    "-base-url", Arg.Set_string base_url,
-    "BASE_URL of the website. \
+    "-base-url", Arg.Set_string base_url,"BASE_URL of the website. \
      Should not end with a trailing slash. \
      Currently, this has no effect on the native backend. \
      Mandatory for 'learn-ocaml build' if the site is not hosted in path '/', \
@@ -232,6 +231,11 @@ module Request_handler = struct
       (`Forbidden, "No address information avaible")
       lwt_ok
 
+  let wrap_user_session session f =
+    Session.get_user_token session >>= function
+    | Some token -> f token
+    | None ->  Lwt.fail_with "Invalid session"
+
   let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
                     caching -> resp Api.request ->
                     (resp response, error) result Lwt.t
@@ -288,6 +292,29 @@ module Request_handler = struct
                           | Some nickname ->
                               Save.set tok Save.{empty with nickname})
          >>= fun () -> respond_json cache tok
+      | Api.Create_teacher_token_s (session, nick) ->
+         wrap_user_session session @@ fun token ->
+         verify_teacher_token token
+         >?= fun () ->
+         Token.create_teacher ()
+         >>= fun tok ->
+         (match nick with | None -> Lwt.return_unit
+                          | Some nickname ->
+                              Save.set tok Save.{empty with nickname})
+         >>= fun () -> respond_json cache tok
+      | Api.Login token ->
+         lwt_catch_fail
+           (fun () ->
+             Token.exists token >>= fun exists ->
+             lwt_option_fail
+               (if exists then Some token else None)
+               (`Not_found, "Token does not exist")
+             @@ fun token ->
+                let session = Session.gen_session () in
+                Session.set_session session token >>= fun () ->
+                respond_json cache session
+          )
+           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
@@ -297,6 +324,19 @@ module Request_handler = struct
                (`Not_found, "token not found")
                (respond_json cache))
          (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Fetch_save_s session ->
+         wrap_user_session session @@ fun token ->
+         lwt_catch_fail
+           (fun () ->
+             Save.get token >>= fun tokopt ->
+             lwt_option_fail
+               tokopt
+               (`Not_found, "token not found")
+               (respond_json cache))
+           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Get_token session ->
+         wrap_user_session session @@ fun token ->
+          respond_json cache token
       | Api.Archive_zip token ->
           let open Lwt_process in
           let path = Filename.concat !sync_dir (Token.to_path token) in 
@@ -306,7 +346,44 @@ module Request_handler = struct
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
                                caching = Nocache }
+      | Api.Archive_zip_s session ->
+          let open Lwt_process in
+          wrap_user_session session @@ fun token ->
+          let path = Filename.concat !sync_dir (Token.to_path token) in 
+          let cmd = shell ("git archive master --format=zip -0 --remote="^path)
+          and stdout = `FD_copy Unix.stdout in
+          Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
+          lwt_ok @@ Response { contents = contents;
+                               content_type = "application/zip";
+                               caching = Nocache }
       | Api.Update_save (token, save) ->
+          let save = Save.fix_mtimes save in
+          let exercise_states = SMap.bindings save.Save.all_exercise_states in
+          (Token.check_teacher token >>= function
+            | true -> Lwt.return exercise_states
+            | false ->
+                Lwt_list.filter_s (fun (id, _) ->
+                    Exercise.Status.is_open id token >|= function
+                    | `Open -> true
+                    | `Closed -> false
+                    | `Deadline t -> t >= -300. (* Grace period! *))
+                  exercise_states)
+          >>= fun valid_exercise_states ->
+          let save =
+            { save with
+              Save.all_exercise_states =
+                List.fold_left (fun m (id,save) -> SMap.add id save m)
+                  SMap.empty valid_exercise_states }
+          in
+          token_save_mutex.Lwt_utils.with_lock (token :> Token.t) (fun () ->
+              Save.get token >>= fun x ->
+              lwt_option_fail x
+                (`Not_found, Token.to_string token)
+              @@ fun prev_save ->
+                  let save = Save.sync prev_save save in
+                  Save.set token save >>= fun () -> respond_json cache save)
+      | Api.Update_save_s (session, save) ->
+          wrap_user_session session @@ fun token ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
           (Token.check_teacher token >>= function
@@ -351,6 +428,11 @@ module Request_handler = struct
           verify_teacher_token token >?= fun () ->
           Student.Index.get ()
           >>= respond_json cache
+      | Api.Students_list_s session ->
+          wrap_user_session session @@ fun token ->
+          verify_teacher_token token >?= fun () ->
+          Student.Index.get ()
+          >>= respond_json cache
       | Api.Set_students_list (token, students) ->
           verify_teacher_token token >?= fun () ->
           Lwt_list.map_s
@@ -365,7 +447,90 @@ module Request_handler = struct
             students >>=
           Student.Index.set
           >>= respond_json cache
+      | Api.Set_students_list_s (session, students) ->
+          wrap_user_session session @@ fun token ->
+          verify_teacher_token token >?= fun () ->
+          Lwt_list.map_s
+            (fun (ancestor, ours) ->
+               let token = ancestor.Student.token in
+               Student.get token >|= fun theirs ->
+               let theirs = match theirs with
+                 | None -> Student.default token
+                 | Some std -> std
+               in
+               Student.three_way_merge ~ancestor ~theirs ~ours)
+            students >>=
+          Student.Index.set
+          >>= respond_json cache
       | Api.Students_csv (token, exercises, students) ->
+          verify_teacher_token token >?= fun () ->
+          (match students with
+           | [] -> Token.Index.get () >|= List.filter Token.is_student
+           | l -> Lwt.return l)
+          >>= Lwt_list.map_p (fun token ->
+              Save.get token >|= fun save -> token, save)
+          >>= fun tok_saves ->
+          let all_exercises =
+            match exercises with
+            | [] ->
+                List.fold_left (fun acc (_tok, save) ->
+                    match save with
+                    | None -> acc
+                    | Some save ->
+                        SMap.fold (fun ex_id _ans acc -> SSet.add ex_id acc)
+                          save.Save.all_exercise_states
+                          acc)
+                  SSet.empty tok_saves
+                |> SSet.elements
+            | exercises -> exercises
+          in
+          let columns =
+            "token" :: "nickname" ::
+            (List.fold_left (fun acc ex_id ->
+                 (ex_id ^ " grade") ::
+                 (ex_id ^ " date") ::
+                 acc)
+                [] (List.rev all_exercises))
+          in
+          let buf = Buffer.create 3497 in
+          let sep () = Buffer.add_char buf ',' in
+          let line () = Buffer.add_char buf '\n' in
+          Buffer.add_string buf (String.concat "," columns);
+          line ();
+          Lwt_list.iter_s (fun (tok, save) ->
+              match save with None -> Lwt.return_unit | Some save ->
+                Buffer.add_string buf (Token.to_string tok);
+                sep ();
+                Buffer.add_string buf save.Save.nickname;
+                Lwt_list.iter_s (fun ex_id ->
+                    Lwt.catch (fun () ->
+                        sep ();
+                        Exercise.get ex_id >>= fun exo ->
+                        Lwt.wrap2 SMap.find ex_id save.Save.all_exercise_states
+                        >|= fun st ->
+                        (match st.Answer.grade with
+                         | None -> ()
+                         | Some grade ->
+                             if match st.Answer.report with
+                               | None -> false
+                               | Some rep -> check_report exo rep grade
+                             then Buffer.add_string buf (string_of_int grade)
+                             else Printf.bprintf buf "CHEAT(%d)" grade);
+                        sep ();
+                        Buffer.add_string buf (string_of_date st.Answer.mtime))
+                      (function
+                        | Not_found -> sep (); Lwt.return_unit
+                        | e -> raise e))
+                  all_exercises
+                >|= line)
+            tok_saves
+          >>= fun () ->
+          lwt_ok @@
+            Response {contents = Buffer.contents buf;
+                      content_type = "text/csv";
+                      caching = Nocache}
+      | Api.Students_csv_s (session, exercises, students) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           (match students with
            | [] -> Token.Index.get () >|= List.filter Token.is_student
@@ -449,7 +614,26 @@ module Request_handler = struct
                            k true)
                     index (fun index -> Lwt.return (index, !deadlines)))
           >>= respond_json cache
+      | Api.Exercise_index_s (Some session) ->
+          wrap_user_session session @@ fun token ->
+          Exercise.Index.get () >>= fun index ->
+          Token.check_teacher token >>= (function
+              | true -> Lwt.return (index, [])
+              | false ->
+                  let deadlines = ref [] in
+                  Exercise.Index.filterk
+                    (fun id _ k ->
+                       Exercise.Status.is_open id token >>= function
+                       | `Open -> k true
+                       | `Closed -> k false
+                       | `Deadline t ->
+                           deadlines := (id, max t 0.) :: !deadlines;
+                           k true)
+                    index (fun index -> Lwt.return (index, !deadlines)))
+          >>= respond_json cache
       | Api.Exercise_index None ->
+         lwt_fail (`Forbidden, "Forbidden")
+      | Api.Exercise_index_s None ->
          lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Exercise (Some token, id, js) ->
@@ -463,7 +647,21 @@ module Request_handler = struct
                  match o with `Deadline t -> Some (max t 0.) | `Open -> None)
           | `Closed ->
              lwt_fail (`Forbidden, "Exercise closed"))
+      | Api.Exercise_s (Some session, id, js) ->
+          wrap_user_session session @@ fun token ->
+          (Exercise.Status.is_open id token >>= function
+          | `Open | `Deadline _ as o ->
+              Exercise.Meta.get id >>= fun meta ->
+              Exercise.get id >>= fun ex ->
+              let ex = Learnocaml_exercise.strip js ex in
+              respond_json cache
+                (meta, ex,
+                 match o with `Deadline t -> Some (max t 0.) | `Open -> None)
+          | `Closed ->
+             lwt_fail (`Forbidden, "Exercise closed"))
       | Api.Exercise (None, _, _) ->
+         lwt_fail (`Forbidden, "Forbidden")
+      | Api.Exercise_s (None, _, _) ->
          lwt_fail (`Forbidden, "Forbidden")
 
       | Api.Lesson_index () ->
@@ -484,7 +682,15 @@ module Request_handler = struct
       | Api.Exercise_status_index token ->
           verify_teacher_token token >?= fun () ->
           Exercise.Status.all () >>= respond_json cache
+      | Api.Exercise_status_index_s session ->
+          wrap_user_session session @@ fun token ->
+          verify_teacher_token token >?= fun () ->
+          Exercise.Status.all () >>= respond_json cache
       | Api.Exercise_status (token, id) ->
+          verify_teacher_token token >?= fun () ->
+          Exercise.Status.get id >>= respond_json cache
+      | Api.Exercise_status_s (session, id) ->
+          wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
           Exercise.Status.get id >>= respond_json cache
       | Api.Set_exercise_status (token, status) ->
@@ -495,8 +701,26 @@ module Request_handler = struct
                 set (three_way_merge ~ancestor ~theirs ~ours))
             status
           >>= respond_json cache
+      | Api.Set_exercise_status_s (session, status) ->
+          wrap_user_session session @@ fun token ->
+          verify_teacher_token token >?= fun () ->
+          Lwt_list.iter_s
+            Exercise.Status.(fun (ancestor, ours) ->
+                get ancestor.id >>= fun theirs ->
+                set (three_way_merge ~ancestor ~theirs ~ours))
+            status
+          >>= respond_json cache
 
       | Api.Partition (token, eid, fid, prof) ->
+         lwt_catch_fail (fun () ->
+           verify_teacher_token token
+           >?= fun () ->
+           Learnocaml_partition_create.partition eid fid prof
+           >>= respond_json cache
+           )
+           (fun exn -> (`Not_found, Printexc.to_string exn))
+      | Api.Partition_s (session, eid, fid, prof) ->
+          wrap_user_session session @@ fun token ->
          lwt_catch_fail (fun () ->
            verify_teacher_token token
            >?= fun () ->
@@ -530,7 +754,7 @@ module Request_handler = struct
 
 end
 
-module Api_server = Api.Server (Json_codec) (Request_handler)
+module Api_server = Api.Server (Api.Json_codec) (Request_handler)
 
 let init_teacher_token () =
   Token.Index.get () >>= function tokens ->
@@ -560,36 +784,44 @@ let last_modified = (* server startup time *)
     (tm.tm_year + 1900)
     tm.tm_hour tm.tm_min tm.tm_sec
 
-(* Taken from the source of "decompress", from bin/easy.ml *)
+(* Adapted from the source of "decompress.1.5.3", from bin/decompress.ml *)
 let compress ?(level = 4) data =
-  let input_buffer = Bytes.create 0xFFFF in
-  let output_buffer = Bytes.create 0xFFFF in
-
-  let pos = ref 0 in
-  let res = Buffer.create (String.length data) in
-
+  let bigstring_output o off len buf =
+    let res = Bytes.create len in
+    for i = 0 to len - 1 do
+      Bytes.set res i o.{off + i}
+    done
+    ; Buffer.add_bytes buf res in
+  let src_len   = String.length data in
+  let dst_bound = max (De.Def.Ns.compress_bound src_len) De.io_buffer_size in
+  let o = De.bigstring_create dst_bound in
+  (* buffer.mli: nothing bad will happen if the buffer grows beyond that limit: *)
+  let buf = Buffer.create dst_bound in
+  (* de.mli: we recommend a queue as large as output buffer: *)
+  let q = De.Queue.create De.io_buffer_size in
+  (* LZ77 with a 32.kB sliding-window compression: *)
+  let w = De.Lz77.make_window ~bits:15 in
+  let open Zl in
+  let encoder = Def.encoder (`String data) `Manual ~q ~w ~level in
+  let rec go encoder =
+    match Def.encode encoder with
+    | `Await _encoder ->
+       Error "Zl.Def.encode: could not compress"
+    | `Flush encoder ->
+       let len = De.io_buffer_size - Def.dst_rem encoder in
+       bigstring_output o 0 len buf
+       ; Def.dst encoder o 0 De.io_buffer_size |> go
+    | `End encoder ->
+       let len = De.io_buffer_size - Def.dst_rem encoder in
+       if len > 0 then bigstring_output o 0 len buf
+       ; Ok (Buffer.contents buf) in
   Lwt_preemptive.detach
-    (Decompress.Zlib_deflate.bytes
-       input_buffer
-       output_buffer
-       (fun input_buffer -> function
-          | Some max ->
-              let n = min max (min 0xFFFF (String.length data - !pos)) in
-              Bytes.blit_string data !pos input_buffer 0 n;
-              pos := !pos + n;
-              n
-          | None ->
-              let n = min 0xFFFF (String.length data - !pos) in
-              Bytes.blit_string data !pos input_buffer 0 n;
-              pos := !pos + n;
-              n)
-       (fun output_buffer len ->
-          Buffer.add_subbytes res output_buffer 0 len;
-          0xFFFF))
-    (Decompress.Zlib_deflate.default ~witness:Decompress.B.bytes level)
+    (fun () ->
+      Def.dst encoder o 0 De.io_buffer_size |> go)
+    ()
   >>= function
-  | Ok _ -> Lwt.return (Buffer.contents res)
-  | Error _ -> Lwt.fail_with "Could not compress"
+  | Ok str -> Lwt.return str
+  | Error e -> Lwt.fail_with e
 
 let launch () =
   Random.self_init () ;

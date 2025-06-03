@@ -100,6 +100,7 @@ jobs:
           brew install openssl@3  # Workaround https://github.com/ocaml/opam-repository/issues/19676
           brew install zstd  # Install zstd to avoid "ld: Undefined symbols: _ZSTD_*" at linking time
           # ^-> see also https://github.com/ocaml/ocaml/issues/12562
+          brew install libffi zlib  # needed since https://github.com/ocaml-sf/learn-ocaml/pull/610
           opam switch create . ocaml-base-compiler --deps-only
       - name: Build the binaries
         run: |

@@ -15,11 +15,12 @@ val static_dir: string ref
 
 (** All mutable data access will be made relative to this directory *)
 val sync_dir: string ref
+val data_dir: string ref
 
 (** {2 Utility server-side conversion functions} *)
 
 (** Used both for file i/o and request handling *)
-module Json_codec: Learnocaml_api.JSON_CODEC
+
 val get_from_file : 'a Json_encoding.encoding -> string -> 'a Lwt.t
 val write_to_file : 'a Json_encoding.encoding -> 'a -> string -> unit Lwt.t
 
@@ -111,6 +112,27 @@ end
 
 
 (** {2 Dynamic data} *)
+module Session: sig
+
+  include module type of struct include Session end
+
+  type entry = {
+      session : Session.t;
+      token : Token.t;
+      last_connection : float;
+    }
+  val enc : entry Json_encoding.encoding
+
+  (** Retrieves the token associated with the given session. *)
+  val get_user_token : t -> Token.t option Lwt.t
+
+  (** Associates a token to a session. *)
+  val set_session : t -> Token.t -> unit Lwt.t
+
+   (** Generates a fresh session identifier *)
+  val gen_session : unit -> Session.t
+end
+
 
 module Token: sig
 

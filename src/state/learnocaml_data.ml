@@ -188,6 +188,29 @@ module Save = struct
 
 end
 
+module Session = struct
+  type t = string
+
+  let parse session =
+    let len = 32 in
+    if String.length session <> 2 * len then
+      failwith "Bad session length"
+    else if not (String.for_all 
+      (fun c -> match c with
+        | '0'..'9' | 'a'..'z' -> true
+        | _ -> false)
+        session)
+    then
+      failwith "Invalid hex character"
+    else
+      session
+
+  let to_string s = s
+
+  let enc = J.conv (fun s -> s) parse J.string
+end
+type 'a session = Session.t
+
 module Token = struct
 
   type t = string list
