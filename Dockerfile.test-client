@@ -1,7 +1,7 @@
 # This Dockerfile is useful for testing purposes
 # to ensure learn-ocaml-client can be built alone from learn-ocaml-client.opam
 
-FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
+FROM ocaml/opam:alpine-3.21-ocaml-5.1 as compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -34,7 +34,7 @@ RUN opam install learn-ocaml-client --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml-client
 
 
-FROM alpine:3.20 as client
+FROM alpine:3.21 as client
 
 ARG BUILD_DATE
 ARG VCS_BRANCH
