@@ -9,6 +9,7 @@ WORKDIR /home/opam/learn-ocaml
 # Note: don't copy learn-ocaml.opam.locked
 COPY learn-ocaml-client.opam learn-ocaml.opam ./
 RUN sudo chown -R opam:nogroup .
+RUN sudo ln -sf /usr/bin/opam-2.3 /usr/bin/opam && opam init --reinit -ni
 
 ENV OPAMYES true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
