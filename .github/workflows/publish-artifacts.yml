@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
@@ -42,20 +42,20 @@ jobs:
       # Not the default gh download-artifact action, which doesn't work
       # between workflows
       - name: Get previous artifact learn-ocaml-www
-        uses: dawidd6/action-download-artifact@v8
+        uses: dawidd6/action-download-artifact@v10
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-www
           path: artifacts/
           skip_unpack: true
       - name: Get previous artifact learn-ocaml-linux-x86_64
-        uses: dawidd6/action-download-artifact@v8
+        uses: dawidd6/action-download-artifact@v10
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-linux-x86_64
           path: artifacts/linux-x86_64
       - name: Get previous artifact learn-ocaml-darwin-x86_64
-        uses: dawidd6/action-download-artifact@v8
+        uses: dawidd6/action-download-artifact@v10
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: learn-ocaml-darwin-x86_64
@@ -67,7 +67,7 @@ jobs:
           tree -H . --noreport --dirsfirst -T 'Learn-ocaml latest development artifacts' --charset utf-8 -o index.html
           sudo chown -R root:root .
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
 
   # Deployment job
   deploy:
@@ -81,4 +81,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
