@@ -10,10 +10,12 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Js_of_ocaml_lwt
 open Js_utils
+open Re.Pcre
 open Lwt
 open Learnocaml_data
 open Learnocaml_common
 open Learnocaml_config
+
 
 module H = Tyxml_js.Html5
 
@@ -85,8 +87,76 @@ let (exercise_filter_signal: string option React.signal), set_exercise_filter =
 let (exercise_sort_signal: exercise_ordering React.signal), set_exercise_sort =
   React.S.create By_category
 
+let (expand_state: string list React.signal), set_expand_state =
+  React.S.create []
+
+let encode str =
+  Re.Pcre.substitute ~rex:(Re.Pcre.regexp ",") ~subst:(fun _ -> "-c") (
+      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "&") ~subst:(fun _ -> "-a") (
+          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "=") ~subst:(fun _ -> "-e") (
+              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-") ~subst:(fun _ -> "--") str)))
+let decode str =
+  Re.Pcre.substitute ~rex:(Re.Pcre.regexp "--") ~subst:(fun _ -> "-") (
+      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-e") ~subst:(fun _ -> "=") (
+          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-a") ~subst:(fun _ -> "&") (
+              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-c") ~subst:(fun _ -> ",") str)))
+
+let rec update_expand ?value fragment =
+  match value with
+  | Some v ->
+     if (List.mem_assoc "expand" fragment) then
+       match fragment with
+       | [] ->
+          update_expand ~value:v []
+       | ("expand", x)::t ->
+          let expand_list = Re.Pcre.split ~rex:(Re.Pcre.regexp ",") x in
+          let new_expand_list =
+            if (List.mem v expand_list) then
+              begin
+                let filtered_list = List.filter (fun x -> x <> v) expand_list in
+                if (filtered_list = []) then [""] else filtered_list
+              end
+            else
+              begin
+                if (expand_list = [""]) then [v] else v::expand_list
+              end
+          in
+          let join l =
+            match l with
+            | [] -> ""
+            | h::t -> List.fold_left (fun acc x -> acc ^ "," ^ x) h t
+          in
+          let joined_expand = join new_expand_list in
+          set_expand_state new_expand_list;
+          (*if (joined_expand <> "") then*) ("expand", joined_expand)::t (*else t*)
+       | h::t ->
+          h::(update_expand ~value:v t)
+     else
+       begin
+         set_expand_state [v];
+         fragment@[("expand",v)]
+       end
+  | None ->
+     set_expand_state [];
+     List.filter (fun (k, _) -> k <> "expand") fragment
+
+let update_sort value fragment =
+  let filtered_fragment = List.remove_assoc "sort" (update_expand fragment) in
+  filtered_fragment@[("sort",value)]
+
+let update_fragment key value =
+  let fragment = Js_utils.parse_fragment () in
+  let filtered_fragment =
+    if (key = "expand") then
+      let v = (Uri.pct_encode (encode value)) in
+      update_expand ~value:v fragment
+    else
+      update_sort value fragment
+  in
+  Js_utils.set_fragment (filtered_fragment)
+
 let make_exercises_to_display_signal index =
-  let get_index exo_sort exo_filter =
+  let get_index exo_sort exo_filter _expand =
     let index =
       match exo_sort with
       | By_category -> index
@@ -113,7 +183,7 @@ let make_exercises_to_display_signal index =
             StrMap.fold (fun skill exercises acc ->
                 (skill,
                  {Exercise.Index.title = skill;
-                  contents = Exercise.Index.Exercises (List.rev exercises)})
+                   contents = Exercise.Index.Exercises (List.rev exercises)})
                 :: acc)
               by_skill []
           in
@@ -165,7 +235,7 @@ let make_exercises_to_display_signal index =
            Exercise.Index.contents = Exercise.Index.Exercises []; }]
     else index
   in
-  React.S.l2 get_index exercise_sort_signal exercise_filter_signal
+  React.S.l3 get_index exercise_sort_signal exercise_filter_signal expand_state
 
 let retain_signals = ref (React.S.const ())
 (* Used to register signals as GC roots *)
@@ -173,6 +243,23 @@ let retain_signals = ref (React.S.const ())
 let exercises_tab token : tab_handler =
   fun _ _ () ->
     let open Tyxml_js.Html5 in
+    let () =
+      Dom_html.window##.onhashchange := Dom_html.handler (fun _ ->
+        let fragment = Js_utils.parse_fragment () in
+        (match List.assoc_opt "sort"  fragment with
+        | Some "category" -> set_exercise_sort By_category
+        | Some "skill" -> set_exercise_sort By_skill
+        | Some "difficulty" -> set_exercise_sort By_difficulty
+        | _ -> ());
+        let expands = List.assoc_opt "expand" fragment in
+        let ids expands =
+          match expands with
+          | None -> []
+          | Some e ->  Re.Pcre.split ~rex:(Re.Pcre.regexp ",") e
+        in
+        set_expand_state (ids expands);
+        Js._true)
+    in
     show_loading  [%i"Loading exercises"] @@ fun () ->
     Lwt_js.sleep 0.5 >>= fun () ->
     retrieve (Learnocaml_api.Exercise_index token)
@@ -236,6 +323,12 @@ let exercises_tab token : tab_handler =
           ]
         ] ]
     in
+    let update_expand_class id ids =
+      if (List.mem id ids) then
+        []
+      else
+        ["collapse"]
+    in
     let rec format_exercise_list index =
       match index with
       | Exercise.Index.Exercises el ->
@@ -248,7 +341,24 @@ let exercises_tab token : tab_handler =
           List.map (fun (id, grp) ->
               let clas =
                 "group-title" ::
-                match gl with [] | [_] -> [] | _ -> ["collapsed"]
+                  match gl with
+                  | [] -> []
+                  | [_] ->
+                     let expand_ids = React.S.value expand_state in
+                     if (expand_ids = []) then
+                       begin
+                         set_expand_state [id];
+                         update_fragment "expand" id;
+                         []
+                       end
+                     else
+                       update_expand_class id expand_ids
+                  | _ ->
+                     let expand_ids = React.S.value expand_state in
+                     if (expand_ids = []) then
+                       ["collapsed"]
+                     else
+                       update_expand_class id expand_ids
               in
               let title =
                 H.div ~a:[a_id id; a_class clas]
@@ -257,8 +367,9 @@ let exercises_tab token : tab_handler =
               let exos = format_exercise_list grp.Exercise.Index.contents in
               Manip.Ev.onclick title
                 (fun _ ->
-                   ignore (Manip.toggleClass title "collapsed");
-                   false);
+                  update_fragment "expand" id;
+                  ignore (Manip.toggleClass title "collapsed");
+                  false);
               H.li [title; exos])
             gl
     in
@@ -269,7 +380,14 @@ let exercises_tab token : tab_handler =
       List.map (fun (id, sort, name) ->
           let btn = button ~a:[a_id id] [ txt name ] in
           Manip.Ev.onclick btn
-            (fun _ -> set_exercise_sort sort; true);
+            (fun _ ->
+              let sort_value =
+                match sort with
+                | By_category -> "category"
+                | By_skill -> "skill"
+                | By_difficulty -> "difficulty"
+              in
+              update_fragment "sort" sort_value;set_exercise_sort sort;true);
           let signal =
             React.S.map (fun s ->
                 (if sort = s then Manip.addClass else Manip.removeClass)
@@ -311,6 +429,17 @@ let exercises_tab token : tab_handler =
     in
     retain_signals :=
       React.S.merge (fun () () -> ()) () (list_update_signal :: btns_sigs);
+    let () =
+      ignore (React.S.map (fun expanded_ids ->
+        List.iter (fun id ->
+          match Dom_html.getElementById_opt id with
+          | Some elt ->
+            let class_list = elt##.classList in
+            if Js.to_bool (class_list##contains (Js.string "group-title")) &&
+               Js.to_bool (class_list##contains (Js.string "collapsed"))
+            then ignore (class_list##remove (Js.string "collapsed"))
+          | None -> ()) expanded_ids) expand_state)
+    in
     Lwt.return pane_div
 
 let playground_tab token : tab_handler =
