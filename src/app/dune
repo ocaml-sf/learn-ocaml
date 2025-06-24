@@ -35,6 +35,7 @@
  (libraries ezjsonm
             ace
 	    sha
+	    re.pcre
             learnocaml_repository
             learnocaml_app_common
             learnocaml_toplevel
