@@ -101,7 +101,7 @@ let () =
     (function
      | Ok (_, server_id) -> Learnocaml_local_storage.(store server_id) server_id; Lwt.return_true
      | Error _ -> Lwt.return_false) >>= fun has_server ->
-  let token = get_token ~has_server ()
+  let session = get_session ~has_server ()
   in
   (* ---- launch everything --------------------------------------------- *)
   let toplevel_buttons_group = button_group () in
@@ -118,8 +118,8 @@ let () =
   Dom_html.document##.title :=
     Js.string (id ^ " - " ^ "Learn OCaml" ^" v."^ Learnocaml_api.version);
   let exercise_fetch =
-    token >>= fun token ->
-    retrieve (Learnocaml_api.Exercise (token, id, true))
+    session >>= fun session ->
+    retrieve (Learnocaml_api.Exercise_s (session, id, true))
   in
   let after_init top =
     exercise_fetch >>= fun (_meta, exo, _deadline) ->
@@ -171,8 +171,8 @@ let () =
   (* ---- details pane -------------------------------------------------- *)
   let load_meta () =
     Lwt.async (fun () ->
-        token >>= fun token ->
-        display_meta token ex_meta id)
+        session >>= fun session ->
+        display_meta session ex_meta id)
   in
   if arg "tab" = "meta" then load_meta () else
     Manip.Ev.onclick (find_component "learnocaml-exo-button-meta") (fun _ ->
@@ -191,9 +191,9 @@ let () =
   let editor, ace = setup_editor solution in
   let module EB = Editor_button (struct let ace = ace let buttons_container = editor_toolbar end) in
   if has_server then
-    EB.reload token id (Learnocaml_exercise.(access File.template exo))
+    EB.reload session id (Learnocaml_exercise.(access File.template exo))
   else EB.cleanup (Learnocaml_exercise.(access File.template exo));
-  EB.sync token id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
+  EB.sync session id (fun () -> Ace.focus ace; Ace.set_synchronized ace) ;
   EB.download id;
   EB.eval top select_tab;
   let typecheck = typecheck top ace editor in
@@ -277,8 +277,8 @@ let () =
           else
             Some solution, None
         in
-        token >>= fun token ->
-        sync_exercise token id ?answer ?editor (fun () -> Ace.set_synchronized ace)
+        session >>= fun session ->
+        sync_exercise session id ?answer ?editor (fun () -> Ace.set_synchronized ace)
         >>= fun _save ->
         select_tab "report" ;
         Lwt_js.yield () >>= fun () ->

@@ -91,7 +91,7 @@ let help_button name (title,md_text) =
     H.a_style "margin-left: 1em;";
   ] [H.txt "?"]
 
-let rec teacher_tab token _select _params () =
+let rec teacher_tab session _select _params () =
   let action_new_token () =
     Learnocaml_common.ask_string
        ~title:"NEW TEACHER TOKEN"
@@ -101,7 +101,7 @@ let rec teacher_tab token _select _params () =
       | "" -> None
       | s -> Some s
     in
-    retrieve (Learnocaml_api.Create_teacher_token (token, nick))
+    retrieve (Learnocaml_api.Create_teacher_token_s (session, nick))
     >|= fun new_token ->
     alert ~title:[%i"TEACHER TOKEN"]
       (Printf.sprintf [%if"New teacher token created:\n%s\n\n\
@@ -217,7 +217,7 @@ let rec teacher_tab token _select _params () =
       Seq.filter_map (function `Token tk -> Some tk | `Any -> None) |>
       List.of_seq
     in
-    retrieve (Learnocaml_api.Students_csv (token, exercises, students))
+    retrieve (Learnocaml_api.Students_csv_s (session, exercises, students))
     >|= fun csv ->
     Learnocaml_common.fake_download
       ~name:"learnocaml.csv"
@@ -946,14 +946,14 @@ let rec teacher_tab token _select _params () =
     in
     (if changes = [] then Lwt.return () else
        retrieve
-         (Learnocaml_api.Set_exercise_status (token, changes)))
+         (Learnocaml_api.Set_exercise_status_s (session, changes)))
     >>= fun () ->
     (if students_changes = [] then Lwt.return () else
        retrieve
-         (Learnocaml_api.Set_students_list (token, students_changes)))
+         (Learnocaml_api.Set_students_list_s (session, students_changes)))
     >>= fun () ->
     (* Reload the full tab: a bit more costly, but safer & simpler *)
-    teacher_tab token _select _params () >|=
+    teacher_tab session _select _params () >|=
     Manip.replaceSelf (find_component "learnocaml-main-teacher")
     (* status_map := status_current ();
      * status_changes := SMap.empty;
@@ -1333,12 +1333,12 @@ let rec teacher_tab token _select _params () =
     ]
   in
   let fetch_exercises =
-    retrieve (Learnocaml_api.Exercise_index (Some token))
+    retrieve (Learnocaml_api.Exercise_index_s (Some session))
     >|= fun (index, _) ->
     exercises_index := index
   in
   let fetch_stats =
-    retrieve (Learnocaml_api.Exercise_status_index token)
+    retrieve (Learnocaml_api.Exercise_status_index_s session)
     >|= fun statuses ->
     let map =
       List.fold_left (fun m ex -> SMap.add ex.ES.id ex m)
@@ -1347,7 +1347,7 @@ let rec teacher_tab token _select _params () =
     status_map := map
   in
   let fetch_students =
-    retrieve (Learnocaml_api.Students_list token)
+    retrieve (Learnocaml_api.Students_list_s session)
     >|= fun students ->
     students_map :=
       List.fold_left (fun m st -> Token.Map.add st.Student.token st m)

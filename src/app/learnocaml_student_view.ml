@@ -348,10 +348,10 @@ let stats_tab assignments answers =
     end
   ]
 
-let init_exercises_and_stats_tabs teacher_token student_token answers =
-  retrieve (Learnocaml_api.Exercise_index (Some teacher_token))
+let init_exercises_and_stats_tabs student_token session answers =
+  retrieve (Learnocaml_api.Exercise_index_s (Some session))
   >>= fun (index, _) ->
-  retrieve (Learnocaml_api.Exercise_status_index teacher_token)
+  retrieve (Learnocaml_api.Exercise_status_index_s session)
   >>= fun status ->
   let assignments = gather_assignments student_token index status in
   Manip.replaceChildren El.Tabs.(stats.tab) (stats_tab assignments answers);
@@ -491,8 +491,9 @@ let () =
   Learnocaml_local_storage.init ();
   Option.iter Ocplib_i18n.set_lang (Js_utils.get_lang ());
   set_string_translations_view ();
-  let teacher_token = Learnocaml_local_storage.(retrieve sync_token) in
-  if not (Token.is_teacher teacher_token) then
+  let is_teacher = Learnocaml_local_storage.(retrieve is_teacher) in
+  let session = Learnocaml_local_storage.(retrieve sync_session) in
+  if not (is_teacher) then
     (* No security here: it's client-side, and we don't check that the token is
        registered server-side *)
     failwith "The page you are trying to access is for teachers only";
@@ -503,11 +504,11 @@ let () =
   init_draft_tab ();
   Manip.setInnerText El.token
     ([%i"Status of student: "] ^ Token.to_string student_token);
-  retrieve (Learnocaml_api.Fetch_save student_token)
+  retrieve (Learnocaml_api.Fetch_save_s session)
   >>= fun save ->
   Manip.setInnerText El.nickname save.Save.nickname;
   init_exercises_and_stats_tabs
-    teacher_token student_token save.Save.all_exercise_states
+    student_token session save.Save.all_exercise_states
   >>= fun _sighandlers ->
   hide_loading ~id:El.loading_id ();
   let _sig =
@@ -515,7 +516,7 @@ let () =
     | None -> ()
     | Some ex_id ->
         Lwt.async @@ fun () ->
-        retrieve (Learnocaml_api.Exercise (Some teacher_token, ex_id, true))
+        retrieve (Learnocaml_api.Exercise_s (Some session, ex_id, true))
         >>= fun (meta, exo, _) ->
         clear_tabs ();
         let ans = SMap.find_opt ex_id save.Save.all_exercise_states in

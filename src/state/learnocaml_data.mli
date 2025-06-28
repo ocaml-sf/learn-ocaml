@@ -70,6 +70,18 @@ module Save: sig
 
 end
 
+module Session : sig
+  type t = string
+
+  val to_string: t -> string
+  
+  val parse: string -> t
+
+  val enc : t Json_encoding.encoding
+end
+
+type 'a session = Session.t
+
 module Token: sig
   type t
 

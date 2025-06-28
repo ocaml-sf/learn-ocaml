@@ -57,4 +57,8 @@ val server_id : int storage_key
 
 val sync_token : Token.t storage_key
 
+val sync_session : Session.t storage_key
+
+val is_teacher : bool storage_key
+
 val nickname : string storage_key
