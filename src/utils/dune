@@ -9,6 +9,7 @@
 
 (library
  (name ocplib_i18n)
+ (public_name learn-ocaml.i18n)
  (wrapped false)
  (flags :standard -warn-error -4-42-44-45-48)
  (preprocess (pps ppx_ocplib_i18n))
