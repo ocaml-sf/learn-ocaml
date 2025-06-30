@@ -25,7 +25,17 @@
     learnocaml_data
     learnocaml_api
     sha
+    re.pcre
     ocplib_i18n)
+)
+
+(library
+ (name learnocaml_app_common_test)
+ (wrapped false)
+ (modules Learnocaml_app_common_test)
+ (libraries learnocaml_app_common)
+ (inline_tests)
+ (preprocess (pps ppx_expect ppx_inline_test))
 )
 
 (executable
@@ -143,4 +153,3 @@
         (learnocaml_partition_view.bc.js as www/js/learnocaml-partition-view.js)
         (learnocaml_playground_main.bc.js as www/js/learnocaml-playground.js))
 )
-

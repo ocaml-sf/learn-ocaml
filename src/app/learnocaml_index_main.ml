@@ -88,18 +88,7 @@ let (exercise_sort_signal: exercise_ordering React.signal), set_exercise_sort =
   React.S.create By_category
 
 let (expand_state: string list React.signal), set_expand_state =
-  React.S.create []
-
-let encode str =
-  Re.Pcre.substitute ~rex:(Re.Pcre.regexp ",") ~subst:(fun _ -> "-c") (
-      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "&") ~subst:(fun _ -> "-a") (
-          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "=") ~subst:(fun _ -> "-e") (
-              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-") ~subst:(fun _ -> "--") str)))
-let decode str =
-  Re.Pcre.substitute ~rex:(Re.Pcre.regexp "--") ~subst:(fun _ -> "-") (
-      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-e") ~subst:(fun _ -> "=") (
-          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-a") ~subst:(fun _ -> "&") (
-              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-c") ~subst:(fun _ -> ",") str)))
+  React.S.create [] 
 
 let rec update_expand ?value fragment =
   match value with
@@ -148,7 +137,7 @@ let update_fragment key value =
   let fragment = Js_utils.parse_fragment () in
   let filtered_fragment =
     if (key = "expand") then
-      let v = (Uri.pct_encode (encode value)) in
+      let v = (Uri.pct_encode (Learnocaml_common.encode value)) in
       update_expand ~value:v fragment
     else
       update_sort value fragment
