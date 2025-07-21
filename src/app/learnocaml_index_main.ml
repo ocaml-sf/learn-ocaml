@@ -737,7 +737,9 @@ let init_token_dialog () =
         Manip.SetCss.borderColor input "#f44";
         Lwt.return_none
     | token ->
-       Server_caller.request (Learnocaml_api.Login token) >>= function
+      let body = [ ("method", "token"); ("token", Token.to_string token) ] in
+      let encoded_body = Learnocaml_common.encode_form_body body in
+      Server_caller.request (Learnocaml_api.Login encoded_body) >>= function
        | Ok session ->
           Learnocaml_local_storage.(store sync_session) session;
           Learnocaml_local_storage.(store is_teacher) (Token.is_teacher token);
@@ -788,13 +790,41 @@ let init_token_dialog () =
   let session = Learnocaml_local_storage.(retrieve sync_session) in
   session
 
+  let get_cookie name =
+  Js.(to_array (str_array (Dom_html.document##.cookie##split (string ";"))))
+  |> Array.fold_left
+       (fun res v ->
+         match res with
+         | Some _ -> res
+         | None -> let cookie = Js.to_string v
+                                |> String.trim
+                                |> String.split_on_char '=' in
+                   match cookie with
+                   | n :: v when n = name -> Some (String.concat "=" v)
+                   | _ -> None)
+       None
+
+let delete_cookie name =
+  Dom_html.document##.cookie := Js.string (Printf.sprintf "%s=; Max-age=-1;" name)
+
 let init_sync_session button_group =
   catch
     (fun () ->
-       begin try
-           Lwt.return (Learnocaml_local_storage.(retrieve sync_session))
-         with Not_found -> init_token_dialog ()
-       end >>= fun session ->
+      begin
+        match get_cookie "session" with
+        | None ->
+           begin
+             try Lwt.return Learnocaml_local_storage.(retrieve sync_session)
+             with Not_found -> init_token_dialog ()
+           end
+        | Some session ->
+           let session = Learnocaml_data.Session.parse session in
+           Server_caller.request (Learnocaml_api.Fetch_save_s session) >>= function
+           | Ok save ->
+              set_state_from_save_file ~session:session save;
+              Lwt.return session
+           | Error _ -> init_token_dialog ()
+      end >>= fun session ->
        enable_button_group button_group ;
        Lwt.return (Some session))
     (fun _ -> Lwt.return None)
@@ -811,7 +841,9 @@ let migrate_from_legacy_token () =
     match token with
     | None -> Lwt.return ()
     | Some token ->
-      Server_caller.request (Learnocaml_api.Login token) >>= function
+      let body = [ ("method", "token"); ("token", Token.to_string token) ] in
+      let encoded_body = Learnocaml_common.encode_form_body body in
+      Server_caller.request (Learnocaml_api.Login encoded_body) >>= function
       | Error e ->
           Learnocaml_common.alert
             ~title:[%i"Migration error"]
@@ -1034,6 +1066,7 @@ let () =
       (fun () ->
          Lwt.async @@ fun () ->
          Learnocaml_local_storage.clear ();
+         delete_cookie "session";
          reload ();
          Lwt.return_unit)
   in

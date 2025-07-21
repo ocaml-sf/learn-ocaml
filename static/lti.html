@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+  <title>Learn OCaml</title>
+  <link rel="stylesheet" href="/css/learnocaml_common.css">
+  <link rel="stylesheet" href="/css/learnocaml_main.css">
+  <script src="/js/ace/ace.js" type="text/javascript" charset="utf-8" defer></script>
+  <script language="JavaScript" src="/js/learnocaml-config.js"></script>
+  <script language="JavaScript" src="/js/learnocaml-lti.js" defer></script>
+  <style>
+    #login-overlay div>div:last-child {
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="login-overlay">
+    <form method="post" action="/register">
+      <div id="login-direct">
+        <h4 id="txt_direct_login"><!-- Direct login --></h4>
+        <div>
+          <div id="txt_direct_login_nickname"><!-- Nickname --></div>
+          <div class="filler_h"></div>
+          <input id="login-direct-nick-input" type="text" name="nick" minlength="2" autocomplete="off"></input>
+        </div>
+        <input type="hidden" name="csrf">
+        <input type="hidden" name="user-id">
+        <input type="hidden" name="hmac">
+        <input type="hidden" name="method" value="lti">
+        <button id="login-direct-login" type="submit"><span
+            id="txt_button_direct_login"><!-- Direct login --></span></button>
+      </div>
+    </form>
+    <form method="post" action="/associate">
+      <div id="login-token">
+        <h4 id="txt_returning_with_token"><!-- Login with a token --></h4>
+        <div>
+          <div id="txt_returning_token"><!-- Token --></div>
+          <div class="filler_h"></div>
+          <input type="text" placeholder="XXX-XXX-XXX-XXX" maxlength="17"
+            pattern="(X-)?[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}" id="login-token-input" name="token"
+            autocomplete="off">
+        </div>
+        <input type="hidden" id="token-csrf-input" name="csrf">
+        <input type="hidden" id="token-id-input" name="user-id">
+        <input type="hidden" id="token-hamc-input" name="hmac">
+        <input type="hidden" name="target_method" value="lti">
+        <input type="hidden" name="source_method" value="token">
+        <button id="login-token-button" type="submit"><span id="txt_token_returning"><!-- Connect --></span></button>
+        <div id="txt_indirect_label"><!-- to be able to login independently of Moodle --></div>
+        <span><!-- Workaround(last-child) --></span>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>
