@@ -434,7 +434,50 @@ module Request_handler = struct
                  lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies })
             | Error e -> lwt_fail (`Forbidden, e))
       | Api.Associate body ->
-         lwt_fail (`Forbidden, "Not implemented yet")
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (k, vs) -> (k, String.concat "," vs)) in
+         let target_method = List.assoc "target_method" params in
+         let source_method = List.assoc "source_method" params in
+
+         if target_method = source_method then
+           lwt_fail (`Bad_request, "Cannot associate a method to itself")
+         else (match source_method with
+               |"token"->
+                 let token = List.assoc "token" params in
+                 Lwt.return (Ok (Token.parse token))
+               |"email" ->
+                 Lwt.return (Error "Not implemented yet")
+               | _ -> Lwt.return (Error "Unknow method"))
+              >>= (function
+                   | Error msg -> lwt_fail (`Forbidden, msg)
+                   | Ok token ->
+                      let lwt_result =
+                    (match target_method with
+                     | "lti" ->
+                        let csrf = List.assoc "csrf" params and
+                            hmac = List.assoc "hmac" params and
+                            user_id = List.assoc "user-id" params in
+                          let creds = { LtiAuth.user_id; LtiAuth.token; LtiAuth.csrf; LtiAuth.hmac } in
+                          LtiAuth.associate creds >>= (function
+                            | Ok t -> Lwt.return (Ok (t, "lti", user_id))
+                            | Error e -> Lwt.return (Error e))
+                     |"email" ->
+                       Lwt.return (Error "Not implemented yet")
+                     | _ ->
+                        Lwt.return (Error "Unknown target_method"))
+                     in
+                     lwt_result >>= (function
+                     | Error msg ->
+                        lwt_fail (`Forbidden, msg)
+                     | Ok (token, method_, value) ->
+                        TokenIndex.add_association ~token ~method_ ~value >>= fun () ->
+                        let session = Session.gen_session () in
+                        Session.set_session session token >>= fun () ->
+                        let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                                            ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+                        let cookies = [make_cookie ("session", Session.to_string session);
+                                       make_cookie ~http_only:true ("csrf", "expired")] in
+                        lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }))
       | Api.Login body ->
          let params = Uri.query_of_encoded body
                       |> List.map (fun (k, vs) -> (k, String.concat "," vs)) in

@@ -16,6 +16,18 @@
             learnocaml_report
             learnocaml_data
             learnocaml_api
+            learnocaml_auth
             learnocaml_store
-	    learnocaml_partition_create)
+	    learnocaml_partition_create
+	    markup)
 )
+(library
+ (name learnocaml_auth)
+ (modules learnocaml_auth)
+ (libraries lwt.unix 
+            lwt_utils
+	    cryptokit
+	    learnocaml_store
+ 	    learnocaml_data)
+)
+

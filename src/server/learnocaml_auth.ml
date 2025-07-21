@@ -97,13 +97,31 @@ module LtiAuth = struct
    | Some token -> Lwt.return (Ok token)
    | None -> Lwt.return (Error "Token not found")
 
+  let can_login id token =
+    LtiIndex.exists id >>= fun already_linked ->
+    if already_linked then
+      Lwt.return false
+    else
+      TokenIndex.has token "lti" >|= not
+
+
   let login (_:login_credentials) = Lwt.return (Error "TODO: implement LtiAuth.login")
 
   let register (params:register_credentials) =
     Lwt.return (Error "TODO: implement LtiAuth.register")
 
   let associate (params:associate_credentials) =
-    Lwt.return (Error "TODO: implement LtiAuth.associate")
+    NonceIndex.get_current_secret () >>= fun secret ->
+    let new_hmac = generate_hmac secret params.csrf params.user_id in
+    if not (Eqaf.equal params.hmac new_hmac) then
+      Lwt.return (Error "bad hmac")
+    else
+      can_login params.user_id params.token >>= fun canlogin ->
+      if not canlogin then
+        Lwt.return (Error "Bad token (or token already used by an upgraded account")
+      else
+        LtiIndex.add params.user_id params.token >>= fun () ->
+        Lwt.return (Ok params.token)
 
   (** Don't give the same oauth_consumer_key to differents LTI consumer **)
   (* Deal with the request to check OAuth autenticity and return Moodle user's token*)
