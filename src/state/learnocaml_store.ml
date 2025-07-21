@@ -596,3 +596,162 @@ module Student = struct
            with module Index := Student.Index)
 
 end
+
+module LtiIndex = struct
+  open Lwt.Syntax
+
+  module Store = Irmin_git_unix.FS.KV(Irmin.Contents.Json_value)
+  module Info = Irmin_git_unix.Info(Store.Info)
+  
+  let repo_path = ref "./.secret/lti.git"
+  let config () = Irmin_git.config ~bare:true !repo_path
+
+  let enc =
+    let open Json_encoding in
+    conv
+      (fun token -> token)
+      (fun token -> token)
+      Token.enc
+
+  let add id token =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    Store.set_exn t ~info:(Info.v "Add LTI ID → Token") [id]
+      (Json_encoding.construct enc token)
+
+  let get_user_token id =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    let+ res = Store.find t [id] in
+    Option.map (Json_encoding.destruct enc) res
+
+  let exists id =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    Store.mem t [id]
+
+end
+
+module TokenIndex = struct
+  open Lwt.Syntax
+
+  module Store = Irmin_git_unix.FS.KV(Irmin.Contents.Json_value)
+  module Info = Irmin_git_unix.Info(Store.Info)
+
+  let repo_path = ref "./.secret/token.git"
+  let config () = Irmin_git.config ~bare:true !repo_path
+
+  type methods = {
+    idmoodle : string option;
+    email    : string option;
+  }
+
+  let enc_methods =
+    let open Json_encoding in
+    conv
+      (fun { idmoodle; email } -> (idmoodle, email))
+      (fun (idmoodle, email) -> { idmoodle; email })
+      (tup2 (option string) (option string))
+
+  let add_association ~token ~method_ ~value =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    let key = [Token.to_string token] in
+    let* existing = Store.find t key in
+    let methods =
+      match existing with
+      | Some json ->
+        let current = Json_encoding.destruct enc_methods json in
+        begin match method_ with
+          | "idmoodle" -> { current with idmoodle = Some value }
+          | "email"    -> { current with email = Some value }
+          | _ -> current
+        end
+      | None ->
+        match method_ with
+        | "idmoodle" -> { idmoodle = Some value; email = None}
+        | "email"    -> { idmoodle = None; email = Some value}
+        | _ -> { idmoodle = None; email = None }
+    in
+    Store.set_exn t ~info:(Info.v "Add Token → Methods") key
+      (Json_encoding.construct enc_methods methods)
+
+  let get_methods token =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    let+ res = Store.find t [Token.to_string token] in
+    Option.map (Json_encoding.destruct enc_methods) res
+
+  let has token method_ =
+    let* res = get_methods token in
+    match res with
+    | None -> Lwt.return false
+    | Some m ->
+      let b = match method_ with
+        | "lti" -> Option.is_some m.idmoodle
+        | "email"    -> Option.is_some m.email
+        | _ -> false
+      in
+      Lwt.return b
+
+  let exists token =
+    let* repo = Store.Repo.v (config ()) in
+    let* t = Store.main repo in
+    Store.mem t [Token.to_string token]
+end
+
+module BaseNonceIndex = struct
+  let file = "oauth.json"
+
+  let generate_random_hex len =
+  Cryptokit.Random.string Cryptokit.Random.secure_rng len
+  |> Cryptokit.transform_string @@ Cryptokit.Hexa.encode ()
+
+  let enc = Json_encoding.(list (tup2 string (list string)))
+
+  let file_path () =
+    Filename.concat !sync_dir file
+
+  let parse = Learnocaml_api.Json_codec.decode enc
+  let serialise = Learnocaml_api.Json_codec.encode ~minify:false enc
+
+  let create_index () =
+    let secret = generate_random_hex 32 in
+    let value = [(secret, [])] in
+    write_to_file enc value (file_path ()) >|= fun () ->
+    secret
+
+  let get_first_oauth () =
+    let create () =
+      create_index () >|= fun secret -> (secret, [])
+    in
+    Lwt.catch
+      (fun () ->
+         get_from_file enc (file_path ()) >>= function
+         | (secret, nonces) :: _ -> Lwt.return (secret, nonces)
+         | [] -> create ()
+      )
+      (fun _exn -> create ())
+
+  let get_current_secret () =
+    get_first_oauth () >|= fun (secret, _nonces) -> secret
+
+  let purge () =
+    get_first_oauth () >>= fun oauth ->
+    write_to_file enc [oauth] (file_path ())
+
+  let add_nonce nonce =
+    get_from_file enc (file_path ()) >>= fun oauth ->
+    let oauth =
+      match oauth with
+      | (secret, nonces) :: r -> (secret, nonce :: nonces) :: r
+      | [] -> [(generate_random_hex 32, [nonce])]
+    in
+    write_to_file enc oauth (file_path ())
+
+  let check_nonce nonce =
+    get_first_oauth () >|= fun (_secret, nonces) ->
+    List.exists ((=) nonce) nonces
+end
+
+module NonceIndex = BaseNonceIndex

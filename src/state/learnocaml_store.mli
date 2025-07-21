@@ -202,3 +202,51 @@ module Student: sig
   val set: t -> unit Lwt.t
 
 end
+
+module LtiIndex: sig
+
+  (** Adds a new LTI entry to the store. *)
+  val add : string -> Token.t -> unit Lwt.t
+
+  (** Retrieves the token associated with the given user ID. *)
+  val get_user_token : string -> Token.t option Lwt.t
+
+  (** Checks if the user ID exists in the LTI index. *)
+  val exists : string -> bool Lwt.t
+
+end
+
+module TokenIndex : sig
+
+  type methods = {
+    idmoodle : string option;
+    email    : string option;
+  }
+
+  (** Associate a token with an external authentication method and value (e.g. "idmoodle", "email"). *)
+  val add_association : token:Token.t -> method_:string -> value:string -> unit Lwt.t
+
+  (** Retrieve all associated external methods for a given token. *)
+  val get_methods : Token.t -> methods option Lwt.t
+
+  (** Check if a token is associated with a specific method (e.g. "idmoodle", "email"). *)
+  val has : Token.t -> string -> bool Lwt.t
+
+  (** Check if a token exists in the TokenIndex (i.e. has any association). *)
+  val exists : Token.t -> bool Lwt.t
+
+end
+
+module NonceIndex: sig
+  val create_index : unit -> string Lwt.t
+
+  val get_first_oauth : unit -> (string * string list) Lwt.t
+  val get_current_secret : unit -> string Lwt.t
+
+  (** Delete all secrets + nonce associated excepted the current secret with its nonces *)
+  val purge : unit -> unit Lwt.t
+
+  val add_nonce : string -> unit Lwt.t
+  val check_nonce : string -> bool Lwt.t
+
+end
