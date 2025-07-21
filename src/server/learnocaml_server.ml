@@ -8,6 +8,7 @@
 
 open Learnocaml_data
 open Learnocaml_store
+open Learnocaml_auth
 
 let port = ref 8080
 
@@ -31,6 +32,8 @@ let args = Arg.align @@
     "PORT the TCP port (8080)" ]
 
 open Lwt.Infix
+
+type kind = Exercise of string*bool | Lesson of string*bool | Playground of string*bool | Toplevel
 
 let read_static_file path =
   Lwt_io.(with_file ~mode: Input (sanitise_path !static_dir path) read)
@@ -75,12 +78,17 @@ type cached_response = {
   deflated_body: string option;
   content_type: string;
   caching: caching;
+  cookies: Cohttp.Cookie.Set_cookie_hdr.t list
 }
 
 type 'a response =
   | Response of { contents: 'a;
                   content_type: string;
-                  caching: caching }
+                  caching: caching;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
+  | Redirect of { code: Cohttp.Code.status_code;
+                  url: string;
+                  cookies: Cohttp.Cookie.Set_cookie_hdr.t list }
   | Cached of cached_response
 
 type error = (Cohttp.Code.status_code * string)
@@ -122,21 +130,22 @@ let lwt_option_fail x e f =
   | Some x -> f x
   | None -> lwt_fail e
 
-let respond_static caching path =
+let respond_static ?(cookies=[]) caching path =
   lwt_catch_fail
     (fun () ->
        read_static_file path >>= fun contents ->
        let content_type =
          Magic_mime.lookup (List.fold_left (fun _ r -> r) "" path)
        in
-       lwt_ok @@ Response { contents; content_type; caching })
+       lwt_ok @@ Response { contents; content_type; caching; cookies })
     (fun e -> (`Not_found, Printexc.to_string e))
 
-let respond_json caching contents =
+let respond_json ?(cookies=[]) caching contents =
   lwt_ok @@
     Response { contents;
                content_type = "application/json";
-               caching }
+               caching;
+               cookies}
 
 let verify_teacher_token token =
   Token.check_teacher token >>= function
@@ -182,6 +191,12 @@ let check_report exo report grade =
   let score, _ = Learnocaml_report.result report in
   score * 100 / max_grade = grade
 
+let generate_csrf_token length =
+  let random_bytes = Bytes.make length '\000' in
+  Cryptokit.Random.secure_rng#random_bytes random_bytes 0 length;
+  Base64.encode (Bytes.to_string random_bytes)
+
+
 module Memory_cache = struct
 
   let (tbl: (cache_request_hash, cached_response) Hashtbl.t) =
@@ -202,6 +217,7 @@ module Request_handler = struct
   let map_ret f r =
     r >?= function
     | Response ({contents; _} as r) -> lwt_ok @@ Response {r with contents = f contents}
+    | (Redirect _) as r -> lwt_ok r
     | (Cached _) as r -> lwt_ok r
 
   let alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -237,10 +253,10 @@ module Request_handler = struct
     | None ->  Lwt.fail_with "Invalid session"
 
   let callback_raw: type resp. Conduit.endp -> Learnocaml_data.Server.config ->
-                    caching -> resp Api.request ->
+                    caching -> Api.http_request -> resp Api.request ->
                     (resp response, error) result Lwt.t
     = let module ServerData = Learnocaml_data.Server in
-      fun conn config cache -> function
+      fun conn config cache req -> function
       | Api.Version () ->
          respond_json cache (Api.version, config.ServerData.server_id)
       | Api.Static path ->
@@ -302,19 +318,148 @@ module Request_handler = struct
                           | Some nickname ->
                               Save.set tok Save.{empty with nickname})
          >>= fun () -> respond_json cache tok
-      | Api.Login token ->
-         lwt_catch_fail
-           (fun () ->
-             Token.exists token >>= fun exists ->
-             lwt_option_fail
-               (if exists then Some token else None)
-               (`Not_found, "Token does not exist")
-             @@ fun token ->
-                let session = Session.gen_session () in
-                Session.set_session session token >>= fun () ->
-                respond_json cache session
-          )
-           (fun exn -> (`Internal_server_error, Printexc.to_string exn))
+      | Api.Launch body ->
+         (* 32 bytes of entropy, same as RoR as of 2020. *)
+         let csrf_token =  match generate_csrf_token 32 with
+           | Ok tok -> tok
+           | Error (`Msg msg) -> failwith msg in
+         let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                          ~expiration:(`Max_age (Int64.of_int 3600))
+                          ~path:"/" ~http_only:true
+                          ("csrf", csrf_token)] in
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (a, b) -> a, String.concat "," b) in
+         LtiAuth.check_oauth ("localhost:8080" ^ "/launch") params >>=
+           (function
+            | Ok id ->
+               LtiAuth.get_token id >>= (function
+               |Ok token ->
+                 let session = Session.gen_session () in
+                 Session.set_session session token >>= fun () ->
+                 let cookies = [Cohttp.Cookie.Set_cookie_hdr.make
+                                  ~expiration:(`Max_age (Int64.of_int 60))
+                                  ~path:"/"
+                                  ("session", Session.to_string session)] in
+                 let rank = function Exercise (_,_) -> 0 | Lesson (_,_) -> 1 | Playground (_,_) -> 2 | Toplevel -> 3 in
+                 let sort_from_rank l = List.sort (fun (k1) (k2) -> rank k1 - rank k2) l in
+                 (*sort_from_rank [(Lesson, "first"); (Exercise, "demo"); (Playground, "editor")]*)
+                 let ex_exist exo = Exercise.Index.get () >>= fun exercises ->
+                                    let find_exercises_names contents = match contents with
+                                      | Learnocaml_data.Exercise.Index.Groups _ -> failwith "erreur find_exercises_names"
+                                      | Learnocaml_data.Exercise.Index.Exercises exos -> List.map fst exos in
+                                    let find_names exs = List.map
+                                                           (fun group -> find_exercises_names (snd group).Learnocaml_data.Exercise.Index.contents)
+                                                           exs in
+                                    let names = match exercises with
+                                      | Learnocaml_data.Exercise.Index.Groups exs -> List.concat (find_names exs)
+                                      | Learnocaml_data.Exercise.Index.Exercises _ -> [] in
+                                    Lwt.return (List.exists (fun name -> name = exo) names) in
+                 let play_exist play = Playground.Index.get () >>= fun playgrounds ->
+                                       let find_names exs = List.map
+                                                              (fun group -> (fst group))
+                                                              exs in
+                                       let names = find_names playgrounds in
+                                       Lwt.return (List.exists (fun name -> name = play) names) in
+                 let less_exist less = Lesson.Index.get () >>= fun lessons ->
+                                       let find_names exs = List.map
+                                                              (fun group -> (fst group))
+                                                              exs in
+                                       let names = find_names lessons in
+                                       Lwt.return (List.exists (fun name -> name = less) names) in
+                 let list_redirections l =
+                   Lwt_list.fold_left_s (fun r (kind, id) ->
+                                       match kind with
+                                       | "custom_exercise" -> ex_exist id >|= fun ok ->
+                                                              Exercise (id,ok) :: r
+                                       | "custom_playground" -> play_exist id >|= fun ok ->
+                                                                Playground (id, ok) :: r
+                                       | "custom_lesson" -> less_exist id >|= fun ok ->
+                                                            Lesson (id, ok) :: r
+                                       | "custom_toplevel" -> Lwt.return (Toplevel :: r)
+                                       | _ -> Lwt.return r
+                     ) [] l
+                 in
+                 let return_url kind_url = match kind_url with
+                   | Exercise (id,ok) -> if ok
+                                         then "/exercises/"^id^"/#tab%3Dtext"
+                                         else "/redirection?kind=exercise&id="^id
+                   | Playground (id,ok) -> if ok
+                                           then "/playground/"^id^"/#tab%3Dtoplevel"
+                                           else "/redirection?kind=playground&id="^id
+                   | Lesson (id,ok) -> if ok
+                                       then "/#activity%3Dlessons%26lesson%3D"^id
+                                       else "/redirection?kind=lesson&id="^id
+                   | Toplevel -> "/#activity%3Dtoplevel"
+                 in
+                 let return_url_many kind_url = match kind_url with
+                   | Exercise (id,ok) -> if ok
+                                         then "/redirection?kind=exercise&id="^id^"&many=true"
+                                         else "/redirection?kind=exercise&id="^id
+                   | Playground (id,ok) -> if ok
+                                           then "/redirection?kind=playground&id="^id^"&many=true"
+                                           else "/redirection?kind=playground&id="^id
+                   | Lesson (id,ok) -> if ok
+                                       then "/redirection?kind=lesson&id="^id^"&many=true"
+                                       else "/redirection?kind=lesson&id="^id
+                   | _ -> "/" in
+                 let redirection l = match sort_from_rank l with
+                     [] -> "/"
+                   | [url] -> return_url url
+                   | url :: _ -> return_url_many url in
+                 list_redirections params >>= fun list ->
+                 lwt_ok @@ Redirect { code=`See_other; url= !base_url^(redirection list); cookies }
+               |Error _ ->
+                 NonceIndex.get_current_secret () >>= fun secret ->
+                 let hmac = generate_hmac secret csrf_token id in
+                 read_static_file ["lti.html"] >>= fun s ->
+                 let contents =
+                   Markup.string s
+                   |> Markup.parse_html
+                   |> Markup.signals
+                   |> Markup.map (function
+                          | `Start_element ((e, "input"), attrs) as elt ->
+                             (match List.assoc_opt ("", "type") attrs,
+                                    List.assoc_opt ("", "name") attrs with
+                              | Some "hidden", Some "csrf" ->
+                                 `Start_element ((e, "input"), (("", "value"), csrf_token) :: attrs)
+                              | Some "hidden", Some "user-id" ->
+                                 `Start_element ((e, "input"), (("", "value"), id) :: attrs)
+                              | Some "hidden", Some "hmac" ->
+                                 `Start_element ((e, "input"), (("", "value"), hmac) :: attrs)
+                              | _ -> elt)
+                          | t -> t)
+                   |> Markup.pretty_print
+                   |> Markup.write_html
+                   |> Markup.to_string in
+                 lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies })
+            | Error e -> lwt_fail (`Forbidden, e))
+      | Api.Associate body ->
+         lwt_fail (`Forbidden, "Not implemented yet")
+      | Api.Login body ->
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (k, vs) -> (k, String.concat "," vs)) in
+         begin match List.assoc_opt "method" params with
+         | Some "token" ->
+            begin match List.assoc_opt "token" params with
+            | Some t ->
+               let token = Token.parse t in
+               Token.exists token >>= fun exists ->
+               if exists then (
+                 let session = Session.gen_session () in
+                 Session.set_session session token >>= fun () ->
+                 respond_json cache session
+               ) else
+                 lwt_fail (`Forbidden, "Invalid token")
+            | None ->
+               lwt_fail (`Bad_request, "Missing 'token' parameter")
+            end
+         | Some "email" ->
+            lwt_fail (`Forbidden, "Not implemented yet")
+         | Some m -> lwt_fail (`Bad_request, "Unknown login method: " ^ m)
+         | None -> lwt_fail (`Bad_request, "Missing 'method' parameter")
+         end
+      | Api.Register body ->
+         lwt_fail (`Forbidden, "Not implemented yet")
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
@@ -345,7 +490,8 @@ module Request_handler = struct
           Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
-                               caching = Nocache }
+                               caching = Nocache;
+                               cookies = [] }
       | Api.Archive_zip_s session ->
           let open Lwt_process in
           wrap_user_session session @@ fun token ->
@@ -355,7 +501,8 @@ module Request_handler = struct
           Lwt_process.pread ~stdin:stdout cmd >>= fun contents ->
           lwt_ok @@ Response { contents = contents;
                                content_type = "application/zip";
-                               caching = Nocache }
+                               caching = Nocache;
+                               cookies = [] }
       | Api.Update_save (token, save) ->
           let save = Save.fix_mtimes save in
           let exercise_states = SMap.bindings save.Save.all_exercise_states in
@@ -421,7 +568,8 @@ module Request_handler = struct
               lwt_ok @@
                 Response { contents;
                            content_type = "application/octet-stream";
-                           caching = Nocache })
+                           caching = Nocache;
+                               cookies = [] })
             (fun e -> (`Not_found, Printexc.to_string e))
 
       | Api.Students_list token ->
@@ -528,7 +676,8 @@ module Request_handler = struct
           lwt_ok @@
             Response {contents = Buffer.contents buf;
                       content_type = "text/csv";
-                      caching = Nocache}
+                      caching = Nocache;
+                      cookies = [] }
       | Api.Students_csv_s (session, exercises, students) ->
           wrap_user_session session @@ fun token ->
           verify_teacher_token token >?= fun () ->
@@ -596,7 +745,8 @@ module Request_handler = struct
           lwt_ok @@
             Response {contents = Buffer.contents buf;
                       content_type = "text/csv";
-                      caching = Nocache}
+                      caching = Nocache;
+                      cookies = [] }
 
       | Api.Exercise_index (Some token) ->
           Exercise.Index.get () >>= fun index ->
@@ -734,12 +884,13 @@ module Request_handler = struct
 
   let callback: type resp. Conduit.endp ->
                            Learnocaml_data.Server.config ->
+                           Api.http_request ->
                            resp Api.request -> resp ret
-  = fun conn config req ->
+  = fun conn config http_req req ->
     let cache = caching req in
     let respond () =
       Lwt.catch
-        (fun () -> callback_raw conn config cache req)
+        (fun () -> callback_raw conn config cache http_req req)
         (function
           | Not_found ->
               lwt_fail (`Not_found, "Component not found")
@@ -825,6 +976,9 @@ let compress ?(level = 4) data =
 
 let launch () =
   Random.self_init () ;
+  NonceIndex.get_first_oauth () >>= fun (secret, _) ->
+  Lwt_io.printf "LTI shared secret: %s\n" secret
+  >>= fun () ->
   Learnocaml_store.Server.get () >>= fun config ->
   let callback conn req body =
     let uri = Request.uri req in
@@ -848,8 +1002,8 @@ let launch () =
         (Cohttp.Header.get_acceptable_encodings req.Request.headers)
     in
     let respond = function
-      | Response {contents=body; content_type; caching; _}
-      | Cached {body; content_type; caching; _} as resp ->
+      | Response {contents=body; content_type; caching; cookies; _}
+      | Cached {body; content_type; caching; cookies; _} as resp ->
           let headers = Cohttp.Header.init_with "Content-Type" content_type in
           let headers = match caching with
             | Longcache _ ->
@@ -864,10 +1018,12 @@ let launch () =
             | Nocache ->
                 Cohttp.Header.add headers "Cache-Control" "no-cache"
           in
+          let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+          let headers = Cohttp.Header.add_list headers cookies_hdr in
           let resp = match resp, caching with
             | Response _, (Longcache key | Shortcache (Some key)) ->
                 let cached =
-                  {body; deflated_body = None; content_type; caching}
+                  {body; deflated_body = None; content_type; caching; cookies = []}
                 in
                 Memory_cache.add key cached;
                 Cached cached
@@ -899,19 +1055,38 @@ let launch () =
             (fun e ->
               Server.respond_error ~status:`Internal_server_error
                 ~body:(Printexc.to_string e) ())
+      | Redirect { code; url; cookies } ->
+         let headers = Cohttp.Header.init_with "Location" url in
+         let cookies_hdr = List.rev_map Cohttp.Cookie.Set_cookie_hdr.serialize cookies in
+         let headers = Cohttp.Header.add_list headers cookies_hdr in
+         Server.respond_string ~headers ~status:code ~body:"" ()
     in
     if Cohttp.Header.get req.Request.headers "If-Modified-Since" =
        Some last_modified
     then Server.respond ~status:`Not_modified ~body:Cohttp_lwt.Body.empty ()
     else
     (match req.Request.meth with
-     | `GET -> lwt_ok {Api.meth = `GET; path; args}
+     | `GET -> lwt_ok {Api.meth = `GET; host = !base_url; path; args}
      | `POST ->
         begin
-          string_of_stream (Cohttp_lwt.Body.to_stream body)
-          >>= function
-          | Some s -> lwt_ok {Api.meth = `POST s; path; args}
-          | None -> lwt_fail (`Bad_request, "Missing POST body")
+          Cohttp_lwt.Body.to_string body
+          >>= fun params ->
+          let param_list = Uri.query_of_encoded params in
+          if param_list = [] then
+            lwt_fail (`Bad_request, "Missing POST body")
+          else
+            let cookies = Cohttp.Cookie.Cookie_hdr.extract req.Request.headers in
+            match List.assoc_opt "csrf" param_list,
+                  List.assoc_opt "csrf" cookies with
+            | Some (param_csrf :: _), Some cookie_csrf ->
+               if Eqaf.equal param_csrf cookie_csrf then
+                 lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
+               else
+                 lwt_fail (`Forbidden, "CSRF token mismatch")
+            | None, None | None, Some _ ->
+               lwt_ok {Api.meth = `POST params; host = !base_url; path; args}
+            | _, _ ->
+               lwt_fail (`Forbidden, "Bad CSRF token")
         end
      | _ -> lwt_fail (`Bad_request, "Unsupported method"))
     >?= (fun req ->

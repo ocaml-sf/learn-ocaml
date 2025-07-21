@@ -251,6 +251,7 @@ let is_supported
 
 type http_request = {
   meth: [ `GET | `POST of string];
+  host: string;
   path: string list;
   args: (string * string) list;
 }
@@ -387,12 +388,14 @@ module Conversions (Json: JSON_CODEC) = struct
     =
     let get ?token ?session ?(args=[]) path = {
       meth = `GET;
+      host = "";
       path;
       args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @
       (match session with None -> [] | Some s -> ["session", s]) @ args;
     } in
     let post ?token ?session path body = {
       meth = `POST body;
+      host = "";
       path;
       args = (match token with None -> [] | Some t -> ["token", Token.to_string t]) @
       (match session with None -> [] | Some s -> ["session", s]);
@@ -550,7 +553,7 @@ module type REQUEST_HANDLER = sig
   val map_ret: ('a -> 'b) -> 'a ret -> 'b ret
 
   val callback: Conduit.endp ->
-                Learnocaml_data.Server.config -> 'resp request -> 'resp ret
+                Learnocaml_data.Server.config -> http_request -> 'resp request -> 'resp ret
 end
 
 module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
@@ -562,7 +565,7 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
 
   let handler conn config request =
       let k req =
-        Rh.callback conn config req |> Rh.map_ret (C.response_encode req)
+        Rh.callback conn config request req |> Rh.map_ret (C.response_encode req)
       in
       let token =
         match List.assoc_opt "token" request.args with
