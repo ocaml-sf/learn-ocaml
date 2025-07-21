@@ -92,6 +92,8 @@ module LtiAuth = struct
   type register_credentials = { user_id : string; nickname : string; csrf : string; hmac : string }
   type associate_credentials = { user_id : string; token : Token.t; csrf : string; hmac : string }
 
+  let user_exists _ = Lwt.return true
+
  let get_token id =
    LtiIndex.get_user_token id >>= function
    | Some token -> Lwt.return (Ok token)
@@ -108,7 +110,18 @@ module LtiAuth = struct
   let login (_:login_credentials) = Lwt.return (Error "TODO: implement LtiAuth.login")
 
   let register (params:register_credentials) =
-    Lwt.return (Error "TODO: implement LtiAuth.register")
+    NonceIndex.get_current_secret () >>= fun secret ->
+    let new_hmac = generate_hmac secret params.csrf params.user_id in
+    if not (Eqaf.equal params.hmac new_hmac) then
+      Lwt.return (Error "bad hmac")
+    else
+      let nickname = params.nickname in
+      Token.create_student () >>= fun token ->
+      (if nickname = "" then Lwt.return_unit
+       else Save.set token Save.{empty with nickname})
+      >>= fun () ->
+      LtiIndex.add params.user_id token >>= fun () ->
+      Lwt.return (Ok token)
 
   let associate (params:associate_credentials) =
     NonceIndex.get_current_secret () >>= fun secret ->

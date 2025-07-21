@@ -502,7 +502,38 @@ module Request_handler = struct
          | None -> lwt_fail (`Bad_request, "Missing 'method' parameter")
          end
       | Api.Register body ->
-         lwt_fail (`Forbidden, "Not implemented yet")
+         let params = Uri.query_of_encoded body
+                      |> List.map (fun (k, vs) -> (k, String.concat "," vs)) in
+         let token =
+           (match List.assoc_opt "method" params with
+            | Some "lti" ->
+               let user_id = List.assoc "user-id" params and
+                   csrf = List.assoc "csrf" params and
+                   hmac = List.assoc "hmac" params and
+                   nickname = List.assoc "nick" params in
+               let creds = { LtiAuth.user_id; LtiAuth.nickname; LtiAuth.csrf; LtiAuth.hmac } in
+               LtiAuth.register creds >>=
+                 (function
+                  | Ok t -> Lwt.return (Ok (t,"lti",user_id))
+                  | Error e -> Lwt.return (Error e))
+            | Some "email" ->
+               Lwt.return (Error "Not implemented yet")
+            | Some m ->
+               Lwt.return (Error ("Unknown login method: " ^ m))
+            |None -> Lwt.return (Error "Missing 'method' parameter"))
+         in
+         token >>= (function
+         | Ok  (token, method_, value) ->
+            TokenIndex.add_association ~token ~method_ ~value >>= fun () ->
+            let session = Session.gen_session () in
+            Session.set_session session token >>= fun () ->
+            let make_cookie = Cohttp.Cookie.Set_cookie_hdr.make
+                                ~expiration:(`Max_age (Int64.of_int 60)) ~path:"/" in
+            let cookies = [make_cookie ("session", Session.to_string session);
+                           make_cookie ~http_only:true ("csrf", "expired")] in
+            lwt_ok @@ Redirect { code=`See_other; url="/"; cookies }
+         | Error msg ->
+            lwt_fail (`Forbidden, msg))
       | Api.Fetch_save token ->
          lwt_catch_fail
            (fun () ->
