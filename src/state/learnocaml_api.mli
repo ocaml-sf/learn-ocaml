@@ -90,8 +90,14 @@ type _ request =
       teacher token * string option -> teacher token request
   | Create_teacher_token_s:
       'a session * string option -> teacher token request
-  | Login: 
-      'a token -> Session.t request
+  | Launch :
+      string -> string request
+  | Associate :
+      string -> string request
+  | Login:
+      string -> string request
+  | Register :
+      string -> string request
   | Fetch_save:
       'a token -> Save.t request
   | Fetch_save_s:

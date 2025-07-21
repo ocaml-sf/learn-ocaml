@@ -104,8 +104,14 @@ type _ request =
       teacher token * string option -> teacher token request
   | Create_teacher_token_s:
       'a session * string option -> teacher token request
-  | Login: 
-      'a token -> Session.t request
+  | Launch :
+      string -> string request
+  | Associate :
+      string -> string request
+  | Login:
+      string -> string request
+  | Register :
+      string -> string request
   | Fetch_save:
       'a token -> Save.t request
   | Fetch_save_s:
@@ -209,7 +215,10 @@ let supported_versions
   | Exercise_status (_, _) -> Compat.(Upto (v "2.0"))
   | Set_exercise_status (_, _) -> Compat.(Upto (v "2.0"))
   | Partition (_, _, _, _) -> Compat.(Upto (v "2.0"))
+  | Launch _ -> Compat.(Since (v "2.0"))
+  | Associate _ -> Compat.(Since (v "2.0"))
   | Login _ -> Compat.(Since (v "2.0"))
+  | Register _ -> Compat.(Since (v "2.0"))
   | Get_token _ -> Compat.(Since (v "2.0"))
   | Create_teacher_token_s _ -> Compat.(Since (v "2.0"))
   | Fetch_save_s _ -> Compat.(Since (v "2.0"))
@@ -295,8 +304,10 @@ module Conversions (Json: JSON_CODEC) = struct
       | Create_teacher_token_s _ ->
          json J.(obj1 (req "token" string)) +>
             Token.(to_string, parse)
-      | Login _ ->
-          json J.(obj1 (req "session" string))
+      | Launch _ -> str
+      | Associate _ -> str
+      | Login _ -> str
+      | Register _ -> str
       | Fetch_save _  ->
           json Save.enc
       |Fetch_save_s _ ->
@@ -404,8 +415,14 @@ module Conversions (Json: JSON_CODEC) = struct
     | Create_teacher_token_s (session, nick) ->
         get ~session (["session"; "teacher"; "new"] @
                     (match nick with None -> [] | Some n -> [n]))
-    | Login token ->
-        get ~token ["login"]
+    | Launch body ->
+       post ["lauch"] body
+    | Associate body ->
+       post ["associate"] body
+    | Login body ->
+       post ["login"] body
+    | Register body ->
+       post ["register"] body
     | Fetch_save token ->
         get ~token ["save.json"]
     | Fetch_save_s session ->
@@ -579,8 +596,14 @@ module Server (Json: JSON_CODEC) (Rh: REQUEST_HANDLER) = struct
           Create_teacher_token (token, Some nick) |> k
       | `GET, ["session"; "teacher"; "new"; nick], _, Some session ->
           Create_teacher_token_s (session, Some nick) |> k
-      | `GET, ["login"], Some token, _ ->
-        Login token |> k
+      | `POST body, ["launch"], _token, _ ->
+         Launch body |> k
+      | `POST body, ["associate"], _, _ ->
+         Associate body |> k
+      | `POST body, ["login"], _, _ ->
+         Login body |> k
+      | `POST body, ["register"], _, _ ->
+         Register body |> k
       | `GET, ["save.json"], Some token, _->
           Fetch_save token |> k
       | `GET, ["session"; "save.json"], _, Some session ->
