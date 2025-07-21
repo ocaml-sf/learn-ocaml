@@ -1159,6 +1159,9 @@ let setup_prelude_pane ace prelude =
   Manip.appendChildren prelude_pane
     [ prelude_title ; prelude_container ]
 
+let encode_form_body body =
+  body |> List.map (fun (k,v) -> (k, [v])) |> Uri.encoded_of_query
+
 let get_session ?(has_server = true) () =
   if not has_server then
     Lwt.return None
@@ -1171,8 +1174,9 @@ let get_session ?(has_server = true) () =
       ask_string ~title:"Token" ~may_cancel:false
         [H.txt [%i"Enter your token"]]
       >>= fun input_tok ->
-      let token = Token.parse (input_tok) in
-      Server_caller.request (Learnocaml_api.Login token) >>= function
+      let body = [ ("method", "token"); ("token", input_tok) ] in
+      let encoded_body = encode_form_body body in
+      Server_caller.request (Learnocaml_api.Login encoded_body) >>= function
       | Ok session ->
          (Server_caller.request (Learnocaml_api.Fetch_save_s session)
           >>= function
