@@ -318,7 +318,7 @@ module Request_handler = struct
                           | Some nickname ->
                               Save.set tok Save.{empty with nickname})
          >>= fun () -> respond_json cache tok
-      | Api.Launch body ->
+      | Api.Launch body when config.ServerData.use_lti ->
          (* 32 bytes of entropy, same as RoR as of 2020. *)
          let csrf_token =  match generate_csrf_token 32 with
            | Ok tok -> tok
@@ -433,6 +433,8 @@ module Request_handler = struct
                    |> Markup.to_string in
                  lwt_ok @@ Response { contents; content_type="text/html"; caching=Nocache; cookies })
             | Error e -> lwt_fail (`Forbidden, e))
+      | Api.Launch _ ->
+         lwt_fail (`Forbidden, "LTI is disabled on this instance.")
       | Api.Associate body ->
          let params = Uri.query_of_encoded body
                       |> List.map (fun (k, vs) -> (k, String.concat "," vs)) in
@@ -453,7 +455,7 @@ module Request_handler = struct
                    | Ok token ->
                       let lwt_result =
                     (match target_method with
-                     | "lti" ->
+                     | "lti" when config.ServerData.use_lti ->
                         let csrf = List.assoc "csrf" params and
                             hmac = List.assoc "hmac" params and
                             user_id = List.assoc "user-id" params in
@@ -461,6 +463,8 @@ module Request_handler = struct
                           LtiAuth.associate creds >>= (function
                             | Ok t -> Lwt.return (Ok (t, "lti", user_id))
                             | Error e -> Lwt.return (Error e))
+                     | "lti" ->
+                        Lwt.return (Error "LTI is disabled on this instance")
                      |"email" ->
                        Lwt.return (Error "Not implemented yet")
                      | _ ->

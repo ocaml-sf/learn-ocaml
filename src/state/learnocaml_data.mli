@@ -140,6 +140,7 @@ module Server : sig
      where users can pre-set some of the server settings. *)
   type preconfig = {
     secret : string option;
+    use_lti : bool;
   }
   val empty_preconfig : preconfig
 
@@ -147,6 +148,7 @@ module Server : sig
      from the preconfig during the 'build' stage. *)
   type config = {
     secret : string option; (* maybe a secret *)
+    use_lti : bool;
     server_id : int; (* random integer generated each building time *)
   }
 

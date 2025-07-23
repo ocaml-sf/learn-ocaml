@@ -399,18 +399,29 @@ let enc_check_version_2 enc =
 module Server = struct
   type preconfig = {
     secret : string option;
+    use_lti : bool;
   }
   let empty_preconfig = {
     secret = None;
+    use_lti = false;
   }
 
+  let bool_of_option = function
+    | Some b -> b
+    | None -> false
+
   let preconfig_enc =
-    J.conv (fun (c : preconfig) -> c.secret)
-           (fun secret : preconfig -> {secret}) @@
-      J.obj1 (J.opt "secret" J.string)
+    J.conv (fun (c : preconfig) ->
+        (c.secret, Some(c.use_lti)))
+      (fun (secret, use_lti) ->
+        {secret;
+         use_lti = bool_of_option use_lti}) @@
+      J.obj2 (J.opt "secret" J.string)
+        (J.opt "use_lti" J.bool)
 
   type config = {
     secret : string option;
+    use_lti : bool;
     server_id : int;
   }
 
@@ -421,13 +432,20 @@ module Server = struct
     let server_id = Random.bits () in
     {
       secret;
+      use_lti = preconf.use_lti;
       server_id;
     }
 
   let config_enc =
-    J.conv (fun (c : config) -> (c.secret,c.server_id))
-           (fun (secret,server_id) : config -> {secret; server_id}) @@
-      J.obj2 (J.opt "secret" J.string) (J.req "server_id" J.int)
+    J.conv (fun (c : config) ->
+        (c.secret, Some(c.use_lti), c.server_id))
+      (fun (secret, use_lti, server_id) ->
+        {secret;
+         use_lti = bool_of_option use_lti;
+         server_id}) @@
+      J.obj3 (J.opt "secret" J.string)
+        (J.opt "use_lti" J.bool)
+        (J.req "server_id" J.int)
 end
 
 module Exercise = struct
