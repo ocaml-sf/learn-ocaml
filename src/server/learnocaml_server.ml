@@ -329,7 +329,13 @@ module Request_handler = struct
                           ("csrf", csrf_token)] in
          let params = Uri.query_of_encoded body
                       |> List.map (fun (a, b) -> a, String.concat "," b) in
-         LtiAuth.check_oauth ("localhost:8080" ^ "/launch") params >>=
+         let launch_url =
+          if req.Api.host = "" then
+           "http://localhost:8080/launch"
+          else
+           req.Api.host ^ "/launch"
+         in
+         LtiAuth.check_oauth launch_url params >>=
            (function
             | Ok id ->
                LtiAuth.get_token id >>= (function

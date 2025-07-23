@@ -151,7 +151,7 @@ module LtiAuth = struct
           NonceIndex.add_nonce oauth_args.nonce >>= fun () ->
           NonceIndex.get_current_secret () >|=
             signature_oauth args "post" url >>= fun s ->
-          if Eqaf.equal s oauth_args.signature || true (* EMD: temporary fix; FIXME *) then
+          if Eqaf.equal s oauth_args.signature then
             Lwt.return (Ok (oauth_args.consumer_key ^ ":" ^ (List.assoc "user_id" args)))
           else
             Lwt.return (Error "Wrong signature")
