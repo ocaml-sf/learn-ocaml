@@ -87,43 +87,63 @@ let (exercise_filter_signal: string option React.signal), set_exercise_filter =
 let (exercise_sort_signal: exercise_ordering React.signal), set_exercise_sort =
   React.S.create By_category
 
-let (expand_state: string list React.signal), set_expand_state =
-  React.S.create [] 
 
+let (expand_state_signal: string list React.signal), set_expand_state =
+  React.S.create []
+
+let join_ids l =
+  match l with
+  | [] -> ""
+  | h::t -> List.fold_left (fun acc x -> acc ^ "," ^ x) h t
+
+let split_ids str =
+  Re.Pcre.split ~rex:(Re.Pcre.regexp ",") str
+
+let encode str =
+  let open Re.Pcre in
+  substitute ~rex:(regexp ",") ~subst:(fun _ -> "-c")
+  @@ substitute ~rex:(regexp "&") ~subst:(fun _ -> "-a")
+  @@ substitute ~rex:(regexp "=") ~subst:(fun _ -> "-e")
+  @@ substitute ~rex:(regexp "-") ~subst:(fun _ -> "--")
+  @@ str
+
+let decode str =
+  let open Re.Pcre in
+  substitute ~rex:(regexp "--") ~subst:(fun _ -> "-")
+  @@ substitute ~rex:(regexp "-e") ~subst:(fun _ -> "=")
+  @@ substitute ~rex:(regexp "-a") ~subst:(fun _ -> "&")
+  @@ substitute ~rex:(regexp "-c") ~subst:(fun _ -> ",")
+  @@ str
+
+(* Update the expand list in fragment to fit the URL *)
 let rec update_expand ?value fragment =
   match value with
   | Some v ->
-     if (List.mem_assoc "expand" fragment) then
+     if List.mem_assoc "expand" fragment then
        match fragment with
-       | [] ->
-          update_expand ~value:v []
+       | [] -> []
        | ("expand", x)::t ->
-          let expand_list = Re.Pcre.split ~rex:(Re.Pcre.regexp ",") x in
+          let expand_list = split_ids x in
           let new_expand_list =
-            if (List.mem v expand_list) then
+            if List.mem v expand_list then
               begin
                 let filtered_list = List.filter (fun x -> x <> v) expand_list in
-                if (filtered_list = []) then [""] else filtered_list
+                if filtered_list = [] then [""] else filtered_list
               end
             else
               begin
-                if (expand_list = [""]) then [v] else v::expand_list
+                if expand_list = [""] then [v] else v :: expand_list
               end
           in
-          let join l =
-            match l with
-            | [] -> ""
-            | h::t -> List.fold_left (fun acc x -> acc ^ "," ^ x) h t
-          in
-          let joined_expand = join new_expand_list in
+          let joined_expand = join_ids new_expand_list in
           set_expand_state new_expand_list;
-          (*if (joined_expand <> "") then*) ("expand", joined_expand)::t (*else t*)
+          ("expand", joined_expand)::t
        | h::t ->
           h::(update_expand ~value:v t)
      else
        begin
          set_expand_state [v];
-         fragment@[("expand",v)]
+         fragment @ [("expand", v)]
        end
   | None ->
      set_expand_state [];
@@ -131,18 +151,18 @@ let rec update_expand ?value fragment =
 
 let update_sort value fragment =
   let filtered_fragment = List.remove_assoc "sort" (update_expand fragment) in
-  filtered_fragment@[("sort",value)]
+  filtered_fragment @ [("sort", value)] @ [("expand", "")]
 
 let update_fragment key value =
   let fragment = Js_utils.parse_fragment () in
   let filtered_fragment =
-    if (key = "expand") then
-      let v = (Uri.pct_encode (Learnocaml_common.encode value)) in
+    if key = "expand" then
+      let v = (Uri.pct_encode (encode value)) in
       update_expand ~value:v fragment
     else
       update_sort value fragment
   in
-  Js_utils.set_fragment (filtered_fragment)
+  Js_utils.set_fragment filtered_fragment
 
 let make_exercises_to_display_signal index =
   let get_index exo_sort exo_filter _expand =
@@ -224,7 +244,7 @@ let make_exercises_to_display_signal index =
            Exercise.Index.contents = Exercise.Index.Exercises []; }]
     else index
   in
-  React.S.l3 get_index exercise_sort_signal exercise_filter_signal expand_state
+  React.S.l3 get_index exercise_sort_signal exercise_filter_signal expand_state_signal
 
 let retain_signals = ref (React.S.const ())
 (* Used to register signals as GC roots *)
@@ -240,13 +260,9 @@ let exercises_tab token : tab_handler =
         | Some "skill" -> set_exercise_sort By_skill
         | Some "difficulty" -> set_exercise_sort By_difficulty
         | _ -> ());
-        let expands = List.assoc_opt "expand" fragment in
-        let ids expands =
-          match expands with
-          | None -> []
-          | Some e ->  Re.Pcre.split ~rex:(Re.Pcre.regexp ",") e
-        in
-        set_expand_state (ids expands);
+        (match List.assoc_opt "expand" fragment with
+        | None -> set_expand_state []
+        | Some e -> set_expand_state (split_ids e));
         Js._true)
     in
     show_loading  [%i"Loading exercises"] @@ fun () ->
@@ -313,10 +329,10 @@ let exercises_tab token : tab_handler =
         ] ]
     in
     let update_expand_class id ids =
-      if (List.mem id ids) then
+      if List.mem id ids then
         []
       else
-        ["collapse"]
+        ["collapsed"]
     in
     let rec format_exercise_list index =
       match index with
@@ -333,21 +349,22 @@ let exercises_tab token : tab_handler =
                   match gl with
                   | [] -> []
                   | [_] ->
-                     let expand_ids = React.S.value expand_state in
-                     if (expand_ids = []) then
+                     let expand_ids = React.S.value expand_state_signal in
+                     if expand_ids = [] then
                        begin
-                         set_expand_state [id];
-                         update_fragment "expand" id;
+                         let encoded = encode id in
+                         set_expand_state [(encoded)];
+                         update_fragment "expand" (encoded);
                          []
                        end
                      else
-                       update_expand_class id expand_ids
+                       update_expand_class (encode id) expand_ids
                   | _ ->
-                     let expand_ids = React.S.value expand_state in
-                     if (expand_ids = []) then
+                     let expand_ids = React.S.value expand_state_signal in
+                     if expand_ids = [] then
                        ["collapsed"]
                      else
-                       update_expand_class id expand_ids
+                       update_expand_class (encode id) expand_ids
               in
               let title =
                 H.div ~a:[a_id id; a_class clas]
@@ -376,7 +393,7 @@ let exercises_tab token : tab_handler =
                 | By_skill -> "skill"
                 | By_difficulty -> "difficulty"
               in
-              update_fragment "sort" sort_value;set_exercise_sort sort;true);
+              update_fragment "sort" sort_value; set_exercise_sort sort; true);
           let signal =
             React.S.map (fun s ->
                 (if sort = s then Manip.addClass else Manip.removeClass)
@@ -427,7 +444,7 @@ let exercises_tab token : tab_handler =
             if Js.to_bool (class_list##contains (Js.string "group-title")) &&
                Js.to_bool (class_list##contains (Js.string "collapsed"))
             then ignore (class_list##remove (Js.string "collapsed"))
-          | None -> ()) expanded_ids) expand_state)
+          | None -> ()) expanded_ids) expand_state_signal)
     in
     Lwt.return pane_div
 
