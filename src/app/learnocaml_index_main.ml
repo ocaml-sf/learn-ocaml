@@ -87,6 +87,7 @@ let (exercise_filter_signal: string option React.signal), set_exercise_filter =
 let (exercise_sort_signal: exercise_ordering React.signal), set_exercise_sort =
   React.S.create By_category
 
+
 let (expand_state_signal: string list React.signal), set_expand_state =
   React.S.create []
 
