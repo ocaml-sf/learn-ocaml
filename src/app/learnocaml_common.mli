@@ -10,6 +10,10 @@ open Js_of_ocaml
 open Js_of_ocaml_tyxml
 open Learnocaml_data
 
+val encode : string -> string
+
+val decode : string -> string
+
 val find_div_or_append_to_body : string -> [> Html_types.div ] Tyxml_js.Html.elt
 
 val find_component : string -> 'a Tyxml_js.Html.elt

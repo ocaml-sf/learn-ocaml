@@ -13,8 +13,20 @@ open Js_utils
 open Lwt.Infix
 open Learnocaml_data
 open Learnocaml_config
+open Re.Pcre
 
 module H = Tyxml_js.Html
+
+let encode str =
+  Re.Pcre.substitute ~rex:(Re.Pcre.regexp ",") ~subst:(fun _ -> "-c") (
+      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "&") ~subst:(fun _ -> "-a") (
+          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "=") ~subst:(fun _ -> "-e") (
+              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-") ~subst:(fun _ -> "--") str)))
+let decode str =
+  Re.Pcre.substitute ~rex:(Re.Pcre.regexp "--") ~subst:(fun _ -> "-") (
+      Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-e") ~subst:(fun _ -> "=") (
+          Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-a") ~subst:(fun _ -> "&") (
+              Re.Pcre.substitute ~rex:(Re.Pcre.regexp "-c") ~subst:(fun _ -> ",") str)))
 
 let find_div_or_append_to_body id =
   match Manip.by_id id with
