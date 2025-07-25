@@ -25,5 +25,5 @@ module LtiAuth : sig
   val user_exists : string -> bool Lwt.t
   val get_token : string -> (Token.t, string) result Lwt.t
 
-  val check_oauth : string -> (string * string) list -> (string, string) result Lwt.t
+  val check_oauth : string -> (string * string) list -> string -> (string, string) result Lwt.t
 end

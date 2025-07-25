@@ -335,7 +335,8 @@ module Request_handler = struct
           else
            req.Api.host ^ "/launch"
          in
-         LtiAuth.check_oauth launch_url params >>=
+         NonceIndex.get_current_secret () >>= fun secret ->
+         LtiAuth.check_oauth launch_url params secret >>=
            (function
             | Ok id ->
                LtiAuth.get_token id >>= (function

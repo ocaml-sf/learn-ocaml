@@ -205,6 +205,8 @@ end
 
 module LtiIndex: sig
 
+  val repo_path: string ref
+
   (** Adds a new LTI entry to the store. *)
   val add : string -> Token.t -> unit Lwt.t
 

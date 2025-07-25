@@ -31,3 +31,17 @@
  	    learnocaml_data)
 )
 
+(library
+  (name learnocaml_auth_test)
+  (wrapped false)
+  (modules Learnocaml_auth_test)
+  (libraries learnocaml_auth
+             learnocaml_store
+             learnocaml_data
+             lwt.unix
+             lwt_utils
+             cryptokit)
+  (inline_tests)
+  (preprocess (pps ppx_expect ppx_inline_test))
+)
+

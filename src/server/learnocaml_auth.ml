@@ -20,8 +20,6 @@ let safe_encode s =
 
 
 let generate_hmac secret csrf user_id =
-  let decoder = Cryptokit.Hexa.decode () in
-  let secret = Cryptokit.transform_string decoder secret in
   let hmac = Cryptokit.MAC.hmac_sha256 secret and
       encoder = Cryptokit.Hexa.encode () in
   Cryptokit.hash_string hmac (csrf ^ user_id)
@@ -138,7 +136,7 @@ module LtiAuth = struct
 
   (** Don't give the same oauth_consumer_key to differents LTI consumer **)
   (* Deal with the request to check OAuth autenticity and return Moodle user's token*)
-  let check_oauth url args =
+  let check_oauth url args secret =
     try
       let oauth_args = get_oauth_args args in
       if oauth_args.signature_method <> oauth_signature_method then
@@ -149,8 +147,7 @@ module LtiAuth = struct
           Lwt.return (Error "Nonce already used")
         else
           NonceIndex.add_nonce oauth_args.nonce >>= fun () ->
-          NonceIndex.get_current_secret () >|=
-            signature_oauth args "post" url >>= fun s ->
+          let s = signature_oauth args "post" url secret in
           if Eqaf.equal s oauth_args.signature then
             Lwt.return (Ok ((safe_encode oauth_args.consumer_key) ^ "/" ^ (List.assoc "user_id" args)))
           else
