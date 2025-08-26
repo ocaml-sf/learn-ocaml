@@ -30,8 +30,6 @@ type t =
     descr : (string * string) list ;
     compiled : compiled ;
     max_score : int ;
-    depend : string option ;
-    dependencies : string list; (* TODO: move to test.cma + list of cmi file contents *)
   }
 
 let encoding =
@@ -66,19 +64,17 @@ let encoding =
          (req "test_lib" compiled_lib_encoding))
   in
   conv
-    (fun { id ; prelude_ml ; prepare_ml = _; template ; descr ; compiled ; max_score ; depend ; dependencies ; solution = _} ->
-       (id, prelude_ml, template, descr, compiled, max_score, depend, dependencies))
-    (fun ((id, prelude_ml, template, descr, compiled, max_score, depend, dependencies)) ->
-       { id ; prelude_ml ; prepare_ml = ""; template ; descr ; compiled ; max_score ; depend ; dependencies; solution = ""})
-    (obj8
+    (fun { id ; prelude_ml ; prepare_ml = _; template ; descr ; compiled ; max_score ; solution = _} ->
+       (id, prelude_ml, template, descr, compiled, max_score))
+    (fun ((id, prelude_ml, template, descr, compiled, max_score)) ->
+       { id ; prelude_ml ; prepare_ml = ""; template ; descr ; compiled ; max_score ; solution = ""})
+    (obj6
        (req "id" string)
        (req "prelude_ml" string)
        (req "template" string)
        (req "descr" (list (tup2 string string)))
        (req "compiled" compiled_encoding)
-       (req "max-score" int)
-       (opt "depend" string)
-       (dft "dependencies" (list string) []))
+       (req "max-score" int))
 
 (* let meta_from_string m =
  *   Ezjsonm.from_string m
@@ -248,43 +244,6 @@ module File = struct
     compiled_lib "test"
       (fun comp -> comp.test_lib)
       (fun test_lib c -> { c with test_lib })
-  let depend =
-    { key = "depend.txt" ;
-      decode = (fun v -> Some v) ;
-      encode = (function
-                | None -> "" (* no `depend` ~ empty `depend` *)
-                | Some txt -> txt) ;
-      field = (fun ex -> ex.depend) ;
-      update = (fun depend ex -> { ex with depend })
-     }
-
-  (* [parse_dependencies txt] extracts dependencies from the string [txt].
-    Dependencies are file names separated by at least one line break.
-    [txt] may contain comments starting with characters ';' or '#'
-    and ending by a line break. *)
-  let parse_dependencies txt =
-    let remove_comment ~start:c line =
-          match String.index_opt line c with
-          | None -> line
-          | Some index -> String.sub line 0 index in
-    let lines = String.split_on_char '\n' txt in
-    List.filter ((<>) "") @@
-    List.map (fun line -> String.trim (remove_comment ~start:'#' line)) lines
-
-  let dependencies = function
-    | None -> []
-    | Some txt ->
-      let filenames = parse_dependencies txt in
-      List.mapi
-        (fun pos filename ->
-          { key = filename ;
-            decode = (fun v -> v) ; encode = (fun v -> v) ;
-            field = (fun ex -> List.nth ex.dependencies pos) ;
-            update = (fun v ex ->
-                        let dependencies =
-                          List.mapi (fun i v' -> if i = pos then v else v')
-                            ex.dependencies in { ex with dependencies }) })
-        filenames
 
   module MakeReader (Concur : Concur) = struct
     let read ~read_field ?id: ex_id () =
@@ -416,9 +375,7 @@ module File = struct
           read_file exercise_js ;
           read_file test_cma ;
           read_file test_js ;
-          read_file depend ;
           (* read_max_score () *) ] >>= fun () ->
-      join (List.map read_file (dependencies (get_opt depend !ex))) >>= fun () ->
       return !ex
   end
 
@@ -463,7 +420,6 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
     let open Concur in
     FileReader.read ~read_field ?id () >>= fun ex ->
     try
-      let depend = File.get_opt File.depend ex in
       return
         { id = field_from_file File.id ex;
           (* meta = field_from_file File.meta ex; *)
@@ -486,17 +442,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
               js = field_from_file File.test_js ex;
             };
           };
-          max_score = 0 ;
-          depend ;
-          dependencies =
-            let field_from_dependency file =
-              try field_from_file file ex
-              with File.Missing_file msg
-              -> let msg' = msg ^ ": dependency declared in "
-                                ^ File.(key depend) ^ ", but not found" in
-                 raise (File.Missing_file msg')
-            in
-            List.map field_from_dependency (File.dependencies depend)
+          max_score = 0
         }
     with File.Missing_file _ as e -> fail e
 
@@ -512,7 +458,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         return ()
       with Not_found -> Concur.return () in
     join
-      ([ write_field id ;
+       [ write_field id ;
         (* write_field meta ;
          * write_field title ; *)
          write_field prelude_ml ;
@@ -527,9 +473,7 @@ module MakeReaderAnddWriter (Concur : Concur) = struct
         write_field exercise_js ;
         write_field test_cma ;
         write_field test_js ;
-        write_field depend ;
         (* write_field max_score *) ]
-        @ (List.map write_field (dependencies (access depend ex))) )
         >>= fun () ->
     return !acc
 end
