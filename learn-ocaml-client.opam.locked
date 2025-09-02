@@ -6,9 +6,9 @@ description: """\
 This contains the binaries to interact with the learn-ocaml
 platform from the command line."""
 maintainer: [
-  "Érik Martin-Dorel <erik.martin-dorel@irit.fr>"
+  "Érik Martin-Dorel <erik@martin-dorel.org>"
   "Yann Régis-Gianas <yann.regis-gianas@nomadic-labs.com>"
-  "Louis Gesbert <louis.gesbert@ocamlpro.com>"
+  "Louis Gesbert <louis.gesbert@inria.fr>"
 ]
 authors: [
   "Benjamin Canou (OCamlPro)"

@@ -9,9 +9,9 @@ authors: [
   "Pierrick Couderc (OCamlPro)"
 ]
 maintainer: [
-  "Érik Martin-Dorel <erik.martin-dorel@irit.fr>"
+  "Érik Martin-Dorel <erik@martin-dorel.org>"
   "Yann Régis-Gianas <yann.regis-gianas@nomadic-labs.com>"
-  "Louis Gesbert <louis.gesbert@ocamlpro.com>"
+  "Louis Gesbert <louis.gesbert@inria.fr>"
 ]
 license: "MIT"
 homepage: "https://github.com/ocaml-sf/learn-ocaml"
