@@ -99,12 +99,15 @@ jobs:
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: "all"
       - name: Set up Docker Buildx
-        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
-        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        # cf. https://docs.docker.com/reference/cli/docker/buildx/create/#docker-container-driver
         uses: docker/setup-buildx-action@v3
         with:
-          driver: "docker"
+          driver: "docker-container"
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -124,6 +127,7 @@ jobs:
           tags: |
             ocamlsf/learn-ocaml:latest
             ocamlsf/learn-ocaml:${{ steps.tag.outputs.tag }}
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml
             org.opencontainers.image.description=learn-ocaml app manager
@@ -144,12 +148,15 @@ jobs:
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: "all"
       - name: Set up Docker Buildx
-        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
-        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        # cf. https://docs.docker.com/reference/cli/docker/buildx/create/#docker-container-driver
         uses: docker/setup-buildx-action@v3
         with:
-          driver: "docker"
+          driver: "docker-container"
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -171,6 +178,7 @@ jobs:
           tags: |
             ocamlsf/learn-ocaml-client:latest
             ocamlsf/learn-ocaml-client:${{ steps.tag.outputs.tag }}
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client
             org.opencontainers.image.description=learn-ocaml command-line client
@@ -193,12 +201,15 @@ jobs:
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: "all"
       - name: Set up Docker Buildx
-        # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
-        # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
+        # cf. https://docs.docker.com/reference/cli/docker/buildx/create/#docker-container-driver
         uses: docker/setup-buildx-action@v3
         with:
-          driver: "docker"
+          driver: "docker-container"
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -222,6 +233,7 @@ jobs:
           tags: |
             ocamlsf/emacs-learn-ocaml-client:latest
             ocamlsf/emacs-learn-ocaml-client:${{ steps.tag.outputs.tag }}
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client with emacs
             org.opencontainers.image.description=learn-ocaml command-line client with emacs
