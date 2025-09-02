@@ -18,11 +18,11 @@ jobs:
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver: "docker"
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -33,11 +33,12 @@ jobs:
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           pull: true
           push: true
           tags: "ocamlsf/learn-ocaml:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml
             org.opencontainers.image.description=learn-ocaml app manager
@@ -57,11 +58,11 @@ jobs:
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver: "docker"
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -72,13 +73,14 @@ jobs:
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           pull: true
           # load: true # implied by "driver: docker"
           push: true
           target: client
           tags: "ocamlsf/learn-ocaml-client:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client
             org.opencontainers.image.description=learn-ocaml command-line client
@@ -99,11 +101,11 @@ jobs:
       - name: Set up Docker Buildx
         # cf. https://github.com/docker/buildx/blob/master/docs/reference/buildx_build.md#image
         # and https://docs.docker.com/engine/reference/commandline/buildx_create/#driver
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver: "docker"
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -114,7 +116,7 @@ jobs:
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           pull: false # because of the previous "load: true"
           push: true
@@ -123,6 +125,7 @@ jobs:
             base=ocamlsf/learn-ocaml-client
             version=master
           tags: "ocamlsf/emacs-learn-ocaml-client:master"
+          platforms: "linux/amd64,linux/arm64/v8"
           labels: |
             org.opencontainers.image.title=learn-ocaml-client with emacs
             org.opencontainers.image.description=learn-ocaml command-line client with emacs
