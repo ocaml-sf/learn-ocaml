@@ -125,7 +125,7 @@ jobs:
           pull: true
           push: true
           cache-from: "type=gha"
-          cache-to: "type=gha,mode=min"
+          cache-to: "type=gha,mode=max"
           tags: |
             ocamlsf/learn-ocaml:latest
             ocamlsf/learn-ocaml:${{ steps.tag.outputs.tag }}
@@ -177,7 +177,7 @@ jobs:
           # load: true # implied by "driver: docker"
           push: true
           cache-from: "type=gha"
-          cache-to: "type=gha,mode=min"
+          cache-to: "type=gha,mode=max"
           target: client
           tags: |
             ocamlsf/learn-ocaml-client:latest
