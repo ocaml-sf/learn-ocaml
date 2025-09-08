@@ -15,6 +15,10 @@ on:
     types: ["completed"]
   # TODO: dispatch?
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release-please:
     name: Create Release
@@ -26,14 +30,11 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       body: ${{ steps.release.outputs.body }}
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: ocaml
-          package-name: learn-ocaml
-          bump-minor-pre-major: false
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"revert","section":"Reverts","hidden":false},{"type":"perf","section":"Performance Improvements","hidden":false},{"type":"refactor","section":"Code Refactoring","hidden":false},{"type":"deps","section":"Dependencies","hidden":false},{"type":"build","section":"Build System","hidden":false},{"type":"test","section":"Tests","hidden":false},{"type":"ci","section":"CI/CD","hidden":false},{"type":"docs","section":"Documentation","hidden":false},{"type":"style","section":"Style","hidden":false},{"type":"chore","section":"Miscellaneous Chores","hidden":true}]'
+          config-file: release-please-config.json
 
   add-binaries:
     needs: [release-please]
@@ -46,21 +47,22 @@ jobs:
         uses: actions/checkout@v4
       - name: Download workflow artifacts
         # cf. https://github.com/actions/download-artifact/issues/3
-        uses: dawidd6/action-download-artifact@v8
+        uses: dawidd6/action-download-artifact@v11
         with:
           workflow: static-builds.yml
           workflow_conclusion: success
           commit: ${{ github.sha }}
           path: artifacts
+          skip_unpack: true
       - name: Unpack workflow artifacts
         run: |
           cd artifacts
           mkdir -v target
           dist=(linux darwin)
-          artifact() { printf "learn-ocaml-%s-x86_64.tar.gz" "$d"; }
+          artifact() { printf "learn-ocaml-%s-x86_64.zip" "$d"; }
           for d in "${dist[@]}"; do
             mkdir -v -- "$d"
-            ( cd "$d" && tar xvzf "../$(artifact "$d")/$(artifact "$d")" )
+            ( cd "$d" && unzip "../$(artifact "$d")" )
             bin=(./learn-ocaml-client ./learn-ocaml-server ./learn-ocaml)
             for b in "${bin[@]}"; do
               mv -v -- "$d/$b" "target/$b-$d-x86_64"
