@@ -62,7 +62,7 @@ jobs:
           git config --global credential.helper 'store --file ~/.git-credentials'
           # See also https://stackoverflow.com/a/74841589/9164010
           printf "host=github.com\nprotocol=https\nusername=proofbot\npassword=${{ secrets.OPAM_RELEASE }}" | git credential-store store
-          echo -n ${{ secrets.OPAM_RELEASE }} > ~/.opam/plugins/opam-publish/proofbot.token
+          echo -n ${{ secrets.OPAM_RELEASE }} > ~/.opam/plugins/opam-publish/${var_opam_repo/\//%}.token  # proofbot.token
       - name: Generate CHANGES file
         env:
           CHANGES: ${{ inputs.body }}
@@ -70,10 +70,10 @@ jobs:
           printf "%s" "$CHANGES" > CHANGES.md
       # TODO: Docker-based caching
       - name: Setup OCaml
-        uses: avsm/setup-ocaml@v1
+        uses: avsm/setup-ocaml@v3
         # TODO: Keep up-to-date!
         with:
-          ocaml-version: 5.1.1
+          ocaml-compiler: 5.1.1
       - name: Install opam-publish
         run: |
           opam install -y -j 2 "opam-publish>=2.3.0"
