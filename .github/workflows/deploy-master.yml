@@ -41,7 +41,7 @@ jobs:
           pull: true
           push: true
           cache-from: "type=gha"
-          cache-to: "type=gha,mode=min"
+          cache-to: "type=gha,mode=max"
           tags: "ocamlsf/learn-ocaml:master"
           platforms: "linux/amd64,linux/arm64/v8"
           labels: |
@@ -87,7 +87,7 @@ jobs:
           # load: true # implied by "driver: docker"
           push: true
           cache-from: "type=gha"
-          cache-to: "type=gha,mode=min"
+          cache-to: "type=gha,mode=max"
           target: client
           tags: "ocamlsf/learn-ocaml-client:master"
           platforms: "linux/amd64,linux/arm64/v8"
