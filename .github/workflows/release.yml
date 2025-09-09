@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get tag name
-        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
+        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "tag=${tag#v}" >> $GITHUB_OUTPUT
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -118,7 +118,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119
@@ -148,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get tag name
-        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
+        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "tag=${tag#v}" >> $GITHUB_OUTPUT
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119
@@ -203,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get tag name
-        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "::set-output name=tag::${tag#v}"
+        run: tag="${{ needs.release-please.outputs.tag_name }}"; echo "tag=${tag#v}" >> $GITHUB_OUTPUT
         id: tag
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -224,7 +224,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          echo "::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Push to Docker Hub
         # cf. https://github.com/docker/build-push-action#customizing
         # and https://github.com/docker/build-push-action/pull/119

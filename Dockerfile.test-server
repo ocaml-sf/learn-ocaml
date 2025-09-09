@@ -1,7 +1,7 @@
 # This Dockerfile is useful for testing purposes
 # to ensure learn-ocaml can be built alone from learn-ocaml.opam
 
-FROM ocaml/opam:alpine-3.20-ocaml-5.1 as compilation
+FROM ocaml/opam:alpine-3.20-ocaml-5.1 AS compilation
 LABEL Description="learn-ocaml building" Vendor="OCamlPro"
 
 WORKDIR /home/opam/learn-ocaml
@@ -10,7 +10,7 @@ WORKDIR /home/opam/learn-ocaml
 COPY learn-ocaml.opam learn-ocaml-client.opam ./
 RUN sudo chown -R opam:nogroup .
 
-ENV OPAMYES true
+ENV OPAMYES=true
 RUN echo 'archive-mirrors: [ "https://opam.ocaml.org/cache" ]' >> ~/.opam/config \
   && opam repository set-url default http://opam.ocaml.org \
   && opam switch 5.1 \
@@ -28,16 +28,16 @@ COPY dune-project dune-project
 COPY dune dune
 RUN sudo chown -R opam:nogroup .
 
-ENV OPAMVERBOSE 1
+ENV OPAMVERBOSE=1
 
 # Run "make detect-libs"
-ENV OPAMWITHTEST 1
+ENV OPAMWITHTEST=1
 
 RUN opam install learn-ocaml --destdir /home/opam/install-prefix \
   && ls -l /home/opam/install-prefix/bin/learn-ocaml
 
 
-FROM alpine:3.20 as program
+FROM alpine:3.20 AS program
 
 ARG BUILD_DATE
 ARG VCS_BRANCH

@@ -14,11 +14,11 @@ RUN apk add --no-cache \
   && mkdir -p -v bin \
   && chown -v learn-ocaml:learn-ocaml bin
 
-ENV PATH /home/learn-ocaml/bin:${PATH}
+ENV PATH="/home/learn-ocaml/bin:${PATH}"
 
-ENV LANG C.UTF-8
-# ENV LC_ALL C.UTF-8
-# ENV LANGUAGE en_US:en
+ENV LANG="C.UTF-8"
+# ENV LC_ALL="C.UTF-8"
+# ENV LANGUAGE="en_US:en"
 
 COPY --chown=learn-ocaml:learn-ocaml .emacs .emacs
 
