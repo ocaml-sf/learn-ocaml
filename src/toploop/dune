@@ -1,5 +1,6 @@
 (library
  (name toploop_results)
+ (public_name learn-ocaml.toploop_results)
  (wrapped false)
  (modules Toploop_results)
  (libraries compiler-libs.toplevel)
@@ -7,6 +8,7 @@
 
 (library
  (name toploop)
+ (public_name learn-ocaml.toploop)
  (wrapped false)
  (modes byte)
  (modules Toploop_ext)
