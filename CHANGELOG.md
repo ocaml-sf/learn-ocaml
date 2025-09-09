@@ -1,5 +1,86 @@
 # Changelog
 
+## [1.1.0](https://github.com/ocaml-sf/learn-ocaml/compare/v1.0.0...v1.1.0) (2025-09-09)
+
+
+### Features
+
+* **build:** Migrate ocplib-i18n to ppxlib ([e34b5f7](https://github.com/ocaml-sf/learn-ocaml/commit/e34b5f77e358e8f5289c25f41c0bbb5d5c9a8848))
+* bump version to 1.1.0 ([9d757cd](https://github.com/ocaml-sf/learn-ocaml/commit/9d757cd29889e36eb0b62eb418ac5b8865023ed7))
+* **CLI:** Add option `learn-ocaml build serve --serve-during-build` ([a47f8dd](https://github.com/ocaml-sf/learn-ocaml/commit/a47f8ddef2762ad20c2bb168f05d706d6fa31dd5)), closes [#594](https://github.com/ocaml-sf/learn-ocaml/issues/594)
+* complete porting to OCaml 5.1 and jsoo 5.8 ([5f5dbb7](https://github.com/ocaml-sf/learn-ocaml/commit/5f5dbb7be1307adda6223838847a6b92806de643))
+* Reenable asak (using pin-depends for compat patch with OCaml 5) ([046d7dd](https://github.com/ocaml-sf/learn-ocaml/commit/046d7dd92fee318f17540fcca9ddaf86b215cecb))
+
+
+### Bug Fixes
+
+* Actually bind the `--dry-run` flag ([1a76ddb](https://github.com/ocaml-sf/learn-ocaml/commit/1a76ddba19acf32d35f91554e9ece3a355b33b83))
+* **build:** Fix static build on macOS w.r.t. libzstd ([3e8afe8](https://github.com/ocaml-sf/learn-ocaml/commit/3e8afe8bce87abe0b165d3bb7d1b866e22094015))
+* **build:** Fix/disable some warnings ([49c7208](https://github.com/ocaml-sf/learn-ocaml/commit/49c72080c7e412a047eed2326b150b48bd024ba0))
+* **build:** Update linking flags (needed for POSIX & macOS static binaries) ([6b0bc56](https://github.com/ocaml-sf/learn-ocaml/commit/6b0bc56bfbe46b2ea86dcc1562c78ea90d1d3a07))
+* **CI:** fix base Alpine version for final Docker images ([e721ad4](https://github.com/ocaml-sf/learn-ocaml/commit/e721ad4cd1dd292dbe2288712f9a9768459e3e0a))
+* **CI:** fix Dockerfile and client dependencies ([8012c6b](https://github.com/ocaml-sf/learn-ocaml/commit/8012c6b3bc6ebbb9692437063abf5b0620435abb))
+* **CI:** fix static builds and some specific deps ([283456d](https://github.com/ocaml-sf/learn-ocaml/commit/283456d52c164d106b29914e735ac3899209f7ef))
+* **CI:** Use macos-13 for static-builds ([#603](https://github.com/ocaml-sf/learn-ocaml/issues/603)) ([d2c8d65](https://github.com/ocaml-sf/learn-ocaml/commit/d2c8d65b12c2512bd35204305d59c5eb486d8a96))
+* **CI:** use older dependency releases in lockfile ([a5b4abf](https://github.com/ocaml-sf/learn-ocaml/commit/a5b4abf91285f7076320acd67fb348a01566d57b))
+* **docker:** Add missing alpine package (lsof) ([cc6caa3](https://github.com/ocaml-sf/learn-ocaml/commit/cc6caa34947000e6e60c175b607f5b0437609dc9))
+* font size of code fragments in descr ([#487](https://github.com/ocaml-sf/learn-ocaml/issues/487)) ([b8ebfcc](https://github.com/ocaml-sf/learn-ocaml/commit/b8ebfccee5753bf9fd8ab3cbb733b1aaa12c9cfb)), closes [#214](https://github.com/ocaml-sf/learn-ocaml/issues/214)
+* **server:** Add missing flush in Learnocaml_server.kill_running ([3b14462](https://github.com/ocaml-sf/learn-ocaml/commit/3b14462aebd7e9a3a0c9a109442182fbb3af2671))
+
+
+### Performance Improvements
+
+* **GHA:** Perform more caching, as the Dockerfile does multi-stage builds ([#632](https://github.com/ocaml-sf/learn-ocaml/issues/632)) ([b28115a](https://github.com/ocaml-sf/learn-ocaml/commit/b28115aad2377279eade202b68500b5d47c02cd7)), closes [#627](https://github.com/ocaml-sf/learn-ocaml/issues/627)
+
+
+### Dependencies
+
+* **opam:** Bump conf-libssl ([2081069](https://github.com/ocaml-sf/learn-ocaml/commit/20810690c73b1ae6996985fb037267818558d62d))
+* **opam:** Bump conf-pkg-config ([c50b77d](https://github.com/ocaml-sf/learn-ocaml/commit/c50b77d212699935f56fb735702059900fba19b2))
+* **opam:** Require js_of_ocaml &lt; 6.0.0 ([dcb59ce](https://github.com/ocaml-sf/learn-ocaml/commit/dcb59ce20ddc667fec7db5dc4a2b2582d9ebf489))
+* **opam:** Skip conduit-lwt-unix's latest release for now ([a636b26](https://github.com/ocaml-sf/learn-ocaml/commit/a636b26c14eac8203c406d9a66c7261848d9a924))
+
+
+### Build System
+
+* add `opam update` to static-build.sh ([a1f5d6e](https://github.com/ocaml-sf/learn-ocaml/commit/a1f5d6ee80060bbd075e9c031818cb95b6b8dddc))
+* **deps:** bump dawidd6/action-download-artifact from 2 to 6 in /.github/workflows ([#605](https://github.com/ocaml-sf/learn-ocaml/issues/605)) ([5780d3a](https://github.com/ocaml-sf/learn-ocaml/commit/5780d3ab58961b0d386d89bf608c8fa8798ae1b1))
+* **deps:** bump dawidd6/action-download-artifact in /.github/workflows ([5780d3a](https://github.com/ocaml-sf/learn-ocaml/commit/5780d3ab58961b0d386d89bf608c8fa8798ae1b1))
+* **js_of_ocaml:** Remove `--no-source-map` from root dune file ([6f6be0f](https://github.com/ocaml-sf/learn-ocaml/commit/6f6be0f6c80fa27a002c0268d087fe0f37965f2f))
+* lower upper bound of js_of_ocaml ([3e839c6](https://github.com/ocaml-sf/learn-ocaml/commit/3e839c61d591859a09e237fc13723394b0b9187c))
+* update pinned package versions ([b21586f](https://github.com/ocaml-sf/learn-ocaml/commit/b21586f484292ef020e8932c33ae6a7f22a7af3f))
+* update pinned package versions ([#622](https://github.com/ocaml-sf/learn-ocaml/issues/622)) ([ce843c5](https://github.com/ocaml-sf/learn-ocaml/commit/ce843c546d7c39331e1021deb58ee06111769b31))
+
+
+### CI/CD
+
+* Bump several GitHub Actions tags to latest major version ([8b1bc50](https://github.com/ocaml-sf/learn-ocaml/commit/8b1bc508af7e4e003e5eec8cbd22320e29313ae0))
+* **deploy-master.yml:** Add missing GHA `docker/setup-qemu-action` ([7ba32cd](https://github.com/ocaml-sf/learn-ocaml/commit/7ba32cd7515cd50e5ccdf640e1b47c9fc36b91f1))
+* **deploy-master.yml:** Build and push images for amd64 and arm64/v8 ([af5b77a](https://github.com/ocaml-sf/learn-ocaml/commit/af5b77a4240e899d9bb98f992462ad245c24d0bf))
+* **deploy-master.yml:** Use the docker-container driver for multi-platform builds ([3431025](https://github.com/ocaml-sf/learn-ocaml/commit/343102570fb043e59e21a0df231f94ae8b39ab3d))
+* **gha:** Enable gha cache (mode=min) in `docker/build-push-action` ([d7f78c7](https://github.com/ocaml-sf/learn-ocaml/commit/d7f78c700a0113b60ef20e1b28e15987e0216e2a))
+* **GHA:** Make deployment workflows up-to-date ([#630](https://github.com/ocaml-sf/learn-ocaml/issues/630)) ([d3bd293](https://github.com/ocaml-sf/learn-ocaml/commit/d3bd293abf266337711d41c71975502f3d2e982e)), closes [#595](https://github.com/ocaml-sf/learn-ocaml/issues/595)
+* **GHA:** Use actions/checkout@v4 ([#599](https://github.com/ocaml-sf/learn-ocaml/issues/599)) ([b7ed29c](https://github.com/ocaml-sf/learn-ocaml/commit/b7ed29c4748ab2d8dfe6969ac1479f0ced68eb80))
+* **gha:** Use actions/upload-artifact@v4 & dawidd6/action-download-artifact@v8 ([02476fe](https://github.com/ocaml-sf/learn-ocaml/commit/02476fed50fafb014bbddb1b014b304a42b0ebca))
+* **macos:** s/macos-latest/macos-14/ ([#598](https://github.com/ocaml-sf/learn-ocaml/issues/598)) ([0a69394](https://github.com/ocaml-sf/learn-ocaml/commit/0a69394bd4a1462fe0891b375e6efd08938f0c8c))
+* **publish-artifacts.yml:** Bump GHA versions ([61ee0cd](https://github.com/ocaml-sf/learn-ocaml/commit/61ee0cd11cf8bf1940ee38ea031cec5cef4278d0))
+* **release.yml:** Build and push images for amd64 and arm64/v8 ([396b615](https://github.com/ocaml-sf/learn-ocaml/commit/396b615f7d4d6555b007ca91a523b3895c6f24b4)), closes [#626](https://github.com/ocaml-sf/learn-ocaml/issues/626)
+* **release.yml:** Build and push images for amd64 and arm64/v8 ([#628](https://github.com/ocaml-sf/learn-ocaml/issues/628)) ([1641137](https://github.com/ocaml-sf/learn-ocaml/commit/16411373dda3a9f2fca484a4b1a8d9c2f175c343)), closes [#626](https://github.com/ocaml-sf/learn-ocaml/issues/626)
+
+
+### Documentation
+
+* **CONTRIBUTING.md:** minor update ([f318b95](https://github.com/ocaml-sf/learn-ocaml/commit/f318b958dae945d7f7e7a7b8fe091f51eb22263e))
+* Document how to include local images in exercises ([#612](https://github.com/ocaml-sf/learn-ocaml/issues/612)) ([d3bc210](https://github.com/ocaml-sf/learn-ocaml/commit/d3bc210f616bc5c27b329c24efd6e863d4ec1d62)), closes [#128](https://github.com/ocaml-sf/learn-ocaml/issues/128)
+* Update index.md ([25af64f](https://github.com/ocaml-sf/learn-ocaml/commit/25af64fab5938cea1a70052820d3b3ee5d56d71b))
+* Update index.md & publish-artifacts.yml ([#615](https://github.com/ocaml-sf/learn-ocaml/issues/615)) ([0a50c15](https://github.com/ocaml-sf/learn-ocaml/commit/0a50c15a4b96ad11643d48e9bc8488d12993f775))
+
+
+### Style
+
+* Address warnings in Dockerfiles and GHA workflows ([#634](https://github.com/ocaml-sf/learn-ocaml/issues/634)) ([5ffd748](https://github.com/ocaml-sf/learn-ocaml/commit/5ffd748f6d68e4eabe6e4a351a5fa65bd2087fb5))
+* Fix displayed version to adapt to git tags naming convention ([2784290](https://github.com/ocaml-sf/learn-ocaml/commit/2784290e758a2fcfef7807cce5fd4e9c5e44e59f))
+
 ## [1.0.0](https://github.com/ocaml-sf/learn-ocaml/compare/v0.16.0...v1.0.0) (2024-02-12)
 
 
