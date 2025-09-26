@@ -86,13 +86,6 @@ module File : sig
 
   (** Returns the (public) [descr.html] *)
   val descr: (string * string) list file
-
-  (** Returns the (public) depend file *)
-  val depend: string option file
-
-  (** [dependencies txt] create the (private, already deciphered) dependencies
-      declared in [txt] *)
-  val dependencies: string option -> string file list
 end
 
 (** Access a field from the exercise, using the [t] representation, without **
