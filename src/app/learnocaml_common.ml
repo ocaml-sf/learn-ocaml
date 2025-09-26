@@ -399,7 +399,7 @@ let render_rich_text ?on_runnable_clicked text =
     | Image _ :: _ -> assert false
     | Math code :: rest ->
         render
-          (H.txt ("`" ^ code ^ "`") :: acc)
+          (H.txt (" $" ^ code ^ "$ ") :: acc)
           rest in
   (render [] text
    :> [< Html_types.phrasing > `Code `Em `PCDATA ] H.elt list)
@@ -589,18 +589,17 @@ let stars_div stars =
 
 let exercise_text ex_meta exo =
   let mathjax_url =
-    api_server ^ "/js/mathjax/MathJax.js?delayStartupUntil=configured"
+    api_server ^ "/js/mathjax/es5/tex-chtml.js"
   in
   let mathjax_config =
-    "MathJax.Hub.Config({\n\
-    \  jax: [\"input/AsciiMath\", \"output/HTML-CSS\"],\n\
-    \  extensions: [],\n\
-    \  showMathMenu: false,\n\
-    \  showMathMenuMSIE: false,\n\
-    \  \"HTML-CSS\": {\n\
-    \    imageFont: null\n\
-    \  }
-          });"
+    "MathJax = {\n\
+    \  tex: {\n\
+    \    inlineMath: [[\"$\", \"$\"], [\"\\\\(\", \"\\\\)\"]]\n\
+    \  },\n\
+    \  svg: {\n\
+    \    fontCache: \"global\"\n\
+    \  }\n\
+    };"
     (* the following would allow comma instead of dot for the decimal separator,
        but should depend on the language the exercise is in, not the language of the
        app
@@ -625,13 +624,12 @@ let exercise_text ex_meta exo =
      <title>%s - exercise text</title>\
      <meta charset='UTF-8'>\
      <link rel='stylesheet' href='%s/css/learnocaml_standalone_description.css'>\
-     <script type='text/x-mathjax-config'>%s</script>
-            <script type='text/javascript' src='%s'></script>\
+     <script>%s</script>
+            <script type=\"text/javascript\" id=\"MathJax-script\" async src='%s'></script>\
      </head>\
      <body>\
      %s\
      </body>\
-     <script type='text/javascript'>MathJax.Hub.Configured()</script>\
      </html>"
     ex_meta.Exercise.Meta.title
     api_server
